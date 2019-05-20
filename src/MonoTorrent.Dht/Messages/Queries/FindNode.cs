@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // FindNode.cs
 //
@@ -75,4 +74,3 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
-#endif

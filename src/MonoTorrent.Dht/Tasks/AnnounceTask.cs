@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -41,4 +40,3 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // RoutingTable.cs
 //
@@ -174,4 +173,3 @@ namespace MonoTorrent.Dht
         }
     }
 }
-#endif

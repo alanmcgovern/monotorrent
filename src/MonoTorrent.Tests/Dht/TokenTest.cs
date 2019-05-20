@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 // TokenTest.cs.cs
 //
 // Authors:
@@ -64,4 +63,3 @@ namespace MonoTorrent.Dht
         }
     }
 }
-#endif

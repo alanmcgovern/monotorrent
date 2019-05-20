@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // Node.cs
 //
@@ -264,4 +263,3 @@ namespace MonoTorrent.Dht
         }
     }
 }
-#endif

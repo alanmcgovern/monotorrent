@@ -76,9 +76,7 @@ namespace MonoTorrent.Client
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
-#if !DISABLE_DHT	
 		private bool dhtInitialised;
-#endif		
         #endregion Member Variables
 
 
@@ -474,9 +472,7 @@ namespace MonoTorrent.Client
             if (!HasMetadata)
             {
                 Mode = new MetadataMode(this, torrentSave);
-#if !DISABLE_DHT
                 StartDHT();
-#endif                    
                 return;
             }
 
@@ -511,9 +507,8 @@ namespace MonoTorrent.Client
 
             Engine.Broadcast(this);
 
-#if !DISABLE_DHT
             StartDHT();
-#endif
+
             StartTime = DateTime.Now;
             PieceManager.Reset();
 
@@ -525,7 +520,6 @@ namespace MonoTorrent.Client
             });
         }
 
-#if !DISABLE_DHT
         private void StartDHT()
         {
 			if (dhtInitialised)
@@ -552,7 +546,6 @@ namespace MonoTorrent.Client
                 return true;
             });
         }
-#endif
 
         /// <summary>
         /// Stops the TorrentManager
@@ -572,9 +565,7 @@ namespace MonoTorrent.Client
                 return;
 
             if (State != TorrentState.Stopped) {
-#if !DISABLE_DHT
                 Engine.DhtEngine.PeersFound -= DhtPeersFound;
-#endif
 				Mode = new StoppingMode(this);
             }
         }
@@ -709,7 +700,6 @@ namespace MonoTorrent.Client
             return picker;
         }
 
-#if !DISABLE_DHT
         private async void DhtPeersFound(object o, PeersFoundEventArgs e)
         {
             if (InfoHash != e.InfoHash)
@@ -719,7 +709,6 @@ namespace MonoTorrent.Client
             int count = await AddPeersAsync(e.Peers);
             RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
         }
-#endif
 
         public void LoadFastResume(FastResume data)
         {

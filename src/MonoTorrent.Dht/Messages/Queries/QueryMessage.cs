@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // QueryMessage.cs
 //
@@ -77,4 +76,3 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
-#endif

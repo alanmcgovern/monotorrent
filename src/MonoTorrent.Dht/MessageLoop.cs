@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // MessageLoop.cs
 //
@@ -269,4 +268,3 @@ namespace MonoTorrent.Dht
         }
     }
 }
-#endif

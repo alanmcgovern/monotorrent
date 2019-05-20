@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // AnnouncePeerResponse.cs
 //
@@ -52,4 +51,3 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
-#endif

@@ -284,9 +284,7 @@ namespace MonoTorrent
                 fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
             }
 
-#if !DISABLE_DHT
             File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());
-#endif
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
 

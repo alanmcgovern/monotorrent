@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // Ping.cs
 //
@@ -63,4 +62,3 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 //
 // BigInteger.cs - Big Integer implementation
 //
@@ -1404,4 +1403,3 @@ namespace MonoTorrent.Dht
         }
     }
 }
-#endif

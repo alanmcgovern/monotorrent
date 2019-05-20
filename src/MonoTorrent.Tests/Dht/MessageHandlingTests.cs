@@ -1,4 +1,3 @@
-#if !DISABLE_DHT
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -93,16 +92,5 @@ namespace MonoTorrent.Dht
             Assert.AreEqual(NodeState.Bad, node.State, "#2");
             Assert.AreEqual(lastSeen, node.LastSeen, "#3");
         }
-
-//        void FakePingResponse(object sender, SendQueryEventArgs e)
-//        {
-//            if (!e.TimedOut || !(e.Query is Ping))
-//                return;
-//
-//            SendQueryTask task = (SendQueryTask)e.Task;
-//            PingResponse response = new PingResponse(task.Target.Id);
-//            listener.RaiseMessageReceived(response, task.Target.EndPoint);
-//        }
     }
 }
-#endif

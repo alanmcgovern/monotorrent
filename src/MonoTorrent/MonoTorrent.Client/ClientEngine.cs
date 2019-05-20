@@ -59,11 +59,7 @@ namespace MonoTorrent.Client
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = true;
-#if !DISABLE_DHT
         public static readonly bool SupportsDht = true;
-#else
-        public static readonly bool SupportsDht = false;
-#endif
         internal const int TickLength = 500;    // A logic tick will be performed every TickLength miliseconds
        
         #endregion
@@ -96,9 +92,9 @@ namespace MonoTorrent.Client
 
         public ConnectionManager ConnectionManager { get; }
 
-#if !DISABLE_DHT
+
         public IDhtEngine DhtEngine { get; private set; }
-#endif
+
         public DiskManager DiskManager { get; }
 
         public bool Disposed { get; private set; }
