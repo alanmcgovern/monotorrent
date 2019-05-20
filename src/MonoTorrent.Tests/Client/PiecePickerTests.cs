@@ -236,28 +236,6 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [Ignore("If a fast peer sends a choke message, CancelRequests will not be called")]
-        public void FastPeerChoked()
-        {
-            List<RequestMessage> messages = new List<RequestMessage>();
-            peer.IsChoking = false;
-            peer.BitField.SetAll(true);
-            peer.SupportsFastPeer = true;
-
-            RequestMessage m;
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages.Add(m);
-
-            picker.CancelRequests(peer);
-
-            List<RequestMessage> messages2 = new List<RequestMessage>();
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages2.Add(m);
-
-            Assert.AreEqual(0, messages2.Count, "#1");
-        }
-
-        [Test]
         public void ChokeThenClose()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
