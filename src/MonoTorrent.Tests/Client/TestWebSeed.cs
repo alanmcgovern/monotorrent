@@ -95,8 +95,11 @@ namespace MonoTorrent.Client
             var sendTask = connection.SendAsync (requests.Encode (), 0, requests.ByteLength);
             var receiveTask = connection.ReceiveAsync (new byte[100000], 0, 100000);
             connection.Dispose ();
-            Assert.CatchAsync<OperationCanceledException> (() => sendTask);
-            Assert.CatchAsync<OperationCanceledException> (() => receiveTask);
+            Assert.CatchAsync<OperationCanceledException> (() => sendTask, "#1");
+            Assert.CatchAsync<OperationCanceledException> (async () => {
+                await receiveTask;
+                await connection.ReceiveAsync (new byte[100000], 0, 100000);
+            }, "#2");
         }
 
         [Test]

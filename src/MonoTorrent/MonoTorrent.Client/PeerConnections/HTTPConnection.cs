@@ -125,6 +125,8 @@ namespace MonoTorrent.Client.Connections
         public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
             // This is a little tricky, so let's spell it out in comments...
+            if (Disposed)
+                throw new OperationCanceledException ();
 
             // If this is the first time ReceiveAsync is invoked, then we should get the first PieceMessage from the queue
             if (CurrentRequest == null)
@@ -330,10 +332,10 @@ namespace MonoTorrent.Client.Connections
 
             Disposed = true;
 
-            ReceiveWaiter.Set ();
             SendResult?.TrySetCanceled ();
             DataStreamResponse?.Dispose();
             DataStream?.Dispose();
+            ReceiveWaiter.Set ();
 
             DataStreamResponse = null;
             DataStream = null;
