@@ -5,12 +5,16 @@
     <CI Condition="'$(CI)' == '' ">false</CI>
 
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Out Condition=" '$(Out)' == '' ">$(MSBuildThisFileDirectory)out</Out>
   </PropertyGroup>
 
   <ItemGroup>
     <SolutionFile Include="src/MonoTorrent.sln">
       <Configuration>$(Configuration)</Configuration>
     </SolutionFile>
+    <PackFile Include="src/MonoTorrent/MonoTorrent.csproj">
+      <Configuration>$(Configuration)</Configuration>
+    </PackFile>
   </ItemGroup>
 
   <Target Name="Build" DependsOnTargets="$(BuildDependsOn)">
@@ -30,6 +34,16 @@
         Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
         Targets="Clean"
     />
+  </Target>
+
+  <Target Name="Pack">
+    <MakeDir Directories="$(Out)" />
+    <MSBuild
+        Projects="@(PackFile)"
+        Properties="$(MSBuildCommonProperties);Configuration=%(PackFile.Configuration);PackageOutputPath=$(Out)"
+        Targets="Pack"
+    />
+
   </Target>
 
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
