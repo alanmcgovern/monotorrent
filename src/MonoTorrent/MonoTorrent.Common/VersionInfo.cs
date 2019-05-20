@@ -46,16 +46,17 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The current version of the client
         /// </summary>
-        public static readonly string ClientVersion = CreateClientVersion ();
+        public static readonly string ClientVersion;
 
         public static readonly string DhtClientVersion = "MO06";
 
-        internal static  Version Version;
-		static string CreateClientVersion ()
-		{
-			Version = new Version("1.0.0");
+        internal static readonly Version Version;
 
-			    // 'MO' for MonoTorrent then four digit version number
+        static VersionInfo ()
+        {
+            Version  = System.Version.Parse(typeof(VersionInfo).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version);
+
+            // 'MO' for MonoTorrent then four digit version number
             string version = string.Format ("{0}{1}{2}{3}", Math.Max (Version.Major, 0),
                                                             Math.Max (Version.Minor, 0),
                                                             Math.Max (Version.Build, 0),
@@ -64,7 +65,7 @@ namespace MonoTorrent.Common
                 version = version.Substring (0, 4);
             else
                 version = version.PadRight (4, '0');
-			return string.Format ("-MO{0}-", version);
-		}
+            ClientVersion = string.Format ("-MO{0}-", version);
+        }
     }
 }
