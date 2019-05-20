@@ -487,6 +487,9 @@ namespace MonoTorrent.Client
                 Manager.UpdateLimiters ();
             }
 
+            Manager.PieceManager.Picker.CancelTimedOutRequests();
+            Manager.Peers.UpdatePeerCounts();
+
             if (Manager.finishedPieces.Count > 0)
                 SendHaveMessagesToAll();
 

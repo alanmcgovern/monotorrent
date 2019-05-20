@@ -132,10 +132,6 @@ namespace MonoTorrent.Client
             this.engine = engine;
 
             PendingConnects = new List<AsyncConnectState>();
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2.5), () =>  {
-                CancelPendingConnects(null);
-                return true;
-            });
         }
 
         #endregion
@@ -343,6 +339,11 @@ namespace MonoTorrent.Client
                 id.TorrentManager.RaisePeerDisconnected(
                     new PeerConnectionEventArgs( id.TorrentManager, id, Direction.None, message ) );
             }
+        }
+
+        internal void CancelPendingConnects()
+        {
+            CancelPendingConnects(null);
         }
 
         internal void CancelPendingConnects (TorrentManager manager)

@@ -22,38 +22,19 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public int Available
-        {
-            get { return AvailablePeers.Count; }
-        }
+        public int Available { get; private set; }
 
         /// <summary>
         /// Returns the number of Leechs we are currently connected to
         /// </summary>
         /// <returns></returns>
-        public int Leechs
-        {
-            get
-            {
-                return (int)ClientEngine.MainLoop.QueueWait(() => {
-                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return !p.IsSeeder; });
-                });
-            }
-        }
+        public int Leechs { get; private set; }
 
         /// <summary>
         /// Returns the number of Seeds we are currently connected to
         /// </summary>
         /// <returns></returns>
-        public int Seeds
-        {
-            get
-            {
-                return (int)ClientEngine.MainLoop.QueueWait(() => {
-                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return p.IsSeeder; });
-                });
-            }
-        }
+        public int Seeds { get; private set; }
 
         #endregion
 
@@ -105,6 +86,21 @@ namespace MonoTorrent.Client
             return false;
         }
 
+        internal void UpdatePeerCounts ()
+        {
+            int seeds = 0;
+            int leeches = 0;
+            for (int i = 0; i < ActivePeers.Count; i++) {
+                if (ActivePeers[i].IsSeeder)
+                    seeds++;
+                else
+                    leeches++;
+            }
+
+            Available = AvailablePeers.Count;
+            Seeds = seeds;
+            Leechs = leeches;
+        }
         #endregion Methods
     }
 }

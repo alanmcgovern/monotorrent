@@ -370,11 +370,10 @@ namespace MonoTorrent.Client
             return (other == null) ? false : InfoHash == other.InfoHash;
         }
 
-        public List<Piece> GetActiveRequests()
+        public async Task<List<Piece>> GetActiveRequestsAsync()
         {
-            return (List<Piece>)ClientEngine.MainLoop.QueueWait(delegate {
-                return PieceManager.Picker.ExportActiveRequests();
-            });
+            await ClientEngine.MainLoop;
+            return PieceManager.Picker.ExportActiveRequests();
         }
 
         /// <summary>
@@ -511,13 +510,6 @@ namespace MonoTorrent.Client
 
             StartTime = DateTime.Now;
             PieceManager.Reset();
-
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
-                if (State != TorrentState.Downloading && State != TorrentState.Seeding)
-                    return false;
-                PieceManager.Picker.CancelTimedOutRequests();
-                return true;
-            });
         }
 
         private void StartDHT()

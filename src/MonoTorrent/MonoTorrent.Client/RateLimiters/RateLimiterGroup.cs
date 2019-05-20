@@ -35,7 +35,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class RateLimiterGroup : IRateLimiter
+    class RateLimiterGroup : IRateLimiter, IEnumerable<IRateLimiter>
     {
         List<IRateLimiter> limiters;
 
@@ -82,6 +82,16 @@ namespace MonoTorrent.Client
         {
             for (int i = 0; i < limiters.Count; i++)
                 limiters [i].UpdateChunks (maxRate, actualRate);
+        }
+
+        public IEnumerator<IRateLimiter> GetEnumerator()
+        {
+            return limiters.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return limiters.GetEnumerator();
         }
     }
 }

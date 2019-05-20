@@ -82,8 +82,8 @@ namespace MonoTorrent.Client
         private int tickCount;
         private List<TorrentManager> torrents;
         private ReadOnlyCollection<TorrentManager> torrentsReadonly;
-        private RateLimiterGroup uploadLimiter;
-        private RateLimiterGroup downloadLimiter;
+        private IRateLimiter uploadLimiter;
+        private IRateLimiter downloadLimiter;
 
         #endregion
 
@@ -190,7 +190,12 @@ namespace MonoTorrent.Client
             });
             this.torrents = new List<TorrentManager>();
             this.torrentsReadonly = new ReadOnlyCollection<TorrentManager> (torrents);
-            CreateRateLimiters();
+            downloadLimiter = new RateLimiterGroup {
+                new DiskWriterLimiter(DiskManager),
+                new RateLimiter()
+            };
+
+            uploadLimiter = new RateLimiter();
             this.PeerId = GeneratePeerId();
 
             localPeerListener = new LocalPeerListener(this);
@@ -200,24 +205,6 @@ namespace MonoTorrent.Client
             // This means we created the listener in the constructor
             if (listener.Endpoint.Port == 0)
                 listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
-        }
-
-        void CreateRateLimiters()
-        {
-            RateLimiter downloader = new RateLimiter();
-            downloadLimiter = new RateLimiterGroup();
-            downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
-            downloadLimiter.Add(downloader);
-
-            RateLimiter uploader = new RateLimiter();
-            uploadLimiter = new RateLimiterGroup();
-            uploadLimiter.Add(uploader);
-
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
-                downloader.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
-                uploader.UpdateChunks(Settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
-                return !Disposed;
-            });
         }
 
         #endregion
@@ -408,6 +395,14 @@ namespace MonoTorrent.Client
         private void LogicTick()
         {
             tickCount++;
+
+            if (tickCount % 2 == 0)
+            {
+                downloadLimiter.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
+                uploadLimiter.UpdateChunks(Settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
+            }
+
+            ConnectionManager.CancelPendingConnects();
 
             ConnectionManager.TryConnect ();
             for (int i = 0; i < this.torrents.Count; i++)
