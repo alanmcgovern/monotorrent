@@ -15,9 +15,6 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (null);
             };
 
-            if (manager.State == state)
-                tcs.TrySetResult (null);
-
             return tcs.Task;
         }
     }

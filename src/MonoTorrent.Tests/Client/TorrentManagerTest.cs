@@ -88,9 +88,10 @@ namespace MonoTorrent.Client
             await rig2.Engine.Unregister(rig2.Manager);
             await rig.Engine.Register(rig2.Manager);
 
-            hashingTask = rig2.Manager.WaitForState(TorrentState.Stopped);
+            hashingTask = rig2.Manager.WaitForState(TorrentState.Downloading);
             await rig2.Manager.HashCheckAsync(true);
             await hashingTask;
+            await rig2.Manager.StopAsync();
 
             rig2.Dispose();
         }
@@ -98,24 +99,13 @@ namespace MonoTorrent.Client
         [Test]
         public async Task StopTest()
         {
-            bool started = false;
-            AutoResetEvent h = new AutoResetEvent(false);
-
-            rig.Manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e)
-            {
-                if (!started) {
-                    if ((started = e.NewState == TorrentState.Hashing))
-                        h.Set();
-                } else {
-                    if (e.NewState == TorrentState.Stopped)
-                        h.Set();
-                }
-            };
+            var hashingState = rig.Manager.WaitForState(TorrentState.Hashing);
+            var stoppedState = rig.Manager.WaitForState(TorrentState.Stopped);
 
             await rig.Manager.StartAsync();
-            Assert.IsTrue (h.WaitOne(5000, true), "Started");
+            Assert.IsTrue(hashingState.Wait(5000000), "Started");
             await rig.Manager.StopAsync();
-            Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
+            Assert.IsTrue(stoppedState.Wait(5000000), "Stopped");
         }
 
         [Test]
