@@ -329,6 +329,17 @@ namespace MonoTorrent.Client
            PieceManager.ChangePicker(picker, Bitfield, Torrent.Files);
         }
 
+        /// <summary>
+        /// Changes the active piece picker. This can be called when the manager is running, or when it is stopped.
+        /// </summary>
+        /// <param name="picker">The new picker to use.</param>
+        /// <returns></returns>
+        public async Task ChangePickerAsync(PiecePicker picker)
+        {
+            await ClientEngine.MainLoop;
+            ChangePicker(picker);
+        }
+
         public void Dispose()
         {
             if (disposed)
