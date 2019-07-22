@@ -116,7 +116,7 @@ namespace MonoTorrent.Client
             get { return this.engine.Settings.GlobalMaxConnections; }
         }
 
-        int TryConnectIndex {
+        LinkedList<TorrentManager> TorrentManagers {
             get; set;
         }
         #endregion
@@ -132,12 +132,19 @@ namespace MonoTorrent.Client
             this.engine = engine;
 
             PendingConnects = new List<AsyncConnectState>();
+            TorrentManagers = new LinkedList<TorrentManager>();
         }
 
         #endregion
 
 
         #region Async Connection Methods
+
+        internal void Add (TorrentManager manager)
+            => TorrentManagers.AddLast (manager);
+
+        internal void Remove (TorrentManager manager)
+            => TorrentManagers.Remove (manager);
 
         internal async void ConnectToPeer(TorrentManager manager, Peer peer)
         {
@@ -467,21 +474,25 @@ namespace MonoTorrent.Client
 
         internal void TryConnect()
         {
-            int lastConnect = TryConnectIndex;
-            bool connected = true;
-
             // If we have already reached our max connections globally, don't try to connect to a new peer
-            while (OpenConnections < this.MaxOpenConnections && PendingConnects.Count < this.MaxHalfOpenConnections && connected) {
-                connected = false;
-                // Check each torrent manager in turn to see if they have any peers we want to connect to
-                for (int i = lastConnect; i < engine.Torrents.Count; i ++) {
-                    if (TryConnect(engine.Torrents[i])) {
-                        connected = true;
-                        TryConnectIndex = (i + 1) % engine.Torrents.Count;
+            while (OpenConnections < this.MaxOpenConnections && PendingConnects.Count < this.MaxHalfOpenConnections) {
+                var node = TorrentManagers.First;
+                while (node != null) {
+                    // If we successfully connect, then break out of this loop and restart our
+                    // connection process from the first node in the list again.
+                    if (TryConnect(node.Value)) {
+                        TorrentManagers.Remove(node);
+                        TorrentManagers.AddLast(node);
+                        break;
                     }
+
+                    // If we did not successfully connect to a peer, then try the next torrent.
+                    node = node.Next;
                 }
 
-                lastConnect = 0;
+                // If we failed to connect to anyone after walking the entire list, give up for now.
+                if (node == null)
+                    break;
             }
         }
         

@@ -291,6 +291,8 @@ namespace MonoTorrent.Client
             if (Contains(manager.Torrent))
                 throw new TorrentException("A manager for this torrent has already been registered");
             this.torrents.Add(manager);
+            ConnectionManager.Add (manager);
+
             manager.Engine = this;
             manager.DownloadLimiter.Add(downloadLimiter);
             manager.UploadLimiter.Add(uploadLimiter);
@@ -375,6 +377,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException("The manager must be stopped before it can be unregistered");
 
             this.torrents.Remove(manager);
+            ConnectionManager.Remove(manager);
 
             manager.Engine = null;
             manager.DownloadLimiter.Remove(downloadLimiter);
