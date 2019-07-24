@@ -68,9 +68,9 @@ namespace MonoTorrent.Dht
         Dictionary<BEncodedValue, SendDetails> waitingResponse = new Dictionary<BEncodedValue, SendDetails>();
         List<SendDetails> waitingResponseTimedOut = new List<SendDetails> ();
         
-        private bool CanSend
+        private bool ShouldSend
         {
-            get { return sendQueue.Count > 0 && (DateTime.UtcNow - lastSent) > TimeSpan.FromMilliseconds(5); }
+            get { return (DateTime.UtcNow - lastSent) > TimeSpan.FromMilliseconds(5); }
         }
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
@@ -83,10 +83,14 @@ namespace MonoTorrent.Dht
                     return false;
                 try
                 {
-                    SendMessage();
+                    if (ShouldSend) {
+                        for (int i = 0; i < 5 && sendQueue.Count > 0; i ++)
+                            SendMessage();
+                    }
 
                     while (receiveQueue.Count > 0)
                         ReceiveMessage();
+
                     TimeoutMessage();
                 }
                 catch (Exception ex)
@@ -133,16 +137,14 @@ namespace MonoTorrent.Dht
 
         private void SendMessage()
         {
-            while (CanSend) {
-                var details = sendQueue.Dequeue();
+            var details = sendQueue.Dequeue();
 
-                lastSent = details.SentAt = DateTime.UtcNow;
-                if (details.Message is QueryMessage)
-                    waitingResponse.Add(details.Message.TransactionId, details);
+            lastSent = details.SentAt = DateTime.UtcNow;
+            if (details.Message is QueryMessage)
+                waitingResponse.Add(details.Message.TransactionId, details);
 
-                byte[] buffer = details.Message.Encode();
-                listener.Send(buffer, details.Destination);
-            }
+            byte[] buffer = details.Message.Encode();
+            listener.Send(buffer, details.Destination);
         }
 
         internal void Start()
