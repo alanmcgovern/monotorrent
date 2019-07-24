@@ -4,37 +4,26 @@ using System.Net;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace MonoTorrent.Dht.Tasks
 {
     class InitialiseTask
     {
-        int activeRequests = 0;
-        List<Node> initialNodes;
-        SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
-        DhtEngine engine;
+        readonly List<Node> initialNodes;
+        readonly SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
+        readonly DhtEngine engine;
 
         public InitialiseTask(DhtEngine engine)
+            : this (engine, Enumerable.Empty<Node> ())
         {
-            Initialise(engine, null);
-        }
-
-        public InitialiseTask(DhtEngine engine, byte[] initialNodes)
-        {
-            Initialise(engine, initialNodes == null ? null :  Node.FromCompactNode(initialNodes));
+            
         }
 
         public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
         {
-            Initialise(engine, nodes);
-        }
-
-        void Initialise(DhtEngine engine, IEnumerable<Node> nodes)
-        {
             this.engine = engine;
-            this.initialNodes = new List<Node>();
-            if (nodes != null)
-                initialNodes.AddRange(nodes);
+            initialNodes = new List<Node>(nodes);
         }
 
         public async void Execute()
@@ -57,30 +46,37 @@ namespace MonoTorrent.Dht.Tasks
             }
             else
             {
-                Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                Node utorrent = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
                 await SendFindNode(new Node[] { utorrent });
             }
         }
 
-        private async Task SendFindNode(IEnumerable<Node> newNodes)
+        async Task SendFindNode(IEnumerable<Node> newNodes)
         {
+            var activeRequests = new List<Task<SendQueryEventArgs>> ();
             foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
             {
                 FindNode request = new FindNode(engine.LocalId, engine.LocalId);
-                activeRequests++;
-                var args = await engine.SendQueryAsync (request, node);
-                activeRequests--;
+                activeRequests.Add (engine.SendQueryAsync (request, node));
+            }
 
+            while (activeRequests.Count > 0) {
+                var completed = await Task.WhenAny (activeRequests);
+                activeRequests.Remove (completed);
+
+                var args = await completed;
                 if (!args.TimedOut) {
-                    FindNodeResponse response = (FindNodeResponse)args.Response;
-                    await SendFindNode (Node.FromCompactNode (response.Nodes));
-                }
-
-                if (activeRequests == 0) {
-                    if (initialNodes.Count > 0 && engine.RoutingTable.CountNodes () < 10)
-                        await new InitialiseTask (engine).ExecuteAsync ();
+                    var response = (FindNodeResponse)args.Response;
+                    foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, Node.FromCompactNode (response.Nodes), Bucket.MaxCapacity))
+                    {
+                        FindNode request = new FindNode(engine.LocalId, engine.LocalId);
+                        activeRequests.Add (engine.SendQueryAsync (request, node));
+                    }
                 }
             }
+
+            if (initialNodes.Count > 0 && engine.RoutingTable.NeedsBootstrap)
+                await new InitialiseTask (engine).ExecuteAsync ();
         }
     }
 }
