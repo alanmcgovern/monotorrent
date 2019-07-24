@@ -67,11 +67,12 @@ namespace MonoTorrent.Dht
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
         Dictionary<BEncodedValue, SendDetails> waitingResponse = new Dictionary<BEncodedValue, SendDetails>();
         List<SendDetails> waitingResponseTimedOut = new List<SendDetails> ();
-        
-        private bool ShouldSend
-        {
-            get { return (DateTime.UtcNow - lastSent) > TimeSpan.FromMilliseconds(5); }
-        }
+
+        internal int PendingQueries
+            => waitingResponse.Count;
+
+        bool ShouldSend
+            => (DateTime.UtcNow - lastSent) > TimeSpan.FromMilliseconds(5);
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
         {
