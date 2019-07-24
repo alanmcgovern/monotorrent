@@ -128,6 +128,14 @@ namespace MonoTorrent.Dht.Messages
                 }
             }
 
+            // If the transaction ID is null, or invalid, we should bail out
+            if (message != null && message.TransactionId == null)
+                error = "Response had a null transation ID";
+
+            // If the node ID is null, or invalid, we should bail out
+            if (message != null && message.Id == null)
+                error = "Response had a null node ID";
+
             return error == null && message != null;
         }
     }
