@@ -85,7 +85,9 @@ namespace MonoTorrent.Dht
                 try
                 {
                     SendMessage();
-                    ReceiveMessage();
+
+                    while (receiveQueue.Count > 0)
+                        ReceiveMessage();
                     TimeoutMessage();
                 }
                 catch (Exception ex)
