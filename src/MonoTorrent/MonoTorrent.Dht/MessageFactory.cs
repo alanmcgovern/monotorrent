@@ -104,6 +104,7 @@ namespace MonoTorrent.Dht.Messages
             else if (dictionary[MessageTypeKey].Equals(ErrorMessage.ErrorType))
             {
                 message = new ErrorMessage(dictionary);
+                messages.Remove(message.TransactionId);
             }
             else
             {
