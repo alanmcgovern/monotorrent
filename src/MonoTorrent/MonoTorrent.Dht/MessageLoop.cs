@@ -162,7 +162,7 @@ namespace MonoTorrent.Dht
         private void TimeoutMessage()
         {
             foreach (var v in waitingResponse) {
-                if ((DateTime.UtcNow - v.Value.SentAt) > engine.Timeout)
+                if (engine.Timeout == TimeSpan.Zero || (DateTime.UtcNow - v.Value.SentAt) > engine.Timeout)
                     waitingResponseTimedOut.Add (v.Value);
             }
 
