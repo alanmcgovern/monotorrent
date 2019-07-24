@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Dht.Messages;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.BEncoding;
@@ -100,8 +101,10 @@ namespace MonoTorrent.Dht
             });
         }
 
-        void MessageReceived(byte[] buffer, IPEndPoint endpoint)
+        async void MessageReceived(byte[] buffer, IPEndPoint endpoint)
         {
+            await DhtEngine.MainLoop;
+
             lock (locker)
             {
                 // I should check the IP address matches as well as the transaction id
