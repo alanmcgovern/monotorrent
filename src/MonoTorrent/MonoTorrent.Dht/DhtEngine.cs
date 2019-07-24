@@ -249,7 +249,7 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged(DhtState.Ready);
             }
 
-            MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
+            MainLoop.QueueTimeout(TimeSpan.FromSeconds(30), delegate
             {
                 if (Disposed)
                     return false;
