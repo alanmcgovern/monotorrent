@@ -33,7 +33,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void SendQueryTaskTimeout()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
 
             Ping ping = new Ping(engine.LocalId);
             ping.TransactionId = transactionId;
@@ -48,7 +48,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void SendQueryTaskSucceed()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
 
             Ping ping = new Ping(engine.LocalId);
             ping.TransactionId = transactionId;
@@ -75,7 +75,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void NodeReplaceTest()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
             ManualResetEvent handle = new ManualResetEvent(false);
             Bucket b = new Bucket();
             for (int i = 0; i < Bucket.MaxCapacity; i++)
@@ -124,7 +124,7 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < 5; i++)
                 nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
 
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
             engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(75);
             engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
             {
@@ -165,7 +165,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void ReplaceNodeTest()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
             Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
             for(int i=0; i < 4; i++)
             {

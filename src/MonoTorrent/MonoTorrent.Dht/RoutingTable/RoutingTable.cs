@@ -54,6 +54,8 @@ namespace MonoTorrent.Dht
             get { return localNode; }
         }
 
+        public bool NeedsBootstrap => CountNodes () < 10;
+
         public RoutingTable()
             : this(new Node(NodeId.Create(), new System.Net.IPEndPoint(IPAddress.Any, 0)))
         {

@@ -163,7 +163,7 @@ namespace MonoTorrent.Dht
         {
             if (waitingResponse.Count > 0)
             {
-                if ((DateTime.UtcNow - waitingResponse[0].SentAt) > engine.TimeOut)
+                if ((DateTime.UtcNow - waitingResponse[0].SentAt) > engine.Timeout)
                 {
                     SendDetails details = waitingResponse.Dequeue();
                     MessageFactory.UnregisterSend((QueryMessage)details.Message);

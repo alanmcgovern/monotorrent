@@ -37,7 +37,7 @@ namespace MonoTorrent.Dht
         public void SendPing()
         {
             engine.Add(node);
-            engine.TimeOut = TimeSpan.FromMilliseconds(75);
+            engine.Timeout = TimeSpan.FromMilliseconds(75);
             ManualResetEvent handle = new ManualResetEvent(false);
             engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e) {
                 if (!e.TimedOut && e.Query is Ping)
@@ -63,7 +63,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void PingTimeout()
         {
-            engine.TimeOut = TimeSpan.FromHours(1);
+            engine.Timeout = TimeSpan.FromHours(1);
             // Send ping
             Ping ping = new Ping(node.Id);
             ping.TransactionId = transactionId;
@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht
 
             Assert.IsTrue(sendTask.Wait (1000), "#0");
 
-            engine.TimeOut = TimeSpan.FromMilliseconds(75);
+            engine.Timeout = TimeSpan.FromMilliseconds(75);
             DateTime lastSeen = node.LastSeen;
 
             // Time out a ping
