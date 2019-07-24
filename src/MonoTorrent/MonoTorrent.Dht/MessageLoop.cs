@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht
         {
             this.engine = engine;
             this.listener = listener;
-            listener.MessageReceived += new MessageReceived(MessageReceived);
+            listener.MessageReceived += MessageReceived;
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
                 if (engine.Disposed)
                     return false;
