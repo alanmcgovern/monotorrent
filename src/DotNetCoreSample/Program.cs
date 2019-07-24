@@ -93,7 +93,7 @@ namespace MonoTorrent
             DhtEngine dht = new DhtEngine (dhtListner);
             engine.RegisterDht(dht);
             dhtListner.Start();
-            engine.DhtEngine.Start(nodes);
+            engine.DhtEngine.StartAsync(nodes);
 
             while (false) {
                 dht.PeersFound += (o, e) => Console.WriteLine(e.Peers.Count);

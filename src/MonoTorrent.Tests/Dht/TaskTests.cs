@@ -152,7 +152,7 @@ namespace MonoTorrent.Dht
             };
 
             engine.Add(nodes);
-            engine.Start();
+            engine.StartAsync();
 
             System.Threading.Thread.Sleep(500);
             foreach (Bucket b in engine.RoutingTable.Buckets)

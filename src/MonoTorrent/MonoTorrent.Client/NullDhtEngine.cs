@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
@@ -76,14 +77,14 @@ namespace MonoTorrent.Client
             return new byte[0];
         }
 
-        public void Start()
+        public Task StartAsync()
         {
-            
+            return Task.CompletedTask;
         }
 
-        public void Start(byte[] initialNodes)
+        public Task StartAsync(byte[] initialNodes)
         {
-            
+            return Task.CompletedTask;
         }
 
         public void Stop()

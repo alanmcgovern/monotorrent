@@ -31,6 +31,7 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.Common;
@@ -262,12 +263,12 @@ namespace MonoTorrent.Dht
             return e;
         }
 
-        public void Start()
+        public async Task StartAsync()
         {
-            Start(null);
+            await StartAsync(null);
         }
 
-        public void Start(byte[] initialNodes)
+        public async Task StartAsync(byte[] initialNodes)
         {
             CheckDisposed();
 
