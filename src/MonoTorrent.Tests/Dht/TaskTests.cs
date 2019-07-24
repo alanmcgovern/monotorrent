@@ -126,29 +126,23 @@ namespace MonoTorrent.Dht
 
             engine.Timeout = TimeSpan.FromMilliseconds(25);
             engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(75);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
+            listener.MessageSent += delegate(Message message, IPEndPoint endpoint)
             {
-                DhtEngine.MainLoop.Queue(delegate
+                Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(endpoint.Port); });
+                if (current == null)
+                    return;
+
+                if (message is Ping)
                 {
-                    if (!e.TimedOut)
-                        return;
-
-                    Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(e.EndPoint.Port); });
-                    if (current == null)
-                        return;
-
-                    if (e.Query is Ping)
-                    {
-                        PingResponse r = new PingResponse(current.Id, e.Query.TransactionId);
-                        listener.RaiseMessageReceived(r, current.EndPoint);
-                    }
-                    else if (e.Query is FindNode)
-                    {
-                        FindNodeResponse response = new FindNodeResponse(current.Id, e.Query.TransactionId);
-                        response.Nodes = "";
-                        listener.RaiseMessageReceived(response, current.EndPoint);
-                    }
-                });
+                    PingResponse r = new PingResponse(current.Id, message.TransactionId);
+                    listener.RaiseMessageReceived(r, current.EndPoint);
+                }
+                else if (message is FindNode)
+                {
+                    FindNodeResponse response = new FindNodeResponse(current.Id, message.TransactionId);
+                    response.Nodes = "";
+                    listener.RaiseMessageReceived(response, current.EndPoint);
+                }
             };
 
             engine.Add(nodes);
