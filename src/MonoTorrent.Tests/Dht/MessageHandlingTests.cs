@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Dht.Messages;
-using MonoTorrent.BEncoding;
 using System.Net;
 using System.Threading;
-using MonoTorrent.Dht.Tasks;
+using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Dht
 {
@@ -34,28 +34,66 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
+        public void ErrorReceived ()
+        {
+            int failedCount = 0;
+            var pingSuccessful = new TaskCompletionSource<bool> ();
+
+            var ping = new Ping(node.Id) {
+                TransactionId = transactionId
+            };
+
+            engine.MessageLoop.QuerySent += (o, e) => {
+                // This ping should not time out.
+                if (e.Query.TransactionId.Equals (ping.TransactionId))
+                    pingSuccessful.TrySetResult (!e.TimedOut && e.Response == null && e.Error != null);
+            };
+
+            listener.MessageSent += (message, endpoint) => {
+                // This TransactionId should be registered and it should be pending a response.
+                if (!MessageFactory.IsRegistered (ping.TransactionId) || engine.MessageLoop.PendingQueries != 1)
+                    pingSuccessful.TrySetResult (false);
+
+                if (message.TransactionId.Equals (ping.TransactionId)) {
+                    listener.RaiseMessageReceived (new ErrorMessage (ping.TransactionId, ErrorCode.ServerError, "Ooops"), node.EndPoint);
+                    failedCount++;
+                }
+            };
+
+            // Send the ping
+            var task = engine.SendQueryAsync (ping, node);
+
+            // The query should complete, and the message should not have timed out.
+            Assert.IsTrue (task.Wait (100000), "#1");
+            Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
+            Assert.IsTrue (pingSuccessful.Task.Result, "#3");
+            Assert.IsFalse (MessageFactory.IsRegistered (ping.TransactionId), "#4");
+            Assert.AreEqual (0, engine.MessageLoop.PendingQueries, "#5");
+            Assert.AreEqual (1, failedCount, "#6");
+        }
+
+        [Test]
         public void SendPing()
         {
-            engine.Add(node);
-            engine.Timeout = TimeSpan.FromMilliseconds(75);
-            ManualResetEvent handle = new ManualResetEvent(false);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e) {
-                if (!e.TimedOut && e.Query is Ping)
-                    handle.Set();
-
-                if (!e.TimedOut || !(e.Query is Ping))
-                    return;
-
-                PingResponse response = new PingResponse(node.Id, e.Query.TransactionId);
-                listener.RaiseMessageReceived(response, e.EndPoint);
+            var tcs = new TaskCompletionSource<object> ();
+            listener.MessageSent += (Message message, IPEndPoint endpoint) => {
+                if (message is Ping && endpoint == node.EndPoint) {
+                    var response = new PingResponse(node.Id, message.TransactionId);
+                    listener.RaiseMessageReceived(response, endpoint);
+                }
+            };
+            engine.MessageLoop.QuerySent += (o, e) => {
+                if (e.Query is Ping && e.EndPoint == node.EndPoint)
+                    tcs.TrySetResult (null);
             };
 
             Assert.AreEqual(NodeState.Unknown, node.State, "#1");
-
             DateTime lastSeen = node.LastSeen;
-            Assert.IsTrue(handle.WaitOne(1000, false), "#1a");
-            Node nnnn = node;
-            node = engine.RoutingTable.FindNode(nnnn.Id);
+
+            // Should cause an implicit Ping to be sent to the node to verify it's alive.
+            engine.Add(node);
+
+            Assert.IsTrue(tcs.Task.Wait(1000), "#1a");
             Assert.IsTrue (lastSeen < node.LastSeen, "#2");
             Assert.AreEqual(NodeState.Good, node.State, "#3");
         }
@@ -63,34 +101,79 @@ namespace MonoTorrent.Dht
         [Test]
         public void PingTimeout()
         {
-            engine.Timeout = TimeSpan.FromHours(1);
-            // Send ping
-            Ping ping = new Ping(node.Id);
-            ping.TransactionId = transactionId;
+            bool pingSuccessful = false;
+            var ping = new Ping(node.Id) {
+                TransactionId = transactionId
+            };
 
-            ManualResetEvent handle = new ManualResetEvent(false);
-            var sendTask = engine.SendQueryAsync (ping, node);
+            bool timedOutPingSuccessful = false;
+            var timedOutPing = new Ping(node.Id) {
+                TransactionId = (BEncodedNumber)5
+            };
 
-            // Receive response
-            PingResponse response = new PingResponse(node.Id, transactionId);
-            listener.RaiseMessageReceived(response, node.EndPoint);
+            listener.MessageSent += (message, endpoint) => {
+                if (message.TransactionId.Equals (ping.TransactionId)) {
+                    var response = new PingResponse(node.Id, transactionId);
+                    listener.RaiseMessageReceived(response, endpoint);
+                }
+            };
 
-            Assert.IsTrue(sendTask.Wait (1000), "#0");
+            engine.MessageLoop.QuerySent += (o, e) => {
+                // This ping should not time out.
+                if (e.Query.TransactionId.Equals (ping.TransactionId))
+                    pingSuccessful = !e.TimedOut;
 
-            engine.Timeout = TimeSpan.FromMilliseconds(75);
-            DateTime lastSeen = node.LastSeen;
+                // This ping should time out.
+                if (e.Query.TransactionId.Equals (timedOutPing.TransactionId))
+                    timedOutPingSuccessful = e.TimedOut;
+            };
 
-            // Time out a ping
-            ping = new Ping(node.Id);
-            ping.TransactionId = (BEncodedString)"ab";
+            // Send the ping which will be responded to
+            Assert.IsTrue (engine.SendQueryAsync (ping, node).Wait (1000), "#0a");
+            Assert.AreEqual (0, node.FailedCount, "#0b");
 
-            sendTask = engine.SendQueryAsync (ping, node);
+            engine.Timeout = TimeSpan.Zero;
+            var lastSeen = node.LastSeen;
 
-            sendTask.Wait (1000);
+            // Send a ping which will time out
+            Assert.IsTrue (engine.SendQueryAsync (timedOutPing, node).Wait (1000), "#0c");
 
             Assert.AreEqual(4, node.FailedCount, "#1");
             Assert.AreEqual(NodeState.Bad, node.State, "#2");
             Assert.AreEqual(lastSeen, node.LastSeen, "#3");
+            Assert.IsTrue (pingSuccessful, "#4");
+            Assert.IsTrue (pingSuccessful, "#5");
+        }
+
+        [Test]
+        public void TransactionIdCollision()
+        {
+            // See what happens if we receive a query with the same ID as a pending query we are sending.
+            var pingSuccessful = new TaskCompletionSource<bool> ();
+            var ping = new Ping(node.Id) {
+                TransactionId = transactionId
+            };
+
+            engine.MessageLoop.QuerySent += (o, e) => {
+                // This ping should not time out.
+                if (e.Query.TransactionId.Equals (ping.TransactionId))
+                    pingSuccessful.TrySetResult (!e.TimedOut);
+            };
+
+            // Send the ping
+            var task = engine.SendQueryAsync (ping, node);
+
+            // Some other node sends us a Query with the same transaction ID
+            listener.RaiseMessageReceived (ping, new IPEndPoint (IPAddress.Any, 9876));
+
+            // Now we receive a response to our original ping
+            listener.RaiseMessageReceived (new PingResponse (node.Id, ping.TransactionId), node.EndPoint);
+
+            // The query should complete, and the message should not have timed out.
+            Assert.IsTrue (task.Wait (1000), "#1");
+            Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
+            Assert.IsTrue (pingSuccessful.Task.Result, "#3");
+            Assert.AreEqual (0, engine.MessageLoop.PendingQueries, "#4");
         }
     }
 }

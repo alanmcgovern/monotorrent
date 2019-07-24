@@ -130,11 +130,14 @@ namespace MonoTorrent.Dht
             }
         }
 
-        private void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
-        {
-            //Console.WriteLine ("Query: {0}. Response: {1}. TimedOut: {2}", query.GetType ().Name, response?.GetType ().Name, response == null);
-            QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query, response));
-        }
+        void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query)
+            => QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query));
+
+        void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
+            => QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query, response));
+
+        void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
+            => QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query, error));
 
         private void SendMessage()
         {
@@ -172,8 +175,8 @@ namespace MonoTorrent.Dht
                 waitingResponse.Remove (v.Message.TransactionId);
 
                 if (v.CompletionSource != null)
-                    v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Destination, (QueryMessage)v.Message, null));
-                RaiseMessageSent (v.Destination, (QueryMessage)v.Message, null);
+                    v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Destination, (QueryMessage)v.Message));
+                RaiseMessageSent (v.Destination, (QueryMessage)v.Message);
             }
 
             waitingResponseTimedOut.Clear ();
@@ -183,7 +186,6 @@ namespace MonoTorrent.Dht
         {
             KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
             Message message = receive.Value;
-            ResponseMessage response = message as ResponseMessage;
             IPEndPoint source = receive.Key;
             SendDetails query = default;
 
@@ -198,30 +200,36 @@ namespace MonoTorrent.Dht
                 // If we have received a ResponseMessage corresponding to a query we sent, we should
                 // remove it from our list before handling it as that could cause an exception to be
                 // thrown.
-                if (response != null) {
-                    query = waitingResponse [response.TransactionId];
-                    waitingResponse.Remove (response.TransactionId);
+                if (message is ResponseMessage || message is ErrorMessage) {
+                    query = waitingResponse [message.TransactionId];
+                    waitingResponse.Remove (message.TransactionId);
                 }
 
                 node.Seen();
-                message.Handle(engine, node);
-                if (response != null) {
+                if (message is ResponseMessage response) {
+                    response.Handle(engine, node);
+
                     if (query.CompletionSource != null)
                         query.CompletionSource.TrySetResult (new SendQueryEventArgs (node.EndPoint, response.Query, response));
                     RaiseMessageSent (node.EndPoint, response.Query, response);
+                } else if (message is ErrorMessage error) {
+                    if (query.CompletionSource != null)
+                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node.EndPoint, (QueryMessage) query.Message, error));
+                    RaiseMessageSent (node.EndPoint, (QueryMessage) query.Message, error);
                 }
             }
             catch (MessageException ex)
             {
+                var error = new ErrorMessage(message.TransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
                 if (query.CompletionSource != null)
-                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, null));
-                // Normal operation (FIXME: do i need to send a response error message?) 
+                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, error));
             }
             catch (Exception ex)
             {
+                var error = new ErrorMessage(message.TransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
                 if (query.CompletionSource != null)
-                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, null));
-                this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
+                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, error));
+                EnqueueSend(error, source);
             }
         }
 

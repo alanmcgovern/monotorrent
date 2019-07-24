@@ -53,10 +53,10 @@ namespace MonoTorrent.Dht.Tasks
 
             // We want to keep a list of the top (K) closest nodes which have responded
             int index = ClosestActiveNodes.Values.IndexOf (target);
-            if (index >= Bucket.MaxCapacity || args.TimedOut)
+            if (index >= Bucket.MaxCapacity || args.Response == null)
                 ClosestActiveNodes.RemoveAt (index);
 
-            if (args.TimedOut) {
+            if (args.Response == null) {
                 if (activeQueries == 0)
                     tcs.TrySetResult (new Node[0]);
                 return;

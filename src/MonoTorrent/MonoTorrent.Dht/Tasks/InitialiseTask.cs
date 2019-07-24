@@ -65,7 +65,7 @@ namespace MonoTorrent.Dht.Tasks
                 activeRequests.Remove (completed);
 
                 var args = await completed;
-                if (!args.TimedOut) {
+                if (args.Response != null) {
                     var response = (FindNodeResponse)args.Response;
                     foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, Node.FromCompactNode (response.Nodes), Bucket.MaxCapacity))
                     {
