@@ -170,19 +170,30 @@ namespace MonoTorrent.Dht
                 Add(n);
         }
 
-        internal void Add(Node node)
+        internal async void Add(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            SendQueryAsync(new Ping(RoutingTable.LocalNode.Id), node);
+            try {
+                await MainLoop;
+                await SendQueryAsync(new Ping(RoutingTable.LocalNode.Id), node);
+            } catch {
+                // Ignore?
+            }
         }
 
-        public void Announce(InfoHash infoHash, int port)
+        public async void Announce(InfoHash infoHash, int port)
         {
             CheckDisposed();
             Check.InfoHash(infoHash);
-            new AnnounceTask(this, infoHash, port).Execute();
+
+            try {
+                await MainLoop;
+                await new AnnounceTask(this, infoHash, port).Execute();
+            } catch {
+                // Ignore?
+            }
         }
 
         void CheckDisposed()
@@ -202,11 +213,17 @@ namespace MonoTorrent.Dht
             });
         }
 
-        public void GetPeers(InfoHash infoHash)
+        public async void GetPeers(InfoHash infoHash)
         {
             CheckDisposed();
             Check.InfoHash(infoHash);
-            new GetPeersTask(this, infoHash).Execute();
+
+            try {
+                await MainLoop;
+                await new GetPeersTask(this, infoHash).Execute();
+            } catch {
+                // Ignore?
+            }
         }
 
         internal void RaiseStateChanged(DhtState newState)
@@ -272,12 +289,15 @@ namespace MonoTorrent.Dht
         {
             CheckDisposed();
 
+            await MainLoop;
             messageLoop.Start();
             if (Bootstrap)
             {
-                new InitialiseTask(this, initialNodes).Execute();
                 RaiseStateChanged(DhtState.Initialising);
-                bootStrap = false;
+                var initTask = new InitialiseTask(this, initialNodes == null ? Enumerable.Empty<Node> () : Node.FromCompactNode (initialNodes));
+                await initTask.ExecuteAsync ();
+                RaiseStateChanged(DhtState.Ready);
+                Bootstrap = false;
             }
             else
             {
