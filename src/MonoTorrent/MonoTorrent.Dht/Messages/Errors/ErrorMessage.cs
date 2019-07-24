@@ -45,7 +45,7 @@ namespace MonoTorrent.Dht.Messages
 
         internal override NodeId Id
         {
-            get { return new NodeId((BEncodedString)""); }
+            get { return new NodeId(new byte[20]); }
         }
         private BEncodedList ErrorList
         {
