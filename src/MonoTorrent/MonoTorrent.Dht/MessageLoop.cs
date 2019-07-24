@@ -61,7 +61,6 @@ namespace MonoTorrent.Dht
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
-        List<IAsyncResult> activeSends = new List<IAsyncResult>();
         DhtEngine engine;
         DateTime lastSent;
         DhtListener listener;
@@ -72,7 +71,7 @@ namespace MonoTorrent.Dht
         
         private bool CanSend
         {
-            get { return activeSends.Count < 5 && sendQueue.Count > 0 && (DateTime.Now - lastSent) > TimeSpan.FromMilliseconds(5); }
+            get { return sendQueue.Count > 0 && (DateTime.UtcNow - lastSent) > TimeSpan.FromMilliseconds(5); }
         }
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
