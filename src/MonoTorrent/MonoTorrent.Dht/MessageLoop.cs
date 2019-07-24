@@ -118,12 +118,10 @@ namespace MonoTorrent.Dht
                 }
                 catch (MessageException ex)
                 {
-                    Console.WriteLine("Message Exception: {0}", ex);
                     // Caused by bad transaction id usually - ignore
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("OMGZERS! {0}", ex);
                     //throw new Exception("IP:" + endpoint.Address.ToString() + "bad transaction:" + e.Message);
                 }
             }
@@ -219,14 +217,12 @@ namespace MonoTorrent.Dht
             {
                 if (query.CompletionSource != null)
                     query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, null));
-                Console.WriteLine("Incoming message barfed: {0}", ex);
                 // Normal operation (FIXME: do i need to send a response error message?) 
             }
             catch (Exception ex)
             {
                 if (query.CompletionSource != null)
                     query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, null));
-                Console.WriteLine("Handle Error for message: {0}", ex);
                 this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
             }
         }
@@ -235,7 +231,6 @@ namespace MonoTorrent.Dht
         {
             lastSent = DateTime.Now;
             byte[] buffer = message.Encode();
-            //Console.WriteLine ("Sending: {0}", message.GetType ().Name);
             listener.Send(buffer, endpoint);
         }
 
