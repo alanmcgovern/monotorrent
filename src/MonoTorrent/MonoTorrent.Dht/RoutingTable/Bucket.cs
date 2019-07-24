@@ -78,6 +78,8 @@ namespace MonoTorrent.Dht
             set { replacement = value; }
         }
 
+        internal BigInteger Capacity => Max.Value - Min.Value;
+
         public Bucket()
             : this(Minimum, Maximum)
         {
