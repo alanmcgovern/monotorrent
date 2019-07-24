@@ -29,16 +29,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Dht.Messages;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Net.Sockets;
-using System.Net;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Listeners;
-using MonoTorrent.Common;
 using System.Diagnostics;
+using System.Net;
+using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
+using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
@@ -67,7 +65,8 @@ namespace MonoTorrent.Dht
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
-        MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
+        Dictionary<BEncodedValue, SendDetails> waitingResponse = new Dictionary<BEncodedValue, SendDetails>();
+        List<SendDetails> waitingResponseTimedOut = new List<SendDetails> ();
         
         private bool CanSend
         {
@@ -134,19 +133,16 @@ namespace MonoTorrent.Dht
 
         private void SendMessage()
         {
-            SendDetails? send = null;
-            if (CanSend)
-                send = sendQueue.Dequeue();
+            while (CanSend) {
+                var details = sendQueue.Dequeue();
 
-            if (send != null)
-            {
-                SendMessage(send.Value.Message, send.Value.Destination);
-                SendDetails details = send.Value;
-                details.SentAt = DateTime.UtcNow;
+                lastSent = details.SentAt = DateTime.UtcNow;
                 if (details.Message is QueryMessage)
-                    waitingResponse.Add(details);
-            }
+                    waitingResponse.Add(details.Message.TransactionId, details);
 
+                byte[] buffer = details.Message.Encode();
+                listener.Send(buffer, details.Destination);
+            }
         }
 
         internal void Start()
@@ -163,50 +159,50 @@ namespace MonoTorrent.Dht
 
         private void TimeoutMessage()
         {
-            if (waitingResponse.Count > 0)
-            {
-                if ((DateTime.UtcNow - waitingResponse[0].SentAt) > engine.Timeout)
-                {
-                    SendDetails details = waitingResponse.Dequeue();
-                    MessageFactory.UnregisterSend((QueryMessage)details.Message);
-                    if (details.CompletionSource != null)
-                        details.CompletionSource.TrySetResult (new SendQueryEventArgs (details.Destination, (QueryMessage)details.Message, null));
-                    RaiseMessageSent (details.Destination, (QueryMessage)details.Message, null);
-                }
+            foreach (var v in waitingResponse) {
+                if ((DateTime.UtcNow - v.Value.SentAt) > engine.Timeout)
+                    waitingResponseTimedOut.Add (v.Value);
             }
+
+            foreach (var v in waitingResponseTimedOut) {
+                MessageFactory.UnregisterSend((QueryMessage)v.Message);
+                waitingResponse.Remove (v.Message.TransactionId);
+
+                if (v.CompletionSource != null)
+                    v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Destination, (QueryMessage)v.Message, null));
+                RaiseMessageSent (v.Destination, (QueryMessage)v.Message, null);
+            }
+
+            waitingResponseTimedOut.Clear ();
         }
 
         private void ReceiveMessage()
         {
-            if (receiveQueue.Count == 0)
-                return;
-
             KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
-            Message m = receive.Value;
+            Message message = receive.Value;
+            ResponseMessage response = message as ResponseMessage;
             IPEndPoint source = receive.Key;
-            SendDetails query = default (SendDetails);
-            for (int i = 0; i < waitingResponse.Count; i++) {
-                if (waitingResponse [i].Message.TransactionId.Equals (m.TransactionId)) {
-                    query = waitingResponse [i];
-                    waitingResponse.RemoveAt (i--);
-                }
-            }
+            SendDetails query = default;
 
             try
             {
-                Node node = engine.RoutingTable.FindNode(m.Id);
-
-                // What do i do with a null node?
-                if (node == null)
-                {
-                    node = new Node(m.Id, source);
+                Node node = engine.RoutingTable.FindNode(message.Id);
+                if (node == null) {
+                    node = new Node(message.Id, source);
                     engine.RoutingTable.Add(node);
                 }
+
+                // If we have received a ResponseMessage corresponding to a query we sent, we should
+                // remove it from our list before handling it as that could cause an exception to be
+                // thrown.
+                if (response != null) {
+                    query = waitingResponse [response.TransactionId];
+                    waitingResponse.Remove (response.TransactionId);
+                }
+
                 node.Seen();
-                m.Handle(engine, node);
-                ResponseMessage response = m as ResponseMessage;
-                if (response != null)
-                {
+                message.Handle(engine, node);
+                if (response != null) {
                     if (query.CompletionSource != null)
                         query.CompletionSource.TrySetResult (new SendQueryEventArgs (node.EndPoint, response.Query, response));
                     RaiseMessageSent (node.EndPoint, response.Query, response);
@@ -224,13 +220,6 @@ namespace MonoTorrent.Dht
                     query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, null));
                 this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
             }
-        }
-
-        private void SendMessage(Message message, IPEndPoint endpoint)
-        {
-            lastSent = DateTime.Now;
-            byte[] buffer = message.Encode();
-            listener.Send(buffer, endpoint);
         }
 
         internal void EnqueueSend(Message message, IPEndPoint endpoint, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs = null)
