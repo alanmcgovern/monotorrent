@@ -44,16 +44,18 @@ namespace MonoTorrent.Dht
     {
         private struct SendDetails
         {
-            public SendDetails(IPEndPoint destination, Message message, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs)
+            public SendDetails(Node node, IPEndPoint destination, Message message, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs)
             {
                 CompletionSource = tcs;
                 Destination = destination;
+                Node = node;
                 Message = message;
                 SentAt = DateTime.MinValue;
             }
             public System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> CompletionSource;
             public IPEndPoint Destination;
             public Message Message;
+            public Node Node;
             public DateTime SentAt;
         }
 
@@ -130,14 +132,14 @@ namespace MonoTorrent.Dht
             }
         }
 
-        void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query)
-            => QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query));
+        void RaiseMessageSent(Node node, IPEndPoint endpoint, QueryMessage query)
+            => QuerySent?.Invoke (this, new SendQueryEventArgs(node, endpoint, query));
 
-        void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
-            => QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query, response));
+        void RaiseMessageSent(Node node, IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
+            => QuerySent?.Invoke (this, new SendQueryEventArgs(node, endpoint, query, response));
 
-        void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
-            => QuerySent?.Invoke (this, new SendQueryEventArgs(endpoint, query, error));
+        void RaiseMessageSent(Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
+            => QuerySent?.Invoke (this, new SendQueryEventArgs(node, endpoint, query, error));
 
         private void SendMessage()
         {
@@ -175,8 +177,8 @@ namespace MonoTorrent.Dht
                 waitingResponse.Remove (v.Message.TransactionId);
 
                 if (v.CompletionSource != null)
-                    v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Destination, (QueryMessage)v.Message));
-                RaiseMessageSent (v.Destination, (QueryMessage)v.Message);
+                    v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage)v.Message));
+                RaiseMessageSent (v.Node, v.Destination, (QueryMessage)v.Message);
             }
 
             waitingResponseTimedOut.Clear ();
@@ -210,30 +212,30 @@ namespace MonoTorrent.Dht
                     response.Handle(engine, node);
 
                     if (query.CompletionSource != null)
-                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node.EndPoint, response.Query, response));
-                    RaiseMessageSent (node.EndPoint, response.Query, response);
+                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, response.Query, response));
+                    RaiseMessageSent (node, node.EndPoint, response.Query, response);
                 } else if (message is ErrorMessage error) {
                     if (query.CompletionSource != null)
-                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node.EndPoint, (QueryMessage) query.Message, error));
-                    RaiseMessageSent (node.EndPoint, (QueryMessage) query.Message, error);
+                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, error));
+                    RaiseMessageSent (node, node.EndPoint, (QueryMessage) query.Message, error);
                 }
             }
             catch (MessageException)
             {
                 var error = new ErrorMessage(message.TransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
                 if (query.CompletionSource != null)
-                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, error));
+                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage)query.Message, error));
             }
             catch (Exception)
             {
                 var error = new ErrorMessage(message.TransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
                 if (query.CompletionSource != null)
-                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, error));
-                EnqueueSend(error, source);
+                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage)query.Message, error));
+                EnqueueSend(error, null, source);
             }
         }
 
-        internal void EnqueueSend(Message message, IPEndPoint endpoint, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs = null)
+        internal void EnqueueSend(Message message, Node node, IPEndPoint endpoint, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs = null)
         {
             lock (locker)
             {
@@ -250,13 +252,13 @@ namespace MonoTorrent.Dht
                 if (message is QueryMessage)
                     MessageFactory.RegisterSend((QueryMessage)message);
 
-                sendQueue.Enqueue(new SendDetails(endpoint, message, tcs));
+                sendQueue.Enqueue(new SendDetails(node, endpoint, message, tcs));
             }
         }
 
         internal void EnqueueSend(Message message, Node node, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs = null)
         {
-            EnqueueSend (message, node.EndPoint, tcs);
+            EnqueueSend (message, node, node.EndPoint, tcs);
         }
 
         public System.Threading.Tasks.Task<SendQueryEventArgs> SendAsync (Message message, Node node)

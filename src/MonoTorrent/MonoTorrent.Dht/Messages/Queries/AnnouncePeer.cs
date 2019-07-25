@@ -89,7 +89,7 @@ namespace MonoTorrent.Dht.Messages
 			else
 			    response = new ErrorMessage(TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
 				
-			engine.MessageLoop.EnqueueSend(response, node.EndPoint);
+			engine.MessageLoop.EnqueueSend(response, node, node.EndPoint);
         }
     }
 }

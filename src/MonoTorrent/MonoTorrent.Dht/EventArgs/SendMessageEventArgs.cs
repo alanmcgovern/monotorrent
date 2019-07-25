@@ -10,30 +10,34 @@ namespace MonoTorrent.Dht
     {
         public IPEndPoint EndPoint { get; }
         public ErrorMessage Error { get; }
+        public Node Node { get; }
         public QueryMessage Query { get; }
         public ResponseMessage Response { get; }
         public bool TimedOut => Response == null && Error == null;
 
-        public SendQueryEventArgs (IPEndPoint endpoint, QueryMessage query)
+        public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query)
         {
             EndPoint = endpoint;
             Error = null;
+            Node = node;
             Query = query;
             Response = null;
         }
 
-        public SendQueryEventArgs (IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
+        public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
         {
             EndPoint = endpoint;
             Error = null;
+            Node = node;
             Query = query;
             Response = response;
         }
 
-        public SendQueryEventArgs (IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
+        public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
         {
             EndPoint = endpoint;
             Error = error;
+            Node = node;
             Query = query;
             Response = null;
         }

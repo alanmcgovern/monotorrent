@@ -29,6 +29,7 @@ namespace MonoTorrent.Dht.Tasks
         {
             var activeQueries = new List<Task<SendQueryEventArgs>> ();
             var closestNodes = new ClosestNodesCollection(InfoHash);
+            var closestActiveNodes = new ClosestNodesCollection(InfoHash);
 
             foreach (var node in Engine.RoutingTable.GetClosest (InfoHash)) {
                 if (closestNodes.Add (node))
@@ -58,11 +59,13 @@ namespace MonoTorrent.Dht.Tasks
                         if (closestNodes.Add (node))
                             activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
                 }
+
+                closestActiveNodes.Add (query.Node);
             }
 
             // Finally, return the 8 closest nodes we discovered during this phase. These are the nodes we should
             // announce to later.
-            return closestNodes;
+            return closestActiveNodes;
         }
     }
 }
