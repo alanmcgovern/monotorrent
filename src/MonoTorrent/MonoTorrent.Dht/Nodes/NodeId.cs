@@ -29,14 +29,16 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
     internal class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
+        internal static readonly NodeId Minimum = new NodeId(new byte[20]);
+        internal static readonly NodeId Maximum = new NodeId(Enumerable.Repeat ((byte)255, 20).ToArray ());
+
         static readonly Random random = new Random();
 
         public byte[] Bytes { get; }

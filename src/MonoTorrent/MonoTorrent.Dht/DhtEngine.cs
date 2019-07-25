@@ -168,7 +168,8 @@ namespace MonoTorrent.Dht
 
             try {
                 await MainLoop;
-                await new GetPeersTask(this, infoHash).Execute();
+                var task = new GetPeersTask(this, infoHash);
+                await task.ExecuteAsync();
             } catch {
                 // Ignore?
             }
