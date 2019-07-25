@@ -48,7 +48,7 @@ namespace MonoTorrent.Dht
         NodeId id;
         int failedCount;
         DateTime lastSeen;
-        BEncodedString token;
+        BEncodedValue token;
 
         public IPEndPoint EndPoint
         {
@@ -89,7 +89,7 @@ namespace MonoTorrent.Dht
             }
         }
 
-        public BEncodedString Token
+        public BEncodedValue Token
         {
             get { return token; }
             set { token = value; }
