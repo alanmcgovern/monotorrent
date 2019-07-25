@@ -42,7 +42,11 @@ namespace MonoTorrent.Dht.Messages
 
         public BEncodedString Nodes
         {
-            get { return (BEncodedString)Parameters[NodesKey]; }
+            get {
+                if (Parameters.TryGetValue (NodesKey, out BEncodedValue value))
+                    return value as BEncodedString ?? BEncodedString.Empty;
+                return BEncodedString.Empty;
+            }
             set { Parameters[NodesKey] = value; }
         }
 
