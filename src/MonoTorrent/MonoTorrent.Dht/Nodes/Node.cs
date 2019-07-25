@@ -48,7 +48,7 @@ namespace MonoTorrent.Dht
         NodeId id;
         int failedCount;
         DateTime lastSeen;
-        BEncodedString token;
+        BEncodedValue token;
 
         public IPEndPoint EndPoint
         {
@@ -89,7 +89,7 @@ namespace MonoTorrent.Dht
             }
         }
 
-        public BEncodedString Token
+        public BEncodedValue Token
         {
             get { return token; }
             set { token = value; }
@@ -142,11 +142,14 @@ namespace MonoTorrent.Dht
             CompactPort(buffer, offset + 20);
         }
 
-        internal static BEncodedString CompactNode(IList<Node> nodes)
+        internal static BEncodedString CompactNode(ICollection<Node> nodes)
         {
-            byte[] buffer = new byte[nodes.Count * 26];
-            for (int i = 0; i < nodes.Count; i++)
-                nodes[i].CompactNode(buffer, i * 26);
+            var count = 0;
+            var buffer = new byte[nodes.Count * 26];
+            foreach (var node in nodes) {
+                node.CompactNode(buffer, count * 26);
+                count++;
+            }
 
             return new BEncodedString(buffer);
         }
@@ -235,31 +238,6 @@ namespace MonoTorrent.Dht
                 sb.Append("-");
             }
            return sb.ToString(0, sb.Length - 1);
-        }
-
-        internal static IEnumerable<Node> CloserNodes(NodeId target, SortedList<NodeId, NodeId> currentNodes, IEnumerable<Node> newNodes, int maxNodes)
-        {
-            foreach (Node node in newNodes)
-            {
-                if (currentNodes.ContainsValue(node.Id))
-                    continue;
-
-                NodeId distance = node.Id.Xor(target);
-                if (currentNodes.Count < maxNodes)
-                {
-                    currentNodes.Add(distance, node.Id);
-                }
-                else if (distance < currentNodes.Keys[currentNodes.Count - 1])
-                {
-                    currentNodes.RemoveAt(currentNodes.Count - 1);
-                    currentNodes.Add(distance, node.Id);
-                }
-                else
-                {
-                    continue;
-                }
-                yield return node;
-            }
         }
     }
 }

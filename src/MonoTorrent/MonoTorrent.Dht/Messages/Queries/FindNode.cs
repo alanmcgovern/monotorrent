@@ -70,7 +70,7 @@ namespace MonoTorrent.Dht.Messages
             else
                 response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(Target));
             
-            engine.MessageLoop.EnqueueSend(response, node.EndPoint);
+            engine.MessageLoop.EnqueueSend(response, node, node.EndPoint);
         }
     }
 }

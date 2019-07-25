@@ -54,6 +54,8 @@ namespace MonoTorrent.Dht
             get { return localNode; }
         }
 
+        public bool NeedsBootstrap => CountNodes () < 10;
+
         public RoutingTable()
             : this(new Node(NodeId.Create(), new System.Net.IPEndPoint(IPAddress.Any, 0)))
         {
@@ -115,10 +117,10 @@ namespace MonoTorrent.Dht
 
         private bool Split(Bucket bucket)
         {
-            if (bucket.Max - bucket.Min < Bucket.MaxCapacity)
-                return false;//to avoid infinit loop when add same node
+            if (bucket.Capacity < Bucket.MaxCapacity)
+                return false;//to avoid infinite loop when add same node
             
-            NodeId median = (bucket.Min + bucket.Max) / 2;
+            NodeId median = NodeId.Median (bucket.Min, bucket.Max);
             Bucket left = new Bucket(bucket.Min, median);
             Bucket right = new Bucket(median, bucket.Max);
 
@@ -144,26 +146,29 @@ namespace MonoTorrent.Dht
         }
 
         
-        public List<Node> GetClosest(NodeId target)
+        public ICollection<Node> GetClosest(NodeId target)
         {
-            SortedList<NodeId,Node> sortedNodes = new SortedList<NodeId,Node>(Bucket.MaxCapacity);
-						
-            foreach (Bucket b in this.buckets)
-            {
-                foreach (Node n in b.Nodes)
-                {
-                    NodeId distance = n.Id.Xor(target);
-                    if (sortedNodes.Count == Bucket.MaxCapacity)
-                    {
-                        if (distance > sortedNodes.Keys[sortedNodes.Count-1])//maxdistance
-                            continue;
-                        //remove last (with the maximum distance)
-                        sortedNodes.RemoveAt(sortedNodes.Count-1);						
-                    }
-                    sortedNodes.Add(distance, n);
-                }
-            }
-            return new List<Node>(sortedNodes.Values);
+            var closestNodes = new ClosestNodesCollection (target);
+
+            // Buckets have a capacity of 8 and are split in two whenever they are
+            // full. As such we should always be able to find the 8 closest nodes
+            // by adding the nodes of the matching bucket, the bucket above, and the
+            // bucket below.
+            var firstBucketIndex = buckets.FindIndex (t => t.CanContain (target));
+            foreach (var node in buckets[firstBucketIndex].Nodes)
+                closestNodes.Add (node);
+
+            // Try the bucket before this one
+            if (firstBucketIndex > 0)
+                foreach (var node in buckets [firstBucketIndex - 1].Nodes)
+                    closestNodes.Add (node);
+
+            // Try the bucket after this one
+            if (firstBucketIndex < (buckets.Count - 1))
+                foreach (var node in buckets [firstBucketIndex + 1].Nodes)
+                    closestNodes.Add (node);
+
+            return closestNodes;
         }
 
         internal void Clear()

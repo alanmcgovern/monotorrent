@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
             this.Settings = settings;
 
             this.ConnectionManager = new ConnectionManager(this);
-            RegisterDht (new NullDhtEngine());
+            DhtEngine = new NullDhtEngine();
             this.DiskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
@@ -309,18 +309,16 @@ namespace MonoTorrent.Client
             }
         }
 
-        public void RegisterDht(IDhtEngine engine)
+        public async Task RegisterDhtAsync(IDhtEngine engine)
         {
-            MainLoop.QueueWait(delegate
-            {
-                if (DhtEngine != null)
-                {
-                    DhtEngine.StateChanged -= DhtEngineStateChanged;
-                    DhtEngine.Stop();
-                    DhtEngine.Dispose();
-                }
-                DhtEngine = engine ?? new NullDhtEngine();
-            });
+            await MainLoop;
+
+            if (DhtEngine != null) {
+                DhtEngine.StateChanged -= DhtEngineStateChanged;
+                await DhtEngine.StopAsync();
+                DhtEngine.Dispose();
+            }
+            DhtEngine = engine ?? new NullDhtEngine();
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
         }

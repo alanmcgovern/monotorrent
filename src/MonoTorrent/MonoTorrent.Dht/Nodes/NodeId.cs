@@ -29,28 +29,42 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
     internal class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
+        internal static readonly NodeId Minimum = new NodeId(new byte[20]);
+        internal static readonly NodeId Maximum = new NodeId(Enumerable.Repeat ((byte)255, 20).ToArray ());
+
         static readonly Random random = new Random();
 
-        BigInteger value;
-        private byte[] bytes;
+        public byte[] Bytes { get; }
+        public BigInteger Value { get; }
 
-        internal byte[] Bytes
+        internal NodeId(BigInteger value)
         {
-            get { return bytes; }
+            Value  = value;
+            Bytes = value.GetBytes ();
+            if (Bytes.Length < 20) {
+                var newBytes = new byte[20];
+                Buffer.BlockCopy (Bytes, 0, newBytes, newBytes.Length - Bytes.Length, Bytes.Length);
+                Bytes = newBytes;
+            }
+
+            if (Bytes.Length != 20)
+                throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
         }
 
         internal NodeId(byte[] value)
-            : this(new BigInteger(value))
         {
-            this.bytes = value;
+            if (value.Length != 20)
+                throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
+
+            Bytes = value;
+            Value  = new BigInteger(value);
         }
 
         internal NodeId(InfoHash infoHash)
@@ -59,51 +73,24 @@ namespace MonoTorrent.Dht
 
         }
 
-        private NodeId(BigInteger value)
-        {
-            this.value = value;
-        }
-
         internal NodeId(BEncodedString value)
-            : this(new BigInteger(value.TextBytes))
+            : this(value.TextBytes)
         {
-            this.bytes = value.TextBytes;
+
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as NodeId);
-        }
-
-        public bool Equals(NodeId other)
-        {
-            if ((object)other == null)
-                return false;
-
-            return value.Equals(other.value);
-        }
-
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return value.ToString();
-        }
+        internal BEncodedString BencodedString()
+            => new BEncodedString((byte[])Bytes.Clone ());
 
         public int CompareTo(object obj)
-        {
-            return CompareTo(obj as NodeId);
-        }
+            => CompareTo(obj as NodeId);
 
         public int CompareTo(NodeId other)
         {
             if ((object)other == null)
                 return 1;
 
-            BigInteger.Sign s = value.Compare(other.value);
+            BigInteger.Sign s = Value.Compare(other.Value);
             if (s == BigInteger.Sign.Zero)
                 return 0;
             else if (s == BigInteger.Sign.Positive)
@@ -111,114 +98,47 @@ namespace MonoTorrent.Dht
             else return -1;
         }
 
+        public override bool Equals(object obj)
+            =>  Equals(obj as NodeId);
+
+        public bool Equals(NodeId other)
+            => Value.Equals (other?.Value);
+
+        public override int GetHashCode()
+            => Value.GetHashCode();
+
+        public override string ToString()
+            => Value.ToString();
+
+        internal static NodeId Median (NodeId min, NodeId max)
+            => new NodeId ((min.Value + max.Value) / 2);
+
         internal NodeId Xor(NodeId right)
-        {
-            return new NodeId(value.Xor(right.value));
-        }
+            => this ^ right;
 
-        public static implicit operator NodeId(int value)
-        {
-            return new NodeId(new BigInteger((uint)value));
-        }
+        public static NodeId operator ^(NodeId left, NodeId right)
+            => new NodeId (left.Value.Xor (right.Value));
 
-        public static NodeId operator -(NodeId first)
-        {
-            CheckArguments(first);
-            return new NodeId(first.value);
-        }
-
-        public static NodeId operator -(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return new NodeId(first.value - second.value);
-        }
+        public static NodeId operator - (NodeId first, NodeId second)
+            => new NodeId (first.Value - second.Value);
 
         public static bool operator >(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return first.value > second.value;
-        }
+            => first.Value > second.Value;
 
         public static bool operator <(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return first.value < second.value;
-        }
+            => first.Value < second.Value;
 
         public static bool operator <=(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return first < second || first == second;
-        }
+            => first.Value <= second.Value;
 
         public static bool operator >=(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return first > second || first == second;
-        }
-
-        public static NodeId operator +(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return new NodeId(first.value + second.value);
-        }
-
-        public static NodeId operator *(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return new NodeId(first.value * second.value);
-        }
-
-        public static NodeId operator /(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return new NodeId(first.value / second.value);
-        }
-
-        public static NodeId operator %(NodeId first, NodeId second)
-        {
-            CheckArguments(first, second);
-            return new NodeId(first.value % second.value);
-        }
-
-        private static void CheckArguments(NodeId first)
-        {
-            if (first == null)
-                throw new ArgumentNullException("first");
-        }
-
-        private static void CheckArguments(NodeId first, NodeId second)
-        {
-            if (first == null)
-                throw new ArgumentNullException("first");
-            if (second == null)
-                throw new ArgumentNullException("second");
-        }
+            => first.Value >= second.Value;
 
         public static bool operator ==(NodeId first, NodeId second)
-        {
-            if ((object)first == null)
-                return (object)second == null;
-            if ((object)second == null)
-                return false;
-            return first.value == second.value;
-        }
+            => first?.Value == second?.Value;
 
         public static bool operator !=(NodeId first, NodeId second)
-        {
-            return first.value != second.value;
-        }
-
-        internal BEncodedString BencodedString()
-        {
-            return new BEncodedString((byte[])bytes.Clone ());
-        }
-
-        internal NodeId Pow(uint p)
-        {
-            value = BigInteger.Pow(value, p);
-            return this;
-        }
+            => first?.Value != second?.Value;
 
         public static NodeId Create()
         {

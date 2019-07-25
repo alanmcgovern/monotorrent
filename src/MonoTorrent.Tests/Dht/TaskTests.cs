@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
 using System.Net;
-using MonoTorrent.Dht.Tasks;
-using MonoTorrent.Dht.Messages;
-using MonoTorrent.BEncoding;
 using System.Threading;
+using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Tasks;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Dht
 {
@@ -17,7 +19,6 @@ namespace MonoTorrent.Dht
         TestListener listener;
         Node node;
         BEncodedString transactionId = "aa";
-        ManualResetEvent handle;
 
         [SetUp]
         public void Setup()
@@ -26,14 +27,13 @@ namespace MonoTorrent.Dht
             listener = new TestListener();
             engine = new DhtEngine(listener);
             node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 4));
-            handle = new ManualResetEvent(false);
         }
 
         int counter;
         [Test]
         public void SendQueryTaskTimeout()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.Zero;
 
             Ping ping = new Ping(engine.LocalId);
             ping.TransactionId = transactionId;
@@ -43,40 +43,34 @@ namespace MonoTorrent.Dht
             };
 
             Assert.IsTrue(engine.SendQueryAsync (ping, node).Wait (3000), "#1");
+            Assert.AreEqual (4, counter, "#2");
         }
 
         [Test]
         public void SendQueryTaskSucceed()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
-
-            Ping ping = new Ping(engine.LocalId);
-            ping.TransactionId = transactionId;
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
-            {
-                if (e.TimedOut)
-                {
+            var ping = new Ping(engine.LocalId) {
+                TransactionId = transactionId
+            };
+            listener.MessageSent += (message, endpoint) => {
+                if (message is Ping && message.TransactionId.Equals (ping.TransactionId)) {
                     counter++;
                     PingResponse response = new PingResponse(node.Id, transactionId);
                     listener.RaiseMessageReceived(response, node.EndPoint);
                 }
             };
 
-            ;
             Assert.IsTrue(engine.SendQueryAsync (ping, node).Wait (3000), "#1");
-            System.Threading.Thread.Sleep(200);
             Assert.AreEqual(1, counter, "#2");
             Node n = engine.RoutingTable.FindNode(this.node.Id);
             Assert.IsNotNull(n, "#3");
             Assert.IsTrue(n.LastSeen > DateTime.UtcNow.AddSeconds(-2));
         }
 
-        int nodeCount = 0;
         [Test]
         public void NodeReplaceTest()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
-            ManualResetEvent handle = new ManualResetEvent(false);
+            int nodeCount = 0;
             Bucket b = new Bucket();
             for (int i = 0; i < Bucket.MaxCapacity; i++)
             {
@@ -89,25 +83,17 @@ namespace MonoTorrent.Dht
             b.Nodes[1].LastSeen = DateTime.UtcNow.AddDays(-4);
             b.Nodes[5].LastSeen = DateTime.UtcNow.AddDays(-3);
 
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
-            {
-                if (!e.TimedOut)
-                    return;
+            listener.MessageSent += (message, endpoint) => {
 
                 b.Nodes.Sort();
-                if ((e.EndPoint.Port == 3 && nodeCount == 0) ||
-                     (e.EndPoint.Port == 1 && nodeCount == 1) ||
-                     (e.EndPoint.Port == 5 && nodeCount == 2))
+                if ((endpoint.Port == 3 && nodeCount == 0) ||
+                     (endpoint.Port == 1 && nodeCount == 1) ||
+                     (endpoint.Port == 5 && nodeCount == 2))
                 {
-                    Node n = b.Nodes.Find(delegate(Node no) { return no.EndPoint.Port == e.EndPoint.Port; });
+                    Node n = b.Nodes.Find(delegate(Node no) { return no.EndPoint.Port == endpoint.Port; });
                     n.Seen();
-                    PingResponse response = new PingResponse(n.Id, e.Query.TransactionId);
-                    DhtEngine.MainLoop.Queue(delegate
-                    {
-                        //System.Threading.Thread.Sleep(100);
-                        Console.WriteLine("Faking the receive");
-                        listener.RaiseMessageReceived(response, node.EndPoint);
-                    });
+                    PingResponse response = new PingResponse(n.Id, message.TransactionId);
+                    listener.RaiseMessageReceived(response, node.EndPoint);
                     nodeCount++;
                 }
 
@@ -118,43 +104,40 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void BucketRefreshTest()
+        public async Task BucketRefreshTest()
         {
             List<Node> nodes = new List<Node>();
             for (int i = 0; i < 5; i++)
                 nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
 
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
             engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(75);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
-            {
-                DhtEngine.MainLoop.Queue(delegate
+            listener.MessageSent += (message, endpoint) => {
+                Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(endpoint.Port); });
+                if (current == null)
+                    return;
+
+                if (message is Ping)
                 {
-                    if (!e.TimedOut)
-                        return;
-
-                    Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(e.EndPoint.Port); });
-                    if (current == null)
-                        return;
-
-                    if (e.Query is Ping)
-                    {
-                        PingResponse r = new PingResponse(current.Id, e.Query.TransactionId);
-                        listener.RaiseMessageReceived(r, current.EndPoint);
-                    }
-                    else if (e.Query is FindNode)
-                    {
-                        FindNodeResponse response = new FindNodeResponse(current.Id, e.Query.TransactionId);
-                        response.Nodes = "";
-                        listener.RaiseMessageReceived(response, current.EndPoint);
-                    }
-                });
+                    PingResponse r = new PingResponse(current.Id, message.TransactionId);
+                    listener.RaiseMessageReceived(r, current.EndPoint);
+                }
+                else if (message is FindNode)
+                {
+                    FindNodeResponse response = new FindNodeResponse(current.Id, message.TransactionId);
+                    response.Nodes = "";
+                    listener.RaiseMessageReceived(response, current.EndPoint);
+                }
             };
 
             engine.Add(nodes);
-            engine.Start();
 
-            System.Threading.Thread.Sleep(500);
+            foreach (Bucket b in engine.RoutingTable.Buckets)
+                b.LastChanged = DateTime.MinValue;
+
+            await engine.StartAsync();
+            await engine.WaitForState (DhtState.Ready);
+
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
                 Assert.IsTrue(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
@@ -165,7 +148,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void ReplaceNodeTest()
         {
-            engine.TimeOut = TimeSpan.FromMilliseconds(25);
+            engine.Timeout = TimeSpan.FromMilliseconds(25);
             Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
             for(int i=0; i < 4; i++)
             {

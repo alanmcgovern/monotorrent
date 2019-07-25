@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Dht;
-using NUnit.Framework;
+using System.Linq;
 using System.Net;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Dht
 {
@@ -19,7 +19,7 @@ namespace MonoTorrent.Dht
         {
             id = new byte[20];
             id[1] = 128;
-            n = new Node(new NodeId(id), new System.Net.IPEndPoint(IPAddress.Any, 0));
+            n = new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0));
             table = new RoutingTable(n);
             table.Add(n);
         }
@@ -69,7 +69,7 @@ namespace MonoTorrent.Dht
             TestHelper.ManyNodes(out table, out nodes);
             
 
-            List<Node> closest = table.GetClosest(table.LocalNode.Id);
+            var closest = table.GetClosest(table.LocalNode.Id).ToList ();
             Assert.AreEqual(8, closest.Count, "#1");
             for (int i = 0; i < 8; i++)
                 Assert.IsTrue(closest.Exists(delegate(Node node) { return nodes[i].Equals(closest[i].Id); }));

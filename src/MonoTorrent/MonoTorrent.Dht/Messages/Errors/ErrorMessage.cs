@@ -45,7 +45,7 @@ namespace MonoTorrent.Dht.Messages
 
         internal override NodeId Id
         {
-            get { return new NodeId((BEncodedString)""); }
+            get { return new NodeId(new byte[20]); }
         }
         private BEncodedList ErrorList
         {
@@ -62,13 +62,15 @@ namespace MonoTorrent.Dht.Messages
             get { return ((BEncodedString)ErrorList[1]).Text; }
         }
 		
-        public ErrorMessage(ErrorCode error, string message)
+        public ErrorMessage(BEncodedValue transactionId, ErrorCode error, string message)
             : base(ErrorType)
         {
 		    BEncodedList l = new BEncodedList();
 		    l.Add(new BEncodedNumber((int)error));
 			l.Add(new BEncodedString(message));
             properties.Add(ErrorListKey, l);
+
+            TransactionId = transactionId;
         }
 
         public ErrorMessage(BEncodedDictionary d)

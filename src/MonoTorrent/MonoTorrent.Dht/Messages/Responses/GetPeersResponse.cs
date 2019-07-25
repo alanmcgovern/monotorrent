@@ -42,9 +42,13 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString TokenKey = "token";
         internal static readonly BEncodedString ValuesKey = "values";
 
-        public BEncodedString Token
+        public BEncodedValue Token
         {
-            get { return (BEncodedString)Parameters[TokenKey]; }
+            get {
+                if (Parameters.TryGetValue(TokenKey, out BEncodedValue token))
+                    return token;
+                return null;
+            }
             set { Parameters[TokenKey] = value; }
         }
 

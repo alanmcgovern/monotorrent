@@ -25,18 +25,20 @@ namespace MonoTorrent.Dht.Tasks
             this.port = port;
         }
 
-        public async Task Execute()
+        public async Task ExecuteAsync()
         {
             GetPeersTask getpeers = new GetPeersTask(engine, infoHash);
-            var nodes = await getpeers.Execute();
+            var nodes = await getpeers.ExecuteAsync();
 
+            var announceTasks = new List<Task> ();
             foreach (Node n in nodes)
             {
-                if (n.Token == null)
-                    continue;
-                AnnouncePeer query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
-                await engine.SendQueryAsync (query, n);
+                if (n.Token != null) {
+                    var query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
+                    announceTasks.Add (engine.SendQueryAsync (query, n));
+                }
             }
+            await Task.WhenAll (announceTasks);
         }
     }
 }

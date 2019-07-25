@@ -1,16 +1,17 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+using System.Net;
+
+using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
-using System.Net;
 
 namespace MonoTorrent.Dht
 {
     internal class TestListener : DhtListener
     {
         private bool started;
+
+        public event Action<Message, IPEndPoint> MessageSent;
 
         public TestListener()
             : base(new IPEndPoint(IPAddress.Loopback, 0))
@@ -25,15 +26,14 @@ namespace MonoTorrent.Dht
 
         public override void Send(byte[] buffer, IPEndPoint endpoint)
         {
-            // Do nothing
+            Message message;
+            MessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out message);
+            MessageSent?.Invoke (message, endpoint);
         }
 
         public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
         {
-            DhtEngine.MainLoop.Queue(delegate
-            {
-                OnMessageReceived(message.Encode(), endpoint);
-            });
+            OnMessageReceived(message.Encode(), endpoint);
         }
 
         public override void Start()

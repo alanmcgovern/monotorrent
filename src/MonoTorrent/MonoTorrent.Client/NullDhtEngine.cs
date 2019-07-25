@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
@@ -37,8 +38,15 @@ namespace MonoTorrent.Client
     class NullDhtEngine : IDhtEngine
     {
         #pragma warning disable 0067
-        public event EventHandler<PeersFoundEventArgs> PeersFound;
-        public event EventHandler StateChanged;
+        public event EventHandler<PeersFoundEventArgs> PeersFound {
+            add { }
+            remove { }
+        }
+
+        public event EventHandler StateChanged {
+            add { }
+            remove { }
+        }
         #pragma warning restore 0067
 
         public bool Disposed
@@ -71,24 +79,24 @@ namespace MonoTorrent.Client
 
         }
 
-        public byte[] SaveNodes()
+        public Task<byte[]> SaveNodesAsync()
         {
-            return new byte[0];
+            return Task.FromResult (new byte[0]);
         }
 
-        public void Start()
+        public Task StartAsync()
         {
-            
+            return Task.CompletedTask;
         }
 
-        public void Start(byte[] initialNodes)
+        public Task StartAsync(byte[] initialNodes)
         {
-            
+            return Task.CompletedTask;
         }
 
-        public void Stop()
+        public Task StopAsync()
         {
-            
+            return Task.CompletedTask;
         }
     }
 }

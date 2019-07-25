@@ -555,13 +555,13 @@ namespace MonoTorrent.Client
                 {
                     if (DateTime.Now > (Manager.TrackerManager.LastUpdated.Add(tracker.UpdateInterval)))
                     {
-                        Manager.TrackerManager.Announce(TorrentEvent.None);
+                        _ = Manager.TrackerManager.Announce(TorrentEvent.None);
                     }
                 }
                 // Otherwise update at the min interval
                 else if (DateTime.Now > (Manager.TrackerManager.LastUpdated.Add(tracker.MinUpdateInterval)))
                 {
-                    Manager.TrackerManager.Announce(TorrentEvent.None);
+                    _ = Manager.TrackerManager.Announce(TorrentEvent.None);
                 }
             }
         }

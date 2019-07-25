@@ -28,23 +28,19 @@
 
 
 using System;
-using System.Net;
 using System.Collections.Generic;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Linq;
+using System.Threading.Tasks;
 
-using MonoTorrent;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
 using MonoTorrent.BEncoding;
-using System.IO;
+using MonoTorrent.Client;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Client.Messages;
 using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    internal enum ErrorCode : int
+    internal enum ErrorCode
     {
         GenericError = 201,
         ServerError = 202,
@@ -63,74 +59,22 @@ namespace MonoTorrent.Dht
 
         #region Fields
 
-        internal static MainLoop MainLoop = new MainLoop("DhtLoop");
-
-        bool bootStrap = true;
-        TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
-        bool disposed;
-        MessageLoop messageLoop;
-        DhtState state = DhtState.NotReady;
-        RoutingTable table = new RoutingTable();
-        TimeSpan timeout;
-        Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
-        TokenManager tokenManager;
+        internal static MainLoop MainLoop { get; } = new MainLoop("DhtLoop");
 
         #endregion Fields
 
         #region Properties
 
-        internal bool Bootstrap
-        {
-            get { return bootStrap; }
-            set { bootStrap = value; }
-        }
+        public bool Disposed { get; private set; }
+        public DhtState State { get; private set; }
 
-        internal TimeSpan BucketRefreshTimeout
-        {
-            get { return bucketRefreshTimeout; }
-            set { bucketRefreshTimeout = value; }
-        }
-
-        public bool Disposed
-        {
-            get { return disposed; }
-        }
-
-        internal NodeId LocalId
-        {
-            get { return RoutingTable.LocalNode.Id; }
-        }
-
-        internal MessageLoop MessageLoop
-        {
-            get { return messageLoop; }
-        }
-
-        internal RoutingTable RoutingTable
-        {
-            get { return table; }
-        }
-
-        public DhtState State
-        {
-            get { return state; }
-        }
-
-        internal TimeSpan TimeOut
-        {
-            get { return timeout; }
-            set { timeout = value; }
-        }
-
-        internal TokenManager TokenManager
-        {
-            get { return tokenManager; }
-        }
-
-        internal Dictionary<NodeId, List<Node>> Torrents
-        {
-            get { return torrents; }
-        }
+        internal TimeSpan BucketRefreshTimeout { get; set; }
+        internal NodeId LocalId => RoutingTable.LocalNode.Id;
+        internal MessageLoop MessageLoop { get; }
+        internal RoutingTable RoutingTable { get; }
+        internal TimeSpan Timeout { get; set; }
+        internal TokenManager TokenManager { get; }
+        internal Dictionary<NodeId, List<Node>> Torrents { get; }
 
         #endregion Properties
 
@@ -139,11 +83,15 @@ namespace MonoTorrent.Dht
         public DhtEngine(DhtListener listener)
         {
             if (listener == null)
-                throw new ArgumentNullException("listener");
+                throw new ArgumentNullException(nameof (listener));
 
-            messageLoop = new MessageLoop(this, listener);
-            timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default
-            tokenManager = new TokenManager();
+            BucketRefreshTimeout = TimeSpan.FromMinutes(15);
+            MessageLoop = new MessageLoop(this, listener);
+            RoutingTable = new RoutingTable ();
+            State = DhtState.NotReady;
+            TokenManager = new TokenManager();
+            Torrents = new Dictionary<NodeId, List<Node>>();
+            Timeout = TimeSpan.FromSeconds(15);
         }
 
         #endregion Constructors
@@ -157,7 +105,7 @@ namespace MonoTorrent.Dht
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
             InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode(nodes));
-            task.Execute();
+            _ = task.ExecuteAsync();
         }
 
         internal void Add(IEnumerable<Node> nodes)
@@ -169,19 +117,31 @@ namespace MonoTorrent.Dht
                 Add(n);
         }
 
-        internal void Add(Node node)
+        internal async void Add(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            SendQueryAsync(new Ping(RoutingTable.LocalNode.Id), node);
+            try {
+                await MainLoop;
+                await SendQueryAsync(new Ping(RoutingTable.LocalNode.Id), node);
+            } catch {
+                // Ignore?
+            }
         }
 
-        public void Announce(InfoHash infoHash, int port)
+        public async void Announce(InfoHash infoHash, int port)
         {
             CheckDisposed();
             Check.InfoHash(infoHash);
-            new AnnounceTask(this, infoHash, port).Execute();
+
+            try {
+                await MainLoop;
+                var task = new AnnounceTask(this, infoHash, port);
+                await task.ExecuteAsync ();
+            } catch {
+                // Ignore?
+            }
         }
 
         void CheckDisposed()
@@ -192,59 +152,69 @@ namespace MonoTorrent.Dht
 
         public void Dispose()
         {
-            if (disposed)
+            if (Disposed)
                 return;
 
             // Ensure we don't break any threads actively running right now
-            DhtEngine.MainLoop.QueueWait((Action)delegate {
-                disposed = true;
+            MainLoop.QueueWait(() => {
+                Disposed = true;
             });
         }
 
-        public void GetPeers(InfoHash infoHash)
+        public async void GetPeers(InfoHash infoHash)
         {
             CheckDisposed();
             Check.InfoHash(infoHash);
-            new GetPeersTask(this, infoHash).Execute();
+
+            try {
+                await MainLoop;
+                var task = new GetPeersTask(this, infoHash);
+                await task.ExecuteAsync();
+            } catch {
+                // Ignore?
+            }
         }
 
-        internal void RaiseStateChanged(DhtState newState)
+        async void InitializeAsync (byte[] initialNodes)
         {
-            state = newState;
-
-            if (StateChanged != null)
-                StateChanged(this, EventArgs.Empty);
+            var initTask = new InitialiseTask(this, Node.FromCompactNode (initialNodes));
+            await initTask.ExecuteAsync ();
+            RaiseStateChanged(DhtState.Ready);
         }
 
         internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
         {
-            if (PeersFound != null)
-                PeersFound(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
+            PeersFound?.Invoke(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
         }
 
-        public byte[] SaveNodes()
+        void RaiseStateChanged(DhtState newState)
         {
-            BEncodedList details = new BEncodedList();
+            State = newState;
+            StateChanged?.Invoke (this, EventArgs.Empty);
+        }
 
-            MainLoop.QueueWait((Action)delegate {
-                foreach (Bucket b in RoutingTable.Buckets)
-                {
-                    foreach (Node n in b.Nodes)
-                        if (n.State != NodeState.Bad)
-                            details.Add(n.CompactNode());
+        public async Task<byte[]> SaveNodesAsync()
+        {
+            await MainLoop;
 
-                    if (b.Replacement != null)
-                        if (b.Replacement.State != NodeState.Bad)
-                            details.Add(b.Replacement.CompactNode());
-                }
-            });
+            var details = new BEncodedList();
+
+            foreach (Bucket b in RoutingTable.Buckets) {
+                foreach (Node n in b.Nodes)
+                    if (n.State != NodeState.Bad)
+                        details.Add(n.CompactNode());
+
+                if (b.Replacement != null)
+                    if (b.Replacement.State != NodeState.Bad)
+                        details.Add(b.Replacement.CompactNode());
+            }
 
             return details.Encode();
         }
 
-        internal async System.Threading.Tasks.Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
+        internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
-            SendQueryEventArgs e = default (SendQueryEventArgs);
+            SendQueryEventArgs e = default;
             for (int i = 0; i < 4; i++) {
                 e = await MessageLoop.SendAsync (query, node);
 
@@ -262,28 +232,26 @@ namespace MonoTorrent.Dht
             return e;
         }
 
-        public void Start()
-        {
-            Start(null);
-        }
+        public async Task StartAsync()
+            => await StartAsync(Array.Empty<byte>());
 
-        public void Start(byte[] initialNodes)
+        public async Task StartAsync(byte[] initialNodes)
         {
             CheckDisposed();
 
-            messageLoop.Start();
-            if (Bootstrap)
+            await MainLoop;
+            MessageLoop.Start();
+            if (RoutingTable.NeedsBootstrap)
             {
-                new InitialiseTask(this, initialNodes).Execute();
                 RaiseStateChanged(DhtState.Initialising);
-                bootStrap = false;
+                InitializeAsync (initialNodes);
             }
             else
             {
                 RaiseStateChanged(DhtState.Ready);
             }
 
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
+            MainLoop.QueueTimeout(TimeSpan.FromSeconds(30), delegate
             {
                 if (Disposed)
                     return false;
@@ -301,11 +269,32 @@ namespace MonoTorrent.Dht
             });
         }
 
-        public void Stop()
+        public async Task StopAsync()
         {
-            messageLoop.Stop();
+            await MainLoop;
+
+            MessageLoop.Stop();
+            RaiseStateChanged (DhtState.NotReady);
         }
 
+        internal async Task WaitForState (DhtState state)
+        {
+            await MainLoop;
+            if (State == state)
+                return;
+
+            var tcs = new TaskCompletionSource<object> ();
+
+            void handler (object o, EventArgs e) {
+                if (State == state) {
+                    StateChanged -= handler;
+                    tcs.SetResult (true);
+                }
+            }
+
+            StateChanged += handler;
+            await tcs.Task;
+        }
         #endregion Methods
     }
 }

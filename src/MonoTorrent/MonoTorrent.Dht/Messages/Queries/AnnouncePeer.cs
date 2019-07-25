@@ -59,7 +59,7 @@ namespace MonoTorrent.Dht.Messages
             get { return (BEncodedString)Parameters[TokenKey]; }
         }
 
-        public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedString token)
+        public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
             : base(id, QueryName, responseCreator)
         {
             Parameters.Add(InfoHashKey, infoHash.BencodedString());
@@ -87,9 +87,9 @@ namespace MonoTorrent.Dht.Messages
 				response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
 		    }
 			else
-			    response = new ErrorMessage(ErrorCode.ProtocolError, "Invalid or expired token received");
+			    response = new ErrorMessage(TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
 				
-			engine.MessageLoop.EnqueueSend(response, node.EndPoint);
+			engine.MessageLoop.EnqueueSend(response, node, node.EndPoint);
         }
     }
 }

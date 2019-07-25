@@ -8,4 +8,9 @@
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\SampleClient\main.cs" />
+    <Compile Include="..\SampleClient\Top10Listener.cs" />
+  </ItemGroup>
 </Project>

@@ -217,7 +217,7 @@ namespace MonoTorrent.Client
             Incoming.ManualBytesSent = 0;
             var task = NetworkIO.SendAsync (Incoming, data, 0, 100, null, null, null);
 
-            NetworkIO.ReceiveAsync (Outgoing, data, 0, 100, null, null, null);
+            _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, 100, null, null, null);
             try { await task; }
             catch { }
             Assert.IsTrue(task.IsFaulted);

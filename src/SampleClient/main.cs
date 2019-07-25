@@ -91,16 +91,13 @@ namespace MonoTorrent
 
             DhtListener dhtListner = new DhtListener (new IPEndPoint (IPAddress.Any, port));
             DhtEngine dht = new DhtEngine (dhtListner);
-            engine.RegisterDht(dht);
+            await engine.RegisterDhtAsync(dht);
             dhtListner.Start();
-            engine.DhtEngine.Start(nodes);
 
-            while (false) {
-                dht.PeersFound += (o, e) => Console.WriteLine(e.Peers.Count);
-                Console.ReadLine ();
-                var torrent111 = Torrent.Load(@"C:\Users\Alan\Desktop\monotorrent\build\Samples\Debug\Torrents\a.torrent");
-                dht.GetPeers (torrent111.InfoHash);
-            }
+            // This starts the Dht engine but does not wait for the full initialization to
+            // complete. This is because it can take up to 2 minutes to bootstrap, depending
+            // on how many nodes time out when they are contacted.
+            await engine.DhtEngine.StartAsync(nodes);
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
@@ -123,7 +120,7 @@ namespace MonoTorrent
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach (string file in Directory.GetFiles(torrentsPath))
             {
-                if (file.EndsWith(".torrent"))
+                if (file.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
@@ -143,7 +140,7 @@ namespace MonoTorrent
                     TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
                     if (fastResume.ContainsKey(torrent.InfoHash.ToHex ()))
                         manager.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex ()]));
-                    engine.Register(manager);
+                    await engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add(manager);
@@ -188,7 +185,7 @@ namespace MonoTorrent
                     }
                 }
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                manager.StartAsync().Wait();
+                await manager.StartAsync();
             }
 
             // While the torrents are still running, print out some stats to the screen.
@@ -284,11 +281,12 @@ namespace MonoTorrent
                 fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
             }
 
-            File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());
+            var nodes = await engine.DhtEngine.SaveNodesAsync ();
+            File.WriteAllBytes(dhtNodeFile, nodes);
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
 
-            System.Threading.Thread.Sleep(2000);
+            Thread.Sleep(2000);
 		}
 	}
 }

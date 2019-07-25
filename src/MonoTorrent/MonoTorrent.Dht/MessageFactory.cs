@@ -97,13 +97,20 @@ namespace MonoTorrent.Dht.Messages
             message = null;
             error = null;
 
-            if (dictionary[MessageTypeKey].Equals(QueryMessage.QueryType))
+            if (!dictionary.TryGetValue (MessageTypeKey, out BEncodedValue messageType)) {
+                message = null;
+                error = "The BEncodedDictionary did not contain the 'q' key, so the message type could not be identified";
+                return false;
+            }
+
+            if (messageType.Equals(QueryMessage.QueryType))
             {
                 message = queryDecoders[(BEncodedString)dictionary[QueryNameKey]](dictionary);
             }
-            else if (dictionary[MessageTypeKey].Equals(ErrorMessage.ErrorType))
+            else if (messageType.Equals(ErrorMessage.ErrorType))
             {
                 message = new ErrorMessage(dictionary);
+                messages.Remove(message.TransactionId);
             }
             else
             {
@@ -126,6 +133,14 @@ namespace MonoTorrent.Dht.Messages
                     error = "Response had bad transaction ID";
                 }
             }
+
+            // If the transaction ID is null, or invalid, we should bail out
+            if (message != null && message.TransactionId == null)
+                error = "Response had a null transation ID";
+
+            // If the node ID is null, or invalid, we should bail out
+            if (message != null && message.Id == null)
+                error = "Response had a null node ID";
 
             return error == null && message != null;
         }
