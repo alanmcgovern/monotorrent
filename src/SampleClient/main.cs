@@ -93,7 +93,11 @@ namespace MonoTorrent
             DhtEngine dht = new DhtEngine (dhtListner);
             await engine.RegisterDhtAsync(dht);
             dhtListner.Start();
-            var startDhtTask = engine.DhtEngine.StartAsync(nodes);
+
+            // This starts the Dht engine but does not wait for the full initialization to
+            // complete. This is because it can take up to 2 minutes to bootstrap, depending
+            // on how many nodes time out when they are contacted.
+            await engine.DhtEngine.StartAsync(nodes);
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))

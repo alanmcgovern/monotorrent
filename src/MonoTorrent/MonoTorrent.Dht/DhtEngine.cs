@@ -173,6 +173,13 @@ namespace MonoTorrent.Dht
             }
         }
 
+        async void InitializeAsync (byte[] initialNodes)
+        {
+            var initTask = new InitialiseTask(this, Node.FromCompactNode (initialNodes));
+            await initTask.ExecuteAsync ();
+            RaiseStateChanged(DhtState.Ready);
+        }
+
         internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
         {
             PeersFound?.Invoke(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
@@ -224,9 +231,7 @@ namespace MonoTorrent.Dht
         }
 
         public async Task StartAsync()
-        {
-            await StartAsync(null);
-        }
+            => await StartAsync(Array.Empty<byte>());
 
         public async Task StartAsync(byte[] initialNodes)
         {
@@ -237,9 +242,7 @@ namespace MonoTorrent.Dht
             if (RoutingTable.NeedsBootstrap)
             {
                 RaiseStateChanged(DhtState.Initialising);
-                var initTask = new InitialiseTask(this, initialNodes == null ? Enumerable.Empty<Node> () : Node.FromCompactNode (initialNodes));
-                await initTask.ExecuteAsync ();
-                RaiseStateChanged(DhtState.Ready);
+                InitializeAsync (initialNodes);
             }
             else
             {
@@ -272,6 +275,24 @@ namespace MonoTorrent.Dht
             RaiseStateChanged (DhtState.NotReady);
         }
 
+        internal async Task WaitForState (DhtState state)
+        {
+            await MainLoop;
+            if (State == state)
+                return;
+
+            var tcs = new TaskCompletionSource<object> ();
+
+            void handler (object o, EventArgs e) {
+                if (State == state) {
+                    StateChanged -= handler;
+                    tcs.SetResult (true);
+                }
+            }
+
+            StateChanged += handler;
+            await tcs.Task;
+        }
         #endregion Methods
     }
 }

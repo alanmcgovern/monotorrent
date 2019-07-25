@@ -136,6 +136,7 @@ namespace MonoTorrent.Dht
                 b.LastChanged = DateTime.MinValue;
 
             await engine.StartAsync();
+            await engine.WaitForState (DhtState.Ready);
 
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
