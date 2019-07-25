@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
             this.Settings = settings;
 
             this.ConnectionManager = new ConnectionManager(this);
-            RegisterDht (new NullDhtEngine());
+            DhtEngine = new NullDhtEngine();
             this.DiskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
