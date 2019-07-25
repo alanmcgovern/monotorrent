@@ -29,10 +29,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {

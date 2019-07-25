@@ -27,16 +27,13 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
     internal abstract class ResponseMessage : Message
     {
-        private static readonly BEncodedString ReturnValuesKey = "r";
+        static readonly BEncodedString ReturnValuesKey = "r";
         internal static readonly BEncodedString ResponseType = "r";
         protected QueryMessage queryMessage;
 

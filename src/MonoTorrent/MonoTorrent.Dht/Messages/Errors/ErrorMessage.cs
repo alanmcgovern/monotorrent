@@ -27,20 +27,13 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net;
-
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht;
-
 
 namespace MonoTorrent.Dht.Messages
 {
     internal class ErrorMessage : Message
     {
-        private static readonly BEncodedString ErrorListKey = "e";
+        static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";
 
         internal override NodeId Id

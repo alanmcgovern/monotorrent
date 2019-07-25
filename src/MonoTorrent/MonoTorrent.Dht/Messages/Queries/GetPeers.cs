@@ -28,19 +28,16 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
     internal class GetPeers : QueryMessage
     {
-        private static BEncodedString InfoHashKey = "info_hash";
-        private static BEncodedString QueryName = "get_peers";
-        private static Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new GetPeersResponse(d, m);
+        static readonly BEncodedString InfoHashKey = "info_hash";
+        static readonly BEncodedString QueryName = "get_peers";
+        static readonly Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new GetPeersResponse(d, m);
         
         public NodeId InfoHash
         {

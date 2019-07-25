@@ -38,7 +38,7 @@ namespace MonoTorrent.Dht.Messages
     
     static class MessageFactory
     {
-        static readonly string QueryNameKey = "q";
+        static readonly BEncodedString QueryNameKey = "q";
         static readonly BEncodedString MessageTypeKey = "y";
         static readonly BEncodedString TransactionIdKey = "t";
 

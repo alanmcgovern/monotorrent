@@ -28,19 +28,16 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
     class FindNode : QueryMessage
     {
-        private static BEncodedString TargetKey = "target";
-        private static BEncodedString QueryName = "find_node";
-        private static Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new FindNodeResponse(d, m);
+        static readonly BEncodedString TargetKey = "target";
+        static readonly BEncodedString QueryName = "find_node";
+        static readonly Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new FindNodeResponse(d, m);
 
         public NodeId Target
         {
