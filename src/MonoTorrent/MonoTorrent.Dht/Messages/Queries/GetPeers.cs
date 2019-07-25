@@ -27,17 +27,14 @@
 //
 
 
-using System;
-
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    internal class GetPeers : QueryMessage
+    sealed class GetPeers : QueryMessage
     {
         static readonly BEncodedString InfoHashKey = "info_hash";
         static readonly BEncodedString QueryName = "get_peers";
-        static readonly Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new GetPeersResponse(d, m);
         
         public NodeId InfoHash
         {
@@ -45,16 +42,19 @@ namespace MonoTorrent.Dht.Messages
         }
         
         public GetPeers(NodeId id, NodeId infohash)
-            : base(id, QueryName, responseCreator)
+            : base(id, QueryName)
         {
             Parameters.Add(InfoHashKey, infohash.BencodedString());
         }
         
         public GetPeers(BEncodedDictionary d)
-            : base(d, responseCreator)
+            : base(d)
         {
             
         }
+
+        public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
+            => new GetPeersResponse (parameters);
 
         public override void Handle(DhtEngine engine, Node node)
         {

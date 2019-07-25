@@ -31,7 +31,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    internal class ErrorMessage : Message
+    sealed class ErrorMessage : Message
     {
         static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";

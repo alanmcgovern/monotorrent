@@ -31,15 +31,15 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class PingResponse : ResponseMessage
+    sealed class PingResponse : ResponseMessage
     {
         public PingResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)
         {
         }
 
-        public PingResponse(BEncodedDictionary d, QueryMessage m)
-            :base(d, m)
+        public PingResponse(BEncodedDictionary d)
+            :base(d)
         {
         }
     }

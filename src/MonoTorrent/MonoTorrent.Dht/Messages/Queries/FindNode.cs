@@ -27,17 +27,14 @@
 //
 
 
-using System;
-
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class FindNode : QueryMessage
+    sealed class FindNode : QueryMessage
     {
         static readonly BEncodedString TargetKey = "target";
         static readonly BEncodedString QueryName = "find_node";
-        static readonly Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new FindNodeResponse(d, m);
 
         public NodeId Target
         {
@@ -45,15 +42,18 @@ namespace MonoTorrent.Dht.Messages
         }
         
         public FindNode(NodeId id, NodeId target)
-            : base(id, QueryName, responseCreator)
+            : base(id, QueryName)
         {
             Parameters.Add(TargetKey, target.BencodedString());
         }
         
         public FindNode(BEncodedDictionary d)
-            :base(d, responseCreator)
+            :base(d)
         {
         }
+
+        public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
+            => new FindNodeResponse (parameters);
 
         public override void Handle(DhtEngine engine, Node node)
         {

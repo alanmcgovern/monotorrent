@@ -27,20 +27,18 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class AnnouncePeer : QueryMessage
+    sealed class AnnouncePeer : QueryMessage
     {
         static readonly BEncodedString InfoHashKey = "info_hash";
         static readonly BEncodedString QueryName = "announce_peer";
         static readonly BEncodedString PortKey = "port";
         static readonly BEncodedString TokenKey = "token";
-        static readonly Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new AnnouncePeerResponse(d, m);
 
         internal NodeId InfoHash
         {
@@ -58,7 +56,7 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
-            : base(id, QueryName, responseCreator)
+            : base(id, QueryName)
         {
             Parameters.Add(InfoHashKey, infoHash.BencodedString());
             Parameters.Add(PortKey, port);
@@ -66,10 +64,13 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public AnnouncePeer(BEncodedDictionary d)
-            : base(d, responseCreator)
+            : base(d)
         {
 
         }
+
+        public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
+            => new AnnouncePeerResponse(parameters);
 
         public override void Handle(DhtEngine engine, Node node)
         {

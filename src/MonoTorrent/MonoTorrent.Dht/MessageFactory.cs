@@ -121,7 +121,7 @@ namespace MonoTorrent.Dht.Messages
                     messages.Remove(key);
                     try
                     {
-                        message = query.ResponseCreator(dictionary, query);
+                        message = query.CreateResponse(dictionary);
                     }
                     catch
                     {

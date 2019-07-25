@@ -35,20 +35,15 @@ namespace MonoTorrent.Dht.Messages
     {
         static readonly BEncodedString ReturnValuesKey = "r";
         internal static readonly BEncodedString ResponseType = "r";
-        protected QueryMessage queryMessage;
 
         internal override NodeId Id
         {
             get { return new NodeId((BEncodedString)Parameters[IdKey]); }
         }
+
         public BEncodedDictionary Parameters
         {
             get { return (BEncodedDictionary)properties[ReturnValuesKey]; }
-        }
-
-        public QueryMessage Query
-        {
-            get { return queryMessage; }
         }
 
         protected ResponseMessage(NodeId id, BEncodedValue transactionId)
@@ -59,10 +54,10 @@ namespace MonoTorrent.Dht.Messages
             TransactionId = transactionId;
         }
 
-        protected ResponseMessage(BEncodedDictionary d, QueryMessage m)
+        protected ResponseMessage(BEncodedDictionary d)
             : base(d)
         {
-            queryMessage = m;
+
         }
     }
 }

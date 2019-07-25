@@ -31,7 +31,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class FindNodeResponse : ResponseMessage
+    sealed class FindNodeResponse : ResponseMessage
     {
         static readonly BEncodedString NodesKey = "nodes";
 
@@ -47,8 +47,8 @@ namespace MonoTorrent.Dht.Messages
             Parameters.Add(NodesKey, BEncodedString.Empty);
         }
 
-        public FindNodeResponse(BEncodedDictionary d, QueryMessage m)
-            : base(d, m)
+        public FindNodeResponse(BEncodedDictionary d)
+            : base(d)
         {
         }
 

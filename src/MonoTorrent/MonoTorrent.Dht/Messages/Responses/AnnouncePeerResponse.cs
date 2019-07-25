@@ -31,7 +31,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class AnnouncePeerResponse : ResponseMessage
+    sealed class AnnouncePeerResponse : ResponseMessage
     {
         public AnnouncePeerResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)
@@ -39,8 +39,8 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public AnnouncePeerResponse(BEncodedDictionary d, QueryMessage m)
-            : base(d, m)
+        public AnnouncePeerResponse(BEncodedDictionary d)
+            : base(d)
         {
 
         }

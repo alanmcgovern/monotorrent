@@ -33,7 +33,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class GetPeersResponse : ResponseMessage
+    sealed class GetPeersResponse : ResponseMessage
     {
         static readonly BEncodedString NodesKey = "nodes";
         static readonly BEncodedString TokenKey = "token";
@@ -73,8 +73,8 @@ namespace MonoTorrent.Dht.Messages
             Parameters.Add(TokenKey, token);
         }
 
-        public GetPeersResponse(BEncodedDictionary d, QueryMessage m)
-            : base(d, m)
+        public GetPeersResponse(BEncodedDictionary d)
+            : base(d)
         {
 
         }

@@ -212,8 +212,8 @@ namespace MonoTorrent.Dht
                     response.Handle(engine, node);
 
                     if (query.CompletionSource != null)
-                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, response.Query, response));
-                    RaiseMessageSent (node, node.EndPoint, response.Query, response);
+                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, response));
+                    RaiseMessageSent (node, node.EndPoint, (QueryMessage) query.Message, response);
                 } else if (message is ErrorMessage error) {
                     if (query.CompletionSource != null)
                         query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, error));

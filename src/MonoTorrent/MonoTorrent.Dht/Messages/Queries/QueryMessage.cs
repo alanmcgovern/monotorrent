@@ -27,13 +27,11 @@
 //
 
 
-using System;
-
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    internal abstract class QueryMessage : Message
+    abstract class QueryMessage : Message
     {
         static readonly BEncodedString QueryArgumentsKey = "a";
         static readonly BEncodedString QueryNameKey = "q";
@@ -44,35 +42,31 @@ namespace MonoTorrent.Dht.Messages
             get { return new NodeId((BEncodedString)Parameters[IdKey]); }
         }
 
-        internal Func<BEncodedDictionary, QueryMessage, ResponseMessage> ResponseCreator {
-            get; private set;
-        }
-
         protected BEncodedDictionary Parameters
         {
             get { return (BEncodedDictionary)properties[QueryArgumentsKey]; }
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator)
-            : this(id, queryName, new BEncodedDictionary(), responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName)
+            : this(id, queryName, new BEncodedDictionary())
         {
 
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments, Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments)
             : base(QueryType)
         {
             properties.Add(QueryNameKey, queryName);
             properties.Add(QueryArgumentsKey, queryArguments);
 
             Parameters.Add(IdKey, id.BencodedString());
-            ResponseCreator = responseCreator;
         }
 
-        protected QueryMessage(BEncodedDictionary d, Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator)
+        protected QueryMessage(BEncodedDictionary d)
             : base(d)
         {
-            ResponseCreator = responseCreator;
         }
+
+        public abstract ResponseMessage CreateResponse (BEncodedDictionary parameters);
     }
 }
