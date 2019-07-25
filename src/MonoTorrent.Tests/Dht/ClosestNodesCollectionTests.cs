@@ -51,6 +51,16 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
+        public void ContainsTest()
+        {
+            var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
+            var nodes = new ClosestNodesCollection (NodeId.Minimum);
+
+            nodes.Add (node);
+            Assert.IsTrue (nodes.Contains (node), "#2");
+        }
+
+        [Test]
         public void RemoveOnlyElement()
         {
             var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));

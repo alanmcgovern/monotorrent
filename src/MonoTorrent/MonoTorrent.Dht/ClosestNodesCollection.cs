@@ -8,7 +8,7 @@ namespace MonoTorrent.Dht
     {
         sealed class DistanceComparer : IComparer<Tuple<NodeId, Node>>
         {
-            public static DistanceComparer Instance = new DistanceComparer ();
+            public static readonly DistanceComparer Instance = new DistanceComparer ();
 
             public int Compare (Tuple<NodeId, Node> x, Tuple<NodeId, Node> y)
             {
@@ -67,7 +67,7 @@ namespace MonoTorrent.Dht
             => Nodes.Clear ();
 
         public bool Contains (Node item)
-            => IndexOf (item) > 0;
+            => IndexOf (item) >= 0;
 
         void ICollection<Node>.CopyTo (Node [] array, int arrayIndex)
         {
