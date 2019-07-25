@@ -74,7 +74,6 @@ namespace MonoTorrent.Dht.Messages
             }
             else
             {
-                // Is this right?
                 response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(InfoHash));
             }
             

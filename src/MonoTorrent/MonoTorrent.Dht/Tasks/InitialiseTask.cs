@@ -11,13 +11,12 @@ namespace MonoTorrent.Dht.Tasks
     class InitialiseTask
     {
         readonly List<Node> initialNodes;
-        readonly SortedList<NodeId, Node> nodes = new SortedList<NodeId, Node>();
         readonly DhtEngine engine;
 
         public InitialiseTask(DhtEngine engine)
             : this (engine, Enumerable.Empty<Node> ())
         {
-            
+
         }
 
         public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
@@ -45,10 +44,12 @@ namespace MonoTorrent.Dht.Tasks
         async Task SendFindNode(IEnumerable<Node> newNodes)
         {
             var activeRequests = new List<Task<SendQueryEventArgs>> ();
-            foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
-            {
-                FindNode request = new FindNode(engine.LocalId, engine.LocalId);
+            var nodes = new ClosestNodesCollection (engine.LocalId);
+
+            foreach (var node in newNodes) {
+                var request = new FindNode(engine.LocalId, engine.LocalId);
                 activeRequests.Add (engine.SendQueryAsync (request, node));
+                nodes.Add (node);
             }
 
             while (activeRequests.Count > 0) {
@@ -58,10 +59,11 @@ namespace MonoTorrent.Dht.Tasks
                 var args = await completed;
                 if (args.Response != null) {
                     var response = (FindNodeResponse)args.Response;
-                    foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, Node.FromCompactNode (response.Nodes), Bucket.MaxCapacity))
-                    {
-                        FindNode request = new FindNode(engine.LocalId, engine.LocalId);
-                        activeRequests.Add (engine.SendQueryAsync (request, node));
+                    foreach (var node in Node.FromCompactNode (response.Nodes)) {
+                        if (nodes.Add (node)) {
+                            var request = new FindNode(engine.LocalId, engine.LocalId);
+                            activeRequests.Add (engine.SendQueryAsync (request, node));
+                        }
                     }
                 }
             }

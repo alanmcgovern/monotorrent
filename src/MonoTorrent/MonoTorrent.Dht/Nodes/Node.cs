@@ -142,11 +142,14 @@ namespace MonoTorrent.Dht
             CompactPort(buffer, offset + 20);
         }
 
-        internal static BEncodedString CompactNode(IList<Node> nodes)
+        internal static BEncodedString CompactNode(ICollection<Node> nodes)
         {
-            byte[] buffer = new byte[nodes.Count * 26];
-            for (int i = 0; i < nodes.Count; i++)
-                nodes[i].CompactNode(buffer, i * 26);
+            var count = 0;
+            var buffer = new byte[nodes.Count * 26];
+            foreach (var node in nodes) {
+                node.CompactNode(buffer, count * 26);
+                count++;
+            }
 
             return new BEncodedString(buffer);
         }
@@ -235,31 +238,6 @@ namespace MonoTorrent.Dht
                 sb.Append("-");
             }
            return sb.ToString(0, sb.Length - 1);
-        }
-
-        internal static IEnumerable<Node> CloserNodes(NodeId target, SortedList<NodeId, Node> currentNodes, IEnumerable<Node> newNodes, int maxNodes)
-        {
-            foreach (Node node in newNodes)
-            {
-                if (currentNodes.ContainsValue (node))
-                    continue;
-
-                NodeId distance = node.Id ^ target;
-                if (currentNodes.Count < maxNodes)
-                {
-                    currentNodes.Add(distance, node);
-                }
-                else if (distance < currentNodes.Keys[currentNodes.Count - 1])
-                {
-                    currentNodes.RemoveAt(currentNodes.Count - 1);
-                    currentNodes.Add(distance, node);
-                }
-                else
-                {
-                    continue;
-                }
-                yield return node;
-            }
         }
     }
 }

@@ -28,11 +28,11 @@ namespace MonoTorrent.Dht.Tasks
         public async Task<IEnumerable<Node>> ExecuteAsync()
         {
             var activeQueries = new List<Task<SendQueryEventArgs>> ();
-            var closestNodes = new SortedList<NodeId, Node> ();
+            var closestNodes = new ClosestNodesCollection(InfoHash);
 
             foreach (var node in Engine.RoutingTable.GetClosest (InfoHash)) {
-                closestNodes.Add (node.Id ^ InfoHash, node);
-                activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
+                if (closestNodes.Add (node))
+                    activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
             }
 
             while (activeQueries.Count > 0) {
@@ -54,15 +54,15 @@ namespace MonoTorrent.Dht.Tasks
                 // The response contains nodes which should be closer to our target. If they are closer than nodes
                 // we've already checked, then let's query them!
                 if (response.Nodes != null) {
-                    var possiblyCloserNodes = Node.FromCompactNode (response.Nodes);
-                    foreach (var node in Node.CloserNodes (InfoHash, closestNodes, possiblyCloserNodes, Bucket.MaxCapacity))
-                        activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
+                    foreach (var node in Node.FromCompactNode (response.Nodes))
+                        if (closestNodes.Add (node))
+                            activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
                 }
             }
 
             // Finally, return the 8 closest nodes we discovered during this phase. These are the nodes we should
             // announce to later.
-            return closestNodes.Values;
+            return closestNodes;
         }
     }
 }
