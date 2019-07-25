@@ -309,18 +309,16 @@ namespace MonoTorrent.Client
             }
         }
 
-        public void RegisterDht(IDhtEngine engine)
+        public async Task RegisterDhtAsync(IDhtEngine engine)
         {
-            MainLoop.QueueWait(delegate
-            {
-                if (DhtEngine != null)
-                {
-                    DhtEngine.StateChanged -= DhtEngineStateChanged;
-                    DhtEngine.Stop();
-                    DhtEngine.Dispose();
-                }
-                DhtEngine = engine ?? new NullDhtEngine();
-            });
+            await MainLoop;
+
+            if (DhtEngine != null) {
+                DhtEngine.StateChanged -= DhtEngineStateChanged;
+                await DhtEngine.StopAsync();
+                DhtEngine.Dispose();
+            }
+            DhtEngine = engine ?? new NullDhtEngine();
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
         }

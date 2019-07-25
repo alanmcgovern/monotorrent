@@ -35,16 +35,18 @@ namespace MonoTorrent
 {
     public interface IDhtEngine : IDisposable
     {
-        bool Disposed { get; }
         event EventHandler<PeersFoundEventArgs> PeersFound;
-        byte[] SaveNodes();
+        event EventHandler StateChanged;
+
+        bool Disposed { get; }
+        DhtState State { get; }
+
         void Add(BEncodedList nodes);
         void Announce(InfoHash infohash, int port);
         void GetPeers(InfoHash infohash);
+        Task<byte[]> SaveNodesAsync();
         Task StartAsync();
         Task StartAsync(byte[] initialNodes);
-        DhtState State { get; }
-        event EventHandler StateChanged;
-        void Stop();
+        Task StopAsync();
     }
 }

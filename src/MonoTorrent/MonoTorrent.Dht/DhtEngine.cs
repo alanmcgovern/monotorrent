@@ -37,8 +37,6 @@ using MonoTorrent.Client;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace MonoTorrent.Dht
 {
@@ -186,22 +184,21 @@ namespace MonoTorrent.Dht
             StateChanged?.Invoke (this, EventArgs.Empty);
         }
 
-        public byte[] SaveNodes()
+        public async Task<byte[]> SaveNodesAsync()
         {
-            BEncodedList details = new BEncodedList();
+            await MainLoop;
 
-            MainLoop.QueueWait(() => {
-                foreach (Bucket b in RoutingTable.Buckets)
-                {
-                    foreach (Node n in b.Nodes)
-                        if (n.State != NodeState.Bad)
-                            details.Add(n.CompactNode());
+            var details = new BEncodedList();
 
-                    if (b.Replacement != null)
-                        if (b.Replacement.State != NodeState.Bad)
-                            details.Add(b.Replacement.CompactNode());
-                }
-            });
+            foreach (Bucket b in RoutingTable.Buckets) {
+                foreach (Node n in b.Nodes)
+                    if (n.State != NodeState.Bad)
+                        details.Add(n.CompactNode());
+
+                if (b.Replacement != null)
+                    if (b.Replacement.State != NodeState.Bad)
+                        details.Add(b.Replacement.CompactNode());
+            }
 
             return details.Encode();
         }
@@ -267,8 +264,10 @@ namespace MonoTorrent.Dht
             });
         }
 
-        public void Stop()
+        public async Task StopAsync()
         {
+            await MainLoop;
+
             MessageLoop.Stop();
             RaiseStateChanged (DhtState.NotReady);
         }

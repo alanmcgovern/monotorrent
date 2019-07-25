@@ -79,9 +79,9 @@ namespace MonoTorrent.Client
 
         }
 
-        public byte[] SaveNodes()
+        public Task<byte[]> SaveNodesAsync()
         {
-            return new byte[0];
+            return Task.FromResult (new byte[0]);
         }
 
         public Task StartAsync()
@@ -94,9 +94,9 @@ namespace MonoTorrent.Client
             return Task.CompletedTask;
         }
 
-        public void Stop()
+        public Task StopAsync()
         {
-            
+            return Task.CompletedTask;
         }
     }
 }
