@@ -27,33 +27,24 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
     class FindNodeResponse : ResponseMessage
     {
-        private static readonly BEncodedString NodesKey = "nodes";
+        static readonly BEncodedString NodesKey = "nodes";
 
         public BEncodedString Nodes
         {
-            get {
-                if (Parameters.TryGetValue (NodesKey, out BEncodedValue value))
-                    return value as BEncodedString ?? BEncodedString.Empty;
-                return BEncodedString.Empty;
-            }
+            get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey) ?? BEncodedString.Empty;
             set { Parameters[NodesKey] = value; }
         }
 
         public FindNodeResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)
         {
-            Parameters.Add(NodesKey, new BEncodedString());
+            Parameters.Add(NodesKey, BEncodedString.Empty);
         }
 
         public FindNodeResponse(BEncodedDictionary d, QueryMessage m)

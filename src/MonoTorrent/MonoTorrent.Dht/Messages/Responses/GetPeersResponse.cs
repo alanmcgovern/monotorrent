@@ -28,64 +28,42 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
     class GetPeersResponse : ResponseMessage
     {
-        internal static readonly BEncodedString NodesKey = "nodes";
-        private static readonly BEncodedString TokenKey = "token";
-        internal static readonly BEncodedString ValuesKey = "values";
+        static readonly BEncodedString NodesKey = "nodes";
+        static readonly BEncodedString TokenKey = "token";
+        static readonly BEncodedString ValuesKey = "values";
 
         public BEncodedValue Token
         {
-            get {
-                if (Parameters.TryGetValue(TokenKey, out BEncodedValue token))
-                    return token;
-                return null;
-            }
-            set { Parameters[TokenKey] = value; }
+            get => Parameters.GetValueOrDefault(TokenKey);
+            set => Parameters[TokenKey] = value;
         }
 
         public BEncodedString Nodes
         {
-            get
-            {
-                if (Parameters.ContainsKey(ValuesKey) || !Parameters.ContainsKey(NodesKey))
-                    return null;
-                return (BEncodedString)Parameters[NodesKey];
-            }
+            get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey);
             set
             {
                 if (Parameters.ContainsKey(ValuesKey))
                     throw new InvalidOperationException("Already contains the values key");
-                if (!Parameters.ContainsKey(NodesKey))
-                    Parameters.Add(NodesKey, null);
                 Parameters[NodesKey] = value;
             }
         }
 
         public BEncodedList Values
         {
-            get
-            {
-                if (Parameters.ContainsKey(NodesKey) || !Parameters.ContainsKey(ValuesKey))
-                    return null;
-                return (BEncodedList)Parameters[ValuesKey];
-            }
+            get => (BEncodedList) Parameters.GetValueOrDefault(ValuesKey);
             set
             {
                 if (Parameters.ContainsKey(NodesKey))
                     throw new InvalidOperationException("Already contains the nodes key");
-                if (!Parameters.ContainsKey(ValuesKey))
-                    Parameters.Add(ValuesKey, value);
-                else
-                    Parameters[ValuesKey] = value;
+                Parameters[ValuesKey] = value;
             }
         }
 

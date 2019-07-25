@@ -280,6 +280,12 @@ namespace MonoTorrent.BEncoding
             get { return this.dictionary.Count; }
         }
 
+        public BEncodedValue GetValueOrDefault(BEncodedString key)
+            => GetValueOrDefault (key, null);
+
+        public BEncodedValue GetValueOrDefault(BEncodedString key, BEncodedValue defaultValue)
+            => dictionary.TryGetValue(key, out BEncodedValue value) ? value : defaultValue;
+
         //public int IndexOf(KeyValuePair<BEncodedString, IBEncodedValue> item)
         //{
         //    return this.dictionary.IndexOf(item);
@@ -305,11 +311,6 @@ namespace MonoTorrent.BEncoding
             return this.dictionary.Remove(item.Key);
         }
 
-        //public void RemoveAt(int index)
-        //{
-        //    this.dictionary.RemoveAt(index);
-        //}
-
         public bool TryGetValue(BEncodedString key, out BEncodedValue value)
         {
             return this.dictionary.TryGetValue(key, out value);
@@ -320,12 +321,6 @@ namespace MonoTorrent.BEncoding
             get { return this.dictionary[key]; }
             set { this.dictionary[key] = value; }
         }
-
-        //public KeyValuePair<BEncodedString, IBEncodedValue> this[int index]
-        //{
-        //    get { return this.dictionary[index]; }
-        //    set { this.dictionary[index] = value; }
-        //}
 
         public ICollection<BEncodedString> Keys
         {
