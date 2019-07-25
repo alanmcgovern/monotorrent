@@ -6,11 +6,11 @@ namespace MonoTorrent.Dht
 {
     sealed class ClosestNodesCollection : ICollection<Node>
     {
-        sealed class DistanceComparer : IComparer<Tuple<NodeId, Node>>
+        sealed class DistanceComparer : IComparer<ValueTuple<NodeId, Node>>
         {
             public static readonly DistanceComparer Instance = new DistanceComparer ();
 
-            public int Compare (Tuple<NodeId, Node> x, Tuple<NodeId, Node> y)
+            public int Compare (ValueTuple<NodeId, Node> x, ValueTuple<NodeId, Node> y)
             {
                 var result = x.Item1.CompareTo (y.Item1);
                 if (result == 0)
@@ -24,7 +24,7 @@ namespace MonoTorrent.Dht
         public bool IsReadOnly => false;
         public NodeId Target { get; }
 
-        List<Tuple<NodeId, Node>> Nodes { get ; }
+        List<ValueTuple<NodeId, Node>> Nodes { get ; }
 
         public ClosestNodesCollection (NodeId target)
             : this (target, Bucket.MaxCapacity)
@@ -34,13 +34,13 @@ namespace MonoTorrent.Dht
 
         public ClosestNodesCollection (NodeId target, int capacity)
         {
-            Nodes = new List<Tuple<NodeId, Node>> (capacity);
+            Nodes = new List<ValueTuple<NodeId, Node>> (capacity);
             Target = target;
         }
 
         public bool Add (Node item)
         {
-            var kvp = Tuple.Create (item.Id ^ Target, item);
+            var kvp = ValueTuple.Create (item.Id ^ Target, item);
 
             // The item is already here!
             var insertionIndex = IndexOf (kvp);
@@ -85,9 +85,9 @@ namespace MonoTorrent.Dht
         }
 
         public int IndexOf (Node item)
-            => IndexOf (Tuple.Create (item.Id ^ Target, item));
+            => IndexOf (ValueTuple.Create (item.Id ^ Target, item));
 
-        int IndexOf (Tuple<NodeId, Node> item)
+        int IndexOf (ValueTuple<NodeId, Node> item)
             => Nodes.BinarySearch (item, DistanceComparer.Instance);
 
         public bool Remove (Node item)
