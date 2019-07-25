@@ -40,7 +40,7 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    internal class Node : IComparable<Node>, IEquatable<Node>
+    internal class Node : IEquatable<Node>
     {
         public static readonly int MaxFailures = 4;
 
@@ -200,15 +200,6 @@ namespace MonoTorrent.Dht
                 if (address != null)
 	            	yield return new Node(NodeId.Create(), new IPEndPoint(address, (int)port));
 	        }
-        }
-
-        //To order by last seen in bucket
-        public int CompareTo(Node other)
-        {
-            if (other == null)
-                return 1;
-            
-            return lastSeen.CompareTo(other.lastSeen);
         }
 
         public override bool Equals(object obj)

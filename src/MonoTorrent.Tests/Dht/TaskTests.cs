@@ -85,7 +85,7 @@ namespace MonoTorrent.Dht
 
             listener.MessageSent += (message, endpoint) => {
 
-                b.Nodes.Sort();
+                b.Nodes.Sort((l, r) => l.LastSeen.CompareTo (r.LastSeen));
                 if ((endpoint.Port == 3 && nodeCount == 0) ||
                      (endpoint.Port == 1 && nodeCount == 1) ||
                      (endpoint.Port == 5 && nodeCount == 2))

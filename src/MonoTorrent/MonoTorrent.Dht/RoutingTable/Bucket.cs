@@ -49,6 +49,8 @@ namespace MonoTorrent.Dht
 		List<Node> nodes = new List<Node>(MaxCapacity);
         Node replacement;
 
+        static readonly Comparison<Node> LastSeenComparer = (l, r) => l.LastSeen.CompareTo (r.LastSeen);
+
         public DateTime LastChanged
         {
             get { return lastChanged; }
@@ -159,7 +161,7 @@ namespace MonoTorrent.Dht
 
         internal void SortBySeen()
         {
-            nodes.Sort();
+            nodes.Sort(LastSeenComparer);
         }
     }
 }
