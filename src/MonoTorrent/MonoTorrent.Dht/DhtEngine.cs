@@ -105,7 +105,7 @@ namespace MonoTorrent.Dht
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
             InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode(nodes));
-            task.Execute();
+            _ = task.ExecuteAsync();
         }
 
         internal void Add(IEnumerable<Node> nodes)

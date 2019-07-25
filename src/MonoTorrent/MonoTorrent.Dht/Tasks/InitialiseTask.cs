@@ -26,15 +26,6 @@ namespace MonoTorrent.Dht.Tasks
             initialNodes = new List<Node>(nodes);
         }
 
-        public async void Execute()
-        {
-            try {
-                await ExecuteAsync ();
-            } catch {
-
-            }
-        }
-
         public async Task ExecuteAsync()
         {
             // If we were given a list of nodes to load at the start, use them
