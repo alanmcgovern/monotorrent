@@ -42,6 +42,8 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public class BEncodedString : BEncodedValue, IComparable<BEncodedString>
     {
+        internal static readonly BEncodedString Empty = new BEncodedString ("");
+
         #region Member Variables
 
         /// <summary>
