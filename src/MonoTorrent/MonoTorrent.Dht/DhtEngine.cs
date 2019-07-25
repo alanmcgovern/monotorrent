@@ -137,7 +137,8 @@ namespace MonoTorrent.Dht
 
             try {
                 await MainLoop;
-                await new AnnounceTask(this, infoHash, port).Execute();
+                var task = new AnnounceTask(this, infoHash, port);
+                await task.ExecuteAsync ();
             } catch {
                 // Ignore?
             }
