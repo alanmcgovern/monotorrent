@@ -119,11 +119,11 @@ namespace MonoTorrent.Dht
                     if (MessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
                         receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, message));
                 }
-                catch (MessageException ex)
+                catch (MessageException)
                 {
                     // Caused by bad transaction id usually - ignore
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //throw new Exception("IP:" + endpoint.Address.ToString() + "bad transaction:" + e.Message);
                 }
@@ -218,13 +218,13 @@ namespace MonoTorrent.Dht
                     RaiseMessageSent (node.EndPoint, (QueryMessage) query.Message, error);
                 }
             }
-            catch (MessageException ex)
+            catch (MessageException)
             {
                 var error = new ErrorMessage(message.TransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
                 if (query.CompletionSource != null)
                     query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Destination, (QueryMessage)query.Message, error));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 var error = new ErrorMessage(message.TransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
                 if (query.CompletionSource != null)

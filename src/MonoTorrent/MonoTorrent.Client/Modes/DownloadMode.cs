@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
             {
                 state = TorrentState.Seeding;
                 Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
-                Manager.TrackerManager.Announce(TorrentEvent.Completed);
+                _ = Manager.TrackerManager.Announce(TorrentEvent.Completed);
             }
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)
                 if (!ShouldConnect(Manager.Peers.ConnectedPeers[i]))

@@ -504,8 +504,8 @@ namespace MonoTorrent.Client
             if (TrackerManager.CurrentTracker != null)
             {
                 if (TrackerManager.CurrentTracker.CanScrape)
-                    TrackerManager.Scrape();
-                TrackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+                    _ = TrackerManager.Scrape();
+                _ = TrackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
             }
 
             if (Complete && Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
