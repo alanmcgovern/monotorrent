@@ -66,8 +66,6 @@ namespace MonoTorrent.Dht
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
         DhtEngine engine;
-        TimeSpan LastSent => TimeSpan.FromTicks (Stopwatch.GetTimestamp () - LastSentTimestamp);
-        long LastSentTimestamp { get; set; }
         DhtListener listener;
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
@@ -77,9 +75,6 @@ namespace MonoTorrent.Dht
 
         internal int PendingQueries
             => waitingResponse.Count;
-
-        bool ShouldSend
-            => LastSent > TimeSpan.FromMilliseconds(5);
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
         {
@@ -91,10 +86,8 @@ namespace MonoTorrent.Dht
                     return false;
                 try
                 {
-                    if (ShouldSend) {
-                        for (int i = 0; i < 5 && sendQueue.Count > 0; i ++)
-                            SendMessage();
-                    }
+                    for (int i = 0; i < 5 && sendQueue.Count > 0; i ++)
+                        SendMessage();
 
                     while (receiveQueue.Count > 0)
                         ReceiveMessage();
@@ -151,7 +144,6 @@ namespace MonoTorrent.Dht
             var details = sendQueue.Dequeue();
 
             details.Sent();
-            LastSentTimestamp = Stopwatch.GetTimestamp ();
             if (details.Message is QueryMessage)
                 waitingResponse.Add(details.Message.TransactionId, details);
 
