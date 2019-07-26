@@ -31,7 +31,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Diagnostics;
 using Mono.Math;
 
 namespace MonoTorrent.Dht
@@ -39,48 +39,21 @@ namespace MonoTorrent.Dht
 	/// <summary>
 	/// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
 	/// </summary>
-	internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>, IEnumerable<Node>
+	class Bucket : IComparable<Bucket>, IEquatable<Bucket>, IEnumerable<Node>
 	{
 		public const int MaxCapacity = 8;
-
-        DateTime lastChanged = DateTime.UtcNow;
-        NodeId max;
-        NodeId min;
-		List<Node> nodes = new List<Node>(MaxCapacity);
-        Node replacement;
 
         // The item at position 0 will be the one we have not seen in the longest time.
         // The last item in the list is one we have seen the most recently.
         static readonly Comparison<Node> LastSeenComparer = (l, r) => r.LastSeen.CompareTo (l.LastSeen);
 
-        public DateTime LastChanged
-        {
-            get { return lastChanged; }
-            set { lastChanged = value; }
-        }
-
-        public NodeId Max
-        {
-            get { return max; }
-        }
-
-        public NodeId Min
-        {
-            get { return min; }
-        }
-
-        public List<Node> Nodes
-        {
-            get { return nodes; }
-        }
-
-        internal Node Replacement
-        {
-            get { return replacement; }
-            set { replacement = value; }
-        }
-
         internal BigInteger Capacity => Max.Value - Min.Value;
+        public TimeSpan LastChanged => TimeSpan.FromTicks (Stopwatch.GetTimestamp () - LastChangedTimestamp);
+        long LastChangedTimestamp { get; set; }
+        public NodeId Max { get; }
+        public NodeId Min { get; }
+        public List<Node> Nodes { get; }
+        internal Node Replacement { get; set; }
 
         public Bucket()
             : this(NodeId.Minimum, NodeId.Maximum)
@@ -90,29 +63,30 @@ namespace MonoTorrent.Dht
 
         public Bucket(NodeId min, NodeId max)
 		{
-			this.min = min;
-			this.max = max;
+			Min = min;
+			Max = max;
+            Nodes = new List<Node>(MaxCapacity);
 		}
 		
         public bool Add(Node node)
         {
             // if the current bucket is not full we directly add the Node
-            if (nodes.Count < MaxCapacity)
+            if (Nodes.Count < MaxCapacity)
             {
-                nodes.Add(node);
-                lastChanged = DateTime.UtcNow;
+                Nodes.Add(node);
+                Changed ();
                 return true;
             }
             //test replace
 
-            for (int i = nodes.Count - 1; i >= 0; i--)
+            for (int i = Nodes.Count - 1; i >= 0; i--)
             {
-                if (nodes[i].State != NodeState.Bad)
+                if (Nodes[i].State != NodeState.Bad)
                     continue;
 
-                nodes.RemoveAt(i);
-                nodes.Add(node);
-                lastChanged = DateTime.Now;
+                Nodes.RemoveAt(i);
+                Nodes.Add(node);
+                Changed ();
                 return true;
             }
             return false;
@@ -132,10 +106,16 @@ namespace MonoTorrent.Dht
 
             return Min <= id && Max > id;
         }
-        
+
+        internal void Changed ()
+            => Changed (TimeSpan.Zero);
+
+        internal void Changed (TimeSpan delta)
+            => LastChangedTimestamp = Stopwatch.GetTimestamp () + delta.Ticks;
+
         public int CompareTo(Bucket other)
         {
-            return min.CompareTo(other.min);
+            return Min.CompareTo(other.Min);
         }
 
         public override bool Equals(object obj)
@@ -148,17 +128,17 @@ namespace MonoTorrent.Dht
             if (other == null)
                 return false;
 
-            return min.Equals(other.min) && max.Equals(other.max);
+            return Min.Equals(other.Min) && Max.Equals(other.Max);
         }
 
         public override int GetHashCode()
         {
-            return min.GetHashCode() ^ max.GetHashCode();
+            return Min.GetHashCode() ^ Max.GetHashCode();
         }
 
         public override string ToString()
         {
-            return string.Format("Count: {2} Min: {0}  Max: {1}", min, max, nodes.Count);
+            return string.Format("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
         }
 
         internal void SortBySeen()

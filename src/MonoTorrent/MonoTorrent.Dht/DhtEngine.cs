@@ -258,9 +258,9 @@ namespace MonoTorrent.Dht
 
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
-                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
+                    if (b.LastChanged > BucketRefreshTimeout)
                     {
-                        b.LastChanged = DateTime.UtcNow;
+                        b.Changed ();
                         RefreshBucketTask task = new RefreshBucketTask(this, b);
                         task.Execute();
                     }

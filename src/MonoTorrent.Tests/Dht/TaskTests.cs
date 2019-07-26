@@ -135,14 +135,14 @@ namespace MonoTorrent.Dht
             engine.Add(nodes);
 
             foreach (Bucket b in engine.RoutingTable.Buckets)
-                b.LastChanged = DateTime.MinValue;
+                b.Changed (TimeSpan.FromDays (-1));
 
             await engine.StartAsync();
             await engine.WaitForState (DhtState.Ready);
 
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
-                Assert.IsTrue(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
+                Assert.IsTrue(b.LastChanged < TimeSpan.FromMinutes (1));
                 Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen < TimeSpan.FromMilliseconds(900); }));
             }
         }
