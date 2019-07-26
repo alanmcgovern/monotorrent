@@ -131,7 +131,7 @@ namespace MonoTorrent.Dht
             Assert.AreEqual (0, node.FailedCount, "#0b");
 
             engine.Timeout = TimeSpan.Zero;
-            node.Seen (TimeSpan.FromHours (-1));
+            node.Seen (TimeSpan.FromHours (1));
 
             // Send a ping which will time out
             Assert.IsTrue (engine.SendQueryAsync (timedOutPing, node).Wait (1000), "#0c");

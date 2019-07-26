@@ -81,9 +81,9 @@ namespace MonoTorrent.Dht
                 b.Add(n);
             }
 
-            b.Nodes[3].Seen (TimeSpan.FromDays (-5));
-            b.Nodes[1].Seen (TimeSpan.FromDays (-4));
-            b.Nodes[5].Seen (TimeSpan.FromDays (-3));
+            b.Nodes[3].Seen (TimeSpan.FromDays (5));
+            b.Nodes[1].Seen (TimeSpan.FromDays (4));
+            b.Nodes[5].Seen (TimeSpan.FromDays (3));
 
             listener.MessageSent += (message, endpoint) => {
 
@@ -155,7 +155,7 @@ namespace MonoTorrent.Dht
             for(int i=0; i < 4; i++)
             {
                 Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
-                node.Seen (TimeSpan.FromMinutes (-i));
+                node.Seen (TimeSpan.FromMinutes (i));
                 engine.RoutingTable.Add(node);
             }
             Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];

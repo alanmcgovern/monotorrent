@@ -48,8 +48,9 @@ namespace MonoTorrent.Dht
         static readonly Comparison<Node> LastSeenComparer = (l, r) => r.LastSeen.CompareTo (l.LastSeen);
 
         internal BigInteger Capacity => Max.Value - Min.Value;
-        public TimeSpan LastChanged => TimeSpan.FromTicks (Stopwatch.GetTimestamp () - LastChangedTimestamp);
-        long LastChangedTimestamp { get; set; }
+        public TimeSpan LastChanged => LastChangedTimer.Elapsed + LastChangedDelta;
+        TimeSpan LastChangedDelta { get; set; }
+        Stopwatch LastChangedTimer { get; }
         public NodeId Max { get; }
         public NodeId Min { get; }
         public List<Node> Nodes { get; }
@@ -62,9 +63,12 @@ namespace MonoTorrent.Dht
         }
 
         public Bucket(NodeId min, NodeId max)
-		{
-			Min = min;
-			Max = max;
+        {
+            Min = min;
+            Max = max;
+
+            LastChangedDelta = TimeSpan.FromDays(1);
+            LastChangedTimer = new Stopwatch();
             Nodes = new List<Node>(MaxCapacity);
 		}
 		
@@ -111,7 +115,10 @@ namespace MonoTorrent.Dht
             => Changed (TimeSpan.Zero);
 
         internal void Changed (TimeSpan delta)
-            => LastChangedTimestamp = Stopwatch.GetTimestamp () + delta.Ticks;
+        {
+            LastChangedDelta = delta;
+            LastChangedTimer.Restart ();
+        }
 
         public int CompareTo(Bucket other)
         {

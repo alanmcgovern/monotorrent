@@ -46,15 +46,16 @@ namespace MonoTorrent.Dht
         public IPEndPoint EndPoint { get; }
         public int FailedCount { get; set; }
         public NodeId Id { get; }
-        public TimeSpan LastSeen => TimeSpan.FromTicks (Stopwatch.GetTimestamp() - LastSeenTimestamp);
-        long LastSeenTimestamp { get; set; }
+        public TimeSpan LastSeen => LastSeenTimer.Elapsed + LastSeenDelta;
+        TimeSpan LastSeenDelta { get; set; }
+        Stopwatch LastSeenTimer { get; }
         public NodeState State
         {
             get {
                 if (FailedCount >= MaxFailures)
                     return NodeState.Bad;
 
-                else if (LastSeenTimestamp == 0)
+                else if (!LastSeenTimer.IsRunning)
                     return NodeState.Unknown;
 
                 return LastSeen.TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
@@ -66,6 +67,9 @@ namespace MonoTorrent.Dht
         {
             EndPoint = endpoint;
             Id = id;
+
+            LastSeenDelta = TimeSpan.FromDays(1);
+            LastSeenTimer = new Stopwatch();
         }
 
         internal void Seen()
@@ -74,7 +78,8 @@ namespace MonoTorrent.Dht
         internal void Seen(TimeSpan delta)
         {
             FailedCount = 0;
-            LastSeenTimestamp = Stopwatch.GetTimestamp () + delta.Ticks;
+            LastSeenDelta = delta;
+            LastSeenTimer.Restart ();
         }
 
         internal BEncodedString CompactPort()

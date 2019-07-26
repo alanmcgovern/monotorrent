@@ -47,11 +47,11 @@ namespace MonoTorrent.Dht
                 newNode
             };
 
-            oldNode.Seen (TimeSpan.FromDays (-1));
+            oldNode.Seen (TimeSpan.FromDays (1));
             bucket.SortBySeen ();
             Assert.AreEqual (oldNode, bucket.Nodes [0], "#1");
 
-            newNode.Seen (TimeSpan.FromDays (-2));
+            newNode.Seen (TimeSpan.FromDays (2));
             bucket.SortBySeen ();
             Assert.AreEqual (newNode, bucket.Nodes [0], "#2");
         }

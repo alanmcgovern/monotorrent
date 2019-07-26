@@ -50,17 +50,13 @@ namespace MonoTorrent.Dht
                 Destination = destination;
                 Node = node;
                 Message = message;
-                SentAtTimestamp = 0;
+                SentAt = null;
             }
             public TaskCompletionSource<SendQueryEventArgs> CompletionSource;
             public IPEndPoint Destination;
             public Message Message;
             public Node Node;
-            public TimeSpan SentAt => TimeSpan.FromTicks (Stopwatch.GetTimestamp () - SentAtTimestamp);
-            long SentAtTimestamp;
-
-            public void Sent ()
-                => SentAtTimestamp = Stopwatch.GetTimestamp ();
+            public Stopwatch SentAt;
         }
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
@@ -143,7 +139,7 @@ namespace MonoTorrent.Dht
         {
             var details = sendQueue.Dequeue();
 
-            details.Sent();
+            details.SentAt = Stopwatch.StartNew();
             if (details.Message is QueryMessage)
                 waitingResponse.Add(details.Message.TransactionId, details);
 
@@ -166,7 +162,7 @@ namespace MonoTorrent.Dht
         private void TimeoutMessage()
         {
             foreach (var v in waitingResponse) {
-                if (engine.Timeout == TimeSpan.Zero || v.Value.SentAt > engine.Timeout)
+                if (engine.Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > engine.Timeout)
                     waitingResponseTimedOut.Add (v.Value);
             }
 
