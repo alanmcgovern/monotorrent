@@ -99,7 +99,7 @@ namespace MonoTorrent.Dht
         }
 
         public override bool Equals(object obj)
-            =>  Equals(obj as NodeId);
+            => Equals(obj as NodeId);
 
         public bool Equals(NodeId other)
             => Value.Equals (other?.Value);
@@ -112,9 +112,6 @@ namespace MonoTorrent.Dht
 
         internal static NodeId Median (NodeId min, NodeId max)
             => new NodeId ((min.Value + max.Value) / 2);
-
-        internal NodeId Xor(NodeId right)
-            => this ^ right;
 
         public static NodeId operator ^(NodeId left, NodeId right)
             => new NodeId (left.Value.Xor (right.Value));

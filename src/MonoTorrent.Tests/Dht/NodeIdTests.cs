@@ -43,12 +43,12 @@ namespace MonoTorrent.Dht
             byte[] b = new byte[20]; b[0] = 1;
             NodeId one = new NodeId(b);
 
-            NodeId r = one.Xor(zero);
+            NodeId r = one ^ zero;
             Assert.AreEqual(one, r, "#1");
             Assert.IsTrue(one > zero, "#2");
             Assert.IsTrue(one.CompareTo(zero) > 0, "#3");
 
-            NodeId z = one.Xor(r);
+            NodeId z = one ^ r;
             Assert.AreEqual(zero, z, "#4");
         }
 

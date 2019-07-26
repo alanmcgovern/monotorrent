@@ -29,8 +29,8 @@ namespace MonoTorrent.Dht
 
             nodes.Sort(delegate(NodeId left, NodeId right)
             {
-                NodeId dLeft = left.Xor(table.LocalNode.Id);
-                NodeId dRight = right.Xor(table.LocalNode.Id);
+                NodeId dLeft = left ^ table.LocalNode.Id;
+                NodeId dRight = right ^ table.LocalNode.Id;
                 return dLeft.CompareTo(dRight);
             });
             
