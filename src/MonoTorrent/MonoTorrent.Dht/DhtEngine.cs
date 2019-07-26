@@ -92,6 +92,12 @@ namespace MonoTorrent.Dht
             TokenManager = new TokenManager();
             Torrents = new Dictionary<NodeId, List<Node>>();
             Timeout = TimeSpan.FromSeconds(15);
+
+            MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {
+                if (!Disposed)
+                    TokenManager.RefreshTokens ();
+                return !Disposed;
+            });
         }
 
         #endregion Constructors
