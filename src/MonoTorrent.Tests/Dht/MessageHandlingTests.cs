@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -88,13 +87,12 @@ namespace MonoTorrent.Dht
             };
 
             Assert.AreEqual(NodeState.Unknown, node.State, "#1");
-            DateTime lastSeen = node.LastSeen;
 
             // Should cause an implicit Ping to be sent to the node to verify it's alive.
             engine.Add(node);
 
             Assert.IsTrue(tcs.Task.Wait(1000), "#1a");
-            Assert.IsTrue (lastSeen < node.LastSeen, "#2");
+            Assert.IsTrue (node.LastSeen < TimeSpan.FromSeconds (1), "#2");
             Assert.AreEqual(NodeState.Good, node.State, "#3");
         }
 
@@ -133,14 +131,14 @@ namespace MonoTorrent.Dht
             Assert.AreEqual (0, node.FailedCount, "#0b");
 
             engine.Timeout = TimeSpan.Zero;
-            var lastSeen = node.LastSeen;
+            node.Seen (TimeSpan.FromHours (-1));
 
             // Send a ping which will time out
             Assert.IsTrue (engine.SendQueryAsync (timedOutPing, node).Wait (1000), "#0c");
 
             Assert.AreEqual(4, node.FailedCount, "#1");
             Assert.AreEqual(NodeState.Bad, node.State, "#2");
-            Assert.AreEqual(lastSeen, node.LastSeen, "#3");
+            Assert.IsTrue(node.LastSeen >= TimeSpan.FromHours (1), "#3");
             Assert.IsTrue (pingSuccessful, "#4");
             Assert.IsTrue (pingSuccessful, "#5");
         }

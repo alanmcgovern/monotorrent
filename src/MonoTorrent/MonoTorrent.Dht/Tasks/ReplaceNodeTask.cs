@@ -27,7 +27,7 @@ namespace MonoTorrent.Dht.Tasks
             bucket.LastChanged = DateTime.UtcNow;
             bucket.SortBySeen();
 
-            if ((DateTime.UtcNow - bucket.Nodes[0].LastSeen) < TimeSpan.FromMinutes(3))
+            if (bucket.Nodes[0].LastSeen < TimeSpan.FromMinutes(3))
             {
                 return;
             }

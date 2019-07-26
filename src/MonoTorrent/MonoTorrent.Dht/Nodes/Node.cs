@@ -29,14 +29,13 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-
-using Mono.Math;
-using MonoTorrent.BEncoding;
+using System.Diagnostics;
 using System.Net;
-using MonoTorrent.Dht.Messages;
 using System.Text;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
@@ -47,18 +46,18 @@ namespace MonoTorrent.Dht
         public IPEndPoint EndPoint { get; }
         public int FailedCount { get; set; }
         public NodeId Id { get; }
-        public DateTime LastSeen { get; internal set; }
+        public TimeSpan LastSeen => TimeSpan.FromTicks (Stopwatch.GetTimestamp() - LastSeenTimestamp);
+        long LastSeenTimestamp { get; set; }
         public NodeState State
         {
-            get
-            {
+            get {
                 if (FailedCount >= MaxFailures)
                     return NodeState.Bad;
 
-                else if (LastSeen == DateTime.MinValue)
+                else if (LastSeenTimestamp == 0)
                     return NodeState.Unknown;
 
-                return (DateTime.UtcNow - LastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
+                return LastSeen.TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
             }
         }
         public BEncodedValue Token { get; set; }
@@ -70,9 +69,12 @@ namespace MonoTorrent.Dht
         }
 
         internal void Seen()
+            => Seen (TimeSpan.Zero);
+
+        internal void Seen(TimeSpan delta)
         {
             FailedCount = 0;
-            LastSeen = DateTime.UtcNow;
+            LastSeenTimestamp = Stopwatch.GetTimestamp () + delta.Ticks;
         }
 
         internal BEncodedString CompactPort()

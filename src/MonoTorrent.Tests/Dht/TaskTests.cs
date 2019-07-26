@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,11 +61,12 @@ namespace MonoTorrent.Dht
                 }
             };
 
+            Assert.IsFalse(node.LastSeen < TimeSpan.FromSeconds(2));
             Assert.IsTrue(engine.SendQueryAsync (ping, node).Wait (3000), "#1");
             Assert.AreEqual(1, counter, "#2");
-            Node n = engine.RoutingTable.FindNode(this.node.Id);
+            Node n = engine.RoutingTable.FindNode(node.Id);
             Assert.IsNotNull(n, "#3");
-            Assert.IsTrue(n.LastSeen > DateTime.UtcNow.AddSeconds(-2));
+            Assert.IsTrue(n.LastSeen < TimeSpan.FromSeconds(2));
         }
 
         [Test]
@@ -75,13 +77,13 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < Bucket.MaxCapacity; i++)
             {
                 Node n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
-                n.LastSeen = DateTime.UtcNow;
+                n.Seen();
                 b.Add(n);
             }
 
-            b.Nodes[3].LastSeen = DateTime.UtcNow.AddDays(-5);
-            b.Nodes[1].LastSeen = DateTime.UtcNow.AddDays(-4);
-            b.Nodes[5].LastSeen = DateTime.UtcNow.AddDays(-3);
+            b.Nodes[3].Seen (TimeSpan.FromDays (-5));
+            b.Nodes[1].Seen (TimeSpan.FromDays (-4));
+            b.Nodes[5].Seen (TimeSpan.FromDays (-3));
 
             listener.MessageSent += (message, endpoint) => {
 
@@ -141,7 +143,7 @@ namespace MonoTorrent.Dht
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
                 Assert.IsTrue(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
-                Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
+                Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen < TimeSpan.FromMilliseconds(900); }));
             }
         }
 
@@ -153,7 +155,7 @@ namespace MonoTorrent.Dht
             for(int i=0; i < 4; i++)
             {
                 Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
-                node.LastSeen = DateTime.UtcNow.AddMinutes(-i);
+                node.Seen (TimeSpan.FromMinutes (-i));
                 engine.RoutingTable.Add(node);
             }
             Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];

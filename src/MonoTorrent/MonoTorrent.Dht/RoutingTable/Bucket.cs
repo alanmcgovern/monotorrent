@@ -39,7 +39,7 @@ namespace MonoTorrent.Dht
 	/// <summary>
 	/// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
 	/// </summary>
-	internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>
+	internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>, IEnumerable<Node>
 	{
 		public const int MaxCapacity = 8;
 
@@ -49,7 +49,9 @@ namespace MonoTorrent.Dht
 		List<Node> nodes = new List<Node>(MaxCapacity);
         Node replacement;
 
-        static readonly Comparison<Node> LastSeenComparer = (l, r) => l.LastSeen.CompareTo (r.LastSeen);
+        // The item at position 0 will be the one we have not seen in the longest time.
+        // The last item in the list is one we have seen the most recently.
+        static readonly Comparison<Node> LastSeenComparer = (l, r) => r.LastSeen.CompareTo (l.LastSeen);
 
         public DateTime LastChanged
         {
@@ -160,8 +162,12 @@ namespace MonoTorrent.Dht
         }
 
         internal void SortBySeen()
-        {
-            nodes.Sort(LastSeenComparer);
-        }
+            => Nodes.Sort(LastSeenComparer);
+
+        public IEnumerator<Node> GetEnumerator ()
+            => Nodes.GetEnumerator ();
+
+        IEnumerator IEnumerable.GetEnumerator ()
+            => GetEnumerator ();
     }
 }
