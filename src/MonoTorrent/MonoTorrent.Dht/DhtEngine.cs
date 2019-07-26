@@ -224,7 +224,7 @@ namespace MonoTorrent.Dht
                     node.FailedCount++;
                     continue;
                 } else {
-                    node.LastSeen = DateTime.UtcNow;
+                    node.Seen ();
                     return e;
                 }
             }
