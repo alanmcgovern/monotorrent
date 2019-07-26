@@ -40,71 +40,39 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    internal class Node : IEquatable<Node>
+    class Node : IEquatable<Node>
     {
         public static readonly int MaxFailures = 4;
 
-        IPEndPoint endpoint;
-        NodeId id;
-        int failedCount;
-        DateTime lastSeen;
-        BEncodedValue token;
-
-        public IPEndPoint EndPoint
-        {
-            get { return endpoint; }
-        }
-
-        public int FailedCount
-        {
-            get { return failedCount; }
-            internal set { failedCount = value; }
-        }
-
-        public NodeId Id
-        {
-            get { return id; }
-        }
-
-        public DateTime LastSeen
-        {
-            get { return lastSeen; }
-            internal set { lastSeen = value; }
-        }
-
-        // FIXME: State should be set properly as per specification.
-        // i.e. it needs to take into account the 'LastSeen' property.
-        // and must take into account when a node does not send us messages etc
+        public IPEndPoint EndPoint { get; }
+        public int FailedCount { get; set; }
+        public NodeId Id { get; }
+        public DateTime LastSeen { get; internal set; }
         public NodeState State
         {
             get
             {
-                if (failedCount >= MaxFailures)
+                if (FailedCount >= MaxFailures)
                     return NodeState.Bad;
 
-                else if (lastSeen == DateTime.MinValue)
+                else if (LastSeen == DateTime.MinValue)
                     return NodeState.Unknown;
 
-                return (DateTime.UtcNow - lastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
+                return (DateTime.UtcNow - LastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
             }
         }
-
-        public BEncodedValue Token
-        {
-            get { return token; }
-            set { token = value; }
-        }
+        public BEncodedValue Token { get; set; }
 
         public Node(NodeId id, IPEndPoint endpoint)
         {
-            this.endpoint = endpoint;
-            this.id = id;
+            EndPoint = endpoint;
+            Id = id;
         }
 
         internal void Seen()
         {
-            failedCount = 0;
-            lastSeen = DateTime.UtcNow;
+            FailedCount = 0;
+            LastSeen = DateTime.UtcNow;
         }
 
         internal BEncodedString CompactPort()
@@ -116,8 +84,8 @@ namespace MonoTorrent.Dht
 
         internal void CompactPort(byte[] buffer, int offset)
         {
-            Message.Write(buffer, offset, endpoint.Address.GetAddressBytes());
-            Message.Write(buffer, offset + 4, (ushort)endpoint.Port);
+            Message.Write(buffer, offset, EndPoint.Address.GetAddressBytes());
+            Message.Write(buffer, offset + 4, (ushort)EndPoint.Port);
         }
 
         internal static BEncodedString CompactPort(IList<Node> peers)
@@ -138,7 +106,7 @@ namespace MonoTorrent.Dht
 
         private void CompactNode(byte[] buffer, int offset)
         {
-            Message.Write(buffer, offset, id.Bytes);
+            Message.Write(buffer, offset, Id.Bytes);
             CompactPort(buffer, offset + 20);
         }
 
@@ -203,29 +171,20 @@ namespace MonoTorrent.Dht
         }
 
         public override bool Equals(object obj)
-        {
-            return Equals(obj as Node);
-        }
+            => Equals(obj as Node);
 
         public bool Equals(Node other)
-        {
-            if (other == null)
-                return false;
-
-            return id.Equals(other.id);
-        }
+            => Id.Equals (other?.Id);
 
         public override int GetHashCode()
-        {
-            return id.GetHashCode();
-        }
+            => Id.GetHashCode();
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(48);
-            for (int i = 0; i < id.Bytes.Length; i++)
+            for (int i = 0; i < Id.Bytes.Length; i++)
             {
-                sb.Append(id.Bytes[i]);
+                sb.Append(Id.Bytes[i]);
                 sb.Append("-");
             }
            return sb.ToString(0, sb.Length - 1);
