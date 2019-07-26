@@ -44,25 +44,30 @@ namespace MonoTorrent.Dht
     {
         private struct SendDetails
         {
-            public SendDetails(Node node, IPEndPoint destination, Message message, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs)
+            public SendDetails(Node node, IPEndPoint destination, Message message, TaskCompletionSource<SendQueryEventArgs> tcs)
             {
                 CompletionSource = tcs;
                 Destination = destination;
                 Node = node;
                 Message = message;
-                SentAt = DateTime.MinValue;
+                SentAtTimestamp = 0;
             }
-            public System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> CompletionSource;
+            public TaskCompletionSource<SendQueryEventArgs> CompletionSource;
             public IPEndPoint Destination;
             public Message Message;
             public Node Node;
-            public DateTime SentAt;
+            public TimeSpan SentAt => TimeSpan.FromTicks (Stopwatch.GetTimestamp () - SentAtTimestamp);
+            long SentAtTimestamp;
+
+            public void Sent ()
+                => SentAtTimestamp = Stopwatch.GetTimestamp ();
         }
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
         DhtEngine engine;
-        DateTime lastSent;
+        TimeSpan LastSent => TimeSpan.FromTicks (Stopwatch.GetTimestamp () - LastSentTimestamp);
+        long LastSentTimestamp { get; set; }
         DhtListener listener;
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
@@ -74,7 +79,7 @@ namespace MonoTorrent.Dht
             => waitingResponse.Count;
 
         bool ShouldSend
-            => (DateTime.UtcNow - lastSent) > TimeSpan.FromMilliseconds(5);
+            => LastSent > TimeSpan.FromMilliseconds(5);
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
         {
@@ -145,7 +150,8 @@ namespace MonoTorrent.Dht
         {
             var details = sendQueue.Dequeue();
 
-            lastSent = details.SentAt = DateTime.UtcNow;
+            details.Sent();
+            LastSentTimestamp = Stopwatch.GetTimestamp ();
             if (details.Message is QueryMessage)
                 waitingResponse.Add(details.Message.TransactionId, details);
 
@@ -168,7 +174,7 @@ namespace MonoTorrent.Dht
         private void TimeoutMessage()
         {
             foreach (var v in waitingResponse) {
-                if (engine.Timeout == TimeSpan.Zero || (DateTime.UtcNow - v.Value.SentAt) > engine.Timeout)
+                if (engine.Timeout == TimeSpan.Zero || v.Value.SentAt > engine.Timeout)
                     waitingResponseTimedOut.Add (v.Value);
             }
 
