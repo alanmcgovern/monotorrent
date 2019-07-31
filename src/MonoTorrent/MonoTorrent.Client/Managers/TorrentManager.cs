@@ -725,6 +725,11 @@ namespace MonoTorrent.Client
             for (int i = 0; i < Torrent.Pieces.Count; i++)
                 OnPieceHashed (i, data.Bitfield[i]);
 
+            Peers.AvailablePeers.AddRange(data.ActivePeers);
+            Peers.AvailablePeers.AddRange(data.AvailablePeers);
+            Peers.BannedPeers.AddRange(data.BannedPeers);
+            Peers.AvailablePeers.AddRange(data.BusyPeers);
+
             this.HashChecked = true;
         }
 
@@ -733,7 +738,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
-            return new FastResume(InfoHash, this.Bitfield);
+            return new FastResume(InfoHash, this.Bitfield, Peers.ActivePeers, Peers.AvailablePeers, Peers.BannedPeers, Peers.BusyPeers);
         }
 
         void VerifyHashState ()
