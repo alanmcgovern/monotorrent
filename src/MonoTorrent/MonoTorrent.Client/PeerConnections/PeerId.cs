@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
                 return;
 
             Disposed = true;
-            Connection?.Dispose();
+            Connection?.SafeDispose ();
         }
         internal PeerMessage Dequeue()
         {
