@@ -43,19 +43,19 @@ namespace MonoTorrent.Client.Connections
 
         public bool CanReconnect => !IsIncoming;
 
-        public bool Connected => Socket.Connected;
+        public bool Connected => SK.Connected;
 
         EndPoint IConnection.EndPoint => EndPoint;
 
-        public IPEndPoint EndPoint { get; }
+        public IPEndPoint EndPoint { get; private set; }
 
         public bool IsIncoming { get; }
 
-        SocketAsyncEventArgs ReceiveArgs { get; }
+        protected SocketAsyncEventArgs ReceiveArgs { get; private set; }
 
-        SocketAsyncEventArgs SendArgs { get; }
+        protected SocketAsyncEventArgs SendArgs { get; private set; }
 
-        Socket Socket { get; }
+        protected Socket SK { get; private set; }
 
         public Uri Uri { get; protected set; }
 
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.Connections
 		#region Constructors
 
 		protected SocketConnection(Uri uri)
-            : this (new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
+            : this (new Socket((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp),
                   new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port), false)
 
         {
@@ -88,11 +88,12 @@ namespace MonoTorrent.Client.Connections
             };
             ReceiveArgs.Completed += HandleOperationCompleted;
             SendArgs.Completed += HandleOperationCompleted;
-            Socket = socket;
+            SK = socket;
             EndPoint = endpoint;
             IsIncoming = isIncoming;
         }
 
+        //去掉static函数，否则导致大量的ReceiveArgs以及SendArgs不能释放--因为Dispose函数里也不能释放
         static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
         {
             if (e.SocketError != SocketError.Success)
@@ -111,7 +112,7 @@ namespace MonoTorrent.Client.Connections
             var tcs = new TaskCompletionSource<int>();
             ReceiveArgs.UserToken = tcs;
 
-            if (!Socket.ConnectAsync(ReceiveArgs))
+            if (!SK.ConnectAsync(ReceiveArgs))
                 return Task.FromResult(true);
             return tcs.Task;
         }
@@ -122,7 +123,7 @@ namespace MonoTorrent.Client.Connections
             ReceiveArgs.SetBuffer(buffer, offset, count);
             ReceiveArgs.UserToken = tcs;
 
-            if (!Socket.ReceiveAsync(ReceiveArgs))
+            if (!SK.ReceiveAsync(ReceiveArgs))
                 return Task.FromResult(ReceiveArgs.BytesTransferred);
             return tcs.Task;
         }
@@ -133,14 +134,40 @@ namespace MonoTorrent.Client.Connections
             SendArgs.SetBuffer(buffer, offset, count);
             SendArgs.UserToken = tcs;
 
-            if (!Socket.SendAsync(SendArgs))
+            if (!SK.SendAsync(SendArgs))
                 return Task.FromResult(SendArgs.BytesTransferred);
             return tcs.Task;
         }
 
         public void Dispose()
         {
-            Socket.Dispose ();
+            try
+            {
+                if (null != ReceiveArgs)
+                {
+                    ReceiveArgs.Completed -= HandleOperationCompleted;
+                    SendArgs.Completed -= HandleOperationCompleted;
+
+                    ReceiveArgs.RemoteEndPoint = null;
+                    SendArgs.RemoteEndPoint = null;
+
+                    ReceiveArgs.Dispose();
+                    SendArgs.Dispose();
+
+                    ReceiveArgs = null;
+                    SendArgs = null;
+
+                    //EndPoint = null;//reserved for Logging
+                    Uri = null;
+
+                    SK.Dispose();
+                    SK = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(null, " SocketConnection dispose error " + EndPoint + " " + " IsIncoming " + IsIncoming + " " + ex.Message);
+            }
         }
 
         #endregion
