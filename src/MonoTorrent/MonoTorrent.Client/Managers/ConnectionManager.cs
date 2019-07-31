@@ -326,8 +326,6 @@ namespace MonoTorrent.Client
                 if (!id.AmChoking)
                     id.TorrentManager.UploadingTo--;
 
-                id.Dispose();
-
                 id.TorrentManager.Peers.ConnectedPeers.RemoveAll(delegate(PeerId other) { return id == other; });
 
                 if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
@@ -340,12 +338,17 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Peers.AvailablePeers.Insert(0, id.Peer);
                 }
             }
-
+            catch(Exception ex)
+            {
+                Logger.Log(null, "CleanupSocket Error " + ex.Message);
+            }
             finally
             {
                 id.TorrentManager.RaisePeerDisconnected(
                     new PeerConnectionEventArgs( id.TorrentManager, id, Direction.None, message ) );
             }
+
+            id.SafeDispose ();
         }
 
         internal void CancelPendingConnects()
