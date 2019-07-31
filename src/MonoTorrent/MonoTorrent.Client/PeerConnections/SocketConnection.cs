@@ -51,11 +51,11 @@ namespace MonoTorrent.Client.Connections
 
         public bool IsIncoming { get; }
 
-        SocketAsyncEventArgs ReceiveArgs { get; }
+        SocketAsyncEventArgs ReceiveArgs { get; set; }
 
-        SocketAsyncEventArgs SendArgs { get; }
+        SocketAsyncEventArgs SendArgs { get; set; }
 
-        Socket Socket { get; }
+        Socket Socket { get; set; }
 
         public Uri Uri { get; protected set; }
 
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.Connections
 		#region Constructors
 
 		protected SocketConnection(Uri uri)
-            : this (new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
+            : this (new Socket((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp),
                   new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port), false)
 
         {
@@ -140,7 +140,13 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            Socket.Dispose ();
+            Socket?.SafeDispose();
+            SendArgs?.SafeDispose();
+            ReceiveArgs?.SafeDispose();
+
+            Socket = null;
+            SendArgs = null;
+            ReceiveArgs = null;
         }
 
         #endregion
