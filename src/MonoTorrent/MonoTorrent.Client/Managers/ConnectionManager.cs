@@ -186,7 +186,6 @@ namespace MonoTorrent.Client
                 } else {
                     PeerId id = new PeerId (peer, manager);
                     id.Connection = connection;
-                    manager.Peers.ActivePeers.Add (peer);
 
                     Logger.Log (id.Connection, "ConnectionManager - Connection opened");
 
@@ -210,30 +209,33 @@ namespace MonoTorrent.Client
                 return;
             }
 
+            // The peer is no longer in the 'ConnectingToPeers' list, so we should
+            // add it immediately to the 'Connected' list so it is always in one of
+            // the lists.
+            id.ProcessingQueue = true;
+            id.TorrentManager.Peers.ActivePeers.Add(id.Peer);
+            id.TorrentManager.Peers.ConnectedPeers.Add(id);
+
             try
             {
-                id.ProcessingQueue = true;
                 // Increase the count of the "open" connections
                 var initialData = await EncryptorFactory.CheckEncryptionAsync (id, 0, new[] { id.TorrentManager.InfoHash });
-                EndCheckEncryption(id, initialData);
+                await EndCheckEncryption(id, initialData);
 
-
-                id.TorrentManager.Peers.ConnectedPeers.Add(id);
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
                 id.LastBlockReceived.Restart ();
             }
-            catch (Exception)
+            catch
             {
                 id.TorrentManager.RaiseConnectionAttemptFailed(
                     new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Outgoing, "ProcessFreshConnection: failed to encrypt"));
 
-                id.Connection.Dispose();
-                id.Connection = null;
+                CleanupSocket(id, "ProcessFreshConnection Error");
             }
         }
 
-        private async void EndCheckEncryption(PeerId id, byte[] initialData)
+        private async Task EndCheckEncryption(PeerId id, byte[] initialData)
         {
             try
             {
@@ -257,6 +259,8 @@ namespace MonoTorrent.Client
                     handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
                     handshake.Handle(id);
 
+                    id.TorrentManager.HandlePeerConnected(id, Direction.Outgoing);
+
                     // If there are any pending messages, send them otherwise set the queue
                     // processing as finished.
                     if (id.QueueLength > 0)
@@ -265,15 +269,13 @@ namespace MonoTorrent.Client
                         id.ProcessingQueue = false;
 
                     ReceiveMessagesAsync(id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, id);
-                    // Alert the engine that there is a new usable connection
-                    id.TorrentManager.HandlePeerConnected(id, Direction.Outgoing);
                 }
             }
             catch
             {
                 id.Peer.Encryption &= ~EncryptionTypes.RC4Full;
                 id.Peer.Encryption &= ~EncryptionTypes.RC4Header;
-                CleanupSocket(id, "Failed encryptor check");
+                throw;
             }
         }
 
