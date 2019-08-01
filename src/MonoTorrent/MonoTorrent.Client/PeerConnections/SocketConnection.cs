@@ -37,6 +37,8 @@ namespace MonoTorrent.Client.Connections
 {
     public class SocketConnection : IConnection
     {
+        static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
+
         #region Member Variables
 
         public byte[] AddressBytes => EndPoint.Address.GetAddressBytes();
@@ -86,8 +88,8 @@ namespace MonoTorrent.Client.Connections
             SendArgs = new SocketAsyncEventArgs {
                 RemoteEndPoint = endpoint
             };
-            ReceiveArgs.Completed += HandleOperationCompleted;
-            SendArgs.Completed += HandleOperationCompleted;
+            ReceiveArgs.Completed += Handler;
+            SendArgs.Completed += Handler;
             Socket = socket;
             EndPoint = endpoint;
             IsIncoming = isIncoming;
