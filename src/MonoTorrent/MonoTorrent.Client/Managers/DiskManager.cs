@@ -207,24 +207,25 @@ namespace MonoTorrent.Client
             byte[] hashBuffer = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
 
-            SHA1 hasher = HashAlgoFactory.Create<SHA1>();
-            hasher.Initialize();
+            using (var hasher = HashAlgoFactory.Create<SHA1>()) {
+                hasher.Initialize();
 
-            while (startOffset != endOffset)
-            {
-                int count = (int)Math.Min(Piece.BlockSize, endOffset - startOffset);
-                if (!await ReadAsync(manager, startOffset, hashBuffer, count).ConfigureAwait(false))
+                while (startOffset != endOffset)
                 {
-                    ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
-                    return null;
+                    int count = (int)Math.Min(Piece.BlockSize, endOffset - startOffset);
+                    if (!await ReadAsync(manager, startOffset, hashBuffer, count).ConfigureAwait(false))
+                    {
+                        ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
+                        return null;
+                    }
+                    startOffset += count;
+                    hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
                 }
-                startOffset += count;
-                hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
-            }
 
-            hasher.TransformFinalBlock(hashBuffer, 0, 0);
-            ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
-            return hasher.Hash;
+                hasher.TransformFinalBlock(hashBuffer, 0, 0);
+                ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
+                return hasher.Hash;
+            }
         }
 
         async Task WaitForBufferedWrites ()
