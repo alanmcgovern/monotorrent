@@ -69,6 +69,8 @@ namespace MonoTorrent.Client
                 }
                 var id = new PeerId(e.Peer, e.TorrentManager);
                 id.Connection = e.Connection;
+                id.LastMessageSent.Restart ();
+                id.LastMessageReceived.Restart ();
                 if (!e.Connection.IsIncoming) {
                     Engine.ConnectionManager.ProcessFreshConnection(id);
                     return;
