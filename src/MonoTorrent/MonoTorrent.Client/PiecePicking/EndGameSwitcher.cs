@@ -146,6 +146,7 @@ namespace MonoTorrent.Client
 			if (inEndgame)
 			{
 				endgame.Initialise(bitfield, files, standard.ExportActiveRequests());
+				standard.Reset ();
 				// Set torrent's IsInEndGame flag
 				torrentManager.isInEndGame = true;
 			}
