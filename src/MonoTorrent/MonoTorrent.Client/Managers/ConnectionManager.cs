@@ -412,10 +412,10 @@ namespace MonoTorrent.Client
         internal async void ProcessQueue(PeerId id)
         {
             while (id.QueueLength > 0) {
-                try {
-                    PeerMessage msg = id.Dequeue ();
-                    var pm = msg as PieceMessage;
+                var msg = id.Dequeue ();
+                var pm = msg as PieceMessage;
 
+                try {
                     if (pm != null) {
                         pm.Data = ClientEngine.BufferManager.GetBuffer (pm.ByteLength);
                         await engine.DiskManager.ReadAsync (id.TorrentManager, pm.StartOffset + ((long)pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength);
@@ -426,10 +426,6 @@ namespace MonoTorrent.Client
                     if (msg is PieceMessage)
                         id.IsRequestingPiecesCount--;
 
-
-                    if (pm != null)
-                        ClientEngine.BufferManager.FreeBuffer (pm.Data);
-
                     // Fire the event to let the user know a message was sent
                     if (PeerMessageTransferred != null)
                         RaisePeerMessageTransferred (new PeerMessageEventArgs (id.TorrentManager, msg, Direction.Outgoing, id));
@@ -438,6 +434,9 @@ namespace MonoTorrent.Client
                 } catch (Exception e) {
                     CleanupSocket (id, "Exception calling SendMessage: " + e.Message);
                     break;
+                } finally {
+                    if (pm?.Data != null)
+                        ClientEngine.BufferManager.FreeBuffer (pm.Data);
                 }
             }
 
