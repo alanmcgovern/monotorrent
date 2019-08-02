@@ -96,6 +96,11 @@ namespace MonoTorrent.Client
             return null;
         }
 
+        public override int CurrentReceivedCount()
+        {
+            return (int) Toolbox.Accumulate (pieces, p => p.TotalReceived);
+        }
+
         public override int CurrentRequestCount()
         {
             return requests.Count;

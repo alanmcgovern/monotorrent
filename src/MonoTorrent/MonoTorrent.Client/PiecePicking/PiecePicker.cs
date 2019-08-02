@@ -74,6 +74,11 @@ namespace MonoTorrent.Client
             CheckOverriden();
             return picker.ContinueExistingRequest(peer);
         }
+        public virtual int CurrentReceivedCount()
+        {
+            CheckOverriden();
+            return picker.CurrentReceivedCount();
+        }
         public virtual int CurrentRequestCount()
         {
             CheckOverriden();
