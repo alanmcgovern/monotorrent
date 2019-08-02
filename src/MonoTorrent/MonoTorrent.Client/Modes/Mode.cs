@@ -499,6 +499,11 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     continue;
 
+                if (!id.LastPeerExchangeReview.IsRunning || id.LastPeerExchangeReview.Elapsed > TimeSpan.FromMinutes (1)) {
+                    id.PeerExchangeManager?.OnTick ();
+                    id.LastPeerExchangeReview.Restart ();
+                }
+
                 int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / PieceManager.BonusRequestPerKb);
                 maxRequests = Math.Min(id.AmRequestingPiecesCount + 2, maxRequests);
                 maxRequests = Math.Min(id.MaxSupportedPendingRequests, maxRequests);

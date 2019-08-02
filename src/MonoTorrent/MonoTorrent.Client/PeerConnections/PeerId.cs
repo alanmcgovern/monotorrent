@@ -52,6 +52,7 @@ namespace MonoTorrent.Client
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
         internal Stopwatch LastBlockReceived { get; } = new Stopwatch ();
+        internal Stopwatch LastPeerExchangeReview { get; } = new Stopwatch ();
 
         #endregion
 
