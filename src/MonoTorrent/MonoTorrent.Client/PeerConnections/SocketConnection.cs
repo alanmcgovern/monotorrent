@@ -120,6 +120,10 @@ namespace MonoTorrent.Client.Connections
 
         public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
+            // If this has been disposed, then bail out
+            if (Socket == null)
+                return Task.FromResult (0);
+
             var tcs = new TaskCompletionSource<int>();
             ReceiveArgs.SetBuffer(buffer, offset, count);
             ReceiveArgs.UserToken = tcs;
@@ -131,6 +135,10 @@ namespace MonoTorrent.Client.Connections
 
         public Task<int> SendAsync(byte[] buffer, int offset, int count)
         {
+            // If this has been disposed, then bail out
+            if (Socket == null)
+                return Task.FromResult (0);
+
             var tcs = new TaskCompletionSource<int>();
             SendArgs.SetBuffer(buffer, offset, count);
             SendArgs.UserToken = tcs;
