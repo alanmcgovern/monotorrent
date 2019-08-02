@@ -41,9 +41,12 @@ namespace MonoTorrent.Client
                 Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
                 _ = Manager.TrackerManager.Announce(TorrentEvent.Completed);
             }
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)
-                if (!ShouldConnect(Manager.Peers.ConnectedPeers[i]))
+            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
+                if (!ShouldConnect(Manager.Peers.ConnectedPeers[i])) {
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager.Peers.ConnectedPeers[i]);
+                    i--;
+                }
+            }
             base.Tick(counter);
         }
     }
