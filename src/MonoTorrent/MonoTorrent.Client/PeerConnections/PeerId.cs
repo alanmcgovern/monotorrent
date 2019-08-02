@@ -166,22 +166,21 @@ namespace MonoTorrent.Client
             return sendQueue.Dequeue();
         }
 
-        internal void Enqueue(PeerMessage msg)
+        internal void Enqueue(PeerMessage message)
+            => EnqueueAt (message, sendQueue.Count);
+
+        internal void EnqueueAt(PeerMessage message, int index)
         {
-            sendQueue.Add(msg);
+            if (sendQueue.Count == 0 || index >= sendQueue.Count)
+                sendQueue.Add (message);
+            else
+                sendQueue.Insert(index, message);
+
             if (!ProcessingQueue)
             {
                 ProcessingQueue = true;
                 ConnectionManager.ProcessQueue(this);
             }
-        }
-
-        internal void EnqueueAt(PeerMessage message, int index)
-        {
-            if (sendQueue.Count == 0 || index >= sendQueue.Count)
-                Enqueue(message);
-            else
-                sendQueue.Insert(index, message);
         }
 
         public override bool Equals(object obj)
