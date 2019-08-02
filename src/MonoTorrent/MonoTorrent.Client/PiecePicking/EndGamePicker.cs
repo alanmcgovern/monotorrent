@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
             foreach (Piece piece in pieces)
             {
                 for (int i = 0; i < piece.BlockCount; i++)
-                    if (piece.Blocks[i].RequestedOff != null)
+                    if (piece.Blocks[i].RequestedOff != null && !piece.Blocks[i].Received)
                         this.requests.Add(new Request(piece.Blocks[i].RequestedOff, piece.Blocks[i]));
             }
         }
