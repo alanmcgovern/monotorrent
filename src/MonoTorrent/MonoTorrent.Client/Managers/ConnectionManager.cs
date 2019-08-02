@@ -186,6 +186,8 @@ namespace MonoTorrent.Client
                 } else {
                     PeerId id = new PeerId (peer, manager);
                     id.Connection = connection;
+                    id.LastMessageReceived.Restart ();
+                    id.LastMessageSent.Restart ();
 
                     Logger.Log (id.Connection, "ConnectionManager - Connection opened");
 
