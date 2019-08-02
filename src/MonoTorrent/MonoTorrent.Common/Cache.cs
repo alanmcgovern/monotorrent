@@ -67,7 +67,13 @@ namespace MonoTorrent.Common
         {
             if (cache.Count > 0)
                 return cache.Dequeue();
-            return autoCreate ? new T() : null;
+
+            if (autoCreate) {
+                var instance = new T ();
+                instance.Initialise ();
+                return instance;
+            }
+            return null;
         }
 
         public void Enqueue(T instance)
