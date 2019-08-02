@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)
-                Manager.finishedPieces.Enqueue(piece.Index);
+                Manager.finishedPieces.Enqueue(new HaveMessage (piece.Index));
         }
 
         protected virtual void HandlePortMessage(PeerId id, PortMessage message)
@@ -654,10 +654,10 @@ namespace MonoTorrent.Client
 
                 MessageBundle bundle = new MessageBundle();
 
-                foreach (int pieceIndex in Manager.finishedPieces)
+                foreach (var haveMessage in Manager.finishedPieces)
                 {
                     // If the peer has the piece already, we need to recalculate his "interesting" status.
-                    bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[pieceIndex];
+                    bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[haveMessage.PieceIndex];
                     if (hasPiece)
                     {
                         bool isInteresting = Manager.PieceManager.IsInteresting(Manager.Peers.ConnectedPeers[i]);
@@ -666,7 +666,7 @@ namespace MonoTorrent.Client
 
                     // Check to see if have supression is enabled and send the have message accordingly
                     if (!hasPiece || (hasPiece && !Manager.Engine.Settings.HaveSupressionEnabled))
-                        bundle.Messages.Add(new HaveMessage(pieceIndex));
+                        bundle.Messages.Add(haveMessage);
                 }
 
                 Manager.Peers.ConnectedPeers[i].Enqueue(bundle);
