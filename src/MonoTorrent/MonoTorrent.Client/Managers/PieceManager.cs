@@ -91,7 +91,8 @@ namespace MonoTorrent.Client
                 id.LastBlockReceived.Restart ();
                 var block = piece.Blocks [message.StartOffset / Piece.BlockSize];
 
-                RaiseBlockReceived(new BlockEventArgs(id.TorrentManager, block, piece, id));
+                if (BlockReceived != null)
+                    RaiseBlockReceived(new BlockEventArgs(id.TorrentManager, block, piece, id));
 
                 if (piece.AllBlocksReceived)
                     UnhashedPieces[message.PieceIndex] = true;
