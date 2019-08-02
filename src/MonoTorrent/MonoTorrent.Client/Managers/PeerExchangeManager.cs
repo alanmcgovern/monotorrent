@@ -61,7 +61,6 @@ namespace MonoTorrent.Client
 			this.addedPeers = new List<Peer>();
 			this.droppedPeers = new List<Peer>();
             id.TorrentManager.OnPeerFound += new EventHandler<PeerAddedEventArgs>(OnAdd);
-            Start();
         }
 
         internal void OnAdd(object source, PeerAddedEventArgs e)
@@ -73,15 +72,6 @@ namespace MonoTorrent.Client
 
 
         #region Methods
-
-        internal void Start()
-        {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
-                if (!disposed)
-                    OnTick();
-                return !disposed;
-            });
-        }
 
         internal void OnTick()
         {
