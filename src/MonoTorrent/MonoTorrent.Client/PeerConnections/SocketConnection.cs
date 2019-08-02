@@ -129,7 +129,7 @@ namespace MonoTorrent.Client.Connections
             ReceiveArgs.UserToken = tcs;
 
             if (!Socket.ReceiveAsync(ReceiveArgs))
-                return Task.FromResult(ReceiveArgs.BytesTransferred);
+                tcs.SetResult (ReceiveArgs.BytesTransferred);
             return tcs.Task;
         }
 
@@ -144,7 +144,7 @@ namespace MonoTorrent.Client.Connections
             SendArgs.UserToken = tcs;
 
             if (!Socket.SendAsync(SendArgs))
-                return Task.FromResult(SendArgs.BytesTransferred);
+                tcs.SetResult (SendArgs.BytesTransferred);
             return tcs.Task;
         }
 
