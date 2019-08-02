@@ -7,13 +7,13 @@ namespace MonoTorrent.Client.Connections
     public static class ConnectionFactory
     {
         private static object locker = new object();
-        private static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
+        private static Dictionary<string, Func<Uri, IConnection>> trackerTypes = new Dictionary<string, Func<Uri, IConnection>>();
        
         static ConnectionFactory()
         {
-            RegisterTypeForProtocol("ipv4", typeof(IPV4Connection));
-            RegisterTypeForProtocol("ipv6", typeof(IPV6Connection));
-            RegisterTypeForProtocol("http", typeof(HttpConnection));
+            RegisterTypeForProtocol("ipv4", uri => new IPV4Connection (uri));
+            RegisterTypeForProtocol("ipv6", uri => new IPV6Connection (uri));
+            RegisterTypeForProtocol("http", uri => new HttpConnection (uri));
         }
 
         public static void RegisterTypeForProtocol(string protocol, Type connectionType)
@@ -23,9 +23,15 @@ namespace MonoTorrent.Client.Connections
             if (connectionType == null)
                 throw new ArgumentNullException("connectionType");
 
-            lock (locker)
-                trackerTypes[protocol] = connectionType;
+            RegisterTypeForProtocol (protocol, uri => (IConnection) Activator.CreateInstance (connectionType, uri));
         }
+
+        static void RegisterTypeForProtocol(string protocol, Func<Uri, IConnection> creator)
+        {
+            lock (locker)
+                trackerTypes[protocol] = creator;
+        }
+
 
         public static IConnection Create(Uri connectionUri)
         {
@@ -35,14 +41,14 @@ namespace MonoTorrent.Client.Connections
             if (connectionUri.Scheme == "ipv4" && connectionUri.Port == -1)
                 return null;
 
-            Type type;
+            Func<Uri, IConnection> creator;
             lock (locker)
-                if (!trackerTypes.TryGetValue(connectionUri.Scheme, out type))
+                if (!trackerTypes.TryGetValue(connectionUri.Scheme, out creator))
                     return null;
 
             try
             {
-                return (IConnection)Activator.CreateInstance(type, connectionUri);
+                return creator (connectionUri);
             }
             catch
             {
