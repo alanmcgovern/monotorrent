@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private bool disposed;
-        internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
+        internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         internal bool isInEndGame = false;       // Set true when the torrent enters end game processing
         private Mode mode;
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
         {
             this.Bitfield = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
             this.SavePath = Path.Combine(savePath, baseDirectory);
-            this.finishedPieces = new Queue<int>();
+            this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
             this.InactivePeerManager = new InactivePeerManager(this);
             this.Peers = new PeerManager();
