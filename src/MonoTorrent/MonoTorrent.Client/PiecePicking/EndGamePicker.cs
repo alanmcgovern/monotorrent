@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Linq;
+
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.Messages;
@@ -42,11 +44,10 @@ namespace MonoTorrent.Client
     public class EndGamePicker : PiecePicker
     {
         static Predicate<Request> TimedOut = delegate (Request r) { return r.Block.RequestTimedOut; };
-        static Predicate<Request> NotRequested = delegate (Request r) { return r.Block.RequestedOff == null; };
 
         // Struct to link a request for a block to a peer
         // This way we can have multiple requests for the same block
-        class Request
+        internal class Request
         {
             public Request(PeerId peer, Block block)
             {
@@ -63,6 +64,7 @@ namespace MonoTorrent.Client
 
         // These are all the requests for the individual blocks
         List<Request> requests;
+        internal List<Request> Requests => requests;
 
         public EndGamePicker()
             : base(null)
@@ -210,61 +212,47 @@ namespace MonoTorrent.Client
                 return r.Block.PieceIndex == piece &&
                        r.Block.StartOffset == startOffset &&
                        r.Block.RequestLength == length &&
-                       peer.Equals(r.Peer);
+                       peer == r.Peer;
             }, false);
         }
 
         public override void CancelRequests(PeerId peer)
         {
             CancelWhere(delegate(Request r) { return r.Peer == peer; }, false);
-            foreach (var p in pieces) {
-                for (int i = 0; i < p.BlockCount; i++) {
-                    if (p.Blocks [i].RequestedOff == peer && !p.Blocks [i].Received)
-                        p.Blocks[i].CancelRequest();
-                }
-            }
         }
 
         public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            foreach (Request r in requests)
-            {
-                // When we get past this block, it means we've found a valid request for this piece
-                if (r.Block.PieceIndex != pieceIndex || r.Block.StartOffset != startOffset || r.Block.RequestLength != length || r.Peer != peer)
-                    continue;
-
-                // All the other requests for this block need to be cancelled.
-                foreach (Piece p in pieces)
-                {
-                    if (p.Index != pieceIndex)
-                        continue;
-
-                    CancelWhere(delegate(Request req) {
-                        return req.Block.PieceIndex == pieceIndex &&
-                               req.Block.StartOffset == startOffset &&
-                               req.Block.RequestLength == length &&
-                               req.Peer != peer;
-                    }, true);
-
-                    // Mark the block as received
-                    p.Blocks[startOffset / Piece.BlockSize].Received = true;
-
-                    // Once a piece is completely received, remove it from our list.
-                    // If a piece *fails* the hashcheck, we need to add it back into the list so
-                    // we download it again.
-                    if (p.AllBlocksReceived)
-                        pieces.Remove(p);
-
-                    requests.Remove(r);
-                    piece = p;
-                    peer.AmRequestingPiecesCount--;
-                    return true;
-                }
+            var r = requests.SingleOrDefault (t => t.Block.PieceIndex == pieceIndex && t.Block.StartOffset == startOffset && t.Block.RequestLength == length && t.Peer == peer);
+            if (r == null) {
+                piece = null;
+                return false;
             }
 
-            // The request was not valid
-            piece = null;
-            return false;
+            piece = pieces.Single (p => p.Index == r.Block.PieceIndex);
+            if (piece == null)
+                return false;
+
+            // All the other requests for this block need to be cancelled.
+            CancelWhere(delegate(Request req) {
+                return req.Block.PieceIndex == pieceIndex &&
+                        req.Block.StartOffset == startOffset &&
+                        req.Block.RequestLength == length &&
+                        req.Peer != peer;
+            }, true);
+
+            // Mark the block as received
+            piece.Blocks[startOffset / Piece.BlockSize].Received = true;
+
+            // Once a piece is completely received, remove it from our list.
+            // If a piece *fails* the hashcheck, we need to add it back into the list so
+            // we download it again.
+            if (piece.AllBlocksReceived)
+                pieces.Remove(piece);
+
+            requests.Remove(r);
+            peer.AmRequestingPiecesCount--;
+            return true;
         }
     }
 }
