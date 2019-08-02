@@ -83,6 +83,11 @@ namespace MonoTorrent.Client
             return ActivePicker.ContinueExistingRequest(peer);
         }
 
+        public override int CurrentReceivedCount()
+        {
+            return ActivePicker.CurrentReceivedCount();
+        }
+
         public override int CurrentRequestCount()
         {
             return ActivePicker.CurrentRequestCount();
@@ -138,10 +143,7 @@ namespace MonoTorrent.Client
             endgameSelector.NAnd(bitfield);
 
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
-            int count = 0;
-            List<Piece> pieces = standard.ExportActiveRequests();
-            for (int i = 0; i < pieces.Count; i++)
-                count += pieces[i].TotalReceived;
+            int count = standard.CurrentReceivedCount ();
             inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count < Threshold;
 			if (inEndgame)
 			{

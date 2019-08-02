@@ -104,9 +104,20 @@ namespace MonoTorrent.Client
                 requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
         }
 
+        public override int CurrentReceivedCount()
+        {
+            int count = 0;
+            for (int i = 0; i < requests.Count; i ++)
+                count += requests[i].TotalReceived;
+            return count;
+        }
+
         public override int CurrentRequestCount()
         {
-            return (int)Toolbox.Accumulate<Piece>(requests, delegate(Piece p) { return p.TotalRequested - p.TotalReceived; });
+            int count = 0;
+            for (int i = 0; i < requests.Count; i ++)
+                count += requests[i].TotalRequested - requests[i].TotalReceived;
+            return count;
         }
 
         public override List<Piece> ExportActiveRequests()

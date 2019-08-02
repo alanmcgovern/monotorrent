@@ -58,6 +58,11 @@ namespace MonoTorrent.Client
             
         }
 
+        public override int CurrentReceivedCount ()
+        {
+            return 0;
+        }
+
         public override int CurrentRequestCount()
         {
             return 0;
