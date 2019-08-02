@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Client;
@@ -133,6 +134,18 @@ namespace MonoTorrent.Client
                 Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
 
             Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+        }
+
+        [Test]
+        public void ReceivedPiecesAreNotRequested()
+        {
+            for (int i = 2; i < pieces[0].BlockCount; i++) {
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
+                pieces[0].Blocks[i].Received = true;
+            }
+
+            picker.Initialise(bitfield, rig.Torrent.Files, pieces);
+            Assert.IsTrue (picker.Requests.All (t => !t.Block.Received), "#1");
         }
     }
 }
