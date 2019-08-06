@@ -48,13 +48,20 @@ namespace MonoTorrent.Client
         internal static readonly int SmallMessageBufferSize = 1 << 8;               // 256 bytes
         internal static readonly int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
         internal static readonly int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
-        
+
+        internal bool OwnsBuffer (byte [] buffer)
+        {
+            lock (allocatedBuffers)
+                return allocatedBuffers.Contains (buffer);
+        }
+
         public static readonly byte [] EmptyBuffer = new byte[0];
 
         private Queue<byte []> largeMessageBuffers;
         private Queue<byte []> mediumMessageBuffers;
         private Queue<byte []> smallMessageBuffers;
         private Queue<byte []> massiveBuffers;
+        HashSet<byte []> allocatedBuffers;
 
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
@@ -65,6 +72,7 @@ namespace MonoTorrent.Client
             this.largeMessageBuffers = new Queue<byte []>();
             this.mediumMessageBuffers = new Queue<byte []>();
             this.smallMessageBuffers = new Queue<byte []>();
+            this.allocatedBuffers = new HashSet<byte []>();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
             this.AllocateBuffers(4, BufferType.LargeMessageBuffer);
@@ -154,6 +162,8 @@ namespace MonoTorrent.Client
                             massiveBuffers.Enqueue(buffer);
 
                     buffer = new byte[minCapacity];
+                    lock (allocatedBuffers)
+                        allocatedBuffers.Add (buffer);
                 }
             }
         }
@@ -193,24 +203,34 @@ namespace MonoTorrent.Client
             buffer = EmptyBuffer; // After recovering the buffer, we send the "EmptyBuffer" back as a placeholder
         }
 
-
         private void AllocateBuffers(int number, BufferType type)
         {
-            Logger.Log(null, "BufferManager - Allocating {0} buffers of type {1}", number, type);
-            if (type == BufferType.LargeMessageBuffer)
-                while (number-- > 0)
-                    this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
+            Queue<byte []> bufferQueue;
+            int bufferSize;
 
-            else if (type == BufferType.MediumMessageBuffer)
-                while (number-- > 0)
-                    this.mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
+            switch (type) {
+                case BufferType.SmallMessageBuffer:
+                    bufferQueue = smallMessageBuffers;
+                    bufferSize = SmallMessageBufferSize;
+                    break;
+                case BufferType.MediumMessageBuffer:
+                    bufferQueue = mediumMessageBuffers;
+                    bufferSize = MediumMessageBufferSize;
+                    break;
+                case BufferType.LargeMessageBuffer:
+                    bufferQueue = largeMessageBuffers;
+                    bufferSize = LargeMessageBufferSize;
+                    break;
+                default:
+                    throw new ArgumentException("Unsupported BufferType detected");
+            }
 
-            else if (type == BufferType.SmallMessageBuffer)
-                while (number-- > 0)
-                        this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
-
-            else
-                throw new ArgumentException("Unsupported BufferType detected");
+            while (number -- > 0) {
+                var buffer = new byte [bufferSize];
+                bufferQueue.Enqueue (buffer);
+                lock (allocatedBuffers)
+                    allocatedBuffers.Add (buffer);
+            }
         }
     }
 }

@@ -32,12 +32,59 @@ using System;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Connections
 {
     public class SocketConnection : IConnection
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
+
+        /// <summary>
+        /// This stores a reusable 'SocketAsyncEventArgs' for every byte[] owned by ClientEngine.BufferManager
+        /// </summary>
+        static readonly Dictionary<byte[], SocketAsyncEventArgs> bufferCache = new Dictionary<byte[], SocketAsyncEventArgs> ();
+
+        /// <summary>
+        /// This stores reusable 'SocketAsyncEventArgs' for arbitrary byte[], or for when we are connecting
+        /// to a peer and do not have a byte[] buffer to send/receive from.
+        /// </summary>
+        static readonly Queue<SocketAsyncEventArgs> otherCache = new Queue<SocketAsyncEventArgs> ();
+
+        static readonly Task<int> FailedTask = Task.FromResult (0);
+
+        /// <summary>
+        /// Where possible we will use a SocketAsyncEventArgs object which has already had
+        /// 'SetBuffer(byte[],int,int)' invoked on it for the given byte[]. Reusing these is
+        /// much more efficient than constantly calling SetBuffer on a different 'SocketAsyncEventArgs'
+        /// object.
+        /// </summary>
+        /// <param name="buffer">The buffer we wish to get the reusuable 'SocketAsyncEventArgs' for</param>
+        /// <returns></returns>
+        static SocketAsyncEventArgs GetSocketAsyncEventArgs (byte[] buffer)
+        {
+            SocketAsyncEventArgs args;
+            lock (bufferCache) {
+                if (buffer != null && ClientEngine.BufferManager.OwnsBuffer (buffer)) {
+                    if (!bufferCache.TryGetValue (buffer, out args)) {
+                        bufferCache[buffer] = args = new SocketAsyncEventArgs ();
+                        args.SetBuffer (buffer, 0, buffer.Length);
+                        args.Completed += Handler;
+                    }
+                } else  {
+                    if (otherCache.Count == 0) {
+                        args = new SocketAsyncEventArgs ();
+                        args.Completed += Handler;
+                    } else {
+                        args = otherCache.Dequeue ();
+                    }
+
+                    if (buffer != null)
+                        args.SetBuffer (buffer, 0, buffer.Length);
+                }
+                return args;
+            }
+        }
 
         #region Member Variables
 
@@ -52,10 +99,6 @@ namespace MonoTorrent.Client.Connections
         public IPEndPoint EndPoint { get; }
 
         public bool IsIncoming { get; }
-
-        SocketAsyncEventArgs ReceiveArgs { get; set; }
-
-        SocketAsyncEventArgs SendArgs { get; set; }
 
         Socket Socket { get; set; }
 
@@ -82,14 +125,6 @@ namespace MonoTorrent.Client.Connections
 
         SocketConnection (Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
-            ReceiveArgs = new SocketAsyncEventArgs {
-                RemoteEndPoint = endpoint
-            };
-            SendArgs = new SocketAsyncEventArgs {
-                RemoteEndPoint = endpoint
-            };
-            ReceiveArgs.Completed += Handler;
-            SendArgs.Completed += Handler;
             Socket = socket;
             EndPoint = endpoint;
             IsIncoming = isIncoming;
@@ -101,6 +136,12 @@ namespace MonoTorrent.Client.Connections
                 ((TaskCompletionSource<int>)e.UserToken).SetException(new SocketException((int)e.SocketError));
             else
                 ((TaskCompletionSource<int>)e.UserToken).SetResult(e.BytesTransferred);
+
+            // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
+            // *not* managed by our BufferManager, then we should put it back in the 'other' cache.
+            if (e.Buffer == null || !ClientEngine.BufferManager.OwnsBuffer (e.Buffer))
+                lock (bufferCache)
+                    otherCache.Enqueue (e);
         }
 
         #endregion
@@ -111,9 +152,11 @@ namespace MonoTorrent.Client.Connections
         public Task ConnectAsync ()
         {
             var tcs = new TaskCompletionSource<int>();
-            ReceiveArgs.UserToken = tcs;
+            var args = GetSocketAsyncEventArgs (null);
+            args.RemoteEndPoint = EndPoint;
+            args.UserToken = tcs;
 
-            if (!Socket.ConnectAsync(ReceiveArgs))
+            if (!Socket.ConnectAsync(args))
                 return Task.FromResult(true);
             return tcs.Task;
         }
@@ -122,14 +165,15 @@ namespace MonoTorrent.Client.Connections
         {
             // If this has been disposed, then bail out
             if (Socket == null)
-                return Task.FromResult (0);
+                return FailedTask;
 
             var tcs = new TaskCompletionSource<int>();
-            ReceiveArgs.SetBuffer(buffer, offset, count);
-            ReceiveArgs.UserToken = tcs;
+            var args = GetSocketAsyncEventArgs (buffer);
+            args.SetBuffer (offset, count);
+            args.UserToken = tcs;
 
-            if (!Socket.ReceiveAsync(ReceiveArgs))
-                tcs.SetResult (ReceiveArgs.BytesTransferred);
+            if (!Socket.ReceiveAsync(args))
+                tcs.SetResult (args.BytesTransferred);
             return tcs.Task;
         }
 
@@ -137,26 +181,22 @@ namespace MonoTorrent.Client.Connections
         {
             // If this has been disposed, then bail out
             if (Socket == null)
-                return Task.FromResult (0);
+                return FailedTask;
 
             var tcs = new TaskCompletionSource<int>();
-            SendArgs.SetBuffer(buffer, offset, count);
-            SendArgs.UserToken = tcs;
+            var args = GetSocketAsyncEventArgs (buffer);
+            args.SetBuffer (offset, count);
+            args.UserToken = tcs;
 
-            if (!Socket.SendAsync(SendArgs))
-                tcs.SetResult (SendArgs.BytesTransferred);
+            if (!Socket.SendAsync(args))
+                tcs.SetResult (args.BytesTransferred);
             return tcs.Task;
         }
 
         public void Dispose()
         {
             Socket?.SafeDispose();
-            SendArgs?.SafeDispose();
-            ReceiveArgs?.SafeDispose();
-
             Socket = null;
-            SendArgs = null;
-            ReceiveArgs = null;
         }
 
         #endregion
