@@ -41,10 +41,10 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        public SpeedMonitor DataDown { get; }
-        public SpeedMonitor DataUp { get; }
-        public SpeedMonitor ProtocolDown { get; }
-        public SpeedMonitor ProtocolUp { get; }
+        internal SpeedMonitor DataDown { get; }
+        internal SpeedMonitor DataUp { get; }
+        internal SpeedMonitor ProtocolDown { get; }
+        internal SpeedMonitor ProtocolUp { get; }
 
         #endregion Member Variables
 
