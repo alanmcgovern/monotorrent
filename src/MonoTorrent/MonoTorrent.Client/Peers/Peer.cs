@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         public EncryptionTypes Encryption
         {
             get { return encryption; }
-            set { encryption = value; }
+            internal set { encryption = value; }
         }
 
         internal int TotalHashFails
