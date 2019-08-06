@@ -32,7 +32,7 @@ using System.Text;
 
 namespace MonoTorrent.Client.Encryption
 {
-    public class RC4Header : IEncryption
+    class RC4Header : IEncryption
     {
         public RC4Header()
         {

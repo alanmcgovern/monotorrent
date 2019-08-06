@@ -40,7 +40,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class HttpConnection : IConnection
+    sealed class HttpConnection : IConnection
     {
         class HttpRequestData
         {

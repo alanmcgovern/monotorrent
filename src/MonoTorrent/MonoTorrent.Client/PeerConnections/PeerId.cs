@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
         internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        public IConnection Connection { get; internal set; }
+        internal IConnection Connection { get; set; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
@@ -73,14 +73,25 @@ namespace MonoTorrent.Client
         internal MonoTorrentCollection<int> AmAllowedFastPieces { get; set; }
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
-        public int AmRequestingPiecesCount { get; set; }
-        public BitField BitField { get; set; }
+        public int AmRequestingPiecesCount { get; internal set; }
+        public BitField BitField { get; internal set; }
         public Software ClientApp { get; internal set; }
         ConnectionManager ConnectionManager => Engine.ConnectionManager;
         internal IEncryption Decryptor { get; set; }
         internal string DisconnectReason { get; set; }
         public bool Disposed { get; private set; }
-        public IEncryption Encryptor { get; set; }
+        internal IEncryption Encryptor { get; set; }
+        public EncryptionTypes EncryptionType {
+            get {
+                if (Encryptor is RC4)
+                    return EncryptionTypes.RC4Full;
+                if (Encryptor is RC4Header)
+                    return EncryptionTypes.RC4Header;
+                if (Encryptor is PlainTextEncryption || Encryptor == null)
+                    return EncryptionTypes.PlainText;
+                return EncryptionTypes.None;
+            }
+        }
         public ClientEngine Engine { get; private set;}
         internal ExtensionSupports ExtensionSupports { get; set; }
         public int HashFails => Peer.TotalHashFails;
@@ -89,7 +100,7 @@ namespace MonoTorrent.Client
         public bool IsConnected => Connection != null;
         public bool IsInterested { get; internal set; }
         public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
-        public int IsRequestingPiecesCount { get; set; }
+        public int IsRequestingPiecesCount { get; internal set; }
         internal Stopwatch LastMessageReceived { get; } = new Stopwatch ();
         internal Stopwatch LastMessageSent { get; } = new Stopwatch ();
         internal Stopwatch WhenConnected { get; } = new Stopwatch ();
@@ -110,7 +121,7 @@ namespace MonoTorrent.Client
         public TorrentManager TorrentManager
         {
             get { return torrentManager; }
-            set
+            internal set
             {
                 torrentManager = value;
                 if (value != null)

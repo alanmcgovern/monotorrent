@@ -36,7 +36,7 @@ using System.Text;
 
 namespace MonoTorrent.Common
 {
-    public class UriQueryBuilder
+    class UriQueryBuilder
     {
         UriBuilder builder;
         Dictionary<string, string> queryParams;

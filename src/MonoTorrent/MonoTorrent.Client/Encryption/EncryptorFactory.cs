@@ -38,7 +38,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
-    internal static class EncryptorFactory
+    static class EncryptorFactory
     {
         internal static async Task<byte[]> CheckEncryptionAsync(PeerId id, int bytesToReceive, InfoHash[] sKeys)
         {

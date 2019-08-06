@@ -2,7 +2,7 @@
 
 namespace MonoTorrent
 {
-    public static class IDisposableExtensions
+    static class IDisposableExtensions
     {
         public static void SafeDispose (this IDisposable disposable)
         {

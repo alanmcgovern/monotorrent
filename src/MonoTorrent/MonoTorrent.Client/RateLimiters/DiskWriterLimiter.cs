@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class DiskWriterLimiter : IRateLimiter
+    sealed class DiskWriterLimiter : IRateLimiter
     {
         // 4MB / average write size.
         const int MaxPendingWriteBytes = 4 * 1024 * 1024;

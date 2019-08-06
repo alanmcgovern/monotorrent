@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// Plaintext "encryption"
     /// </summary>
-    public class PlainTextEncryption : IEncryption
+    class PlainTextEncryption : IEncryption
     {
         public static PlainTextEncryption Instance = new PlainTextEncryption();
 

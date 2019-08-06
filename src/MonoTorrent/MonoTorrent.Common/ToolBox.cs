@@ -37,9 +37,9 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Common
 {
-	public delegate long Operation<T>(T target);
+	internal delegate long Operation<T>(T target);
 
-    public static class Toolbox
+    internal static class Toolbox
     {
         private static Random r = new Random();
 		public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)

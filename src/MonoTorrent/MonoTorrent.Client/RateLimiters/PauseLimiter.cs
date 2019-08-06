@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class PauseLimiter : IRateLimiter
+    sealed class PauseLimiter : IRateLimiter
     {
         TorrentManager manager;
 

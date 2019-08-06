@@ -43,7 +43,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
-    public class EncryptionException : TorrentException
+    public sealed class EncryptionException : TorrentException
     {
         public EncryptionException()
         {

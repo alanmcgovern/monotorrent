@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// Class to handle message stream encryption for initiating connections
     /// </summary>
-    class PeerAEncryption : EncryptedSocket
+    sealed class PeerAEncryption : EncryptedSocket
     {
         private byte[] VerifyBytes;
 

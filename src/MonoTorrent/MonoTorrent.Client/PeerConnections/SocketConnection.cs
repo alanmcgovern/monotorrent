@@ -36,7 +36,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class SocketConnection : IConnection
+    class SocketConnection : IConnection
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 

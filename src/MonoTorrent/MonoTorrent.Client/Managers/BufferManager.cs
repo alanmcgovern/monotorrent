@@ -35,7 +35,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public enum BufferType
+    enum BufferType
     {
         SmallMessageBuffer,
         MediumMessageBuffer,
@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
         MassiveBuffer
     }
 
-    public class BufferManager
+    class BufferManager
     {
         internal static readonly int SmallMessageBufferSize = 1 << 8;               // 256 bytes
         internal static readonly int MediumMessageBufferSize = 1 << 11;             // 2048 bytes

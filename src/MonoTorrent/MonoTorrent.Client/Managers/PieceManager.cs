@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
             UnhashedPieces = new BitField(0);
         }
 
-        public Piece PieceDataReceived(PeerId id, PieceMessage message)
+        internal Piece PieceDataReceived(PeerId id, PieceMessage message)
         {
             Piece piece;
             if (Picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece))

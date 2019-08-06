@@ -6,7 +6,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    internal class TorrentFileStream : FileStream
+    class TorrentFileStream : FileStream
     {
         TorrentFile file;
 

@@ -127,7 +127,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        public ConnectionManager(ClientEngine engine)
+        internal ConnectionManager(ClientEngine engine)
         {
             this.engine = engine;
 
@@ -371,7 +371,7 @@ namespace MonoTorrent.Client
         /// This method is called when the ClientEngine recieves a valid incoming connection
         /// </summary>
         /// <param name="result"></param>
-        public void IncomingConnectionAccepted(PeerId id)
+        internal void IncomingConnectionAccepted(PeerId id)
         {
             try
             {

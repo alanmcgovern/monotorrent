@@ -38,7 +38,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
-    internal static class PeerIO
+    static class PeerIO
     {
         const int MaxMessageLength = Piece.BlockSize * 4;
 

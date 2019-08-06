@@ -91,7 +91,6 @@ namespace MonoTorrent.Client.PieceWriters
                 }
             }
 
-            //monitor.BytesSent(totalRead, TransferType.Data);
             return true;
         }
 
@@ -130,8 +129,6 @@ namespace MonoTorrent.Client.PieceWriters
                     i++;
                 }
             }
-
-            //monitor.BytesSent(totalRead, TransferType.Data);
         }
     }
 }

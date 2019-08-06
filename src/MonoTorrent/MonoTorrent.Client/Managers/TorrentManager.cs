@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
 			}
         }
 
-        public int PeerReviewRoundsComplete
+        internal int PeerReviewRoundsComplete
         {
             get
             {
@@ -205,7 +205,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// List of peers we have inactivated for this torrent
         /// </summary>
-        public List<Uri> InactivePeerList => InactivePeerManager.InactivePeerList;
+        public IList<Uri> InactivePeerList => InactivePeerManager.InactivePeerList.AsReadOnly ();
 
         #endregion
 
@@ -379,12 +379,6 @@ namespace MonoTorrent.Client
         public bool Equals(TorrentManager other)
         {
             return (other == null) ? false : InfoHash == other.InfoHash;
-        }
-
-        public async Task<List<Piece>> GetActiveRequestsAsync()
-        {
-            await ClientEngine.MainLoop;
-            return PieceManager.Picker.ExportActiveRequests();
         }
 
         /// <summary>

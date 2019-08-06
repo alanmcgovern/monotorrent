@@ -38,7 +38,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    internal class NetworkIO
+    class NetworkIO
     {
         static MainLoop IOLoop = new MainLoop ("NetworkIO Loop");
 

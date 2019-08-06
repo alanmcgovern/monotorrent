@@ -36,7 +36,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
-    public interface IEncryptor
+    interface IEncryptor
     {
         void AddPayload(byte[] buffer);
         void AddPayload(byte[] buffer, int offset, int count);

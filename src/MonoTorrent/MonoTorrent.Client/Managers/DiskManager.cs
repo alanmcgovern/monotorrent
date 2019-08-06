@@ -13,7 +13,7 @@ namespace MonoTorrent.Client
 {
     public class DiskManager : IDisposable
     {
-        public struct BufferedIO
+        struct BufferedIO
         {
             public TorrentManager manager;
             public long offset;
@@ -43,15 +43,15 @@ namespace MonoTorrent.Client
         readonly SpeedMonitor readMonitor;
         readonly SpeedMonitor writeMonitor;
 
-        internal RateLimiter ReadLimiter;
-        internal RateLimiter WriteLimiter;
+        internal RateLimiter ReadLimiter { get; }
+        internal RateLimiter WriteLimiter { get; }
 
         #endregion Member Variables
 
 
         #region Properties
 
-        public bool Disposed { get; private set; }
+        bool Disposed { get; set; }
 
         public int BufferedWriteBytes => bufferedWriteBytes;
 
@@ -97,7 +97,10 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public void Dispose()
+        void IDisposable.Dispose ()
+            => Dispose ();
+
+        internal void Dispose ()
         {
             if (Disposed)
                 return;
@@ -154,7 +157,7 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        public async Task FlushAsync()
+        internal async Task FlushAsync()
         {
             await IOLoop;
 
@@ -162,7 +165,7 @@ namespace MonoTorrent.Client
                 Writer.Flush(manager.Torrent.Files);
         }
 
-        public async Task FlushAsync(TorrentManager manager)
+        internal async Task FlushAsync(TorrentManager manager)
         {
             await IOLoop;
 
@@ -176,7 +179,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task FlushAsync(TorrentManager manager, int index)
+        internal async Task FlushAsync(TorrentManager manager, int index)
         {
             await IOLoop;
 
@@ -192,7 +195,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<byte[]> GetHashAsync(TorrentManager manager, int pieceIndex)
+        internal async Task<byte[]> GetHashAsync(TorrentManager manager, int pieceIndex)
         {
             await IOLoop;
 
@@ -238,7 +241,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task CloseFilesAsync(TorrentManager manager)
+        internal async Task CloseFilesAsync(TorrentManager manager)
         {
             await IOLoop;
 
@@ -254,7 +257,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string path)
+        internal async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string path)
         {
             await IOLoop;
 
@@ -284,7 +287,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<bool> ReadAsync (TorrentManager manager, long offset, byte [] buffer, int count)
+        internal async Task<bool> ReadAsync (TorrentManager manager, long offset, byte [] buffer, int count)
         {
             await IOLoop;
 

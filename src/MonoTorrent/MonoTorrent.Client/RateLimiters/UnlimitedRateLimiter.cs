@@ -30,7 +30,7 @@ using System;
 
 namespace MonoTorrent.Client
 {
-    class UnlimitedRateLimiter : IRateLimiter
+    sealed class UnlimitedRateLimiter : IRateLimiter
     {
         public static readonly IRateLimiter Instance = new UnlimitedRateLimiter ();
 

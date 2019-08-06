@@ -342,7 +342,7 @@ namespace MonoTorrent.Client
             return ReceiveMessage(connection, decryptor, rig.Manager);
         }
 
-        public static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor, TorrentManager manager)
+        internal static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor, TorrentManager manager)
         {
             byte[] buffer = new byte[4];
             Receive (connection, buffer, 0, buffer.Length);

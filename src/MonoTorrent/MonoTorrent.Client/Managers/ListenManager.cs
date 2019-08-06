@@ -13,7 +13,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Instance methods of this class are threadsafe
     /// </summary>
-    public class ListenManager : IDisposable
+    class ListenManager : IDisposable
     {
 
 		#region Properties
@@ -53,9 +53,6 @@ namespace MonoTorrent.Client
         }
 
         #endregion Public Methods
-
-
-
 
         private async void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {

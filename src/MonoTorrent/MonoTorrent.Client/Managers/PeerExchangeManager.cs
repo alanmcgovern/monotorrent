@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class is used to send each minute a peer excahnge message to peer who have enable this protocol
     /// </summary>
-    public class PeerExchangeManager : IDisposable
+    class PeerExchangeManager : IDisposable
     {
         #region Member Variables
 
