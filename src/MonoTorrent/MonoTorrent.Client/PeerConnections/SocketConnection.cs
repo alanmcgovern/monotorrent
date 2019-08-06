@@ -132,16 +132,25 @@ namespace MonoTorrent.Client.Connections
 
         static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
         {
-            if (e.SocketError != SocketError.Success)
-                ((TaskCompletionSource<int>)e.UserToken).SetException(new SocketException((int)e.SocketError));
-            else
-                ((TaskCompletionSource<int>)e.UserToken).SetResult(e.BytesTransferred);
+            // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
+            // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
+            var tcs = (TaskCompletionSource<int>)e.UserToken;
+            var error = e.SocketError;
+            var transferred = e.BytesTransferred;
+            e.RemoteEndPoint = null;
+            e.UserToken = null;
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferManager, then we should put it back in the 'other' cache.
             if (e.Buffer == null || !ClientEngine.BufferManager.OwnsBuffer (e.Buffer))
                 lock (bufferCache)
                     otherCache.Enqueue (e);
+
+            if (error != SocketError.Success)
+                tcs.SetException(new SocketException((int) error));
+            else
+                tcs.SetResult(transferred);
+
         }
 
         #endregion
