@@ -29,15 +29,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.BEncoding;
-using System.Threading;
-using System.Text.RegularExpressions;
-using System.Net;
-using System.Web;
-using MonoTorrent.Common;
 using System.IO;
+using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -48,11 +46,11 @@ namespace MonoTorrent.Client.Tracker
 
         string TrackerId { get; set; }
 
-        public string Key { get; }
+        internal string Key { get; }
 
         internal TimeSpan RequestTimeout { get; set; } = DefaultRequestTimeout;
 
-        public Uri ScrapeUri { get; }
+        internal Uri ScrapeUri { get; }
 
         public HTTPTracker(Uri announceUrl)
             : base(announceUrl)
@@ -126,8 +124,8 @@ namespace MonoTorrent.Client.Tracker
             }
             catch (Exception ex)
             {
-                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, false));
                 FailureMessage = "The tracker could not be contacted";
+                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, false));
                 throw new TrackerException (FailureMessage, ex);
             }
         }

@@ -29,8 +29,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
@@ -40,92 +40,34 @@ namespace MonoTorrent.Client.Tracker
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
-        bool canAnnounce;
-        bool canScrape;
-        int complete;
-        int downloaded;
-        string failureMessage;
-        int incomplete;
-        TimeSpan minUpdateInterval;
-        TrackerState status;
-        TimeSpan updateInterval;
-        Uri uri;
-        string warningMessage;
+        public bool CanAnnounce { get; protected set; }
+        public bool CanScrape { get; protected set; }
+        public int Complete { get; protected set; }
+        public int Downloaded { get; protected set; }
+        public string FailureMessage { get; protected set; }
+        public int Incomplete { get; protected set; }
+        public TimeSpan MinUpdateInterval { get; protected set; }
+        public TrackerState Status { get; protected set; }
+        public TimeSpan UpdateInterval { get; protected set; }
+        public Uri Uri { get; }
+        public string WarningMessage { get; protected set; }
 
-        public bool CanAnnounce
+        protected Tracker (Uri uri)
         {
-            get { return canAnnounce; }
-            protected set { canAnnounce = value; }
-        }
-        public bool CanScrape
-        {
-            get { return canScrape; }
-            set { canScrape = value; }
-        }
-        public int Complete
-        {
-            get { return complete; }
-            protected set { complete = value; }
-        }
-        public int Downloaded
-        {
-            get { return downloaded; }
-            protected set { downloaded = value; }
-        }
-        public string FailureMessage
-        {
-            get { return failureMessage ?? ""; }
-            protected set { failureMessage = value; }
-        }
-        public int Incomplete
-        {
-            get { return incomplete; }
-            protected set { incomplete = value; }
-        }
-        public TimeSpan MinUpdateInterval
-        {
-            get { return minUpdateInterval; }
-            protected set { minUpdateInterval = value; }
-        }
-        public TrackerState Status
-        {
-            get { return status; }
-            protected set { status = value; }
-        }
-        public TimeSpan UpdateInterval
-        {
-            get { return updateInterval; }
-            protected set { updateInterval = value; }
-        }
-        public Uri Uri
-        {
-            get { return uri; }
-        }
-        public string WarningMessage
-        {
-            get { return warningMessage ?? ""; }
-            protected set { warningMessage = value; }
-        }
-
-        protected Tracker(Uri uri)
-        {
-            Check.Uri(uri);
             MinUpdateInterval = TimeSpan.FromMinutes(3);
             UpdateInterval = TimeSpan.FromMinutes(30);
-            this.uri = uri;
+            Uri = uri ?? throw new ArgumentNullException (nameof (uri));
+            FailureMessage = "";
+            WarningMessage = "";
         }
 
         public abstract Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters);
-        public abstract Task ScrapeAsync(ScrapeParameters parameters);
+        public abstract Task ScrapeAsync (ScrapeParameters parameters);
 
-        protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
-        {
-            AnnounceComplete?.Invoke (this, e);
-        }
+        protected virtual void RaiseAnnounceComplete (AnnounceResponseEventArgs e)
+            => AnnounceComplete?.Invoke (this, e);
 
-        protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
-        {
-            ScrapeComplete?.Invoke (this, e);
-        }
+        protected virtual void RaiseScrapeComplete (ScrapeResponseEventArgs e)
+            => ScrapeComplete?.Invoke (this, e);
     }
 }
