@@ -352,7 +352,7 @@ namespace MonoTorrent.Client
                     new PeerConnectionEventArgs( id.TorrentManager, id, Direction.None, message ) );
             }
 
-            id.SafeDispose ();
+            id.Dispose ();
         }
 
         internal void CancelPendingConnects()

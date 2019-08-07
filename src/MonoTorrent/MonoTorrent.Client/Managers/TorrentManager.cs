@@ -202,11 +202,6 @@ namespace MonoTorrent.Client
 
         public InfoHash InfoHash { get; }
 
-        /// <summary>
-        /// List of peers we have inactivated for this torrent
-        /// </summary>
-        public IList<Uri> InactivePeerList => InactivePeerManager.InactivePeerList.AsReadOnly ();
-
         #endregion
 
         #region Constructors

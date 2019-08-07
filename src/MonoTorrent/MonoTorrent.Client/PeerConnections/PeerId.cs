@@ -40,7 +40,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    public class PeerId : IDisposable
+    public class PeerId
     {
         #region Choke/Unchoke
 
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
         ConnectionManager ConnectionManager => Engine.ConnectionManager;
         internal IEncryption Decryptor { get; set; }
         internal string DisconnectReason { get; set; }
-        public bool Disposed { get; private set; }
+        internal bool Disposed { get; private set; }
         internal IEncryption Encryptor { get; set; }
         public EncryptionTypes EncryptionType {
             get {
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
                 return EncryptionTypes.None;
             }
         }
-        public ClientEngine Engine { get; private set;}
+        internal ClientEngine Engine { get; private set;}
         internal ExtensionSupports ExtensionSupports { get; set; }
         public int HashFails => Peer.TotalHashFails;
         internal MonoTorrentCollection<int> IsAllowedFastPieces { get; set; }
@@ -118,10 +118,10 @@ namespace MonoTorrent.Client
         public bool SupportsLTMessages { get; internal set; }
         internal MonoTorrentCollection<int> SuggestedPieces { get; }
 
-        public TorrentManager TorrentManager
+        internal TorrentManager TorrentManager
         {
             get { return torrentManager; }
-            internal set
+            set
             {
                 torrentManager = value;
                 if (value != null)
@@ -164,14 +164,16 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public void Dispose ()
+        internal void Dispose ()
         {
             if (Disposed)
                 return;
 
             Disposed = true;
             Connection?.SafeDispose ();
+            Connection = null;
         }
+
         internal PeerMessage Dequeue()
         {
             return sendQueue.Dequeue();
