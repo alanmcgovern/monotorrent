@@ -27,24 +27,22 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 
 namespace MonoTorrent.Common
 {
     public class SpeedMonitor
     {
         const int DefaultAveragePeriod = 12;
-        readonly int[] speeds;
-        private int speedsIndex;
-        private DateTime lastUpdated;
-        private long tempRecvCount;
 
+        readonly Stopwatch lastUpdated;
+        readonly int[] speeds;
+        int speedsIndex;
+        long tempRecvCount;
 
         public int Rate { get; private set; }
 
         public long Total { get; private set; }
-
 
         public SpeedMonitor()
             : this(DefaultAveragePeriod)
@@ -57,7 +55,7 @@ namespace MonoTorrent.Common
             if (averagingPeriod < 0)
                 throw new ArgumentOutOfRangeException ("averagingPeriod");
 
-            this.lastUpdated = DateTime.UtcNow;
+            this.lastUpdated = Stopwatch.StartNew ();
             this.speeds = new int [Math.Max (1, averagingPeriod)];
             this.speedsIndex = -speeds.Length;
         }
@@ -79,7 +77,7 @@ namespace MonoTorrent.Common
                 Total = 0;
                 Rate = 0;
                 tempRecvCount = 0;
-                lastUpdated = DateTime.UtcNow;
+                lastUpdated.Restart ();
                 speedsIndex = -speeds.Length;
             }
         }
@@ -117,25 +115,17 @@ namespace MonoTorrent.Common
             Rate = total / speedsCount;
         }
 
-
         public void Tick()
         {
-            DateTime old = lastUpdated;
-            DateTime now = DateTime.UtcNow;
-            int difference = (int) (now - old).TotalMilliseconds;
-
+            int difference = (int) lastUpdated.Elapsed.TotalMilliseconds;
             if (difference > 800)
-            {
-                lastUpdated = now;
-                TimePeriodPassed(difference);
-            }
+                Tick (difference);
         }
 
-        // Used purely for unit testing purposes.
         internal void Tick (int difference)
         {
             lock (speeds)  {
-                lastUpdated = DateTime.UtcNow;
+                lastUpdated.Restart ();
                 TimePeriodPassed(difference);
             }
         }
