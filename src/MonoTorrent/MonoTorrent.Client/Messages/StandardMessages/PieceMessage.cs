@@ -91,7 +91,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public PieceMessage()
         {
-            Data = BufferManager.EmptyBuffer;
         }
 
         public PieceMessage(int pieceIndex, int startOffset, int blockLength)
@@ -99,7 +98,6 @@ namespace MonoTorrent.Client.Messages.Standard
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
             this.requestLength = blockLength;
-            Data = BufferManager.EmptyBuffer;
         }
 
         #endregion
@@ -116,8 +114,7 @@ namespace MonoTorrent.Client.Messages.Standard
             this.dataOffset = offset;
 
             // This buffer will be freed after the PieceWriter has finished with it
-            this.Data = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref this.Data, requestLength);
+            Data = ClientEngine.BufferManager.GetBuffer(requestLength);
             Buffer.BlockCopy(buffer, offset, this.Data, 0, requestLength);
         }
 

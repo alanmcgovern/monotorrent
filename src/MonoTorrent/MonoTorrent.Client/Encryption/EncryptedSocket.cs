@@ -138,8 +138,8 @@ namespace MonoTorrent.Client.Encryption
             GenerateX();
             GenerateY();
 
-            InitialPayload = BufferManager.EmptyBuffer;
-            RemoteInitialPayload = BufferManager.EmptyBuffer;
+            InitialPayload = Array.Empty<byte> ();
+            RemoteInitialPayload = Array.Empty<byte> ();
 
             bytesReceived = 0;
 
@@ -331,7 +331,7 @@ namespace MonoTorrent.Client.Encryption
                 {
                     initialBufferCount = 0;
                     initialBufferOffset = 0;
-                    initialBuffer = BufferManager.EmptyBuffer;
+                    initialBuffer = Array.Empty<byte> ();
                 }
 
                 if (toCopy != length)

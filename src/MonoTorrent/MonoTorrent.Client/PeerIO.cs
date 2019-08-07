@@ -54,33 +54,37 @@ namespace MonoTorrent.Client
                 message.Decode (buffer, 0, HandshakeMessage.HandshakeLength);
                 return message;
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (ref buffer);
+                ClientEngine.BufferManager.FreeBuffer (buffer);
             }
         }
 
         public static async Task<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor monitor, TorrentManager manager)
         {
-            var messageLengthBuffer = BufferManager.EmptyBuffer;
-            var messageBuffer = BufferManager.EmptyBuffer;
+            byte[] messageLengthBuffer = null;
+            byte[] messageBuffer = null;
 
+            int messageLength = 4;
+            int messageBody;
             try {
-                int messageLength = 4;
-                ClientEngine.BufferManager.GetBuffer (ref messageLengthBuffer, messageLength);
+                messageLengthBuffer = ClientEngine.BufferManager.GetBuffer (messageLength);
                 await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
 
-                int messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0)); ;
+                messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0)); ;
                 if (messageBody < 0 || messageBody > MaxMessageLength)
                     throw new Exception ($"Invalid message length received. Value was '{messageBody}'");
 
                 if (messageBody == 0)
                     return new KeepAliveMessage ();
 
-                ClientEngine.BufferManager.GetBuffer (ref messageBuffer, messageBody + messageLength);
+                messageBuffer = ClientEngine.BufferManager.GetBuffer (messageBody + messageLength);
                 Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageLength);
-                ClientEngine.BufferManager.FreeBuffer (ref messageLengthBuffer);
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer (messageLengthBuffer);
+            }
 
+            try {
                 // Always assume protocol first, then convert to data when we what message it is!
                 await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
@@ -96,8 +100,7 @@ namespace MonoTorrent.Client
                 }
                 return data;
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (ref messageLengthBuffer);
-                ClientEngine.BufferManager.FreeBuffer (ref messageBuffer);
+                ClientEngine.BufferManager.FreeBuffer (messageBuffer);
             }
         }
 
@@ -122,7 +125,7 @@ namespace MonoTorrent.Client
                     managerMonitor?.DataUp.AddDelta(pieceMessage.RequestLength);
                 }
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (ref buffer);
+                ClientEngine.BufferManager.FreeBuffer (buffer);
             }
         }
     }

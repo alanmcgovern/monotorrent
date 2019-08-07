@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.Encryption
                 
             // Send the entire message in one go
             await NetworkIO.SendAsync (socket, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
-            InitialPayload = BufferManager.EmptyBuffer;
+            InitialPayload = Array.Empty<byte> ();
 
             await Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
         }

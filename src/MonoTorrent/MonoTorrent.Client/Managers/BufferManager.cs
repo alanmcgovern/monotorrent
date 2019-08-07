@@ -27,209 +27,119 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Diagnostics;
+
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    enum BufferType
-    {
-        SmallMessageBuffer,
-        MediumMessageBuffer,
-        LargeMessageBuffer,
-        MassiveBuffer
-    }
-
     class BufferManager
     {
-        internal static readonly int SmallMessageBufferSize = 1 << 8;               // 256 bytes
-        internal static readonly int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
-        internal static readonly int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
+        const int AllocateDelta = 8;
 
-        internal bool OwnsBuffer (byte [] buffer)
-        {
-            lock (allocatedBuffers)
-                return allocatedBuffers.Contains (buffer);
-        }
+        const int SmallMessageBufferSize = 256;
+        const int MediumMessageBufferSize = 2048;
+        const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
-        public static readonly byte [] EmptyBuffer = new byte[0];
-
-        private Queue<byte []> largeMessageBuffers;
-        private Queue<byte []> mediumMessageBuffers;
-        private Queue<byte []> smallMessageBuffers;
-        private Queue<byte []> massiveBuffers;
-        HashSet<byte []> allocatedBuffers;
+        HashSet<byte []> AllocatedBuffers { get; }
+        Queue<byte []> LargeMessageBuffers { get; }
+        Queue<byte []> MassiveBuffers { get; }
+        Queue<byte []> MediumMessageBuffers { get; }
+        Queue<byte []> SmallMessageBuffers { get; }
 
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
         public BufferManager()
         {
-            this.massiveBuffers = new Queue<byte []>();
-            this.largeMessageBuffers = new Queue<byte []>();
-            this.mediumMessageBuffers = new Queue<byte []>();
-            this.smallMessageBuffers = new Queue<byte []>();
-            this.allocatedBuffers = new HashSet<byte []>();
+            AllocatedBuffers = new HashSet<byte []>();
+            LargeMessageBuffers = new Queue<byte []>();
+            MassiveBuffers = new Queue<byte []>();
+            MediumMessageBuffers = new Queue<byte []>();
+            SmallMessageBuffers = new Queue<byte []>();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
-            this.AllocateBuffers(4, BufferType.LargeMessageBuffer);
-            this.AllocateBuffers(4, BufferType.MediumMessageBuffer);
-            this.AllocateBuffers(4, BufferType.SmallMessageBuffer);
+            AllocateBuffers(AllocateDelta, LargeMessageBuffers, LargeMessageBufferSize);
+            AllocateBuffers(AllocateDelta, MediumMessageBuffers, MediumMessageBufferSize);
+            AllocateBuffers(AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
-        /// <summary>
-        /// Allocates an existing buffer from the pool
-        /// </summary>
-        /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
-        /// <param name="type">The type of buffer that is needed</param>
-        private void GetBuffer(ref byte[] buffer, BufferType type)
+        public void FreeBuffer(byte [] buffer)
         {
-            // We check to see if the buffer already there is the empty buffer. If it isn't, then we have
-            // a buffer leak somewhere and the buffers aren't being freed properly.
-            if (buffer != EmptyBuffer)
-                throw new TorrentException("The old Buffer should have been recovered before getting a new buffer");
-
-            // If we're getting a small buffer and there are none in the pool, just return a new one.
-            // Otherwise return one from the pool.
-            if (type == BufferType.SmallMessageBuffer)
-                lock (this.smallMessageBuffers)
-                {
-                    if (this.smallMessageBuffers.Count == 0)
-                        this.AllocateBuffers(5, BufferType.SmallMessageBuffer);
-                    buffer = this.smallMessageBuffers.Dequeue();
-                }
-
-            else if (type == BufferType.MediumMessageBuffer)
-                lock (this.mediumMessageBuffers)
-                {
-                    if (this.mediumMessageBuffers.Count == 0)
-                        this.AllocateBuffers(5, BufferType.MediumMessageBuffer);
-                    buffer = this.mediumMessageBuffers.Dequeue();
-                }
-           
-            // If we're getting a large buffer and there are none in the pool, just return a new one.
-            // Otherwise return one from the pool.
-            else if (type == BufferType.LargeMessageBuffer)
-                lock (this.largeMessageBuffers)
-                {
-                    if (this.largeMessageBuffers.Count == 0)
-                        this.AllocateBuffers(5, BufferType.LargeMessageBuffer);
-                    buffer = this.largeMessageBuffers.Dequeue();
-                }
-
-            else
-                throw new TorrentException("You cannot directly request a massive buffer");
-        }
-
-
-        public byte[] GetBuffer (int minCapacity)
-        {
-            var buffer = EmptyBuffer;
-            GetBuffer (ref buffer, minCapacity);
-            return buffer;
-        }
-
-        /// <summary>
-        /// Allocates an existing buffer from the pool
-        /// </summary>
-        /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
-        /// <param name="type">The type of buffer that is needed</param>
-        public void GetBuffer(ref byte[] buffer, int minCapacity)
-        {
-            if (buffer != EmptyBuffer)
-                throw new TorrentException("The old Buffer should have been recovered before getting a new buffer");
-
-            if (minCapacity <= SmallMessageBufferSize)
-                GetBuffer(ref buffer, BufferType.SmallMessageBuffer);
-
-            else if (minCapacity <= MediumMessageBufferSize)
-                GetBuffer(ref buffer, BufferType.MediumMessageBuffer);
-
-            else if (minCapacity <= LargeMessageBufferSize)
-                GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
-
-            else
-            {
-                lock (this.massiveBuffers)
-                {
-                    for (int i = 0; i < massiveBuffers.Count; i++)
-                        if ((buffer = massiveBuffers.Dequeue()).Length >= minCapacity)
-                            return;
-                        else
-                            massiveBuffers.Enqueue(buffer);
-
-                    buffer = new byte[minCapacity];
-                    lock (allocatedBuffers)
-                        allocatedBuffers.Add (buffer);
-                }
-            }
-        }
-
-
-        public void FreeBuffer(byte[] buffer)
-        {
-            FreeBuffer (ref buffer);
-        }
-
-        public void FreeBuffer(ref byte[] buffer)
-        {
-            if (buffer == EmptyBuffer)
+            if (buffer == null)
                 return;
-
-            if (buffer.Length == SmallMessageBufferSize)
-                lock (this.smallMessageBuffers)
-                    this.smallMessageBuffers.Enqueue(buffer);
-
-            else if (buffer.Length == MediumMessageBufferSize)
-                lock (this.mediumMessageBuffers)
-                    this.mediumMessageBuffers.Enqueue(buffer);
-
-            else if (buffer.Length == LargeMessageBufferSize)
-                lock (this.largeMessageBuffers)
-                    this.largeMessageBuffers.Enqueue(buffer);
-
-            else if (buffer.Length > LargeMessageBufferSize)
-                lock (this.massiveBuffers)
-                    this.massiveBuffers.Enqueue(buffer);
 
             // All buffers should be allocated in this class, so if something else is passed in that isn't the right size
             // We just throw an exception as someone has done something wrong.
-            else
+            if (!OwnsBuffer (buffer))
                 throw new TorrentException("That buffer wasn't created by this manager");
 
-            buffer = EmptyBuffer; // After recovering the buffer, we send the "EmptyBuffer" back as a placeholder
+            if (buffer.Length == SmallMessageBufferSize)
+                lock (SmallMessageBuffers)
+                    SmallMessageBuffers.Enqueue(buffer);
+
+            else if (buffer.Length == MediumMessageBufferSize)
+                lock (MediumMessageBuffers)
+                    MediumMessageBuffers.Enqueue(buffer);
+
+            else if (buffer.Length == LargeMessageBufferSize)
+                lock (LargeMessageBuffers)
+                    LargeMessageBuffers.Enqueue(buffer);
+
+            else if (buffer.Length > LargeMessageBufferSize)
+                lock (MassiveBuffers)
+                    MassiveBuffers.Enqueue(buffer);
         }
 
-        private void AllocateBuffers(int number, BufferType type)
+        public byte[] GetBuffer (int minCapacity)
         {
-            Queue<byte []> bufferQueue;
-            int bufferSize;
+            if (minCapacity <= SmallMessageBufferSize)
+                return GetBuffer(SmallMessageBuffers, SmallMessageBufferSize);
 
-            switch (type) {
-                case BufferType.SmallMessageBuffer:
-                    bufferQueue = smallMessageBuffers;
-                    bufferSize = SmallMessageBufferSize;
-                    break;
-                case BufferType.MediumMessageBuffer:
-                    bufferQueue = mediumMessageBuffers;
-                    bufferSize = MediumMessageBufferSize;
-                    break;
-                case BufferType.LargeMessageBuffer:
-                    bufferQueue = largeMessageBuffers;
-                    bufferSize = LargeMessageBufferSize;
-                    break;
-                default:
-                    throw new ArgumentException("Unsupported BufferType detected");
+            if (minCapacity <= MediumMessageBufferSize)
+                return GetBuffer(MediumMessageBuffers, MediumMessageBufferSize);
+
+            if (minCapacity <= LargeMessageBufferSize)
+                return GetBuffer(LargeMessageBuffers, LargeMessageBufferSize);
+
+            lock (MassiveBuffers)
+            {
+                byte[] buffer;
+                for (int i = 0; i < MassiveBuffers.Count; i++)
+                    if ((buffer = MassiveBuffers.Dequeue()).Length >= minCapacity)
+                        return buffer;
+                    else
+                        MassiveBuffers.Enqueue(buffer);
+
+                buffer = new byte[minCapacity];
+                lock (AllocatedBuffers)
+                    AllocatedBuffers.Add (buffer);
+                return buffer;
             }
+        }
 
-            while (number -- > 0) {
+        byte[] GetBuffer(Queue<byte []> buffers, int bufferSize)
+        {
+            lock (buffers) {
+                if (buffers.Count == 0)
+                    AllocateBuffers (AllocateDelta, buffers, bufferSize);
+                return buffers.Dequeue ();
+            }
+        }
+
+        public bool OwnsBuffer (byte [] buffer)
+        {
+            lock (AllocatedBuffers)
+                return AllocatedBuffers.Contains (buffer);
+        }
+
+        void AllocateBuffers (int count, Queue<byte []> bufferQueue, int bufferSize)
+        {
+            while (count -- > 0) {
                 var buffer = new byte [bufferSize];
                 bufferQueue.Enqueue (buffer);
-                lock (allocatedBuffers)
-                    allocatedBuffers.Add (buffer);
+                lock (AllocatedBuffers)
+                    AllocatedBuffers.Add (buffer);
             }
         }
     }
