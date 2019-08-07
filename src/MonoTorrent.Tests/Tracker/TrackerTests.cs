@@ -57,7 +57,7 @@ namespace MonoTorrent.Tracker
                         handle.Set();
                 };
                 var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new string('1', 20), "", 1411);
+                                                                       infoHash, false, new string('1', 20), "", 1411, false);
                 await tier.Trackers[0].AnnounceAsync(parameters);
             }
 

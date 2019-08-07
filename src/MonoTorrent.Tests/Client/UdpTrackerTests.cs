@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             TorrentEvent.Completed,
             new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
-            false, new string('a', 20), null, 1515);
+            false, new string('a', 20), null, 1515, false);
         ScrapeParameters scrapeParams = new ScrapeParameters(new InfoHash(new byte[20]));
         MonoTorrent.Tracker.Tracker server;
         UdpTracker tracker;

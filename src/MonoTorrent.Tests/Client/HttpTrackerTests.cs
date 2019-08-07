@@ -46,9 +46,9 @@ namespace MonoTorrent.Client
             keys.Clear();
             tracker = (HTTPTracker) TrackerFactory.Create(AnnounceUrl);
             
-            announceParams = new AnnounceParameters();
-            announceParams.PeerId = "id";
-            announceParams.InfoHash = new InfoHash (new byte[20]);
+            announceParams = new AnnounceParameters()
+                .WithPeerId ("id")
+                .WithInfoHash (new InfoHash (new byte[20]));
 
             scrapeParams = new ScrapeParameters (new InfoHash (new byte[20]));
         }
@@ -128,19 +128,19 @@ namespace MonoTorrent.Client
             Assert.AreEqual(0, tracker.Incomplete, "#2");
             Assert.AreEqual(0, tracker.Downloaded, "#3");
 
-            await tracker.AnnounceAsync(new AnnounceParameters (0, 0, 100, TorrentEvent.Started, infoHash, false, "peer1", null, 1));
+            await tracker.AnnounceAsync(new AnnounceParameters (0, 0, 100, TorrentEvent.Started, infoHash, false, "peer1", null, 1, false));
             await tracker.ScrapeAsync(scrapeParams);
             Assert.AreEqual(0, tracker.Complete, "#4");
             Assert.AreEqual(1, tracker.Incomplete, "#5");
             Assert.AreEqual(0, tracker.Downloaded, "#6");
 
-            await tracker.AnnounceAsync(new AnnounceParameters (0, 0, 0, TorrentEvent.Started, infoHash, false, "peer2", null, 2));
+            await tracker.AnnounceAsync(new AnnounceParameters (0, 0, 0, TorrentEvent.Started, infoHash, false, "peer2", null, 2, false));
             await tracker.ScrapeAsync(scrapeParams);
             Assert.AreEqual(1, tracker.Complete, "#7");
             Assert.AreEqual(1, tracker.Incomplete, "#8");
             Assert.AreEqual(0, tracker.Downloaded, "#9");
 
-            await tracker.AnnounceAsync(new AnnounceParameters (0, 0, 0, TorrentEvent.Completed, infoHash, false, "peer3", null, 3));
+            await tracker.AnnounceAsync(new AnnounceParameters (0, 0, 0, TorrentEvent.Completed, infoHash, false, "peer3", null, 3, false));
             await tracker.ScrapeAsync(scrapeParams);
             Assert.AreEqual(2, tracker.Complete, "#10");
             Assert.AreEqual(1, tracker.Incomplete, "#11");

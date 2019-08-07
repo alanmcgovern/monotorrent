@@ -187,8 +187,7 @@ namespace MonoTorrent.Client.Tracker
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 bytesLeft,
                                                 clientEvent, this.infoHash, requireEncryption, manager.Engine.PeerId,
-                                                ip, port);
-            p.SupportsEncryption = supportsEncryption;
+                                                ip, port, supportsEncryption);
             try {
                 var peers = await tracker.AnnounceAsync(p);
                 await OnAnnounceComplete(tracker, peers, trySubsequent, clientEvent, true);

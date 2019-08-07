@@ -150,8 +150,8 @@ namespace MonoTorrent.Client.Tracker
                 b.Add ("requirecrypto", 1);
             if (!b.Contains ("key"))
                 b.Add ("key", Key);
-            if (!string.IsNullOrEmpty (parameters.Ipaddress))
-                b.Add ("ip", parameters.Ipaddress);
+            if (!string.IsNullOrEmpty (parameters.IPAddress))
+                b.Add ("ip", parameters.IPAddress);
 
             // If we have not successfully sent the started event to this tier, override the passed in started event
             // Otherwise append the event if it is not "none"
