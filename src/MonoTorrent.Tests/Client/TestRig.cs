@@ -482,7 +482,7 @@ namespace MonoTorrent.Client
 
         static TestRig()
         {
-            TrackerFactory.Register("custom", typeof(CustomTracker));
+            TrackerFactory.Register("custom", uri => new CustomTracker (uri));
         }
 
         private static void AddAnnounces(BEncodedDictionary dict, string[][] tiers)

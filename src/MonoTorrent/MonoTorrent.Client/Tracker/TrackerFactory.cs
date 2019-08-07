@@ -27,47 +27,44 @@
 //
 
 using System;
-using System.Net;
-using System.Threading;
-using MonoTorrent.Common;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Tracker
 {
     public static class TrackerFactory
     {
-        static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
-
-        static TrackerFactory()
-        {
-            // Register builtin tracker clients
-            Register("udp", typeof(UdpTracker));
-            Register("http", typeof(HTTPTracker));
-            Register("https", typeof(HTTPTracker));
-        }
+        static readonly Dictionary<string, Func<Uri, Tracker>> trackerTypes = new Dictionary<string, Func<Uri, Tracker>> {
+            { "udp", uri => new UdpTracker (uri) },
+            { "http", uri => new HTTPTracker (uri) },
+            { "https", uri => new HTTPTracker (uri) },
+        };
 
         public static void Register(string protocol, Type trackerType)
         {
             if (string.IsNullOrEmpty(protocol))
                 throw new ArgumentException("cannot be null or empty", protocol);
-
             if (trackerType == null)
-                throw new ArgumentNullException("trackerType");
+                throw new ArgumentNullException(nameof(trackerType));
 
+            Register (protocol, uri => (Tracker) Activator.CreateInstance (trackerType, uri));
+        }
+
+        public static void Register(string protocol, Func<Uri, Tracker> creator)
+        {
             lock (trackerTypes)
-                trackerTypes.Add(protocol, trackerType);
+                trackerTypes[protocol] = creator;
         }
 
         public static Tracker Create(Uri uri)
         {
             Check.Uri(uri);
 
-            if (!trackerTypes.ContainsKey(uri.Scheme))
-                return null;
-			
-            try
-            {
-                return (Tracker)Activator.CreateInstance(trackerTypes[uri.Scheme], uri);
+            try {
+                lock (trackerTypes) {
+                    if (trackerTypes.TryGetValue (uri.Scheme, out Func<Uri, Tracker> creator))
+                        return creator (uri);
+                    return null;
+                }
             }
             catch
             {

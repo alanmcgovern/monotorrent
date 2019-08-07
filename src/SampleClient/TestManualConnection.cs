@@ -266,7 +266,7 @@ namespace SampleClient
 
         static EngineTestRig()
         {
-            TrackerFactory.Register("custom", typeof(CustomTracker));
+            TrackerFactory.Register("custom", uri => new CustomTracker (uri));
         }
 
         public EngineTestRig(string savePath)
