@@ -31,23 +31,20 @@ namespace MonoTorrent.Common
 {
     public struct FileMapping
     {
-        string source;
-        string destination;
+        /// <summary>
+        /// This is the full path to the file on disk
+        /// </summary>
+        public string Source { get; }
 
-        public string Source
-        {
-            get { return source; }
-        }
-
-        public string Destination
-        {
-            get { return destination; }
-        }
+        /// <summary>
+        /// This is the relative path to the file within the Torrent
+        /// </summary>
+        public string Destination { get; }
 
         public FileMapping (string source, string destination)
         {
-            this.source = source;
-            this.destination = destination;
+            Source = source;
+            Destination = destination;
         }
     }
 }

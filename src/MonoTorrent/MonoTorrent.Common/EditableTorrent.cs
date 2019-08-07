@@ -76,19 +76,19 @@ namespace MonoTorrent
             set { SetString (InfoDict, PublisherUrlKey, value); }
         }
 
-        public EditableTorrent ()
+        protected EditableTorrent ()
             : this (new BEncodedDictionary ())
         {
 
         }
 
-        public EditableTorrent (Torrent torrent)
+        protected EditableTorrent (Torrent torrent)
         {
             Check.Torrent (torrent);
             Initialise (torrent.ToDictionary ());
         }
 
-        public EditableTorrent (BEncodedDictionary metadata)
+        protected EditableTorrent (BEncodedDictionary metadata)
         {
             Check.Metadata (metadata);
             Initialise (BEncodedValue.Clone (metadata));
@@ -165,16 +165,6 @@ namespace MonoTorrent
             CheckCanEditSecure ();
             Check.Key (key);
             InfoDict.Remove (key);
-        }
-
-        public BEncodedDictionary ToDictionary ()
-        {
-            return BEncodedValue.Clone (Metadata);
-        }
-
-        public Torrent ToTorrent ()
-        {
-            return Torrent.Load (ToDictionary ());
         }
 
         protected BEncodedDictionary GetDictionary (BEncodedDictionary dictionary, BEncodedString key)

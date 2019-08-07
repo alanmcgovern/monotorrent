@@ -52,5 +52,15 @@ namespace MonoTorrent
         {
 
         }
+
+        public BEncodedDictionary ToDictionary ()
+        {
+            return BEncodedValue.Clone (Metadata);
+        }
+
+        public Torrent ToTorrent ()
+        {
+            return Torrent.Load (ToDictionary ());
+        }
     }
 }

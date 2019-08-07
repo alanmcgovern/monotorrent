@@ -6,87 +6,56 @@ namespace MonoTorrent.Common
 {
     public class TorrentCreatorEventArgs : EventArgs
     {
-        #region Member Variables
-
-        private long fileHashed;
-        private long fileTotal;
-        private long overallHashed;
-        private long overallTotal;
-        private string file;
-
-        #endregion Member Variables
-
-
         #region Properties
 
         /// <summary>
         /// The number of bytes hashed from the current file
         /// </summary>
-        public long FileBytesHashed
-        {
-            get { return fileHashed; }
-        }
+        public long FileBytesHashed { get; }
 
         /// <summary>
         /// The size of the current file
         /// </summary>
-        public long FileSize
-        {
-            get { return fileTotal; }
-        }
+        public long FileSize { get; }
 
         /// <summary>
-        /// The percentage of the current file which has been hashed (range 0-100)
+        /// The percentage of the current file which has been hashed (range 0-1)
         /// </summary>
         public double FileCompletion
-        {
-            get { return fileHashed / (double)fileTotal * 100.0; }
-        }
+            => FileBytesHashed / (double)FileSize;
 
         /// <summary>
         /// The number of bytes hashed so far
         /// </summary>
-        public long OverallBytesHashed
-        {
-            get { return this.overallHashed; }
-        }
+        public long OverallBytesHashed { get; }
 
         /// <summary>
         /// The total number of bytes to hash
         /// </summary>
-        public long OverallSize
-        {
-            get { return overallTotal; }
-        }
+        public long OverallSize { get; }
 
         /// <summary>
-        /// The percentage of the data which has been hashed (range 0-100)
+        /// The percentage of the data which has been hashed (range 0-1)
         /// </summary>
         public double OverallCompletion
-        {
-            get { return overallHashed / (double)overallTotal * 100.0; }
-        }
+            => OverallBytesHashed / (double)OverallSize;
 
         /// <summary>
         /// The path of the current file
         /// </summary>
-        public string CurrentFile 
-        { 
-            get { return file; }
-        }
+        public string CurrentFile { get; }
 
         #endregion Properties
-
 
         #region Constructors
 
         internal TorrentCreatorEventArgs(string file, long fileHashed, long fileTotal, long overallHashed, long overallTotal)
         {
-            this.file = file;
-            this.fileHashed = fileHashed;
-            this.fileTotal = fileTotal;
-            this.overallHashed = overallHashed;
-            this.overallTotal = overallTotal;
+            CurrentFile = file;
+            FileBytesHashed = fileHashed;
+            FileSize = fileTotal;
+            OverallBytesHashed = overallHashed;
+            OverallSize = overallTotal;
         }
 
         #endregion Constructors
