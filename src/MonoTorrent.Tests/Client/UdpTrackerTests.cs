@@ -39,6 +39,7 @@ using MonoTorrent.Client;
 using System.Threading;
 using System.Net;
 using System.Threading.Tasks;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Client
 {
@@ -61,7 +62,7 @@ namespace MonoTorrent.Client
             keys = new List<string>();
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
-            listener = new IgnoringListener(6767);
+            listener = new IgnoringListener(0);
             listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceParameters e)
             {
                 keys.Add(e.Key);
@@ -75,7 +76,8 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             keys.Clear();
-            tracker = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:6767/announce/"));
+            tracker = (UdpTracker)TrackerFactory.Create(new Uri($"udp://127.0.0.1:{listener.ListenEndPoint.Port}/announce/"));
+            announceparams = announceparams.WithPort (listener.ListenEndPoint.Port);
             tracker.RetryDelay = TimeSpan.FromMilliseconds (50);
 
             listener.IgnoreAnnounces = false;
@@ -299,28 +301,28 @@ namespace MonoTorrent.Client
 
         }
 
-        protected override void ReceiveConnect(ConnectMessage connectMessage)
+        protected override async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreConnects)
-                base.ReceiveConnect(connectMessage);
+                await base.ReceiveConnect(client, connectMessage, remotePeer);
         }
 
-        protected override void ReceiveAnnounce(AnnounceMessage announceMessage)
+        protected override async Task ReceiveAnnounce(UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreAnnounces)
-                base.ReceiveAnnounce(announceMessage);
+                await base.ReceiveAnnounce(client, announceMessage, remotePeer);
         }
 
-        protected override void ReceiveError(ErrorMessage errorMessage)
+        protected override async Task ReceiveError(UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreErrors)
-                base.ReceiveError(errorMessage);
+                await base.ReceiveError(client, errorMessage, remotePeer);
         }
 
-        protected override void ReceiveScrape(ScrapeMessage scrapeMessage)
+        protected override async Task ReceiveScrape(UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreScrapes)
-                base.ReceiveScrape(scrapeMessage);
+                await base.ReceiveScrape(client, scrapeMessage, remotePeer);
         }
     }
 }

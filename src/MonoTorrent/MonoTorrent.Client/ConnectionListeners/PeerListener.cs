@@ -27,16 +27,13 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Net;
+
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Common;
-using System.Net.Sockets;
 
 namespace MonoTorrent.Client
 {
-    public abstract class PeerListener : Listener
+    abstract class PeerListener : Listener, IPeerListener
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
 

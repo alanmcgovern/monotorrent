@@ -157,7 +157,7 @@ namespace MonoTorrent.Client
             => Name;
     }
 
-    public class CustomListener : PeerListener
+    class CustomListener : PeerListener
     {
         public override void Start()
         {
@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class TestRig : IDisposable
+    class TestRig : IDisposable
     {
         static Random Random = new Random(1000);
         static int port = 10000;

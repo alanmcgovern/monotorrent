@@ -1,49 +1,46 @@
 using System;
 using System.Net;
-
+using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
-    internal class TestListener : DhtListener
+    class TestListener : IDhtListener
     {
-        private bool started;
-
         public event Action<Message, IPEndPoint> MessageSent;
+        public event MessageReceived MessageReceived;
+        public event EventHandler<EventArgs> StatusChanged;
 
-        public TestListener()
-            : base(new IPEndPoint(IPAddress.Loopback, 0))
-        {
+        public IPEndPoint Endpoint { get; private set; } = new IPEndPoint(IPAddress.Loopback, 0);
+        public ListenerStatus Status { get; private set; }
 
-        }
+        public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
+            => MessageReceived?.Invoke (message.Encode (), endpoint);
 
-        public bool Started
-        {
-            get { return started; }
-        }
+        public void ChangeEndpoint (IPEndPoint endpoint)
+            => Endpoint = endpoint;
 
-        public override void Send(byte[] buffer, IPEndPoint endpoint)
+        public Task SendAsync(byte[] buffer, IPEndPoint endpoint)
         {
             Message message;
             MessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out message);
             MessageSent?.Invoke (message, endpoint);
+            return Task.CompletedTask;
         }
 
-        public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
-        {
-            OnMessageReceived(message.Encode(), endpoint);
-        }
+        public void Start ()
+            => SetStatus (ListenerStatus.Listening);
 
-        public override void Start()
-        {
-            started = true;
-        }
+        public void Stop ()
+            => SetStatus (ListenerStatus.NotListening);
 
-        public override void Stop()
+        void SetStatus (ListenerStatus status)
         {
-            started = false;
+            Status = status;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
         }
     }
 }

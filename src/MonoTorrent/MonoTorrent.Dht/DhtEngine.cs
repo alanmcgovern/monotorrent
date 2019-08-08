@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -80,7 +81,16 @@ namespace MonoTorrent.Dht
 
         #region Constructors
 
-        public DhtEngine(DhtListener listener)
+        /// <summary>
+        /// Creates a new DhtEngine which listens for connections on the given endpoint
+        /// </summary>
+        /// <param name="listenerEndpoint">The IPAddresss/port which the engine should listen on</param>
+        public DhtEngine (IPEndPoint listenerEndpoint)
+            : this (new DhtListener (listenerEndpoint))
+        {
+        }
+
+        public DhtEngine(IDhtListener listener)
         {
             if (listener == null)
                 throw new ArgumentNullException(nameof (listener));

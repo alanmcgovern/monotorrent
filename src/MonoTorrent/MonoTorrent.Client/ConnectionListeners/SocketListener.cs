@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Accepts incoming connections and passes them off to the right TorrentManager
     /// </summary>
-    public sealed class SocketListener : PeerListener
+    sealed class SocketListener : PeerListener
     {
         Socket listener;
         SocketAsyncEventArgs connectArgs;
