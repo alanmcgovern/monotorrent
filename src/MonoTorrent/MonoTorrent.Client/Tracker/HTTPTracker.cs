@@ -282,8 +282,6 @@ namespace MonoTorrent.Client.Tracker
 
         void ScrapeReceived (WebRequest request, WebResponse response)
         {
-            string message = "";
-
             try
             {
                 BEncodedDictionary d;
@@ -292,7 +290,6 @@ namespace MonoTorrent.Client.Tracker
                 // FIXME: Log the failure?
                 if (!dict.ContainsKey("files"))
                 {
-                    message = "Response contained no data";
                     return;
                 }
                 BEncodedDictionary files = (BEncodedDictionary)dict["files"];
@@ -324,12 +321,10 @@ namespace MonoTorrent.Client.Tracker
             }
             catch (WebException)
             {
-                message = "The tracker could not be contacted";
                 throw;
             }
             catch
             {
-                message = "The tracker returned an invalid or incomplete response";
                 throw;
             }
         }
