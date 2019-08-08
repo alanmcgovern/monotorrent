@@ -556,15 +556,15 @@ namespace MonoTorrent.Client
             if (tracker != null && (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading))
             {
                 // If the last connection succeeded, then update at the regular interval
-                if (Manager.TrackerManager.UpdateSucceeded)
+                if (Manager.TrackerManager.LastAnnounceSucceeded)
                 {
-                    if (DateTime.Now > (Manager.TrackerManager.LastUpdated.Add(tracker.UpdateInterval)))
+                    if (Manager.TrackerManager.TimeSinceLastAnnounce > tracker.UpdateInterval)
                     {
                         _ = Manager.TrackerManager.Announce(TorrentEvent.None);
                     }
                 }
                 // Otherwise update at the min interval
-                else if (DateTime.Now > (Manager.TrackerManager.LastUpdated.Add(tracker.MinUpdateInterval)))
+                else if (Manager.TrackerManager.TimeSinceLastAnnounce > tracker.MinUpdateInterval)
                 {
                     _ = Manager.TrackerManager.Announce(TorrentEvent.None);
                 }

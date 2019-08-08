@@ -37,6 +37,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -49,37 +50,41 @@ namespace MonoTorrent.Client.Tracker
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         #region Member Variables
-        private TorrentManager manager;
 
         /// <summary>
-        /// Returns the tracker that is current in use by the engine
+        /// Returns the tracker which responded to the most recent Announce request.
         /// </summary>
         public ITracker CurrentTracker => Tiers.SelectMany (t => t.Trackers).OrderBy (t => t.TimeSinceLastAnnounce).FirstOrDefault ();
 
         /// <summary>
-        /// True if the last update succeeded
+        /// True if the most recent Announce request was successful.
         /// </summary>
-        public bool UpdateSucceeded
-        {
-            get { return this.updateSucceeded; }
-        }
-        private bool updateSucceeded;
-
+        public bool LastAnnounceSucceeded { get; private set; }
 
         /// <summary>
-        /// The time the last tracker update was sent to any tracker
+        /// The timer tracking the time since the most recent Announce request was sent.
         /// </summary>
-        public DateTime LastUpdated
-        {
-            get { return this.lastUpdated; }
-        }
-        private DateTime lastUpdated;
-
+        Stopwatch LastAnnounce { get; }
 
         /// <summary>
-        /// The trackers available
+        /// The time, in UTC, when the most recent Announce request was sent
+        /// </summary>
+        public DateTime LastUpdated { get; private set; }
+
+        /// <summary>
+        /// The TorrentManager associated with this tracker
+        /// </summary>
+        TorrentManager Manager { get; set; }
+
+        /// <summary>
+        /// The available trackers.
         /// </summary>
         public IList<TrackerTier> Tiers { get; }
+
+        /// <summary>
+        /// The amount of time since the most recent Announce request was issued.
+        /// </summary>
+        internal TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
 
         #endregion
 
@@ -92,13 +97,13 @@ namespace MonoTorrent.Client.Tracker
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
         public TrackerManager(TorrentManager manager, IList<RawTrackerTier> announces)
         {
-            this.manager = manager;
+            Manager = manager;
+            LastAnnounce = new Stopwatch ();
 
             // Check if this tracker supports scraping
             var trackerTiers = new List<TrackerTier>();
             for (int i = 0; i < announces.Count; i++)
                 trackerTiers.Add(new TrackerTier(announces[i]));
-
             trackerTiers.RemoveAll(delegate(TrackerTier t) { return t.Trackers.Count == 0; });
             Tiers = trackerTiers.AsReadOnly ();
         }
@@ -125,14 +130,14 @@ namespace MonoTorrent.Client.Tracker
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            ClientEngine engine = manager.Engine;
+            ClientEngine engine = Manager.Engine;
             
             // If the engine is null, we have been unregistered
             if (engine == null)
                 return;
 
-            this.updateSucceeded = true;
-            this.lastUpdated = DateTime.Now;
+            LastAnnounce.Restart ();
+            LastUpdated = DateTime.UtcNow;
 
             EncryptionTypes e = engine.Settings.AllowedEncryption;
             bool requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.PlainText);
@@ -148,13 +153,13 @@ namespace MonoTorrent.Client.Tracker
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.
             long bytesLeft = 1000;
-            if (manager.HasMetadata)
-                bytesLeft = (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size);
+            if (Manager.HasMetadata)
+                bytesLeft = (long)((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
 
-            AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
-                                                this.manager.Monitor.DataBytesUploaded,
+            AnnounceParameters p = new AnnounceParameters(Manager.Monitor.DataBytesDownloaded,
+                                                Manager.Monitor.DataBytesUploaded,
                                                 bytesLeft,
-                                                clientEvent, manager.InfoHash, requireEncryption, manager.Engine.PeerId,
+                                                clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId,
                                                 ip, port, supportsEncryption);
 
             foreach (var tuple in GetNextTracker (referenceTracker)) {
@@ -167,18 +172,19 @@ namespace MonoTorrent.Client.Tracker
                         actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
 
                     var peers = await tuple.Item2.AnnounceAsync(actualArgs);
-                    manager.Peers.BusyPeers.Clear ();
-                    int count = await manager.AddPeersAsync(peers);
-                    manager.RaisePeersFound(new TrackerPeersAdded(manager, count, peers.Count, tuple.Item2));
+                    Manager.Peers.BusyPeers.Clear ();
+                    int count = await Manager.AddPeersAsync(peers);
+                    Manager.RaisePeersFound(new TrackerPeersAdded(Manager, count, peers.Count, tuple.Item2));
 
-                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tuple.Item2, true, peers));
+                    LastAnnounceSucceeded = true;
+                    Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (tuple.Item2, true, peers));
                     return;
                 } catch {
                 }
             }
 
-            updateSucceeded = false;
-            AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (null, false));
+            LastAnnounceSucceeded = false;
+            Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (null, false));
         }
 
         public async Task Scrape()
@@ -195,10 +201,10 @@ namespace MonoTorrent.Client.Tracker
             if (tuple != null && !tuple.Item2.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
             try {
-                await tuple.Item2.ScrapeAsync(new ScrapeParameters(manager.InfoHash));
-                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tuple.Item2, true));
+                await tuple.Item2.ScrapeAsync(new ScrapeParameters(Manager.InfoHash));
+                Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, true));
             } catch {
-                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tuple.Item2, false));
+                Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, false));
             }
         }
 
