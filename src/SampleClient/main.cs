@@ -89,10 +89,8 @@ namespace MonoTorrent
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
 
-            DhtListener dhtListner = new DhtListener (new IPEndPoint (IPAddress.Any, port));
-            DhtEngine dht = new DhtEngine (dhtListner);
+            DhtEngine dht = new DhtEngine (new IPEndPoint (IPAddress.Any, port));
             await engine.RegisterDhtAsync(dht);
-            dhtListner.Start();
 
             // This starts the Dht engine but does not wait for the full initialization to
             // complete. This is because it can take up to 2 minutes to bootstrap, depending

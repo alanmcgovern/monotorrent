@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
 
         public bool Disposed { get; private set; }
 
-        public PeerListener Listener { get; }
+        public IPeerListener Listener { get; }
 
         public bool LocalPeerSearchEnabled
         {
@@ -161,13 +161,13 @@ namespace MonoTorrent.Client
 
         }
 
-        public ClientEngine(EngineSettings settings, PeerListener listener)
+        public ClientEngine(EngineSettings settings, IPeerListener listener)
             : this (settings, listener, new DiskWriter())
         {
 
         }
 
-        public ClientEngine(EngineSettings settings, PeerListener listener, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, IPeerListener listener, PieceWriter writer)
         {
             Check.Settings(settings);
             Check.Listener(listener);

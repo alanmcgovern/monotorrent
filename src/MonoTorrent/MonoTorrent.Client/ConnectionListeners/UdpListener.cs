@@ -34,10 +34,11 @@ using System.Threading;
 
 using MonoTorrent.Client;
 using MonoTorrent.Common;
+using System.Threading.Tasks;
 
 namespace MonoTorrent
 {
-    public abstract class UdpListener : Listener
+    abstract class UdpListener : Listener
     {
         CancellationTokenSource Cancellation { get; set; }
         UdpClient Client { get; set; }
@@ -50,12 +51,12 @@ namespace MonoTorrent
 
 		protected abstract void OnMessageReceived(byte[] buffer, IPEndPoint endpoint);
 
-        public virtual void Send(byte[] buffer, IPEndPoint endpoint)
+        public virtual async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
             try
             {
                if (endpoint.Address != IPAddress.Any)
-                    Client.Send(buffer, buffer.Length, endpoint);
+                    await Client.SendAsync (buffer, buffer.Length, endpoint);
             }
             catch(Exception ex)
             {

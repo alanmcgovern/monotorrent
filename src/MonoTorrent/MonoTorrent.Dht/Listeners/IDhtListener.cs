@@ -1,10 +1,10 @@
-//
-// Listener.cs
+﻿//
+// IDhtListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,47 +26,18 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
+
 using System.Net;
+using System.Threading.Tasks;
 
-using MonoTorrent.Common;
+using MonoTorrent.Client;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Dht.Listeners
 {
-    abstract class Listener : IListener
+    public interface IDhtListener : IListener
     {
-        public event EventHandler<EventArgs> StatusChanged;
+        event MessageReceived MessageReceived;
 
-        public IPEndPoint Endpoint { get; private set; }
-
-		public ListenerStatus Status { get; private set; }
-
-
-		protected Listener(IPEndPoint endpoint)
-        {
-            Status = ListenerStatus.NotListening;
-            Endpoint = endpoint;
-        }
-
-        public void ChangeEndpoint(IPEndPoint endpoint)
-        {
-            Endpoint = endpoint;
-            if (Status != ListenerStatus.NotListening)
-            {
-                Stop();
-                Start();
-            }
-        }
-
-        protected virtual void RaiseStatusChanged(ListenerStatus status)
-        {
-            Status = status;
-            if (StatusChanged != null)
-                Toolbox.RaiseAsyncEvent<EventArgs>(StatusChanged, this, EventArgs.Empty);
-        }
-
-        public abstract void Start();
-
-        public abstract void Stop();
+        Task SendAsync (byte[] buffer, IPEndPoint endpoint);
     }
 }

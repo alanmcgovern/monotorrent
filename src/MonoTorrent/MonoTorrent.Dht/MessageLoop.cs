@@ -62,7 +62,7 @@ namespace MonoTorrent.Dht
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
         DhtEngine engine;
-        DhtListener listener;
+        IDhtListener listener;
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
@@ -72,18 +72,18 @@ namespace MonoTorrent.Dht
         internal int PendingQueries
             => waitingResponse.Count;
 
-        public MessageLoop(DhtEngine engine, DhtListener listener)
+        public MessageLoop(DhtEngine engine, IDhtListener listener)
         {
             this.engine = engine;
             this.listener = listener;
             listener.MessageReceived += MessageReceived;
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), () => {
                 if (engine.Disposed)
                     return false;
                 try
                 {
                     for (int i = 0; i < 5 && sendQueue.Count > 0; i ++)
-                        SendMessage();
+                        SendMessage().Wait ();
 
                     while (receiveQueue.Count > 0)
                         ReceiveMessage();
@@ -135,7 +135,7 @@ namespace MonoTorrent.Dht
         void RaiseMessageSent(Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
             => QuerySent?.Invoke (this, new SendQueryEventArgs(node, endpoint, query, error));
 
-        private void SendMessage()
+        private async Task SendMessage()
         {
             var details = sendQueue.Dequeue();
 
@@ -144,7 +144,7 @@ namespace MonoTorrent.Dht
                 waitingResponse.Add(details.Message.TransactionId, details);
 
             byte[] buffer = details.Message.Encode();
-            listener.Send(buffer, details.Destination);
+            await listener.SendAsync(buffer, details.Destination);
         }
 
         internal void Start()

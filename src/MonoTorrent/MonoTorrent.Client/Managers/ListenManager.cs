@@ -42,12 +42,12 @@ namespace MonoTorrent.Client
         {
         }
 
-        public void Register(PeerListener listener)
+        public void Register(IPeerListener listener)
         {
             listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
 
-        public void Unregister(PeerListener listener)
+        public void Unregister(IPeerListener listener)
         {
             listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }

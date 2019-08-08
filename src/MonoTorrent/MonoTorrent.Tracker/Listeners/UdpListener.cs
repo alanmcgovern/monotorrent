@@ -26,33 +26,36 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using System.IO;
-using System.Net;
-using System.Web;
-using System.Text;
-using System.Collections.Specialized;
-using System.Diagnostics;
 
-using MonoTorrent.Common;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Messages.UdpTracker;
-using MonoTorrent.Client;
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
+using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Tracker.Listeners
 {
     public class UdpListener : ListenerBase
     {
-
-        private System.Net.Sockets.UdpClient listener;
-        private IPEndPoint endpoint;
-        private Dictionary<IPAddress, long> connectionIDs;
         private long curConnectionID;
         //TODO system to clear old connectionID...
+
+        CancellationTokenSource Cancellation { get; set; }
+        Dictionary<IPAddress, long> ConnectionIDs { get ; }
+        IPEndPoint EndPoint { get; }
+        UdpClient Listener { get; set; }
+
+        public IPEndPoint ListenEndPoint => (IPEndPoint) Listener?.Client.LocalEndPoint;
+
         public override bool Running
         {
-            get { return listener != null; }
+            get { return Listener != null; }
         }
 
         public UdpListener(int port)
@@ -62,8 +65,8 @@ namespace MonoTorrent.Tracker.Listeners
 
         public UdpListener(IPEndPoint endpoint)
         {
-            this.endpoint = endpoint;
-            connectionIDs = new Dictionary<IPAddress, long>();
+            EndPoint = endpoint;
+            ConnectionIDs = new Dictionary<IPAddress, long>();
         }
 
         /// <summary>
@@ -74,11 +77,16 @@ namespace MonoTorrent.Tracker.Listeners
             if (Running)
                 return;
 
-            //TODO test if it is better to use socket directly
-            //Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            
-            listener = new System.Net.Sockets.UdpClient(endpoint.Port);
-            listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
+            Cancellation?.Cancel ();
+            Cancellation = new CancellationTokenSource ();
+
+            var listener = Listener = new UdpClient(EndPoint.Port);
+            Cancellation.Token.Register (() => {
+                listener.SafeDispose ();
+                Listener = null;
+            });
+
+            ReceiveAsync (listener, Cancellation.Token);
         }
 
         /// <summary>
@@ -88,73 +96,83 @@ namespace MonoTorrent.Tracker.Listeners
         {
             if (!Running)
                 return;
-			System.Net.Sockets.UdpClient listener = this.listener;
-			this.listener = null;
-            listener.Close();
+
+            Cancellation?.Dispose ();
+            Cancellation = null;
         }
 
-        private void ReceiveData(IAsyncResult ar)
+        async void ReceiveAsync (UdpClient client, CancellationToken token)
         {
-            try
-            {
-                System.Net.Sockets.UdpClient listener = (System.Net.Sockets.UdpClient)ar.AsyncState;
-                byte[] data = listener.EndReceive(ar, ref endpoint);
-                if (data.Length <16)
-                    return;//bad request
-
-                UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Request);
-
-                switch (request.Action)
+            Task sendTask = null;
+            while (!token.IsCancellationRequested) {
+                try
                 {
-                    case 0:
-                        ReceiveConnect((ConnectMessage)request);
-                        break;
-                    case 1:
-                        ReceiveAnnounce((AnnounceMessage)request);
-                        break;
-                    case 2:
-                        ReceiveScrape((ScrapeMessage)request);
-                        break;
-                    case 3:
-                        ReceiveError((ErrorMessage)request);
-                        break;
-                    default:
-                        throw new ProtocolException(string.Format("Invalid udp message received: {0}", request.Action));
+                    var result = await client.ReceiveAsync ();
+                    byte[] data = result.Buffer;
+                    if (data.Length <16)
+                        return;//bad request
+
+                    UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Request);
+
+                    if (sendTask != null) {
+                        try {
+                            await sendTask;
+                        } catch {
+
+                        }
+                    }
+
+
+                    switch (request.Action)
+                    {
+                        case 0:
+                            sendTask = ReceiveConnect(client, (ConnectMessage)request, result.RemoteEndPoint);
+                            break;
+                        case 1:
+                            sendTask = ReceiveAnnounce(client, (AnnounceMessage)request, result.RemoteEndPoint);
+                            break;
+                        case 2:
+                            sendTask = ReceiveScrape(client, (ScrapeMessage)request, result.RemoteEndPoint);
+                            break;
+                        case 3:
+                            sendTask = ReceiveError(client, (ErrorMessage)request, result.RemoteEndPoint);
+                            break;
+                        default:
+                            throw new ProtocolException(string.Format("Invalid udp message received: {0}", request.Action));
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                Logger.Log(null, e.ToString());
-            }
-            finally
-            {
-                if (Running)
-                    listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
+                catch (Exception e)
+                {
+                    Logger.Log(null, e.ToString());
+                }
             }
         }
         
-        protected virtual void ReceiveConnect(ConnectMessage connectMessage)
+        protected virtual async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
-            UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID());
+            UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID (remotePeer));
             byte[] data = m.Encode();
-            listener.Send(data, data.Length, endpoint);
+            try {
+                await client.SendAsync(data, data.Length, remotePeer);
+            } catch {
+            }
         }
 
         //TODO is endpoint.Address.Address enough and do we really need this complex system for connection ID
         //advantage: this system know if we have ever connect before announce scrape request...
-        private long CreateConnectionID()
+        private long CreateConnectionID (IPEndPoint remotePeer)
         {
             curConnectionID++;
-            if (!connectionIDs.ContainsKey(endpoint.Address))
-                connectionIDs.Add(endpoint.Address, curConnectionID);
+            if (!ConnectionIDs.ContainsKey(remotePeer.Address))
+                ConnectionIDs.Add(remotePeer.Address, curConnectionID);
             return curConnectionID;
         }
 
         //QUICKHACK: format bencoded val and get it back wereas must refactor tracker system to have more generic object...
-        protected virtual void ReceiveAnnounce(AnnounceMessage announceMessage)
+        protected virtual async Task ReceiveAnnounce(UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
         {
             UdpTrackerMessage m;
-            BEncodedDictionary dict = Handle(getCollection(announceMessage), endpoint.Address, false);
+            BEncodedDictionary dict = Handle(getCollection(announceMessage), remotePeer.Address, false);
             if (dict.ContainsKey(RequestParameters.FailureKey))
             {
                 m = new ErrorMessage(announceMessage.TransactionId, dict[RequestParameters.FailureKey].ToString());
@@ -195,7 +213,7 @@ namespace MonoTorrent.Tracker.Listeners
                 m = new AnnounceResponseMessage(announceMessage.TransactionId, interval, leechers, seeders, peers);
             }
             byte[] data = m.Encode();
-            listener.Send(data, data.Length, endpoint);
+            await client.SendAsync (data, data.Length, remotePeer);
         }
 
         private NameValueCollection getCollection(AnnounceMessage announceMessage)
@@ -215,9 +233,9 @@ namespace MonoTorrent.Tracker.Listeners
             return res;
         }
 
-        protected virtual void ReceiveScrape(ScrapeMessage scrapeMessage)
+        protected virtual async Task ReceiveScrape(UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
         {
-            BEncodedDictionary val = Handle(getCollection(scrapeMessage), endpoint.Address, true);
+            BEncodedDictionary val = Handle(getCollection(scrapeMessage), remotePeer.Address, true);
 
             UdpTrackerMessage m;
             byte[] data;
@@ -256,14 +274,14 @@ namespace MonoTorrent.Tracker.Listeners
                     {
                         m = new ScrapeResponseMessage(scrapeMessage.TransactionId, scrapes);
                         data = m.Encode();
-                        listener.Send(data, data.Length, endpoint);
+                        await client.SendAsync(data, data.Length, remotePeer);
                         scrapes.Clear();
                     }
                 }
                 m = new ScrapeResponseMessage(scrapeMessage.TransactionId, scrapes);
             }
             data = m.Encode();
-            listener.Send(data, data.Length, endpoint);
+            await client.SendAsync(data, data.Length, remotePeer);
         }
 
         private NameValueCollection getCollection(ScrapeMessage scrapeMessage)
@@ -277,9 +295,9 @@ namespace MonoTorrent.Tracker.Listeners
             return res;
         }
 
-        protected virtual void ReceiveError(ErrorMessage errorMessage)
+        protected virtual Task ReceiveError(UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
         {
-            throw new ProtocolException(String.Format("ErrorMessage from :{0}",endpoint.Address));
+            throw new ProtocolException(String.Format("ErrorMessage from :{0}", remotePeer.Address));
         }
     }
 }
