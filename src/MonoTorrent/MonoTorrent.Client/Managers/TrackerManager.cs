@@ -122,6 +122,9 @@ namespace MonoTorrent.Client.Tracker
 
         async Task Announce(TorrentEvent clientEvent, ITracker referenceTracker)
         {
+            // If the user initiates an Announce we need to go to the correct thread to process it.
+            await ClientEngine.MainLoop;
+
             ClientEngine engine = manager.Engine;
             
             // If the engine is null, we have been unregistered
@@ -185,6 +188,9 @@ namespace MonoTorrent.Client.Tracker
 
         public async Task Scrape(ITracker tracker)
         {
+            // If the user initiates a Scrape we need to go to the correct thread to process it.
+            await ClientEngine.MainLoop;
+
             var tuple = GetNextTracker (tracker).FirstOrDefault ();
             if (tuple != null && !tuple.Item2.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
