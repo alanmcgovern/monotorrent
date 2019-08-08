@@ -28,11 +28,10 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Net.Sockets;
 using System.Net;
-using MonoTorrent.BEncoding;
+using System.Threading;
+
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 
@@ -40,55 +39,13 @@ namespace MonoTorrent
 {
     public abstract class UdpListener : Listener
     {
-
-        private UdpClient client;
+        CancellationTokenSource Cancellation { get; set; }
+        UdpClient Client { get; set; }
 
         protected UdpListener(IPEndPoint endpoint)
             :base(endpoint)
         {
-            
-        }
-
-        private void EndReceive(IAsyncResult result)
-        {
-            try
-            {
-                IPEndPoint e = new IPEndPoint(IPAddress.Any, Endpoint.Port);
-                byte[] buffer = client.EndReceive(result, ref e);
-
-                OnMessageReceived(buffer, e);
-                client.BeginReceive(EndReceive, null);
-            }
-            catch (ObjectDisposedException)
-            {
-                // Ignore, we're finished!
-            }
-            catch (SocketException ex)
-            {
-                // If the destination computer closes the connection
-                // we get error code 10054. We need to keep receiving on
-                // the socket until we clear all the error states
-                if (ex.ErrorCode == 10054)
-                {
-                    while (true)
-                    {
-                        try
-                        {
-                            client.BeginReceive(EndReceive, null);
-                            return;
-                        }
-                        catch (ObjectDisposedException)
-                        {
-                            return;
-                        }
-                        catch (SocketException e)
-                        {
-                            if (e.ErrorCode != 10054)
-                                return;
-                        }
-                    }
-                }
-            }
+            Cancellation = new CancellationTokenSource ();
         }
 
 		protected abstract void OnMessageReceived(byte[] buffer, IPEndPoint endpoint);
@@ -98,7 +55,7 @@ namespace MonoTorrent
             try
             {
                if (endpoint.Address != IPAddress.Any)
-                    client.Send(buffer, buffer.Length, endpoint);
+                    Client.Send(buffer, buffer.Length, endpoint);
             }
             catch(Exception ex)
             {
@@ -108,31 +65,51 @@ namespace MonoTorrent
 
         public override void Start()
         {
-            try
-            {
-                client = new UdpClient(Endpoint);
-                client.BeginReceive(EndReceive, null);
+            if (Status == ListenerStatus.Listening)
+                return;
+
+            Cancellation?.Cancel ();
+            Cancellation = new CancellationTokenSource ();
+            try {
+                var client = Client = new UdpClient(Endpoint);
+                Cancellation.Token.Register (() => {
+                    client.SafeDispose ();
+                    Client = null;
+                });
+
+                ReceiveAsync (client, Cancellation.Token);
                 RaiseStatusChanged(ListenerStatus.Listening);
             }
             catch (SocketException)
             {
+                Cancellation?.Cancel ();
+                Cancellation = null;
+
                 RaiseStatusChanged(ListenerStatus.PortNotFree);
-            }
-            catch (ObjectDisposedException)
-            {
-                // Do Nothing
             }
         }
 
         public override void Stop()
         {
-            try
-            {
-                client.Close();
-            }
-            catch
-            {
-                // FIXME: Not needed
+            Cancellation?.Cancel ();
+            Cancellation = null;
+        }
+
+        async void ReceiveAsync (UdpClient client, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested) {
+                try {
+                    var result = await client.ReceiveAsync ().ConfigureAwait (false);
+                    OnMessageReceived(result.Buffer, result.RemoteEndPoint);
+                } catch (SocketException ex) {
+                    // If the destination computer closes the connection
+                    // we get error code 10054. We need to keep receiving on
+                    // the socket until we clear all the error states
+                    if (ex.ErrorCode == 10054)
+                        continue;
+                } catch {
+                    // Do nothing.
+                }
             }
         }
     }
