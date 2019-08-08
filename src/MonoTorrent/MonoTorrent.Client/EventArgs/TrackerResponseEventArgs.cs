@@ -33,21 +33,22 @@ namespace MonoTorrent.Client.Tracker
 {
     public abstract class TrackerResponseEventArgs : EventArgs
     {
-
         /// <summary>
         /// True if the request completed successfully
         /// </summary>
         public bool Successful { get; }
 
-		/// <summary>
-		/// The tracker which the request was sent to
-		/// </summary>
-		public ITracker Tracker { get; }
+        /// <summary>
+        /// If the request completed successfull this will be set to the tracker which sent the valid response.
+        /// If the request was unsuccessful, then this will be null for Announce requests (as every Tracker is queried),
+        /// and it will be non-null for Scrape requests as only a single tracker is scraped.
+        /// </summary>
+        public ITracker Tracker { get; }
 
-		protected TrackerResponseEventArgs(ITracker tracker, bool successful)
+        protected TrackerResponseEventArgs(ITracker tracker, bool successful)
         {
             Successful = successful;
-            Tracker = tracker ?? throw new ArgumentNullException(nameof (tracker));
+            Tracker = tracker;
         }
     }
 }

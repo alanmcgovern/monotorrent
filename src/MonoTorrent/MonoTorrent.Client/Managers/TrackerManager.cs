@@ -192,7 +192,7 @@ namespace MonoTorrent.Client.Tracker
                 await tuple.Item2.ScrapeAsync(new ScrapeParameters(manager.InfoHash));
                 ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tuple.Item2, true));
             } catch {
-                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (null, false));
+                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tuple.Item2, false));
             }
         }
 

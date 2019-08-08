@@ -102,6 +102,18 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task ScrapeFailedTest()
+        {
+            var scrapeFailed = false;
+            trackers[0][0].FailScrape = true;
+            trackerManager.ScrapeComplete += (o, e) => scrapeFailed = !e.Successful;
+
+            await trackerManager.Scrape();
+            Assert.AreEqual(1, trackers[0][0].ScrapedAt.Count, "#1");
+            Assert.IsTrue (scrapeFailed, "#2");
+        }
+
+        [Test]
         public async Task AnnounceTest()
         {
             await trackerManager.Announce();
