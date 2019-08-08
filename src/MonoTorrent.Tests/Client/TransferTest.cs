@@ -219,12 +219,12 @@ namespace MonoTorrent.Client
         {
             rig.AddConnection(pair.Incoming);
             await InitiateTransfer(pair.Outgoing, EncryptionTypes.All);
-            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4, null, null));
-            IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(1000, true))
+            _ = pair.Outgoing.SendAsync(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4);
+            var receiveTask = pair.Outgoing.ReceiveAsync(new byte[1000], 0, 1000);
+            if (!receiveTask.Wait (1000))
                 Assert.Fail("Connection never closed");
 
-            int r = pair.Outgoing.EndReceive(result);
+            int r = receiveTask.Result;
             if (r != 0)
                 Assert.Fail("Connection should've been closed");
         }
@@ -234,12 +234,12 @@ namespace MonoTorrent.Client
         {
             rig.AddConnection(pair.Incoming);
             await InitiateTransfer(pair.Outgoing, EncryptionTypes.All);
-            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255, 255, 255, 250 }, 0, 4, null, null));
-            IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(1000, true))
+            await pair.Outgoing.SendAsync(new byte[] { 255, 255, 255, 250 }, 0, 4);
+            var receiveTask = pair.Outgoing.ReceiveAsync(new byte[1000], 0, 1000);
+            if (!receiveTask.Wait(1000))
                 Assert.Fail("Connection never closed");
 
-            int r = pair.Outgoing.EndReceive(result);
+            int r = receiveTask.Result;
             if (r != 0)
                 Assert.Fail("Connection should've been closed");
         }
@@ -305,10 +305,10 @@ namespace MonoTorrent.Client
         public static void Send(CustomConnection connection, byte[] buffer, int offset, int count)
         {
             while (count > 0) {
-                var r = connection.BeginSend (buffer, offset, count, null, null);
-                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                var sendTask = connection.SendAsync (buffer, offset, count);
+                if (!sendTask.Wait(TimeSpan.FromSeconds (4)))
                     throw new Exception ("Could not send required data");
-                int transferred = connection.EndSend (r);
+                int transferred = sendTask.Result;
                 if (transferred == 0)
                     throw new Exception ("The socket was gracefully killed");
                 offset += transferred;
@@ -326,10 +326,10 @@ namespace MonoTorrent.Client
         public static void Receive(CustomConnection connection, byte[] buffer, int offset, int count)
         {
             while (count > 0) {
-                var r = connection.BeginReceive (buffer, offset, count, null, null);
-                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                var receiveTask = connection.ReceiveAsync (buffer, offset, count);
+                if (!receiveTask.Wait (TimeSpan.FromSeconds (4)))
                     throw new Exception ("Could not receive required data");
-                int transferred = connection.EndReceive (r);
+                int transferred = receiveTask.Result;
                 if (transferred == 0)
                     throw new Exception ("The socket was gracefully killed");
                 offset += transferred;

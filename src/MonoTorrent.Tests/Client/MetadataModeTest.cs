@@ -165,10 +165,10 @@ namespace MonoTorrent.Client
         {
             byte[] b = message.Encode();
             encryptor.Encrypt(b);
-            IAsyncResult result = connection.BeginSend(b, 0, b.Length, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000, true))
+            var sendTask = connection.SendAsync(b, 0, b.Length);
+            if (!sendTask.Wait(5000))
                 throw new Exception("Message didn't send correctly");
-            connection.EndSend(result);
+            GC.KeepAlive (sendTask.Result);
         }
 
         private PeerMessage ReceiveMessage(CustomConnection connection)

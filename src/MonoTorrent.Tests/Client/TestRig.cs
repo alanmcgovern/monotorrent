@@ -110,164 +110,51 @@ namespace MonoTorrent.Client
 
     public class CustomConnection : IConnection
     {
-        public string Name;
-        public event EventHandler BeginReceiveStarted;
-        public event EventHandler EndReceiveStarted;
+        public byte[] AddressBytes => ((IPEndPoint)EndPoint).Address.GetAddressBytes();
+        public bool CanReconnect => false;
+        public bool Connected  => Socket.Connected;
+        public EndPoint EndPoint => Socket.RemoteEndPoint;
+        public bool IsIncoming { get; }
+        public int? ManualBytesReceived { get; set; }
+        public int? ManualBytesSent { get; set; }
+        public string Name => IsIncoming ? "Incoming" : "Outgoing";
+        public bool SlowConnection { get; set; }
+        public Uri Uri => new Uri("ipv4://127.0.0.1:1234");
 
-        public event EventHandler BeginSendStarted;
-        public event EventHandler EndSendStarted;
+        Socket Socket { get; }
 
-        private Socket s;
-        private bool incoming;
-
-        public int? ManualBytesReceived {
-            get; set;
-        }
-
-        public int? ManualBytesSent {
-            get; set;
-        }
-
-        public bool SlowConnection {
-            get; set;
-        }
-
-        public CustomConnection(Socket s, bool incoming)
+        public CustomConnection(Socket socket, bool isIncoming)
         {
-            this.s = s;
-            this.incoming = incoming;
+            Socket = socket;
+            IsIncoming = isIncoming;
         }
+        
+        public Task ConnectAsync()
+            => throw new InvalidOperationException();
 
-        public byte[] AddressBytes
-        {
-            get { return ((IPEndPoint)s.RemoteEndPoint).Address.GetAddressBytes(); }
-        }
-
-        public bool Connected
-        {
-            get { return s.Connected; }
-        }
-
-        public bool CanReconnect
-        {
-            get { return false; }
-        }
-
-        public bool IsIncoming
-        {
-            get { return incoming; }
-        }
-
-        public EndPoint EndPoint
-        {
-            get { return s.RemoteEndPoint; }
-        }
-
-        public IAsyncResult BeginConnect(AsyncCallback callback, object state)
-        {
-            throw new InvalidOperationException();
-        }
-
-        public void EndConnect(IAsyncResult result)
-        {
-            throw new InvalidOperationException();
-        }
-
-        public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            if (BeginReceiveStarted != null)
-                BeginReceiveStarted (this, EventArgs.Empty);
-            if (SlowConnection)
-                count = Math.Min(88, count);
-            return s.BeginReceive(buffer, offset, count, SocketFlags.None, callback, state);
-        }
-
-        public int EndReceive(IAsyncResult result)
-        {
-            if (EndReceiveStarted != null)
-                EndReceiveStarted(null, EventArgs.Empty);
-
-            if (ManualBytesReceived.HasValue)
-                return ManualBytesReceived.Value;
-
-            return s.EndReceive(result);
-        }
-
-        public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            if (BeginSendStarted != null)
-                BeginSendStarted(null, EventArgs.Empty);
-
-            if (SlowConnection)
-                count = Math.Min(88, count);
-            return s.BeginSend(buffer, offset, count, SocketFlags.None, callback, state);
-        }
-
-        public int EndSend(IAsyncResult result)
-        {
-            if (EndSendStarted != null)
-                EndSendStarted(null, EventArgs.Empty);
-
-            if (ManualBytesSent.HasValue)
-                return ManualBytesSent.Value;
-
-            try
-            {
-                return s.EndSend(result);
-            }
-            catch (ObjectDisposedException)
-            {
-                return 0;
-            }
-        }
-        //private bool disposed;
         public void Dispose()
+            => Socket.Close();
+
+        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
-           // disposed = true;
-            s.Close();
+            if (SlowConnection)
+                count = Math.Min(88, count);
+
+            var result = await Task.Factory.FromAsync (Socket.BeginReceive(buffer, offset, count, SocketFlags.None, null, null), Socket.EndReceive);
+            return ManualBytesReceived ?? result;
+        }
+
+        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
+        {
+            if (SlowConnection)
+                count = Math.Min(88, count);
+
+            var result = await Task.Factory.FromAsync(Socket.BeginSend(buffer, offset, count, SocketFlags.None, null, null), Socket.EndSend);
+            return ManualBytesSent ?? result;
         }
 
         public override string ToString()
-        {
-            return Name;
-        }
-
-        public Uri Uri
-        {
-            get { return new Uri("ipv4://127.0.0.1:1234"); }
-        }
-
-
-        public int Receive (byte[] buffer, int offset, int count)
-        {
-            var r = BeginReceive (buffer, offset, count, null, null);
-            if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
-                throw new Exception ("Could not receive required data");
-            return EndReceive (r);
-        }
-
-        public int Send (byte[] buffer, int offset, int count)
-        {
-            var r = BeginSend (buffer, offset, count, null, null);
-            if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
-                throw new Exception ("Could not receive required data");
-            return EndSend (r);
-        }
-
-        public Task ConnectAsync()
-        {
-            return Task.Factory.FromAsync(BeginConnect(null, null), EndConnect);
-        }
-
-        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
-        {
-            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
-        }
-
-        public Task<int> SendAsync(byte[] buffer, int offset, int count)
-        {
-            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
-        }
+            => Name;
     }
 
     public class CustomListener : PeerListener

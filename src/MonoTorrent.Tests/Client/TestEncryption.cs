@@ -40,8 +40,6 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             conn = new ConnectionPair(13253);
-            conn.Incoming.Name = "Incoming";
-            conn.Outgoing.Name = "Outgoing";
             rig.Engine.Settings.AllowedEncryption = EncryptionTypes.All;
             rig.Manager.HashChecked = true;
         }
@@ -153,62 +151,62 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void EncrytorFactoryPeerAFullInitial()
+        public async Task EncrytorFactoryPeerAFullInitial()
         {
-            PeerATest(EncryptionTypes.RC4Full, true);
+            await PeerATest(EncryptionTypes.RC4Full, true);
         }
         [Test]
-        public void EncrytorFactoryPeerAFullNoInitial()
+        public async Task EncrytorFactoryPeerAFullNoInitial()
         {
-            PeerATest(EncryptionTypes.RC4Full, false);
-        }
-
-        [Test]
-        public void EncrytorFactoryPeerAHeaderNoInitial()
-        {
-            PeerATest(EncryptionTypes.RC4Header, false);
-        }
-        [Test]
-        public void EncrytorFactoryPeerAHeaderInitial()
-        {
-            PeerATest(EncryptionTypes.RC4Header, true);
+            await PeerATest(EncryptionTypes.RC4Full, false);
         }
 
         [Test]
-        public void EncryptorFactoryPeerAPlain()
+        public async Task EncrytorFactoryPeerAHeaderNoInitial()
         {
-            rig.Engine.StartAll();
+            await PeerATest(EncryptionTypes.RC4Header, false);
+        }
+        [Test]
+        public async Task EncrytorFactoryPeerAHeaderInitial()
+        {
+            await PeerATest(EncryptionTypes.RC4Header, true);
+        }
+
+        [Test]
+        public async Task EncryptorFactoryPeerAPlain()
+        {
+            await rig.Engine.StartAll();
 
             rig.AddConnection(conn.Incoming);
 
             HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
 
-            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
-            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+            await conn.Outgoing.SendAsync(buffer, 0, buffer.Length);
+            await conn.Outgoing.ReceiveAsync(buffer, 0, buffer.Length);
 
             message.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
         }
 
         [Test]
-        public void EncrytorFactoryPeerBFull()
+        public async Task EncrytorFactoryPeerBFull()
         {
             rig.Engine.Settings.PreferEncryption = true;
-            PeerBTest(EncryptionTypes.RC4Full);
+            await PeerBTest(EncryptionTypes.RC4Full);
         }
 
         [Test]
-        public void EncrytorFactoryPeerBHeader()
+        public async Task EncrytorFactoryPeerBHeader()
         {
             rig.Engine.Settings.PreferEncryption = false;
-            PeerBTest(EncryptionTypes.RC4Header);
+            await PeerBTest(EncryptionTypes.RC4Header);
         }
 
-        private void PeerATest(EncryptionTypes encryption, bool addInitial)
+        async Task PeerATest(EncryptionTypes encryption, bool addInitial)
         {
             rig.Engine.Settings.AllowedEncryption = encryption;
-            rig.Engine.StartAll();
+            await rig.Engine.StartAll();
 
             HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
@@ -224,10 +222,10 @@ namespace MonoTorrent.Client
             if (!addInitial)
             {
                 a.Encryptor.Encrypt(buffer);
-                conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
+                await conn.Outgoing.SendAsync(buffer, 0, buffer.Length);
             }
          
-            int received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+            int received = await conn.Outgoing.ReceiveAsync(buffer, 0, buffer.Length);
             Assert.AreEqual (68, received, "Recived handshake");
 
             a.Decryptor.Decrypt(buffer);
@@ -242,10 +240,10 @@ namespace MonoTorrent.Client
                 Assert.IsTrue(a.Encryptor is RC4Header);
         }
 
-        private void PeerBTest(EncryptionTypes encryption)
+        async Task PeerBTest(EncryptionTypes encryption)
         {
             rig.Engine.Settings.AllowedEncryption = encryption;
-            rig.Engine.StartAll();
+            await rig.Engine.StartAll();
             rig.AddConnection(conn.Outgoing);
 
             PeerBEncryption a = new PeerBEncryption(new InfoHash[] { rig.Manager.InfoHash }, EncryptionTypes.All);
@@ -256,7 +254,7 @@ namespace MonoTorrent.Client
             HandshakeMessage message = new HandshakeMessage();
             byte[] buffer = new byte[68];
 
-            conn.Incoming.EndReceive(conn.Incoming.BeginReceive(buffer, 0, buffer.Length, null, null));
+            await conn.Incoming.ReceiveAsync(buffer, 0, buffer.Length);
 
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);

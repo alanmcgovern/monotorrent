@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AddConnectionToStoppedManager()
+        public async Task AddConnectionToStoppedManager()
         {
             MessageBundle bundle = new MessageBundle();
 
@@ -44,10 +44,10 @@ namespace MonoTorrent.Client
 
             // Add the 'incoming' connection to the engine and send our payload
             rig.Listener.Add(rig.Manager, conn.Incoming);
-            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(data, 0, data.Length, null, null));
+            await conn.Outgoing.SendAsync (data, 0, data.Length);
 
             try {
-                var received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null));
+                var received = await conn.Outgoing.ReceiveAsync(data, 0, data.Length);
                 Assert.AreEqual (received, 0);
             } catch {
                 Assert.IsFalse(conn.Incoming.Connected, "#1");
