@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.Tracker
 {
     public static class TrackerFactory
     {
-        static readonly Dictionary<string, Func<Uri, Tracker>> trackerTypes = new Dictionary<string, Func<Uri, Tracker>> {
+        static readonly Dictionary<string, Func<Uri, ITracker>> trackerTypes = new Dictionary<string, Func<Uri, ITracker>> {
             { "udp", uri => new UdpTracker (uri) },
             { "http", uri => new HTTPTracker (uri) },
             { "https", uri => new HTTPTracker (uri) },
@@ -46,22 +46,22 @@ namespace MonoTorrent.Client.Tracker
             if (trackerType == null)
                 throw new ArgumentNullException(nameof(trackerType));
 
-            Register (protocol, uri => (Tracker) Activator.CreateInstance (trackerType, uri));
+            Register (protocol, uri => (ITracker) Activator.CreateInstance (trackerType, uri));
         }
 
-        public static void Register(string protocol, Func<Uri, Tracker> creator)
+        public static void Register(string protocol, Func<Uri, ITracker> creator)
         {
             lock (trackerTypes)
                 trackerTypes[protocol] = creator;
         }
 
-        public static Tracker Create(Uri uri)
+        public static ITracker Create(Uri uri)
         {
             Check.Uri(uri);
 
             try {
                 lock (trackerTypes) {
-                    if (trackerTypes.TryGetValue (uri.Scheme, out Func<Uri, Tracker> creator))
+                    if (trackerTypes.TryGetValue (uri.Scheme, out Func<Uri, ITracker> creator))
                         return creator (uri);
                     return null;
                 }

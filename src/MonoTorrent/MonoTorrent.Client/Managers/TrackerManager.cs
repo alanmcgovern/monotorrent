@@ -45,6 +45,9 @@ namespace MonoTorrent.Client.Tracker
     /// </summary>
     public class TrackerManager
     {
+        public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
+        public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
+
         #region Member Variables
         private TorrentManager manager;
 
@@ -117,7 +120,7 @@ namespace MonoTorrent.Client.Tracker
         internal async Task Announce(TorrentEvent clientEvent)
             => await Announce (clientEvent, null);
 
-        public async Task Announce(Tracker tracker)
+        public async Task Announce(ITracker tracker)
         {
             Check.Tracker(tracker);
             await Announce(TorrentEvent.None, tracker);
@@ -171,13 +174,14 @@ namespace MonoTorrent.Client.Tracker
                     int count = await manager.AddPeersAsync(peers);
                     manager.RaisePeersFound(new TrackerPeersAdded(manager, count, peers.Count, tuple.Item2));
 
+                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tuple.Item2, true, peers));
                     return;
                 } catch {
-
                 }
             }
 
             updateSucceeded = false;
+            AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (null, false));
         }
 
         public async Task Scrape()
@@ -190,7 +194,12 @@ namespace MonoTorrent.Client.Tracker
             var tuple = GetNextTracker (tracker).FirstOrDefault ();
             if (tuple != null && !tuple.Item2.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
-            await tuple.Item2.ScrapeAsync(new ScrapeParameters(manager.InfoHash));
+            try {
+                await tuple.Item2.ScrapeAsync(new ScrapeParameters(manager.InfoHash));
+                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tuple.Item2, true));
+            } catch {
+                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (null, false));
+            }
         }
 
         IEnumerable<Tuple<TrackerTier, ITracker>> GetNextTracker (ITracker referenceTracker)

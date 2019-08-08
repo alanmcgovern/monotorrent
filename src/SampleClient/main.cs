@@ -175,15 +175,10 @@ namespace MonoTorrent
                 };
 
                 // Every time the tracker's state changes, this is fired
-                foreach (TrackerTier tier in manager.TrackerManager.Tiers)
-                {
-                    foreach (MonoTorrent.Client.Tracker.Tracker t in tier.GetTrackers())
-                    {
-                        t.AnnounceComplete += delegate(object sender, AnnounceResponseEventArgs e) {
-                            listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
-                        };
-                    }
-                }
+                manager.TrackerManager.AnnounceComplete += (sender, e) => {
+                    listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker));
+                };
+
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 await manager.StartAsync();
             }

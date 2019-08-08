@@ -1,5 +1,5 @@
 //
-// TrackerStateChangedEventArgs.cs
+// TrackerResponseEventArgs.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,56 +27,27 @@
 //
 
 
-
 using System;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    /// <summary>
-    /// Provides the data needed to handle a TrackerUpdate event
-    /// </summary>
-    public class TrackerStateChangedEventArgs : TorrentEventArgs
+    public abstract class TrackerResponseEventArgs : EventArgs
     {
-        #region Member Variables
+
         /// <summary>
-        /// The current status of the tracker update
+        /// True if the request completed successfully
         /// </summary>
-        public ITracker Tracker
+        public bool Successful { get; }
+
+		/// <summary>
+		/// The tracker which the request was sent to
+		/// </summary>
+		public ITracker Tracker { get; }
+
+		protected TrackerResponseEventArgs(ITracker tracker, bool successful)
         {
-            get { return this.tracker; }
+            Successful = successful;
+            Tracker = tracker ?? throw new ArgumentNullException(nameof (tracker));
         }
-        private ITracker tracker;
-
-
-        public TrackerState OldState
-        {
-            get { return this.oldState; }
-        }
-        private TrackerState oldState;
-
-
-        public TrackerState NewState
-        {
-            get { return this.newState; }
-        }
-        private TrackerState newState;
-        #endregion
-
-
-        #region Constructors
-        /// <summary>
-        /// Creates a new TrackerUpdateEventArgs
-        /// </summary>
-        /// <param name="state">The current state of the update</param>
-        /// <param name="response">The response of the tracker (if any)</param>
-        public TrackerStateChangedEventArgs(TorrentManager manager, ITracker tracker, TrackerState oldState, TrackerState newState)
-            : base(manager)
-        {
-            this.tracker = tracker;
-            this.oldState = oldState;
-            this.newState = newState;
-        }
-        #endregion
     }
 }

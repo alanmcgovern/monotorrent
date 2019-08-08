@@ -17,6 +17,7 @@ namespace SampleClient
 {
     public class CustomTracker : Tracker
     {
+        public bool FailAnnounce { get; set; }
         public CustomTracker(Uri uri)
             :base(uri)
         {
@@ -27,25 +28,19 @@ namespace SampleClient
 
         public override Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
         {
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
+            if (FailAnnounce)
+                throw new Exception ("Deliberately failing");
             return Task.FromResult (peers);
         }
 
         public override Task ScrapeAsync(ScrapeParameters parameters)
         {
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
             return Task.CompletedTask;
         }
 
         public void AddPeer(Peer peer)
         {
             peers.Add(peer);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
-        }
-
-        public void AddFailedPeer(Peer peer)
-        {
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, false));
         }
     }
 

@@ -67,16 +67,6 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task UnregisteredAnnounce()
-        {
-            await rig.Engine.Unregister(rig.Manager);
-            rig.Tracker.AddPeer(new Peer("", new Uri("ipv4://myCustomTcpSocket")));
-            Assert.AreEqual(0, rig.Manager.Peers.Available, "#1");
-            rig.Tracker.AddFailedPeer(new Peer("", new Uri("ipv4://myCustomTcpSocket")));
-            Assert.AreEqual(0, rig.Manager.Peers.Available, "#2");
-        }
-
-        [Test]
         public async Task ReregisterManager()
         {
             var hashingTask = rig.Manager.WaitForState(TorrentState.Stopped);
@@ -152,7 +142,7 @@ namespace MonoTorrent.Client
             // Check that the engine announces when the download starts, completes
             // and is stopped.
             AutoResetEvent handle = new AutoResetEvent(false);
-            rig.Manager.TrackerManager.CurrentTracker.AnnounceComplete += delegate {
+            rig.Manager.TrackerManager.AnnounceComplete += delegate {
                 handle.Set ();
             };
 

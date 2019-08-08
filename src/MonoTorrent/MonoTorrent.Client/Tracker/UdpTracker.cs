@@ -37,7 +37,7 @@ using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class UdpTracker : Tracker
+    class UdpTracker : Tracker
     {
         Task<long> ConnectionIdTask { get; set; }
         Stopwatch LastConnected { get; }  = new Stopwatch ();
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.Tracker
             CanAnnounce = true;
         }
 
-        public override async Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters)
+        protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
         {
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
@@ -61,16 +61,15 @@ namespace MonoTorrent.Client.Tracker
                 var message = new AnnounceMessage (DateTime.Now.GetHashCode (), ConnectionIdTask.Result, parameters);
                 var announce = (AnnounceResponseMessage) await SendAndReceiveAsync (message);
                 MinUpdateInterval = announce.Interval;
-                RaiseAnnounceComplete (new AnnounceResponseEventArgs (this, true, announce.Peers));
+
                 return announce.Peers;
             } catch (Exception e) {
                 ConnectionIdTask = null;
-                RaiseAnnounceComplete (new AnnounceResponseEventArgs (this, false));
                 throw new TrackerException ("Announce could not be completed", e);
             }
         }
 
-        public override async Task ScrapeAsync (ScrapeParameters parameters)
+        protected override async Task DoScrapeAsync (ScrapeParameters parameters)
         {
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
@@ -86,10 +85,8 @@ namespace MonoTorrent.Client.Tracker
                     Downloaded = response.Scrapes[0].Complete;
                     Incomplete = response.Scrapes[0].Leeches;
                 }
-                RaiseScrapeComplete (new ScrapeResponseEventArgs (this, true));
             } catch (Exception e) {
                 ConnectionIdTask = null;
-                RaiseScrapeComplete (new ScrapeResponseEventArgs (this, false));
                 throw new TrackerException ("Scrape could not be completed", e);
             }
         }

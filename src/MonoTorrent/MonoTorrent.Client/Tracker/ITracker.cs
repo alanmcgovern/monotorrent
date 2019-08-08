@@ -9,9 +9,6 @@ namespace MonoTorrent.Client.Tracker
 {
     public interface ITracker
     {
-        event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
-
         bool CanAnnounce { get; }
         bool CanScrape { get; }
         int Complete { get; }

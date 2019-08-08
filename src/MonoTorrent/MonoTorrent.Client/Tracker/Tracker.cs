@@ -36,11 +36,8 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public abstract class Tracker : ITracker
+    abstract class Tracker : ITracker
     {
-        public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
-
         public bool CanAnnounce { get; protected set; }
         public bool CanScrape { get; protected set; }
         public int Complete { get; protected set; }
@@ -65,17 +62,18 @@ namespace MonoTorrent.Client.Tracker
             WarningMessage = "";
         }
 
-        public abstract Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters);
-        public abstract Task ScrapeAsync (ScrapeParameters parameters);
-
-        protected virtual void RaiseAnnounceComplete (AnnounceResponseEventArgs e)
+        public async Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters)
         {
-            if (e.Successful)
-                LastAnnounced.Restart ();
-            AnnounceComplete?.Invoke (this, e);
+            var result = await DoAnnounceAsync (parameters);
+            LastAnnounced.Restart ();
+            return result;
         }
 
-        protected virtual void RaiseScrapeComplete (ScrapeResponseEventArgs e)
-            => ScrapeComplete?.Invoke (this, e);
+        protected abstract Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters);
+
+        public Task ScrapeAsync (ScrapeParameters parameters)
+            => DoScrapeAsync (parameters);
+
+        protected abstract Task DoScrapeAsync (ScrapeParameters parameters);
     }
 }

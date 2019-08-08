@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class CustomTracker : MonoTorrent.Client.Tracker.Tracker
+    class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
         public List<DateTime> AnnouncedAt = new List<DateTime>();
         public List<DateTime> ScrapedAt = new List<DateTime>();
@@ -79,20 +79,18 @@ namespace MonoTorrent.Client
             CanScrape = true;
         }
 
-        public override Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
+        protected override Task<List<Peer>> DoAnnounceAsync(AnnounceParameters parameters)
         {
             AnnouncedAt.Add(DateTime.Now);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, !FailAnnounce));
             if (FailAnnounce)
                 throw new TrackerException ("Deliberately failing announce request", null);
 
             return Task.FromResult (peers);
         }
 
-        public override Task ScrapeAsync(ScrapeParameters parameters)
+        protected override Task DoScrapeAsync(ScrapeParameters parameters)
         {
             ScrapedAt.Add(DateTime.Now);
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, !FailScrape));
             if (FailScrape)
                 throw new TrackerException ("Deliberately failing scrape request", null);
 
@@ -102,12 +100,6 @@ namespace MonoTorrent.Client
         public void AddPeer(Peer peer)
         {
             peers.Add (peer);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
-        }
-
-        public void AddFailedPeer(Peer peer)
-        {
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, false));
         }
 
         public override string ToString()
@@ -402,7 +394,7 @@ namespace MonoTorrent.Client
             get { return torrentDict; }
         }
 
-        public CustomTracker Tracker
+        internal CustomTracker Tracker
         {
             get { return (CustomTracker)this.manager.TrackerManager.CurrentTracker; }
         }

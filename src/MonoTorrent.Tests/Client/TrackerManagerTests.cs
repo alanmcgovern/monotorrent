@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
-    public class DefaultTracker : Tracker.Tracker
+    class DefaultTracker : Tracker.Tracker
     {
         public DefaultTracker()
             :base(new Uri("http://tracker:5353/announce"))
@@ -17,12 +17,12 @@ namespace MonoTorrent.Client
 
         }
 
-        public override Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
+        protected override Task<List<Peer>> DoAnnounceAsync(AnnounceParameters parameters)
         {
             return Task.FromResult (new List<Peer>());
         }
 
-        public override Task ScrapeAsync(ScrapeParameters parameters)
+        protected override Task DoScrapeAsync(ScrapeParameters parameters)
         {
             return Task.CompletedTask;
         }
@@ -120,6 +120,7 @@ namespace MonoTorrent.Client
         {
             trackers[0][0].FailAnnounce = true;
             trackers[0][1].FailAnnounce = true;
+            trackers[0][3].FailAnnounce = true;
             await trackerManager.Announce();
             Assert.AreEqual(trackers[0][2], trackerManager.CurrentTracker, "#1");
             Assert.AreEqual(1, trackers[0][0].AnnouncedAt.Count, "#2");

@@ -39,7 +39,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class HTTPTracker : Tracker
+    class HTTPTracker : Tracker
     {
         static readonly Random random = new Random();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds(10);
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Tracker
             Key = UriHelper.UrlEncode(passwordKey);
         }
 
-        public override async Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
+        protected override async Task<List<Peer>> DoAnnounceAsync(AnnounceParameters parameters)
         {
             // Clear out previous failure state
             FailureMessage = "";
@@ -88,6 +88,8 @@ namespace MonoTorrent.Client.Tracker
                 using (cts.Token.Register (() => request.Abort ()))
                 using (var response = await request.GetResponseAsync ())
                     peers = AnnounceReceived (request, response);
+
+                return peers;
             }
             catch (Exception ex)
             {
@@ -95,14 +97,9 @@ namespace MonoTorrent.Client.Tracker
                 FailureMessage = "The tracker could not be contacted";
                 throw new TrackerException (FailureMessage, ex);
             }
-            finally
-            {
-                RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, string.IsNullOrEmpty(FailureMessage), peers));
-            }
-            return peers;
         }
         
-        public override async Task ScrapeAsync(ScrapeParameters parameters)
+        protected override async Task DoScrapeAsync(ScrapeParameters parameters)
         {
             try
             {
@@ -125,7 +122,6 @@ namespace MonoTorrent.Client.Tracker
             catch (Exception ex)
             {
                 FailureMessage = "The tracker could not be contacted";
-                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, false));
                 throw new TrackerException (FailureMessage, ex);
             }
         }
@@ -335,10 +331,6 @@ namespace MonoTorrent.Client.Tracker
             {
                 message = "The tracker returned an invalid or incomplete response";
                 throw;
-            }
-            finally
-            {
-                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, string.IsNullOrEmpty(message)));
             }
         }
 

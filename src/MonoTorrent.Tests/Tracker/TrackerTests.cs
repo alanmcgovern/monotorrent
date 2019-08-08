@@ -43,25 +43,17 @@ namespace MonoTorrent.Tracker
         [Test]
         public async Task MultipleAnnounce()
         {
-            int announceCount = 0;
             Random r = new Random();
-            ManualResetEvent handle = new ManualResetEvent(false);
 
             for (int i=0; i < 20; i++)
             {
                 InfoHash infoHash = new InfoHash(new byte[20]);
                 r.NextBytes(infoHash.Hash);
                 TrackerTier tier = new TrackerTier(new string[] { uri.ToString() });
-                tier.Trackers[0].AnnounceComplete += delegate {
-                    if (++announceCount == 20)
-                        handle.Set();
-                };
                 var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new string('1', 20), "", 1411, false);
                 await tier.Trackers[0].AnnounceAsync(parameters);
             }
-
-            Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");
         }
     }
 }
