@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
         public void ChangeEndpoint(IPEndPoint endpoint)
         {
             Endpoint = endpoint;
-            if (Status == ListenerStatus.Listening)
+            if (Status != ListenerStatus.NotListening)
             {
                 Stop();
                 Start();
