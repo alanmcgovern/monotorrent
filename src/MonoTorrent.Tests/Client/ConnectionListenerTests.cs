@@ -36,6 +36,8 @@ namespace MonoTorrent.Client
                 using (TcpClient c = new TcpClient(AddressFamily.InterNetwork)) {
                     var task = AcceptSocket ();
                     c.Connect(endpoint);
+                    if (await Task.WhenAny (Task.Delay (1000), task) != task)
+                        Assert.Fail ("Failed to establish a connection");
                     (await task).Connection.Dispose ();
                 }
             }
