@@ -27,20 +27,17 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net.Sockets;
-using System.Net;
-using System.IO;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.PieceWriters;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
+
+using MonoTorrent.Common;
+using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
@@ -198,7 +195,8 @@ namespace MonoTorrent.Client
             uploadLimiter = new RateLimiter();
             this.PeerId = GeneratePeerId();
 
-            localPeerListener = new LocalPeerListener(this);
+            localPeerListener = new LocalPeerListener();
+            localPeerListener.PeerFound += HandleLocalPeerFound;
             localPeerManager = new LocalPeerManager();
             LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
             listenManager.Register(listener);
@@ -266,6 +264,29 @@ namespace MonoTorrent.Client
                 this.localPeerListener.Stop();
                 this.localPeerManager.Dispose();
             });
+        }
+
+        async void HandleLocalPeerFound (object sender, LocalPeerFoundEventArgs args)
+        {
+            try {
+                await MainLoop;
+
+                var manager = Torrents.FirstOrDefault (t => t.InfoHash == args.InfoHash);
+                // There's no TorrentManager in the engine
+                if (manager == null)
+                    return;
+
+                // The torrent is marked as private, so we can't add random people
+                if (manager.HasMetadata && manager.Torrent.IsPrivate)
+                    return;
+
+                // Add new peer to matched Torrent
+                var peer = new Peer ("", args.Uri);
+                int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
+                manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
+            } catch {
+                // We don't care if the peer couldn't be added (for whatever reason)
+            }
         }
 
         public async Task PauseAll()

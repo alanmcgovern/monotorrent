@@ -27,17 +27,13 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Timers;
 using System.Threading;
-using MonoTorrent;
+
 using MonoTorrent.Common;
-using MonoTorrent.Client;
-using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
@@ -45,30 +41,36 @@ namespace MonoTorrent.Client
     class LocalPeerListener : Listener
     {
         const int MulticastPort = 6771;
-        static readonly IPAddress multicastIpAddress = IPAddress.Parse("239.192.152.143");
+        static readonly IPAddress MulticastIpAddress = IPAddress.Parse("239.192.152.143");
 
-        private ClientEngine engine;
-        private UdpClient udpClient;
+        public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
 
-        public LocalPeerListener(ClientEngine engine)
-            : base(new IPEndPoint(IPAddress.Any, 6771))
+        CancellationTokenSource Cancellation { get; set; }
+        Regex RegexMatcher = new Regex("BT-SEARCH \\* HTTP/1.1\\r\\nHost: 239.192.152.143:6771\\r\\nPort: (?<port>[^@]+)\\r\\nInfohash: (?<hash>[^@]+)\\r\\n\\r\\n\\r\\n");
+
+        public LocalPeerListener ()
+            : base (new IPEndPoint (IPAddress.Any, 6771))
         {
-            this.engine = engine;
         }
 
         public override void Start()
         {
             if (Status == ListenerStatus.Listening)
                 return;
-            try
-            {
-                udpClient = new UdpClient(MulticastPort);
-                udpClient.JoinMulticastGroup(multicastIpAddress);
-                udpClient.BeginReceive(OnReceiveCallBack, udpClient);
+
+            Cancellation?.Cancel ();
+            Cancellation = new CancellationTokenSource();
+
+            try {
+                var client = new UdpClient(MulticastPort);
+                Cancellation.Token.Register (() => client.SafeDispose ());
+
+                client.JoinMulticastGroup(MulticastIpAddress);
+                ReceiveAsync (client, Cancellation.Token);
                 RaiseStatusChanged(ListenerStatus.Listening);
-            }
-            catch
-            {
+            } catch {
+                Cancellation?.Cancel ();
+                Cancellation = null;
                 RaiseStatusChanged(ListenerStatus.PortNotFree);
             }
         }
@@ -78,65 +80,32 @@ namespace MonoTorrent.Client
             if (Status == ListenerStatus.NotListening)
                 return;
 
+            Cancellation?.Cancel ();
+            Cancellation = null;
             RaiseStatusChanged(ListenerStatus.NotListening);
-            UdpClient c = udpClient;
-            udpClient = null;
-            if (c != null)
-                c.Close();
         }
 
-        private async void OnReceiveCallBack(IAsyncResult ar)
+        async void ReceiveAsync (UdpClient client, CancellationToken token)
         {
-            UdpClient u = (UdpClient)ar.AsyncState;
-            IPEndPoint e = new IPEndPoint(IPAddress.Any, 0);
-            try
-            {
-                byte[] receiveBytes = u.EndReceive(ar, ref e);
-                string receiveString = Encoding.ASCII.GetString(receiveBytes);
+            while (!token.IsCancellationRequested) {
+                try {
+                    var result = await client.ReceiveAsync ().ConfigureAwait (false);
+                    var receiveString = Encoding.ASCII.GetString(result.Buffer);
 
-                Regex exp = new Regex("BT-SEARCH \\* HTTP/1.1\\r\\nHost: 239.192.152.143:6771\\r\\nPort: (?<port>[^@]+)\\r\\nInfohash: (?<hash>[^@]+)\\r\\n\\r\\n\\r\\n");
-                Match match = exp.Match(receiveString);
+                    var match = RegexMatcher.Match(receiveString);
+                    if (!match.Success)
+                        return;
 
-                if (!match.Success)
-                    return;
+                    int portcheck = Convert.ToInt32(match.Groups["port"].Value);
+                    if (portcheck <= 0 || portcheck > 65535)
+                        return;
 
-                int portcheck = Convert.ToInt32(match.Groups["port"].Value);
-                if (portcheck < 0 || portcheck > 65535)
-                    return;
+                    var infoHash = InfoHash.FromHex(match.Groups["hash"].Value);
+                    var uri = new Uri("ipv4://" + result.RemoteEndPoint.Address + ':' + portcheck);
 
-                TorrentManager manager = null;
-                InfoHash matchHash = InfoHash.FromHex(match.Groups["hash"].Value);
-                for (int i = 0; manager == null && i < engine.Torrents.Count; i ++)
-                    if (engine.Torrents [i].InfoHash == matchHash)
-                        manager = engine.Torrents [i];
-                
-                if (manager == null)
-                    return;
+                    PeerFound?.Invoke (this, new LocalPeerFoundEventArgs (infoHash, uri));
+                } catch {
 
-                Uri uri = new Uri("ipv4://" + e.Address.ToString() + ':' + match.Groups["port"].Value);
-                Peer peer = new Peer("", uri, EncryptionTypes.All);
-
-                // Add new peer to matched Torrent
-                if (!manager.HasMetadata || !manager.Torrent.IsPrivate)
-                {
-                    await ClientEngine.MainLoop;
-                    int count = await manager.AddPeerAsync (peer) ? 1 : 0;
-                    manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
-                }
-            }
-            catch
-            {
-                // Failed to receive data, ignore
-            }
-            finally
-            {
-                try
-                {
-                    u.BeginReceive(OnReceiveCallBack, ar.AsyncState);
-                }
-                catch
-                {
-                    // It's closed
                 }
             }
         }

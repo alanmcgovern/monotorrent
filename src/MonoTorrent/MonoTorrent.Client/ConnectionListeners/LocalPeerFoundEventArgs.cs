@@ -1,10 +1,10 @@
-//
-// IListener.cs
+﻿//
+// LocalPeerFoundEventArgs.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2019 Jared Hendry
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,21 +27,18 @@
 //
 
 using System;
-using System.Net;
-
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public interface IListener
+    public class LocalPeerFoundEventArgs : EventArgs
     {
-        event EventHandler<EventArgs> StatusChanged;
+        public InfoHash InfoHash { get; }
+        public Uri Uri { get; }
 
-        IPEndPoint Endpoint { get; }
-        ListenerStatus Status { get; }
-
-        void ChangeEndpoint(IPEndPoint port);
-        void Start();
-        void Stop();
+        public LocalPeerFoundEventArgs (InfoHash infoHash, Uri uri)
+        {
+            InfoHash = infoHash;
+            Uri = uri;
+        }
     }
 }
