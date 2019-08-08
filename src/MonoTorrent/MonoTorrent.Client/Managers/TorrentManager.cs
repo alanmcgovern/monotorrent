@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
             this.InactivePeerManager = new InactivePeerManager(this);
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager();
-            this.TrackerManager = new TrackerManager(this, InfoHash, announces);
+            this.TrackerManager = new TrackerManager(this, announces);
 
             Mode = new StoppedMode(this);            
             CreateRateLimiters();

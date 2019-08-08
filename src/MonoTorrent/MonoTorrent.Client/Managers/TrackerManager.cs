@@ -57,11 +57,6 @@ namespace MonoTorrent.Client.Tracker
         public ITracker CurrentTracker => Tiers.SelectMany (t => t.Trackers).OrderBy (t => t.TimeSinceLastAnnounce).FirstOrDefault ();
 
         /// <summary>
-        /// The infohash for the torrent
-        /// </summary>
-        private InfoHash infoHash;
-
-        /// <summary>
         /// True if the last update succeeded
         /// </summary>
         public bool UpdateSucceeded
@@ -95,10 +90,9 @@ namespace MonoTorrent.Client.Tracker
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager, InfoHash infoHash, IList<RawTrackerTier> announces)
+        public TrackerManager(TorrentManager manager, IList<RawTrackerTier> announces)
         {
             this.manager = manager;
-            this.infoHash = infoHash;
 
             // Check if this tracker supports scraping
             var trackerTiers = new List<TrackerTier>();
@@ -157,7 +151,7 @@ namespace MonoTorrent.Client.Tracker
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 bytesLeft,
-                                                clientEvent, this.infoHash, requireEncryption, manager.Engine.PeerId,
+                                                clientEvent, manager.InfoHash, requireEncryption, manager.Engine.PeerId,
                                                 ip, port, supportsEncryption);
 
             foreach (var tuple in GetNextTracker (referenceTracker)) {
