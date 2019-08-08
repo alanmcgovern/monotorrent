@@ -28,16 +28,12 @@
 
 
 using System;
-using System.Linq;
-using System.Net;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
-using System.Diagnostics;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -74,7 +70,7 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// The TorrentManager associated with this tracker
         /// </summary>
-        TorrentManager Manager { get; set; }
+        ITrackerRequestFactory RequestFactory { get; set; }
 
         /// <summary>
         /// The available trackers.
@@ -95,16 +91,16 @@ namespace MonoTorrent.Client.Tracker
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager, IList<RawTrackerTier> announces)
+        public TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
         {
-            Manager = manager;
+            RequestFactory = requestFactory;
             LastAnnounce = new Stopwatch ();
 
             // Check if this tracker supports scraping
-            var trackerTiers = new List<TrackerTier>();
-            for (int i = 0; i < announces.Count; i++)
-                trackerTiers.Add(new TrackerTier(announces[i]));
-            trackerTiers.RemoveAll(delegate(TrackerTier t) { return t.Trackers.Count == 0; });
+            var trackerTiers = new List<TrackerTier> ();
+            foreach (var tier in announces)
+                trackerTiers.Add (new TrackerTier (tier));
+            trackerTiers.RemoveAll (tier => tier.Trackers.Count == 0);
             Tiers = trackerTiers.AsReadOnly ();
         }
 
@@ -130,37 +126,10 @@ namespace MonoTorrent.Client.Tracker
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            ClientEngine engine = Manager.Engine;
-            
-            // If the engine is null, we have been unregistered
-            if (engine == null)
-                return;
-
             LastAnnounce.Restart ();
             LastUpdated = DateTime.UtcNow;
 
-            EncryptionTypes e = engine.Settings.AllowedEncryption;
-            bool requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.PlainText);
-            bool supportsEncryption = Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(e, EncryptionTypes.RC4Header);
-
-            requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
-            supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
-
-            IPEndPoint reportedAddress = engine.Settings.ReportedAddress;
-            string ip = reportedAddress == null ? null : reportedAddress.Address.ToString();
-            int port = reportedAddress == null ? engine.Listener.Endpoint.Port : reportedAddress.Port;
-
-            // FIXME: In metadata mode we need to pretend we need to download data otherwise
-            // tracker optimisations might result in no peers being sent back.
-            long bytesLeft = 1000;
-            if (Manager.HasMetadata)
-                bytesLeft = (long)((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
-
-            AnnounceParameters p = new AnnounceParameters(Manager.Monitor.DataBytesDownloaded,
-                                                Manager.Monitor.DataBytesUploaded,
-                                                bytesLeft,
-                                                clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId,
-                                                ip, port, supportsEncryption);
+            var p = RequestFactory.CreateAnnounce (clientEvent);
 
             foreach (var tuple in GetNextTracker (referenceTracker)) {
                 try {
@@ -172,12 +141,8 @@ namespace MonoTorrent.Client.Tracker
                         actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
 
                     var peers = await tuple.Item2.AnnounceAsync(actualArgs);
-                    Manager.Peers.BusyPeers.Clear ();
-                    int count = await Manager.AddPeersAsync(peers);
-                    Manager.RaisePeersFound(new TrackerPeersAdded(Manager, count, peers.Count, tuple.Item2));
-
                     LastAnnounceSucceeded = true;
-                    Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (tuple.Item2, true, peers));
+                    Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
                     return;
                 } catch {
                 }
@@ -201,7 +166,8 @@ namespace MonoTorrent.Client.Tracker
             if (tuple != null && !tuple.Item2.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
             try {
-                await tuple.Item2.ScrapeAsync(new ScrapeParameters(Manager.InfoHash));
+                var parameters = RequestFactory.CreateScrape ();
+                await tuple.Item2.ScrapeAsync (parameters);
                 Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, true));
             } catch {
                 Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, false));

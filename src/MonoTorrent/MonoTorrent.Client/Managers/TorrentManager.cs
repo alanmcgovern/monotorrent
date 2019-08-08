@@ -288,10 +288,20 @@ namespace MonoTorrent.Client
             this.InactivePeerManager = new InactivePeerManager(this);
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager();
-            this.TrackerManager = new TrackerManager(this, announces);
+            this.TrackerManager = new TrackerManager(new TrackerRequestFactory (this), announces);
 
             Mode = new StoppedMode(this);            
             CreateRateLimiters();
+
+            TrackerManager.AnnounceComplete += async (o, e) => {
+                if (e.Successful) {
+                    await ClientEngine.MainLoop;
+
+                    Peers.BusyPeers.Clear ();
+                    int count = await AddPeersAsync (e.Peers);
+                    RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
+                }
+            };
 
             if (HasMetadata) {
                 foreach (TorrentFile file in Torrent.Files)

@@ -1,10 +1,10 @@
-//
-// AnnounceResponseEventArgs.cs
+﻿//
+// ITrackerRequestFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,25 +26,14 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using System.Collections.Generic;
+
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class AnnounceResponseEventArgs : TrackerResponseEventArgs
+    public interface ITrackerRequestFactory
     {
-        public IList<Peer> Peers { get; }
-
-        public AnnounceResponseEventArgs(ITracker tracker, bool successful)
-            : this(tracker, successful, Array.Empty<Peer> ())
-        {
-
-        }
-
-        public AnnounceResponseEventArgs(ITracker tracker, bool successful, IList<Peer> peers)
-            : base(tracker, successful)
-        {
-            Peers = peers;
-        }
+        AnnounceParameters CreateAnnounce (TorrentEvent clientEvent);
+        ScrapeParameters CreateScrape ();
     }
 }
