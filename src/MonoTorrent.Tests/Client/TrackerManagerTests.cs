@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
             await rig.RecreateManager();
             trackerManager = rig.Manager.TrackerManager;
             this.trackers = new List<List<CustomTracker>>();
-            foreach (TrackerTier t in trackerManager)
+            foreach (TrackerTier t in trackerManager.Tiers)
             {
                 List<CustomTracker> list = new List<CustomTracker>();
                 foreach (Tracker.Tracker tracker in t)

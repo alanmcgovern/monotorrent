@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using MonoTorrent.Client.Tracker;
+
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
@@ -20,6 +20,7 @@ namespace MonoTorrent.Client.Tracker
         int Incomplete { get; }
         TimeSpan MinUpdateInterval { get; }
         TrackerState Status { get; }
+        TimeSpan TimeSinceLastAnnounce { get; }
         TimeSpan UpdateInterval { get; }
         Uri Uri { get; }
         string WarningMessage { get; }

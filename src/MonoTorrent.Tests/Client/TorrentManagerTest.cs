@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
             };
             rig.Torrent.AnnounceUrls.Add (tier);
             TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
-            foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
+            foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager.Tiers)
             {
                 Assert.IsTrue (t.Trackers.Count > 0, "#1");
             }

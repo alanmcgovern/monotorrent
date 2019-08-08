@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 using MonoTorrent.Common;
@@ -46,14 +47,17 @@ namespace MonoTorrent.Client.Tracker
         public int Downloaded { get; protected set; }
         public string FailureMessage { get; protected set; }
         public int Incomplete { get; protected set; }
+        Stopwatch LastAnnounced { get; }
         public TimeSpan MinUpdateInterval { get; protected set; }
         public TrackerState Status { get; protected set; }
+        public TimeSpan TimeSinceLastAnnounce => LastAnnounced.IsRunning ? LastAnnounced.Elapsed : TimeSpan.MaxValue;
         public TimeSpan UpdateInterval { get; protected set; }
         public Uri Uri { get; }
         public string WarningMessage { get; protected set; }
 
         protected Tracker (Uri uri)
         {
+            LastAnnounced = new Stopwatch ();
             MinUpdateInterval = TimeSpan.FromMinutes(3);
             UpdateInterval = TimeSpan.FromMinutes(30);
             Uri = uri ?? throw new ArgumentNullException (nameof (uri));
@@ -65,7 +69,11 @@ namespace MonoTorrent.Client.Tracker
         public abstract Task ScrapeAsync (ScrapeParameters parameters);
 
         protected virtual void RaiseAnnounceComplete (AnnounceResponseEventArgs e)
-            => AnnounceComplete?.Invoke (this, e);
+        {
+            if (e.Successful)
+                LastAnnounced.Restart ();
+            AnnounceComplete?.Invoke (this, e);
+        }
 
         protected virtual void RaiseScrapeComplete (ScrapeResponseEventArgs e)
             => ScrapeComplete?.Invoke (this, e);

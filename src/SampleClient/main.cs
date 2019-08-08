@@ -175,7 +175,7 @@ namespace MonoTorrent
                 };
 
                 // Every time the tracker's state changes, this is fired
-                foreach (TrackerTier tier in manager.TrackerManager)
+                foreach (TrackerTier tier in manager.TrackerManager.Tiers)
                 {
                     foreach (MonoTorrent.Client.Tracker.Tracker t in tier.GetTrackers())
                     {
