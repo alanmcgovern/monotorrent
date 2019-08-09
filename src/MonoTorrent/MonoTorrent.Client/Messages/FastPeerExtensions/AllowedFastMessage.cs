@@ -27,51 +27,37 @@
 //
 
 
-
-using System;
 using System.Text;
-using System.Net;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class AllowedFastMessage : PeerMessage, IFastPeerMessage
+    class AllowedFastMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x11;
-        private readonly int messageLength = 5;
+        readonly int messageLength = 5;
 
-        #region Member Variables
-        public int PieceIndex
-        {
-            get { return this.pieceIndex; }
-        }
-        private int pieceIndex;
-        #endregion
+        public override int ByteLength => messageLength + 4;
+        public int PieceIndex { get; private set; }
 
-
-        #region Constructors
         internal AllowedFastMessage()
         {
         }
 
         internal AllowedFastMessage(int pieceIndex)
         {
-            this.pieceIndex = pieceIndex;
+            PieceIndex = pieceIndex;
         }
-        #endregion
 
-
-        #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, PieceIndex);
 
             return CheckWritten(written - offset);
         }
@@ -81,41 +67,22 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = ReadInt(buffer, offset);
+            PieceIndex = ReadInt(buffer, offset);
         }
 
-        public override int ByteLength
-        {
-            get { return this.messageLength + 4; }
-        }
-        #endregion
-
-
-        #region Overidden Methods
         public override bool Equals(object obj)
-        {
-            AllowedFastMessage msg = obj as AllowedFastMessage;
-            if (msg == null)
-                return false;
-
-            return this.pieceIndex == msg.pieceIndex;
-        }
-
+            => (obj as AllowedFastMessage)?.PieceIndex == PieceIndex;
 
         public override int GetHashCode()
-        {
-            return this.pieceIndex.GetHashCode();
-        }
-
+            => PieceIndex.GetHashCode();
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(24);
             sb.Append("AllowedFast");
             sb.Append(" Index: ");
-            sb.Append(this.pieceIndex);
+            sb.Append(PieceIndex);
             return sb.ToString();
         }
-        #endregion
     }
 }

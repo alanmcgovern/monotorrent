@@ -26,14 +26,12 @@
 //
 
 
-using System;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "KeepAlive" message
     /// </summary>
-    public class KeepAliveMessage : PeerMessage
+    class KeepAliveMessage : PeerMessage
     {
         private const int messageLength = 0;   // has no payload
         internal static readonly byte MessageId = 0;

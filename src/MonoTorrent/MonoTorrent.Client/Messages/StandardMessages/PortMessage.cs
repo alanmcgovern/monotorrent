@@ -27,16 +27,12 @@
 //
 
 
-
-using System;
-using System.Net;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "Port" message
     /// </summary>
-    public class PortMessage : PeerMessage
+    class PortMessage : PeerMessage
     {
         private const int messageLength = 3;
         internal static readonly byte MessageId = 9;

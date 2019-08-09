@@ -27,17 +27,14 @@
 //
 
 
-
-using System;
 using MonoTorrent.Common;
-using System.Net;
 
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// 
     /// </summary>
-    public class HandshakeMessage : PeerMessage
+    class HandshakeMessage : PeerMessage
     {
         internal const int HandshakeLength = 68;
         private readonly static byte[] ZeroedBits = new byte[8];

@@ -27,15 +27,11 @@
 //
 
 
-
 using System;
-using System.Net;
-using MonoTorrent.Common;
-using System.IO;
 
 namespace MonoTorrent.Client.Messages.Standard
 {
-    public class PieceMessage : PeerMessage
+    class PieceMessage : PeerMessage
     {
         internal static readonly byte MessageId = 7;
         private const int messageLength = 9;
