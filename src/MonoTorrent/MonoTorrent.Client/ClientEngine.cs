@@ -37,7 +37,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Common;
 using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.Client.Encryption;
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
