@@ -27,7 +27,7 @@ namespace MonoTorrent.Tracker
         }
     }
 
-    public class CustomListener : ListenerBase
+    class CustomListener : ListenerBase
     {
         public BEncodedValue Handle(PeerDetails d, MonoTorrent.Common.TorrentEvent e, ITrackable trackable)
         {
@@ -92,7 +92,7 @@ namespace MonoTorrent.Tracker
         public ITrackable trackable;
     }
 
-    public class TrackerTestRig : IDisposable
+    class TrackerTestRig : IDisposable
     {
         private Random r = new Random(1000);
 

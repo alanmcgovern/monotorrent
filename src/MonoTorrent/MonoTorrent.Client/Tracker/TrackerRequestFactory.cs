@@ -34,7 +34,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class TrackerRequestFactory : ITrackerRequestFactory
+    class TrackerRequestFactory : ITrackerRequestFactory
     {
         TorrentManager Manager { get; }
 

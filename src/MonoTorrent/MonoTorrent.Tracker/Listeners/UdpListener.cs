@@ -41,7 +41,7 @@ using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    public class UdpListener : ListenerBase
+    class UdpListener : ListenerBase
     {
         private long curConnectionID;
         //TODO system to clear old connectionID...
