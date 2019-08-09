@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Tracker
         #region Member Variables
 
         /// <summary>
-        /// Returns the tracker which responded to the most recent Announce request.
+        /// Returns the tracker which will be used, by default, for Announce or Scrape requests.
         /// </summary>
         public ITracker CurrentTracker => Tiers.SelectMany (t => t.Trackers).OrderBy (t => t.TimeSinceLastAnnounce).FirstOrDefault ();
 

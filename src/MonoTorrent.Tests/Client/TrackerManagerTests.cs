@@ -180,6 +180,16 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task CurrentTracker ()
+        {
+            Assert.IsNotNull (trackerManager.CurrentTracker, "#1");
+            Assert.AreEqual (TimeSpan.MaxValue, trackerManager.CurrentTracker.TimeSinceLastAnnounce, "#2");
+            await trackerManager.Announce ();
+            Assert.AreEqual (trackers[0][0], trackerManager.CurrentTracker, "#3");
+            Assert.AreNotEqual (TimeSpan.MaxValue, trackerManager.CurrentTracker.TimeSinceLastAnnounce, "#4");
+        }
+
+        [Test]
         public void Defaults ()
         {
             DefaultTracker tracker = new DefaultTracker();
