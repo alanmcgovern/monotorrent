@@ -121,8 +121,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceAllFailed ()
         {
-            AnnounceResponseEventArgs args = null;
-            trackerManager.AnnounceComplete += (o, e) => args = e;
+            var argsTask = new TaskCompletionSource<AnnounceResponseEventArgs> ();;
+            trackerManager.AnnounceComplete += (o, e) => argsTask.SetResult (e);
 
             foreach (var tier in trackers)
                 foreach (var tracker in tier)
@@ -134,6 +134,9 @@ namespace MonoTorrent.Client
                 foreach (var tracker in tier)
                     Assert.AreEqual (1, tracker.AnnouncedAt.Count, "#1." + tracker.Uri);
 
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("Announce never completed");
+            var args = await argsTask.Task;
             Assert.IsNull(args.Tracker, "#2");
             Assert.IsFalse(args.Successful, "#3");
         }
