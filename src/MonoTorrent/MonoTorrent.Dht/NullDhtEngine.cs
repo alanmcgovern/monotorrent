@@ -28,12 +28,11 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Dht
 {
     class NullDhtEngine : IDhtEngine
     {
