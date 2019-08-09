@@ -31,7 +31,7 @@ using System;
 using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent
+namespace MonoTorrent.Dht
 {
     public interface IDhtEngine : IDisposable
     {
