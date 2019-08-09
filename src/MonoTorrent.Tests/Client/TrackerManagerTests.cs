@@ -129,13 +129,13 @@ namespace MonoTorrent.Client
                     tracker.FailAnnounce = true;
 
             await trackerManager.Announce();
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("The announce never completed");
 
             foreach (var tier in trackers)
                 foreach (var tracker in tier)
                     Assert.AreEqual (1, tracker.AnnouncedAt.Count, "#1." + tracker.Uri);
 
-            if (!argsTask.Task.Wait (1000))
-                Assert.Fail ("Announce never completed");
             var args = await argsTask.Task;
             Assert.IsNull(args.Tracker, "#2");
             Assert.IsFalse(args.Successful, "#3");
@@ -144,13 +144,17 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceFailed ()
         {
-            AnnounceResponseEventArgs args = null;
-            trackerManager.AnnounceComplete += (o, e) => args = e;
+            var argsTask = new TaskCompletionSource<AnnounceResponseEventArgs> ();
+            trackerManager.AnnounceComplete += (o, e) => argsTask.SetResult (e);
             trackers[0][0].FailAnnounce = true;
             trackers[0][1].FailAnnounce = true;
             trackers[0][3].FailAnnounce = true;
 
             await trackerManager.Announce();
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("The announce never completed");
+
+            var args = await argsTask.Task;
             Assert.AreEqual(trackers[0][2], trackerManager.CurrentTracker, "#1");
             Assert.AreEqual(1, trackers[0][0].AnnouncedAt.Count, "#2");
             Assert.AreEqual(1, trackers[0][1].AnnouncedAt.Count, "#3");
@@ -163,14 +167,17 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceSecondTier ()
         {
-            AnnounceResponseEventArgs args = null;
-            trackerManager.AnnounceComplete += (o, e) => args = e;
+            var argsTask = new TaskCompletionSource<AnnounceResponseEventArgs> ();
+            trackerManager.AnnounceComplete += (o, e) => argsTask.SetResult (e);
 
             for (int i = 0; i < trackers[0].Count; i++)
                 trackers[0][i].FailAnnounce = true;
             
             await trackerManager.Announce();
-            
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("The announce never completed");
+
+            var args = await argsTask.Task;
             for (int i = 0; i < trackers[0].Count; i++)
                 Assert.AreEqual(1, trackers[0][i].AnnouncedAt.Count, "#1." + i);
 
@@ -202,10 +209,14 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ScrapePrimary ()
         {
-            ScrapeResponseEventArgs args = null;
-            trackerManager.ScrapeComplete += (o, e) => args = e;
+            var argsTask = new TaskCompletionSource<ScrapeResponseEventArgs> ();
+            trackerManager.ScrapeComplete += (o, e) => argsTask.SetResult (e);
 
             await trackerManager.Scrape();
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("The scrape never completed");
+
+            var args = await argsTask.Task;
             Assert.IsTrue (args.Successful);
             Assert.AreSame (trackers[0][0], args.Tracker);
 
@@ -217,11 +228,15 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ScrapeFailed ()
         {
-            ScrapeResponseEventArgs args = null;
+            var argsTask = new TaskCompletionSource<ScrapeResponseEventArgs> ();
             trackers[0][0].FailScrape = true;
-            trackerManager.ScrapeComplete += (o, e) => args = e;
+            trackerManager.ScrapeComplete += (o, e) => argsTask.SetResult (e);
 
             await trackerManager.Scrape();
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("The scrape never completed");
+
+            var args = await argsTask.Task;
             Assert.AreEqual(1, trackers[0][0].ScrapedAt.Count, "#1");
             Assert.IsFalse (args.Successful, "#2");
             Assert.AreSame (trackers[0][0], args.Tracker, "#3");
@@ -230,10 +245,14 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ScrapeSecondary ()
         {
-            ScrapeResponseEventArgs args = null;
-            trackerManager.ScrapeComplete += (o, e) => args = e;
+            var argsTask = new TaskCompletionSource<ScrapeResponseEventArgs> ();
+            trackerManager.ScrapeComplete += (o, e) => argsTask.SetResult (e);
 
             await trackerManager.Scrape(trackers[0][1]);
+            if (!argsTask.Task.Wait (1000))
+                Assert.Fail ("The scrape never completed");
+
+            var args = await argsTask.Task;
             Assert.IsTrue (args.Successful);
             Assert.AreSame (trackers[0][1], args.Tracker);
 
