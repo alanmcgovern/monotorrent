@@ -19,20 +19,21 @@ namespace MonoTorrent
             get; private set;
         }
 
-        public List<string> Webseeds {
-            get; private set;
+        public IList<string> Webseeds {
+            get;
         }
 
         public MagnetLink (string url)
         {
             Check.Url (url);
             AnnounceUrls = new RawTrackerTier ();
-            Webseeds  = new List<string> ();
 
-            ParseMagnetLink (url);
+            var seeds = new List<string> ();
+            ParseMagnetLink (url, seeds);
+            Webseeds = seeds.AsReadOnly ();
         }
 
-        void ParseMagnetLink (string url)
+        void ParseMagnetLink (string url, List<string> seeds)
         {
             string[] splitStr = url.Split ('?');
             if (splitStr.Length == 0 || splitStr[0] != "magnet:")
@@ -73,7 +74,7 @@ namespace MonoTorrent
                         AnnounceUrls.Add(Encoding.UTF8.GetString(bytes));
                     break;
                     case "as"://Acceptable Source
-                        Webseeds.Add (keyval[1]);
+                        seeds.Add (keyval[1]);
                     break;
                     case "dn"://display name
                         var name = UriHelper.UrlDecode(keyval[1]);
