@@ -34,7 +34,11 @@ namespace MonoTorrent.Client
             var task = Incoming.ReceiveAsync (new byte[100], 0, 100);
             Incoming.Dispose ();
 
-            Assert.ThrowsAsync<SocketException> (() => Task.WhenAny (task, Task.Delay (1000)).Result, "Timeout waiting for the receive task to complete");
+            try {
+                Assert.IsTrue (task.Wait (1000), "#1");
+            } catch (AggregateException ex) {
+                Assert.IsInstanceOf<SocketException> (ex.InnerException, "#3");
+            }
         }
 
         [Test]
@@ -43,7 +47,11 @@ namespace MonoTorrent.Client
             var task = Incoming.SendAsync (new byte[1000000], 0, 1000000);
             Incoming.Dispose ();
 
-            Assert.ThrowsAsync<SocketException> (() => Task.WhenAny (task, Task.Delay (1000)).Result, "Timeout waiting for the send task to complete");
+            try {
+                Assert.IsTrue (task.Wait (1000), "#1");
+            } catch (AggregateException ex) {
+                Assert.IsInstanceOf<SocketException> (ex.InnerException, "#3");
+            }
         }
 
 
