@@ -220,7 +220,7 @@ namespace MonoTorrent.Dht
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
-            SendQueryEventArgs e = default;
+            SendQueryEventArgs e = default (SendQueryEventArgs);
             for (int i = 0; i < 4; i++) {
                 e = await MessageLoop.SendAsync (query, node);
 

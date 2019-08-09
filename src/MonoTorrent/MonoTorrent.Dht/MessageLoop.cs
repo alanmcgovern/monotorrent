@@ -183,7 +183,7 @@ namespace MonoTorrent.Dht
             KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
             Message message = receive.Value;
             IPEndPoint source = receive.Key;
-            SendDetails query = default;
+            SendDetails query = default (SendDetails);
 
             try
             {
