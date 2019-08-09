@@ -27,17 +27,14 @@
 //
 
 
-
-using System;
-using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    public class ErrorMessage : UdpTrackerMessage
+    class ErrorMessage : UdpTrackerMessage
     {
-        string errorMessage;
+        public override int ByteLength => 4 + 4 + Encoding.ASCII.GetByteCount(Error);
+        public string Error { get; private set; }
 
         public ErrorMessage()
             :this(0, "")
@@ -45,19 +42,9 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public ErrorMessage(int transactionId, string error)
-            :base(3, transactionId)
+            : base(3, transactionId)
         {
-            this.errorMessage = error;
-        }
-
-        public string Error
-        {
-            get { return errorMessage; }
-        }
-
-        public override int ByteLength
-        {
-            get { return 4 + 4 + Encoding.ASCII.GetByteCount(errorMessage); }
+            Error = error;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
@@ -65,7 +52,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             if (Action != ReadInt(buffer, ref offset))
                 ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
-            errorMessage = ReadString(buffer, ref offset, length - offset);
+            Error = ReadString(buffer, ref offset, length - offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
@@ -74,9 +61,9 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
-            written += WriteAscii(buffer, written, errorMessage);
+            written += WriteAscii(buffer, written, Error);
 
-            return written - offset; ;
+            return written - offset;
         }
     }
 }

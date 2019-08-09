@@ -27,34 +27,17 @@
 //
 
 
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Tracker;
-
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    public abstract class UdpTrackerMessage : Message
+    abstract class UdpTrackerMessage : Message
     {
-        private int action;
-        private int transactionId;
+        public int Action { get ; }
+        public int TransactionId { get; protected set; }
 
-        public int Action
+        protected UdpTrackerMessage(int action, int transactionId)
         {
-            get { return action; }
-        }
-
-        public int TransactionId
-        {
-            get { return transactionId; }
-            protected set { transactionId = value; }
-        }
-
-        public UdpTrackerMessage(int action, int transactionId)
-        {
-            this.action = action;
-            this.transactionId = transactionId;
+            Action = action;
+            TransactionId = transactionId;
         }
 
         public static UdpTrackerMessage DecodeMessage(byte[] buffer, int offset, int count, MessageType type)

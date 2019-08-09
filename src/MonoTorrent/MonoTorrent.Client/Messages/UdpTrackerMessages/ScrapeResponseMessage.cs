@@ -27,27 +27,14 @@
 //
 
 
-
-using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class ScrapeResponseMessage : UdpTrackerMessage
     {
-        private List<ScrapeDetails> scrapes;
-
-        public override int ByteLength
-        {
-            get { return 8 + (scrapes.Count * 12); }
-        }
-
-        public List<ScrapeDetails> Scrapes
-        {
-            get { return scrapes; }
-        }
+        public override int ByteLength => 8 + (Scrapes.Count * 12);
+        public List<ScrapeDetails> Scrapes { get; }
 
         public ScrapeResponseMessage()
             : this(0, new List<ScrapeDetails>())
@@ -58,7 +45,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public ScrapeResponseMessage(int transactionId, List<ScrapeDetails> scrapes)
             :base(2, transactionId)
         {
-            this.scrapes = scrapes;
+            Scrapes = scrapes;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
@@ -71,7 +58,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
                 int seeds = ReadInt(buffer, ref offset);
                 int complete = ReadInt(buffer, ref offset);
                 int leeches = ReadInt(buffer, ref offset);
-                scrapes.Add(new ScrapeDetails(seeds, leeches, complete));
+                Scrapes.Add(new ScrapeDetails(seeds, leeches, complete));
             }
         }
 
@@ -81,11 +68,11 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
             written+=Write(buffer, written, Action);
             written+=Write(buffer, written, TransactionId);
-            for(int i=0; i < scrapes.Count; i++)
+            for(int i=0; i < Scrapes.Count; i++)
             {
-                written += Write(buffer, written, scrapes[i].Seeds);
-                written += Write(buffer, written, scrapes[i].Complete);
-                written += Write(buffer, written, scrapes[i].Leeches);
+                written += Write(buffer, written, Scrapes[i].Seeds);
+                written += Write(buffer, written, Scrapes[i].Complete);
+                written += Write(buffer, written, Scrapes[i].Leeches);
             }
             
             return written - offset;
