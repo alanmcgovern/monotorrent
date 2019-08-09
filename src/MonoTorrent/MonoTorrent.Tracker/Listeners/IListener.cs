@@ -1,8 +1,8 @@
 ﻿//
-// ITrackerRequestFactory.cs
+// IListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2019 Alan McGovern
 //
@@ -27,13 +27,21 @@
 //
 
 
-using MonoTorrent.Common;
+using System;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Tracker.Listeners
 {
-    interface ITrackerRequestFactory
+    /// <summary>
+    /// Listens for incoming Announce or Scrape requests and sends the response back.
+    /// </summary>
+    public interface IListener
     {
-        AnnounceParameters CreateAnnounce (TorrentEvent clientEvent);
-        ScrapeParameters CreateScrape ();
+        event EventHandler<ScrapeParameters> ScrapeReceived;
+        event EventHandler<AnnounceParameters> AnnounceReceived;
+
+        bool Running { get; }
+
+        void Start();
+        void Stop();
     }
 }

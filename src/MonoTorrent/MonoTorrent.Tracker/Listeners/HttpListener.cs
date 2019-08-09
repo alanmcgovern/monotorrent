@@ -39,7 +39,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    public class HttpListener : ListenerBase
+    class HttpListener : ListenerBase
     {
         #region Fields
 

@@ -91,7 +91,7 @@ namespace MonoTorrent.Client.Tracker
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
+        internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
         {
             RequestFactory = requestFactory;
             LastAnnounce = new Stopwatch ();

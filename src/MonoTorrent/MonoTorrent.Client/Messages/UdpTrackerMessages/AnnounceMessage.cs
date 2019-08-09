@@ -1,13 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    public class AnnounceMessage : UdpTrackerMessage
+    class AnnounceMessage : UdpTrackerMessage
     {
         private long connectionId;
         private InfoHash infoHash;  // 20

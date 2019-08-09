@@ -82,7 +82,6 @@ namespace MonoTorrent.Tracker
         private Dictionary<InfoHash, SimpleTorrentManager> torrents;
         private BEncodedString trackerId;
 
-
         #endregion Fields
 
 
@@ -144,6 +143,8 @@ namespace MonoTorrent.Tracker
             get { return trackerId; }
         }
 
+        List<IListener> Listeners { get; }
+
         #endregion Properties
 
 
@@ -170,6 +171,7 @@ namespace MonoTorrent.Tracker
             minAnnounceInterval = TimeSpan.FromMinutes(10);
             timeoutInterval = TimeSpan.FromMinutes(50);
 
+            Listeners = new List<IListener> ();
             MonoTorrent.Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
                 Requests.Tick();
                 return !disposed;
@@ -241,13 +243,13 @@ namespace MonoTorrent.Tracker
                 return new List<SimpleTorrentManager>(this.torrents.Values).GetEnumerator();
         }
 
-        public bool IsRegistered(ListenerBase listener)
+        public bool IsRegistered(IListener listener)
         {
             CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
-            
-            return listener.Tracker == this;
+
+            return Listeners.Contains (listener);
         }
 
         private void ListenerReceivedAnnounce(object sender, AnnounceParameters e)
@@ -374,18 +376,15 @@ namespace MonoTorrent.Tracker
                 h(this, e);
         }
 
-        public void RegisterListener(ListenerBase listener)
+        public void RegisterListener(IListener listener)
         {
             CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
-            if (listener.Tracker != null)
-                throw new TorrentException("The listener is registered to a different Tracker");
-
-            listener.Tracker = this;
-            listener.AnnounceReceived += new EventHandler<AnnounceParameters>(ListenerReceivedAnnounce);
-            listener.ScrapeReceived += new EventHandler<ScrapeParameters>(ListenerReceivedScrape);
+            listener.AnnounceReceived += ListenerReceivedAnnounce;
+            listener.ScrapeReceived += ListenerReceivedScrape;
+            Listeners.Add (listener);
         }
 
         public void Remove(ITrackable trackable)
@@ -398,18 +397,15 @@ namespace MonoTorrent.Tracker
                 torrents.Remove(trackable.InfoHash);
         }
 
-        public void UnregisterListener(ListenerBase listener)
+        public void UnregisterListener(IListener listener)
         {
             CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
-            if (listener.Tracker != this)
-                throw new TorrentException("The listener is not registered with this tracker");
-
-            listener.Tracker = null;
-            listener.AnnounceReceived -= new EventHandler<AnnounceParameters>(ListenerReceivedAnnounce);
-            listener.ScrapeReceived -= new EventHandler<ScrapeParameters>(ListenerReceivedScrape);
+            listener.AnnounceReceived -= ListenerReceivedAnnounce;
+            listener.ScrapeReceived -= ListenerReceivedScrape;
+            Listeners.Remove (listener);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
