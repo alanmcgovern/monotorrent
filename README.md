@@ -1,4 +1,4 @@
- 
+[![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
 
 PRE-REQUISITES
 ------------------------------------------------------------------------------------------------------------
