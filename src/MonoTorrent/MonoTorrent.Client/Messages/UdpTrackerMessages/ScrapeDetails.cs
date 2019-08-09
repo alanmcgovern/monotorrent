@@ -27,39 +27,19 @@
 //
 
 
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    public class ScrapeDetails
+    class ScrapeDetails
     {
-        private int complete;
-        private int leeches;
-        private int seeds;
-
-        public int Complete
-        {
-            get { return complete; }
-        }
-
-        public int Leeches
-        {
-            get { return leeches; }
-        }
-
-        public int Seeds
-        {
-            get { return seeds; }
-        }
+        public int Complete { get; }
+        public int Leeches { get; }
+        public int Seeds { get; }
 
         public ScrapeDetails(int seeds, int leeches, int complete)
         {
-            this.complete = complete;
-            this.leeches = leeches;
-            this.seeds = seeds;
+            Complete = complete;
+            Leeches = leeches;
+            Seeds = seeds;
         }
     }
 }
