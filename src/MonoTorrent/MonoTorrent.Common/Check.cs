@@ -2,7 +2,7 @@ using System;
 
 namespace MonoTorrent
 {
-    public static class Check
+    static class Check
     {
         static void DoCheck(object toCheck, string name)
         {
