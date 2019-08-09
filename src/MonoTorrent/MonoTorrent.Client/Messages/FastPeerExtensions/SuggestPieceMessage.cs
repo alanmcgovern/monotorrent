@@ -27,28 +27,24 @@
 //
 
 
-
-using System;
 using System.Text;
-using System.Net;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
     // FIXME: The only use for a SuggestPiece message is for when i load a piece into a Disk Cache and want to make use for it
-    public class SuggestPieceMessage : PeerMessage, IFastPeerMessage
+    class SuggestPieceMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x0D;
-        private readonly int messageLength = 5;
+        readonly int messageLength = 5;
 
         #region Member Variables
+
+        public override int ByteLength => messageLength + 4;
+
         /// <summary>
         /// The index of the suggested piece to request
         /// </summary>
-        public int PieceIndex
-        {
-            get { return this.pieceIndex; }
-        }
-        private int pieceIndex;
+        public int PieceIndex { get; private set; }
         #endregion
 
 
@@ -67,7 +63,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         /// <param name="pieceIndex">The suggested piece to download</param>
         public SuggestPieceMessage(int pieceIndex)
         {
-            this.pieceIndex = pieceIndex;
+            PieceIndex = pieceIndex;
         }
         #endregion
 
@@ -82,7 +78,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
 			written += Write(buffer, written, messageLength);
 			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
+			written += Write(buffer, written, PieceIndex);
 
             return CheckWritten(written - offset);
         }
@@ -92,37 +88,25 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = ReadInt(buffer, ref offset);
+            PieceIndex = ReadInt(buffer, ref offset);
         }
 
-        public override int ByteLength
-        {
-            get { return this.messageLength + 4; }
-        }
         #endregion
 
 
         #region Overidden Methods
         public override bool Equals(object obj)
-        {
-            SuggestPieceMessage msg = obj as SuggestPieceMessage;
-            if (msg == null)
-                return false;
-
-            return this.pieceIndex == msg.pieceIndex;
-        }
+            => (obj as SuggestPieceMessage)?.PieceIndex == PieceIndex;
 
         public override int GetHashCode()
-        {
-            return this.pieceIndex.GetHashCode();
-        }
+            => PieceIndex.GetHashCode();
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(24);
             sb.Append("Suggest Piece");
             sb.Append(" Index: ");
-            sb.Append(this.pieceIndex);
+            sb.Append(PieceIndex);
             return sb.ToString();
         }
         #endregion

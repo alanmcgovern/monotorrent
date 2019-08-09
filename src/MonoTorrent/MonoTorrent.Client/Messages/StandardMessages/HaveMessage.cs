@@ -27,16 +27,12 @@
 //
 
 
-
-using System;
-using System.Net;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "Have" message
     /// </summary>
-    public class HaveMessage : PeerMessage
+    class HaveMessage : PeerMessage
     {
         internal static readonly byte MessageId = 4;
         private const int messageLength = 5;

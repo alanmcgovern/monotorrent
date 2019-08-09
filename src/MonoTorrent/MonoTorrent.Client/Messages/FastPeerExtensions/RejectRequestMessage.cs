@@ -27,46 +27,34 @@
 //
 
 
-
-using System;
 using System.Text;
-using System.Net;
+
 using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class RejectRequestMessage : PeerMessage, IFastPeerMessage
+    class RejectRequestMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x10;
         public readonly int messageLength = 13;
 
         #region Member Variables
+        public override int ByteLength => messageLength + 4;
+
         /// <summary>
         /// The offset in bytes of the block of data
         /// </summary>
-        public int StartOffset
-        {
-            get { return this.startOffset; }
-        }
-        private int startOffset;
+        public int StartOffset { get; private set; }
 
         /// <summary>
         /// The index of the piece
         /// </summary>
-        public int PieceIndex
-        {
-            get { return this.pieceIndex; }
-        }
-        private int pieceIndex;
+        public int PieceIndex { get; private set; }
 
         /// <summary>
         /// The length of the block of data
         /// </summary>
-        public int RequestLength
-        {
-            get { return this.requestLength; }
-        }
-        private int requestLength;
+        public int RequestLength { get; private set; }
         #endregion
 
 
@@ -88,9 +76,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
         public RejectRequestMessage(int pieceIndex, int startOffset, int requestLength)
         {
-            this.pieceIndex = pieceIndex;
-            this.startOffset = startOffset;
-            this.requestLength = requestLength;
+            PieceIndex = pieceIndex;
+            StartOffset = startOffset;
+            RequestLength = requestLength;
         }
         #endregion
 
@@ -105,9 +93,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
 			written += Write(buffer, written, messageLength);
 			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
-			written += Write(buffer, written, startOffset);
-			written += Write(buffer, written, requestLength);
+			written += Write(buffer, written, PieceIndex);
+			written += Write(buffer, written, StartOffset);
+			written += Write(buffer, written, RequestLength);
 
             return CheckWritten(written - offset);
         }
@@ -118,14 +106,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = ReadInt(buffer, ref offset);
-            this.startOffset = ReadInt(buffer, ref offset);
-            this.requestLength = ReadInt(buffer, ref offset);
-        }
-
-        public override int ByteLength
-        {
-            get { return this.messageLength + 4; }
+            PieceIndex = ReadInt(buffer, ref offset);
+            StartOffset = ReadInt(buffer, ref offset);
+            RequestLength = ReadInt(buffer, ref offset);
         }
         #endregion
 
@@ -137,17 +120,17 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (msg == null)
                 return false;
 
-            return (this.pieceIndex == msg.pieceIndex
-                && this.startOffset == msg.startOffset
-                && this.requestLength == msg.requestLength);
+            return (PieceIndex == msg.PieceIndex
+                && StartOffset == msg.StartOffset
+                && RequestLength == msg.RequestLength);
         }
 
 
         public override int GetHashCode()
         {
-            return (this.pieceIndex.GetHashCode()
-                    ^ this.requestLength.GetHashCode()
-                    ^ this.startOffset.GetHashCode());
+            return (PieceIndex.GetHashCode()
+                    ^ RequestLength.GetHashCode()
+                    ^ StartOffset.GetHashCode());
         }
 
 
@@ -156,11 +139,11 @@ namespace MonoTorrent.Client.Messages.FastPeer
             StringBuilder sb = new StringBuilder(24);
             sb.Append("Reject Request");
             sb.Append(" Index: ");
-            sb.Append(this.pieceIndex);
+            sb.Append(PieceIndex);
             sb.Append(" Offset: ");
-            sb.Append(this.startOffset);
+            sb.Append(StartOffset);
             sb.Append(" Length " );
-            sb.Append(this.requestLength);
+            sb.Append(RequestLength);
             return sb.ToString();
         }
         #endregion

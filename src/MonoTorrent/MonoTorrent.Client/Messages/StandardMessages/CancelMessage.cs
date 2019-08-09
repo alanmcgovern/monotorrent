@@ -27,17 +27,12 @@
 //
 
 
-
-using System;
-using System.Net;
-using MonoTorrent.Client.Messages;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// 
     /// </summary>
-    public class CancelMessage : PeerMessage
+    class CancelMessage : PeerMessage
     {
         private const int messageLength = 13;
         internal static readonly byte MessageId = 8;

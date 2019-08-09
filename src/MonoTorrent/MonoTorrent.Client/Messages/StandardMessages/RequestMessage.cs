@@ -27,11 +27,6 @@
 //
 
 
-
-using System;
-using System.Net;
-using MonoTorrent.Client.Messages.FastPeer;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     public class RequestMessage : PeerMessage

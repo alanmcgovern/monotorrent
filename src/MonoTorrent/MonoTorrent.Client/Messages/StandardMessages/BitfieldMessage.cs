@@ -27,9 +27,6 @@
 //
 
 
-
-using System;
-using System.Net;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Messages.Standard
@@ -37,7 +34,7 @@ namespace MonoTorrent.Client.Messages.Standard
     /// <summary>
     /// 
     /// </summary>
-    public class BitfieldMessage : PeerMessage
+    class BitfieldMessage : PeerMessage
     {
         internal static readonly byte MessageId = 5;
 

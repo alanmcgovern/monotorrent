@@ -27,16 +27,12 @@
 //
 
 
-
-using System;
-using System.Net;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "NotInterested" message
     /// </summary>
-    public class NotInterestedMessage : PeerMessage
+    class NotInterestedMessage : PeerMessage
     {
         private const int messageLength = 1;
         internal static readonly byte MessageId = 3;

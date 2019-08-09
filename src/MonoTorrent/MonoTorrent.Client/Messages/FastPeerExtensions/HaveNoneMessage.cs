@@ -27,35 +27,24 @@
 //
 
 
-
-using System;
-using System.Text;
-using System.Net;
-
 namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class HaveNoneMessage : PeerMessage, IFastPeerMessage
+    class HaveNoneMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x0F;
-        private readonly int messageLength = 1;
+        readonly int messageLength = 1;
 
-        #region Constructors
-        public HaveNoneMessage()
-        {
-        }
-        #endregion
+        public override int ByteLength => messageLength + 4;
 
-
-        #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
 
             return CheckWritten(written - offset);
         }
@@ -66,28 +55,13 @@ namespace MonoTorrent.Client.Messages.FastPeer
                 throw new ProtocolException("Message decoding not supported");
         }
 
-        public override int ByteLength
-        {
-            get { return this.messageLength + 4; }
-        }
-        #endregion
-
-
-        #region Overidden Methods
         public override bool Equals(object obj)
-        {
-            return obj is HaveNoneMessage;
-        }
+            => obj is HaveNoneMessage;
 
         public override int GetHashCode()
-        {
-            return this.ToString().GetHashCode();
-        }
+            => 1;
 
         public override string ToString()
-        {
-            return "HaveNoneMessage";
-        }
-        #endregion
+            => "HaveNoneMessage";
     }
 }

@@ -27,16 +27,12 @@
 //
 
 
-
-using System;
-using System.Net;
-
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// 
     /// </summary>
-    public class ChokeMessage : PeerMessage
+    class ChokeMessage : PeerMessage
     {
         private const int messageLength = 1;
         internal static readonly byte MessageId = 0;
