@@ -271,7 +271,7 @@ namespace MonoTorrent.Client
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
 
-            if(MonoTorrent.Common.Torrent.TryLoad(torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
+            if(Torrent.TryLoad(torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
                 Torrent = torrent;
 
             Initialise(savePath, "", announces);

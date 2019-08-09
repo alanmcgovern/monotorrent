@@ -7,43 +7,75 @@ namespace MonoTorrent
 {
     public class MagnetLink
     {
+        /// <summary>
+        /// The list of tracker Urls.
+        /// </summary>
         public RawTrackerTier AnnounceUrls {
-            get; private set;
+            get;
         }
 
+        /// <summary>
+        /// The infohash of the torrent.
+        /// </summary>
         public InfoHash InfoHash {
-            get; private set;
+            get;
         }
 
+        /// <summary>
+        /// The size in bytes of the data, if available.
+        /// </summary>
+        public long? Size {
+            get;
+        }
+
+        /// <summary>
+        /// The display name of the torrent, if available.
+        /// </summary>
         public string Name {
-            get; private set;
+            get;
         }
 
+        /// <summary>
+        /// The list of webseed Urls.
+        /// </summary>
         public IList<string> Webseeds {
             get;
         }
 
-        public MagnetLink (string url)
+        public MagnetLink (InfoHash infoHash, string name = null, IList<string> announceUrls = null, IEnumerable<string> webSeeds = null, long? size = null)
         {
-            Check.Url (url);
-            AnnounceUrls = new RawTrackerTier ();
-
-            var seeds = new List<string> ();
-            ParseMagnetLink (url, seeds);
-            Webseeds = seeds.AsReadOnly ();
+            InfoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            Name = name;
+            AnnounceUrls = new RawTrackerTier (announceUrls ?? Array.Empty<string> ());
+            Webseeds = new List<string> (webSeeds ?? Array.Empty<string> ()).AsReadOnly ();
+            Size = size;
         }
 
-        void ParseMagnetLink (string url, List<string> seeds)
+        /// <summary>
+        /// Parses a magnet link from the given string. The uri should be in the form magnet:?xt=urn:btih:
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public static MagnetLink Parse (string uri)
+            => FromUri (new Uri (uri));
+
+        /// <summary>
+        /// Parses a magnet link from the given Uri. The uri should be in the form magnet:?xt=urn:btih:
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public static MagnetLink FromUri (Uri uri)
         {
-            string[] splitStr = url.Split ('?');
-            if (splitStr.Length == 0 || splitStr[0] != "magnet:")
-                throw new FormatException ("The magnet link must start with 'magnet:?'.");
+            InfoHash infoHash = null;
+            string name = null;
+            var announceUrls = new RawTrackerTier ();
+            var webSeeds = new List<string> ();
+            long? size = null;
 
-            if (splitStr.Length == 1)
-                return;//no parametter
+            if (uri.Scheme != "magnet")
+                throw new FormatException ("Magnet links must start with 'magnet:'.");
 
-            string[] parameters = splitStr[1].Split ('&', ';');
-
+            string[] parameters = uri.Query.Substring (1).Split ('&');
             for (int i = 0; i < parameters.Length ; i++)
             {
                 string[] keyval = parameters[i].Split ('=');
@@ -52,7 +84,7 @@ namespace MonoTorrent
                 switch (keyval[0].Substring(0, 2))
                 {
                     case "xt"://exact topic
-                        if (InfoHash != null)
+                        if (infoHash != null)
                             throw new FormatException ("More than one infohash in magnet link is not allowed.");
 
                         string val = keyval[1].Substring(9);
@@ -61,26 +93,29 @@ namespace MonoTorrent
                             case "urn:sha1:"://base32 hash
                             case "urn:btih:":
                             if (val.Length == 32)
-                                InfoHash = InfoHash.FromBase32 (val);
+                                infoHash = InfoHash.FromBase32 (val);
                             else if (val.Length == 40)
-                                InfoHash = InfoHash.FromHex (val);
+                                infoHash = InfoHash.FromHex (val);
                             else
                                 throw new FormatException("Infohash must be base32 or hex encoded.");
                             break;
                         }
                     break;
                     case "tr" ://address tracker
-                        var bytes = UriHelper.UrlDecode(keyval[1]);
-                        AnnounceUrls.Add(Encoding.UTF8.GetString(bytes));
+                        var urlBytes = UriHelper.UrlDecode(keyval[1]);
+                        announceUrls.Add(Encoding.UTF8.GetString(urlBytes));
                     break;
                     case "as"://Acceptable Source
-                        seeds.Add (keyval[1]);
+                        var webseedBytes = UriHelper.UrlDecode(keyval[1]);
+                        webSeeds.Add(Encoding.UTF8.GetString (webseedBytes));
                     break;
                     case "dn"://display name
-                        var name = UriHelper.UrlDecode(keyval[1]);
-                        Name = Encoding.UTF8.GetString(name);
+                        var nameBytes = UriHelper.UrlDecode(keyval[1]);
+                        name = Encoding.UTF8.GetString(nameBytes);
                     break;
                     case "xl"://exact length
+                        size = long.Parse (keyval [1]);
+                    break;
                     case "xs":// eXact Source - P2P link.
                     case "kt"://keyword topic
                     case "mt"://manifest topic
@@ -91,6 +126,43 @@ namespace MonoTorrent
                     break;
                 }
             }
+
+            return new MagnetLink (infoHash, name, announceUrls, webSeeds, size);
+        }
+
+        public string ToV1Uri ()
+            => ToUri (1);
+
+        string ToUri (int formatVersion)
+        {
+            var sb = new StringBuilder ();
+            sb.Append ("magnet:?");
+            if (formatVersion == 1) {
+                sb.Append ("xt=urn:btih:");
+                sb.Append (InfoHash.ToHex ());
+            } else if (formatVersion == 2) {
+                sb.Append ("xt=urn:btmh");
+                throw new NotSupportedException ("Need to add support for the new 'multihash' thing");
+            } else {
+                throw new NotSupportedException ();
+            }
+
+            if (!string.IsNullOrEmpty (Name)) {
+                sb.Append ("&dn=");
+                sb.Append (UriHelper.UrlEncode (Encoding.UTF8.GetBytes (Name)));
+            }
+
+            foreach (var tracker in AnnounceUrls) {
+                sb.Append ("&tr=");
+                sb.Append (UriHelper.UrlEncode (Encoding.UTF8.GetBytes (tracker)));
+            }
+
+            foreach (var webseed in Webseeds) {
+                sb.Append ("&as=");
+                sb.Append (UriHelper.UrlEncode (Encoding.UTF8.GetBytes (webseed)));
+            }
+
+            return sb.ToString ();
         }
     }
 }

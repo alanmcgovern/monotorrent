@@ -27,10 +27,7 @@
 //
 
 
-
-using System;
-
-namespace MonoTorrent
+namespace MonoTorrent.Dht
 {
     public enum DhtState
     {
