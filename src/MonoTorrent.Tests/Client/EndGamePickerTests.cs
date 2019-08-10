@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
+
 using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -121,8 +121,8 @@ namespace MonoTorrent.Client
         public void HashFail()
         {
             Piece piece;
-            RequestMessage m;
-            List<RequestMessage> requests = new List<RequestMessage>();
+            PieceRequest m;
+            List<PieceRequest> requests = new List<PieceRequest>();
 
             id.BitField[0] = true;
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
                 requests.Add(m);
 
-            foreach (RequestMessage message in requests)
+            foreach (var message in requests)
                 Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
 
             Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));

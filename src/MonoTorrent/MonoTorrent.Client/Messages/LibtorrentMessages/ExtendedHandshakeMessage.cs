@@ -27,16 +27,12 @@
 //
 
 
-
-using System;
-using System.Text;
-using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    public class ExtendedHandshakeMessage : ExtensionMessage
+    class ExtendedHandshakeMessage : ExtensionMessage
     {
         private static readonly BEncodedString MaxRequestKey = "reqq";
         private static readonly BEncodedString PortKey = "p";

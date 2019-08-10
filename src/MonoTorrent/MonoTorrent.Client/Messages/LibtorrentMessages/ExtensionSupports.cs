@@ -26,14 +26,12 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
-    public class ExtensionSupports : List<ExtensionSupport>
+    class ExtensionSupports : List<ExtensionSupport>
     {
         public ExtensionSupports()
         {

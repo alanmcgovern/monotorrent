@@ -31,6 +31,7 @@
 
 using System;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
@@ -132,12 +133,12 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal RequestMessage CreateRequest(PeerId id)
+        internal PieceRequest CreateRequest(PeerId id)
         {
             Requested = true;
             RequestedOff = id;
             RequestedOff.AmRequestingPiecesCount++;
-            return new RequestMessage(PieceIndex, this.startOffset, this.requestLength);
+            return new PieceRequest (PieceIndex, StartOffset, RequestLength);
         }
 
         internal void CancelRequest()

@@ -72,7 +72,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Event that's fired every time a message is sent or Received from a Peer
         /// </summary>
-        public event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
+        event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
 
         #endregion
 

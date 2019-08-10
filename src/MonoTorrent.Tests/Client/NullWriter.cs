@@ -42,6 +42,12 @@ namespace MonoTorrent.Client
         {
 
         }
+
+        public override void Move(TorrentFile file, string newPath, bool overwrite)
+        {
+
+        }
+
         public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return 0;
@@ -69,11 +75,6 @@ namespace MonoTorrent.Client
         public override bool Exists(TorrentFile file)
         {
             return false;
-        }
-
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
-        {
-
         }
     }
 }

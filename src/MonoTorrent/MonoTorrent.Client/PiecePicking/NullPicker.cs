@@ -33,7 +33,7 @@ using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public class NullPicker : PiecePicker
     {
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             return null;
         }

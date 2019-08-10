@@ -30,15 +30,13 @@
 
 using System;
 using System.Collections.Generic;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using System.Threading;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Connections;
-using System.Diagnostics;
 using System.Threading.Tasks;
+
+using MonoTorrent.Common;
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
@@ -125,9 +123,9 @@ namespace MonoTorrent.Client
             {
                 while (id.AmRequestingPiecesCount < maxRequests)
                 {
-                    msg = Picker.ContinueExistingRequest(id);
-                    if (msg != null)
-                        id.Enqueue(msg);
+                    var request = Picker.ContinueExistingRequest(id);
+                    if (request != null)
+                        id.Enqueue(new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
                     else
                         break;
                 } 
@@ -137,9 +135,10 @@ namespace MonoTorrent.Client
             {
                 while (id.AmRequestingPiecesCount < maxRequests)
                 {
-                    msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
-                    if (msg != null)
-                        id.Enqueue(msg);
+                    var request = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
+                    if (msg != null && request.Count > 0)
+                        for (int i = 0; i < request.Count; i ++)
+                            id.Enqueue(new RequestMessage (request[i].PieceIndex, request[i].StartOffset, request[i].RequestLength));
                     else
                         break;
                 }

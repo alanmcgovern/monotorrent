@@ -29,10 +29,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+
 using MonoTorrent.Common;
-using MonoTorrent.Client;
+using MonoTorrent.Client.PiecePicking;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {

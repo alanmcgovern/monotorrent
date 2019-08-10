@@ -39,7 +39,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 using System.Diagnostics;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     /// <summary>
     /// Generates a sliding window with high, medium, and low priority sets. The high priority set is downloaded first and in order.
@@ -174,9 +174,9 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
-            MessageBundle bundle;
+            IList<PieceRequest> bundle;
             int start, end;
 
             if (HighPrioritySetStart >= startIndex && HighPrioritySetStart <= endIndex)

@@ -29,11 +29,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
-    public class SortList<T> : IList<T>
+    class SortList<T> : IList<T>
     {
         private List<T> list;
 

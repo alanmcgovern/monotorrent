@@ -33,7 +33,7 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public class RarestFirstPicker : PiecePicker
     {
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
             this.length = bitfield.Length;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             if (peerBitfield.AllFalse)
                 return null;
@@ -72,7 +72,7 @@ namespace MonoTorrent.Client
             while (rarest.Count > 0)
             {
                 BitField current = rarest.Pop();
-                MessageBundle bundle = base.PickPiece(id, current, otherPeers, count, startIndex, endIndex);
+                var bundle = base.PickPiece(id, current, otherPeers, count, startIndex, endIndex);
                 spares.Push(current);
 
                 if (bundle != null)

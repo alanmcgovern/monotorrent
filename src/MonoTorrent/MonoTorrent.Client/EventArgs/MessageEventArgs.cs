@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a PeerMessage event
     /// </summary>
-    public class PeerMessageEventArgs : TorrentEventArgs
+    internal class PeerMessageEventArgs : TorrentEventArgs
     {
         #region Member Variables
 

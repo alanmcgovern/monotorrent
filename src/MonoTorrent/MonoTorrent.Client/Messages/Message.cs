@@ -27,15 +27,12 @@
 //
 
 
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Net;
 
 namespace MonoTorrent.Client.Messages
 {
-    public abstract class Message : IMessage
+    abstract class Message : IMessage
     {
         public abstract int ByteLength { get; }
 

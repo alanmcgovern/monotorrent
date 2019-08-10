@@ -27,22 +27,15 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net;
-using MonoTorrent.Common;
-using System.Threading;
 using System.IO;
-using System.Diagnostics;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
 using System.Threading.Tasks;
+
+using MonoTorrent.Common;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {

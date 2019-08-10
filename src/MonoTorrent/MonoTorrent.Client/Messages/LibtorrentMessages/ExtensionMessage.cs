@@ -1,5 +1,5 @@
 //
-// LibtorrentMessage.cs
+// ExtensionMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,12 +28,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    public abstract class ExtensionMessage : PeerMessage
+    abstract class ExtensionMessage : PeerMessage
     {
         internal static readonly byte MessageId = 20;
         private static Dictionary<byte, CreateMessage> messageDict;

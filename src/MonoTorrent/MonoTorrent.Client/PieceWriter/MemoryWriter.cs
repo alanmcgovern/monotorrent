@@ -130,9 +130,9 @@ namespace MonoTorrent.Client.PieceWriters
             ClientEngine.BufferManager.FreeBuffer(b.Buffer);
         }
 
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
+        public override void Move(TorrentFile file, string newPath, bool overwrite)
         {
-            writer.Move(oldPath, newPath, ignoreExisting);
+            writer.Move(file, newPath, overwrite);
         }
 
         public override void Dispose()

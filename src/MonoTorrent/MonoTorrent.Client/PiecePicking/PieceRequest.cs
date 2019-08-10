@@ -1,10 +1,10 @@
-//
-// LTSupport.cs
+﻿//
+// PieceRequest.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,22 +27,32 @@
 //
 
 
-namespace MonoTorrent.Client.Messages.Libtorrent
+using System;
+
+namespace MonoTorrent.Client.PiecePicking
 {
-    struct ExtensionSupport
+    public class PieceRequest : IEquatable<PieceRequest>
     {
-        public byte MessageId { get; }
-        public string Name { get; }
+        public int PieceIndex { get; }
+        public int StartOffset { get; }
+        public int RequestLength { get; }
 
-        public ExtensionSupport(string name, byte messageId)
+        public PieceRequest (int pieceIndex, int startOffset, int requestLength)
         {
-            MessageId = messageId;
-            Name = name;
+            PieceIndex = pieceIndex;
+            StartOffset = startOffset;
+            RequestLength = requestLength;
         }
 
-        public override string ToString()
-        {
-            return string.Format("{1}: {0}", Name, MessageId);
-        }
+        public override bool Equals (object obj)
+            => Equals (obj as PieceRequest);
+
+        public bool Equals (PieceRequest other)
+            => other?.PieceIndex == PieceIndex
+            && other?.StartOffset == StartOffset
+            && other?.RequestLength == RequestLength;
+
+        public override int GetHashCode ()
+            => PieceIndex;
     }
 }

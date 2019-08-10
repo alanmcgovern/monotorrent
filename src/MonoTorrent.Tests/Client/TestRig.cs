@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
             return FilesThatExist.Contains(file);
         }
 
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
+        public override void Move(TorrentFile file, string newPath, bool overwrite)
         {
             
         }
