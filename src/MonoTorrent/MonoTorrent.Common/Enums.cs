@@ -37,7 +37,32 @@ namespace MonoTorrent.Dht
     }
 }
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Client
+{
+    public enum TorrentState
+    {
+        Stopped,
+        Paused,
+        Downloading,
+        Seeding,
+        Hashing,
+        Stopping,
+        Error,
+		Metadata
+    }
+}
+
+namespace MonoTorrent.Client.Tracker
+{
+    public enum TrackerState
+    {
+        Ok,
+        Offline,
+        InvalidResponse
+    }
+}
+
+namespace MonoTorrent
 {
     public enum ListenerStatus
     {
@@ -60,18 +85,6 @@ namespace MonoTorrent.Common
         Outgoing
     }
 
-    public enum TorrentState
-    {
-        Stopped,
-        Paused,
-        Downloading,
-        Seeding,
-        Hashing,
-        Stopping,
-        Error,
-		Metadata
-    }
-
     public enum Priority
     {
         DoNotDownload = 0,
@@ -81,13 +94,6 @@ namespace MonoTorrent.Common
         High = 8,
         Highest = 16,
         Immediate = 32
-    }
-
-    public enum TrackerState
-    {
-        Ok,
-        Offline,
-        InvalidResponse
     }
 
     public enum TorrentEvent

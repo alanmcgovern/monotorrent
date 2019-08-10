@@ -27,13 +27,12 @@
 //
 
 
-
-using System;
 using System.IO;
-using MonoTorrent.Common;
-using NUnit.Framework;
 using System.Text;
+
 using MonoTorrent.BEncoding;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Common
 {

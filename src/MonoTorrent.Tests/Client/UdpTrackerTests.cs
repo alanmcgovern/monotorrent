@@ -27,19 +27,16 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+
 using MonoTorrent.Client.Messages.UdpTracker;
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using System.Threading;
-using System.Net;
-using System.Threading.Tasks;
-using System.Net.Sockets;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {

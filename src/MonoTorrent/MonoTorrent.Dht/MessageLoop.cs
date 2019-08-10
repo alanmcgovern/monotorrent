@@ -34,7 +34,6 @@ using System.Net;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Common;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 

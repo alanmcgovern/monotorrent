@@ -1,14 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Tracker;
 using System.Net;
-using System.Collections.Specialized;
-using System.Web;
-using MonoTorrent.BEncoding;
+using System.Text;
 using System.Threading;
-using MonoTorrent.Tracker.Listeners;
-using MonoTorrent.Common;
+
 using MonoTorrent;
 
 namespace TrackerApp

@@ -29,17 +29,12 @@
 
 
 using System;
-using System.Text;
 using System.Security.Cryptography;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Common;
+using System.Text;
+using System.Threading.Tasks;
+
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
-using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -390,7 +385,7 @@ namespace MonoTorrent.Client.Encryption
             CryptoSelect = new byte[remoteCryptoBytes.Length];
 
             // '2' corresponds to RC4Full
-            if ((remoteCryptoBytes[3] & 2) == 2 && Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Full))
+            if ((remoteCryptoBytes[3] & 2) == 2 && allowedEncryption.HasFlag (EncryptionTypes.RC4Full))
             {
                 CryptoSelect[3] |= 2;
                 if (replace)
@@ -402,7 +397,7 @@ namespace MonoTorrent.Client.Encryption
             }
             
             // '1' corresponds to RC4Header
-            if ((remoteCryptoBytes[3] & 1) == 1 && Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Header))
+            if ((remoteCryptoBytes[3] & 1) == 1 && allowedEncryption.HasFlag (EncryptionTypes.RC4Header))
             {
                 CryptoSelect[3] |= 1;
                 if (replace)
@@ -532,10 +527,10 @@ namespace MonoTorrent.Client.Encryption
             // This sets all bits in CryptoProvide 0 that is to the right of minCryptoAllowed.
             CryptoProvide[0] = CryptoProvide[1] = CryptoProvide[2] = CryptoProvide[3] = 0;
 
-            if (Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Full))
+            if (allowedEncryption.HasFlag (EncryptionTypes.RC4Full))
                 CryptoProvide[3] |= 1 << 1;
 
-            if (Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Header))
+            if (allowedEncryption.HasFlag (EncryptionTypes.RC4Header))
                 CryptoProvide[3] |= 1;
         }
 

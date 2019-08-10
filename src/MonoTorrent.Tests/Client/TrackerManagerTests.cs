@@ -33,7 +33,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Common;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client

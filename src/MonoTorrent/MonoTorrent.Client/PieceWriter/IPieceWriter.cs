@@ -27,8 +27,6 @@
 //
 
 
-using MonoTorrent.Common;
-
 namespace MonoTorrent.Client.PieceWriters
 {
     public interface IPieceWriter

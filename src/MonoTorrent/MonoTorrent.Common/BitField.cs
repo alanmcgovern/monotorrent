@@ -27,14 +27,12 @@
 //
 
 
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent
 {
     /// <summary>
     /// This class is for represting the Peer's bitfield

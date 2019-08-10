@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
 
         public bool Unlimited
         {
-            get { return manager.State != MonoTorrent.Common.TorrentState.Paused; }
+            get { return manager.State != TorrentState.Paused; }
         }
 
         public PauseLimiter(TorrentManager manager)

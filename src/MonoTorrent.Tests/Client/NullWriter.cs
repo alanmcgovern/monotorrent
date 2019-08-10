@@ -27,14 +27,7 @@
 //
 
 
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.Common;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PieceWriters
 {
     public class NullWriter : PieceWriter
     {

@@ -35,7 +35,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-using MonoTorrent.Common;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Dht;
 
@@ -467,7 +466,7 @@ namespace MonoTorrent.Client
         static string GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
-            sb.Append(Common.VersionInfo.ClientVersion);
+            sb.Append(VersionInfo.ClientVersion);
 
             var random = new Random(count++);
             while (sb.Length < 20)

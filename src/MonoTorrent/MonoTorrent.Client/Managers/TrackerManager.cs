@@ -33,8 +33,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Common;
-
 namespace MonoTorrent.Client.Tracker
 {
     /// <summary>

@@ -30,10 +30,7 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Common;
-using MonoTorrent.Client.PiecePicking;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     class TestPicker : PiecePicker
     {

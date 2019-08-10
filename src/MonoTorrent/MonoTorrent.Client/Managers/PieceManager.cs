@@ -27,12 +27,10 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;

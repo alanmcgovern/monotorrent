@@ -30,14 +30,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.FastPeer;
-using System.Diagnostics;
 
 namespace MonoTorrent.Client.PiecePicking
 {

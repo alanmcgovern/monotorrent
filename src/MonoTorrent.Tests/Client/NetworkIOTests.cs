@@ -26,14 +26,16 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
-using NUnit.Framework;
-using System.Threading;
-using MonoTorrent.Common;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Encryption;
-using System.Threading.Tasks;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {

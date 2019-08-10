@@ -28,7 +28,6 @@
 
 
 using System;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client.Messages.UdpTracker

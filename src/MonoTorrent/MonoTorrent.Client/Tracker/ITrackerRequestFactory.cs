@@ -27,8 +27,6 @@
 //
 
 
-using MonoTorrent.Common;
-
 namespace MonoTorrent.Client.Tracker
 {
     interface ITrackerRequestFactory

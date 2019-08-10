@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {

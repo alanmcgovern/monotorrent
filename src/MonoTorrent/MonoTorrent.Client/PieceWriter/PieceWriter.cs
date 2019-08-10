@@ -29,9 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
-using System.Threading;
 using System.IO;
 
 namespace MonoTorrent.Client.PieceWriters

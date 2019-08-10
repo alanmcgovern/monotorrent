@@ -27,13 +27,12 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
 using System.Text;
-using System.Net.Sockets;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Encryption
 {

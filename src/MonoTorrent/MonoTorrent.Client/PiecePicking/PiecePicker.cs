@@ -31,8 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Common;
-
 namespace MonoTorrent.Client.PiecePicking
 {
     public abstract class PiecePicker

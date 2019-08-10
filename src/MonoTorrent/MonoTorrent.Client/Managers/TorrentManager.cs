@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.Tracker;
