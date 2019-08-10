@@ -255,15 +255,15 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string path)
+        internal async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string newPath)
         {
             await IOLoop;
 
             try
             {
-                path = Path.GetFullPath (path);
-                Writer.Move (file.FullPath, path, false);
-                file.FullPath = path;
+                newPath = Path.GetFullPath (newPath);
+                Writer.Move (file, newPath, false);
+                file.FullPath = newPath;
             }
             catch (Exception ex)
             {

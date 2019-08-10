@@ -37,7 +37,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     // Keep a list of all the pieces which have not yet being fully downloaded
     // From this list we will make requests for all the blocks until the piece is complete.
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
             CancelWhere(TimedOut, false);
         }
 
-        public override RequestMessage ContinueExistingRequest(PeerId peer)
+        public override PieceRequest ContinueExistingRequest(PeerId peer)
         {
             return null;
         }
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
             return !bitfield.AllFalse;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             // Only request 2 pieces at a time in endgame mode
             // to prevent a *massive* overshoot
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
                         continue;
                     var requestMessage = p.Blocks[i].CreateRequest (id);
                     requests.Add(new Request(id, p.Blocks[i]));
-                    return new MessageBundle(requestMessage);
+                    return new [] { requestMessage };
                 }
             }
 
@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
                     }
                     var requestMessage = p.Blocks[i].CreateRequest(id);
                     requests.Add(new Request(id, p.Blocks[i]));
-                    return new MessageBundle(requestMessage);
+                    return new [] { requestMessage };
                 }
             }
 

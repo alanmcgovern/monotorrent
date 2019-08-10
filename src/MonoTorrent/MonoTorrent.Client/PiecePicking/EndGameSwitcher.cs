@@ -34,7 +34,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public class EndGameSwitcher : PiecePicker
     {
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
             ActivePicker.CancelTimedOutRequests();
         }
 
-        public override RequestMessage ContinueExistingRequest(PeerId peer)
+        public override PieceRequest ContinueExistingRequest(PeerId peer)
         {
             return ActivePicker.ContinueExistingRequest(peer);
         }
@@ -113,9 +113,9 @@ namespace MonoTorrent.Client
             return ActivePicker.IsInteresting(bitfield);
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
-            MessageBundle bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            var bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame())
                 return ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             return bundle;

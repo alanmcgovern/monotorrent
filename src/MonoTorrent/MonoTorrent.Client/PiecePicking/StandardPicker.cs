@@ -33,9 +33,8 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.FastPeer;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public class StandardPicker : PiecePicker
     {
@@ -58,7 +57,7 @@ namespace MonoTorrent.Client
 
         static Predicate<Block> TimedOut = delegate(Block b) { return b.RequestTimedOut; };
 
-        protected SortList<Piece> requests;
+        SortList<Piece> requests;
 
         public StandardPicker()
             : base(null)
@@ -137,18 +136,19 @@ namespace MonoTorrent.Client
             return !bitfield.AllFalse;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
-            RequestMessage message;
-            MessageBundle bundle = null;
+            PieceRequest message;
+            IList<PieceRequest> bundle;
+
             // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
             // requests that could be continued would be existing "Fast" pieces.
             if ((message = ContinueExistingRequest(id)) != null)
-                return (bundle = new MessageBundle(message));
+                return new [] { message };
 
             // Then we check if there are any allowed "Fast" pieces to download
             if (id.IsChoking && (message = GetFromList(id, peerBitfield, id.IsAllowedFastPieces)) != null)
-                return (bundle = new MessageBundle(message));
+                return new [] { message };
 
             // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
             if (id.IsChoking)
@@ -157,11 +157,11 @@ namespace MonoTorrent.Client
             // If we are only requesting 1 piece, then we can continue any existing. Otherwise we should try
             // to request the full amount first, then try to continue any existing.
             if (count == 1 && (message = ContinueAnyExisting(id)) != null)
-                return (bundle = new MessageBundle(message));
+                return new [] { message };
 
             // We see if the peer has suggested any pieces we should request
             if ((message = GetFromList(id, peerBitfield, id.SuggestedPieces)) != null)
-                return (bundle = new MessageBundle(message));
+                return new [] { message };
 
             // Now we see what pieces the peer has that we don't have and try and request one
             if ((bundle = GetStandardRequest(id, peerBitfield, otherPeers, startIndex, endIndex, count)) != null)
@@ -169,7 +169,7 @@ namespace MonoTorrent.Client
 
             // If all else fails, ignore how many we're requesting and try to continue any existing
             if ((message = ContinueAnyExisting(id)) != null)
-                return (bundle = new MessageBundle(message));
+                return new [] { message };
 
             return null;
         }
@@ -222,7 +222,7 @@ namespace MonoTorrent.Client
 
 
 
-        public override RequestMessage ContinueExistingRequest(PeerId id)
+        public override PieceRequest ContinueExistingRequest(PeerId id)
         {
             for (int req = 0; req < requests.Count; req++)
             {
@@ -245,7 +245,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        protected RequestMessage ContinueAnyExisting(PeerId id)
+        protected PieceRequest ContinueAnyExisting(PeerId id)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
@@ -270,7 +270,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        protected RequestMessage GetFromList(PeerId id, BitField bitfield, IList<int> pieces)
+        protected PieceRequest GetFromList(PeerId id, BitField bitfield, IList<int> pieces)
         {
             if (!id.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
                 return null;
@@ -292,7 +292,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        public virtual MessageBundle GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public virtual IList<PieceRequest> GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
             int piecesNeeded = (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
             if ((count * Piece.BlockSize) % id.TorrentManager.Torrent.PieceLength != 0)
@@ -303,14 +303,14 @@ namespace MonoTorrent.Client
             if (checkIndex == -1)
                 return null;
 
-            MessageBundle bundle = new MessageBundle();
-            for (int i = 0; bundle.Messages.Count < count && i < piecesNeeded; i++)
+            var bundle = new List<PieceRequest>();
+            for (int i = 0; bundle.Count < count && i < piecesNeeded; i++)
             {
                 // Request the piece
                 Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size);
                 requests.Add(p);
-                for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
-                    bundle.Messages.Add(p.Blocks[j].CreateRequest(id));
+                for (int j = 0; j < p.Blocks.Length && bundle.Count < count; j++)
+                    bundle.Add(p.Blocks[j].CreateRequest(id));
             }
             return bundle;
         }

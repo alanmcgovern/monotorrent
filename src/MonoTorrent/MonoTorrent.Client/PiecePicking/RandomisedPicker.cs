@@ -33,7 +33,7 @@ using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public class RandomisedPicker : PiecePicker
     {
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             if (peerBitfield.AllFalse)
                 return null;

@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
                 throw new Exception("flush");
         }
 
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
+        public override void Move(TorrentFile file, string newPath, bool overwrite)
         {
             if (move)
                 throw new Exception("move");

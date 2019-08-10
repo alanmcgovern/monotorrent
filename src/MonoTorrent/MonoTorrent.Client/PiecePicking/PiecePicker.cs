@@ -29,12 +29,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using MonoTorrent.Common;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public abstract class PiecePicker
     {
@@ -68,7 +67,7 @@ namespace MonoTorrent.Client
             CheckOverriden();
             picker.CancelTimedOutRequests();
         }
-        public virtual RequestMessage ContinueExistingRequest(PeerId peer)
+        public virtual PieceRequest ContinueExistingRequest(PeerId peer)
         {
             CheckOverriden();
             return picker.ContinueExistingRequest(peer);
@@ -98,16 +97,16 @@ namespace MonoTorrent.Client
             CheckOverriden();
             return picker.IsInteresting(bitfield);
         }
-        public RequestMessage PickPiece(PeerId peer, List<PeerId> otherPeers)
+        public PieceRequest PickPiece(PeerId peer, List<PeerId> otherPeers)
         {
-            MessageBundle bundle = PickPiece(peer, otherPeers, 1);
-            return bundle == null ? null : (RequestMessage)bundle.Messages[0];
+            var bundle = PickPiece(peer, otherPeers, 1);
+            return bundle == null ? null : bundle.First ();
         }
-        public MessageBundle PickPiece(PeerId peer, List<PeerId> otherPeers, int count)
+        public IList<PieceRequest> PickPiece(PeerId peer, List<PeerId> otherPeers, int count)
         {
             return PickPiece(peer, peer.BitField, otherPeers, count, 0, peer.BitField.Length);
         }
-        public virtual MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public virtual IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             CheckOverriden();
             return picker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);

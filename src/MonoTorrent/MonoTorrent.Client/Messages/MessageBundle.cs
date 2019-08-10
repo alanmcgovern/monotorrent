@@ -1,36 +1,37 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client.Messages
 {
-    public class MessageBundle : PeerMessage
+    class MessageBundle : PeerMessage
     {
-        private List<PeerMessage> messages;
-
-        public List<PeerMessage> Messages
-        {
-            get { return messages; }
-        }
+        public List<PeerMessage> Messages { get; }
 
         public MessageBundle()
         {
-            messages = new List<PeerMessage>();
+            Messages = new List<PeerMessage>();
         }
 
         public MessageBundle(PeerMessage message)
             : this()
         {
-            messages.Add(message);
+            Messages.Add(message);
         }
 
-        public override int ByteLength
+        internal MessageBundle (IList<PieceRequest> requests)
+            : this ()
         {
-            get
-            {
+            foreach (var m in requests)
+                Messages.Add (new RequestMessage (m.PieceIndex, m.StartOffset, m.RequestLength));
+        }
+
+        public override int ByteLength {
+            get {
                 int total = 0;
-                for (int i = 0; i < messages.Count; i++)
-                    total += messages[i].ByteLength;
+                for (int i = 0; i < Messages.Count; i++)
+                    total += Messages[i].ByteLength;
                 return total;
             }
         }
@@ -44,8 +45,8 @@ namespace MonoTorrent.Client.Messages
         {
             int written = offset;
             
-            for (int i = 0; i < messages.Count; i++)
-                written += messages[i].Encode(buffer, written);
+            for (int i = 0; i < Messages.Count; i++)
+                written += Messages[i].Encode(buffer, written);
 
             return CheckWritten(written - offset);
         }

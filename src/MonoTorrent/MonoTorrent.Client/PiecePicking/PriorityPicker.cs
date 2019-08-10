@@ -33,7 +33,7 @@ using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     public class PriorityPicker : PiecePicker
     {
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer
             if (peerBitfield.AllFalse)
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
                     temp.And(peerBitfield);
                     if (!temp.AllFalse)
                     {
-                        MessageBundle message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+                        var message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
                         if (message != null)
                             return message;
                         temp.SetAll(false);
