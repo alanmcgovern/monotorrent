@@ -28,15 +28,14 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Common;
-using System.Net;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
+
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.Messages.Standard;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {

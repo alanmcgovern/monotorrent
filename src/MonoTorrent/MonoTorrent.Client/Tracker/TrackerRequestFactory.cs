@@ -30,7 +30,6 @@
 using System.Net;
 
 using MonoTorrent.Client.Encryption;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {

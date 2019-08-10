@@ -27,14 +27,13 @@
 //
 
 
-
 using System;
-using System.Text;
+using System.Collections.Generic;
 using System.Net;
-using MonoTorrent.Common;
+using System.Text;
+
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
-using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {

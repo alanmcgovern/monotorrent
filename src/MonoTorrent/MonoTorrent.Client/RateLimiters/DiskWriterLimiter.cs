@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
 
         public bool Unlimited
         {
-            get { return manager.BufferedWriteBytes < MaxPendingWriteBytes; }
+            get { return manager.BufferedWrites < MaxPendingWriteBytes; }
         }
 
         public DiskWriterLimiter(DiskManager manager)

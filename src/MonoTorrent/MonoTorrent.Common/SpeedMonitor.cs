@@ -26,10 +26,11 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
 using System.Diagnostics;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent
 {
     public class SpeedMonitor
     {

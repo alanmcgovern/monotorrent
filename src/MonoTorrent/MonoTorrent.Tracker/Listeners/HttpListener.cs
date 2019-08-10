@@ -27,14 +27,8 @@
 //
 
 using System;
-using System.IO;
 using System.Net;
-using System.Web;
-using System.Text;
-using System.Collections.Specialized;
-using System.Diagnostics;
 
-using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners

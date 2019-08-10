@@ -28,16 +28,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.BEncoding;
-using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {

@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {

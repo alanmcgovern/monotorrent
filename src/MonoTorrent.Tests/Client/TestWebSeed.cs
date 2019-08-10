@@ -34,10 +34,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;

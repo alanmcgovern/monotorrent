@@ -27,22 +27,17 @@
 //
 
 
-
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Text;
-using System.Security.Cryptography;
-using MonoTorrent.BEncoding;
-using System.Collections;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace MonoTorrent.Common
+using MonoTorrent.BEncoding;
+
+namespace MonoTorrent
 {
-    /// <summary>
-    /// The "Torrent" class for both Tracker and Client should inherit from this
-    /// as it contains the fields that are common to both.
-    /// </summary>
     public class Torrent : IEquatable<Torrent>
     {
         #region Private Fields

@@ -27,11 +27,7 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.PiecePicking
 {
@@ -73,12 +69,12 @@ namespace MonoTorrent.Client.PiecePicking
             return new List<Piece>();
         }
 
-        public override void Initialise(MonoTorrent.Common.BitField bitfield, MonoTorrent.Common.TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             
         }
         
-        public override bool IsInteresting(MonoTorrent.Common.BitField bitfield)
+        public override bool IsInteresting(BitField bitfield)
         {
             return false;
         }

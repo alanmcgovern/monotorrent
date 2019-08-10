@@ -27,16 +27,10 @@
 //
 
 using System;
-using System.IO;
-using System.Net;
-using System.Web;
-using System.Text;
-using System.Diagnostics;
-using System.Net.Sockets;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Tracker.Listeners;
 

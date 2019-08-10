@@ -32,8 +32,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-using MonoTorrent.Common;
-
 namespace MonoTorrent.Client.Tracker
 {
     abstract class Tracker : ITracker

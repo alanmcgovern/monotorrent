@@ -26,19 +26,15 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
 using System.IO;
-using System.Threading;
 using System.Security.Cryptography;
 using System.Collections.Generic;
 
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-
+using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {

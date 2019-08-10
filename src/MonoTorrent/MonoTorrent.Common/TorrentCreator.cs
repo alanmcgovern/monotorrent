@@ -28,7 +28,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,7 +39,7 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.PieceWriters;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent
 {
     public class TorrentCreator : EditableTorrent
     {

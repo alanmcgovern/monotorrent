@@ -29,10 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
@@ -108,7 +104,7 @@ namespace MonoTorrent.Client.PiecePicking
             ActivePicker.Initialise(bitfield, files, requests);
         }
 
-        public override bool IsInteresting(MonoTorrent.Common.BitField bitfield)
+        public override bool IsInteresting(BitField bitfield)
         {
             return ActivePicker.IsInteresting(bitfield);
         }

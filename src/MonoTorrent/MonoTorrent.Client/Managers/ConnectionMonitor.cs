@@ -27,11 +27,6 @@
 //
 
 
-
-using System;
-using System.Net.Sockets;
-using MonoTorrent.Common;
-
 namespace MonoTorrent.Client
 {
     /// <summary>

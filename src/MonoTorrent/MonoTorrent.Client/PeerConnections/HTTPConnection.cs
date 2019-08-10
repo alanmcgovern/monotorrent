@@ -32,11 +32,10 @@ using System.Net;
 using System.Threading;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Common;
-using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Connections
 {

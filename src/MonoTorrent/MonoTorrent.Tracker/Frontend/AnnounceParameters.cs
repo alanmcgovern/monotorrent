@@ -26,13 +26,11 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using MonoTorrent.Common;
-using System.Collections.Specialized;
 using System.Collections.Generic;
-using MonoTorrent.BEncoding;
-using System.Web;
+using System.Collections.Specialized;
 using System.Net;
+
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {       

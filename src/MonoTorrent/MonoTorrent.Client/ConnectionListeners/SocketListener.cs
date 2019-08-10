@@ -1,5 +1,5 @@
  //
-// ConnectionListener.cs
+// SocketListener.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,13 +27,11 @@
 //
 
 
-
-using System;
 using System.Net;
 using System.Net.Sockets;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Common;
+
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {

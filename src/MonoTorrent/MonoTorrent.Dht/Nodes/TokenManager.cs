@@ -30,7 +30,6 @@
 using System.Security.Cryptography;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {

@@ -29,7 +29,7 @@ namespace MonoTorrent.Tracker
 
     class CustomListener : ListenerBase
     {
-        public BEncodedValue Handle(PeerDetails d, MonoTorrent.Common.TorrentEvent e, ITrackable trackable)
+        public BEncodedValue Handle(PeerDetails d, TorrentEvent e, ITrackable trackable)
         {
             NameValueCollection c = new NameValueCollection();
             c.Add("info_hash", trackable.InfoHash.UrlEncode());

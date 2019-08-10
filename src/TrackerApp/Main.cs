@@ -28,18 +28,14 @@
 
 using System;
 using System.IO;
-using System.Text;
-using System.Threading;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Web;
 
-using MonoTorrent.Tracker;
-using MonoTorrent.Common;
-using TrackerApp;
+using MonoTorrent; 
 using MonoTorrent.TorrentWatcher;
+using MonoTorrent.Tracker;
 using MonoTorrent.Tracker.Listeners;
-using MonoTorrent;
+
+using TrackerApp;
 
 namespace SampleTracker
 {

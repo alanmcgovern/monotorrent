@@ -31,10 +31,9 @@ using System;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 using MonoTorrent.Client;
-using MonoTorrent.Common;
-using System.Threading.Tasks;
 
 namespace MonoTorrent
 {

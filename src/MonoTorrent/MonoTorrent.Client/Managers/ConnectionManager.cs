@@ -29,20 +29,17 @@
 
 
 using System;
-using MonoTorrent.Common;
-using System.Net.Sockets;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.Libtorrent;
+using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
@@ -68,11 +65,6 @@ namespace MonoTorrent.Client
         #region Events
 
         public event EventHandler<AttemptConnectionEventArgs> BanPeer;
-
-        /// <summary>
-        /// Event that's fired every time a message is sent or Received from a Peer
-        /// </summary>
-        event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
 
         #endregion
 
@@ -245,9 +237,9 @@ namespace MonoTorrent.Client
                     throw new EncryptionException("unhandled initial data");
 
                 EncryptionTypes e = engine.Settings.AllowedEncryption;
-                if (id.Encryptor is RC4 && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
-                    id.Encryptor is RC4Header && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Header) ||
-                    id.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(e, EncryptionTypes.PlainText))
+                if (id.Encryptor is RC4 && !e.HasFlag (EncryptionTypes.RC4Full) ||
+                    id.Encryptor is RC4Header && !e.HasFlag (EncryptionTypes.RC4Header) ||
+                    id.Encryptor is PlainTextEncryption && !e.HasFlag (EncryptionTypes.PlainText))
                 {
                     CleanupSocket(id, id.Encryptor.GetType().Name + " encryption is not enabled");
                 }
@@ -295,10 +287,6 @@ namespace MonoTorrent.Client
                     else
                     {
                         id.LastMessageReceived.Restart();
-
-                        if (PeerMessageTransferred != null)
-                            RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, message, Direction.Incoming, id));
-
                         message.Handle(id);
                     }
                 }
@@ -426,10 +414,6 @@ namespace MonoTorrent.Client
                     if (msg is PieceMessage)
                         id.IsRequestingPiecesCount--;
 
-                    // Fire the event to let the user know a message was sent
-                    if (PeerMessageTransferred != null)
-                        RaisePeerMessageTransferred (new PeerMessageEventArgs (id.TorrentManager, msg, Direction.Outgoing, id));
-
                     id.LastMessageSent.Restart ();
                 } catch (Exception e) {
                     CleanupSocket (id, "Exception calling SendMessage: " + e.Message);
@@ -441,31 +425,6 @@ namespace MonoTorrent.Client
             }
 
             id.ProcessingQueue = false;
-        }
-
-        void RaisePeerMessageTransferred(PeerMessageEventArgs e)
-        {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                EventHandler<PeerMessageEventArgs> h = PeerMessageTransferred;
-                if (h == null)
-                    return;
-
-                if (!(e.Message is MessageBundle))
-                {
-                    h(e.TorrentManager, e);
-                }
-                else
-                {
-                    // Message bundles are only a convience for internal usage!
-                    MessageBundle b = (MessageBundle)e.Message;
-                    foreach (PeerMessage message in b.Messages)
-                    {
-                        PeerMessageEventArgs args = new PeerMessageEventArgs(e.TorrentManager, message, e.Direction, e.ID);
-                        h(args.TorrentManager, args);
-                    }
-                }
-            });
         }
 
         internal bool ShouldBanPeer(Peer peer)

@@ -28,11 +28,7 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
 using System.IO;
-using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {

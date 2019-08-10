@@ -33,9 +33,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-using MonoTorrent.Common;
-using MonoTorrent.Client.Encryption;
-
 namespace MonoTorrent.Client
 {
     class LocalPeerListener : Listener
