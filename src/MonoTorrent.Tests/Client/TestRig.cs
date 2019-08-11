@@ -183,27 +183,29 @@ namespace MonoTorrent.Client
             => Name;
     }
 
-    class CustomListener : PeerListener
+    class CustomListener : IPeerListener
     {
-        public override void Start()
-        {
+        public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        public event EventHandler<EventArgs> StatusChanged;
 
+        public ListenerStatus Status { get; private set; }
+
+        public void Start()
+        {
+            Status = ListenerStatus.Listening;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
         }
 
-        public override void Stop()
+        public void Stop()
         {
-
-        }
-
-        public CustomListener()
-            :base(new IPEndPoint(IPAddress.Any, 0))
-        {
+            Status = ListenerStatus.NotListening;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
         }
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
-            base.RaiseConnectionReceived(p, connection, manager);
+            var p = new Peer("", new Uri("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
+            ConnectionReceived?.Invoke (this, new NewConnectionEventArgs (p, connection, manager));
         }
     }
 

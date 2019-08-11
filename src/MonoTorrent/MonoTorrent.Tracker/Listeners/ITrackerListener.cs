@@ -1,5 +1,5 @@
 ﻿//
-// IListener.cs
+// ITrackerListener.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
@@ -34,14 +34,9 @@ namespace MonoTorrent.Tracker.Listeners
     /// <summary>
     /// Listens for incoming Announce or Scrape requests and sends the response back.
     /// </summary>
-    public interface IListener
+    public interface ITrackerListener : IListener
     {
         event EventHandler<ScrapeParameters> ScrapeReceived;
         event EventHandler<AnnounceParameters> AnnounceReceived;
-
-        bool Running { get; }
-
-        void Start();
-        void Stop();
     }
 }

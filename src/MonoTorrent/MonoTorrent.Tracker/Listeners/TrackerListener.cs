@@ -1,5 +1,5 @@
 ﻿//
-// ListenerBase.cs
+// TrackerListener.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
@@ -35,23 +35,15 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    abstract class ListenerBase : IListener
+    abstract class TrackerListener : Listener, ITrackerListener
     {
-        #region Events
-
         public event EventHandler<ScrapeParameters> ScrapeReceived;
         public event EventHandler<AnnounceParameters> AnnounceReceived;
 
-        #endregion Events
+        protected TrackerListener ()
+        {
 
-        #region Properties
-
-        public abstract bool Running { get; }
-
-        #endregion Properties
-
-
-        #region Methods
+        }
 
         public virtual BEncodedDictionary Handle(string queryString, IPAddress remoteAddress, bool isScrape)
         {
@@ -104,25 +96,10 @@ namespace MonoTorrent.Tracker.Listeners
             return c;
         }
 
-        private void RaiseAnnounceReceived(AnnounceParameters e)
-        {
-            EventHandler<AnnounceParameters> h = AnnounceReceived;
-            if (h != null)
-                h(this, e);
-        }
+        protected void RaiseAnnounceReceived(AnnounceParameters e)
+            => AnnounceReceived?.Invoke (this, e);
 
-        private void RaiseScrapeReceived(ScrapeParameters e)
-        {
-            EventHandler<ScrapeParameters> h = ScrapeReceived;
-            if (h != null)
-                h(this, e);
-        }
-
-        public abstract void Start();
-
-        public abstract void Stop();
-
-        #endregion Methods
-
+        protected void RaiseScrapeReceived(ScrapeParameters e)
+            => ScrapeReceived?.Invoke (this, e);
     }
 }

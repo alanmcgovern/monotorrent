@@ -53,9 +53,14 @@ namespace MonoTorrent.Client.Tracker
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
-            IPEndPoint reportedAddress = engine.Settings.ReportedAddress;
-            string ip = reportedAddress == null ? null : reportedAddress.Address.ToString();
-            int port = reportedAddress == null ? engine.Listener.Endpoint.Port : reportedAddress.Port;
+            string ip = null;
+            int port = -1;
+            if (engine.Settings.ReportedAddress != null) {
+                ip = engine.Settings.ReportedAddress.Address.ToString ();
+                port = engine.Settings.ReportedAddress.Port;
+            } else {
+                port = engine.Settings.ListenPort;
+            }
 
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.

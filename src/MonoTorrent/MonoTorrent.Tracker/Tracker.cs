@@ -138,7 +138,7 @@ namespace MonoTorrent.Tracker
             get { return trackerId; }
         }
 
-        List<IListener> Listeners { get; }
+        List<ITrackerListener> Listeners { get; }
 
         #endregion Properties
 
@@ -166,7 +166,7 @@ namespace MonoTorrent.Tracker
             minAnnounceInterval = TimeSpan.FromMinutes(10);
             timeoutInterval = TimeSpan.FromMinutes(50);
 
-            Listeners = new List<IListener> ();
+            Listeners = new List<ITrackerListener> ();
             MonoTorrent.Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
                 Requests.Tick();
                 return !disposed;
@@ -238,7 +238,7 @@ namespace MonoTorrent.Tracker
                 return new List<SimpleTorrentManager>(this.torrents.Values).GetEnumerator();
         }
 
-        public bool IsRegistered(IListener listener)
+        public bool IsRegistered(ITrackerListener listener)
         {
             CheckDisposed();
             if (listener == null)
@@ -371,7 +371,7 @@ namespace MonoTorrent.Tracker
                 h(this, e);
         }
 
-        public void RegisterListener(IListener listener)
+        public void RegisterListener(ITrackerListener listener)
         {
             CheckDisposed();
             if (listener == null)
@@ -392,7 +392,7 @@ namespace MonoTorrent.Tracker
                 torrents.Remove(trackable.InfoHash);
         }
 
-        public void UnregisterListener(IListener listener)
+        public void UnregisterListener(ITrackerListener listener)
         {
             CheckDisposed();
             if (listener == null)

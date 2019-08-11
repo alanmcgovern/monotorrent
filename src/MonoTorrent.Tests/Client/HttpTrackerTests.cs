@@ -32,11 +32,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     [TestFixture]
     public class HttpTrackerTests
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         AnnounceParameters announceParams;
         ScrapeParameters scrapeParams;
         MonoTorrent.Tracker.Tracker server;
-        MonoTorrent.Tracker.Listeners.HttpListener listener;
+        HttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
         Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
         HTTPTracker tracker;
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         {
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
-            listener = new MonoTorrent.Tracker.Listeners.HttpListener (ListeningPrefix);
+            listener = new HttpTrackerListener (ListeningPrefix);
             listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
                 keys.Add(e.Key);
             };
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
         [Test]
         public void CanAnnouceOrScrapeTest()
         {
-            Tracker.HTTPTracker t = (HTTPTracker) TrackerFactory.Create(new Uri("http://mytracker.com/myurl"));
+            HTTPTracker t = (HTTPTracker) TrackerFactory.Create(new Uri("http://mytracker.com/myurl"));
             Assert.IsFalse(t.CanScrape, "#1");
             Assert.IsTrue(t.CanAnnounce, "#1b");
 

@@ -35,7 +35,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    class LocalPeerListener : Listener
+    class LocalPeerListener : SocketListener
     {
         const int MulticastPort = 6771;
         static readonly IPAddress MulticastIpAddress = IPAddress.Parse("239.192.152.143");

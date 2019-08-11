@@ -31,6 +31,7 @@ using System;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
 
@@ -40,13 +41,13 @@ namespace MonoTorrent.Tracker
     public class TrackerTests
     {
         Uri uri = new Uri("http://127.0.0.1:23456/");
-        MonoTorrent.Tracker.Listeners.HttpListener listener;
+        HttpTrackerListener listener;
         MonoTorrent.Tracker.Tracker server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
+            listener = new HttpTrackerListener(uri.OriginalString);
             listener.Start();
             server = new MonoTorrent.Tracker.Tracker();
             server.RegisterListener(listener);

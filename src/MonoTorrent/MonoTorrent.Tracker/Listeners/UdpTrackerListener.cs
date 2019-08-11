@@ -1,5 +1,5 @@
 ﻿//
-// UdpListener.cs
+// UdpTrackerListener.cs
 //
 // Authors:
 //   olivier Dufour olivier(dot)duff(at)gmail.com
@@ -41,32 +41,23 @@ using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    class UdpListener : ListenerBase
+    class UdpTrackerListener : TrackerListener, ISocketListener
     {
-        private long curConnectionID;
-        //TODO system to clear old connectionID...
+        public IPEndPoint EndPoint { get; private set; }
 
         CancellationTokenSource Cancellation { get; set; }
         Dictionary<IPAddress, long> ConnectionIDs { get ; }
-        IPEndPoint EndPoint { get; }
-        UdpClient Listener { get; set; }
+        long curConnectionID;
 
-        public IPEndPoint ListenEndPoint => (IPEndPoint) Listener?.Client.LocalEndPoint;
-
-        public override bool Running
-        {
-            get { return Listener != null; }
-        }
-
-        public UdpListener(int port)
+        public UdpTrackerListener(int port)
             : this(new IPEndPoint(IPAddress.Any, port))
         {
         }
 
-        public UdpListener(IPEndPoint endpoint)
+        public UdpTrackerListener(IPEndPoint endPoint)
         {
-            EndPoint = endpoint;
             ConnectionIDs = new Dictionary<IPAddress, long>();
+            EndPoint = endPoint;
         }
 
         /// <summary>
@@ -74,16 +65,16 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Start()
         {
-            if (Running)
+            if (Status == ListenerStatus.Listening)
                 return;
 
             Cancellation?.Cancel ();
             Cancellation = new CancellationTokenSource ();
 
-            var listener = Listener = new UdpClient(EndPoint.Port);
+            var listener = new UdpClient(EndPoint.Port);
+            EndPoint = (IPEndPoint) listener.Client.LocalEndPoint;
             Cancellation.Token.Register (() => {
                 listener.SafeDispose ();
-                Listener = null;
             });
 
             ReceiveAsync (listener, Cancellation.Token);
@@ -94,7 +85,7 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Stop()
         {
-            if (!Running)
+            if (Status == ListenerStatus.NotListening)
                 return;
 
             Cancellation?.Dispose ();
