@@ -1,5 +1,5 @@
 //
-// SimpleTorrentManager.cs
+// RequestMonitor.cs
 //
 // Authors:
 //   Gregor Burger burger.gregor@gmail.com

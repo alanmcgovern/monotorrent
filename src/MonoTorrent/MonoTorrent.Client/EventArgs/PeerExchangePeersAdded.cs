@@ -26,28 +26,22 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MonoTorrent.Client
 {
     public class PeerExchangePeersAdded : PeersAddedEventArgs
     {
-        private PeerId id;
-
-        public PeerId Id
-        {
-            get{return id;}
-        }
+        /// <summary>
+        /// The peer who provided the list of additional peers.
+        /// </summary>
+        public PeerId Id { get; }
 
         public PeerExchangePeersAdded(TorrentManager manager, int count, int total, PeerId id)
-            :base(manager, count, total)
+            : base(manager, count, total)
         {
-            if (id == null)
-                throw new ArgumentNullException("id");
-
-            this.id = id;
+            Id = id ?? throw new ArgumentNullException(nameof (id));
         }
     }
 }

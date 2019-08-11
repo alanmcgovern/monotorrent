@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Client
 {
-    public class MessageException : TorrentException
+    class MessageException : TorrentException
     {
         public MessageException()
             : base()

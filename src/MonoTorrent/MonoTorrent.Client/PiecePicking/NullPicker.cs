@@ -31,7 +31,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class NullPicker : PiecePicker
+    class NullPicker : PiecePicker
     {
         public NullPicker()
             : base(null)
