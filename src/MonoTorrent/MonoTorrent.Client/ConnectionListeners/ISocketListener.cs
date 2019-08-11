@@ -1,5 +1,5 @@
-//
-// IListener.cs
+﻿//
+// ISocketListener.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,17 +27,12 @@
 //
 
 
-using System;
+using System.Net;
 
 namespace MonoTorrent
 {
-    public interface IListener
+    public interface ISocketListener : IListener
     {
-        event EventHandler<EventArgs> StatusChanged;
-
-        ListenerStatus Status { get; }
-
-        void Start();
-        void Stop();
+        IPEndPoint EndPoint { get; }
     }
 }

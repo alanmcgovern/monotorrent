@@ -154,7 +154,7 @@ namespace MonoTorrent.Client
         }
 
         public ClientEngine(EngineSettings settings, PieceWriter writer)
-            : this(settings, new SocketListener(new IPEndPoint(IPAddress.Any, 0)), writer)
+            : this(settings, new PeerListener(new IPEndPoint(IPAddress.Any, settings.ListenPort)), writer)
 
         {
 
@@ -199,23 +199,12 @@ namespace MonoTorrent.Client
             localPeerManager = new LocalPeerManager();
             LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
             listenManager.Register(listener);
-            // This means we created the listener in the constructor
-            if (listener.Endpoint.Port == 0)
-                listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
         }
 
         #endregion
 
 
         #region Methods
-
-        public void ChangeListenEndpoint(IPEndPoint endpoint)
-        {
-            Check.Endpoint(endpoint);
-
-            Settings.ListenPort = endpoint.Port;
-            Listener.ChangeEndpoint(endpoint);
-        }
 
         private void CheckDisposed()
         {
@@ -353,7 +342,10 @@ namespace MonoTorrent.Client
                     if (!manager.CanUseDht)
                         continue;
 
-                    DhtEngine.Announce (manager.InfoHash, Listener.Endpoint.Port);
+                    if (Listener is ISocketListener listener)
+                        DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
+                    else
+                        DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
                     DhtEngine.GetPeers (manager.InfoHash);
                 }
             });

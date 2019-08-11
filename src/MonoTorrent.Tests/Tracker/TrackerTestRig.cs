@@ -27,7 +27,7 @@ namespace MonoTorrent.Tracker
         }
     }
 
-    class CustomListener : ListenerBase
+    class CustomListener : TrackerListener
     {
         public BEncodedValue Handle(PeerDetails d, TorrentEvent e, ITrackable trackable)
         {
@@ -41,11 +41,6 @@ namespace MonoTorrent.Tracker
             c.Add("compact", "0");
 
             return base.Handle(c, d.ClientAddress, false);
-        }
-
-        public override bool Running
-        {
-            get { return true; }
         }
 
         public override void Start()

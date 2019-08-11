@@ -1,5 +1,5 @@
 //
-// HttpListener.cs
+// HttpTrackerListener.cs
 //
 // Authors:
 //   Gregor Burger burger.gregor@gmail.com
@@ -34,44 +34,30 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    class HttpListener : ListenerBase
+    class HttpTrackerListener : TrackerListener
     {
         #region Fields
 
         private string prefix;
-        private System.Net.HttpListener listener;
+        private HttpListener listener;
 
         #endregion Fields
 
-
-        #region Properties
-
-        /// <summary>
-        /// True if the listener is waiting for incoming connections
-        /// </summary>
-        public override bool Running
-        {
-            get { return listener != null; }
-        }
-
-        #endregion Properties
-
-
         #region Constructors
 
-        public HttpListener(IPAddress address, int port)
+        public HttpTrackerListener(IPAddress address, int port)
             : this(string.Format("http://{0}:{1}/announce/", address, port))
         {
 
         }
 
-        public HttpListener(IPEndPoint endpoint)
+        public HttpTrackerListener(IPEndPoint endpoint)
             : this(endpoint.Address, endpoint.Port)
         {
 
         }
 
-        public HttpListener(string httpPrefix)
+        public HttpTrackerListener(string httpPrefix)
         {
             if (string.IsNullOrEmpty(httpPrefix))
                 throw new ArgumentNullException("httpPrefix");
@@ -83,19 +69,19 @@ namespace MonoTorrent.Tracker.Listeners
 
 
         #region Methods
-
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
         public override void Start()
         {
-			if (Running)
+			if (Status == ListenerStatus.Listening)
 				return;
 			
-			listener = new System.Net.HttpListener();
+			listener = new HttpListener();
             listener.Prefixes.Add(prefix);
             listener.Start();
             listener.BeginGetContext(EndGetRequest, listener);
+            RaiseStatusChanged (ListenerStatus.Listening);
         }
 
         /// <summary>
@@ -103,18 +89,19 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Stop()
         {
-			if (!Running)
+			if (Status == ListenerStatus.NotListening)
 				return;
 			
             IDisposable d = (IDisposable)listener;
 			listener = null;
             d.Dispose();
+            RaiseStatusChanged (ListenerStatus.NotListening);
         }
 
         private void EndGetRequest(IAsyncResult result)
         {
 			HttpListenerContext context = null;
-			System.Net.HttpListener listener = (System.Net.HttpListener) result.AsyncState;
+			HttpListener listener = (HttpListener) result.AsyncState;
             
             try
             {

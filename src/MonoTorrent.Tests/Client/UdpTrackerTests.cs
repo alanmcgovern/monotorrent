@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.UdpTracker;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
 
@@ -73,8 +74,8 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             keys.Clear();
-            tracker = (UdpTracker)TrackerFactory.Create(new Uri($"udp://127.0.0.1:{listener.ListenEndPoint.Port}/announce/"));
-            announceparams = announceparams.WithPort (listener.ListenEndPoint.Port);
+            tracker = (UdpTracker)TrackerFactory.Create(new Uri($"udp://127.0.0.1:{listener.EndPoint.Port}/announce/"));
+            announceparams = announceparams.WithPort (listener.EndPoint.Port);
             tracker.RetryDelay = TimeSpan.FromMilliseconds (50);
 
             listener.IgnoreAnnounces = false;
@@ -285,7 +286,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    class IgnoringListener : MonoTorrent.Tracker.Listeners.UdpListener
+    class IgnoringListener : UdpTrackerListener
     {
         public bool IgnoreConnects;
         public bool IgnoreAnnounces;

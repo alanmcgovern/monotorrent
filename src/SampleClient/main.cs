@@ -74,7 +74,7 @@ namespace MonoTorrent
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
-            engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
+
             byte[] nodes = Array.Empty<byte> ();
             try
             {

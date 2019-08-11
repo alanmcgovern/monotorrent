@@ -37,7 +37,7 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent
 {
-    abstract class UdpListener : Listener
+    abstract class UdpListener : SocketListener
     {
         CancellationTokenSource Cancellation { get; set; }
         UdpClient Client { get; set; }
@@ -71,7 +71,7 @@ namespace MonoTorrent
             Cancellation?.Cancel ();
             Cancellation = new CancellationTokenSource ();
             try {
-                var client = Client = new UdpClient(Endpoint);
+                var client = Client = new UdpClient(EndPoint);
                 Cancellation.Token.Register (() => {
                     client.SafeDispose ();
                     Client = null;

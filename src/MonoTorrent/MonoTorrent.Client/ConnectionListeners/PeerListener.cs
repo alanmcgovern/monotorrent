@@ -26,26 +26,93 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
 using System.Net;
+using System.Net.Sockets;
 
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    abstract class PeerListener : Listener, IPeerListener
+    /// <summary>
+    /// Accepts incoming connections and passes them off to the right TorrentManager
+    /// </summary>
+    sealed class PeerListener : SocketListener, IPeerListener
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
 
-        protected PeerListener(IPEndPoint endpoint)
+        Socket listener;
+        SocketAsyncEventArgs connectArgs;
+
+        public PeerListener(IPEndPoint endpoint)
             : base(endpoint)
         {
-
         }
 
-        protected virtual void RaiseConnectionReceived(Peer peer, IConnection connection, TorrentManager manager)
+        public override void Start()
         {
-            ConnectionReceived?.Invoke (this, new NewConnectionEventArgs(peer, connection, manager));
+            if (Status == ListenerStatus.Listening)
+                return;
+
+            try
+            {
+                listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                listener.Bind(EndPoint);
+                listener.Listen(6);
+
+                connectArgs = new SocketAsyncEventArgs ();
+                connectArgs.Completed += OnSocketReceived;
+
+                if (!listener.AcceptAsync(connectArgs))
+                    OnSocketReceived (listener, connectArgs);
+                RaiseStatusChanged(ListenerStatus.Listening);
+            }
+            catch (SocketException)
+            {
+                RaiseStatusChanged(ListenerStatus.PortNotFree);
+            }
+        }
+
+        public override void Stop()
+        {
+            RaiseStatusChanged(ListenerStatus.NotListening);
+
+            listener?.Close ();
+            connectArgs = null;
+            listener = null;
+        }
+        
+        void OnSocketReceived (object sender, SocketAsyncEventArgs e)
+        {
+            Socket socket = null;
+            try {
+                if (e.SocketError != SocketError.Success)
+                    throw new SocketException ((int)e.SocketError);
+                socket = e.AcceptSocket;
+                // This is a crazy quirk of the API. We need to null this
+                // out if we re-use the args.
+                e.AcceptSocket = null;
+
+                IConnection connection;
+                if (socket.AddressFamily == AddressFamily.InterNetwork)
+                    connection = new IPV4Connection(socket, true);
+                else
+                    connection = new IPV6Connection(socket, true);
+
+                var peer = new Peer("", connection.Uri, EncryptionTypes.All);
+                ConnectionReceived?.Invoke (this, new NewConnectionEventArgs(peer, connection, null));
+            } catch {
+                socket?.Close();
+            }
+
+            try {
+                if (!((Socket)sender).AcceptAsync(e))
+                    OnSocketReceived (sender, e);
+            } catch {
+                return;
+            }
         }
     }
 }

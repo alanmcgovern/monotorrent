@@ -26,34 +26,20 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using System.Net;
 
-namespace MonoTorrent.Client
+using System;
+
+namespace MonoTorrent
 {
     abstract class Listener : IListener
     {
         public event EventHandler<EventArgs> StatusChanged;
 
-        public IPEndPoint Endpoint { get; private set; }
-
 		public ListenerStatus Status { get; private set; }
 
-
-		protected Listener(IPEndPoint endpoint)
+		protected Listener()
         {
             Status = ListenerStatus.NotListening;
-            Endpoint = endpoint;
-        }
-
-        public void ChangeEndpoint(IPEndPoint endpoint)
-        {
-            Endpoint = endpoint;
-            if (Status != ListenerStatus.NotListening)
-            {
-                Stop();
-                Start();
-            }
         }
 
         protected virtual void RaiseStatusChanged(ListenerStatus status)

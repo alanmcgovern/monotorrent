@@ -490,20 +490,6 @@ namespace MonoTorrent.Client
             peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt(i);
 
-            // Do not try to connect to ourselves
-            if (peer.ConnectionUri.Port == manager.Engine.Listener.Endpoint.Port)
-            {
-                if (manager.Engine.Listener.Endpoint.Address.ToString() == peer.ConnectionUri.Host)
-                    return false;
-
-                if (manager.Engine.Listener.Endpoint.Address == IPAddress.Any)
-                    foreach (var intf in NetworkInterface.GetAllNetworkInterfaces())
-                        if (intf.OperationalStatus == OperationalStatus.Up)
-                            foreach (var ip in intf.GetIPProperties().UnicastAddresses)
-                                if (ip.Address.ToString() == peer.ConnectionUri.Host)
-                                    return false;
-            }
-
             if (ShouldBanPeer(peer))
                 return false;
             

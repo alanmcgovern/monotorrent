@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
 
 		#region Properties
 
-		public MonoTorrentCollection<PeerListener> Listeners { get; }
+		public MonoTorrentCollection<IPeerListener> Listeners { get; }
 
 		ClientEngine Engine { get; set; }
 
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
 		internal ListenManager(ClientEngine engine)
         {
             Engine = engine;
-            Listeners = new MonoTorrentCollection<PeerListener>();
+            Listeners = new MonoTorrentCollection<IPeerListener>();
         }
 
         #endregion Constructors
