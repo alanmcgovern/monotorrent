@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Client
 {
-    public class ProtocolException : TorrentException
+    class ProtocolException : TorrentException
     {
         public ProtocolException()
             :base()

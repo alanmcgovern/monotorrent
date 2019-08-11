@@ -30,7 +30,6 @@
 
 
 using System;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client

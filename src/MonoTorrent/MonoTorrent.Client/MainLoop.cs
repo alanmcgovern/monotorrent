@@ -35,7 +35,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    public class MainLoop : SynchronizationContext, INotifyCompletion
+    class MainLoop : SynchronizationContext, INotifyCompletion
     {
         static readonly ICache<CacheableManualResetEventSlim> cache = new Cache<CacheableManualResetEventSlim> (true).Synchronize ();
 

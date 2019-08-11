@@ -30,7 +30,7 @@ using System;
 
 namespace MonoTorrent.Client
 {
-    public class LocalPeerFoundEventArgs : EventArgs
+    class LocalPeerFoundEventArgs : EventArgs
     {
         public InfoHash InfoHash { get; }
         public Uri Uri { get; }

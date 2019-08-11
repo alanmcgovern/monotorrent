@@ -29,30 +29,18 @@
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// Provides the data needed to handle a PeersAdded event
-    /// </summary>
     public abstract class PeersAddedEventArgs : TorrentEventArgs
     {
-        private int count;
-        private int total;
-        
-        #region Member Variables
+        /// <summary>
+        /// The number of peers which were already known.
+        /// </summary>
+        public int ExistingPeers { get; }
 
-        public int ExistingPeers
-        {
-            get { return total - NewPeers; }
-        }
-        
-        public int NewPeers
-        {
-            get { return this.count; }
-        }
-        
-        #endregion
+        /// <summary>
+        /// The number of new peers which were added.
+        /// </summary>
+        public int NewPeers { get; }
 
-
-        #region Constructors
         /// <summary>
         /// Creates a new PeersAddedEventArgs
         /// </summary>
@@ -60,9 +48,8 @@ namespace MonoTorrent.Client
         protected PeersAddedEventArgs(TorrentManager manager, int peersAdded, int total)
             : base(manager)
         {
-            this.count = peersAdded;
-            this.total = total;
+            NewPeers = peersAdded;
+            ExistingPeers = total - peersAdded;
         }
-        #endregion
     }
 }
