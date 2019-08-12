@@ -49,13 +49,13 @@ namespace MonoTorrent.Dht
         [SetUp]
         public void Setup()
         {
-            Message.UseVersionKey = false;
+            DhtMessage.UseVersionKey = false;
         }
 
         [TearDown]
         public void Teardown()
         {
-            Message.UseVersionKey = true;
+            DhtMessage.UseVersionKey = true;
         }
         
         #region Encode Tests
@@ -63,7 +63,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void AnnouncePeerEncode()
         {
-            Node n = new MonoTorrent.Dht.Node(NodeId.Create(), null);
+            Node n = new Node(NodeId.Create(), null);
             n.Token = token;
             AnnouncePeer m = new AnnouncePeer(id, infohash, 6881, token);
             m.TransactionId = transactionId;
@@ -163,7 +163,7 @@ namespace MonoTorrent.Dht
         {
             // Register the query as being sent so we can decode the response
             AnnouncePeerDecode();
-            MessageFactory.RegisterSend(message);
+            DhtMessageFactory.RegisterSend(message);
             string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
 
             AnnouncePeerResponse m = (AnnouncePeerResponse)Decode(text);
@@ -187,7 +187,7 @@ namespace MonoTorrent.Dht
         public void FindNodeResponseDecode()
         {
             FindNodeEncode();
-            MessageFactory.RegisterSend(message);
+            DhtMessageFactory.RegisterSend(message);
             string text = "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re";
             FindNodeResponse m = (FindNodeResponse)Decode(text);
 
@@ -215,7 +215,7 @@ namespace MonoTorrent.Dht
         public void GetPeersResponseDecode()
         {
             GetPeersEncode();
-            MessageFactory.RegisterSend(message);
+            DhtMessageFactory.RegisterSend(message);
 
             string text = "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re";
             GetPeersResponse m = (GetPeersResponse)Decode(text);
@@ -246,7 +246,7 @@ namespace MonoTorrent.Dht
         public void PingResponseDecode()
         {
             PingEncode();
-            MessageFactory.RegisterSend(message);
+            DhtMessageFactory.RegisterSend(message);
 
             string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
             PingResponse m = (PingResponse)Decode(text);
@@ -259,16 +259,16 @@ namespace MonoTorrent.Dht
         #endregion
 
 
-        private void Compare(Message m, string expected)
+        private void Compare(DhtMessage m, string expected)
         {
             byte[] b = m.Encode();
             Assert.AreEqual(Encoding.UTF8.GetString(b), expected);
         }
 
-        private Message Decode(string p)
+        private DhtMessage Decode(string p)
         {
             byte[] buffer = Encoding.UTF8.GetBytes(p);
-            return MessageFactory.DecodeMessage(BEncodedValue.Decode<BEncodedDictionary>(buffer));
+            return DhtMessageFactory.DecodeMessage(BEncodedValue.Decode<BEncodedDictionary>(buffer));
         }
     }
 }

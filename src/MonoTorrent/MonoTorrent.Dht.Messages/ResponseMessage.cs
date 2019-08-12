@@ -1,10 +1,10 @@
 //
-// BEncodingException.cs
+// ResponseMessage.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,32 +27,37 @@
 //
 
 
-using System;
-using System.Runtime.Serialization;
+using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.BEncoding
+namespace MonoTorrent.Dht.Messages
 {
-    [Serializable]
-    public class BEncodingException : Exception
+    abstract class ResponseMessage : DhtMessage
     {
-        public BEncodingException()
-            : base()
+        static readonly BEncodedString ReturnValuesKey = "r";
+        internal static readonly BEncodedString ResponseType = "r";
+
+        internal override NodeId Id
         {
+            get { return new NodeId((BEncodedString)Parameters[IdKey]); }
         }
 
-        public BEncodingException(string message)
-            : base(message)
+        public BEncodedDictionary Parameters
         {
+            get { return (BEncodedDictionary)properties[ReturnValuesKey]; }
         }
 
-        public BEncodingException(string message, Exception innerException)
-            : base(message, innerException)
+        protected ResponseMessage(NodeId id, BEncodedValue transactionId)
+            : base(ResponseType)
         {
+            properties.Add(ReturnValuesKey, new BEncodedDictionary());
+            Parameters.Add(IdKey, id.BencodedString());
+            TransactionId = transactionId;
         }
 
-        protected BEncodingException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
+        protected ResponseMessage(BEncodedDictionary d)
+            : base(d)
         {
+
         }
     }
 }

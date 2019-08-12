@@ -39,20 +39,20 @@ namespace MonoTorrent.Dht
 {
     class TestListener : IDhtListener
     {
-        public event Action<Message, IPEndPoint> MessageSent;
+        public event Action<DhtMessage, IPEndPoint> MessageSent;
         public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
         public IPEndPoint EndPoint { get; private set; } = new IPEndPoint(IPAddress.Loopback, 0);
         public ListenerStatus Status { get; private set; }
 
-        public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
+        public void RaiseMessageReceived(DhtMessage message, IPEndPoint endpoint)
             => MessageReceived?.Invoke (message.Encode (), endpoint);
 
         public Task SendAsync(byte[] buffer, IPEndPoint endpoint)
         {
-            Message message;
-            MessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out message);
+            DhtMessage message;
+            DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out message);
             MessageSent?.Invoke (message, endpoint);
             return Task.CompletedTask;
         }

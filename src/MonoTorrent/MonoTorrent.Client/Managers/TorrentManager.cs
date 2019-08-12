@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {

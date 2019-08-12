@@ -1,10 +1,10 @@
-//
-// BEncodingException.cs
+﻿//
+// LocalPeerFoundEventArgs.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Jared Hendry
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,31 +28,18 @@
 
 
 using System;
-using System.Runtime.Serialization;
 
-namespace MonoTorrent.BEncoding
+namespace MonoTorrent.Client.Listeners
 {
-    [Serializable]
-    public class BEncodingException : Exception
+    class LocalPeerFoundEventArgs : EventArgs
     {
-        public BEncodingException()
-            : base()
-        {
-        }
+        public InfoHash InfoHash { get; }
+        public Uri Uri { get; }
 
-        public BEncodingException(string message)
-            : base(message)
+        public LocalPeerFoundEventArgs (InfoHash infoHash, Uri uri)
         {
-        }
-
-        public BEncodingException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-
-        protected BEncodingException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
+            InfoHash = infoHash;
+            Uri = uri;
         }
     }
 }

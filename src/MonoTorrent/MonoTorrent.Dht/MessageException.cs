@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    internal class MessageException : Exception
+    class MessageException : Exception
     {
         private ErrorCode errorCode;
 
