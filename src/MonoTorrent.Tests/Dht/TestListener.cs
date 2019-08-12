@@ -40,17 +40,14 @@ namespace MonoTorrent.Dht
     class TestListener : IDhtListener
     {
         public event Action<Message, IPEndPoint> MessageSent;
-        public event MessageReceived MessageReceived;
+        public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
-        public IPEndPoint Endpoint { get; private set; } = new IPEndPoint(IPAddress.Loopback, 0);
+        public IPEndPoint EndPoint { get; private set; } = new IPEndPoint(IPAddress.Loopback, 0);
         public ListenerStatus Status { get; private set; }
 
         public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
             => MessageReceived?.Invoke (message.Encode (), endpoint);
-
-        public void ChangeEndpoint (IPEndPoint endpoint)
-            => Endpoint = endpoint;
 
         public Task SendAsync(byte[] buffer, IPEndPoint endpoint)
         {

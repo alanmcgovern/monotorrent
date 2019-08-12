@@ -30,6 +30,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
@@ -43,47 +44,33 @@ namespace MonoTorrent.Client
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
 
-        Socket listener;
-        SocketAsyncEventArgs connectArgs;
+        //SocketAsyncEventArgs connectArgs;
 
         public PeerListener(IPEndPoint endpoint)
             : base(endpoint)
         {
         }
 
-        public override void Start()
+        protected override void Start(CancellationToken token)
         {
-            if (Status == ListenerStatus.Listening)
-                return;
+            var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var connectArgs = new SocketAsyncEventArgs ();
+            token.Register (() => {
+                listener.Close ();
+                connectArgs.Dispose ();
+            });
 
-            try
-            {
-                listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                listener.Bind(EndPoint);
-                listener.Listen(6);
+            listener.Bind(OriginalEndPoint);
+            EndPoint = (IPEndPoint) listener.LocalEndPoint;
 
-                connectArgs = new SocketAsyncEventArgs ();
-                connectArgs.Completed += OnSocketReceived;
+            listener.Listen(6);
 
-                if (!listener.AcceptAsync(connectArgs))
-                    OnSocketReceived (listener, connectArgs);
-                RaiseStatusChanged(ListenerStatus.Listening);
-            }
-            catch (SocketException)
-            {
-                RaiseStatusChanged(ListenerStatus.PortNotFree);
-            }
+            connectArgs.Completed += OnSocketReceived;
+
+            if (!listener.AcceptAsync(connectArgs))
+                OnSocketReceived (listener, connectArgs);
         }
 
-        public override void Stop()
-        {
-            RaiseStatusChanged(ListenerStatus.NotListening);
-
-            listener?.Close ();
-            connectArgs = null;
-            listener = null;
-        }
-        
         void OnSocketReceived (object sender, SocketAsyncEventArgs e)
         {
             Socket socket = null;

@@ -37,20 +37,18 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent
 {
-    abstract class UdpListener : SocketListener
+    abstract class UdpListener : SocketListener, ISocketMessageListener
     {
-        CancellationTokenSource Cancellation { get; set; }
+        public event Action<byte [], IPEndPoint> MessageReceived;
+
         UdpClient Client { get; set; }
 
         protected UdpListener(IPEndPoint endpoint)
             :base(endpoint)
         {
-            Cancellation = new CancellationTokenSource ();
         }
 
-		protected abstract void OnMessageReceived(byte[] buffer, IPEndPoint endpoint);
-
-        public virtual async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
+        public async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
             try
             {
@@ -63,36 +61,16 @@ namespace MonoTorrent
             }
         }
 
-        public override void Start()
+        protected override void Start(CancellationToken token)
         {
-            if (Status == ListenerStatus.Listening)
-                return;
+            var client = Client = new UdpClient(OriginalEndPoint);
+            EndPoint = (IPEndPoint) client.Client.LocalEndPoint;
+            token.Register (() => {
+                client.SafeDispose ();
+                Client = null;
+            });
 
-            Cancellation?.Cancel ();
-            Cancellation = new CancellationTokenSource ();
-            try {
-                var client = Client = new UdpClient(EndPoint);
-                Cancellation.Token.Register (() => {
-                    client.SafeDispose ();
-                    Client = null;
-                });
-
-                ReceiveAsync (client, Cancellation.Token);
-                RaiseStatusChanged(ListenerStatus.Listening);
-            }
-            catch (SocketException)
-            {
-                Cancellation?.Cancel ();
-                Cancellation = null;
-
-                RaiseStatusChanged(ListenerStatus.PortNotFree);
-            }
-        }
-
-        public override void Stop()
-        {
-            Cancellation?.Cancel ();
-            Cancellation = null;
+            ReceiveAsync (client, token);
         }
 
         async void ReceiveAsync (UdpClient client, CancellationToken token)
@@ -100,7 +78,7 @@ namespace MonoTorrent
             while (!token.IsCancellationRequested) {
                 try {
                     var result = await client.ReceiveAsync ().ConfigureAwait (false);
-                    OnMessageReceived(result.Buffer, result.RemoteEndPoint);
+                    MessageReceived?.Invoke(result.Buffer, result.RemoteEndPoint);
                 } catch (SocketException ex) {
                     // If the destination computer closes the connection
                     // we get error code 10054. We need to keep receiving on

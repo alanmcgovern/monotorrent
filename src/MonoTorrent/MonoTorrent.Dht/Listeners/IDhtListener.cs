@@ -27,17 +27,10 @@
 //
 
 
-using System.Net;
-using System.Threading.Tasks;
-
-using MonoTorrent.Client;
-
 namespace MonoTorrent.Dht.Listeners
 {
-    public interface IDhtListener : IListener
+    public interface IDhtListener : ISocketMessageListener
     {
-        event MessageReceived MessageReceived;
 
-        Task SendAsync (byte[] buffer, IPEndPoint endpoint);
     }
 }
