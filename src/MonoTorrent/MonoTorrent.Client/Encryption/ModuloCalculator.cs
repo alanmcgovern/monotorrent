@@ -27,8 +27,6 @@
 //
 
 using System;
-using System.Text;
-using Mono.Math;
 
 namespace MonoTorrent.Client.Encryption
 {

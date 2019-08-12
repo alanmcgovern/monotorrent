@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client

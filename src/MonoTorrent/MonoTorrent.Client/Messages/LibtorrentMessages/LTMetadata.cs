@@ -33,7 +33,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    internal class LTMetadata : ExtensionMessage
+    class LTMetadata : ExtensionMessage
     {
         public static readonly ExtensionSupport Support = CreateSupport("ut_metadata");
         private static readonly BEncodedString MessageTypeKey = "msg_type";

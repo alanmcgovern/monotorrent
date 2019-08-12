@@ -1,10 +1,10 @@
 //
-// BEncodingException.cs
+// AnnounceTask.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,32 +27,46 @@
 //
 
 
-using System;
-using System.Runtime.Serialization;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace MonoTorrent.BEncoding
+using MonoTorrent.Dht.Messages;
+
+namespace MonoTorrent.Dht.Tasks
 {
-    [Serializable]
-    public class BEncodingException : Exception
+    class AnnounceTask
     {
-        public BEncodingException()
-            : base()
+        readonly NodeId infoHash;
+        readonly DhtEngine engine;
+        readonly int port;
+
+        public AnnounceTask(DhtEngine engine, InfoHash infoHash, int port)
+            : this(engine, new NodeId(infoHash), port)
         {
+
         }
 
-        public BEncodingException(string message)
-            : base(message)
+        public AnnounceTask(DhtEngine engine, NodeId infoHash, int port)
         {
+            this.engine = engine;
+            this.infoHash = infoHash;
+            this.port = port;
         }
 
-        public BEncodingException(string message, Exception innerException)
-            : base(message, innerException)
+        public async Task ExecuteAsync()
         {
-        }
+            GetPeersTask getpeers = new GetPeersTask(engine, infoHash);
+            var nodes = await getpeers.ExecuteAsync();
 
-        protected BEncodingException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
+            var announceTasks = new List<Task> ();
+            foreach (Node n in nodes)
+            {
+                if (n.Token != null) {
+                    var query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
+                    announceTasks.Add (engine.SendQueryAsync (query, n));
+                }
+            }
+            await Task.WhenAll (announceTasks);
         }
     }
 }

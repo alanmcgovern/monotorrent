@@ -39,11 +39,11 @@ using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
-    internal class MessageLoop
+    class MessageLoop
     {
         private struct SendDetails
         {
-            public SendDetails(Node node, IPEndPoint destination, Message message, TaskCompletionSource<SendQueryEventArgs> tcs)
+            public SendDetails(Node node, IPEndPoint destination, DhtMessage message, TaskCompletionSource<SendQueryEventArgs> tcs)
             {
                 CompletionSource = tcs;
                 Destination = destination;
@@ -53,7 +53,7 @@ namespace MonoTorrent.Dht
             }
             public TaskCompletionSource<SendQueryEventArgs> CompletionSource;
             public IPEndPoint Destination;
-            public Message Message;
+            public DhtMessage Message;
             public Node Node;
             public Stopwatch SentAt;
         }
@@ -64,7 +64,7 @@ namespace MonoTorrent.Dht
         IDhtListener listener;
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
-        Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
+        Queue<KeyValuePair<IPEndPoint, DhtMessage>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>>();
         Dictionary<BEncodedValue, SendDetails> waitingResponse = new Dictionary<BEncodedValue, SendDetails>();
         List<SendDetails> waitingResponseTimedOut = new List<SendDetails> ();
 
@@ -110,9 +110,9 @@ namespace MonoTorrent.Dht
                 // and return an error message (if that's what the spec allows)
                 try
                 {
-                    Message message;
-                    if (MessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
-                        receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, message));
+                    DhtMessage message;
+                    if (DhtMessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
+                        receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, DhtMessage>(endpoint, message));
                 }
                 catch (MessageException)
                 {
@@ -166,7 +166,7 @@ namespace MonoTorrent.Dht
             }
 
             foreach (var v in waitingResponseTimedOut) {
-                MessageFactory.UnregisterSend((QueryMessage)v.Message);
+                DhtMessageFactory.UnregisterSend((QueryMessage)v.Message);
                 waitingResponse.Remove (v.Message.TransactionId);
 
                 if (v.CompletionSource != null)
@@ -179,8 +179,8 @@ namespace MonoTorrent.Dht
 
         private void ReceiveMessage()
         {
-            KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
-            Message message = receive.Value;
+            KeyValuePair<IPEndPoint, DhtMessage> receive = receiveQueue.Dequeue();
+            DhtMessage message = receive.Value;
             IPEndPoint source = receive.Key;
             SendDetails query = default (SendDetails);
 
@@ -228,7 +228,7 @@ namespace MonoTorrent.Dht
             }
         }
 
-        internal void EnqueueSend(Message message, Node node, IPEndPoint endpoint, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs = null)
+        internal void EnqueueSend(DhtMessage message, Node node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs> tcs = null)
         {
             lock (locker)
             {
@@ -238,25 +238,25 @@ namespace MonoTorrent.Dht
                         throw new ArgumentException("Message must have a transaction id");
                     do {
                         message.TransactionId = TransactionId.NextId();
-                    } while (MessageFactory.IsRegistered(message.TransactionId));
+                    } while (DhtMessageFactory.IsRegistered(message.TransactionId));
                 }
 
                 // We need to be able to cancel a query message if we time out waiting for a response
                 if (message is QueryMessage)
-                    MessageFactory.RegisterSend((QueryMessage)message);
+                    DhtMessageFactory.RegisterSend((QueryMessage)message);
 
                 sendQueue.Enqueue(new SendDetails(node, endpoint, message, tcs));
             }
         }
 
-        internal void EnqueueSend(Message message, Node node, System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> tcs = null)
+        internal void EnqueueSend(DhtMessage message, Node node, TaskCompletionSource<SendQueryEventArgs> tcs = null)
         {
             EnqueueSend (message, node, node.EndPoint, tcs);
         }
 
-        public System.Threading.Tasks.Task<SendQueryEventArgs> SendAsync (Message message, Node node)
+        public Task<SendQueryEventArgs> SendAsync (DhtMessage message, Node node)
         {
-            var tcs = new System.Threading.Tasks.TaskCompletionSource<SendQueryEventArgs> ();
+            var tcs = new TaskCompletionSource<SendQueryEventArgs> ();
             EnqueueSend (message, node, tcs);
             return tcs.Task;
         }

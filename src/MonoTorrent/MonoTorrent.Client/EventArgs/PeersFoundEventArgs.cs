@@ -28,32 +28,21 @@
 
 
 using System;
-using System.IO;
-using System.Security.Cryptography;
 using System.Collections.Generic;
 
-using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 
-namespace MonoTorrent
+namespace MonoTorrent.Dht
 {
     public class PeersFoundEventArgs : EventArgs
     {
-        private List<Peer> peers;
-        private InfoHash infoHash;
-        
-        public PeersFoundEventArgs(InfoHash infoHash, List<Peer> peers)
+        public IList<Peer> Peers { get; }
+        public InfoHash InfoHash { get; }
+
+        internal PeersFoundEventArgs(InfoHash infoHash, List<Peer> peers)
         {
-            this.peers = peers;
-            this.infoHash = infoHash;
-        }
-        public List<Peer> Peers
-        {
-            get { return peers; }
-        }
-        public InfoHash InfoHash
-        {
-            get { return infoHash; }
+            InfoHash = infoHash;
+            Peers = peers.AsReadOnly ();
         }
     }
 }

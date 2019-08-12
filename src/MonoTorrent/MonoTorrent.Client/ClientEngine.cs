@@ -35,6 +35,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Dht;
 

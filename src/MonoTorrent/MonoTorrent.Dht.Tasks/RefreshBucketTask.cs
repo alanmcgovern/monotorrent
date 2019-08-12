@@ -1,10 +1,10 @@
 //
-// BEncodingException.cs
+// RefreshBucketTask.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,32 +27,35 @@
 //
 
 
-using System;
-using System.Runtime.Serialization;
+using MonoTorrent.Dht.Messages;
 
-namespace MonoTorrent.BEncoding
+namespace MonoTorrent.Dht.Tasks
 {
-    [Serializable]
-    public class BEncodingException : Exception
+    class RefreshBucketTask
     {
-        public BEncodingException()
-            : base()
+        private Bucket bucket;
+        private DhtEngine engine;
+
+        public RefreshBucketTask(DhtEngine engine, Bucket bucket)
         {
+            this.engine = engine;
+            this.bucket = bucket;
         }
 
-        public BEncodingException(string message)
-            : base(message)
+        public async void Execute ()
         {
-        }
+            if (bucket.Nodes.Count == 0)
+                return;
 
-        public BEncodingException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
+            bucket.SortBySeen();
 
-        protected BEncodingException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
+            foreach (var node in bucket.Nodes.ToArray ()) {
+                var message = new FindNode (engine.LocalId, node.Id);
+
+                var args = await engine.SendQueryAsync (message, node);
+                if (!args.TimedOut)
+                    return;
+            }
         }
     }
 }
