@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Net;
 using System.Web;
 using MonoTorrent.BEncoding;
+using System.Threading;
 
 namespace MonoTorrent.Tracker
 {
@@ -43,12 +44,7 @@ namespace MonoTorrent.Tracker
             return base.Handle(c, d.ClientAddress, false);
         }
 
-        public override void Start()
-        {
-            
-        }
-
-        public override void Stop()
+        protected override void Start (CancellationToken token)
         {
             
         }

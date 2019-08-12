@@ -29,6 +29,7 @@
 
 using System;
 using System.Net;
+using System.Threading;
 
 using MonoTorrent.BEncoding;
 
@@ -36,14 +37,7 @@ namespace MonoTorrent.Tracker.Listeners
 {
     class HttpTrackerListener : TrackerListener
     {
-        #region Fields
-
-        private string prefix;
-        private HttpListener listener;
-
-        #endregion Fields
-
-        #region Constructors
+        string Prefix { get; }
 
         public HttpTrackerListener(IPAddress address, int port)
             : this(string.Format("http://{0}:{1}/announce/", address, port))
@@ -62,40 +56,21 @@ namespace MonoTorrent.Tracker.Listeners
             if (string.IsNullOrEmpty(httpPrefix))
                 throw new ArgumentNullException("httpPrefix");
 
-            this.prefix = httpPrefix;
+            Prefix = httpPrefix;
         }
-
-        #endregion Constructors
-
 
         #region Methods
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
-        public override void Start()
+        protected override void Start(CancellationToken token)
         {
-			if (Status == ListenerStatus.Listening)
-				return;
-			
-			listener = new HttpListener();
-            listener.Prefixes.Add(prefix);
+			var listener = new HttpListener();
+            token.Register (() => listener.Close ());
+
+            listener.Prefixes.Add(Prefix);
             listener.Start();
             listener.BeginGetContext(EndGetRequest, listener);
-            RaiseStatusChanged (ListenerStatus.Listening);
-        }
-
-        /// <summary>
-        /// Stops listening for incoming connections
-        /// </summary>
-        public override void Stop()
-        {
-			if (Status == ListenerStatus.NotListening)
-				return;
-			
-            IDisposable d = (IDisposable)listener;
-			listener = null;
-            d.Dispose();
-            RaiseStatusChanged (ListenerStatus.NotListening);
         }
 
         private void EndGetRequest(IAsyncResult result)

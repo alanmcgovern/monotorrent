@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Threading;
 
 namespace MonoTorrent
 {
@@ -35,22 +36,45 @@ namespace MonoTorrent
     {
         public event EventHandler<EventArgs> StatusChanged;
 
-		public ListenerStatus Status { get; private set; }
+        CancellationTokenSource Cancellation { get; set; }
+        public ListenerStatus Status { get; private set; }
 
-		protected Listener()
+        protected Listener()
         {
             Status = ListenerStatus.NotListening;
         }
 
-        protected virtual void RaiseStatusChanged(ListenerStatus status)
+        void RaiseStatusChanged(ListenerStatus status)
         {
             Status = status;
             if (StatusChanged != null)
-                Toolbox.RaiseAsyncEvent<EventArgs>(StatusChanged, this, EventArgs.Empty);
+                Toolbox.RaiseAsyncEvent(StatusChanged, this, EventArgs.Empty);
         }
 
-        public abstract void Start();
+        public void Start()
+        {
+            if (Status == ListenerStatus.Listening)
+                return;
 
-        public abstract void Stop();
+            Cancellation?.Cancel ();
+            Cancellation = new CancellationTokenSource ();
+            Cancellation.Token.Register (() => RaiseStatusChanged (ListenerStatus.NotListening));
+
+            try {
+                Start (Cancellation.Token);
+                RaiseStatusChanged (ListenerStatus.Listening);
+            } catch {
+                RaiseStatusChanged (ListenerStatus.PortNotFree);
+            }
+
+        }
+
+        protected abstract void Start (CancellationToken token);
+
+        public void Stop ()
+        {
+            Cancellation?.Cancel ();
+            Cancellation = null;
+        }
     }
 }

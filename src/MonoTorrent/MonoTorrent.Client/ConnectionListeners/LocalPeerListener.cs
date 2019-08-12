@@ -42,44 +42,22 @@ namespace MonoTorrent.Client
 
         public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
 
-        CancellationTokenSource Cancellation { get; set; }
         Regex RegexMatcher = new Regex("BT-SEARCH \\* HTTP/1.1\\r\\nHost: 239.192.152.143:6771\\r\\nPort: (?<port>[^@]+)\\r\\nInfohash: (?<hash>[^@]+)\\r\\n\\r\\n\\r\\n");
 
         public LocalPeerListener ()
-            : base (new IPEndPoint (IPAddress.Any, 6771))
+            : base (new IPEndPoint (IPAddress.Any, MulticastPort))
         {
         }
 
-        public override void Start()
+        protected override void Start(CancellationToken token)
         {
-            if (Status == ListenerStatus.Listening)
-                return;
+            var client = new UdpClient(OriginalEndPoint);
+            EndPoint = (IPEndPoint) client.Client.LocalEndPoint;
 
-            Cancellation?.Cancel ();
-            Cancellation = new CancellationTokenSource();
+            token.Register (() => client.SafeDispose ());
 
-            try {
-                var client = new UdpClient(MulticastPort);
-                Cancellation.Token.Register (() => client.SafeDispose ());
-
-                client.JoinMulticastGroup(MulticastIpAddress);
-                ReceiveAsync (client, Cancellation.Token);
-                RaiseStatusChanged(ListenerStatus.Listening);
-            } catch {
-                Cancellation?.Cancel ();
-                Cancellation = null;
-                RaiseStatusChanged(ListenerStatus.PortNotFree);
-            }
-        }
-
-        public override void Stop()
-        {
-            if (Status == ListenerStatus.NotListening)
-                return;
-
-            Cancellation?.Cancel ();
-            Cancellation = null;
-            RaiseStatusChanged(ListenerStatus.NotListening);
+            client.JoinMulticastGroup(MulticastIpAddress);
+            ReceiveAsync (client, token);
         }
 
         async void ReceiveAsync (UdpClient client, CancellationToken token)

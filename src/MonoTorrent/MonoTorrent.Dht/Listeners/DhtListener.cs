@@ -31,23 +31,12 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Listeners
 {
-    public delegate void MessageReceived(byte[] buffer, IPEndPoint endpoint);
-
     class DhtListener : UdpListener, IDhtListener
     {
-        public event MessageReceived MessageReceived;
-
         public DhtListener(IPEndPoint endpoint)
             : base(endpoint)
         {
 
-        }
-
-        protected override void OnMessageReceived(byte[] buffer, IPEndPoint endpoint)
-        {
-            MessageReceived h = MessageReceived;
-            if (h != null)
-                h(buffer, endpoint);
         }
     }
 }

@@ -1,10 +1,10 @@
 ﻿//
-// SocketListener.cs
+// ISocketMessageListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,19 +27,16 @@
 //
 
 
+using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace MonoTorrent
 {
-    abstract class SocketListener : Listener, ISocketListener
+    public interface ISocketMessageListener : ISocketListener
     {
-        public IPEndPoint EndPoint { get; protected set; }
+        event Action<byte[], IPEndPoint> MessageReceived;
 
-        protected IPEndPoint OriginalEndPoint { get; set; }
-
-		protected SocketListener(IPEndPoint endPoint)
-        {
-            EndPoint = OriginalEndPoint = endPoint;
-        }
+        Task SendAsync (byte[] buffer, IPEndPoint endpoint);
     }
 }
