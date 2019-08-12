@@ -31,8 +31,17 @@ using System.Net;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    public static class ListenerFactory
+    public static class TrackerListenerFactory
     {
+        /// <summary>
+        /// Creates a listener to receive incoming HTTP requests on IPAddress.Any and the given port.
+        /// The resulting HTTP prefix will be similar to http://{address}:{port}/announce/ and will support Scrape requests.
+        /// </summary>
+        /// <param name="port">The local port to bind to.</param>
+        /// <returns></returns>
+        public static ITrackerListener CreateHttp (int port)
+            => new HttpTrackerListener (IPAddress.Any, port);
+
         /// <summary>
         /// Creates a listener to receive incoming HTTP requests on the given local IP address and port.
         /// The resulting HTTP prefix will be similar to http://{address}:{port}/announce/ and will support Scrape requests.

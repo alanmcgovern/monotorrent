@@ -105,8 +105,8 @@ namespace SampleTracker
             Console.WriteLine("Listening for UDP requests at: {0}", udpEndpoint);
 
             var listeners = new [] {
-                ListenerFactory.CreateHttp (httpEndpoint),
-                ListenerFactory.CreateUdp (udpEndpoint)
+                TrackerListenerFactory.CreateHttp (httpEndpoint),
+                TrackerListenerFactory.CreateUdp (udpEndpoint)
             };
             foreach (var listener in listeners) {
                 tracker.RegisterListener(listener);
