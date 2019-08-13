@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 using MonoTorrent.Client;
 
@@ -39,10 +40,10 @@ namespace MonoTorrent.Dht
         public IList<Peer> Peers { get; }
         public InfoHash InfoHash { get; }
 
-        internal PeersFoundEventArgs(InfoHash infoHash, List<Peer> peers)
+        internal PeersFoundEventArgs(InfoHash infoHash, IList<Peer> peers)
         {
             InfoHash = infoHash;
-            Peers = peers.AsReadOnly ();
+            Peers = new ReadOnlyCollection<Peer> (peers);
         }
     }
 }

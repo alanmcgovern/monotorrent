@@ -71,13 +71,6 @@ namespace MonoTorrent
         NotListening
     }
 
-    public enum PeerStatus
-    {
-        Available,
-        Connecting,
-        Connected
-    }
-
     public enum Direction
     {
         None,
@@ -104,23 +97,7 @@ namespace MonoTorrent
         Completed
     }
 
-    public enum PeerConnectionEvent
-    {
-        IncomingConnectionReceived,
-        OutgoingConnectionCreated,
-        Disconnected
-    }
-
-    public enum PieceEvent
-    {
-        BlockWriteQueued,
-        BlockNotRequested,
-        BlockWrittenToDisk,
-        HashPassed,
-        HashFailed
-    }
-
-	public enum PeerListType
+	enum PeerListType
 	{
 		NascentPeers,
 		CandidatePeers,

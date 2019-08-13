@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public class MonoTorrentCollection<T> : List<T>, ICloneable
+    class MonoTorrentCollection<T> : List<T>, ICloneable
     {
         public MonoTorrentCollection()
             : base()

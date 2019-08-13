@@ -185,7 +185,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
+        public static IList<Peer> Decode(BEncodedList peers)
         {
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
             foreach (BEncodedValue value in peers)
@@ -222,7 +222,7 @@ namespace MonoTorrent.Client
             return new Peer(peerId, connectionUri, EncryptionTypes.All);
         }
 
-        public static MonoTorrentCollection<Peer> Decode(BEncodedString peers)
+        public static IList<Peer> Decode(BEncodedString peers)
         {
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes

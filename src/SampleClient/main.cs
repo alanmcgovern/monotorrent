@@ -4,16 +4,17 @@ using System.Text;
 using System.IO;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
+using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Dht;
-using System.Threading.Tasks;
 
-namespace MonoTorrent
+namespace SampleClient
 {
-    class main
+    class MainClass
     {
         static string dhtNodeFile;
         static string basePath;

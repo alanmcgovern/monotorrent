@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
 
 
 
-        private void VerifyDecodedPeers(List<Peer> decoded)
+        private void VerifyDecodedPeers(IList<Peer> decoded)
         {
             Assert.AreEqual(peers.Count, decoded.Count, "#1");
             foreach (Peer dec in decoded)

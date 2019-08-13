@@ -183,7 +183,7 @@ namespace MonoTorrent.Client
 
             var newPeers = Peer.Decode((BEncodedString)message.Added);
             int count = await id.TorrentManager.AddPeersAsync(newPeers);
-            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, newPeers.Count, id));
+            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAddedEventArgs(id.TorrentManager, count, newPeers.Count, id));
         }
 
         protected virtual void HandleLtChat(PeerId id, LTChat message)
