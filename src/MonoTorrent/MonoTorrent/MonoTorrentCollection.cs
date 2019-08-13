@@ -1,5 +1,5 @@
 //
-// IEncryptor.cs
+// MonoTorrentCollection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,27 +27,46 @@
 //
 
 
-
 using System;
-using System.Text;
-using System.Net.Sockets;
-using MonoTorrent.Client.Connections;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace MonoTorrent.Client.Encryption
+namespace MonoTorrent
 {
-    interface IEncryptor
+    class MonoTorrentCollection<T> : List<T>, ICloneable
     {
-        void AddPayload(byte[] buffer);
-        void AddPayload(byte[] buffer, int offset, int count);
+        public MonoTorrentCollection()
+            : base()
+        {
 
-        byte[] InitialData { get; }
+        }
 
-        Task HandshakeAsync(IConnection socket);
+        public MonoTorrentCollection(IEnumerable<T> collection)
+            : base(collection)
+        {
 
-        Task HandshakeAsync(IConnection socket, byte[] initialBuffer, int offset, int count);
+        }
 
-        IEncryption Encryptor { get; }
-        IEncryption Decryptor { get; }
+        public MonoTorrentCollection(int capacity)
+            : base(capacity)
+        {
+
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        public MonoTorrentCollection<T> Clone()
+        {
+            return new MonoTorrentCollection<T>(this);
+        }
+
+        public T Dequeue()
+        {
+            T result = this[0];
+            RemoveAt(0);
+            return result;
+        }
     }
 }

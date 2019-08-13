@@ -1,10 +1,11 @@
 //
-// RC4Header.cs
+// NullEncryption.cs
 //
 // Authors:
+//   Yiduo Wang planetbeing@gmail.com
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2007 Yiduo Wang
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,40 +27,50 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MonoTorrent.Client.Encryption
 {
-    class RC4Header : IEncryption
+    /// <summary>
+    /// Plaintext "encryption"
+    /// </summary>
+    class PlainTextEncryption : IEncryption
     {
-        public RC4Header()
+        public static PlainTextEncryption Instance = new PlainTextEncryption();
+
+        private PlainTextEncryption()
         {
         }
 
         public void Decrypt(byte[] buffer)
         {
+            // Nothing
         }
 
         public void Decrypt(byte[] buffer, int offset, int count)
         {
+            // Nothing
         }
 
         public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
+            Encrypt(src, srcOffset, dest, destOffset, count);
         }
 
         public void Encrypt(byte[] buffer)
         {
+            // Nothing
         }
 
         public void Encrypt(byte[] buffer, int offset, int count)
         {
+            // Nothing
         }
 
         public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
+            Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
         }
     }
 }

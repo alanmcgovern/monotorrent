@@ -1,5 +1,5 @@
 //
-// ToolBox.cs
+// Toolbox.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -35,7 +35,7 @@ namespace MonoTorrent
 {
 	internal delegate long Operation<T>(T target);
 
-    internal static class Toolbox
+    static class Toolbox
     {
         private static Random r = new Random();
 		public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)

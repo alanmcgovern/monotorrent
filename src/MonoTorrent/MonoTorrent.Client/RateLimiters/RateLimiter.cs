@@ -27,12 +27,9 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.RateLimiters
 {
     sealed class RateLimiter : IRateLimiter
     {

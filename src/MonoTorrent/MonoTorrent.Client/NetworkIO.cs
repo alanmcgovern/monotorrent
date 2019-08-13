@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {

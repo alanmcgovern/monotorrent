@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
                 if (!File.Exists(file.FullPath))
                 {
                     Directory.CreateDirectory (Path.GetDirectoryName(file.FullPath));
-                    SparseFile.CreateSparse (file.FullPath, file.Length);
+                    NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
                 }
                 s = new TorrentFileStream (file, FileMode.OpenOrCreate, access, FileShare.Read);
 

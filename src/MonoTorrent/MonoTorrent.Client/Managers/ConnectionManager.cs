@@ -27,19 +27,15 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {

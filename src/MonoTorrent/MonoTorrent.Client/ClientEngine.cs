@@ -37,6 +37,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client

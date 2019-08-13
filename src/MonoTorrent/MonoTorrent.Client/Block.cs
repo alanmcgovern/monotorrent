@@ -27,9 +27,8 @@
 //
 
 
-
-
 using System;
+
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client

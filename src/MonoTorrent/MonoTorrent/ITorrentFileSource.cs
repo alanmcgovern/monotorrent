@@ -1,5 +1,5 @@
 ﻿//
-// TrackerException.cs
+// ITorrentFileSource.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,19 +27,13 @@
 //
 
 
-using System;
+using System.Collections.Generic;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent
 {
-    public class TrackerException : Exception
+    public interface ITorrentFileSource
     {
-        public TrackerException ()
-        {
-        }
-
-        public TrackerException (string message, Exception innerException)
-            : base (message, innerException)
-        {
-        }
+        IEnumerable<FileMapping> Files { get; }
+        string TorrentName { get; }
     }
 }

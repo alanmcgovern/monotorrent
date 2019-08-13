@@ -33,6 +33,7 @@ using System.Diagnostics;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
@@ -282,7 +283,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Used to check how much upload capacity we are giving this peer
         /// </summary>
-        internal RateLimiter RateLimiter { get; private set; }
+        internal IRateLimiter RateLimiter { get; private set; }
 
         internal short RoundsChoked { get; private set; }
 

@@ -27,9 +27,7 @@
 //
 
 
-
-using System;
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.RateLimiters
 {
     interface IRateLimiter
     {

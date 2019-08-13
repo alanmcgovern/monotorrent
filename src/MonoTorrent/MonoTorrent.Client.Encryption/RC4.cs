@@ -1,5 +1,5 @@
 //
-// NullEncryption.cs
+// RC4.cs
 //
 // Authors:
 //   Yiduo Wang planetbeing@gmail.com
@@ -27,32 +27,53 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using System.Text;
+
+using System.Security.Cryptography;
 
 namespace MonoTorrent.Client.Encryption
 {
     /// <summary>
-    /// Plaintext "encryption"
+    /// RC4 encryption
     /// </summary>
-    class PlainTextEncryption : IEncryption
+    class RC4 : IEncryption
     {
-        public static PlainTextEncryption Instance = new PlainTextEncryption();
+        static RandomNumberGenerator random = new RNGCryptoServiceProvider();
 
-        private PlainTextEncryption()
+        byte[] S;
+        int x;
+        int y;
+
+        public RC4(byte[] key)
         {
+            S = new byte[256];
+            for (int i = 0; i < S.Length; i++)
+                S[i] = (byte)i;
+
+            byte c;
+
+            for (int i = 0; i <= 255; i++)
+            {
+                x = (x + S[i] + key[i % key.Length]) % 256;
+                c = S[x];
+                S[x] = S[i];
+                S[i] = c;
+            }
+
+            x = 0;
+
+            byte[] wasteBuffer = new byte[1024];
+            random.GetBytes(wasteBuffer);
+            Encrypt(wasteBuffer);
         }
 
         public void Decrypt(byte[] buffer)
         {
-            // Nothing
+            Encrypt(buffer, 0, buffer, 0, buffer.Length);
         }
-
         public void Decrypt(byte[] buffer, int offset, int count)
         {
-            // Nothing
+            Decrypt(buffer, offset, buffer, offset, count);
         }
-
         public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
             Encrypt(src, srcOffset, dest, destOffset, count);
@@ -60,17 +81,26 @@ namespace MonoTorrent.Client.Encryption
 
         public void Encrypt(byte[] buffer)
         {
-            // Nothing
+            Encrypt(buffer, 0, buffer, 0, buffer.Length);
         }
-
         public void Encrypt(byte[] buffer, int offset, int count)
         {
-            // Nothing
+            Encrypt(buffer, offset, buffer, offset, count);
         }
-
         public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
+            byte c;
+            for (int i = 0; i < count; i++)
+            {
+                x = (x + 1) & 0xFF;
+                y = (y + S[x]) & 0xFF;
+
+                c = S[y];
+                S[y] = S[x];
+                S[x] = c;
+
+                dest[i + destOffset] = (byte)(src[i + srcOffset] ^ (S[(S[x] + S[y]) & 0xFF]));
+            }
         }
     }
 }

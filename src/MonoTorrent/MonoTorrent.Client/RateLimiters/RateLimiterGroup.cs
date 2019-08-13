@@ -27,13 +27,10 @@
 //
 
 
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.RateLimiters
 {
     sealed class RateLimiterGroup : IRateLimiter, IEnumerable<IRateLimiter>
     {
