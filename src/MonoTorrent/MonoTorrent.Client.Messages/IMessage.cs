@@ -1,10 +1,10 @@
 //
-// TCPConnection.cs
+// IMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,26 +27,15 @@
 //
 
 
-
-using System;
-using System.Net;
-using System.Net.Sockets;
-
-namespace MonoTorrent.Client.Connections
+namespace MonoTorrent.Client.Messages
 {
-    sealed class IPV4Connection : SocketConnection
+    interface IMessage
     {
-        public IPV4Connection(Uri uri)
-            : base(uri)
-        {
-            
-        }
+        int ByteLength { get;}
 
-        public IPV4Connection(Socket socket, bool incoming)
-            : base(socket, incoming)
-        {
-            var endpoint = (IPEndPoint)socket.RemoteEndPoint;
-            Uri = new Uri("ipv4://" + endpoint.Address + ':' + endpoint.Port);
-        }
+        byte[] Encode();
+        int Encode(byte[] buffer, int offset);
+
+        void Decode(byte[] buffer, int offset, int length);
     }
 }

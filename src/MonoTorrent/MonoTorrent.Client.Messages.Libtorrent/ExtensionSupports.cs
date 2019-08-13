@@ -1,10 +1,10 @@
 //
-// LTSupport.cs
+// ExtensionSupports.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,22 +27,37 @@
 //
 
 
+using System.Collections.Generic;
+
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    struct ExtensionSupport
+    class ExtensionSupports : List<ExtensionSupport>
     {
-        public byte MessageId { get; }
-        public string Name { get; }
-
-        public ExtensionSupport(string name, byte messageId)
+        public ExtensionSupports()
         {
-            MessageId = messageId;
-            Name = name;
         }
 
-        public override string ToString()
+        public ExtensionSupports(IEnumerable<ExtensionSupport> collection)
+            : base(collection)
         {
-            return string.Format("{1}: {0}", Name, MessageId);
+
+        }
+
+        public bool Supports(string name)
+        {
+            for (int i = 0; i < Count; i++)
+                if (this[i].Name == name)
+                    return true;
+            return false;
+        }
+
+        internal byte MessageId(ExtensionSupport support)
+        {
+            for (int i = 0; i < Count; i++)
+                if (this[i].Name == support.Name)
+                    return this[i].MessageId;
+
+            throw new MessageException(string.Format("{0} is not supported by this peer", support.Name));
         }
     }
 }

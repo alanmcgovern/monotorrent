@@ -1,5 +1,5 @@
 //
-// PeerConnectionId.cs
+// PeerId.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -33,6 +33,7 @@ using System.Diagnostics;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client

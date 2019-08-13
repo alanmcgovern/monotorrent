@@ -1,5 +1,5 @@
 //
-// IPV6Connection.cs
+// IPV4Connection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,26 +27,25 @@
 //
 
 
-
 using System;
 using System.Net;
 using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class IPV6Connection : SocketConnection
+    sealed class IPV4Connection : SocketConnection
     {
-        public IPV6Connection(Uri uri)
+        public IPV4Connection(Uri uri)
             : base(uri)
         {
             
         }
 
-        public IPV6Connection(Socket socket, bool incoming)
+        public IPV4Connection(Socket socket, bool incoming)
             : base(socket, incoming)
         {
             var endpoint = (IPEndPoint)socket.RemoteEndPoint;
-            Uri = new Uri("ipv6://" + endpoint.Address + ':' + endpoint.Port);
+            Uri = new Uri("ipv4://" + endpoint.Address + ':' + endpoint.Port);
         }
     }
 }

@@ -1,10 +1,10 @@
 //
-// ExtensionSupports.cs
+// IPV6Connection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,38 +26,26 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System.Collections.Generic;
-using MonoTorrent.Client.Messages.Libtorrent;
 
-namespace MonoTorrent.Client
+using System;
+using System.Net;
+using System.Net.Sockets;
+
+namespace MonoTorrent.Client.Connections
 {
-    class ExtensionSupports : List<ExtensionSupport>
+    sealed class IPV6Connection : SocketConnection
     {
-        public ExtensionSupports()
+        public IPV6Connection(Uri uri)
+            : base(uri)
         {
+            
         }
 
-        public ExtensionSupports(IEnumerable<ExtensionSupport> collection)
-            : base(collection)
+        public IPV6Connection(Socket socket, bool incoming)
+            : base(socket, incoming)
         {
-
-        }
-
-        public bool Supports(string name)
-        {
-            for (int i = 0; i < Count; i++)
-                if (this[i].Name == name)
-                    return true;
-            return false;
-        }
-
-        internal byte MessageId(ExtensionSupport support)
-        {
-            for (int i = 0; i < Count; i++)
-                if (this[i].Name == support.Name)
-                    return this[i].MessageId;
-
-            throw new MessageException(string.Format("{0} is not supported by this peer", support.Name));
+            var endpoint = (IPEndPoint)socket.RemoteEndPoint;
+            Uri = new Uri("ipv6://" + endpoint.Address + ':' + endpoint.Port);
         }
     }
 }

@@ -27,8 +27,9 @@
 //
 
 
-using MonoTorrent.BEncoding;
 using System.Collections.Generic;
+
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
