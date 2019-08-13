@@ -1,20 +1,47 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.99.0.0</Version>
+    <MonoTorrentABIVersion>0.99.0.0</MonoTorrentABIVersion>
+
+    <GitVersionFile>version.txt</GitVersionFile>
+    <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
+    <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
+    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
+    <PackDependsOn>$(PackDependsOn);CreatePlainZip</PackDependsOn>
   </PropertyGroup>
+
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(Configuration)' == 'Debug' ">
+    <PropertyGroup>
+      <Version>0.0.0.1</Version>
+      <AssemblyVersion>$(Version)</AssemblyVersion>
+      <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
+      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)-Debug</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(Configuration)' == 'Release' " DependsOnTargets="GitVersion" >
+    <PropertyGroup>
+      <MonoTorrentFileVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
+      <MonoTorrentInformationalVersion>$(MonoTorrentFileVersion)-$(GitBranch)+$(GitCommit)</MonoTorrentInformationalVersion>
+
+      <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(MonoTorrentABIVersion)</AssemblyVersion>
+      <FileVersion Condition="'$(FileVersion)' == ''">$(MonoTorrentFileVersion)</FileVersion>
+      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(MonoTorrentInformationalVersion)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 
   <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies
       to ensure our GitInfo related properties have been calculated correctly. -->
-  <Target Name="SetPackProperties" DependsOnTargets="GitInfo">
+  <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
     <PropertyGroup>
       <Authors>Alan McGovern</Authors>
-      <Description>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links</Description>
+      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links</PackageDescription>
       <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+      <PackageVersion>$(MonoTorrentFileVersion)</PackageVersion>
       <Tags>bittorrent;torrent</Tags>
 
       <IncludeSource>true</IncludeSource>
@@ -27,6 +54,18 @@
       <ProjectUrl>https://github.com/mono/monotorrent</ProjectUrl>
 
     </PropertyGroup>
+  </Target>
+
+  <Target Name="CreatePlainZip"
+          DependsOnTargets="SetAssemblyVersion"
+          Inputs="$(TargetPath)"
+          Outputs="$(PackageOutputPath)\MonoTorrent-$(MonoTorrentFileVersion).zip">
+    <ZipDirectory
+            SourceDirectory="$(OutputPath)"
+            DestinationFile="$(PackageOutputPath)\MonoTorrent-$(MonoTorrentFileVersion).zip"
+            Overwrite="true"
+            Condition="'$(PackageOutputPath)' != ''"
+    />
   </Target>
 
   <ItemGroup>
