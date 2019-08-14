@@ -460,7 +460,9 @@ namespace MonoTorrent.Client
         static string GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
+            sb.Append ("-");
             sb.Append(VersionInfo.ClientVersion);
+            sb.Append ("-");
 
             var random = new Random(count++);
             while (sb.Length < 20)

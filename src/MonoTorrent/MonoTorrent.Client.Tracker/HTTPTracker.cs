@@ -66,7 +66,7 @@ namespace MonoTorrent.Client.Tracker
 
             // Use a random integer prefixed by our identifier.
             lock (random)
-                Key = VersionInfo.ClientIdentifier + random.Next (1, int.MaxValue).ToString ();
+                Key = $"{VersionInfo.ClientVersion}-{random.Next (1, int.MaxValue)}";
         }
 
         protected override async Task<List<Peer>> DoAnnounceAsync(AnnounceParameters parameters)

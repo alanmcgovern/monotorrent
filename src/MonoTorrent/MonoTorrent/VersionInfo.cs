@@ -39,15 +39,18 @@ namespace MonoTorrent
         /// </summary>
         internal static readonly string ProtocolStringV100 = "BitTorrent protocol";
 
-        public static readonly string ClientIdentifier = "MO";
+        static readonly string ClientIdentifier = "MO";
 
         /// <summary>
-        /// The current version of the client
+        /// The current version of the client in the form "MO1234", which represents 'MonoTorrent version 1.2.3.4'.
         /// </summary>
         internal static readonly string ClientVersion;
 
         internal static readonly string DhtClientVersion = $"{ClientIdentifier}06";
 
+        /// <summary>
+        /// The full version of this library.
+        /// </summary>
         public static readonly Version Version;
 
         static VersionInfo ()
@@ -63,7 +66,7 @@ namespace MonoTorrent
                 version = version.Substring (0, 4);
             else
                 version = version.PadRight (4, '0');
-            ClientVersion = $"-{ClientIdentifier}{version}-";
+            ClientVersion = $"{ClientIdentifier}{version}";
         }
     }
 }

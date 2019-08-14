@@ -41,6 +41,8 @@ namespace MonoTorrent.Tracker
     {
         #region Static BEncodedStrings
 
+        static readonly Random Random = new Random ();
+
         internal static readonly BEncodedString PeersKey = "peers";
         internal static readonly BEncodedString IntervalKey = "interval";
         internal static readonly BEncodedString MinIntervalKey = "min interval";
@@ -149,7 +151,7 @@ namespace MonoTorrent.Tracker
         /// Creates a new tracker
         /// </summary>
         public Tracker()
-            : this(new BEncodedString("monotorrent-tracker"))
+            : this (null)
         {
 
         }
@@ -160,6 +162,12 @@ namespace MonoTorrent.Tracker
             allowScrape = true;
             monitor = new RequestMonitor();
             torrents = new Dictionary<InfoHash, SimpleTorrentManager>();
+
+            // Generate an ID which shows that this is monotorrent, and the version, and then a unique(ish) integer.
+            if (trackerId == null) {
+                lock (Random)
+                    trackerId = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
+            }
             this.trackerId = trackerId;
 
             announceInterval = TimeSpan.FromMinutes(45);
