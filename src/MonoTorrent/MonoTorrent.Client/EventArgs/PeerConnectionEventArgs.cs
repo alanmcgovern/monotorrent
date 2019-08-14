@@ -27,9 +27,7 @@
 //
 
 
-
 using System;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {

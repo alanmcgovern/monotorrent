@@ -27,11 +27,10 @@
 //
 
 
-
-using MonoTorrent.Client.Encryption;
-using System.Reflection;
 using System;
 using System.Net;
+
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {

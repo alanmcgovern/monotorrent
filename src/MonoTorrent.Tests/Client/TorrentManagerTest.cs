@@ -1,14 +1,41 @@
+//
+// TorrentManagerTest.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2008 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages;
 using System.Threading;
-using MonoTorrent.BEncoding;
 using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -33,7 +60,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AddConnectionToStoppedManager()
+        public async Task AddConnectionToStoppedManager()
         {
             MessageBundle bundle = new MessageBundle();
 
@@ -44,10 +71,10 @@ namespace MonoTorrent.Client
 
             // Add the 'incoming' connection to the engine and send our payload
             rig.Listener.Add(rig.Manager, conn.Incoming);
-            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(data, 0, data.Length, null, null));
+            await conn.Outgoing.SendAsync (data, 0, data.Length);
 
             try {
-                var received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null));
+                var received = await conn.Outgoing.ReceiveAsync(data, 0, data.Length);
                 Assert.AreEqual (received, 0);
             } catch {
                 Assert.IsFalse(conn.Incoming.Connected, "#1");
@@ -64,16 +91,6 @@ namespace MonoTorrent.Client
             TorrentManager manager = new TorrentManager(t, "path", new TorrentSettings());
 
             Assert.ThrowsAsync<InvalidOperationException>(() => manager.AddPeerAsync(new Peer("id", new Uri("tcp:://whatever.com"))));
-        }
-
-        [Test]
-        public async Task UnregisteredAnnounce()
-        {
-            await rig.Engine.Unregister(rig.Manager);
-            rig.Tracker.AddPeer(new Peer("", new Uri("ipv4://myCustomTcpSocket")));
-            Assert.AreEqual(0, rig.Manager.Peers.Available, "#1");
-            rig.Tracker.AddFailedPeer(new Peer("", new Uri("ipv4://myCustomTcpSocket")));
-            Assert.AreEqual(0, rig.Manager.Peers.Available, "#2");
         }
 
         [Test]
@@ -140,7 +157,7 @@ namespace MonoTorrent.Client
             };
             rig.Torrent.AnnounceUrls.Add (tier);
             TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
-            foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
+            foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager.Tiers)
             {
                 Assert.IsTrue (t.Trackers.Count > 0, "#1");
             }
@@ -152,7 +169,7 @@ namespace MonoTorrent.Client
             // Check that the engine announces when the download starts, completes
             // and is stopped.
             AutoResetEvent handle = new AutoResetEvent(false);
-            rig.Manager.TrackerManager.CurrentTracker.AnnounceComplete += delegate {
+            rig.Manager.TrackerManager.AnnounceComplete += delegate {
                 handle.Set ();
             };
 

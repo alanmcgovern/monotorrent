@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
-using System.IO;
+
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Client
 {
-    internal class ChokeUnchokeManager : IUnchoker
+    class ChokeUnchokeManager : IUnchoker
     {
         #region Private Fields
 

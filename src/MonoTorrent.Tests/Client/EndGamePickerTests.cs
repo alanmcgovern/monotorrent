@@ -1,12 +1,40 @@
+//
+// EndGamePickerTests.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2008 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages;
+using System.Linq;
+
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.PiecePicking;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -120,8 +148,8 @@ namespace MonoTorrent.Client
         public void HashFail()
         {
             Piece piece;
-            RequestMessage m;
-            List<RequestMessage> requests = new List<RequestMessage>();
+            PieceRequest m;
+            List<PieceRequest> requests = new List<PieceRequest>();
 
             id.BitField[0] = true;
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
@@ -129,10 +157,22 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
                 requests.Add(m);
 
-            foreach (RequestMessage message in requests)
+            foreach (var message in requests)
                 Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
 
             Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+        }
+
+        [Test]
+        public void ReceivedPiecesAreNotRequested()
+        {
+            for (int i = 2; i < pieces[0].BlockCount; i++) {
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
+                pieces[0].Blocks[i].Received = true;
+            }
+
+            picker.Initialise(bitfield, rig.Torrent.Files, pieces);
+            Assert.IsTrue (picker.Requests.All (t => !t.Block.Received), "#1");
         }
     }
 }

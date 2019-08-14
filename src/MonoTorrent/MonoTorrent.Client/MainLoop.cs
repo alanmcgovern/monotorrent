@@ -32,11 +32,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public class MainLoop : SynchronizationContext, INotifyCompletion
+    class MainLoop : SynchronizationContext, INotifyCompletion
     {
         static readonly ICache<CacheableManualResetEventSlim> cache = new Cache<CacheableManualResetEventSlim> (true).Synchronize ();
 

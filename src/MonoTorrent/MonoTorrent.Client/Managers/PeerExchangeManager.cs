@@ -27,20 +27,18 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// This class is used to send each minute a peer excahnge message to peer who have enable this protocol
     /// </summary>
-    public class PeerExchangeManager : IDisposable
+    class PeerExchangeManager : IDisposable
     {
         #region Member Variables
 
@@ -61,7 +59,6 @@ namespace MonoTorrent.Client
 			this.addedPeers = new List<Peer>();
 			this.droppedPeers = new List<Peer>();
             id.TorrentManager.OnPeerFound += new EventHandler<PeerAddedEventArgs>(OnAdd);
-            Start();
         }
 
         internal void OnAdd(object source, PeerAddedEventArgs e)
@@ -73,15 +70,6 @@ namespace MonoTorrent.Client
 
 
         #region Methods
-
-        internal void Start()
-        {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
-                if (!disposed)
-                    OnTick();
-                return !disposed;
-            });
-        }
 
         internal void OnTick()
         {

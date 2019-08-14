@@ -27,12 +27,9 @@
 //
 
 
-
 using System;
-using System.IO;
-using System.Collections;
 using System.Text;
-using MonoTorrent.Common;
+
 using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.BEncoding

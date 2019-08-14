@@ -27,16 +27,12 @@
 //
 
 
-
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.Common;
-using NUnit.Framework;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.PieceWriters;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -63,7 +59,7 @@ namespace MonoTorrent.Client
                 throw new Exception("flush");
         }
 
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
+        public override void Move(TorrentFile file, string newPath, bool overwrite)
         {
             if (move)
                 throw new Exception("move");

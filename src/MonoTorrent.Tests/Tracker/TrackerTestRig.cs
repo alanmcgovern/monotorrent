@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Net;
 using System.Web;
 using MonoTorrent.BEncoding;
+using System.Threading;
 
 namespace MonoTorrent.Tracker
 {
@@ -27,9 +28,9 @@ namespace MonoTorrent.Tracker
         }
     }
 
-    public class CustomListener : ListenerBase
+    class CustomListener : TrackerListener
     {
-        public BEncodedValue Handle(PeerDetails d, MonoTorrent.Common.TorrentEvent e, ITrackable trackable)
+        public BEncodedValue Handle(PeerDetails d, TorrentEvent e, ITrackable trackable)
         {
             NameValueCollection c = new NameValueCollection();
             c.Add("info_hash", trackable.InfoHash.UrlEncode());
@@ -43,17 +44,7 @@ namespace MonoTorrent.Tracker
             return base.Handle(c, d.ClientAddress, false);
         }
 
-        public override bool Running
-        {
-            get { return true; }
-        }
-
-        public override void Start()
-        {
-            
-        }
-
-        public override void Stop()
+        protected override void Start (CancellationToken token)
         {
             
         }
@@ -92,7 +83,7 @@ namespace MonoTorrent.Tracker
         public ITrackable trackable;
     }
 
-    public class TrackerTestRig : IDisposable
+    class TrackerTestRig : IDisposable
     {
         private Random r = new Random(1000);
 

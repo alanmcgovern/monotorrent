@@ -28,18 +28,14 @@
 
 using System;
 using System.IO;
-using System.Text;
-using System.Threading;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Web;
 
-using MonoTorrent.Tracker;
-using MonoTorrent.Common;
-using TrackerApp;
+using MonoTorrent; 
 using MonoTorrent.TorrentWatcher;
+using MonoTorrent.Tracker;
 using MonoTorrent.Tracker.Listeners;
-using MonoTorrent;
+
+using TrackerApp;
 
 namespace SampleTracker
 {
@@ -100,13 +96,22 @@ namespace SampleTracker
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
-            System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
-            Console.WriteLine("Listening at: {0}", listenpoint);
-            ListenerBase listener = new HttpListener(listenpoint);
             tracker = new Tracker();
             tracker.AllowUnregisteredTorrents = true;
-            tracker.RegisterListener(listener);
-            listener.Start();
+
+            var httpEndpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Any, 10000);
+            var udpEndpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Any, 10001);
+            Console.WriteLine("Listening for HTTP requests at: {0}", httpEndpoint);
+            Console.WriteLine("Listening for UDP requests at: {0}", udpEndpoint);
+
+            var listeners = new [] {
+                TrackerListenerFactory.CreateHttp (httpEndpoint),
+                TrackerListenerFactory.CreateUdp (udpEndpoint)
+            };
+            foreach (var listener in listeners) {
+                tracker.RegisterListener(listener);
+                listener.Start();
+            }
 
             SetupTorrentWatcher();
 

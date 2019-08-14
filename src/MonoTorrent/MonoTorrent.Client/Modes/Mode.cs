@@ -28,16 +28,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.BEncoding;
-using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
@@ -187,7 +183,7 @@ namespace MonoTorrent.Client
 
             var newPeers = Peer.Decode((BEncodedString)message.Added);
             int count = await id.TorrentManager.AddPeersAsync(newPeers);
-            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, newPeers.Count, id));
+            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAddedEventArgs(id.TorrentManager, count, newPeers.Count, id));
         }
 
         protected virtual void HandleLtChat(PeerId id, LTChat message)
@@ -321,7 +317,7 @@ namespace MonoTorrent.Client
             if (piece != null)
                 WritePieceAsync (id, message, piece);
             else
-                ClientEngine.BufferManager.FreeBuffer(ref message.Data);
+                ClientEngine.BufferManager.FreeBuffer(message.Data);
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests(id);
         }
@@ -334,7 +330,7 @@ namespace MonoTorrent.Client
             await id.TorrentManager.Engine.DiskManager.WriteAsync(Manager, offset, message.Data, message.RequestLength);
             piece.TotalWritten++;
 
-            ClientEngine.BufferManager.FreeBuffer(ref message.Data);
+            ClientEngine.BufferManager.FreeBuffer(message.Data);
             // If we haven't received all the pieces to disk, there's no point in hash checking
             if (!piece.AllBlocksWritten)
                 return;
@@ -360,7 +356,7 @@ namespace MonoTorrent.Client
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)
-                Manager.finishedPieces.Enqueue(piece.Index);
+                Manager.finishedPieces.Enqueue(new HaveMessage (piece.Index));
         }
 
         protected virtual void HandlePortMessage(PeerId id, PortMessage message)
@@ -499,6 +495,11 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     continue;
 
+                if (!id.LastPeerExchangeReview.IsRunning || id.LastPeerExchangeReview.Elapsed > TimeSpan.FromMinutes (1)) {
+                    id.PeerExchangeManager?.OnTick ();
+                    id.LastPeerExchangeReview.Restart ();
+                }
+
                 int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / PieceManager.BonusRequestPerKb);
                 maxRequests = Math.Min(id.AmRequestingPiecesCount + 2, maxRequests);
                 maxRequests = Math.Min(id.MaxSupportedPendingRequests, maxRequests);
@@ -551,15 +552,15 @@ namespace MonoTorrent.Client
             if (tracker != null && (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading))
             {
                 // If the last connection succeeded, then update at the regular interval
-                if (Manager.TrackerManager.UpdateSucceeded)
+                if (Manager.TrackerManager.LastAnnounceSucceeded)
                 {
-                    if (DateTime.Now > (Manager.TrackerManager.LastUpdated.Add(tracker.UpdateInterval)))
+                    if (Manager.TrackerManager.TimeSinceLastAnnounce > tracker.UpdateInterval)
                     {
                         _ = Manager.TrackerManager.Announce(TorrentEvent.None);
                     }
                 }
                 // Otherwise update at the min interval
-                else if (DateTime.Now > (Manager.TrackerManager.LastUpdated.Add(tracker.MinUpdateInterval)))
+                else if (Manager.TrackerManager.TimeSinceLastAnnounce > tracker.MinUpdateInterval)
                 {
                     _ = Manager.TrackerManager.Announce(TorrentEvent.None);
                 }
@@ -649,10 +650,10 @@ namespace MonoTorrent.Client
 
                 MessageBundle bundle = new MessageBundle();
 
-                foreach (int pieceIndex in Manager.finishedPieces)
+                foreach (var haveMessage in Manager.finishedPieces)
                 {
                     // If the peer has the piece already, we need to recalculate his "interesting" status.
-                    bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[pieceIndex];
+                    bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[haveMessage.PieceIndex];
                     if (hasPiece)
                     {
                         bool isInteresting = Manager.PieceManager.IsInteresting(Manager.Peers.ConnectedPeers[i]);
@@ -661,7 +662,7 @@ namespace MonoTorrent.Client
 
                     // Check to see if have supression is enabled and send the have message accordingly
                     if (!hasPiece || (hasPiece && !Manager.Engine.Settings.HaveSupressionEnabled))
-                        bundle.Messages.Add(new HaveMessage(pieceIndex));
+                        bundle.Messages.Add(haveMessage);
                 }
 
                 Manager.Peers.ConnectedPeers[i].Enqueue(bundle);

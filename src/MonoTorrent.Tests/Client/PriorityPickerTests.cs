@@ -29,12 +29,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
 
-namespace MonoTorrent.Client
+using NUnit.Framework;
+
+namespace MonoTorrent.Client.PiecePicking
 {
     [TestFixture]
     public class PriorityPickerTests

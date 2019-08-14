@@ -50,7 +50,7 @@ namespace MonoTorrent.Dht
 
             listener.MessageSent += (message, endpoint) => {
                 // This TransactionId should be registered and it should be pending a response.
-                if (!MessageFactory.IsRegistered (ping.TransactionId) || engine.MessageLoop.PendingQueries != 1)
+                if (!DhtMessageFactory.IsRegistered (ping.TransactionId) || engine.MessageLoop.PendingQueries != 1)
                     pingSuccessful.TrySetResult (false);
 
                 if (message.TransactionId.Equals (ping.TransactionId)) {
@@ -66,7 +66,7 @@ namespace MonoTorrent.Dht
             Assert.IsTrue (task.Wait (100000), "#1");
             Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
             Assert.IsTrue (pingSuccessful.Task.Result, "#3");
-            Assert.IsFalse (MessageFactory.IsRegistered (ping.TransactionId), "#4");
+            Assert.IsFalse (DhtMessageFactory.IsRegistered (ping.TransactionId), "#4");
             Assert.AreEqual (0, engine.MessageLoop.PendingQueries, "#5");
             Assert.AreEqual (1, failedCount, "#6");
         }
@@ -75,7 +75,7 @@ namespace MonoTorrent.Dht
         public void SendPing()
         {
             var tcs = new TaskCompletionSource<object> ();
-            listener.MessageSent += (Message message, IPEndPoint endpoint) => {
+            listener.MessageSent += (DhtMessage message, IPEndPoint endpoint) => {
                 if (message is Ping && endpoint == node.EndPoint) {
                     var response = new PingResponse(node.Id, message.TransactionId);
                     listener.RaiseMessageReceived(response, endpoint);

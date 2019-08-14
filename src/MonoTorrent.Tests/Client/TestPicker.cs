@@ -29,12 +29,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     class TestPicker : PiecePicker
     {
@@ -54,7 +50,7 @@ namespace MonoTorrent.Client
         {
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             PickPieceId.Add(id);
             BitField clone = new BitField(peerBitfield.Length);
@@ -73,7 +69,7 @@ namespace MonoTorrent.Client
                 if (ReturnNoPiece)
                     return null;
                 else
-                    return new MessageBundle();
+                    return Array.Empty<PieceRequest> ();
             }
             return null;
         }

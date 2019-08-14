@@ -27,22 +27,16 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net;
-using MonoTorrent.Common;
-using System.Threading;
 using System.IO;
-using System.Diagnostics;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Client.Tracker;
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -70,7 +64,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private bool disposed;
-        internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
+        internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         internal bool isInEndGame = false;       // Set true when the torrent enters end game processing
         private Mode mode;
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
@@ -107,7 +101,7 @@ namespace MonoTorrent.Client
 			}
         }
 
-        public int PeerReviewRoundsComplete
+        internal int PeerReviewRoundsComplete
         {
             get
             {
@@ -202,11 +196,6 @@ namespace MonoTorrent.Client
 
         public InfoHash InfoHash { get; }
 
-        /// <summary>
-        /// List of peers we have inactivated for this torrent
-        /// </summary>
-        public List<Uri> InactivePeerList => InactivePeerManager.InactivePeerList;
-
         #endregion
 
         #region Constructors
@@ -276,7 +265,7 @@ namespace MonoTorrent.Client
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
 
-            if(MonoTorrent.Common.Torrent.TryLoad(torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
+            if(Torrent.TryLoad(torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
                 Torrent = torrent;
 
             Initialise(savePath, "", announces);
@@ -288,15 +277,25 @@ namespace MonoTorrent.Client
         {
             this.Bitfield = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
             this.SavePath = Path.Combine(savePath, baseDirectory);
-            this.finishedPieces = new Queue<int>();
+            this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
             this.InactivePeerManager = new InactivePeerManager(this);
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager();
-            this.TrackerManager = new TrackerManager(this, InfoHash, announces);
+            this.TrackerManager = new TrackerManager(new TrackerRequestFactory (this), announces);
 
             Mode = new StoppedMode(this);            
             CreateRateLimiters();
+
+            TrackerManager.AnnounceComplete += async (o, e) => {
+                if (e.Successful) {
+                    await ClientEngine.MainLoop;
+
+                    Peers.BusyPeers.Clear ();
+                    int count = await AddPeersAsync (e.Peers);
+                    RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
+                }
+            };
 
             if (HasMetadata) {
                 foreach (TorrentFile file in Torrent.Files)
@@ -379,12 +378,6 @@ namespace MonoTorrent.Client
         public bool Equals(TorrentManager other)
         {
             return (other == null) ? false : InfoHash == other.InfoHash;
-        }
-
-        public async Task<List<Piece>> GetActiveRequestsAsync()
-        {
-            await ClientEngine.MainLoop;
-            return PieceManager.Picker.ExportActiveRequests();
         }
 
         /// <summary>

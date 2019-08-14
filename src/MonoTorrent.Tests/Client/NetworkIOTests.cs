@@ -26,14 +26,16 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
-using NUnit.Framework;
-using System.Threading;
-using MonoTorrent.Common;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Encryption;
-using System.Threading.Tasks;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -69,30 +71,30 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void ReceiveData_SlowIncoming_SlowOutgoing ()
+        public async Task ReceiveData_SlowIncoming_SlowOutgoing ()
         {
-            DoReceive (true, true);
+            await DoReceive (true, true);
         }
 
         [Test]
-        public void ReceiveData_SlowIncoming ()
+        public async Task ReceiveData_SlowIncoming ()
         {
-            DoReceive (false, true);
+            await DoReceive (false, true);
         }
 
         [Test]
-        public void ReceiveData_SlowOutgoing ()
+        public async Task ReceiveData_SlowOutgoing ()
         {
-            DoReceive (true, false);
+            await DoReceive (true, false);
         }
 
         [Test]
-        public void ReceiveData ()
+        public async Task ReceiveData ()
         {
-            DoReceive (false, false);
+            await DoReceive (false, false);
         }
 
-        void DoReceive (bool slowOutgoing, bool slowIncoming)
+        async Task DoReceive (bool slowOutgoing, bool slowIncoming)
         {
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
@@ -103,7 +105,7 @@ namespace MonoTorrent.Client
             var task = NetworkIO.ReceiveAsync(Outgoing, buffer, 0, buffer.Length, null, null, null);
 
             while (sent != buffer.Length) {
-                int r = Incoming.Send (data, sent, data.Length - sent);
+                int r = await Incoming.SendAsync (data, sent, data.Length - sent);
                 Assert.AreNotEqual (0, r, "#Received data");
                 sent += r;
             }
@@ -116,30 +118,30 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void SendData_SlowIncoming_SlowOutgoing ()
+        public async Task SendData_SlowIncoming_SlowOutgoing ()
         {
-            DoSend (true, true);
+            await DoSend (true, true);
         }
 
         [Test]
-        public void SendData_SlowOutgoing ()
+        public async Task SendData_SlowOutgoing ()
         {
-            DoSend (true, false);
+            await DoSend (true, false);
         }
 
         [Test]
-        public void SendData_SlowIncoming ()
+        public async Task SendData_SlowIncoming ()
         {
-            DoSend (false, true);
+            await DoSend (false, true);
         }
 
         [Test]
-        public void SendData ()
+        public async Task SendData ()
         {
-            DoSend (false, false);
+            await DoSend (false, false);
         }
 
-        public void DoSend (bool slowOutgoing, bool slowIncoming)
+        async Task DoSend (bool slowOutgoing, bool slowIncoming)
         {
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
@@ -149,7 +151,7 @@ namespace MonoTorrent.Client
             int received = 0;
             byte[] buffer = new byte [data.Length];
             while (received != buffer.Length) {
-                int r = Incoming.Receive (buffer, received, buffer.Length - received);
+                int r = await Incoming.ReceiveAsync (buffer, received, buffer.Length - received);
                 Assert.AreNotEqual (0, r, "#Received data");
                 received += r;
             }

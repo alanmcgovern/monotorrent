@@ -27,20 +27,18 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net.Sockets;
-using System.Net;
-using System.IO;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.PieceWriters;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Listeners;
+using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -99,7 +97,7 @@ namespace MonoTorrent.Client
 
         public bool Disposed { get; private set; }
 
-        public PeerListener Listener { get; }
+        public IPeerListener Listener { get; }
 
         public bool LocalPeerSearchEnabled
         {
@@ -158,19 +156,19 @@ namespace MonoTorrent.Client
         }
 
         public ClientEngine(EngineSettings settings, PieceWriter writer)
-            : this(settings, new SocketListener(new IPEndPoint(IPAddress.Any, 0)), writer)
+            : this(settings, new PeerListener(new IPEndPoint(IPAddress.Any, settings.ListenPort)), writer)
 
         {
 
         }
 
-        public ClientEngine(EngineSettings settings, PeerListener listener)
+        public ClientEngine(EngineSettings settings, IPeerListener listener)
             : this (settings, listener, new DiskWriter())
         {
 
         }
 
-        public ClientEngine(EngineSettings settings, PeerListener listener, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, IPeerListener listener, PieceWriter writer)
         {
             Check.Settings(settings);
             Check.Listener(listener);
@@ -198,27 +196,17 @@ namespace MonoTorrent.Client
             uploadLimiter = new RateLimiter();
             this.PeerId = GeneratePeerId();
 
-            localPeerListener = new LocalPeerListener(this);
+            localPeerListener = new LocalPeerListener();
+            localPeerListener.PeerFound += HandleLocalPeerFound;
             localPeerManager = new LocalPeerManager();
             LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
             listenManager.Register(listener);
-            // This means we created the listener in the constructor
-            if (listener.Endpoint.Port == 0)
-                listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
         }
 
         #endregion
 
 
         #region Methods
-
-        public void ChangeListenEndpoint(IPEndPoint endpoint)
-        {
-            Check.Endpoint(endpoint);
-
-            Settings.ListenPort = endpoint.Port;
-            Listener.ChangeEndpoint(endpoint);
-        }
 
         private void CheckDisposed()
         {
@@ -266,6 +254,29 @@ namespace MonoTorrent.Client
                 this.localPeerListener.Stop();
                 this.localPeerManager.Dispose();
             });
+        }
+
+        async void HandleLocalPeerFound (object sender, LocalPeerFoundEventArgs args)
+        {
+            try {
+                await MainLoop;
+
+                var manager = Torrents.FirstOrDefault (t => t.InfoHash == args.InfoHash);
+                // There's no TorrentManager in the engine
+                if (manager == null)
+                    return;
+
+                // The torrent is marked as private, so we can't add random people
+                if (manager.HasMetadata && manager.Torrent.IsPrivate)
+                    return;
+
+                // Add new peer to matched Torrent
+                var peer = new Peer ("", args.Uri);
+                int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
+                manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
+            } catch {
+                // We don't care if the peer couldn't be added (for whatever reason)
+            }
         }
 
         public async Task PauseAll()
@@ -333,7 +344,10 @@ namespace MonoTorrent.Client
                     if (!manager.CanUseDht)
                         continue;
 
-                    DhtEngine.Announce (manager.InfoHash, Listener.Endpoint.Port);
+                    if (Listener is ISocketListener listener)
+                        DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
+                    else
+                        DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
                     DhtEngine.GetPeers (manager.InfoHash);
                 }
             });
@@ -446,7 +460,9 @@ namespace MonoTorrent.Client
         static string GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
-            sb.Append(Common.VersionInfo.ClientVersion);
+            sb.Append ("-");
+            sb.Append(VersionInfo.ClientVersion);
+            sb.Append ("-");
 
             var random = new Random(count++);
             while (sb.Length < 20)

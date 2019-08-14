@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Common;
+using System.IO;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using System.IO;
 using MonoTorrent.Client.PieceWriters;
-using System.Security.Cryptography;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Common
 {
@@ -19,21 +21,24 @@ namespace MonoTorrent.Common
             writer.DontWrite = true;
             return writer;
         }
+
+        public BEncodedDictionary Create (string name, List<TorrentFile> files)
+            => Create (name, files, CancellationToken.None);
     }
 
     [TestFixture]
     public class TorrentCreatorTests
     {
-        private string Comment = "My Comment";
-        private string CreatedBy = "Created By MonoTorrent";
-        private int PieceLength = 64 * 1024;
-        private string Publisher = "My Publisher";
-        private string PublisherUrl = "www.mypublisher.com";
-        private BEncodedString CustomKey = "Custom Key";
-        private BEncodedString CustomValue = "My custom value";
+        const string Comment = "My Comment";
+        const string CreatedBy = "Created By MonoTorrent";
+        const int PieceLength = 64 * 1024;
+        const string Publisher = "My Publisher";
+        const string PublisherUrl = "www.mypublisher.com";
+        readonly BEncodedString CustomKey = "Custom Key";
+        readonly BEncodedString CustomValue = "My custom value";
 
         RawTrackerTiers announces;
-        private TorrentCreator creator;
+        TestTorrentCreator creator;
         List<TorrentFile> files;
         TestWriter writer;
 
@@ -73,6 +78,16 @@ namespace MonoTorrent.Common
 
             writer = new TestWriter();
             writer.DontWrite = true;
+        }
+
+        [Test]
+        public void AsyncCancel()
+        {
+            var cts = new CancellationTokenSource ();
+            cts.Cancel ();
+
+            var fileSource = new TorrentFileSource (typeof (TorrentCreatorTests).Assembly.Location);
+            Assert.ThrowsAsync<OperationCanceledException> (() => creator.CreateAsync (fileSource, cts.Token));
         }
 
         [Test]

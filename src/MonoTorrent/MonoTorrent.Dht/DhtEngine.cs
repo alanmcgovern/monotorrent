@@ -29,7 +29,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -80,7 +80,16 @@ namespace MonoTorrent.Dht
 
         #region Constructors
 
-        public DhtEngine(DhtListener listener)
+        /// <summary>
+        /// Creates a new DhtEngine which listens for connections on the given endpoint
+        /// </summary>
+        /// <param name="listenerEndpoint">The IPAddresss/port which the engine should listen on</param>
+        public DhtEngine (IPEndPoint listenerEndpoint)
+            : this (new DhtListener (listenerEndpoint))
+        {
+        }
+
+        public DhtEngine(IDhtListener listener)
         {
             if (listener == null)
                 throw new ArgumentNullException(nameof (listener));
@@ -188,7 +197,7 @@ namespace MonoTorrent.Dht
             RaiseStateChanged(DhtState.Ready);
         }
 
-        internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
+        internal void RaisePeersFound(NodeId infoHash, IList<Peer> peers)
         {
             PeersFound?.Invoke(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
         }
@@ -220,7 +229,7 @@ namespace MonoTorrent.Dht
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
-            SendQueryEventArgs e = default;
+            SendQueryEventArgs e = default (SendQueryEventArgs);
             for (int i = 0; i < 4; i++) {
                 e = await MessageLoop.SendAsync (query, node);
 

@@ -1,23 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Net.Sockets;
 using System.IO;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
 using System.Net;
-using System.Diagnostics;
 using System.Threading;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Dht;
-using MonoTorrent.Dht.Listeners;
 using System.Threading.Tasks;
 
-namespace MonoTorrent
+using MonoTorrent;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Dht;
+
+namespace SampleClient
 {
-    class main
+    class MainClass
     {
         static string dhtNodeFile;
         static string basePath;
@@ -78,7 +75,7 @@ namespace MonoTorrent
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
-            engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
+
             byte[] nodes = Array.Empty<byte> ();
             try
             {
@@ -89,10 +86,8 @@ namespace MonoTorrent
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
 
-            DhtListener dhtListner = new DhtListener (new IPEndPoint (IPAddress.Any, port));
-            DhtEngine dht = new DhtEngine (dhtListner);
+            DhtEngine dht = new DhtEngine (new IPEndPoint (IPAddress.Any, port));
             await engine.RegisterDhtAsync(dht);
-            dhtListner.Start();
 
             // This starts the Dht engine but does not wait for the full initialization to
             // complete. This is because it can take up to 2 minutes to bootstrap, depending
@@ -175,15 +170,10 @@ namespace MonoTorrent
                 };
 
                 // Every time the tracker's state changes, this is fired
-                foreach (TrackerTier tier in manager.TrackerManager)
-                {
-                    foreach (MonoTorrent.Client.Tracker.Tracker t in tier.GetTrackers())
-                    {
-                        t.AnnounceComplete += delegate(object sender, AnnounceResponseEventArgs e) {
-                            listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
-                        };
-                    }
-                }
+                manager.TrackerManager.AnnounceComplete += (sender, e) => {
+                    listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker));
+                };
+
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 await manager.StartAsync();
             }

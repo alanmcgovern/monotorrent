@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
 using System.IO;
 
-namespace MonoTorrent
+namespace SampleClient
 {
     /// <summary>
     /// Keeps track of the X most recent number of events recorded by the listener. X is specified in the constructor

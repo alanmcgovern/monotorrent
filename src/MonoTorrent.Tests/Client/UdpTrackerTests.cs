@@ -27,18 +27,17 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+
 using MonoTorrent.Client.Messages.UdpTracker;
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using System.Threading;
-using System.Net;
-using System.Threading.Tasks;
+using MonoTorrent.Tracker.Listeners;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -48,7 +47,7 @@ namespace MonoTorrent.Client
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             TorrentEvent.Completed,
             new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
-            false, new string('a', 20), null, 1515);
+            false, new string('a', 20), null, 1515, false);
         ScrapeParameters scrapeParams = new ScrapeParameters(new InfoHash(new byte[20]));
         MonoTorrent.Tracker.Tracker server;
         UdpTracker tracker;
@@ -61,7 +60,7 @@ namespace MonoTorrent.Client
             keys = new List<string>();
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
-            listener = new IgnoringListener(6767);
+            listener = new IgnoringListener(0);
             listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceParameters e)
             {
                 keys.Add(e.Key);
@@ -75,7 +74,8 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             keys.Clear();
-            tracker = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:6767/announce/"));
+            tracker = (UdpTracker)TrackerFactory.Create(new Uri($"udp://127.0.0.1:{listener.EndPoint.Port}/announce/"));
+            announceparams = announceparams.WithPort (listener.EndPoint.Port);
             tracker.RetryDelay = TimeSpan.FromMilliseconds (50);
 
             listener.IgnoreAnnounces = false;
@@ -286,7 +286,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    class IgnoringListener : MonoTorrent.Tracker.Listeners.UdpListener
+    class IgnoringListener : UdpTrackerListener
     {
         public bool IgnoreConnects;
         public bool IgnoreAnnounces;
@@ -299,28 +299,28 @@ namespace MonoTorrent.Client
 
         }
 
-        protected override void ReceiveConnect(ConnectMessage connectMessage)
+        protected override async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreConnects)
-                base.ReceiveConnect(connectMessage);
+                await base.ReceiveConnect(client, connectMessage, remotePeer);
         }
 
-        protected override void ReceiveAnnounce(AnnounceMessage announceMessage)
+        protected override async Task ReceiveAnnounce(UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreAnnounces)
-                base.ReceiveAnnounce(announceMessage);
+                await base.ReceiveAnnounce(client, announceMessage, remotePeer);
         }
 
-        protected override void ReceiveError(ErrorMessage errorMessage)
+        protected override async Task ReceiveError(UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreErrors)
-                base.ReceiveError(errorMessage);
+                await base.ReceiveError(client, errorMessage, remotePeer);
         }
 
-        protected override void ReceiveScrape(ScrapeMessage scrapeMessage)
+        protected override async Task ReceiveScrape(UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
         {
             if (!IgnoreScrapes)
-                base.ReceiveScrape(scrapeMessage);
+                await base.ReceiveScrape(client, scrapeMessage, remotePeer);
         }
     }
 }

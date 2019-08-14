@@ -1,24 +1,51 @@
+//
+// ListenManager.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2006 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Encryption;
-using System.Net.Sockets;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Listeners;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// Instance methods of this class are threadsafe
     /// </summary>
-    public class ListenManager : IDisposable
+    class ListenManager : IDisposable
     {
 
 		#region Properties
 
-		public MonoTorrentCollection<PeerListener> Listeners { get; }
+		public MonoTorrentCollection<IPeerListener> Listeners { get; }
 
 		ClientEngine Engine { get; set; }
 
@@ -30,7 +57,7 @@ namespace MonoTorrent.Client
 		internal ListenManager(ClientEngine engine)
         {
             Engine = engine;
-            Listeners = new MonoTorrentCollection<PeerListener>();
+            Listeners = new MonoTorrentCollection<IPeerListener>();
         }
 
         #endregion Constructors
@@ -42,20 +69,17 @@ namespace MonoTorrent.Client
         {
         }
 
-        public void Register(PeerListener listener)
+        public void Register(IPeerListener listener)
         {
             listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
 
-        public void Unregister(PeerListener listener)
+        public void Unregister(IPeerListener listener)
         {
             listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
 
         #endregion Public Methods
-
-
-
 
         private async void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {
@@ -69,6 +93,8 @@ namespace MonoTorrent.Client
                 }
                 var id = new PeerId(e.Peer, e.TorrentManager);
                 id.Connection = e.Connection;
+                id.LastMessageSent.Restart ();
+                id.LastMessageReceived.Restart ();
                 if (!e.Connection.IsIncoming) {
                     Engine.ConnectionManager.ProcessFreshConnection(id);
                     return;

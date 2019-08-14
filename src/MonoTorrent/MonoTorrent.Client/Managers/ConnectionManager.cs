@@ -27,22 +27,15 @@
 //
 
 
-
 using System;
-using MonoTorrent.Common;
-using System.Net.Sockets;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.NetworkInformation;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.Libtorrent;
+using System.Diagnostics;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
@@ -68,11 +61,6 @@ namespace MonoTorrent.Client
         #region Events
 
         public event EventHandler<AttemptConnectionEventArgs> BanPeer;
-
-        /// <summary>
-        /// Event that's fired every time a message is sent or Received from a Peer
-        /// </summary>
-        public event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
 
         #endregion
 
@@ -127,7 +115,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        public ConnectionManager(ClientEngine engine)
+        internal ConnectionManager(ClientEngine engine)
         {
             this.engine = engine;
 
@@ -186,6 +174,8 @@ namespace MonoTorrent.Client
                 } else {
                     PeerId id = new PeerId (peer, manager);
                     id.Connection = connection;
+                    id.LastMessageReceived.Restart ();
+                    id.LastMessageSent.Restart ();
 
                     Logger.Log (id.Connection, "ConnectionManager - Connection opened");
 
@@ -243,9 +233,9 @@ namespace MonoTorrent.Client
                     throw new EncryptionException("unhandled initial data");
 
                 EncryptionTypes e = engine.Settings.AllowedEncryption;
-                if (id.Encryptor is RC4 && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
-                    id.Encryptor is RC4Header && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Header) ||
-                    id.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(e, EncryptionTypes.PlainText))
+                if (id.Encryptor is RC4 && !e.HasFlag (EncryptionTypes.RC4Full) ||
+                    id.Encryptor is RC4Header && !e.HasFlag (EncryptionTypes.RC4Header) ||
+                    id.Encryptor is PlainTextEncryption && !e.HasFlag (EncryptionTypes.PlainText))
                 {
                     CleanupSocket(id, id.Encryptor.GetType().Name + " encryption is not enabled");
                 }
@@ -293,10 +283,6 @@ namespace MonoTorrent.Client
                     else
                     {
                         id.LastMessageReceived.Restart();
-
-                        if (PeerMessageTransferred != null)
-                            RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, message, Direction.Incoming, id));
-
                         message.Handle(id);
                     }
                 }
@@ -347,10 +333,10 @@ namespace MonoTorrent.Client
             finally
             {
                 id.TorrentManager.RaisePeerDisconnected(
-                    new PeerConnectionEventArgs( id.TorrentManager, id, Direction.None, message ) );
+                    new PeerConnectionEventArgs (id.TorrentManager, id, Direction.None, message));
             }
 
-            id.SafeDispose ();
+            id.Dispose ();
         }
 
         internal void CancelPendingConnects()
@@ -369,7 +355,7 @@ namespace MonoTorrent.Client
         /// This method is called when the ClientEngine recieves a valid incoming connection
         /// </summary>
         /// <param name="result"></param>
-        public void IncomingConnectionAccepted(PeerId id)
+        internal void IncomingConnectionAccepted(PeerId id)
         {
             try
             {
@@ -410,10 +396,10 @@ namespace MonoTorrent.Client
         internal async void ProcessQueue(PeerId id)
         {
             while (id.QueueLength > 0) {
-                try {
-                    PeerMessage msg = id.Dequeue ();
-                    var pm = msg as PieceMessage;
+                var msg = id.Dequeue ();
+                var pm = msg as PieceMessage;
 
+                try {
                     if (pm != null) {
                         pm.Data = ClientEngine.BufferManager.GetBuffer (pm.ByteLength);
                         await engine.DiskManager.ReadAsync (id.TorrentManager, pm.StartOffset + ((long)pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength);
@@ -424,47 +410,17 @@ namespace MonoTorrent.Client
                     if (msg is PieceMessage)
                         id.IsRequestingPiecesCount--;
 
-
-                    if (pm != null)
-                        ClientEngine.BufferManager.FreeBuffer (pm.Data);
-
-                    // Fire the event to let the user know a message was sent
-                    if (PeerMessageTransferred != null)
-                        RaisePeerMessageTransferred (new PeerMessageEventArgs (id.TorrentManager, msg, Direction.Outgoing, id));
-
                     id.LastMessageSent.Restart ();
                 } catch (Exception e) {
                     CleanupSocket (id, "Exception calling SendMessage: " + e.Message);
                     break;
+                } finally {
+                    if (pm?.Data != null)
+                        ClientEngine.BufferManager.FreeBuffer (pm.Data);
                 }
             }
 
             id.ProcessingQueue = false;
-        }
-
-        void RaisePeerMessageTransferred(PeerMessageEventArgs e)
-        {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                EventHandler<PeerMessageEventArgs> h = PeerMessageTransferred;
-                if (h == null)
-                    return;
-
-                if (!(e.Message is MessageBundle))
-                {
-                    h(e.TorrentManager, e);
-                }
-                else
-                {
-                    // Message bundles are only a convience for internal usage!
-                    MessageBundle b = (MessageBundle)e.Message;
-                    foreach (PeerMessage message in b.Messages)
-                    {
-                        PeerMessageEventArgs args = new PeerMessageEventArgs(e.TorrentManager, message, e.Direction, e.ID);
-                        h(args.TorrentManager, args);
-                    }
-                }
-            });
         }
 
         internal bool ShouldBanPeer(Peer peer)
@@ -529,20 +485,6 @@ namespace MonoTorrent.Client
             // Remove the peer from the lists so we can start connecting to him
             peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt(i);
-
-            // Do not try to connect to ourselves
-            if (peer.ConnectionUri.Port == manager.Engine.Listener.Endpoint.Port)
-            {
-                if (manager.Engine.Listener.Endpoint.Address.ToString() == peer.ConnectionUri.Host)
-                    return false;
-
-                if (manager.Engine.Listener.Endpoint.Address == IPAddress.Any)
-                    foreach (var intf in NetworkInterface.GetAllNetworkInterfaces())
-                        if (intf.OperationalStatus == OperationalStatus.Up)
-                            foreach (var ip in intf.GetIPProperties().UnicastAddresses)
-                                if (ip.Address.ToString() == peer.ConnectionUri.Host)
-                                    return false;
-            }
 
             if (ShouldBanPeer(peer))
                 return false;

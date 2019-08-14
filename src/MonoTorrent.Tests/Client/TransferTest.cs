@@ -28,19 +28,45 @@
 
 
 
+//
+// TrackerTests.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2006 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
 
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
-using System.Threading;
-using NUnit.Framework;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Encryption;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages.Standard;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -219,12 +245,12 @@ namespace MonoTorrent.Client
         {
             rig.AddConnection(pair.Incoming);
             await InitiateTransfer(pair.Outgoing, EncryptionTypes.All);
-            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4, null, null));
-            IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(1000, true))
+            _ = pair.Outgoing.SendAsync(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4);
+            var receiveTask = pair.Outgoing.ReceiveAsync(new byte[1000], 0, 1000);
+            if (!receiveTask.Wait (1000))
                 Assert.Fail("Connection never closed");
 
-            int r = pair.Outgoing.EndReceive(result);
+            int r = receiveTask.Result;
             if (r != 0)
                 Assert.Fail("Connection should've been closed");
         }
@@ -234,12 +260,12 @@ namespace MonoTorrent.Client
         {
             rig.AddConnection(pair.Incoming);
             await InitiateTransfer(pair.Outgoing, EncryptionTypes.All);
-            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255, 255, 255, 250 }, 0, 4, null, null));
-            IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(1000, true))
+            await pair.Outgoing.SendAsync(new byte[] { 255, 255, 255, 250 }, 0, 4);
+            var receiveTask = pair.Outgoing.ReceiveAsync(new byte[1000], 0, 1000);
+            if (!receiveTask.Wait(1000))
                 Assert.Fail("Connection never closed");
 
-            int r = pair.Outgoing.EndReceive(result);
+            int r = receiveTask.Result;
             if (r != 0)
                 Assert.Fail("Connection should've been closed");
         }
@@ -305,10 +331,10 @@ namespace MonoTorrent.Client
         public static void Send(CustomConnection connection, byte[] buffer, int offset, int count)
         {
             while (count > 0) {
-                var r = connection.BeginSend (buffer, offset, count, null, null);
-                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                var sendTask = connection.SendAsync (buffer, offset, count);
+                if (!sendTask.Wait(TimeSpan.FromSeconds (4)))
                     throw new Exception ("Could not send required data");
-                int transferred = connection.EndSend (r);
+                int transferred = sendTask.Result;
                 if (transferred == 0)
                     throw new Exception ("The socket was gracefully killed");
                 offset += transferred;
@@ -326,10 +352,10 @@ namespace MonoTorrent.Client
         public static void Receive(CustomConnection connection, byte[] buffer, int offset, int count)
         {
             while (count > 0) {
-                var r = connection.BeginReceive (buffer, offset, count, null, null);
-                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                var receiveTask = connection.ReceiveAsync (buffer, offset, count);
+                if (!receiveTask.Wait (TimeSpan.FromSeconds (4)))
                     throw new Exception ("Could not receive required data");
-                int transferred = connection.EndReceive (r);
+                int transferred = receiveTask.Result;
                 if (transferred == 0)
                     throw new Exception ("The socket was gracefully killed");
                 offset += transferred;
@@ -342,7 +368,7 @@ namespace MonoTorrent.Client
             return ReceiveMessage(connection, decryptor, rig.Manager);
         }
 
-        public static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor, TorrentManager manager)
+        internal static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor, TorrentManager manager)
         {
             byte[] buffer = new byte[4];
             Receive (connection, buffer, 0, buffer.Length);

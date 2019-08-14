@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-	internal class InactivePeerManager
+	class InactivePeerManager
 	{
 
 		#region Private Fields

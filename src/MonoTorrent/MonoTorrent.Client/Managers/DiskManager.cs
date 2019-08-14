@@ -1,19 +1,47 @@
+//
+// DiskManager.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2006 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Security.Cryptography;
 using System.IO;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.PieceWriters;
+using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
     public class DiskManager : IDisposable
     {
-        public struct BufferedIO
+        struct BufferedIO
         {
             public TorrentManager manager;
             public long offset;
@@ -43,22 +71,39 @@ namespace MonoTorrent.Client
         readonly SpeedMonitor readMonitor;
         readonly SpeedMonitor writeMonitor;
 
-        internal RateLimiter ReadLimiter;
-        internal RateLimiter WriteLimiter;
+        internal RateLimiter ReadLimiter { get; }
+        internal RateLimiter WriteLimiter { get; }
 
         #endregion Member Variables
 
 
         #region Properties
 
-        public bool Disposed { get; private set; }
+        bool Disposed { get; set; }
 
-        public int BufferedWriteBytes => bufferedWriteBytes;
+        /// <summary>
+        /// The number of bytes which are currently cached in memory, pending writing.
+        /// </summary>
+        public int BufferedWrites => bufferedWriteBytes;
 
+        /// <summary>
+        /// The amount of data, in bytes, being read per second.
+        /// </summary>
         public int ReadRate => readMonitor.Rate;
+
+        /// <summary>
+        /// The amount of data, in bytes, being written per second.
+        /// </summary>
         public int WriteRate => writeMonitor.Rate;
 
+        /// <summary>
+        /// The total number of bytes which have been read.
+        /// </summary>
         public long TotalRead => readMonitor.Total;
+
+        /// <summary>
+        /// The total number of bytes which have been written.
+        /// </summary>
         public long TotalWritten => writeMonitor.Total;
 
         internal PieceWriter Writer { get; set; }
@@ -97,7 +142,10 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public void Dispose()
+        void IDisposable.Dispose ()
+            => Dispose ();
+
+        internal void Dispose ()
         {
             if (Disposed)
                 return;
@@ -154,7 +202,7 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        public async Task FlushAsync()
+        internal async Task FlushAsync()
         {
             await IOLoop;
 
@@ -162,7 +210,7 @@ namespace MonoTorrent.Client
                 Writer.Flush(manager.Torrent.Files);
         }
 
-        public async Task FlushAsync(TorrentManager manager)
+        internal async Task FlushAsync(TorrentManager manager)
         {
             await IOLoop;
 
@@ -176,7 +224,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task FlushAsync(TorrentManager manager, int index)
+        internal async Task FlushAsync(TorrentManager manager, int index)
         {
             await IOLoop;
 
@@ -192,7 +240,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<byte[]> GetHashAsync(TorrentManager manager, int pieceIndex)
+        internal async Task<byte[]> GetHashAsync(TorrentManager manager, int pieceIndex)
         {
             await IOLoop;
 
@@ -204,27 +252,26 @@ namespace MonoTorrent.Client
             long startOffset = (long)manager.Torrent.PieceLength * pieceIndex;
             long endOffset = Math.Min(startOffset + manager.Torrent.PieceLength, manager.Torrent.Size);
 
-            byte[] hashBuffer = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
+            byte[] hashBuffer = ClientEngine.BufferManager.GetBuffer(Piece.BlockSize);
+            try {
+                using (var hasher = HashAlgoFactory.Create<SHA1>()) {
+                    hasher.Initialize();
 
-            SHA1 hasher = HashAlgoFactory.Create<SHA1>();
-            hasher.Initialize();
+                    while (startOffset != endOffset)
+                    {
+                        int count = (int)Math.Min(Piece.BlockSize, endOffset - startOffset);
+                        if (!await ReadAsync(manager, startOffset, hashBuffer, count).ConfigureAwait(false))
+                            return null;
+                        startOffset += count;
+                        hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
+                    }
 
-            while (startOffset != endOffset)
-            {
-                int count = (int)Math.Min(Piece.BlockSize, endOffset - startOffset);
-                if (!await ReadAsync(manager, startOffset, hashBuffer, count).ConfigureAwait(false))
-                {
-                    ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
-                    return null;
+                    hasher.TransformFinalBlock(hashBuffer, 0, 0);
+                    return hasher.Hash;
                 }
-                startOffset += count;
-                hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer(hashBuffer);
             }
-
-            hasher.TransformFinalBlock(hashBuffer, 0, 0);
-            ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
-            return hasher.Hash;
         }
 
         async Task WaitForBufferedWrites ()
@@ -237,7 +284,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task CloseFilesAsync(TorrentManager manager)
+        internal async Task CloseFilesAsync(TorrentManager manager)
         {
             await IOLoop;
 
@@ -253,15 +300,15 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string path)
+        internal async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string newPath)
         {
             await IOLoop;
 
             try
             {
-                path = Path.GetFullPath (path);
-                Writer.Move (file.FullPath, path, false);
-                file.FullPath = path;
+                newPath = Path.GetFullPath (newPath);
+                Writer.Move (file, newPath, false);
+                file.FullPath = newPath;
             }
             catch (Exception ex)
             {
@@ -283,7 +330,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<bool> ReadAsync (TorrentManager manager, long offset, byte [] buffer, int count)
+        internal async Task<bool> ReadAsync (TorrentManager manager, long offset, byte [] buffer, int count)
         {
             await IOLoop;
 

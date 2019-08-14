@@ -27,16 +27,14 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.TorrentWatcher
 {
     /// <summary>
     /// Main controller class for ITorrentWatcher
     /// </summary>
-    public class TorrentWatchers : MonoTorrentCollection<ITorrentWatcher>
+    public class TorrentWatchers : List<ITorrentWatcher>
     {
         #region Constructors
 

@@ -1,18 +1,45 @@
+//
+// TestRig.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2008 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using System.Net.Sockets;
 using System.Net;
-using MonoTorrent.Client.Encryption;
-using System.Threading;
-using NUnit.Framework;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Listeners;
+using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
@@ -56,13 +83,13 @@ namespace MonoTorrent.Client
             return FilesThatExist.Contains(file);
         }
 
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
+        public override void Move(TorrentFile file, string newPath, bool overwrite)
         {
             
         }
     }
 
-    public class CustomTracker : MonoTorrent.Client.Tracker.Tracker
+    class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
         public List<DateTime> AnnouncedAt = new List<DateTime>();
         public List<DateTime> ScrapedAt = new List<DateTime>();
@@ -79,20 +106,18 @@ namespace MonoTorrent.Client
             CanScrape = true;
         }
 
-        public override Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
+        protected override Task<List<Peer>> DoAnnounceAsync(AnnounceParameters parameters)
         {
             AnnouncedAt.Add(DateTime.Now);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, !FailAnnounce));
             if (FailAnnounce)
                 throw new TrackerException ("Deliberately failing announce request", null);
 
             return Task.FromResult (peers);
         }
 
-        public override Task ScrapeAsync(ScrapeParameters parameters)
+        protected override Task DoScrapeAsync(ScrapeParameters parameters)
         {
             ScrapedAt.Add(DateTime.Now);
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, !FailScrape));
             if (FailScrape)
                 throw new TrackerException ("Deliberately failing scrape request", null);
 
@@ -102,12 +127,6 @@ namespace MonoTorrent.Client
         public void AddPeer(Peer peer)
         {
             peers.Add (peer);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
-        }
-
-        public void AddFailedPeer(Peer peer)
-        {
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, false));
         }
 
         public override string ToString()
@@ -118,187 +137,76 @@ namespace MonoTorrent.Client
 
     public class CustomConnection : IConnection
     {
-        public string Name;
-        public event EventHandler BeginReceiveStarted;
-        public event EventHandler EndReceiveStarted;
+        public byte[] AddressBytes => ((IPEndPoint)EndPoint).Address.GetAddressBytes();
+        public bool CanReconnect => false;
+        public bool Connected  => Socket.Connected;
+        public EndPoint EndPoint => Socket.RemoteEndPoint;
+        public bool IsIncoming { get; }
+        public int? ManualBytesReceived { get; set; }
+        public int? ManualBytesSent { get; set; }
+        public string Name => IsIncoming ? "Incoming" : "Outgoing";
+        public bool SlowConnection { get; set; }
+        public Uri Uri => new Uri("ipv4://127.0.0.1:1234");
 
-        public event EventHandler BeginSendStarted;
-        public event EventHandler EndSendStarted;
+        Socket Socket { get; }
 
-        private Socket s;
-        private bool incoming;
-
-        public int? ManualBytesReceived {
-            get; set;
-        }
-
-        public int? ManualBytesSent {
-            get; set;
-        }
-
-        public bool SlowConnection {
-            get; set;
-        }
-
-        public CustomConnection(Socket s, bool incoming)
+        public CustomConnection(Socket socket, bool isIncoming)
         {
-            this.s = s;
-            this.incoming = incoming;
+            Socket = socket;
+            IsIncoming = isIncoming;
         }
+        
+        public Task ConnectAsync()
+            => throw new InvalidOperationException();
 
-        public byte[] AddressBytes
-        {
-            get { return ((IPEndPoint)s.RemoteEndPoint).Address.GetAddressBytes(); }
-        }
-
-        public bool Connected
-        {
-            get { return s.Connected; }
-        }
-
-        public bool CanReconnect
-        {
-            get { return false; }
-        }
-
-        public bool IsIncoming
-        {
-            get { return incoming; }
-        }
-
-        public EndPoint EndPoint
-        {
-            get { return s.RemoteEndPoint; }
-        }
-
-        public IAsyncResult BeginConnect(AsyncCallback callback, object state)
-        {
-            throw new InvalidOperationException();
-        }
-
-        public void EndConnect(IAsyncResult result)
-        {
-            throw new InvalidOperationException();
-        }
-
-        public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            if (BeginReceiveStarted != null)
-                BeginReceiveStarted (this, EventArgs.Empty);
-            if (SlowConnection)
-                count = Math.Min(88, count);
-            return s.BeginReceive(buffer, offset, count, SocketFlags.None, callback, state);
-        }
-
-        public int EndReceive(IAsyncResult result)
-        {
-            if (EndReceiveStarted != null)
-                EndReceiveStarted(null, EventArgs.Empty);
-
-            if (ManualBytesReceived.HasValue)
-                return ManualBytesReceived.Value;
-
-            return s.EndReceive(result);
-        }
-
-        public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            if (BeginSendStarted != null)
-                BeginSendStarted(null, EventArgs.Empty);
-
-            if (SlowConnection)
-                count = Math.Min(88, count);
-            return s.BeginSend(buffer, offset, count, SocketFlags.None, callback, state);
-        }
-
-        public int EndSend(IAsyncResult result)
-        {
-            if (EndSendStarted != null)
-                EndSendStarted(null, EventArgs.Empty);
-
-            if (ManualBytesSent.HasValue)
-                return ManualBytesSent.Value;
-
-            try
-            {
-                return s.EndSend(result);
-            }
-            catch (ObjectDisposedException)
-            {
-                return 0;
-            }
-        }
-        //private bool disposed;
         public void Dispose()
+            => Socket.Close();
+
+        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
-           // disposed = true;
-            s.Close();
+            if (SlowConnection)
+                count = Math.Min(88, count);
+
+            var result = await Task.Factory.FromAsync (Socket.BeginReceive(buffer, offset, count, SocketFlags.None, null, null), Socket.EndReceive);
+            return ManualBytesReceived ?? result;
+        }
+
+        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
+        {
+            if (SlowConnection)
+                count = Math.Min(88, count);
+
+            var result = await Task.Factory.FromAsync(Socket.BeginSend(buffer, offset, count, SocketFlags.None, null, null), Socket.EndSend);
+            return ManualBytesSent ?? result;
         }
 
         public override string ToString()
-        {
-            return Name;
-        }
-
-        public Uri Uri
-        {
-            get { return new Uri("ipv4://127.0.0.1:1234"); }
-        }
-
-
-        public int Receive (byte[] buffer, int offset, int count)
-        {
-            var r = BeginReceive (buffer, offset, count, null, null);
-            if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
-                throw new Exception ("Could not receive required data");
-            return EndReceive (r);
-        }
-
-        public int Send (byte[] buffer, int offset, int count)
-        {
-            var r = BeginSend (buffer, offset, count, null, null);
-            if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
-                throw new Exception ("Could not receive required data");
-            return EndSend (r);
-        }
-
-        public Task ConnectAsync()
-        {
-            return Task.Factory.FromAsync(BeginConnect(null, null), EndConnect);
-        }
-
-        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
-        {
-            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
-        }
-
-        public Task<int> SendAsync(byte[] buffer, int offset, int count)
-        {
-            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
-        }
+            => Name;
     }
 
-    public class CustomListener : PeerListener
+    class CustomListener : IPeerListener
     {
-        public override void Start()
-        {
+        public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        public event EventHandler<EventArgs> StatusChanged;
 
+        public ListenerStatus Status { get; private set; }
+
+        public void Start()
+        {
+            Status = ListenerStatus.Listening;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
         }
 
-        public override void Stop()
+        public void Stop()
         {
-
-        }
-
-        public CustomListener()
-            :base(new IPEndPoint(IPAddress.Any, 0))
-        {
+            Status = ListenerStatus.NotListening;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
         }
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
-            base.RaiseConnectionReceived(p, connection, manager);
+            var p = new Peer("", new Uri("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
+            ConnectionReceived?.Invoke (this, new NewConnectionEventArgs (p, connection, manager));
         }
     }
 
@@ -330,7 +238,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class TestRig : IDisposable
+    class TestRig : IDisposable
     {
         static Random Random = new Random(1000);
         static int port = 10000;
@@ -402,7 +310,7 @@ namespace MonoTorrent.Client
             get { return torrentDict; }
         }
 
-        public CustomTracker Tracker
+        internal CustomTracker Tracker
         {
             get { return (CustomTracker)this.manager.TrackerManager.CurrentTracker; }
         }
@@ -482,7 +390,7 @@ namespace MonoTorrent.Client
 
         static TestRig()
         {
-            TrackerFactory.Register("custom", typeof(CustomTracker));
+            TrackerFactory.Register("custom", uri => new CustomTracker (uri));
         }
 
         private static void AddAnnounces(BEncodedDictionary dict, string[][] tiers)

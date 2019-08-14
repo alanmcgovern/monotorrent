@@ -26,16 +26,12 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
-using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
-using System.Timers;
-using MonoTorrent;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using System.Net.NetworkInformation;
 
 namespace MonoTorrent.Client
 {
