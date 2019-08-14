@@ -30,6 +30,7 @@
 using System;
 using System.Diagnostics;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
@@ -107,7 +108,7 @@ namespace MonoTorrent.Client
         public ConnectionMonitor Monitor { get; }
         internal Peer Peer { get; set; }
         internal PeerExchangeManager PeerExchangeManager { get; set; }
-        public string PeerID => Peer.PeerId;
+        public BEncodedString PeerID => Peer.PeerId;
         public int PiecesSent { get; internal set; }
         public int PiecesReceived { get; internal set; }
         internal ushort Port { get; set; }

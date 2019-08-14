@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
@@ -50,17 +51,16 @@ namespace MonoTorrent.Client.Tracker
         HTTPTracker tracker;
 
         InfoHash infoHash;
-        string peerId;
-        string trackerId;
+        BEncodedString peerId;
+        BEncodedString trackerId;
 
-
-        readonly List<string> keys = new List<string> ();
+        readonly List<BEncodedString> keys = new List<BEncodedString> ();
 
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            peerId = "my peer id &&=?!<>  ";
-            trackerId = "&=?!<>   ";
+            peerId = Enumerable.Repeat ((byte)'=', 20).ToArray ();
+            trackerId = Enumerable.Repeat ((byte)'&', 20).ToArray ();
             listener = new HttpTrackerListener (ListeningPrefix);
             listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
                 keys.Add(e.Key);

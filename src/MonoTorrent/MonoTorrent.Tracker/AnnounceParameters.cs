@@ -91,9 +91,9 @@ namespace MonoTorrent.Tracker
             get { return infoHash; }
         }
 
-        public string Key
+        public BEncodedString Key
         {
-            get { return Parameters["key"]?.UrlDecode (); }
+            get { return Parameters["key"] == null ? null : UriHelper.UrlDecode (Parameters["key"]); }
         }
 
         public override bool IsValid

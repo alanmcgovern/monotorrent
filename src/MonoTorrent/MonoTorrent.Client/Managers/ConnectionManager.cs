@@ -320,7 +320,7 @@ namespace MonoTorrent.Client
                     id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
-                if (canReuse && id.Peer.PeerId != engine.PeerId)
+                if (canReuse && !engine.PeerId.Equals (id.Peer.PeerId))
                 {
                     if (!id.TorrentManager.Peers.AvailablePeers.Contains(id.Peer) && id.Peer.CleanedUpCount < 5)
                         id.TorrentManager.Peers.AvailablePeers.Insert(0, id.Peer);
@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
             try
             {
                 bool maxAlreadyOpen = OpenConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections);
-                if (id.Peer.PeerId == engine.PeerId || maxAlreadyOpen)
+                if (engine.PeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen)
                 {
                     CleanupSocket (id, "Connection was not accepted");
                     return;

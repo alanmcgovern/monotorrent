@@ -33,6 +33,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages.UdpTracker;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Tracker.Listeners;
@@ -52,12 +53,12 @@ namespace MonoTorrent.Client
         MonoTorrent.Tracker.Tracker server;
         UdpTracker tracker;
         IgnoringListener listener;
-        List<string> keys;
+        List<BEncodedString> keys;
 
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            keys = new List<string>();
+            keys = new List<BEncodedString>();
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
             listener = new IgnoringListener(0);

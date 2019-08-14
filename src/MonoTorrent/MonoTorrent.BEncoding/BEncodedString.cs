@@ -41,6 +41,9 @@ namespace MonoTorrent.BEncoding
     {
         internal static readonly BEncodedString Empty = new BEncodedString ("");
 
+        public static bool IsNullOrEmpty (BEncodedString value)
+            => (value?.TextBytes.Length ?? 0) == 0;
+
         #region Member Variables
 
         /// <summary>
@@ -100,18 +103,21 @@ namespace MonoTorrent.BEncoding
             this.textBytes = value;
         }
 
-
         public static implicit operator BEncodedString(string value)
         {
+            if (value == null)
+                return null;
+            if (value.Length == 0)
+                return Empty;
             return new BEncodedString(value);
         }
         public static implicit operator BEncodedString(char[] value)
         {
-            return new BEncodedString(value);
+            return value == null ? null : new BEncodedString(value);
         }
         public static implicit operator BEncodedString(byte[] value)
         {
-            return new BEncodedString(value);
+            return value == null ? null : new BEncodedString(value);
         }
         #endregion
 

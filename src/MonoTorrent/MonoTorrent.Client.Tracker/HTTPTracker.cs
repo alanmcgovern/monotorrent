@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Tracker
 
         internal string TrackerId { get; set; }
 
-        internal string Key { get; set; }
+        internal BEncodedString Key { get; set; }
 
         internal TimeSpan RequestTimeout { get; set; } = DefaultRequestTimeout;
 
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client.Tracker
         {
             UriQueryBuilder b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
-             .Add ("peer_id", parameters.PeerId.UrlEncode ())
+             .Add ("peer_id", UriHelper.UrlEncode (parameters.PeerId.TextBytes))
              .Add ("port", parameters.Port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)
@@ -142,7 +142,7 @@ namespace MonoTorrent.Client.Tracker
             if (parameters.RequireEncryption)
                 b.Add ("requirecrypto", 1);
             if (!b.Contains ("key") && Key != null)
-                b.Add ("key", Key.UrlEncode ());
+                b.Add ("key", UriHelper.UrlEncode (Key.TextBytes));
             if (!string.IsNullOrEmpty (parameters.IPAddress))
                 b.Add ("ip", parameters.IPAddress);
 

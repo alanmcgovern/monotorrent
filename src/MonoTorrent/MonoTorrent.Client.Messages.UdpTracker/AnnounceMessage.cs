@@ -29,6 +29,7 @@
 
 using System;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
@@ -37,7 +38,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
     {
         private long connectionId;
         private InfoHash infoHash;  // 20
-        private string peerId; //20
+        private BEncodedString peerId; //20
         private long downloaded;
         private long left;
         private long uploaded;
@@ -93,7 +94,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             set { numWanted = value; }
         }
 
-        public string PeerId
+        public BEncodedString PeerId
         {
             get { return peerId; }
             set { peerId = value; }
@@ -168,7 +169,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
             written += Write(buffer, written, infoHash.Hash, 0, infoHash.Hash.Length);
-            written += WriteAscii(buffer, written, peerId);
+            written += Write(buffer, written, peerId.TextBytes);
             written += Write(buffer, written, downloaded);
             written += Write(buffer, written, left);
             written += Write(buffer, written, uploaded);

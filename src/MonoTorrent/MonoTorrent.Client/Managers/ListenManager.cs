@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
                 return false;
 
             for (int i = 0; i < Engine.Torrents.Count; i++)
-                if (message.infoHash == Engine.Torrents[i].InfoHash)
+                if (message.InfoHash == Engine.Torrents[i].InfoHash)
                     man = Engine.Torrents[i];
 
             // We're not hosting that torrent

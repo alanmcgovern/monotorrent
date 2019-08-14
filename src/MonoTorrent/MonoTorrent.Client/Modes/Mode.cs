@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
 
             // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
             // we just copy the one that is in the handshake. 
-            if (string.IsNullOrEmpty(id.Peer.PeerId))
+            if (BEncodedString.IsNullOrEmpty(id.Peer.PeerId))
                 id.Peer.PeerId = message.PeerId;
 
             // If the infohash doesn't match, dump the connection
@@ -155,7 +155,7 @@ namespace MonoTorrent.Client
             }
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
-            if (id.Peer.PeerId != message.PeerId)
+            if (!id.Peer.PeerId.Equals (message.PeerId))
             {
                 Logger.Log(id.Connection, "HandShake.Handle - Invalid peerid");
                 throw new TorrentException("Supplied PeerID didn't match the one the tracker gave us");

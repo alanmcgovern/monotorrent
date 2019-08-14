@@ -27,6 +27,8 @@
 //
 
 
+using MonoTorrent.BEncoding;
+
 namespace MonoTorrent.Client.Tracker
 {
     public class AnnounceParameters
@@ -37,7 +39,7 @@ namespace MonoTorrent.Client.Tracker
         public TorrentEvent ClientEvent { get; }
         public InfoHash InfoHash { get; }
         public string IPAddress { get; }
-        public string PeerId { get; }
+        public BEncodedString PeerId { get; }
         public int Port { get; }
         public bool RequireEncryption { get; }
         public bool SupportsEncryption { get; }
@@ -49,7 +51,7 @@ namespace MonoTorrent.Client.Tracker
 
         public AnnounceParameters(long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
-                           string peerId, string ipAddress, int port, bool supportsEncryption)
+                           BEncodedString peerId, string ipAddress, int port, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;
@@ -81,7 +83,7 @@ namespace MonoTorrent.Client.Tracker
         public AnnounceParameters WithIPAddress (string ipAddress)
             => ipAddress == IPAddress ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, ipAddress, Port, SupportsEncryption);
 
-        public AnnounceParameters WithPeerId (string peerId)
+        public AnnounceParameters WithPeerId (BEncodedString peerId)
             => peerId == PeerId ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, peerId, IPAddress, Port, SupportsEncryption);
 
         public AnnounceParameters WithPort (int port)

@@ -193,7 +193,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             NameValueCollection res = new NameValueCollection();
             res.Add("info_hash", announceMessage.Infohash.UrlEncode());
-            res.Add("peer_id", announceMessage.PeerId);
+            res.Add("peer_id", UriHelper.UrlEncode (announceMessage.PeerId.TextBytes));
             res.Add("port", announceMessage.Port.ToString());
             res.Add("uploaded", announceMessage.Uploaded.ToString());
             res.Add("downloaded", announceMessage.Downloaded.ToString());
