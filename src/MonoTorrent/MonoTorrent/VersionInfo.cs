@@ -37,16 +37,18 @@ namespace MonoTorrent
         /// <summary>
         /// Protocol string for version 1.0 of Bittorrent Protocol
         /// </summary>
-        public static readonly string ProtocolStringV100 = "BitTorrent protocol";
+        internal static readonly string ProtocolStringV100 = "BitTorrent protocol";
+
+        public static readonly string ClientIdentifier = "MO";
 
         /// <summary>
         /// The current version of the client
         /// </summary>
-        public static readonly string ClientVersion;
+        internal static readonly string ClientVersion;
 
-        public static readonly string DhtClientVersion = "MO06";
+        internal static readonly string DhtClientVersion = $"{ClientIdentifier}06";
 
-        internal static readonly Version Version;
+        public static readonly Version Version;
 
         static VersionInfo ()
         {
@@ -61,7 +63,7 @@ namespace MonoTorrent
                 version = version.Substring (0, 4);
             else
                 version = version.PadRight (4, '0');
-            ClientVersion = string.Format ("-MO{0}-", version);
+            ClientVersion = $"-{ClientIdentifier}{version}-";
         }
     }
 }

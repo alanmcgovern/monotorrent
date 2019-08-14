@@ -44,9 +44,9 @@ namespace MonoTorrent.Client.Tracker
         static readonly Random random = new Random();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds(10);
 
-        string TrackerId { get; set; }
+        internal string TrackerId { get; set; }
 
-        internal string Key { get; }
+        internal string Key { get; set; }
 
         internal TimeSpan RequestTimeout { get; set; } = DefaultRequestTimeout;
 
@@ -64,10 +64,9 @@ namespace MonoTorrent.Client.Tracker
             CanAnnounce = true;
             CanScrape = ScrapeUri != null;
 
-            byte[] passwordKey = new byte[8];
+            // Use a random integer prefixed by our identifier.
             lock (random)
-                random.NextBytes(passwordKey);
-            Key = UriHelper.UrlEncode(passwordKey);
+                Key = VersionInfo.ClientIdentifier + random.Next (1, int.MaxValue).ToString ();
         }
 
         protected override async Task<List<Peer>> DoAnnounceAsync(AnnounceParameters parameters)
@@ -130,7 +129,7 @@ namespace MonoTorrent.Client.Tracker
         {
             UriQueryBuilder b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
-             .Add ("peer_id", parameters.PeerId)
+             .Add ("peer_id", parameters.PeerId.UrlEncode ())
              .Add ("port", parameters.Port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)
@@ -142,8 +141,8 @@ namespace MonoTorrent.Client.Tracker
                 b.Add ("supportcrypto", 1);
             if (parameters.RequireEncryption)
                 b.Add ("requirecrypto", 1);
-            if (!b.Contains ("key"))
-                b.Add ("key", Key);
+            if (!b.Contains ("key") && Key != null)
+                b.Add ("key", Key.UrlEncode ());
             if (!string.IsNullOrEmpty (parameters.IPAddress))
                 b.Add ("ip", parameters.IPAddress);
 
@@ -158,7 +157,7 @@ namespace MonoTorrent.Client.Tracker
                 b.Add ("event", parameters.ClientEvent.ToString ().ToLower ());
 
             if (!string.IsNullOrEmpty (TrackerId))
-                b.Add ("trackerid", TrackerId);
+                b.Add ("trackerid", TrackerId.UrlEncode ());
 
             return b.ToUri ();
         }

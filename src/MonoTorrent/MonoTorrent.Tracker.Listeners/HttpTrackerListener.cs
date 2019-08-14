@@ -112,7 +112,7 @@ namespace MonoTorrent.Tracker.Listeners
             context.Response.ContentType = "text/plain";
             context.Response.StatusCode = 200;
             context.Response.ContentLength64 = response.LongLength;
-            context.Response.OutputStream.Write(response, 0, response.Length);
+            context.Response.Close (response, true);
         }
 
         #endregion Methods

@@ -93,7 +93,7 @@ namespace MonoTorrent.Tracker
 
         public string Key
         {
-            get { return Parameters["key"]; }
+            get { return Parameters["key"]?.UrlDecode (); }
         }
 
         public override bool IsValid
@@ -112,7 +112,7 @@ namespace MonoTorrent.Tracker
 
         public string PeerId
         {
-            get { return Parameters["peer_id"]; } 
+            get { return Parameters["peer_id"].UrlDecode (); }
         }
 
         public int Port
@@ -122,7 +122,7 @@ namespace MonoTorrent.Tracker
 
         public string TrackerId
         {
-            get { return Parameters["trackerid"]; }
+            get { return Parameters["trackerid"]?.UrlDecode (); }
         }
 
         public long Uploaded

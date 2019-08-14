@@ -49,19 +49,22 @@ namespace MonoTorrent.Client.Tracker
         Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
         HTTPTracker tracker;
 
+        InfoHash infoHash;
+        string peerId;
+        string trackerId;
+
 
         readonly List<string> keys = new List<string> ();
 
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            server = new MonoTorrent.Tracker.Tracker();
-            server.AllowUnregisteredTorrents = true;
+            peerId = "my peer id &&=?!<>  ";
+            trackerId = "&=?!<>   ";
             listener = new HttpTrackerListener (ListeningPrefix);
             listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
                 keys.Add(e.Key);
             };
-            server.RegisterListener(listener);
             
             listener.Start();
         }
@@ -70,13 +73,28 @@ namespace MonoTorrent.Client.Tracker
         public void Setup()
         {
             keys.Clear();
+
+            server = new MonoTorrent.Tracker.Tracker(trackerId);
+            server.AllowUnregisteredTorrents = true;
+            server.RegisterListener(listener);
+
             tracker = (HTTPTracker) TrackerFactory.Create(AnnounceUrl);
-            
+
+            var infoHashBytes = new [] { ' ', '%', '&', '?', '&', '&', '?', '5', '1', '=' }
+                        .Select (t => (byte)t);
+
+            infoHash = new InfoHash (infoHashBytes.Concat (infoHashBytes).ToArray ());
             announceParams = new AnnounceParameters()
-                .WithPeerId ("id")
-                .WithInfoHash (new InfoHash (new byte[20]));
+                .WithPeerId (peerId)
+                .WithInfoHash (infoHash);
 
             scrapeParams = new ScrapeParameters (new InfoHash (new byte[20]));
+        }
+
+        [TearDown]
+        public void Teardown ()
+        {
+            server.UnregisterListener (listener);
         }
 
         [OneTimeTearDown]
@@ -121,6 +139,23 @@ namespace MonoTorrent.Client.Tracker
         }
 
         [Test]
+        public async Task Announce_ValidateParams()
+        {
+            var argsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceParameters> ();
+            listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
+
+            await tracker.AnnounceAsync(announceParams);
+            Assert.IsTrue (argsTask.Task.Wait (5000), "#1");
+
+            var args = argsTask.Task.Result;
+            Assert.AreEqual (peerId, announceParams.PeerId, "#1");
+            Assert.AreEqual (announceParams.PeerId, args.PeerId, "#2");
+
+            Assert.AreEqual (infoHash, args.InfoHash, "#3");
+            Assert.AreEqual (announceParams.InfoHash, args.InfoHash, "#3");
+        }
+
+        [Test]
         public void Announce_Timeout ()
         {
             TaskCompletionSource<bool> s = new TaskCompletionSource<bool>();
@@ -138,15 +173,31 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public async Task KeyTest()
         {
-            tracker = (HTTPTracker) TrackerFactory.Create(new Uri(AnnounceUrl + "?key=value"));
+            // Set a key which uses characters which need escaping.
+            tracker = (HTTPTracker) TrackerFactory.Create(AnnounceUrl);
+            tracker.Key = peerId;
+
             await tracker.AnnounceAsync(announceParams);
-            Assert.AreEqual("value", keys[0], "#1");
+            Assert.AreEqual(peerId, keys[0], "#1");
         }
+
+        [Test]
+        public async Task NullKeyTest()
+        {
+            // Set a key which uses characters which need escaping.
+            tracker = (HTTPTracker) TrackerFactory.Create(AnnounceUrl);
+            tracker.Key = null;
+
+            await tracker.AnnounceAsync(announceParams);
+            Assert.AreEqual (null, keys[0], "#1");
+        }
+
 
         [Test]
         public async Task Scrape()
         {
-            var infoHash = new InfoHash (Enumerable.Repeat ((byte)1, 20).ToArray ());
+            // make sure it's a unique infohash as the listener isn't re-created for every test.
+            infoHash = new InfoHash (Enumerable.Repeat ((byte)1, 20).ToArray ());
             scrapeParams = new ScrapeParameters (infoHash);
 
             await tracker.ScrapeAsync(scrapeParams);
@@ -187,6 +238,24 @@ namespace MonoTorrent.Client.Tracker
             {
                 tcs.SetResult(true);
             }
+        }
+
+        [Test]
+        public async Task TrackerId ()
+        {
+            // Null until the server side tracker sends us the value
+            Assert.IsNull (tracker.TrackerId, "#1");
+            await tracker.AnnounceAsync (announceParams);
+
+            // Now we have the value, the next announce should contain it
+            Assert.AreEqual (trackerId, tracker.TrackerId, "#2");
+
+            var argsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceParameters> ();
+            listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
+
+            await tracker.AnnounceAsync (announceParams);
+            Assert.IsTrue (argsTask.Task.Wait (5000), "#3");
+            Assert.AreEqual (trackerId, argsTask.Task.Result.TrackerId, "#4");
         }
     }
 }
