@@ -34,7 +34,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.RateLimiters;
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
 
         public bool IsRunning { get; private set; }
 
-        public string PeerId { get; }
+        public BEncodedString PeerId { get; }
 
         public EngineSettings Settings { get; }
 

@@ -29,6 +29,7 @@
 
 
 using System.Text.RegularExpressions;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
@@ -119,7 +120,7 @@ namespace MonoTorrent
         static readonly Regex shadows = new Regex(@"(([A-Za-z]{1})\d{3})----*");
         static readonly Regex xbt = new Regex("XBT/d/{3}");
         private ClientApp client;
-        private string peerId;
+        private BEncodedString peerId;
         private string shortId;
 
         /// <summary>
@@ -135,7 +136,7 @@ namespace MonoTorrent
         /// The peer's ID
         /// </summary>
         /// <value>The peer id.</value>
-        internal string PeerId
+        internal BEncodedString PeerId
         {
             get { return this.peerId; }
         }
@@ -154,20 +155,21 @@ namespace MonoTorrent
         /// Initializes a new instance of the <see cref="Software"/> class.
         /// </summary>
         /// <param name="peerId">The peer id.</param>
-        internal Software(string peerId)
+        internal Software(BEncodedString peerId)
         {
             Match m;
 
             this.peerId = peerId;
-			if (peerId.StartsWith("-WebSeed-"))
-			{
-				this.shortId = "WebSeed";
-				this.client = ClientApp.WebSeed;
-				return;
-			}
+            var idAsText = peerId.Text;
+            if (idAsText.StartsWith("-WebSeed-", System.StringComparison.Ordinal))
+            {
+                this.shortId = "WebSeed";
+                this.client = ClientApp.WebSeed;
+                return;
+            }
 
             #region Standard style peers
-            if ((m = standard.Match(peerId)).Success)
+            if ((m = standard.Match(idAsText)).Success)
             {
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
@@ -318,7 +320,7 @@ namespace MonoTorrent
             #endregion
 
             #region Shadows Style
-            if ((m = shadows.Match(peerId)).Success)
+            if ((m = shadows.Match(idAsText)).Success)
             {
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
@@ -356,7 +358,7 @@ namespace MonoTorrent
             #endregion
 
             #region Brams Client
-            if ((m = brahms.Match(peerId)).Success)
+            if ((m = brahms.Match(idAsText)).Success)
             {
                 this.shortId = "M";
                 this.client = ClientApp.BitTorrent;
@@ -365,7 +367,7 @@ namespace MonoTorrent
             #endregion
 
             #region BitLord
-            if ((m = bitlord.Match(peerId)).Success)
+            if ((m = bitlord.Match(idAsText)).Success)
             {
                 this.client = ClientApp.BitLord;
                 this.shortId = "lord";
@@ -374,7 +376,7 @@ namespace MonoTorrent
             #endregion
 
             #region BitComet
-            if ((m = bitcomet.Match(peerId)).Success)
+            if ((m = bitcomet.Match(idAsText)).Success)
             {
                 this.client = ClientApp.BitComet;
                 this.shortId = "BC";
@@ -383,7 +385,7 @@ namespace MonoTorrent
             #endregion
 
             #region XBT
-            if ((m = xbt.Match(peerId)).Success)
+            if ((m = xbt.Match(idAsText)).Success)
             {
                 this.client = ClientApp.XBTClient;
                 this.shortId = "XBT";
@@ -392,7 +394,7 @@ namespace MonoTorrent
             #endregion
 
             #region Opera
-            if ((m = opera.Match(peerId)).Success)
+            if ((m = opera.Match(idAsText)).Success)
             {
                 this.client = ClientApp.Opera;
                 this.shortId = "OP";
@@ -400,7 +402,7 @@ namespace MonoTorrent
             #endregion
 
             #region MLDonkey
-            if ((m = mldonkey .Match(peerId)).Success)
+            if ((m = mldonkey .Match(idAsText)).Success)
             {
                 this.client = ClientApp.MLDonkey;
                 this.shortId = "ML";
@@ -409,7 +411,7 @@ namespace MonoTorrent
             #endregion
 
             #region Bits on wheels
-            if ((m = bow.Match(peerId)).Success)
+            if ((m = bow.Match(idAsText)).Success)
             {
                 this.client = ClientApp.BitsOnWheels;
                 this.shortId = "BOW";
@@ -418,7 +420,7 @@ namespace MonoTorrent
             #endregion
 
             #region Queen Bee
-            if ((m = queenbee.Match(peerId)).Success)
+            if ((m = queenbee.Match(idAsText)).Success)
             {
                 this.client = ClientApp.QueenBee;
                 this.shortId = "Q";
@@ -427,7 +429,7 @@ namespace MonoTorrent
             #endregion
 
             #region BitTornado special style
-            if((m = bittornado.Match(peerId)).Success)
+            if((m = bittornado.Match(idAsText)).Success)
             {
                 this.shortId = m.Groups[1].Value;
                 this.client = ClientApp.BitTornado;
@@ -436,7 +438,7 @@ namespace MonoTorrent
             #endregion
 
             this.client = ClientApp.Unknown;
-            this.shortId = peerId;
+            this.shortId = idAsText;
         }
 
 
