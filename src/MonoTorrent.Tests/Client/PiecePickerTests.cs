@@ -93,6 +93,37 @@ namespace MonoTorrent.Client.PiecePicking
             }
             Assert.IsNull(picker.PickPiece(peers[0], peers));
         }
+
+        [Test]
+        public void RequestEntireFastPiece ()
+        {
+            var id = peers [0];
+            int[] allowedFast = { 1, 2 };
+            id.SupportsFastPeer = true;
+            id.IsAllowedFastPieces.AddRange((int[])allowedFast.Clone());
+            id.BitField.SetAll(true); // Lets pretend he has everything
+            id.ProcessingQueue = true;
+
+            var requests = new List<RequestMessage> ();
+            while (true) {
+                manager.AddPieceRequests (id);
+                if (id.QueueLength == 0)
+                    break;
+
+                while (id.QueueLength > 0) {
+                    var req = (RequestMessage)id.Dequeue ();
+                    requests.Add (req);
+                    manager.PieceDataReceived (id, new PieceMessage (req.PieceIndex, req.StartOffset, req.RequestLength));
+                }
+            }
+            var expectedRequests = rig.Torrent.PieceLength / Piece.BlockSize;
+            Assert.AreEqual (expectedRequests * 2, requests.Count, "#1");
+            Assert.IsTrue (requests.All (r => r.PieceIndex == 1 || r.PieceIndex == 2), "#2");
+            for (int i = 0; i < expectedRequests; i++) {
+                Assert.AreEqual (2, requests.Count (t => t.StartOffset == i * Piece.BlockSize && t.RequestLength == Piece.BlockSize), "#2." + i);
+            }
+        }
+
         [Test]
         public void RequestFastNotSeeder()
         {

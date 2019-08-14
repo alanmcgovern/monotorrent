@@ -99,7 +99,6 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests(PeerId id)
         {
-            PeerMessage msg = null;
             int maxRequests = id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
@@ -134,7 +133,7 @@ namespace MonoTorrent.Client
                 while (id.AmRequestingPiecesCount < maxRequests)
                 {
                     var request = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
-                    if (msg != null && request.Count > 0)
+                    if (request != null && request.Count > 0)
                         for (int i = 0; i < request.Count; i ++)
                             id.Enqueue(new RequestMessage (request[i].PieceIndex, request[i].StartOffset, request[i].RequestLength));
                     else
