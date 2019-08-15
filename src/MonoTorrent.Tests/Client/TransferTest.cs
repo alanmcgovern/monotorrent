@@ -280,14 +280,15 @@ namespace MonoTorrent.Client
 
         public async Task InitiateTransfer(CustomConnection connection, EncryptionTypes allowedEncryption)
         {
-            PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
-            id.Peer.Encryption = allowedEncryption;
-            id.Connection = connection;
-
-            var data = await EncryptorFactory.CheckEncryptionAsync(id, 68, new InfoHash[] { id.TorrentManager.InfoHash });
-            decryptor = id.Decryptor;
-            encryptor = id.Encryptor;
-            TestHandshake(data, connection);
+            EncryptorFactory.EncryptorResult result;
+            if (connection.IsIncoming) {
+                result = await EncryptorFactory.CheckIncomingConnectionAsync(connection, allowedEncryption, rig.Engine.Settings, HandshakeMessage.HandshakeLength, new [] { rig.Manager.InfoHash });
+            } else {
+                result = await EncryptorFactory.CheckOutgoingConnectionAsync(connection, allowedEncryption, rig.Engine.Settings, rig.Manager.InfoHash);
+            }
+            decryptor = result.Decryptor;
+            encryptor = result.Encryptor;
+            TestHandshake(result.InitialData, connection);
         }
 
         public void TestHandshake(byte[] buffer, CustomConnection connection)
@@ -298,8 +299,8 @@ namespace MonoTorrent.Client
             // 2) Receive remote handshake
             if (buffer == null || buffer.Length == 0)
             {
-                buffer = new byte[68];
-                Receive (connection, buffer, 0, 68);
+                buffer = new byte[HandshakeMessage.HandshakeLength];
+                Receive (connection, buffer, 0, HandshakeMessage.HandshakeLength);
                 decryptor.Decrypt(buffer);
             }
 

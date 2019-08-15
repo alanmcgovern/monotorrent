@@ -237,7 +237,7 @@ namespace MonoTorrent.Client.Encryption
             }
          
             int received = await conn.Outgoing.ReceiveAsync(buffer, 0, buffer.Length);
-            Assert.AreEqual (68, received, "Recived handshake");
+            Assert.AreEqual (HandshakeMessage.HandshakeLength, received, "Recived handshake");
 
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
@@ -263,7 +263,7 @@ namespace MonoTorrent.Client.Encryption
                 Assert.Fail("Handshake timed out");
 
             HandshakeMessage message = new HandshakeMessage();
-            byte[] buffer = new byte[68];
+            byte[] buffer = new byte[HandshakeMessage.HandshakeLength];
 
             await conn.Incoming.ReceiveAsync(buffer, 0, buffer.Length);
 

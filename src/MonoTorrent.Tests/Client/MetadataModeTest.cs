@@ -66,9 +66,9 @@ namespace MonoTorrent.Client
             id.Connection = connection;
 
 
-            byte[] data = EncryptorFactory.CheckEncryptionAsync(id, 68, new InfoHash[] { id.TorrentManager.InfoHash }).Result;
-            decryptor = id.Decryptor;
-            encryptor = id.Encryptor;
+            var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.Encryption, rig.Engine.Settings, HandshakeMessage.HandshakeLength, new InfoHash[] { id.TorrentManager.InfoHash });
+            decryptor = id.Decryptor = result.Decryptor;
+            encryptor = id.Encryptor = result.Encryptor;
         }
 
         [TearDown]

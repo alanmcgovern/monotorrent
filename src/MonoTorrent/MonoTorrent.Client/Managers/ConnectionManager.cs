@@ -209,8 +209,11 @@ namespace MonoTorrent.Client
             try
             {
                 // Increase the count of the "open" connections
-                var initialData = await EncryptorFactory.CheckEncryptionAsync (id, 0, new[] { id.TorrentManager.InfoHash });
-                await EndCheckEncryption(id, initialData);
+                var result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, id.Peer.Encryption, engine.Settings, id.TorrentManager.InfoHash);
+                id.Decryptor = result.Decryptor;
+                id.Encryptor = result.Encryptor;
+
+                await EndCheckEncryption(id);
 
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
@@ -225,13 +228,10 @@ namespace MonoTorrent.Client
             }
         }
 
-        private async Task EndCheckEncryption(PeerId id, byte[] initialData)
+        private async Task EndCheckEncryption(PeerId id)
         {
             try
             {
-                if (initialData != null && initialData.Length > 0)
-                    throw new EncryptionException("unhandled initial data");
-
                 EncryptionTypes e = engine.Settings.AllowedEncryption;
                 if (id.Encryptor is RC4 && !e.HasFlag (EncryptionTypes.RC4Full) ||
                     id.Encryptor is RC4Header && !e.HasFlag (EncryptionTypes.RC4Header) ||
