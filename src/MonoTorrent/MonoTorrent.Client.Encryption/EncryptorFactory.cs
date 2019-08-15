@@ -82,9 +82,8 @@ namespace MonoTorrent.Client.Encryption
             message.Decode(buffer, 0, buffer.Length);
 
             if (message.ProtocolString == VersionInfo.ProtocolStringV100) {
-                if (supportsPlainText) {
+                if (supportsPlainText)
                     return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, buffer);
-                }
             }
             else if (supportsRC4Header || supportsRC4Full)
             {
@@ -96,7 +95,15 @@ namespace MonoTorrent.Client.Encryption
                 if (encSocket.Decryptor is RC4 && !supportsRC4Full)
                     throw new EncryptionException("Decryptor was RC4Full but that is not allowed");
 
+                // As the connection was encrypted, the data we got from the initial Receive call will have
+                // been consumed during the crypto handshake process. Now that the encrypted handshake has
+                // been established, we should ensure we read the data again.
                 var data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : null;
+                if (data == null && bytesToReceive > 0) {
+                    data = buffer;
+                    await NetworkIO.ReceiveAsync (connection, data, 0, data.Length, null, null, null);
+                    encSocket.Decryptor.Decrypt (data);
+                }
                 return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, data);
             }
 

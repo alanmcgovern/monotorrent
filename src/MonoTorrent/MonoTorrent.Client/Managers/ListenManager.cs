@@ -109,23 +109,9 @@ namespace MonoTorrent.Client
                 var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.Encryption, Engine.Settings, HandshakeMessage.HandshakeLength, skeys.ToArray());
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
-                var initialData = result.InitialData;
-                if (initialData != null && initialData.Length != HandshakeMessage.HandshakeLength)
-                {
-                    e.Connection.Dispose();
-                    return;
-                }
 
-                HandshakeMessage handshake;
-                if (initialData == null)
-                {
-                    handshake = await PeerIO.ReceiveHandshakeAsync(id.Connection, id.Decryptor);
-                }
-                else
-                {
-                    handshake = new HandshakeMessage();
-                    handshake.Decode(initialData, 0, initialData.Length);
-                }
+                var handshake = new HandshakeMessage();
+                handshake.Decode(result.InitialData, 0, result.InitialData.Length);
                 if (!await HandleHandshake(id, handshake))
                     e.Connection.Dispose();
             }
