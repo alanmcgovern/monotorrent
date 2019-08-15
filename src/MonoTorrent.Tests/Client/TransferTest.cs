@@ -58,7 +58,9 @@
 
 
 using System;
+using System.Diagnostics;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
@@ -73,6 +75,8 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class TransferTest
     {
+        CancellationTokenSource Cancellation { get ; set; }
+
         IEncryption decryptor = PlainTextEncryption.Instance;
         IEncryption encryptor = PlainTextEncryption.Instance;
 
@@ -83,6 +87,10 @@ namespace MonoTorrent.Client
         public async Task Setup()
         {
             pair = new ConnectionPair(55432);
+
+            Cancellation = new CancellationTokenSource (Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5));
+            Cancellation.Token.Register (pair.Dispose);
+
             rig = TestRig.CreateMultiFile();
             rig.Manager.HashChecked = true;
             await rig.Manager.StartAsync();
