@@ -41,6 +41,28 @@ namespace MonoTorrent.Client
 {
     public class DiskManager : IDisposable
     {
+        static readonly ICache<IncrementalHashData> IncrementalHashCache = new Cache<IncrementalHashData> (true);
+
+        readonly Dictionary<int, IncrementalHashData> IncrementalHashes = new Dictionary<int, IncrementalHashData> ();
+
+        class IncrementalHashData : ICacheable
+        {
+            public SHA1 Hasher;
+            public long NextOffsetToHash;
+
+            public IncrementalHashData ()
+            {
+                Hasher = HashAlgoFactory.Create<SHA1> ();
+                Initialise ();
+            }
+
+            public void Initialise ()
+            {
+                Hasher.Initialize ();
+                NextOffsetToHash = 0;
+            }
+        }
+
         struct BufferedIO
         {
             public TorrentManager manager;
@@ -244,32 +266,55 @@ namespace MonoTorrent.Client
         {
             await IOLoop;
 
+            IncrementalHashData incrementalHash;
+            if (IncrementalHashes.TryGetValue (pieceIndex, out incrementalHash)) {
+                // We request the blocks for most pieces sequentially, and most (all?) torrent clients
+                // will process requests in the order they have been received. This means we can optimise
+                // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
+                // we'll compute the final hash by reading the data from disk.
+                if (incrementalHash.NextOffsetToHash == (long)manager.Torrent.PieceLength * (pieceIndex + 1)
+                 || incrementalHash.NextOffsetToHash == manager.Torrent.Size) {
+                    incrementalHash.Hasher.TransformFinalBlock(Array.Empty<byte> (), 0, 0);
+                    var result = incrementalHash.Hasher.Hash;
+                    IncrementalHashCache.Enqueue (incrementalHash);
+                    IncrementalHashes.Remove (pieceIndex);
+                    return result;
+                }
+            } else {
+                // If we have no partial hash data for this piece we could be doing a full
+                // hash check, so let's create a IncrementalHashData for our piece!
+                incrementalHash = IncrementalHashCache.Dequeue ();
+                incrementalHash.NextOffsetToHash = (long)manager.Torrent.PieceLength * pieceIndex;
+            }
+
             // We want to be sure we've actually written everything so when we go to hash the
             // piece it will be returned to us in our Read call. If the write were still pending
             // we could accidentally end up reporting the piece was corrupt.
             await WaitForBufferedWrites();
 
-            long startOffset = (long)manager.Torrent.PieceLength * pieceIndex;
-            long endOffset = Math.Min(startOffset + manager.Torrent.PieceLength, manager.Torrent.Size);
+            // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
+            long startOffset = incrementalHash.NextOffsetToHash;
+            long endOffset = Math.Min((long)manager.Torrent.PieceLength * (pieceIndex + 1), manager.Torrent.Size);
 
             byte[] hashBuffer = ClientEngine.BufferManager.GetBuffer(Piece.BlockSize);
             try {
-                using (var hasher = HashAlgoFactory.Create<SHA1>()) {
-                    hasher.Initialize();
+                var hasher = incrementalHash.Hasher;
 
-                    while (startOffset != endOffset)
-                    {
-                        int count = (int)Math.Min(Piece.BlockSize, endOffset - startOffset);
-                        if (!await ReadAsync(manager, startOffset, hashBuffer, count).ConfigureAwait(false))
-                            return null;
-                        startOffset += count;
-                        hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
-                    }
-
-                    hasher.TransformFinalBlock(hashBuffer, 0, 0);
-                    return hasher.Hash;
+                while (startOffset != endOffset)
+                {
+                    int count = (int)Math.Min(Piece.BlockSize, endOffset - startOffset);
+                    if (!await ReadAsync(manager, startOffset, hashBuffer, count).ConfigureAwait(false))
+                        return null;
+                    startOffset += count;
+                    hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
                 }
+
+                hasher.TransformFinalBlock(hashBuffer, 0, 0);
+                var result = hasher.Hash;
+                return result;
             } finally {
+                IncrementalHashCache.Enqueue (incrementalHash);
+                IncrementalHashes.Remove (pieceIndex);
                 ClientEngine.BufferManager.FreeBuffer(hashBuffer);
             }
         }
@@ -358,6 +403,17 @@ namespace MonoTorrent.Client
         {
             Interlocked.Add(ref bufferedWriteBytes, count);
             await IOLoop;
+
+            int pieceIndex = (int)(offset / manager.Torrent.PieceLength);
+            IncrementalHashData incrementalHash;
+            if (!IncrementalHashes.TryGetValue (pieceIndex , out incrementalHash)) {
+                incrementalHash = IncrementalHashes[pieceIndex] = IncrementalHashCache.Dequeue ();
+                incrementalHash.NextOffsetToHash = (long) manager.Torrent.PieceLength * pieceIndex;
+            }
+            if (incrementalHash.NextOffsetToHash == offset) {
+                incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
+                incrementalHash.NextOffsetToHash += count;
+            }
 
             try
             {
