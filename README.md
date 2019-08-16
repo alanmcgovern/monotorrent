@@ -1,32 +1,57 @@
 [![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
 
-PRE-REQUISITES
-------------------------------------------------------------------------------------------------------------
+# Supported Specifications
 
-* A version of the .NET framework which supports the .NET 4.7.2 profile
+This is a list of all the BEPs which have been implemented in MonoTorrent. A full list of all available BEPs can be seen [here](http://www.bittorrent.org/beps/bep_0000.html)
+
+## Final/Active BEPs
+* BEP 3  - [The BitTorrent Protocol Specification](https://www.bittorrent.org/beps/bep_0003.html). ([Alternative specification](https://wiki.theory.org/index.php/BitTorrentSpecification))
+* BEP 20 - [Peer ID Conventions](http://www.bittorrent.org/beps/bep_0020.html)
+
+## Accepted BEPs
+
+* BEP 5  - [DHT Protocol](http://www.bittorrent.org/beps/bep_0005.html)
+* BEP 6  - [Fast Extension](http://www.bittorrent.org/beps/bep_0006.html)
+* BEP 9  - [Extension for Peers to Send Metadata Files](http://www.bittorrent.org/beps/bep_0009.html)
+* BEP 10 - [Extension Protocol](http://www.bittorrent.org/beps/bep_0010.html)
+* BEP 11 - [Peer Exchange (PEX)](http://www.bittorrent.org/beps/bep_0011.html)
+* BEP 12 - [Multitracker Metadata Extension](http://www.bittorrent.org/beps/bep_0012.html)
+* BEP 14 - [Local Service Discovery](http://www.bittorrent.org/beps/bep_0014.html)
+* BEP 15 - [UDP Tracker Protocol](http://www.bittorrent.org/beps/bep_0015.html)
+* BEP 19 - [HTTP/FTP Seeding (GetRight-style)
+](http://www.bittorrent.org/beps/bep_0019.html)
+* BEP 23 - [Tracker Returns Compact Peer Lists](http://www.bittorrent.org/beps/bep_0023.html)
+* BEP 27 - [Private Torrents](http://www.bittorrent.org/beps/bep_0027.html)
+
+## Draft BEPs
+
+* BEP 16 - [Superseeding](http://www.bittorrent.org/beps/bep_0016.html)
+* BEP 48 - [Tracker Protocol Extension: Scrape](http://www.bittorrent.org/beps/bep_0048.html)
+
+## Others
+* [Message Stream Encryption (Vuze)](http://wiki.vuze.com/w/Message_Stream_Encryption)
+
+# Compiling MonoTorrent
+
+### Pre-requisites
+* A version of the .NET framework, .NET Core or Mono which can compile .NET Standard 2.0 projects.
 * Any IDE which can compile C# code.
 
-
-BUILDING MONOTORRENT:
-------------------------------------------------------------------------------------------------------------
-
-MSBuild:
+### MSBuild:
 To build using MSBuild, execute the following command:
 $ msbuild /restore
 
-Makefiles:
+### Makefiles:
 To build using the Makefile, execute the following command:
 $ make
 
-Using an IDE:
+### Using an IDE:
 You can open src\MonoTorrent.sln in any IDE.
 
 
+## How to use the sample applications
 
-BRIEF INTRODUCTION INTO HOW THE CODE SHOULD BE USED
-------------------------------------------------------------------------------------------------------------
-
-[MonoTorrent Client]
+### MonoTorrent Client
 To run the sample client you need to do the following:
 1) Make sure that MonoTorrent.dll and SampleClient.exe are in the same folder
 2) Create a folder in that directory called "Torrents".
@@ -43,7 +68,7 @@ there is no guarantee what thread the events will be fired on, so if you're doin
 make sure that you perform your actual GUI update in a threadsafe manner.
 
 
-[The Tracker]
+### The Tracker
 ============
 
 The code of the Tracker is located in MonoTorrent.Tracker. There is one sample Tracker implementation
