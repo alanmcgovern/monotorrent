@@ -2,7 +2,7 @@
 
 # Supported Specifications
 
-Full list can be found [here](http://www.bittorrent.org/beps/bep_0000.html)
+This is a list of all the BEPs which have been implemented in MonoTorrent. A full list of all available BEPs can be seen [here](http://www.bittorrent.org/beps/bep_0000.html)
 
 ## Final/Active BEPs
 * BEP 3  - [The BitTorrent Protocol Specification](https://www.bittorrent.org/beps/bep_0003.html). ([Alternative specification](https://wiki.theory.org/index.php/BitTorrentSpecification))
