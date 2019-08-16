@@ -33,25 +33,25 @@ Full list can be found [here](http://www.bittorrent.org/beps/bep_0000.html)
 
 # Compiling MonoTorrent
 
-## Pre-requisites
+### Pre-requisites
 * A version of the .NET framework, .NET Core or Mono which can compile .NET Standard 2.0 projects.
 * Any IDE which can compile C# code.
 
-## MSBuild:
+### MSBuild:
 To build using MSBuild, execute the following command:
 $ msbuild /restore
 
-## Makefiles:
+### Makefiles:
 To build using the Makefile, execute the following command:
 $ make
 
-## Using an IDE:
+### Using an IDE:
 You can open src\MonoTorrent.sln in any IDE.
 
 
-# BRIEF INTRODUCTION INTO HOW THE CODE SHOULD BE USED
+## How to use the sample applications
 
-## MonoTorrent Client
+### MonoTorrent Client
 To run the sample client you need to do the following:
 1) Make sure that MonoTorrent.dll and SampleClient.exe are in the same folder
 2) Create a folder in that directory called "Torrents".
@@ -68,7 +68,7 @@ there is no guarantee what thread the events will be fired on, so if you're doin
 make sure that you perform your actual GUI update in a threadsafe manner.
 
 
-## The Tracker
+### The Tracker
 ============
 
 The code of the Tracker is located in MonoTorrent.Tracker. There is one sample Tracker implementation
