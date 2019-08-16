@@ -29,7 +29,7 @@ Full list can be found [here](http://www.bittorrent.org/beps/bep_0000.html)
 * BEP 48 - [Tracker Protocol Extension: Scrape](http://www.bittorrent.org/beps/bep_0048.html)
 
 ## Others
-* [Messge Stream Encryption (Vuze)](http://wiki.vuze.com/w/Message_Stream_Encryption)
+* [Message Stream Encryption (Vuze)](http://wiki.vuze.com/w/Message_Stream_Encryption)
 
 # Compiling MonoTorrent
 
