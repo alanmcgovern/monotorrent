@@ -28,6 +28,18 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void EditComment_null()
+        {
+            var d = Create ("comment", "a");
+            var editor = new TorrentEditor (d) {
+                Comment = null
+            };
+            d = editor.ToDictionary ();
+            Assert.IsFalse (d.ContainsKey ("comment"), "#1");
+            Assert.IsNull (editor.Comment, "#2");
+        }
+
+        [Test]
         public void ReplaceInfoDict ()
         {
             Assert.Throws<InvalidOperationException>(() =>
