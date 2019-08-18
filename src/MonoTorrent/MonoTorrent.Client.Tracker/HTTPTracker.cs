@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.Tracker
         static readonly Random random = new Random();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds(10);
 
-        internal string TrackerId { get; set; }
+        internal BEncodedString TrackerId { get; set; }
 
         internal BEncodedString Key { get; set; }
 
@@ -156,8 +156,8 @@ namespace MonoTorrent.Client.Tracker
             if (parameters.ClientEvent != TorrentEvent.None)
                 b.Add ("event", parameters.ClientEvent.ToString ().ToLower ());
 
-            if (!string.IsNullOrEmpty (TrackerId))
-                b.Add ("trackerid", TrackerId.UrlEncode ());
+            if (!BEncodedString.IsNullOrEmpty (TrackerId))
+                b.Add ("trackerid", UriHelper.UrlEncode (TrackerId.TextBytes));
 
             return b.ToUri ();
         }
@@ -246,7 +246,7 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     case ("tracker id"):
-                        TrackerId = keypair.Value.ToString();
+                        TrackerId = (BEncodedString) keypair.Value;
                         break;
 
                     case ("min interval"):

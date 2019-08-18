@@ -34,7 +34,7 @@ namespace MonoTorrent.Tracker
         {
             NameValueCollection c = new NameValueCollection();
             c.Add("info_hash", trackable.InfoHash.UrlEncode());
-            c.Add("peer_id", d.peerId);
+            c.Add("peer_id", UriHelper.UrlEncode (d.peerId.TextBytes));
             c.Add("port", d.Port.ToString());
             c.Add("uploaded", d.Uploaded.ToString());
             c.Add("downloaded", d.Downloaded.ToString());
@@ -79,7 +79,7 @@ namespace MonoTorrent.Tracker
         public long Downloaded;
         public long Uploaded;
         public long Remaining;
-        public string peerId;
+        public BEncodedString peerId;
         public ITrackable trackable;
     }
 

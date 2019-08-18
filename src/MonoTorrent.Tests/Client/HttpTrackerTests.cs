@@ -59,8 +59,8 @@ namespace MonoTorrent.Client.Tracker
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            peerId = Enumerable.Repeat ((byte)'=', 20).ToArray ();
-            trackerId = Enumerable.Repeat ((byte)'&', 20).ToArray ();
+            peerId = Enumerable.Repeat ((byte)254, 20).ToArray ();
+            trackerId = Enumerable.Repeat ((byte)255, 20).ToArray ();
             listener = new HttpTrackerListener (ListeningPrefix);
             listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
                 keys.Add(e.Key);

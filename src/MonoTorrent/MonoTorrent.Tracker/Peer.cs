@@ -45,7 +45,7 @@ namespace MonoTorrent.Tracker
         private int downloadSpeed;
         private int uploadSpeed;
         private DateTime lastAnnounceTime;
-        private string peerId;
+        private BEncodedString peerId;
 
 
         internal Peer(AnnounceParameters par, object dictionaryKey)
@@ -117,7 +117,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         ///The Id of the client software
         ///</summary>
-        public string PeerId
+        public BEncodedString PeerId
         {
             get { return peerId; }
         }
@@ -183,7 +183,7 @@ namespace MonoTorrent.Tracker
 
         private BEncodedDictionary GeneratePeersEntry()
         {
-            BEncodedString encPeerId = new BEncodedString(PeerId);
+            BEncodedString encPeerId = PeerId;
             BEncodedString encAddress = new BEncodedString(ClientAddress.Address.ToString());
             BEncodedNumber encPort = new BEncodedNumber(ClientAddress.Port);
 

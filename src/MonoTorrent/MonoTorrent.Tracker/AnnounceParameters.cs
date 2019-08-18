@@ -110,9 +110,13 @@ namespace MonoTorrent.Tracker
             }
         }
 
-        public string PeerId
+        public BEncodedString PeerId
         {
-            get { return Parameters["peer_id"].UrlDecode (); }
+            get {
+                if (Parameters["peer_id"] == null)
+                    return null;
+                return new BEncodedString (UriHelper.UrlDecode (Parameters["peer_id"]));
+            }
         }
 
         public int Port
@@ -120,9 +124,13 @@ namespace MonoTorrent.Tracker
             get { return ParseInt("port"); }
         }
 
-        public string TrackerId
+        public BEncodedString TrackerId
         {
-            get { return Parameters["trackerid"]?.UrlDecode (); }
+            get {
+                if (Parameters["trackerid"] == null)
+                    return null;
+                return new BEncodedString (UriHelper.UrlDecode (Parameters["trackerid"]));
+            }
         }
 
         public long Uploaded

@@ -182,10 +182,10 @@ namespace MonoTorrent.Tracker
             {
                 IPAddress up = IPAddress.Parse(d["ip"].ToString());
                 int port = (int)((BEncodedNumber)d["port"]).Number;
-                string peerId = ((BEncodedString)d["peer id"]).Text;
+                BEncodedString peerId = (BEncodedString)d["peer id"];
 
                 Assert.IsTrue(peers.Exists(delegate(PeerDetails pd) {
-                    return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId == peerId;
+                    return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId.Equals (peerId);
                 }), "#2");
             }
         }
