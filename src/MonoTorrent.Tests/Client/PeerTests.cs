@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using MonoTorrent.BEncoding;
+using System.Linq;
 
 namespace MonoTorrent.Client
 {
@@ -115,7 +116,18 @@ namespace MonoTorrent.Client
             VerifyDecodedPeers(Peer.Decode((BEncodedString)bytes));
         }
 
+        [Test]
+        public void DecodePeerId ()
+        {
+            var peerId = new BEncodedString (Enumerable.Repeat ((byte)255, 20).ToArray ());
+            var dict = new BEncodedDictionary();
+            dict.Add("ip", (BEncodedString) "1237.1.2.3");
+            dict.Add("port", (BEncodedNumber) 12345);
+            dict["peer id"] = peerId;
 
+            var peer = Peer.Decode (new BEncodedList { dict }).Single ();
+            Assert.AreEqual (peerId, peer.PeerId, "#1");
+        }
 
         private void VerifyDecodedPeers(IList<Peer> decoded)
         {
