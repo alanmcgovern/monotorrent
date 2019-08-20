@@ -164,6 +164,9 @@ namespace MonoTorrent
 
         void AddCommonStuff (BEncodedDictionary torrent)
         {
+            if (Announces.Count == 0 || (Announces.Count == 1 && Announces [0].Count <= 1))
+                RemoveCustom ("announce-list");
+
             if (Announces.Count > 0 && Announces [0].Count > 0)
                 Announce = Announces [0] [0];
 
