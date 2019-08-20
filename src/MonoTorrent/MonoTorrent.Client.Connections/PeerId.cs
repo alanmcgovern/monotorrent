@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private MonoTorrentCollection<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
+        private List<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
         private TorrentManager torrentManager;
 
         #endregion Member Variables
@@ -154,7 +154,7 @@ namespace MonoTorrent.Client
             MaxPendingRequests = 2;
             MaxSupportedPendingRequests = 50;
             Monitor = new ConnectionMonitor();
-            sendQueue = new MonoTorrentCollection<PeerMessage>(12);
+            sendQueue = new List<PeerMessage>(12);
             ExtensionSupports = new ExtensionSupports();
 
             InitializeTyrant();
@@ -176,7 +176,9 @@ namespace MonoTorrent.Client
 
         internal PeerMessage Dequeue()
         {
-            return sendQueue.Dequeue();
+            var message = sendQueue[0];
+            sendQueue.RemoveAt (0);
+            return message;
         }
 
         internal void Enqueue(PeerMessage message)
