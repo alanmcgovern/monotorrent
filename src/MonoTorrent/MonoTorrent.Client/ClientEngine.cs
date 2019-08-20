@@ -457,7 +457,7 @@ namespace MonoTorrent.Client
 
 
         static int count = 0;
-        static string GeneratePeerId()
+        static BEncodedString GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
             sb.Append ("-");
@@ -468,7 +468,7 @@ namespace MonoTorrent.Client
             while (sb.Length < 20)
                 sb.Append(random.Next(0, 9));
 
-            return sb.ToString();
+            return new BEncodedString (sb.ToString());
         }
 
         #endregion

@@ -192,15 +192,15 @@ namespace MonoTorrent.Tracker.Listeners
         private NameValueCollection getCollection(AnnounceMessage announceMessage)
         {
             NameValueCollection res = new NameValueCollection();
-            res.Add("info_hash", announceMessage.Infohash.UrlEncode());
-            res.Add("peer_id", UriHelper.UrlEncode (announceMessage.PeerId.TextBytes));
+            res.Add("info_hash", announceMessage.InfoHash.UrlEncode());
+            res.Add("peer_id", announceMessage.PeerId.UrlEncode ());
             res.Add("port", announceMessage.Port.ToString());
             res.Add("uploaded", announceMessage.Uploaded.ToString());
             res.Add("downloaded", announceMessage.Downloaded.ToString());
             res.Add("left", announceMessage.Left.ToString());
             res.Add("compact", "1");//hardcode
             res.Add("numwant", announceMessage.NumWanted.ToString());
-            res.Add("ip", announceMessage.Ip.ToString());
+            res.Add("ip", announceMessage.IP.ToString());
             res.Add("key", announceMessage.Key.ToString());
             res.Add("event", announceMessage.TorrentEvent.ToString().ToLower());
             return res;

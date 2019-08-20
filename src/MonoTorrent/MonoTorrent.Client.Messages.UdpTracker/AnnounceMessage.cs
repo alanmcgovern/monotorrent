@@ -36,87 +36,29 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class AnnounceMessage : UdpTrackerMessage
     {
-        private long connectionId;
-        private InfoHash infoHash;  // 20
-        private BEncodedString peerId; //20
-        private long downloaded;
-        private long left;
-        private long uploaded;
-        private TorrentEvent torrentEvent;
-        private uint ip;
-        private uint key;
-        private int numWanted;
-        private ushort port;
+        public override int ByteLength => 8 + 4 + 4 + 20 + 20 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 2;
 
-        public override int ByteLength
-        {
-            get { return 8 + 4 + 4 + 20 + 20 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 2; }
-        }
+        public long ConnectionId { get; set; }
 
-        public long ConnectionId
-        {
-            get { return connectionId; }
-        }
+        public long Downloaded { get; set; }
 
-        public long Downloaded
-        {
-            get { return downloaded; }
-            set { downloaded = value; }
-        }
+        public InfoHash InfoHash { get; set; }
 
-        public InfoHash Infohash
-        {
-            get { return infoHash; }
-            set { infoHash = value; }
-        }
+        public uint IP { get; set; }
 
-        public uint Ip
-        {
-            get { return ip; }
-            set { ip = value; }
-        }
+        public uint Key { get; set; }
 
-        public uint Key
-        {
-            get { return key; }
-            set { key = value; }
-        }
+        public long Left { get; set; }
 
-        public long Left
-        {
-            get { return left; }
-            set { left = value; }
-        }
+        public int NumWanted { get; set; }
 
-        public int NumWanted
-        {
-            get { return numWanted; }
-            set { numWanted = value; }
-        }
+        public BEncodedString PeerId { get; set; }
 
-        public BEncodedString PeerId
-        {
-            get { return peerId; }
-            set { peerId = value; }
-        }
+        public ushort Port { get; set; }
 
-        public ushort Port
-        {
-            get { return port; }
-            set { port = value; }
-        }
+        public TorrentEvent TorrentEvent { get; set; }
 
-        public TorrentEvent TorrentEvent
-        {
-            get { return torrentEvent; }
-            set { torrentEvent = value; }
-        }
-
-        public long Uploaded
-        {
-            get { return uploaded; }
-            set { uploaded = value; }
-        }
+        public long Uploaded { get; set; }
 
         public AnnounceMessage()
             : this(0, 0, null)
@@ -127,57 +69,57 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public AnnounceMessage(int transactionId, long connectionId, AnnounceParameters parameters)
             :base(1, transactionId)
         {
-            this.connectionId = connectionId;
+            ConnectionId = connectionId;
             if (parameters == null)
                 return;
 
-            this.downloaded = parameters.BytesDownloaded;
-            this.infoHash = parameters.InfoHash;
-            this.ip = 0;
-            this.key = (uint)DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
-            this.left = parameters.BytesLeft;
-            this.numWanted = 50;
-            this.peerId = parameters.PeerId;
-            this.port = (ushort)parameters.Port;
-            this.torrentEvent = parameters.ClientEvent;
-            this.uploaded = parameters.BytesUploaded;
+            Downloaded = parameters.BytesDownloaded;
+            InfoHash = parameters.InfoHash;
+            IP = 0;
+            Key = (uint)DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
+            Left = parameters.BytesLeft;
+            NumWanted = 50;
+            PeerId = parameters.PeerId;
+            Port = (ushort)parameters.Port;
+            TorrentEvent = parameters.ClientEvent;
+            Uploaded = parameters.BytesUploaded;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            connectionId = ReadLong(buffer, ref offset);
+            ConnectionId = ReadLong(buffer, ref offset);
             if (Action != ReadInt(buffer, ref offset))
                 ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
-            infoHash = new InfoHash(ReadBytes(buffer, ref offset, 20));
-            peerId = ReadString(buffer, ref offset, 20);
-            downloaded = ReadLong(buffer, ref offset);
-            left = ReadLong(buffer, ref offset);
-            uploaded = ReadLong(buffer, ref offset);
-            torrentEvent = (TorrentEvent)ReadInt(buffer, ref offset);
-            ip = (uint)ReadInt(buffer, ref offset);
-            key = (uint)ReadInt(buffer, ref offset);
-            numWanted = ReadInt(buffer, ref offset);
-            port = (ushort)ReadShort(buffer, ref offset);
+            InfoHash = new InfoHash(ReadBytes(buffer, ref offset, 20));
+            PeerId = new BEncodedString (ReadBytes(buffer, ref offset, 20));
+            Downloaded = ReadLong(buffer, ref offset);
+            Left = ReadLong(buffer, ref offset);
+            Uploaded = ReadLong(buffer, ref offset);
+            TorrentEvent = (TorrentEvent)ReadInt(buffer, ref offset);
+            IP = (uint)ReadInt(buffer, ref offset);
+            Key = (uint)ReadInt(buffer, ref offset);
+            NumWanted = ReadInt(buffer, ref offset);
+            Port = (ushort)ReadShort(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, connectionId);
+            written += Write(buffer, written, ConnectionId);
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
-            written += Write(buffer, written, infoHash.Hash, 0, infoHash.Hash.Length);
-            written += Write(buffer, written, peerId.TextBytes);
-            written += Write(buffer, written, downloaded);
-            written += Write(buffer, written, left);
-            written += Write(buffer, written, uploaded);
-            written += Write(buffer, written, (int)torrentEvent);
-            written += Write(buffer, written, ip);
-            written += Write(buffer, written, key);
-            written += Write(buffer, written, numWanted);
-            written += Write(buffer, written, port);
+            written += Write(buffer, written, InfoHash.Hash, 0, InfoHash.Hash.Length);
+            written += Write(buffer, written, PeerId.TextBytes);
+            written += Write(buffer, written, Downloaded);
+            written += Write(buffer, written, Left);
+            written += Write(buffer, written, Uploaded);
+            written += Write(buffer, written, (int)TorrentEvent);
+            written += Write(buffer, written, IP);
+            written += Write(buffer, written, Key);
+            written += Write(buffer, written, NumWanted);
+            written += Write(buffer, written, Port);
 
             return written - offset;
         }

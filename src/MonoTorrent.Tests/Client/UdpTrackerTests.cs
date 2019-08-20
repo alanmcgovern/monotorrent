@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -45,10 +46,11 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class UdpTrackerTests
     {
+        static readonly BEncodedString PeerId = new BEncodedString (Enumerable.Repeat ((byte)255, 20).ToArray ());
+        static readonly InfoHash InfoHash = new InfoHash (Enumerable.Repeat ((byte)254, 20).ToArray ());
+
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
-            TorrentEvent.Completed,
-            new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
-            false, new string('a', 20), null, 1515, false);
+            TorrentEvent.Completed, InfoHash, false, PeerId, null, 1515, false);
         ScrapeParameters scrapeParams = new ScrapeParameters(new InfoHash(new byte[20]));
         MonoTorrent.Tracker.Tracker server;
         UdpTracker tracker;
@@ -206,7 +208,22 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceTest()
         {
+            announceparams = announceparams
+                .WithBytesDownloaded (123)
+                .WithBytesLeft (456)
+                .WithBytesUploaded (789);
+
+            var announceArgsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceEventArgs> ();
+            server.PeerAnnounced += (o, e) => announceArgsTask.TrySetResult (e);
             await tracker.AnnounceAsync(announceparams);
+
+            await announceArgsTask.Task;
+
+            var args = announceArgsTask.Task.Result;
+            Assert.AreEqual (PeerId, args.Peer.PeerId, "#1");
+            Assert.AreEqual (123, args.Peer.Downloaded);
+            Assert.AreEqual (456, args.Peer.Remaining);
+            Assert.AreEqual (789, args.Peer.Uploaded);
         }
 
         [Test]

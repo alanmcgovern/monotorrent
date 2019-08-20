@@ -93,7 +93,7 @@ namespace MonoTorrent.Tracker
 
         public BEncodedString Key
         {
-            get { return Parameters["key"] == null ? null : UriHelper.UrlDecode (Parameters["key"]); }
+            get { return BEncodedString.FromUrlEncodedString (Parameters["key"]); }
         }
 
         public override bool IsValid
@@ -112,11 +112,7 @@ namespace MonoTorrent.Tracker
 
         public BEncodedString PeerId
         {
-            get {
-                if (Parameters["peer_id"] == null)
-                    return null;
-                return new BEncodedString (UriHelper.UrlDecode (Parameters["peer_id"]));
-            }
+            get { return BEncodedString.FromUrlEncodedString (Parameters["peer_id"]); }
         }
 
         public int Port
@@ -126,11 +122,7 @@ namespace MonoTorrent.Tracker
 
         public BEncodedString TrackerId
         {
-            get {
-                if (Parameters["trackerid"] == null)
-                    return null;
-                return new BEncodedString (UriHelper.UrlDecode (Parameters["trackerid"]));
-            }
+            get { return BEncodedString.FromUrlEncodedString (Parameters["trackerid"]); }
         }
 
         public long Uploaded
