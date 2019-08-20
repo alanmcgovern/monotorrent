@@ -124,7 +124,7 @@ namespace MonoTorrent.Dht
         internal void Add(IEnumerable<Node> nodes)
         {
             if (nodes == null)
-                throw new ArgumentNullException("nodes");
+                throw new ArgumentNullException(nameof (nodes));
 
             foreach (Node n in nodes)
                 Add(n);
@@ -133,7 +133,7 @@ namespace MonoTorrent.Dht
         internal async void Add(Node node)
         {
             if (node == null)
-                throw new ArgumentNullException("node");
+                throw new ArgumentNullException(nameof (node));
 
             try {
                 await MainLoop;
