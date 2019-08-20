@@ -123,7 +123,12 @@ namespace MonoTorrent.Tracker.Listeners
         
         protected virtual async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
-            UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID (remotePeer));
+            UdpTrackerMessage m;
+            if (connectMessage.ConnectionId == ConnectMessage.InitialiseConnectionId)
+                m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID (remotePeer));
+            else
+                m = new ErrorMessage (connectMessage.TransactionId, $"The connection_id was {connectMessage.ConnectionId} but expected {ConnectMessage.InitialiseConnectionId}");
+
             byte[] data = m.Encode();
             try {
                 await client.SendAsync(data, data.Length, remotePeer);
