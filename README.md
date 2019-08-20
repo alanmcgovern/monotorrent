@@ -47,10 +47,11 @@ The client downloads torrents and has a wide range of functionality.
 * Auto-throttling if the download rate exceeds the piece verification/disk write rate.
 * IPV4 connections.
 * IPV6 connections.
-* IP Ban lists.
+* IP address ban lists.
 * Creating torrents from a single file, a folder, or arbitrary files in arbitrary folders.
 * Fast resume data can be saved/restored to avoid hashing the data every time a torrent is started.
 * Incremental piece hashing (reduces disk reads by incrementally hashing each block in a piece as it is received).
+* Sparse files (NTFS filesystem).
 
 * [UPnP port forwarding](https://github.com/mono/Mono.Nat).
 * [NAT-PMP port forwarding](https://github.com/mono/Mono.Nat).
