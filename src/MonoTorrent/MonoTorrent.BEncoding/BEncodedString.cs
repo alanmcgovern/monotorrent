@@ -39,39 +39,37 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public class BEncodedString : BEncodedValue, IComparable<BEncodedString>
     {
-        internal static readonly BEncodedString Empty = new BEncodedString ("");
+        internal static readonly BEncodedString Empty = new BEncodedString (Array.Empty<byte> ());
 
         public static bool IsNullOrEmpty (BEncodedString value)
             => (value?.TextBytes.Length ?? 0) == 0;
 
-        #region Member Variables
+        public static BEncodedString FromUrlEncodedString (string urlEncodedValue)
+        {
+            if (urlEncodedValue == null)
+                return null;
+            if (urlEncodedValue.Length == 0)
+                return Empty;
+            return new BEncodedString (UriHelper.UrlDecode (urlEncodedValue));
+        }
 
         /// <summary>
-        /// The value of the BEncodedString
+        /// The value of the BEncodedString interpreted as a UTF-8 string. If the underlying bytes
+        /// cannot be represented in UTF-8 then the invalid byte sequence is silently discarded.
         /// </summary>
-        public string Text
-        {
-            get { return Encoding.UTF8.GetString(textBytes); }
-            set { textBytes = Encoding.UTF8.GetBytes(value); }
-        }
+        public string Text => Encoding.UTF8.GetString(TextBytes);
 
         /// <summary>
         /// The underlying byte[] associated with this BEncodedString
         /// </summary>
-        public byte[] TextBytes
-        {
-            get { return this.textBytes; }
-        }
-        private byte[] textBytes;
-        #endregion
-
+        public byte[] TextBytes { get; private set; }
 
         #region Constructors
         /// <summary>
         /// Create a new BEncodedString using UTF8 encoding
         /// </summary>
         public BEncodedString()
-            : this(new byte[0])
+            : this(Array.Empty<byte> ())
         {
         }
 
@@ -80,7 +78,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="value"></param>
         public BEncodedString(char[] value)
-            : this(System.Text.Encoding.UTF8.GetBytes(value))
+            : this(Encoding.UTF8.GetBytes(value))
         {
         }
 
@@ -89,7 +87,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="value">Initial value for the string</param>
         public BEncodedString(string value)
-            : this(System.Text.Encoding.UTF8.GetBytes(value))
+            : this(Encoding.UTF8.GetBytes(value))
         {
         }
 
@@ -100,7 +98,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="value"></param>
         public BEncodedString(byte[] value)
         {
-            this.textBytes = value;
+            TextBytes = value;
         }
 
         public static implicit operator BEncodedString(string value)
@@ -111,14 +109,13 @@ namespace MonoTorrent.BEncoding
                 return Empty;
             return new BEncodedString(value);
         }
+
         public static implicit operator BEncodedString(char[] value)
-        {
-            return value == null ? null : new BEncodedString(value);
-        }
+            => value == null ? null : new BEncodedString(value);
+
         public static implicit operator BEncodedString(byte[] value)
-        {
-            return value == null ? null : new BEncodedString(value);
-        }
+            => value == null ? null : new BEncodedString(value);
+
         #endregion
 
 
@@ -135,16 +132,16 @@ namespace MonoTorrent.BEncoding
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
-            written += WriteLengthAsAscii(buffer, written, textBytes.Length);
+            written += WriteLengthAsAscii(buffer, written, TextBytes.Length);
             written += Message.WriteAscii(buffer, written, ":");
-            written += Message.Write(buffer, written, textBytes);
+            written += Message.Write(buffer, written, TextBytes);
             return written - offset;
         }
 
         int WriteLengthAsAscii (byte[] buffer, int offset, int asciiLength)
         {
             if (asciiLength > 100000)
-                return Message.WriteAscii(buffer, offset, textBytes.Length.ToString());
+                return Message.WriteAscii(buffer, offset, TextBytes.Length.ToString());
 
             bool hasWritten = false;
             int written = offset;
@@ -161,7 +158,6 @@ namespace MonoTorrent.BEncoding
             return written - offset;
         }
 
-
         /// <summary>
         /// Decodes a BEncodedString from the supplied StreamReader
         /// </summary>
@@ -169,7 +165,7 @@ namespace MonoTorrent.BEncoding
         internal override void DecodeInternal(RawReader reader)
         {
             if (reader == null)
-                throw new ArgumentNullException("reader");
+                throw new ArgumentNullException(nameof (reader));
 
             int letterCount;
             string length = string.Empty;
@@ -183,18 +179,14 @@ namespace MonoTorrent.BEncoding
             if (!int.TryParse(length, out letterCount))
                 throw new BEncodingException(string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
 
-            this.textBytes = new byte[letterCount];
-            if (reader.Read(textBytes, 0, letterCount) != letterCount)
+            TextBytes = new byte[letterCount];
+            if (reader.Read(TextBytes, 0, letterCount) != letterCount)
                 throw new BEncodingException("Couldn't decode string");
         }
         #endregion
 
 
         #region Helper Methods
-        public string Hex
-        {
-            get { return BitConverter.ToString(TextBytes); }
-        }
 
         public override int LengthInBytes()
         {
@@ -202,13 +194,13 @@ namespace MonoTorrent.BEncoding
             int prefix = 1; // Account for ':'
 
             // Count the number of characters needed for the length prefix
-            for (int i = textBytes.Length; i != 0; i = i/10)
+            for (int i = TextBytes.Length; i != 0; i = i/10)
                 prefix += 1;
 
-            if (textBytes.Length == 0)
+            if (TextBytes.Length == 0)
                 prefix++;
 
-            return prefix + textBytes.Length;
+            return prefix + TextBytes.Length;
         }
 
         public int CompareTo(object other)
@@ -222,17 +214,17 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 return 1;
 
-            int difference=0;
-            int length = this.textBytes.Length > other.textBytes.Length ? other.textBytes.Length : this.textBytes.Length;
+            int difference;
+            int length = TextBytes.Length > other.TextBytes.Length ? other.TextBytes.Length : TextBytes.Length;
 
             for (int i = 0; i < length; i++)
-                if ((difference = this.textBytes[i].CompareTo(other.textBytes[i])) != 0)
+                if ((difference = TextBytes[i].CompareTo(other.TextBytes[i])) != 0)
                     return difference;
 
-            if (this.textBytes.Length == other.textBytes.Length)
+            if (TextBytes.Length == other.TextBytes.Length)
                 return 0;
 
-            return this.textBytes.Length > other.textBytes.Length ? 1 : -1;
+            return TextBytes.Length > other.TextBytes.Length ? 1 : -1;
         }
 
         #endregion
@@ -253,22 +245,26 @@ namespace MonoTorrent.BEncoding
             else
                 return false;
 
-            return Toolbox.ByteMatch(this.textBytes, other.textBytes);
+            return Toolbox.ByteMatch(TextBytes, other.TextBytes);
         }
 
         public override int GetHashCode()
         {
             int hash = 0;
-            for (int i = 0; i < this.textBytes.Length; i++)
-                hash += this.textBytes[i];
+            for (int i = 0; i < TextBytes.Length; i++)
+                hash += TextBytes[i];
 
             return hash;
         }
 
+        public string UrlEncode ()
+            => UriHelper.UrlEncode (TextBytes);
+
+        public string ToHex ()
+            => BitConverter.ToString(TextBytes);
+
         public override string ToString()
-        {
-            return System.Text.Encoding.UTF8.GetString(textBytes);
-        }
+            => Encoding.UTF8.GetString(TextBytes);
 
         #endregion
     }
