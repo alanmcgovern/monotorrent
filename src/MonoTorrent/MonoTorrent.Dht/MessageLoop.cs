@@ -80,13 +80,14 @@ namespace MonoTorrent.Dht
             Timeout = TimeSpan.FromSeconds(15);
 
             listener.MessageReceived += MessageReceived;
+            Task sendTask = null;
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), () => {
                 if (engine.Disposed)
                     return false;
                 try
                 {
-                    for (int i = 0; i < 5 && sendQueue.Count > 0; i ++)
-                        SendMessage().Wait ();
+                    if (sendTask == null || sendTask.IsCompleted)
+                        sendTask = SendMessages();
 
                     while (receiveQueue.Count > 0)
                         ReceiveMessage();
@@ -138,16 +139,18 @@ namespace MonoTorrent.Dht
         void RaiseMessageSent(Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
             => QuerySent?.Invoke (this, new SendQueryEventArgs(node, endpoint, query, error));
 
-        private async Task SendMessage()
+        private async Task SendMessages()
         {
-            var details = sendQueue.Dequeue();
+            for (int i = 0; i < 5 && sendQueue.Count > 0; i ++) {
+                var details = sendQueue.Dequeue();
 
-            details.SentAt = Stopwatch.StartNew();
-            if (details.Message is QueryMessage)
-                waitingResponse.Add(details.Message.TransactionId, details);
+                details.SentAt = Stopwatch.StartNew();
+                if (details.Message is QueryMessage)
+                    waitingResponse.Add(details.Message.TransactionId, details);
 
-            byte[] buffer = details.Message.Encode();
-            await listener.SendAsync(buffer, details.Destination);
+                byte[] buffer = details.Message.Encode();
+                await listener.SendAsync(buffer, details.Destination);
+            }
         }
 
         internal void Start()
