@@ -48,6 +48,12 @@ namespace MonoTorrent.Tracker
         private BEncodedString peerId;
 
 
+        internal Peer (IPEndPoint endPoint, object dictionaryKey)
+        {
+            ClientAddress = endPoint;
+            this.dictionaryKey = dictionaryKey;
+        }
+
         internal Peer(AnnounceParameters par, object dictionaryKey)
         {
             this.dictionaryKey = dictionaryKey;
@@ -61,6 +67,7 @@ namespace MonoTorrent.Tracker
         public IPEndPoint ClientAddress
         {
             get { return clientAddress; }
+            private set { clientAddress = value; }
         }
 
         ///<summary>

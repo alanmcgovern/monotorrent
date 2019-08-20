@@ -56,27 +56,34 @@ namespace MonoTorrent.Client
         UdpTracker tracker;
         IgnoringListener listener;
         List<BEncodedString> keys;
+        List<IPEndPoint> peerEndpoints;
 
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            keys = new List<BEncodedString>();
-            server = new MonoTorrent.Tracker.Tracker();
-            server.AllowUnregisteredTorrents = true;
             listener = new IgnoringListener(0);
             listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceParameters e)
             {
                 keys.Add(e.Key);
             };
-            server.RegisterListener(listener);
-
             listener.Start();
         }
 
         [SetUp]
         public void Setup()
         {
-            keys.Clear();
+            keys = new List<BEncodedString>();
+            server = new MonoTorrent.Tracker.Tracker();
+            server.AllowUnregisteredTorrents = true;
+            server.RegisterListener(listener);
+
+            peerEndpoints = new List<IPEndPoint> {
+                new IPEndPoint (IPAddress.Parse ("123.123.123.123"), 12312),
+                new IPEndPoint (IPAddress.Parse ("254.254.254.254"), 3522),
+                new IPEndPoint (IPAddress.Parse ("1.1.1.1"), 123),
+                new IPEndPoint (IPAddress.Parse ("1.2.3.4"), 65000),
+            };
+
             tracker = (UdpTracker)TrackerFactory.Create(new Uri($"udp://127.0.0.1:{listener.EndPoint.Port}/announce/"));
             announceparams = announceparams.WithPort (listener.EndPoint.Port);
             tracker.RetryDelay = TimeSpan.FromMilliseconds (50);
@@ -85,6 +92,12 @@ namespace MonoTorrent.Client
             listener.IgnoreConnects = false;
             listener.IgnoreErrors = false;
             listener.IgnoreScrapes = false;
+        }
+
+        [TearDown]
+        public void Teardown ()
+        {
+            server.UnregisterListener(listener);
         }
 
         [OneTimeTearDown]
@@ -110,11 +123,7 @@ namespace MonoTorrent.Client
         [Test]
         public void AnnounceResponseTest()
         {
-            List<Peer> peers = new List<Peer>();
-            peers.Add(new Peer(new string('1', 20), new Uri("ipv4://127.0.0.1:1")));
-            peers.Add(new Peer(new string('2', 20), new Uri("ipv4://127.0.0.1:2")));
-            peers.Add(new Peer(new string('3', 20), new Uri("ipv4://127.0.0.1:3")));
-
+            var peers = peerEndpoints.Select (t => new Peer ("", new Uri ($"ipv4://{t.Address}:{t.Port}"))).ToList ();
             AnnounceResponseMessage m = new AnnounceResponseMessage(12345, TimeSpan.FromSeconds(10), 43, 65, peers);
             AnnounceResponseMessage d = (AnnounceResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
@@ -224,6 +233,22 @@ namespace MonoTorrent.Client
             Assert.AreEqual (123, args.Peer.Downloaded);
             Assert.AreEqual (456, args.Peer.Remaining);
             Assert.AreEqual (789, args.Peer.Uploaded);
+        }
+
+        [Test]
+        public async Task AnnounceTest_GetPeers ()
+        {
+            var trackable = new MonoTorrent.Tracker.InfoHashTrackable ("Test", InfoHash);
+            server.Add (trackable);
+            var manager = server.GetManager (trackable);
+            foreach (var p in peerEndpoints)
+                manager.Add (new MonoTorrent.Tracker.Peer (p, p));
+
+            var peers = await tracker.AnnounceAsync(announceparams);
+            var endpoints = peers.Select (t => new IPEndPoint (IPAddress.Parse (t.ConnectionUri.Host), t.ConnectionUri.Port)).ToArray ();
+            foreach (var p in peerEndpoints) {
+                Assert.IsTrue (endpoints.Contains (p), "#1." + p.ToString ());
+            }
         }
 
         [Test]
