@@ -479,7 +479,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            VerifyHashState ();
+            await VerifyHashState ();
             // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
             // before attempting to start again
             if (!HashChecked)
@@ -729,7 +729,7 @@ namespace MonoTorrent.Client
             return new FastResume(InfoHash, this.Bitfield);
         }
 
-        void VerifyHashState ()
+        async Task VerifyHashState ()
         {
             // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
             // a zero length file and someone deletes it after the first piece has been written to disk, it will
@@ -737,7 +737,7 @@ namespace MonoTorrent.Client
             if (HasMetadata) {
                 foreach (var file in Torrent.Files)
                     if (!file.BitField.AllFalse && HashChecked && file.Length > 0)
-                        HashChecked &= Engine.DiskManager.CheckFileExistsAsync (this, file).Result;
+                        HashChecked &= await Engine.DiskManager.CheckFileExistsAsync (this, file);
             }
         }
 
