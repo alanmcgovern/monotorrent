@@ -41,7 +41,7 @@ namespace MonoTorrent.Dht
 {
     class MessageLoop
     {
-        private struct SendDetails
+        struct SendDetails
         {
             public SendDetails(Node node, IPEndPoint destination, DhtMessage message, TaskCompletionSource<SendQueryEventArgs> tcs)
             {
@@ -60,24 +60,57 @@ namespace MonoTorrent.Dht
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
-        DhtEngine engine;
-        IDhtListener listener;
-        private object locker = new object();
-        Queue<SendDetails> sendQueue = new Queue<SendDetails>();
-        Queue<KeyValuePair<IPEndPoint, DhtMessage>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>>();
-        Dictionary<BEncodedValue, SendDetails> waitingResponse = new Dictionary<BEncodedValue, SendDetails>();
-        List<SendDetails> waitingResponseTimedOut = new List<SendDetails> ();
+        /// <summary>
+        ///  The DHT engine which owns this message loop.
+        /// </summary>
+        DhtEngine Engine { get; }
 
-        internal int PendingQueries
-            => waitingResponse.Count;
+        /// <summary>
+        /// The listener instance which is used to send/receive messages.
+        /// </summary>
+        IDhtListener Listener { get; }
 
-       internal TimeSpan Timeout { get; set; }
+        /// <summary>
+        /// The number of DHT messages which have been sent and no response has been received.
+        /// </summary>
+        internal int PendingQueries => WaitingResponse.Count;
+
+        /// <summary>
+        /// The list of messages which have been received from the attached IDhtListener which
+        /// are waiting to be processed by the engine.
+        /// </summary>
+        Queue<KeyValuePair<IPEndPoint, DhtMessage>> ReceiveQueue { get; }
+
+        /// <summary>
+        /// The list of messages which have been queued to send.
+        /// </summary>
+        Queue<SendDetails> SendQueue { get; }
+
+        /// <summary>
+        /// If a response is not received before the timeout expires, it will be cancelled.
+        /// </summary>
+        internal TimeSpan Timeout { get; set; }
+
+        /// <summary>
+        /// This is the list of messages which have been sent but no response (or error) has
+        /// been received yet. The key for the dictionary is the TransactionId for the Query.
+        /// </summary>
+        Dictionary<BEncodedValue, SendDetails> WaitingResponse { get; }
+
+        /// <summary>
+        /// Temporary (re-usable) storage when cancelling timed out messages.
+        /// </summary>
+        List<SendDetails> WaitingResponseTimedOut { get; }
 
         public MessageLoop(DhtEngine engine, IDhtListener listener)
         {
-            this.engine = engine;
-            this.listener = listener;
+            Engine = engine ?? throw new ArgumentNullException (nameof (engine));
+            Listener = listener ?? throw new ArgumentNullException (nameof (engine));
+            ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>>();
+            SendQueue = new Queue<SendDetails>();
             Timeout = TimeSpan.FromSeconds(15);
+            WaitingResponse = new Dictionary<BEncodedValue, SendDetails>();
+            WaitingResponseTimedOut = new List<SendDetails> ();
 
             listener.MessageReceived += MessageReceived;
             Task sendTask = null;
@@ -89,7 +122,7 @@ namespace MonoTorrent.Dht
                     if (sendTask == null || sendTask.IsCompleted)
                         sendTask = SendMessages();
 
-                    while (receiveQueue.Count > 0)
+                    while (ReceiveQueue.Count > 0)
                         ReceiveMessage();
 
                     TimeoutMessage();
@@ -108,25 +141,22 @@ namespace MonoTorrent.Dht
         {
             await DhtEngine.MainLoop;
 
-            lock (locker)
+            // I should check the IP address matches as well as the transaction id
+            // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
+            // and return an error message (if that's what the spec allows)
+            try
             {
-                // I should check the IP address matches as well as the transaction id
-                // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
-                // and return an error message (if that's what the spec allows)
-                try
-                {
-                    DhtMessage message;
-                    if (DhtMessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
-                        receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, DhtMessage>(endpoint, message));
-                }
-                catch (MessageException)
-                {
-                    // Caused by bad transaction id usually - ignore
-                }
-                catch (Exception)
-                {
-                    //throw new Exception("IP:" + endpoint.Address.ToString() + "bad transaction:" + e.Message);
-                }
+                DhtMessage message;
+                if (DhtMessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
+                    ReceiveQueue.Enqueue(new KeyValuePair<IPEndPoint, DhtMessage>(endpoint, message));
+            }
+            catch (MessageException)
+            {
+                // Caused by bad transaction id usually - ignore
+            }
+            catch (Exception)
+            {
+                //throw new Exception("IP:" + endpoint.Address.ToString() + "bad transaction:" + e.Message);
             }
         }
 
@@ -141,75 +171,75 @@ namespace MonoTorrent.Dht
 
         private async Task SendMessages()
         {
-            for (int i = 0; i < 5 && sendQueue.Count > 0; i ++) {
-                var details = sendQueue.Dequeue();
+            for (int i = 0; i < 5 && SendQueue.Count > 0; i ++) {
+                var details = SendQueue.Dequeue();
 
                 details.SentAt = Stopwatch.StartNew();
                 if (details.Message is QueryMessage)
-                    waitingResponse.Add(details.Message.TransactionId, details);
+                    WaitingResponse.Add(details.Message.TransactionId, details);
 
                 byte[] buffer = details.Message.Encode();
-                await listener.SendAsync(buffer, details.Destination);
+                await Listener.SendAsync(buffer, details.Destination);
             }
         }
 
         internal void Start()
         {
-            if (listener.Status != ListenerStatus.Listening)
-                listener.Start();
+            if (Listener.Status != ListenerStatus.Listening)
+                Listener.Start();
         }
 
         internal void Stop()
         {
-            if (listener.Status != ListenerStatus.NotListening)
-                listener.Stop();
+            if (Listener.Status != ListenerStatus.NotListening)
+                Listener.Stop();
         }
 
         private void TimeoutMessage()
         {
-            foreach (var v in waitingResponse) {
+            foreach (var v in WaitingResponse) {
                 if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
-                    waitingResponseTimedOut.Add (v.Value);
+                    WaitingResponseTimedOut.Add (v.Value);
             }
 
-            foreach (var v in waitingResponseTimedOut) {
+            foreach (var v in WaitingResponseTimedOut) {
                 DhtMessageFactory.UnregisterSend((QueryMessage)v.Message);
-                waitingResponse.Remove (v.Message.TransactionId);
+                WaitingResponse.Remove (v.Message.TransactionId);
 
                 if (v.CompletionSource != null)
                     v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage)v.Message));
                 RaiseMessageSent (v.Node, v.Destination, (QueryMessage)v.Message);
             }
 
-            waitingResponseTimedOut.Clear ();
+            WaitingResponseTimedOut.Clear ();
         }
 
         private void ReceiveMessage()
         {
-            KeyValuePair<IPEndPoint, DhtMessage> receive = receiveQueue.Dequeue();
+            KeyValuePair<IPEndPoint, DhtMessage> receive = ReceiveQueue.Dequeue();
             DhtMessage message = receive.Value;
             IPEndPoint source = receive.Key;
             SendDetails query = default (SendDetails);
 
             try
             {
-                Node node = engine.RoutingTable.FindNode(message.Id);
+                Node node = Engine.RoutingTable.FindNode(message.Id);
                 if (node == null) {
                     node = new Node(message.Id, source);
-                    engine.RoutingTable.Add(node);
+                    Engine.RoutingTable.Add(node);
                 }
 
                 // If we have received a ResponseMessage corresponding to a query we sent, we should
                 // remove it from our list before handling it as that could cause an exception to be
                 // thrown.
                 if (message is ResponseMessage || message is ErrorMessage) {
-                    query = waitingResponse [message.TransactionId];
-                    waitingResponse.Remove (message.TransactionId);
+                    query = WaitingResponse [message.TransactionId];
+                    WaitingResponse.Remove (message.TransactionId);
                 }
 
                 node.Seen();
                 if (message is ResponseMessage response) {
-                    response.Handle(engine, node);
+                    response.Handle(Engine, node);
 
                     if (query.CompletionSource != null)
                         query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, response));
@@ -237,23 +267,20 @@ namespace MonoTorrent.Dht
 
         internal void EnqueueSend(DhtMessage message, Node node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs> tcs = null)
         {
-            lock (locker)
+            if (message.TransactionId == null)
             {
-                if (message.TransactionId == null)
-                {
-                    if (message is ResponseMessage)
-                        throw new ArgumentException("Message must have a transaction id");
-                    do {
-                        message.TransactionId = TransactionId.NextId();
-                    } while (DhtMessageFactory.IsRegistered(message.TransactionId));
-                }
-
-                // We need to be able to cancel a query message if we time out waiting for a response
-                if (message is QueryMessage)
-                    DhtMessageFactory.RegisterSend((QueryMessage)message);
-
-                sendQueue.Enqueue(new SendDetails(node, endpoint, message, tcs));
+                if (message is ResponseMessage)
+                    throw new ArgumentException("Message must have a transaction id");
+                do {
+                    message.TransactionId = TransactionId.NextId();
+                } while (DhtMessageFactory.IsRegistered(message.TransactionId));
             }
+
+            // We need to be able to cancel a query message if we time out waiting for a response
+            if (message is QueryMessage)
+                DhtMessageFactory.RegisterSend((QueryMessage)message);
+
+            SendQueue.Enqueue(new SendDetails(node, endpoint, message, tcs));
         }
 
         internal void EnqueueSend(DhtMessage message, Node node, TaskCompletionSource<SendQueryEventArgs> tcs = null)
