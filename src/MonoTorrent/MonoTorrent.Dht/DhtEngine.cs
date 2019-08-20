@@ -72,7 +72,6 @@ namespace MonoTorrent.Dht
         internal NodeId LocalId => RoutingTable.LocalNode.Id;
         internal MessageLoop MessageLoop { get; }
         internal RoutingTable RoutingTable { get; }
-        internal TimeSpan Timeout { get; set; }
         internal TokenManager TokenManager { get; }
         internal Dictionary<NodeId, List<Node>> Torrents { get; }
 
@@ -100,7 +99,6 @@ namespace MonoTorrent.Dht
             State = DhtState.NotReady;
             TokenManager = new TokenManager();
             Torrents = new Dictionary<NodeId, List<Node>>();
-            Timeout = TimeSpan.FromSeconds(15);
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {
                 if (!Disposed)

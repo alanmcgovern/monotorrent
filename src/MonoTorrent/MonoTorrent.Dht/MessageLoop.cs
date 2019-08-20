@@ -71,10 +71,14 @@ namespace MonoTorrent.Dht
         internal int PendingQueries
             => waitingResponse.Count;
 
+       internal TimeSpan Timeout { get; set; }
+
         public MessageLoop(DhtEngine engine, IDhtListener listener)
         {
             this.engine = engine;
             this.listener = listener;
+            Timeout = TimeSpan.FromSeconds(15);
+
             listener.MessageReceived += MessageReceived;
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), () => {
                 if (engine.Disposed)
@@ -161,7 +165,7 @@ namespace MonoTorrent.Dht
         private void TimeoutMessage()
         {
             foreach (var v in waitingResponse) {
-                if (engine.Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > engine.Timeout)
+                if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
                     waitingResponseTimedOut.Add (v.Value);
             }
 

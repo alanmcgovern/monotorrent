@@ -34,7 +34,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void SendQueryTaskTimeout()
         {
-            engine.Timeout = TimeSpan.Zero;
+            engine.MessageLoop.Timeout = TimeSpan.Zero;
 
             Ping ping = new Ping(engine.LocalId);
             ping.TransactionId = transactionId;
@@ -112,7 +112,7 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < 5; i++)
                 nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
 
-            engine.Timeout = TimeSpan.FromMilliseconds(25);
+            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(25);
             engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(75);
             listener.MessageSent += (message, endpoint) => {
                 Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(endpoint.Port); });
@@ -150,7 +150,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void ReplaceNodeTest()
         {
-            engine.Timeout = TimeSpan.FromMilliseconds(25);
+            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(25);
             Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
             for(int i=0; i < 4; i++)
             {
