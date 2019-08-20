@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 using MonoTorrent.BEncoding;
@@ -69,7 +70,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The remote peer can request these and we'll fulfill the request if we're choking them
         /// </summary>
-        internal MonoTorrentCollection<int> AmAllowedFastPieces { get; set; }
+        internal List<int> AmAllowedFastPieces { get; set; }
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
@@ -94,7 +95,7 @@ namespace MonoTorrent.Client
         internal ClientEngine Engine { get; private set;}
         internal ExtensionSupports ExtensionSupports { get; set; }
         public int HashFails => Peer.TotalHashFails;
-        internal MonoTorrentCollection<int> IsAllowedFastPieces { get; set; }
+        internal List<int> IsAllowedFastPieces { get; set; }
         public bool IsChoking { get; internal set; }
         public bool IsConnected => Connection != null;
         public bool IsInterested { get; internal set; }
@@ -115,7 +116,7 @@ namespace MonoTorrent.Client
         internal bool ProcessingQueue { get; set; }
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
-        internal MonoTorrentCollection<int> SuggestedPieces { get; }
+        internal List<int> SuggestedPieces { get; }
 
         internal TorrentManager TorrentManager
         {
@@ -144,12 +145,12 @@ namespace MonoTorrent.Client
             TorrentManager = manager;
 
 
-            SuggestedPieces = new MonoTorrentCollection<int>();
+            SuggestedPieces = new List<int>();
             AmChoking = true;
             IsChoking = true;
 
-            IsAllowedFastPieces = new MonoTorrentCollection<int>();
-            AmAllowedFastPieces = new MonoTorrentCollection<int>();
+            IsAllowedFastPieces = new List<int>();
+            AmAllowedFastPieces = new List<int>();
             MaxPendingRequests = 2;
             MaxSupportedPendingRequests = 50;
             Monitor = new ConnectionMonitor();
