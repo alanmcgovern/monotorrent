@@ -35,35 +35,23 @@ namespace MonoTorrent.Dht
 {
     class RoutingTable
     {
-        private readonly Node localNode;
-        private List<Bucket> buckets = new List<Bucket>();
+        internal List<Bucket> Buckets { get; }
 
-
-        internal List<Bucket> Buckets
-        {
-            get { return buckets; }
-        }
-
-        public Node LocalNode
-        {
-            get { return localNode; }
-        }
+        public Node LocalNode { get; }
 
         public bool NeedsBootstrap => CountNodes () < 10;
 
         public RoutingTable()
-            : this(new Node(NodeId.Create(), new System.Net.IPEndPoint(IPAddress.Any, 0)))
+            : this(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0)))
         {
 
         }
 
         public RoutingTable(Node localNode)
         {
-            if (localNode == null)
-                throw new ArgumentNullException("localNode");
-
-            this.localNode = localNode;
-            localNode.Seen();
+            Buckets = new List<Bucket> ();
+            LocalNode = localNode ?? throw new ArgumentNullException(nameof (localNode));
+            LocalNode.Seen();
             Add(new Bucket());
         }
 
@@ -75,9 +63,9 @@ namespace MonoTorrent.Dht
         private bool Add(Node node, bool raiseNodeAdded)
         {
             if (node == null)
-                throw new ArgumentNullException("node");
+                throw new ArgumentNullException(nameof (node));
 
-            Bucket bucket = buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
+            Bucket bucket = Buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
             if (bucket.Nodes.Contains(node))
                 return false;
 
@@ -91,13 +79,13 @@ namespace MonoTorrent.Dht
 
         private void Add(Bucket bucket)
         {
-            buckets.Add(bucket);
-            buckets.Sort();
+            Buckets.Add(bucket);
+            Buckets.Sort();
         }
 
         internal Node FindNode(NodeId id)
         {
-            foreach (Bucket b in this.buckets)
+            foreach (Bucket b in Buckets)
                 foreach (Node n in b.Nodes)
                     if (n.Id.Equals(id))
                         return n;
@@ -107,7 +95,7 @@ namespace MonoTorrent.Dht
 
         private void Remove(Bucket bucket)
         {
-            buckets.Remove(bucket);
+            Buckets.Remove(bucket);
         }
 
         private bool Split(Bucket bucket)
@@ -135,7 +123,7 @@ namespace MonoTorrent.Dht
         public int CountNodes()
         {
             int r = 0;
-            foreach (Bucket b in buckets)
+            foreach (Bucket b in Buckets)
                 r += b.Nodes.Count;
             return r;            
         }
@@ -149,18 +137,18 @@ namespace MonoTorrent.Dht
             // full. As such we should always be able to find the 8 closest nodes
             // by adding the nodes of the matching bucket, the bucket above, and the
             // bucket below.
-            var firstBucketIndex = buckets.FindIndex (t => t.CanContain (target));
-            foreach (var node in buckets[firstBucketIndex].Nodes)
+            var firstBucketIndex = Buckets.FindIndex (t => t.CanContain (target));
+            foreach (var node in Buckets[firstBucketIndex].Nodes)
                 closestNodes.Add (node);
 
             // Try the bucket before this one
             if (firstBucketIndex > 0)
-                foreach (var node in buckets [firstBucketIndex - 1].Nodes)
+                foreach (var node in Buckets [firstBucketIndex - 1].Nodes)
                     closestNodes.Add (node);
 
             // Try the bucket after this one
-            if (firstBucketIndex < (buckets.Count - 1))
-                foreach (var node in buckets [firstBucketIndex + 1].Nodes)
+            if (firstBucketIndex < (Buckets.Count - 1))
+                foreach (var node in Buckets [firstBucketIndex + 1].Nodes)
                     closestNodes.Add (node);
 
             return closestNodes;
@@ -168,7 +156,7 @@ namespace MonoTorrent.Dht
 
         internal void Clear()
         {
-            buckets.Clear();
+            Buckets.Clear();
             Add(new Bucket());
         }
     }
