@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
 
         public static IList<Peer> Decode(BEncodedList peers)
         {
-            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
+            var list = new List<Peer>(peers.Count);
             foreach (BEncodedValue value in peers)
             {
                 try
@@ -205,9 +205,9 @@ namespace MonoTorrent.Client
             // Ports are the following 2 bytes
             byte[] byteOrderedData = data;
             int i = offset;
-            UInt16 port;
+            ushort port;
             StringBuilder sb = new StringBuilder(27);
-            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length / 6) + 1);
+            var list = new List<Peer>((byteOrderedData.Length / 6) + 1);
             while ((i + 5) < byteOrderedData.Length)
             {
                 sb.Remove(0, sb.Length);
@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
                 sb.Append('.');
                 sb.Append(byteOrderedData[i++]);
 
-                port = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
+                port = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
                 i += 2;
                 sb.Append(':');
                 sb.Append(port);

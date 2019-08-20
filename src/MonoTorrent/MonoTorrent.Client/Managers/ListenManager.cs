@@ -37,51 +37,37 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// Instance methods of this class are threadsafe
-    /// </summary>
     class ListenManager : IDisposable
     {
+        ClientEngine Engine { get; set; }
+        List<IPeerListener> Listeners { get; }
 
-		#region Properties
-
-		public MonoTorrentCollection<IPeerListener> Listeners { get; }
-
-		ClientEngine Engine { get; set; }
-
-		#endregion Properties
-
-
-		#region Constructors
-
-		internal ListenManager(ClientEngine engine)
+        internal ListenManager(ClientEngine engine)
         {
-            Engine = engine;
-            Listeners = new MonoTorrentCollection<IPeerListener>();
+            Engine = engine ?? throw new ArgumentNullException (nameof (engine));
+            Listeners = new List<IPeerListener>();
         }
-
-        #endregion Constructors
-
-
-        #region Public Methods
 
         public void Dispose()
         {
+            foreach (var listener in Listeners.ToArray ())
+                Unregister (listener);
+            Listeners.Clear ();
         }
 
         public void Register(IPeerListener listener)
         {
-            listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
+            Listeners.Add (listener);
+            listener.ConnectionReceived += ConnectionReceived;
         }
 
         public void Unregister(IPeerListener listener)
         {
-            listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
+            listener.ConnectionReceived -= ConnectionReceived;
+            Listeners.Remove (listener);
         }
 
-        #endregion Public Methods
-
-        private async void ConnectionReceived(object sender, NewConnectionEventArgs e)
+        async void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {
             await ClientEngine.MainLoop;
             try
@@ -121,8 +107,7 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        private async Task<bool> HandleHandshake(PeerId id, HandshakeMessage message)
+        async Task<bool> HandleHandshake(PeerId id, HandshakeMessage message)
         {
             TorrentManager man = null;
             if (message.ProtocolString != VersionInfo.ProtocolStringV100)
@@ -140,7 +125,7 @@ namespace MonoTorrent.Client
             if (man == null)
                 return false;
 
-			if (man.State == TorrentState.Stopped)
+            if (man.State == TorrentState.Stopped)
                 return false;
 
             if (!man.Mode.CanAcceptConnections)
