@@ -166,7 +166,7 @@ namespace MonoTorrent.Tracker
         /// <param name="trackable">The trackable to add</param>
         /// <returns></returns>
         public bool Add(ITrackable trackable)
-            => Add(trackable, new IPAddressComparer());
+            => Add(trackable, new ClientAddressComparer());
 
         /// <summary>
         /// Adds the trackable to the server
