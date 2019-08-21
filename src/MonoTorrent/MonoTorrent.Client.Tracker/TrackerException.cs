@@ -37,6 +37,12 @@ namespace MonoTorrent.Client.Tracker
         {
         }
 
+        public TrackerException (string message)
+            : base (message)
+        {
+        }
+
+
         public TrackerException (string message, Exception innerException)
             : base (message, innerException)
         {

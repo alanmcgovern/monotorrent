@@ -199,6 +199,8 @@ namespace MonoTorrent.Client.Tracker
         {
             // make sure it's a unique infohash as the listener isn't re-created for every test.
             infoHash = new InfoHash (Enumerable.Repeat ((byte)1, 20).ToArray ());
+            var trackable = new InfoHashTrackable ("Test", infoHash);
+            server.Add (trackable);
             scrapeParams = new ScrapeParameters (infoHash);
 
             await tracker.ScrapeAsync(scrapeParams);

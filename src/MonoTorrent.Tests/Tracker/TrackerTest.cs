@@ -28,6 +28,7 @@
 
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 using MonoTorrent.BEncoding;
@@ -159,6 +160,34 @@ namespace MonoTorrent.Tracker
             rig.Listener.Handle(rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
 
             Assert.AreEqual(1, rig.Tracker.GetManager(rig.Trackables[0]).GetPeers().Count, "#1");
+        }
+
+        [Test]
+        public void Scrape_One ()
+        {
+            AddAllTrackables ();
+
+            var trackable = rig.Trackables.Last ();
+
+            var query = $"?info_hash={trackable.InfoHash.UrlEncode()}";
+            var result = rig.Listener.Handle (query, IPAddress.Broadcast, true);
+            var files = (BEncodedDictionary) result["files"];
+
+            Assert.AreEqual (1, files.Count, "#1");
+                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Hash)), "#1");
+        }
+
+        [Test]
+        public void Scrape_Ten()
+        {
+            AddAllTrackables ();
+
+            var query = string.Join ("&", rig.Trackables.Select (t => $"info_hash={t.InfoHash.UrlEncode ()}"));
+            var result = rig.Listener.Handle (query, IPAddress.Broadcast, true);
+            var files = (BEncodedDictionary) result["files"];
+            Assert.AreEqual (rig.Trackables.Count, files.Count, "#1");
+            foreach (var trackable in rig.Trackables)
+                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Hash)), "#2");
         }
 
         [Test]

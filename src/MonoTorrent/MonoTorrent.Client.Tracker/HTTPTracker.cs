@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.Tracker
                 using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
                 using (cts.Token.Register (() => request.Abort ()))
                 using (var response = await request.GetResponseAsync ())
-                    ScrapeReceived (request, response);
+                    ScrapeReceived (parameters.InfoHash, request, response);
             }
             catch (Exception ex)
             {
@@ -279,11 +279,10 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        void ScrapeReceived (WebRequest request, WebResponse response)
+        void ScrapeReceived (InfoHash infoHash, WebRequest request, WebResponse response)
         {
             try
             {
-                BEncodedDictionary d;
                 BEncodedDictionary dict = DecodeResponse(request, response);
 
                 // FIXME: Log the failure?
@@ -292,29 +291,29 @@ namespace MonoTorrent.Client.Tracker
                     return;
                 }
                 BEncodedDictionary files = (BEncodedDictionary)dict["files"];
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in files)
+                if (files.Count != 1)
+                    throw new TrackerException ("The scrape response contained unexpected data");
+
+                var d = (BEncodedDictionary) files[new BEncodedString (infoHash.Hash)];
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
                 {
-                    d = (BEncodedDictionary)keypair.Value;
-                    foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
+                    switch (kp.Key.ToString())
                     {
-                        switch (kp.Key.ToString())
-                        {
-                            case ("complete"):
-                                Complete = (int)((BEncodedNumber)kp.Value).Number;
-                                break;
+                        case ("complete"):
+                            Complete = (int)((BEncodedNumber)kp.Value).Number;
+                            break;
 
-                            case ("downloaded"):
-                                Downloaded = (int)((BEncodedNumber)kp.Value).Number;
-                                break;
+                        case ("downloaded"):
+                            Downloaded = (int)((BEncodedNumber)kp.Value).Number;
+                            break;
 
-                            case ("incomplete"):
-                                Incomplete = (int)((BEncodedNumber)kp.Value).Number;
-                                break;
+                        case ("incomplete"):
+                            Incomplete = (int)((BEncodedNumber)kp.Value).Number;
+                            break;
 
-                            default:
-                                Logger.Log(null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString(), kp.Value.ToString());
-                                break;
-                        }
+                        default:
+                            Logger.Log(null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString(), kp.Value.ToString());
+                            break;
                     }
                 }
             }

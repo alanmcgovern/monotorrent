@@ -352,7 +352,7 @@ namespace MonoTorrent.Tracker
                 dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
                 dict.Add("incomplete", new BEncodedNumber(manager.Incomplete));
                 dict.Add("name", new BEncodedString(manager.Trackable.Name));
-                files.Add(e.InfoHashes[i].ToHex (), dict);
+                files.Add(new BEncodedString (e.InfoHashes[i].Hash), dict);
             }
             RaisePeerScraped(new ScrapeEventArgs(managers));
             e.Response.Add("files", files);
