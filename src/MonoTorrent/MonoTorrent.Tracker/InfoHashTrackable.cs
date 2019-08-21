@@ -49,7 +49,7 @@ namespace MonoTorrent.Tracker
             Check.InfoHash(infoHash);
 
             if (string.IsNullOrEmpty(name))
-                throw new ArgumentNullException("name cannot be null or empty", "name");
+                throw new ArgumentNullException (nameof (name), $"{nameof (name)} cannot be null or empty");
 
             InfoHash = infoHash;
             Name = name;
