@@ -72,8 +72,17 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void SendPing()
+        public void SendPing_Synchronous()
+            => SendPing (false);
+
+        [Test]
+        public void SendPing_Asynchronous()
+            => SendPing (true);
+
+        void SendPing (bool asynchronous)
         {
+            listener.SendAsynchronously = asynchronous;
+
             var tcs = new TaskCompletionSource<object> ();
             listener.MessageSent += (DhtMessage message, IPEndPoint endpoint) => {
                 if (message is Ping && endpoint == node.EndPoint) {
