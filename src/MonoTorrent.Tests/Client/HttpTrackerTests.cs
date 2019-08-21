@@ -33,6 +33,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Tracker;
 using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
@@ -44,7 +45,7 @@ namespace MonoTorrent.Client.Tracker
     {
         AnnounceParameters announceParams;
         ScrapeParameters scrapeParams;
-        MonoTorrent.Tracker.Tracker server;
+        TrackerServer server;
         HttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
         Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
@@ -62,7 +63,7 @@ namespace MonoTorrent.Client.Tracker
             peerId = Enumerable.Repeat ((byte)254, 20).ToArray ();
             trackerId = Enumerable.Repeat ((byte)255, 20).ToArray ();
             listener = new HttpTrackerListener (ListeningPrefix);
-            listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
+            listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
                 keys.Add(e.Key);
             };
             
@@ -74,7 +75,7 @@ namespace MonoTorrent.Client.Tracker
         {
             keys.Clear();
 
-            server = new MonoTorrent.Tracker.Tracker(trackerId);
+            server = new TrackerServer(trackerId);
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener(listener);
 
@@ -141,7 +142,7 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public async Task Announce_ValidateParams()
         {
-            var argsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceParameters> ();
+            var argsTask = new TaskCompletionSource<AnnounceRequest> ();
             listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
 
             await tracker.AnnounceAsync(announceParams);
@@ -250,7 +251,7 @@ namespace MonoTorrent.Client.Tracker
             // Now we have the value, the next announce should contain it
             Assert.AreEqual (trackerId, tracker.TrackerId, "#2");
 
-            var argsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceParameters> ();
+            var argsTask = new TaskCompletionSource<AnnounceRequest> ();
             listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
 
             await tracker.AnnounceAsync (announceParams);

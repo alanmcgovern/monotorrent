@@ -37,8 +37,8 @@ namespace MonoTorrent.Tracker.Listeners
 {
     abstract class TrackerListener : Listener, ITrackerListener
     {
-        public event EventHandler<ScrapeParameters> ScrapeReceived;
-        public event EventHandler<AnnounceParameters> AnnounceReceived;
+        public event EventHandler<TrackerScrapeRequest> ScrapeReceived;
+        public event EventHandler<AnnounceRequest> AnnounceReceived;
 
         protected TrackerListener ()
         {
@@ -48,7 +48,7 @@ namespace MonoTorrent.Tracker.Listeners
         public virtual BEncodedDictionary Handle(string queryString, IPAddress remoteAddress, bool isScrape)
         {
             if (queryString == null)
-                throw new ArgumentNullException("queryString");
+                throw new ArgumentNullException(nameof (queryString));
 
             return Handle(ParseQuery(queryString), remoteAddress, isScrape);
         }
@@ -56,28 +56,28 @@ namespace MonoTorrent.Tracker.Listeners
         public virtual BEncodedDictionary Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
         {
             if (collection == null)
-                throw new ArgumentNullException("collection");
+                throw new ArgumentNullException(nameof (collection));
             if (remoteAddress == null)
-                throw new ArgumentNullException("remoteAddress");
+                throw new ArgumentNullException(nameof (remoteAddress));
 
-            RequestParameters parameters;
+            TrackerRequest request;
             if (isScrape)
-                parameters = new ScrapeParameters(collection, remoteAddress);
+                request = new TrackerScrapeRequest(collection, remoteAddress);
             else
-                parameters = new AnnounceParameters(collection, remoteAddress);
+                request = new AnnounceRequest(collection, remoteAddress);
 
             // If the parameters are invalid, the failure reason will be added to the response dictionary
-            if (!parameters.IsValid)
-                return parameters.Response;
+            if (!request.IsValid)
+                return request.Response;
 
             // Fire the necessary event so the request will be handled and response filled in
             if (isScrape)
-                RaiseScrapeReceived((ScrapeParameters)parameters);
+                RaiseScrapeReceived((TrackerScrapeRequest)request);
             else
-                RaiseAnnounceReceived((AnnounceParameters)parameters);
+                RaiseAnnounceReceived((AnnounceRequest)request);
 
             // Return the response now that the connection has been handled correctly.
-            return parameters.Response;
+            return request.Response;
         }
 
         private NameValueCollection ParseQuery(string url)
@@ -96,10 +96,10 @@ namespace MonoTorrent.Tracker.Listeners
             return c;
         }
 
-        protected void RaiseAnnounceReceived(AnnounceParameters e)
+        protected void RaiseAnnounceReceived(AnnounceRequest e)
             => AnnounceReceived?.Invoke (this, e);
 
-        protected void RaiseScrapeReceived(ScrapeParameters e)
+        protected void RaiseScrapeReceived(TrackerScrapeRequest e)
             => ScrapeReceived?.Invoke (this, e);
     }
 }

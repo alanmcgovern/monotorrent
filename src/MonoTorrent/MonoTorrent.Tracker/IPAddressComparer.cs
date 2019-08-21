@@ -31,12 +31,12 @@ namespace MonoTorrent.Tracker
 {
     public interface IPeerComparer
     {
-        object GetKey(AnnounceParameters parameters);
+        object GetKey(AnnounceRequest parameters);
     }
 
     class IPAddressComparer : IPeerComparer
     {
-        public object GetKey(AnnounceParameters parameters)
+        public object GetKey(AnnounceRequest parameters)
         {
             return parameters.ClientAddress;
         }

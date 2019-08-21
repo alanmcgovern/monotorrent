@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             TorrentEvent.Completed, InfoHash, false, PeerId, null, 1515, false);
         ScrapeParameters scrapeParams = new ScrapeParameters(new InfoHash(new byte[20]));
-        MonoTorrent.Tracker.Tracker server;
+        MonoTorrent.Tracker.TrackerServer server;
         UdpTracker tracker;
         IgnoringListener listener;
         List<BEncodedString> keys;
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         public void FixtureSetup()
         {
             listener = new IgnoringListener(0);
-            listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceParameters e)
+            listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceRequest e)
             {
                 keys.Add(e.Key);
             };
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             keys = new List<BEncodedString>();
-            server = new MonoTorrent.Tracker.Tracker();
+            server = new MonoTorrent.Tracker.TrackerServer();
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener(listener);
 

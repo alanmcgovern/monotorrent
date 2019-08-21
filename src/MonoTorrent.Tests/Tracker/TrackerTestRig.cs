@@ -1,23 +1,50 @@
+//
+// TrackerTestRig.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2006 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Tracker;
-using MonoTorrent.Tracker.Listeners;
 using System.Collections.Specialized;
 using System.Net;
-using System.Web;
-using MonoTorrent.BEncoding;
 using System.Threading;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Tracker.Listeners;
 
 namespace MonoTorrent.Tracker
 {
-    public class CustomComparer : MonoTorrent.Tracker.IPeerComparer
+    public class CustomComparer : IPeerComparer
     {
         public new bool Equals(object left, object right)
         {
             return left.Equals(right);
         }
-        public object GetKey(AnnounceParameters parameters)
+        public object GetKey(AnnounceRequest parameters)
         {
             return parameters.Uploaded;
         }
@@ -88,14 +115,14 @@ namespace MonoTorrent.Tracker
         private Random r = new Random(1000);
 
         public CustomListener Listener;
-        public Tracker Tracker;
+        public TrackerServer Tracker;
 
         public List<PeerDetails> Peers;
         public List<Trackable> Trackables;
 
         public TrackerTestRig()
         {
-            Tracker = new MonoTorrent.Tracker.Tracker();
+            Tracker = new TrackerServer();
             Listener = new CustomListener();
             Tracker.RegisterListener(Listener);
 

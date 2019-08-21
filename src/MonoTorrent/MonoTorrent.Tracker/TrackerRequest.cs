@@ -1,5 +1,5 @@
 //
-// RequestParameters.cs
+// TrackerRequest.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
@@ -35,38 +35,33 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {
-    public abstract class RequestParameters : EventArgs
+    public abstract class TrackerRequest : EventArgs
     {
-        protected internal static readonly string FailureKey = "failure reason";
-        protected internal static readonly string WarningKey = "warning message";
-
-        private IPAddress remoteAddress;
-        private NameValueCollection parameters;
-        private BEncodedDictionary response;
+        protected internal static readonly BEncodedString FailureKey = "failure reason";
+        protected internal static readonly BEncodedString WarningKey = "warning message";
 
         public abstract bool IsValid { get; }
-        
-        public NameValueCollection Parameters
-        {
-            get { return parameters; }
-        }
 
-        public BEncodedDictionary Response
-        {
-            get { return response; }
-        }
+        /// <summary>
+        /// The raw (url-encoded) key/value pairs from the original query string
+        /// </summary>
+        public NameValueCollection Parameters { get; }
 
-        public IPAddress RemoteAddress
-        {
-            get { return remoteAddress; }
-            protected set { remoteAddress = value; }
-        }
+        /// <summary>
+        /// The BEncodedDictionary which will be sent back to the client who initiated this request
+        /// </summary>
+        public BEncodedDictionary Response { get; }
 
-        protected RequestParameters(NameValueCollection parameters, IPAddress address)
+        /// <summary>
+        /// The IPAddress for the remote client who initiated this request.
+        /// </summary>
+        public IPAddress RemoteAddress { get; protected set; }
+
+        protected TrackerRequest(NameValueCollection parameters, IPAddress remoteAddress)
         {
-            this.parameters = parameters;
-            remoteAddress = address;
-            response = new BEncodedDictionary();
+            Parameters = parameters;
+            RemoteAddress = remoteAddress;
+            Response = new BEncodedDictionary();
         }
     }
 }

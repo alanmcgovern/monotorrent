@@ -151,9 +151,9 @@ namespace MonoTorrent.Tracker.Listeners
         {
             UdpTrackerMessage m;
             BEncodedDictionary dict = Handle(getCollection(announceMessage), remotePeer.Address, false);
-            if (dict.ContainsKey(RequestParameters.FailureKey))
+            if (dict.ContainsKey(TrackerRequest.FailureKey))
             {
-                m = new ErrorMessage(announceMessage.TransactionId, dict[RequestParameters.FailureKey].ToString());
+                m = new ErrorMessage(announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString());
             }
             else
             {
@@ -217,9 +217,9 @@ namespace MonoTorrent.Tracker.Listeners
 
             UdpTrackerMessage m;
             byte[] data;
-            if (val.ContainsKey(RequestParameters.FailureKey))
+            if (val.ContainsKey(TrackerRequest.FailureKey))
             {
-                m = new ErrorMessage(scrapeMessage.TransactionId, val[RequestParameters.FailureKey].ToString());
+                m = new ErrorMessage(scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString());
             }
             else
             {

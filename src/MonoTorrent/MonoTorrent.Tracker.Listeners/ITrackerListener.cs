@@ -36,7 +36,7 @@ namespace MonoTorrent.Tracker.Listeners
     /// </summary>
     public interface ITrackerListener : IListener
     {
-        event EventHandler<ScrapeParameters> ScrapeReceived;
-        event EventHandler<AnnounceParameters> AnnounceReceived;
+        event EventHandler<TrackerScrapeRequest> ScrapeReceived;
+        event EventHandler<AnnounceRequest> AnnounceReceived;
     }
 }

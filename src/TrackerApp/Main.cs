@@ -89,14 +89,14 @@ namespace SampleTracker
 
     class MySimpleTracker
     {
-        Tracker tracker;
+        TrackerServer tracker;
         TorrentFolderWatcher watcher;
         const string TORRENT_DIR = "Torrents";
 
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
-            tracker = new Tracker();
+            tracker = new TrackerServer();
             tracker.AllowUnregisteredTorrents = true;
 
             var httpEndpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Any, 10000);

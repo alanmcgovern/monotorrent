@@ -54,7 +54,7 @@ namespace MonoTorrent.Tracker
             this.dictionaryKey = dictionaryKey;
         }
 
-        internal Peer(AnnounceParameters par, object dictionaryKey)
+        internal Peer(AnnounceRequest par, object dictionaryKey)
         {
             this.dictionaryKey = dictionaryKey;
             Update(par);
@@ -170,7 +170,7 @@ namespace MonoTorrent.Tracker
             return dictionaryKey.GetHashCode();
         }
 
-        internal void Update(AnnounceParameters parameters)
+        internal void Update(AnnounceRequest parameters)
         {
             DateTime now = DateTime.Now;
             double elapsedTime = (now - lastAnnounceTime).TotalSeconds;
@@ -195,9 +195,9 @@ namespace MonoTorrent.Tracker
             BEncodedNumber encPort = new BEncodedNumber(ClientAddress.Port);
 
             BEncodedDictionary dictionary = new BEncodedDictionary();
-            dictionary.Add(Tracker.PeerIdKey, encPeerId);
-            dictionary.Add(Tracker.Ip, encAddress);
-            dictionary.Add(Tracker.Port, encPort);
+            dictionary.Add(TrackerServer.PeerIdKey, encPeerId);
+            dictionary.Add(TrackerServer.Ip, encAddress);
+            dictionary.Add(TrackerServer.Port, encPort);
             return dictionary;
         }
         private byte[] GenerateCompactPeersEntry()

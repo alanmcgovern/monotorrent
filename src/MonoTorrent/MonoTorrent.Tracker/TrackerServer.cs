@@ -1,5 +1,5 @@
 //
-// Tracker.cs
+// TrackerServer.cs
 //
 // Authors:
 //   Gregor Burger burger.gregor@gmail.com
@@ -37,7 +37,7 @@ using MonoTorrent.Tracker.Listeners;
 
 namespace MonoTorrent.Tracker
 {
-    public class Tracker : IEnumerable<SimpleTorrentManager>, IDisposable
+    public class TrackerServer : IEnumerable<SimpleTorrentManager>, IDisposable
     {
         #region Static BEncodedStrings
 
@@ -150,13 +150,13 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// Creates a new tracker
         /// </summary>
-        public Tracker()
+        public TrackerServer()
             : this (null)
         {
 
         }
 
-        public Tracker(BEncodedString trackerId)
+        public TrackerServer(BEncodedString trackerId)
         {
             allowNonCompact = true;
             allowScrape = true;
@@ -255,11 +255,11 @@ namespace MonoTorrent.Tracker
             return Listeners.Contains (listener);
         }
 
-        private void ListenerReceivedAnnounce(object sender, AnnounceParameters e)
+        private void ListenerReceivedAnnounce(object sender, AnnounceRequest e)
         {
             if (disposed)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The tracker has been shut down");
+                e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"The tracker has been shut down");
                 return;
             }
 
@@ -278,7 +278,7 @@ namespace MonoTorrent.Tracker
                     }
                     else
                     {
-                        e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The requested torrent is not registered with this tracker");
+                        e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"The requested torrent is not registered with this tracker");
                         return;
                     }
                 }
@@ -288,7 +288,7 @@ namespace MonoTorrent.Tracker
             // bail out
             if (!AllowNonCompact && !e.HasRequestedCompact)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not support non-compact responses");
+                e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"This tracker does not support non-compact responses");
                 return;
             }
 
@@ -305,36 +305,36 @@ namespace MonoTorrent.Tracker
                 manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact);
             }
 
-            e.Response.Add(Tracker.IntervalKey, new BEncodedNumber((int)AnnounceInterval.TotalSeconds));
-            e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int)MinAnnounceInterval.TotalSeconds));
-            e.Response.Add(Tracker.TrackerIdKey, trackerId); // FIXME: Is this right?
-            e.Response.Add(Tracker.CompleteKey, new BEncodedNumber(manager.Complete));
-            e.Response.Add(Tracker.IncompleteKey, new BEncodedNumber(manager.Incomplete));
-            e.Response.Add(Tracker.DownloadedKey, new BEncodedNumber(manager.Downloaded));
+            e.Response.Add (IntervalKey, new BEncodedNumber((int)AnnounceInterval.TotalSeconds));
+            e.Response.Add (MinIntervalKey, new BEncodedNumber((int)MinAnnounceInterval.TotalSeconds));
+            e.Response.Add (TrackerIdKey, trackerId); // FIXME: Is this right?
+            e.Response.Add (CompleteKey, new BEncodedNumber(manager.Complete));
+            e.Response.Add (IncompleteKey, new BEncodedNumber(manager.Incomplete));
+            e.Response.Add (DownloadedKey, new BEncodedNumber(manager.Downloaded));
 
             //FIXME is this the right behaivour 
             //if (par.TrackerId == null)
             //    par.TrackerId = "monotorrent-tracker";
         }
 
-        private void ListenerReceivedScrape(object sender, ScrapeParameters e)
+        private void ListenerReceivedScrape(object sender, TrackerScrapeRequest e)
         {
             if (disposed)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The tracker has been shut down");
+                e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"The tracker has been shut down");
                 return;
             }
 
             monitor.ScrapeReceived();
             if (!AllowScrape)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not allow scraping");
+                e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"This tracker does not allow scraping");
                 return;
             }
 
             if (e.InfoHashes.Count == 0)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"You must specify at least one infohash when scraping this tracker");
+                e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"You must specify at least one infohash when scraping this tracker");
                 return;
             }
             List<SimpleTorrentManager> managers = new List<SimpleTorrentManager>();
