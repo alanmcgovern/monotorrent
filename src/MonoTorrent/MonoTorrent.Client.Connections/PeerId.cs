@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
         internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        internal IConnection Connection { get; set; }
+        internal IConnection Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         public int HashFails => Peer.TotalHashFails;
         internal List<int> IsAllowedFastPieces { get; set; }
         public bool IsChoking { get; internal set; }
-        public bool IsConnected => Connection != null;
+        public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }
         public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public int IsRequestingPiecesCount { get; internal set; }
@@ -139,11 +139,11 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerId(Peer peer, TorrentManager manager)
+        internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
         {
+            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
             Peer = peer ?? throw new ArgumentNullException(nameof (peer));
             TorrentManager = manager;
-
 
             SuggestedPieces = new List<int>();
             AmChoking = true;
@@ -170,8 +170,7 @@ namespace MonoTorrent.Client
                 return;
 
             Disposed = true;
-            Connection?.SafeDispose ();
-            Connection = null;
+            Connection.SafeDispose ();
         }
 
         internal PeerMessage Dequeue()
@@ -198,17 +197,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        public override bool Equals(object obj)
-        {
-            PeerId id = obj as PeerId;
-            return id == null ? false : Peer.Equals(id.Peer);
-        }
-
-        public override int GetHashCode()
-        {
-            return Peer.ConnectionUri.GetHashCode();
-        }
-        
         internal int QueueLength
         {
             get { return sendQueue.Count; }

@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.PiecePicking
             rarest.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
             peers = new List<PeerId>();
             for (int i = 0; i < 5; i++)
-                peers.Add(new PeerId(new Peer(new string((char)(i + 'a'), 20), new Uri("ipv4://aaa")), rig.Manager));
+                peers.Add(new PeerId(new Peer(new string((char)(i + 'a'), 20), new Uri("ipv4://aaa")), rig.Manager, NullConnection.Incoming));
 
             for (int i = 0; i < rig.Manager.Bitfield.Length; i++)
             {
