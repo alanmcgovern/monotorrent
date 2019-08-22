@@ -248,7 +248,7 @@ namespace MonoTorrent.Client
                     handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
                     handshake.Handle(id);
 
-                    id.TorrentManager.HandlePeerConnected(id, Direction.Outgoing);
+                    id.TorrentManager.HandlePeerConnected(id);
 
                     // If there are any pending messages, send them otherwise set the queue
                     // processing as finished.
@@ -331,8 +331,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                id.TorrentManager.RaisePeerDisconnected(
-                    new PeerConnectionEventArgs (id.TorrentManager, id, Direction.None, message));
+                id.TorrentManager.RaisePeerDisconnected(new PeerConnectionEventArgs (id.TorrentManager, id));
             }
 
             id.Dispose ();
@@ -380,7 +379,7 @@ namespace MonoTorrent.Client
                 // Baseline the time the last block was received
                 id.LastBlockReceived.Restart ();
 
-                id.TorrentManager.HandlePeerConnected(id, Direction.Incoming);
+                id.TorrentManager.HandlePeerConnected(id);
 
                 // We've sent our handshake so begin our looping to receive incoming message
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, id);

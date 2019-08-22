@@ -612,7 +612,7 @@ namespace MonoTorrent.Client
         
         internal void RaisePeerDisconnected(PeerConnectionEventArgs args)
         {
-			Mode.HandlePeerDisconnected(args.PeerID);
+            Mode.HandlePeerDisconnected(args.Peer);
             Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerDisconnected, this, args);
         }
 
@@ -742,12 +742,12 @@ namespace MonoTorrent.Client
 
         #endregion Private Methods
 
-        internal void HandlePeerConnected(PeerId id, Direction direction)
+        internal void HandlePeerConnected(PeerId id)
         {
             // The only message sent/received so far is the Handshake message.
             // The current mode decides what additional messages need to be sent.
-			Mode.HandlePeerConnected(id, direction);
-            RaisePeerConnected(new PeerConnectionEventArgs(this, id, direction));
+            Mode.HandlePeerConnected(id);
+            RaisePeerConnected(new PeerConnectionEventArgs(this, id));
         }
     }
 }

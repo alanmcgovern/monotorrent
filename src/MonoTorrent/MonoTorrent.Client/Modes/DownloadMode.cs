@@ -44,11 +44,11 @@ namespace MonoTorrent.Client
             state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
         }
 
-        public override void HandlePeerConnected(PeerId id, Direction direction)
+        public override void HandlePeerConnected(PeerId id)
         {
             if (!ShouldConnect(id))
                 this.Manager.Engine.ConnectionManager.CleanupSocket (id);
-            base.HandlePeerConnected(id, direction);
+            base.HandlePeerConnected(id);
         }
 
         public override bool ShouldConnect(Peer peer)

@@ -411,7 +411,7 @@ namespace MonoTorrent.Client
                 SetAmInterestedStatus(id, true);
         }
 
-        public virtual void HandlePeerConnected(PeerId id, Direction direction)
+        public virtual void HandlePeerConnected(PeerId id)
         {
             MessageBundle bundle = new MessageBundle();
 
