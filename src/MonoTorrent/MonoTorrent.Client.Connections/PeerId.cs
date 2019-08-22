@@ -59,7 +59,6 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private List<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
-        private TorrentManager torrentManager;
 
         #endregion Member Variables
 

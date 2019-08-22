@@ -120,9 +120,9 @@ namespace MonoTorrent.Client
             var stoppedState = rig.Manager.WaitForState(TorrentState.Stopped);
 
             await rig.Manager.StartAsync();
-            Assert.IsTrue(hashingState.Wait(5000000), "Started");
+            Assert.IsTrue(hashingState.Wait(5000), "Started");
             await rig.Manager.StopAsync();
-            Assert.IsTrue(stoppedState.Wait(5000000), "Stopped");
+            Assert.IsTrue(stoppedState.Wait(5000), "Stopped");
         }
 
         [Test]

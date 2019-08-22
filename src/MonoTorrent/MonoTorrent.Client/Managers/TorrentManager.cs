@@ -45,8 +45,8 @@ namespace MonoTorrent.Client
         #region Events
 
         /// <summary>
-        /// This asynchronous event is raised whenever a new incoming, or outgoing, connection has
-        /// successfully completed the handshake process and has been fully established.
+        /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
+        /// has successfully completed the handshake process and has been fully established.
         /// </summary>
         public event EventHandler<PeerConnectedEventArgs> PeerConnected;
 
@@ -56,7 +56,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<PeerDisconnectedEventArgs> PeerDisconnected;
 
-        internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
+        /// <summary>
+        /// This asynchronous event is raised when an outgoing connection to a peer
+        /// could not be established.
+        /// </summary>
+        public event EventHandler<ConnectionAttemptFailedEventArgs> ConnectionAttemptFailed;
 
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
@@ -650,21 +654,14 @@ namespace MonoTorrent.Client
         }
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
-        {
-            // Whenever we have a state change, we need to make sure that we flush the buffers.
-            // For example, Started->Paused, Started->Stopped, Downloading->Seeding etc should all
-            // flush to disk.
-            Toolbox.RaiseAsyncEvent<TorrentStateChangedEventArgs>(TorrentStateChanged, this, e);
-        }
+            => Toolbox.RaiseAsyncEvent(TorrentStateChanged, this, e);
 
         /// <summary>
         /// Raise the connection attempt failed event
         /// </summary>
         /// <param name="args"></param>
-        internal void RaiseConnectionAttemptFailed(PeerConnectionFailedEventArgs args)
-        {
-            Toolbox.RaiseAsyncEvent<PeerConnectionFailedEventArgs>(this.ConnectionAttemptFailed, this, args);
-        }
+        internal void RaiseConnectionAttemptFailed(ConnectionAttemptFailedEventArgs args)
+            => Toolbox.RaiseAsyncEvent(ConnectionAttemptFailed, this, args);
 
         internal void UpdateLimiters ()
         {
