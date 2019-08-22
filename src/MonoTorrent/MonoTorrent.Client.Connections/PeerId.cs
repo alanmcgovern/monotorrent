@@ -117,22 +117,7 @@ namespace MonoTorrent.Client
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
         internal List<int> SuggestedPieces { get; }
-
-        internal TorrentManager TorrentManager
-        {
-            get { return torrentManager; }
-            set
-            {
-                torrentManager = value;
-                if (value != null)
-                {
-                    Engine = value.Engine;
-                    if(value.HasMetadata)
-                        BitField = new BitField(value.Torrent.Pieces.Count);
-                }
-            }
-        }
-
+        internal TorrentManager TorrentManager { get; }
         public Uri Uri => Peer.ConnectionUri;
 
         #endregion Properties
@@ -142,8 +127,12 @@ namespace MonoTorrent.Client
         internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException (nameof (connection));
-            Peer = peer ?? throw new ArgumentNullException(nameof (peer));
-            TorrentManager = manager;
+            Peer = peer ?? throw new ArgumentNullException (nameof (peer));
+            TorrentManager = manager ?? throw new ArgumentNullException (nameof (manager));
+
+            Engine = manager.Engine;
+            if(TorrentManager.HasMetadata)
+                BitField = new BitField(TorrentManager.Torrent.Pieces.Count);
 
             SuggestedPieces = new List<int>();
             AmChoking = true;

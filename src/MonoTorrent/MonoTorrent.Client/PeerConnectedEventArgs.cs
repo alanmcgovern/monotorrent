@@ -31,9 +31,9 @@ using MonoTorrent.Client.Listeners;
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// Provides the data needed to handle a PeerConnection event
+    /// Used by the <see cref="TorrentManager.PeerConnected"/> event
     /// </summary>
-    public class PeerConnectionEventArgs : TorrentEventArgs
+    public sealed class PeerConnectedEventArgs : TorrentEventArgs
     {
         /// <summary>
         /// <see cref="Direction.Incoming"/> if the connection was received by the <see cref="IPeerListener"/> associated
@@ -43,12 +43,12 @@ namespace MonoTorrent.Client
         public Direction Direction => Peer.Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
 
         /// <summary>
-        /// The session tracking the peer's connection.
+        /// The object which will track the current session with this peer.
         /// </summary>
         public PeerId Peer { get; }
 
-        internal PeerConnectionEventArgs (TorrentManager manager, PeerId id)
-            : base (manager)
+        internal PeerConnectedEventArgs (PeerId id)
+            : base (id.TorrentManager)
         {
             Peer = id;
         }

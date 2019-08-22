@@ -44,9 +44,17 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        public event EventHandler<PeerConnectionEventArgs> PeerConnected;
+        /// <summary>
+        /// This asynchronous event is raised whenever a new incoming, or outgoing, connection has
+        /// successfully completed the handshake process and has been fully established.
+        /// </summary>
+        public event EventHandler<PeerConnectedEventArgs> PeerConnected;
 
-        public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
+        /// <summary>
+        /// This asynchronous event is raised whenever an established connection has been
+        /// closed.
+        /// </summary>
+        public event EventHandler<PeerDisconnectedEventArgs> PeerDisconnected;
 
         internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
 
@@ -605,15 +613,15 @@ namespace MonoTorrent.Client
             return count;
         }
         
-        internal void RaisePeerConnected(PeerConnectionEventArgs args)
+        internal void RaisePeerConnected(PeerConnectedEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerConnected, this, args);
+            Toolbox.RaiseAsyncEvent<PeerConnectedEventArgs>(PeerConnected, this, args);
         }
         
-        internal void RaisePeerDisconnected(PeerConnectionEventArgs args)
+        internal void RaisePeerDisconnected(PeerDisconnectedEventArgs args)
         {
             Mode.HandlePeerDisconnected(args.Peer);
-            Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerDisconnected, this, args);
+            Toolbox.RaiseAsyncEvent<PeerDisconnectedEventArgs>(PeerDisconnected, this, args);
         }
 
         internal void RaisePeersFound(PeersAddedEventArgs args)
@@ -746,8 +754,8 @@ namespace MonoTorrent.Client
         {
             // The only message sent/received so far is the Handshake message.
             // The current mode decides what additional messages need to be sent.
+            RaisePeerConnected(new PeerConnectedEventArgs(id));
             Mode.HandlePeerConnected(id);
-            RaisePeerConnected(new PeerConnectionEventArgs(this, id));
         }
     }
 }
