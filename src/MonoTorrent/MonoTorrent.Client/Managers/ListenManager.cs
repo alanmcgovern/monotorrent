@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
 
-                    Engine.ConnectionManager.ProcessFreshConnection(id);
+                    Engine.ConnectionManager.ProcessNewOutgoingConnection(id);
                     return;
                 }
 
