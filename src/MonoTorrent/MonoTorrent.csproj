@@ -23,7 +23,12 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(Configuration)' == 'Release' " DependsOnTargets="GitVersion" >
+  <!-- Restore success is in the .nuget.g.props file generated as part of msbuild /t:Restore. We do not -->
+  <!-- want this logic to run if restore hasn't been executed as the 'GitVersion' target won't exist.   -->
+  <Target Name="SetAssemblyVersion"
+          BeforeTargets="GetAssemblyVersion"
+          Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' "
+          DependsOnTargets="GitVersion">
     <PropertyGroup>
       <MonoTorrentFileVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
       <MonoTorrentInformationalVersion>$(MonoTorrentFileVersion)-$(GitBranch)+$(GitCommit)</MonoTorrentInformationalVersion>
