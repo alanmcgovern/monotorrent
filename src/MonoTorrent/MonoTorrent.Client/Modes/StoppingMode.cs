@@ -27,7 +27,9 @@
 //
 
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
@@ -36,8 +38,12 @@ namespace MonoTorrent.Client
 {
 	class StoppingMode : Mode
 	{
-		List<Task> announcingTasks = new List<Task>();
-		Task stopDiskManagerTask;
+		List<Task> AnnouncingTasks { get; }
+		CancellationTokenSource Cancellation { get; }
+		Task StopDiskManagerTask { get; }
+		TaskCompletionSource<object> StoppedCompletionSource { get; }
+
+		internal Task StoppedTask => StoppedCompletionSource.Task;
 
 		public override TorrentState State
 		{
@@ -47,11 +53,18 @@ namespace MonoTorrent.Client
 		public StoppingMode(TorrentManager manager)
 			: base(manager)
 		{
+			AnnouncingTasks = new List<Task>();
+			Cancellation = new CancellationTokenSource (TimeSpan.FromMinutes (1));
+			StoppedCompletionSource = new TaskCompletionSource<object> ();
+
+			// Ensure the TCS *always* gets completed.
+			Cancellation.Token.Register (() => StoppedCompletionSource.TrySetCanceled ());
+
 			CanAcceptConnections = false;
 			ClientEngine engine = manager.Engine;
 
 			if (manager.TrackerManager.CurrentTracker != null && manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
-				announcingTasks.Add(manager.TrackerManager.Announce(TorrentEvent.Stopped));
+				AnnouncingTasks.Add(manager.TrackerManager.Announce(TorrentEvent.Stopped));
 
 			foreach (PeerId id in manager.Peers.ConnectedPeers)
 				if (id.Connection != null)
@@ -59,7 +72,7 @@ namespace MonoTorrent.Client
 
 			manager.Peers.ClearAll();
 
-			stopDiskManagerTask = engine.DiskManager.CloseFilesAsync (manager);
+			StopDiskManagerTask = engine.DiskManager.CloseFilesAsync (manager);
 
 			manager.Monitor.Reset();
 			manager.PieceManager.Reset();
@@ -74,8 +87,10 @@ namespace MonoTorrent.Client
 
 		public override void Tick(int counter)
 		{
-			if (announcingTasks.TrueForAll (t => t.IsCompleted) && stopDiskManagerTask.IsCompleted)
+			if (AnnouncingTasks.TrueForAll (t => t.IsCompleted) && StopDiskManagerTask.IsCompleted) {
 				Manager.Mode = new StoppedMode(Manager);
+				StoppedCompletionSource.TrySetResult (null);
+			}
 		}
 	}
 }

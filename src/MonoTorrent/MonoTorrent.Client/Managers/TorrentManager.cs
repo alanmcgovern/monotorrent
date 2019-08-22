@@ -557,12 +557,11 @@ namespace MonoTorrent.Client
                 return;
             }
 
-			if (Mode is StoppingMode)
-                return;
-
             if (State != TorrentState.Stopped) {
                 Engine.DhtEngine.PeersFound -= DhtPeersFound;
-				Mode = new StoppingMode(this);
+                var stoppingMode = new StoppingMode(this);
+                Mode = stoppingMode;
+                await stoppingMode.StoppedTask;
             }
         }
 
