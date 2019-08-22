@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
+using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages.Standard;
@@ -77,27 +77,26 @@ namespace MonoTorrent.Client
                     e.Connection.Dispose();
                     return;
                 }
-                var id = new PeerId(e.Peer, e.TorrentManager, e.Connection);
-                id.LastMessageSent.Restart ();
-                id.LastMessageReceived.Restart ();
+
                 if (!e.Connection.IsIncoming) {
+                    var id = new PeerId(e.Peer, e.TorrentManager, e.Connection);
+                    id.LastMessageSent.Restart ();
+                    id.LastMessageReceived.Restart ();
+
                     Engine.ConnectionManager.ProcessFreshConnection(id);
                     return;
                 }
 
-                Logger.Log(id.Connection, "ListenManager - ConnectionReceived");
+                Logger.Log(e.Connection, "ListenManager - ConnectionReceived");
 
                 var skeys = new List<InfoHash>();
                 for (int i = 0; i < Engine.Torrents.Count; i++)
                     skeys.Add(Engine.Torrents[i].InfoHash);
 
-                var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.AllowedEncryption, Engine.Settings, HandshakeMessage.HandshakeLength, skeys.ToArray());
-                id.Decryptor = result.Decryptor;
-                id.Encryptor = result.Encryptor;
-
+                var result = await EncryptorFactory.CheckIncomingConnectionAsync(e.Connection, e.Peer.AllowedEncryption, Engine.Settings, HandshakeMessage.HandshakeLength, skeys.ToArray());
                 var handshake = new HandshakeMessage();
                 handshake.Decode(result.InitialData, 0, result.InitialData.Length);
-                if (!await HandleHandshake(id, handshake))
+                if (!await HandleHandshake(e.Peer, e.Connection, handshake, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose();
             }
             catch
@@ -106,14 +105,14 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task<bool> HandleHandshake(PeerId id, HandshakeMessage message)
+        async Task<bool> HandleHandshake(Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager man = null;
             if (message.ProtocolString != VersionInfo.ProtocolStringV100)
                 return false;
 
             // If we're forcing encrypted connections and this is in plain-text, close it!
-            if (id.Encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.HasFlag(EncryptionTypes.PlainText))
+            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.HasFlag(EncryptionTypes.PlainText))
                 return false;
 
             for (int i = 0; i < Engine.Torrents.Count; i++)
@@ -130,8 +129,11 @@ namespace MonoTorrent.Client
             if (!man.Mode.CanAcceptConnections)
                 return false;
 
-            id.Peer.PeerId = message.PeerId;
-            id.TorrentManager = man;
+            peer.PeerId = message.PeerId;
+            var id = new PeerId (peer, man, connection) {
+                Decryptor = decryptor,
+                Encryptor = encryptor
+            };
 
             message.Handle(id);
             Logger.Log(id.Connection, "ListenManager - Handshake successful handled");

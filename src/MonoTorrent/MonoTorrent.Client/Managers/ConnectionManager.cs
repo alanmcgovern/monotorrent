@@ -331,7 +331,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                id.TorrentManager.RaisePeerDisconnected(new PeerConnectionEventArgs (id.TorrentManager, id));
+                id.TorrentManager.RaisePeerDisconnected(new PeerDisconnectedEventArgs (id));
             }
 
             id.Dispose ();

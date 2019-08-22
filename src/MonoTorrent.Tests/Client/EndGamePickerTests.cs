@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
 
             for (int i = 2; i < pieces[0].BlockCount; i++)
             {
-                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null, NullConnection.Incoming));
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), rig.Manager, NullConnection.Incoming));
                 pieces[0].Blocks[i].Received = true;
             }
             
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client
         public void ReceivedPiecesAreNotRequested()
         {
             for (int i = 2; i < pieces[0].BlockCount; i++) {
-                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null, NullConnection.Incoming));
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), rig.Manager, NullConnection.Incoming));
                 pieces[0].Blocks[i].Received = true;
             }
 
