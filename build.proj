@@ -6,6 +6,8 @@
 
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Out Condition=" '$(Out)' == '' ">$(MSBuildThisFileDirectory)out</Out>
+
+    <MSBuildCommonProperties>$(MSBuildCommonProperties);Deterministic=true</MSBuildCommonProperties>
   </PropertyGroup>
 
   <ItemGroup>
