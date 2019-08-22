@@ -59,10 +59,10 @@ namespace MonoTorrent.Client.PiecePicking
             manager.ChangePicker ((standardPicker = new StandardPicker()), rig.Manager.Bitfield, rig.Manager.Torrent.Files);
             this.picker = manager.Picker;
 
-            peer = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://BLAH")), rig.Manager);
+            peer = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://BLAH")), rig.Manager, NullConnection.Incoming);
             for (int i = 0; i < 20; i++)
             {
-                PeerId p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("ipv4://" + i)), rig.Manager);
+                PeerId p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("ipv4://" + i)), rig.Manager, NullConnection.Incoming);
                 p.SupportsFastPeer = true;
                 peers.Add(p);
             }

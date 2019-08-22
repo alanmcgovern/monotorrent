@@ -70,12 +70,12 @@ namespace MonoTorrent.Client
                 new Piece(36, rig.Torrent.PieceLength, rig.Torrent.Size)
             });
 
-            id = new PeerId(new Peer("peerid", new Uri("ipv4://weburl.com")), rig.Manager);
+            id = new PeerId(new Peer("peerid", new Uri("ipv4://weburl.com")), rig.Manager, NullConnection.Incoming);
             id.Encryptor = id.Decryptor = PlainTextEncryption.Instance;
             id.IsChoking = false;
             id.BitField.SetAll(false);
 
-            other = new PeerId(new Peer("other", new Uri("ipv4://other.com")), rig.Manager);
+            other = new PeerId(new Peer("other", new Uri("ipv4://other.com")), rig.Manager, NullConnection.Incoming);
             other.Decryptor = other.Encryptor = PlainTextEncryption.Instance;
             other.IsChoking = false;
             other.BitField.SetAll(false);
@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
 
             for (int i = 2; i < pieces[0].BlockCount; i++)
             {
-                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null, NullConnection.Incoming));
                 pieces[0].Blocks[i].Received = true;
             }
             
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client
         public void ReceivedPiecesAreNotRequested()
         {
             for (int i = 2; i < pieces[0].BlockCount; i++) {
-                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null, NullConnection.Incoming));
                 pieces[0].Blocks[i].Received = true;
             }
 

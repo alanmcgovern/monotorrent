@@ -77,8 +77,7 @@ namespace MonoTorrent.Client
                     e.Connection.Dispose();
                     return;
                 }
-                var id = new PeerId(e.Peer, e.TorrentManager);
-                id.Connection = e.Connection;
+                var id = new PeerId(e.Peer, e.TorrentManager, e.Connection);
                 id.LastMessageSent.Restart ();
                 id.LastMessageReceived.Restart ();
                 if (!e.Connection.IsIncoming) {

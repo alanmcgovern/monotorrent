@@ -172,8 +172,7 @@ namespace MonoTorrent.Client
                     connection.Dispose ();
                     manager.Peers.BusyPeers.Add (peer);
                 } else {
-                    PeerId id = new PeerId (peer, manager);
-                    id.Connection = connection;
+                    PeerId id = new PeerId (peer, manager, connection);
                     id.LastMessageReceived.Restart ();
                     id.LastMessageSent.Restart ();
 
