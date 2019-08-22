@@ -26,8 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-using System;
+using MonoTorrent.Client.Listeners;
 
 namespace MonoTorrent.Client
 {
@@ -36,54 +35,22 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PeerConnectionEventArgs : TorrentEventArgs
     {
-        #region Member Variables
-
-        public PeerId PeerID
-        {
-            get { return this.peerConnectionId; }
-        }
-        private PeerId peerConnectionId;
-
+        /// <summary>
+        /// <see cref="Direction.Incoming"/> if the connection was received by the <see cref="IPeerListener"/> associated
+        /// with the active <see cref="ClientEngine"/>, otherwise <see cref="Direction.Outgoing"/> if the
+        /// connection was created by the active <see cref="TorrentManager"/>
+        /// </summary>
+        public Direction Direction => Peer.Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
 
         /// <summary>
-        /// The peer event that just happened
+        /// The session tracking the peer's connection.
         /// </summary>
-        public Direction ConnectionDirection
+        public PeerId Peer { get; }
+
+        internal PeerConnectionEventArgs (TorrentManager manager, PeerId id)
+            : base (manager)
         {
-            get { return this.connectionDirection; }
+            Peer = id;
         }
-        private Direction connectionDirection;
-
-        private String message;
-
-        /// <summary>
-        /// Any message that might be associated with this event
-        /// </summary>
-        public String Message
-        {
-            get { return message; }
-        }
-
-        #endregion
-
-
-        #region Constructors
-
-
-        internal PeerConnectionEventArgs( TorrentManager manager, PeerId id, Direction direction )
-            : this( manager, id, direction, "" )
-        {
-
-        }
-
-
-        internal PeerConnectionEventArgs( TorrentManager manager, PeerId id, Direction direction, String message )
-            : base( manager )
-        {
-            this.peerConnectionId = id;
-            this.connectionDirection = direction;
-            this.message = message;
-        }
-        #endregion
     }
 }

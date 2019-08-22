@@ -80,7 +80,7 @@ namespace MonoTorrent.Client
 			engine.Stop();
 		}
 
-		public override void HandlePeerConnected(PeerId id, Direction direction)
+		public override void HandlePeerConnected(PeerId id)
 		{
 			Manager.Engine.ConnectionManager.CleanupSocket (id);
 		}
