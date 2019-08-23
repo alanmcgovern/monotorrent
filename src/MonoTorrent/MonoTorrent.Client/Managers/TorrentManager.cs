@@ -414,14 +414,33 @@ namespace MonoTorrent.Client
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public async Task HashCheckAsync(bool autoStart)
         {
+            if (!HasMetadata)
+                throw new TorrentException ("A hashcheck cannot be performed if the TorrentManager was created with a Magnet link and the metadata has not been downloaded.");
+
             await ClientEngine.MainLoop;
             if (!Mode.CanHashCheck)
                 throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
 
             CheckRegisteredAndDisposed();
-            this.StartTime = DateTime.Now;
-            Mode = new HashingMode(this, autoStart);
-            Engine.Start();
+            StartTime = DateTime.Now;
+
+            var hashingMode = new HashingMode (this);
+            Mode = hashingMode;
+            try {
+                await hashingMode.WaitForHashingToComplete ();
+                HashChecked = true;
+                if (autoStart) {
+                    await StartAsync ();
+                } else {
+                    Mode = new StoppedMode (this);
+                }
+            } catch {
+                HashChecked = false;
+                // If the hash check was cancelled (by virtue of a new Mode being set on the TorrentManager) then
+                // we don't want to overwrite the Mode which was set.
+                if (Mode == hashingMode)
+                    Mode = new StoppedMode (this);
+            }
         }
 
         public async Task MoveFileAsync (TorrentFile file, string path)
