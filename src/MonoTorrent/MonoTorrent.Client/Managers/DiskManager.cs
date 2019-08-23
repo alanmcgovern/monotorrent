@@ -150,8 +150,8 @@ namespace MonoTorrent.Client
                 readMonitor.Tick ();
                 writeMonitor.Tick ();
 
-                WriteLimiter.UpdateChunks (engine.Settings.MaxWriteRate, WriteRate);
-                ReadLimiter.UpdateChunks (engine.Settings.MaxReadRate, ReadRate);
+                WriteLimiter.UpdateChunks (engine.Settings.MaxDiskWriteRate, WriteRate);
+                ReadLimiter.UpdateChunks (engine.Settings.MaxDiskReadRate, ReadRate);
 
                 ProcessBufferedIO ();
 
