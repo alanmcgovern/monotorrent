@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < Engine.Torrents.Count; i++)
                     skeys.Add(Engine.Torrents[i].InfoHash);
 
-                var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.Encryption, Engine.Settings, HandshakeMessage.HandshakeLength, skeys.ToArray());
+                var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.AllowedEncryption, Engine.Settings, HandshakeMessage.HandshakeLength, skeys.ToArray());
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
 

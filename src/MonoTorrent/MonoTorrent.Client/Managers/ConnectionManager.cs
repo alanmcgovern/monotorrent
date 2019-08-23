@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
             try
             {
                 // Increase the count of the "open" connections
-                var result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, id.Peer.Encryption, engine.Settings, id.TorrentManager.InfoHash);
+                var result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, engine.Settings, id.TorrentManager.InfoHash);
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
 
@@ -263,8 +263,8 @@ namespace MonoTorrent.Client
             }
             catch
             {
-                id.Peer.Encryption &= ~EncryptionTypes.RC4Full;
-                id.Peer.Encryption &= ~EncryptionTypes.RC4Header;
+                id.Peer.AllowedEncryption &= ~EncryptionTypes.RC4Full;
+                id.Peer.AllowedEncryption &= ~EncryptionTypes.RC4Header;
                 throw;
             }
         }

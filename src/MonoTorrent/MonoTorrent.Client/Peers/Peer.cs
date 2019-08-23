@@ -50,10 +50,13 @@ namespace MonoTorrent.Client
         public Uri ConnectionUri { get; }
 
         /// <summary>
-        /// The types of encryption the peer supports. Initially this is 'All', and we remove 'RC4' and 'RC4' header from
-        /// the list if we fail to establish an encrypted connection, so the next time we try to connect we use plain text.
+        /// The types of encryption the peer supports. Initially this is set to <see cref="EncryptionTypes.All"/>.
+        /// <see cref="EncryptionTypes.RC4Full"/> and <see cref="EncryptionTypes.RC4Header"/> different methods
+        /// are removed if a connection cannot be established using that method. For example if PlainText connections
+        /// appear to be rejected by the remote peer, it will be removed from the set so only encrypted connections
+        /// will be tried during the next connection attempt.
         /// </summary>
-        public EncryptionTypes Encryption { get; internal set; }
+        public EncryptionTypes AllowedEncryption { get; internal set; }
 
         /// <summary>
         /// The number of times we failed to establish an outgoing connection to this peer.
@@ -95,11 +98,11 @@ namespace MonoTorrent.Client
 
         }
 
-        public Peer(BEncodedString peerId, Uri connectionUri, EncryptionTypes encryption)
+        public Peer(BEncodedString peerId, Uri connectionUri, EncryptionTypes allowedEncryption)
         {
             PeerId = peerId ?? throw new ArgumentNullException (nameof (peerId));
             ConnectionUri = connectionUri ?? throw new ArgumentNullException(nameof (connectionUri));
-            Encryption = encryption;
+            AllowedEncryption = allowedEncryption;
         }
 
         public override bool Equals(object obj)
