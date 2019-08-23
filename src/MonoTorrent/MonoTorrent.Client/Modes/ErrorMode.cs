@@ -59,33 +59,19 @@ namespace MonoTorrent.Client
 
     class ErrorMode : Mode
     {
-        public override TorrentState State
-        {
-            get { return TorrentState.Error; }
-        }
+        public override TorrentState State => TorrentState.Error;
 
         public ErrorMode(TorrentManager manager)
             : base(manager)
         {
             CanAcceptConnections = false;
-            CloseConnections();
         }
 
         public override void Tick(int counter)
         {
             Manager.Monitor.Reset();
-            CloseConnections();
-        }
-
-        void CloseConnections()
-        {
-            foreach (PeerId id in Manager.Peers.ConnectedPeers)
+            foreach (var id in Manager.Peers.ConnectedPeers.ToArray ())
                 Manager.Engine.ConnectionManager.CleanupSocket (id);
-        }
-
-        public override void HandlePeerConnected (PeerId id)
-        {
-            Manager.Engine.ConnectionManager.CleanupSocket (id);
         }
     }
 }
