@@ -59,20 +59,13 @@ namespace MonoTorrent.Client.Encryption
         public void Teardown()
         {
             conn.Dispose();
-            rig.Engine.StopAll();
 
-            for (int i = 0; i < 1000; i++)
-            {
-                System.Threading.Thread.Sleep(4);
-                bool result = true;
-                foreach (var torrent in rig.Engine.Torrents)
-                    result &= torrent.State == TorrentState.Stopped;
+            if (!rig.Engine.StopAll().Wait (4000))
+                Assert.Fail ("The engine failed to stop");
 
-                if (result)
-                    return;
-            }
-
-            Assert.Fail ("Timed out waiting for handle");
+            foreach (var torrent in rig.Engine.Torrents)
+                if (torrent.State != TorrentState.Stopped)
+                    Assert.Fail ("One of the torrent managers didn't enter the stopped state");
         }
 
         [OneTimeTearDown]

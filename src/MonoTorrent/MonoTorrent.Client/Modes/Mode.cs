@@ -413,13 +413,17 @@ namespace MonoTorrent.Client
 
         public virtual void HandlePeerConnected(PeerId id)
         {
-            MessageBundle bundle = new MessageBundle();
+            if (CanAcceptConnections) {
+                MessageBundle bundle = new MessageBundle();
 
-            AppendBitfieldMessage(id, bundle);
-            AppendExtendedHandshake(id, bundle);
-            AppendFastPieces(id, bundle);
+                AppendBitfieldMessage(id, bundle);
+                AppendExtendedHandshake(id, bundle);
+                AppendFastPieces(id, bundle);
 
-            id.Enqueue(bundle);
+                id.Enqueue(bundle);
+            } else {
+               Manager.Engine.ConnectionManager.CleanupSocket (id);
+            }
         }
 
         public virtual void HandlePeerDisconnected(PeerId id)

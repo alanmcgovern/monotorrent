@@ -473,6 +473,9 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
+            if (Mode is StoppingMode)
+                throw new TorrentException("The manager cannot be restarted while it is in the Stopping state.");
+
             CheckRegisteredAndDisposed();
 
             Engine.Start();
@@ -573,7 +576,10 @@ namespace MonoTorrent.Client
                 Engine.DhtEngine.PeersFound -= DhtPeersFound;
                 var stoppingMode = new StoppingMode(this);
                 Mode = stoppingMode;
-                await stoppingMode.StoppedTask;
+
+                await stoppingMode.WaitForStoppingToComplete ();
+                Mode = new StoppedMode (this);
+                Engine.Stop();
             }
         }
 
