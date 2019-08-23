@@ -518,8 +518,13 @@ namespace MonoTorrent.Client
             // before attempting to start again
             if (!HashChecked)
             {
+                // Deliberately do not wait for the entire hash check to complete in this scenario.
+                // Here we want to Task returned by this method to be 'Complete' as soon as the
+                // TorrentManager moves to any state that is not Stopped. The idea is that 'StartAsync'
+                // will simply kick off 'Hashing' mode, or 'MetadataMode', or 'InitialSeeding' mode
+                // and then the user is free to call StopAsync etc whenever they want.
                 if (State != TorrentState.Hashing)
-                    await HashCheckAsync(true);
+                    _ = HashCheckAsync(true);
                 return;
             }
 
