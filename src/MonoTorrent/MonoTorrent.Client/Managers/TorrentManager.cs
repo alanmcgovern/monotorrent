@@ -304,7 +304,7 @@ namespace MonoTorrent.Client
                     await ClientEngine.MainLoop;
 
                     Peers.BusyPeers.Clear ();
-                    int count = await AddPeersAsync (e.Peers);
+                    int count = await AddPeersAsync (e.Peers, true);
                     RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
                 }
             };
@@ -639,7 +639,7 @@ namespace MonoTorrent.Client
         public Task<int> AddPeersAsync(IEnumerable<Peer> peers)
             => AddPeersAsync(peers, false);
 
-        public async Task<int> AddPeersAsync (IEnumerable <Peer> peers, bool fromTrackers)
+        async Task<int> AddPeersAsync (IEnumerable <Peer> peers, bool fromTrackers)
         {
             Check.Peers (peers);
             if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
