@@ -50,6 +50,9 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
+        internal static readonly TimeSpan AnnounceInternal = TimeSpan.FromMinutes (10);
+        internal static readonly TimeSpan MinimumAnnounceInterval = TimeSpan.FromMinutes (3);
+
         #region Events
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;

@@ -82,15 +82,51 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AddPeers_PrivateTorrent ()
+        public async Task AddPeers_Dht ()
+        {
+            var dht = new ManualDhtEngine ();
+            await rig.Engine.RegisterDhtAsync (dht);
+
+            var tcs = new TaskCompletionSource<DhtPeersAdded> ();
+            var manager = rig.Engine.Torrents[0];
+            manager.PeersFound += (o, e) => {
+                if (e is DhtPeersAdded args)
+                    tcs.TrySetResult (args);
+            };
+
+            dht.RaisePeersFound (manager.InfoHash, new [] { rig.CreatePeer (false).Peer });
+            var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
+            Assert.AreEqual (1, result.NewPeers, "#2");
+            Assert.AreEqual (0, result.ExistingPeers, "#3");
+            Assert.AreEqual (1, manager.Peers.AvailablePeers.Count, "#4");
+        }
+
+        [Test]
+        public async Task AddPeers_Dht_Private ()
         {
             // You can't manually add peers to private torrents
-            var dict = (BEncodedDictionary)rig.TorrentDict["info"];
-            dict["private"] = (BEncodedString)"1";
-            Torrent t = Torrent.Load(rig.TorrentDict);
-            TorrentManager manager = new TorrentManager(t, "path", new TorrentSettings());
+            var editor = new TorrentEditor (rig.TorrentDict) {
+                CanEditSecureMetadata = true,
+                Private = true
+            };
 
-            Assert.ThrowsAsync<InvalidOperationException>(() => manager.AddPeerAsync(new Peer("id", new Uri("tcp:://whatever.com"))));
+            var manager = new TorrentManager(editor.ToTorrent (), "path", new TorrentSettings());
+            await rig.Engine.Register (manager);
+
+            var dht = new ManualDhtEngine ();
+            await rig.Engine.RegisterDhtAsync (dht);
+
+            var tcs = new TaskCompletionSource<DhtPeersAdded> ();
+            manager.PeersFound += (o, e) => {
+                if (e is DhtPeersAdded args)
+                    tcs.TrySetResult (args);
+            };
+
+            dht.RaisePeersFound (manager.InfoHash, new [] { rig.CreatePeer (false).Peer });
+            var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
+            Assert.AreEqual (0, result.NewPeers, "#2");
+            Assert.AreEqual (0, result.ExistingPeers, "#3");
+            Assert.AreEqual (0, manager.Peers.AvailablePeers.Count, "#4");
         }
 
         [Test]
