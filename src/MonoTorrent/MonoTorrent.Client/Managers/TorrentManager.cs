@@ -612,10 +612,13 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        public async Task<bool> AddPeerAsync (Peer peer)
+        public Task<bool> AddPeerAsync(Peer peer)
+            => AddPeerAsync(peer, false);
+
+        internal async Task<bool> AddPeerAsync (Peer peer, bool fromTrackers)
         {
             Check.Peer (peer);
-            if (HasMetadata && Torrent.IsPrivate)
+            if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
             await ClientEngine.MainLoop;
@@ -633,17 +636,20 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        public async Task<int> AddPeersAsync (IEnumerable <Peer> peers)
+        public Task<int> AddPeersAsync(IEnumerable<Peer> peers)
+            => AddPeersAsync(peers, false);
+
+        public async Task<int> AddPeersAsync (IEnumerable <Peer> peers, bool fromTrackers)
         {
             Check.Peers (peers);
-            if (HasMetadata && Torrent.IsPrivate)
+            if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
             await ClientEngine.MainLoop;
 
             int count = 0;
             foreach (Peer p in peers)
-                count += await AddPeerAsync(p) ? 1 : 0;
+                count += await AddPeerAsync(p, fromTrackers) ? 1 : 0;
             return count;
         }
         
