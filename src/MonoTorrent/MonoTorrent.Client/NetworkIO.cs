@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
                     receiveQueue.Enqueue (new QueuedIO (connection, buffer, offset, Math.Min (ChunkLength, remaining), rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait(false);
                 } else {
-                    transferred = await connection.ReceiveAsync(buffer, offset, remaining).ConfigureAwait(false); ;
+                    transferred = await connection.ReceiveAsync(buffer, offset, remaining).ConfigureAwait(false);
                 }
 
                 if (transferred == 0)

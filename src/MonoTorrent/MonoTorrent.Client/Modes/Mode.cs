@@ -481,6 +481,10 @@ namespace MonoTorrent.Client
         {
             PeerId id;
 
+            if (Manager.CanUseDht && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Dht.DhtEngine.AnnounceInternal)) {
+                Manager.DhtAnnounce ();
+            }
+
             //Execute iniitial logic for individual peers
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
                 Manager.Monitor.Tick();

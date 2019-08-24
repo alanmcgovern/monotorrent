@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -36,7 +37,6 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -82,7 +82,6 @@ namespace MonoTorrent.Client
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
-		private bool dhtInitialised;
         #endregion Member Variables
 
 
@@ -142,6 +141,16 @@ namespace MonoTorrent.Client
         /// The number of peers that this torrent instance is connected to
         /// </summary>
         public int OpenConnections => Peers.ConnectedPeers.Count;
+
+        /// <summary>
+        /// The time the last announce to the DHT occurred
+        /// </summary>
+        public DateTime LastDhtAnnounce { get; private set; }
+
+        /// <summary>
+        /// Internal timer used to trigger Dht announces every <see cref="MonoTorrent.Dht.DhtEngine.AnnounceInternal"/> seconds.
+        /// </summary>
+        internal Stopwatch LastDhtAnnounceTimer { get; private set; }
 
         /// <summary>
         /// 
@@ -292,6 +301,7 @@ namespace MonoTorrent.Client
             this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
             this.InactivePeerManager = new InactivePeerManager(this);
+            this.LastDhtAnnounceTimer = new Stopwatch ();
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager();
             this.TrackerManager = new TrackerManager(new TrackerRequestFactory (this), announces);
@@ -509,7 +519,7 @@ namespace MonoTorrent.Client
             if (!HasMetadata)
             {
                 Mode = new MetadataMode(this, torrentSave);
-                StartDHT();
+                DhtAnnounce ();
                 return;
             }
 
@@ -548,42 +558,34 @@ namespace MonoTorrent.Client
             }
 
             Engine.Broadcast(this);
-
-            StartDHT();
+            DhtAnnounce();
 
             StartTime = DateTime.Now;
             PieceManager.Reset();
         }
 
-        private void StartDHT()
+        /// <summary>
+        /// Perform an announce using the <see cref="ClientEngine.DhtEngine"/> to retrieve more peers. The
+        /// returned task completes as soon as the Dht announce begins.
+        /// </summary>
+        /// <returns></returns>
+        public async Task DhtAnnounceAsync()
         {
-			if (dhtInitialised)
-				return;
-			dhtInitialised = true;
-            Engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
- 
-            // First get some peers
-            Engine.DhtEngine.GetPeers(InfoHash);
+            await ClientEngine.MainLoop;
+            DhtAnnounce ();
+        }
 
-            // Second, get peers every 10 minutes (if we need them)
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
-                // Torrent is no longer active
-                if (!Mode.CanAcceptConnections)
-                    return false;
-
-                // Only use DHT if it hasn't been (temporarily?) disabled in settings
-                if (CanUseDht && Peers.AvailablePeers.Count < Settings.MaxConnections)
-                {
-                    Engine.DhtEngine.Announce(InfoHash, Engine.Settings.ListenPort);
-                    //announce ever done a get peers task
-                    //engine.DhtEngine.GetPeers(InfoHash);
-                }
-                return true;
-            });
+        internal void DhtAnnounce ()
+        {
+            if (CanUseDht && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > MonoTorrent.Dht.DhtEngine.MinimumAnnounceInterval)) {
+                LastDhtAnnounce = DateTime.UtcNow;
+                LastDhtAnnounceTimer.Restart ();
+                Engine.DhtEngine.GetPeers(InfoHash);
+            }
         }
 
         /// <summary>
-        /// Stops the TorrentManager
+        /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped.
         /// </summary>
         public async Task StopAsync()
         {
@@ -597,7 +599,6 @@ namespace MonoTorrent.Client
             }
 
             if (State != TorrentState.Stopped) {
-                Engine.DhtEngine.PeersFound -= DhtPeersFound;
                 var stoppingMode = new StoppingMode(this);
                 Mode = stoppingMode;
 
@@ -734,16 +735,6 @@ namespace MonoTorrent.Client
             picker = new RarestFirstPicker(picker);
             picker = new PriorityPicker(picker);
             return picker;
-        }
-
-        private async void DhtPeersFound(object o, PeersFoundEventArgs e)
-        {
-            if (InfoHash != e.InfoHash)
-                return;
-
-            await ClientEngine.MainLoop;
-            int count = await AddPeersAsync(e.Peers);
-            RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
         }
 
         public void LoadFastResume(FastResume data)

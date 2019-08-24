@@ -326,31 +326,47 @@ namespace MonoTorrent.Client
 
             if (DhtEngine != null) {
                 DhtEngine.StateChanged -= DhtEngineStateChanged;
+                DhtEngine.PeersFound -= DhtEnginePeersFound;
                 await DhtEngine.StopAsync();
                 DhtEngine.Dispose();
             }
             DhtEngine = engine ?? new NullDhtEngine();
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
+            DhtEngine.PeersFound += DhtEnginePeersFound;
         }
 
-        void DhtEngineStateChanged (object o, EventArgs e)
+        async void DhtEnginePeersFound (object o, PeersFoundEventArgs e)
+        {
+            await MainLoop;
+
+            var manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+            if (manager.CanUseDht) {
+                var successfullyAdded = await manager.AddPeersAsync (e.Peers);
+                manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
+            } else {
+                // This is only used for unit testing to validate that even if the DHT engine
+                // finds peers for a private torrent, we will not add them to the manager.
+                manager.RaisePeersFound (new DhtPeersAdded (manager, 0, 0));
+            }
+        }
+
+        async void DhtEngineStateChanged (object o, EventArgs e)
         {
             if (DhtEngine.State != DhtState.Ready)
                 return;
 
-            MainLoop.Queue (delegate {
-                foreach (TorrentManager manager in torrents) {
-                    if (!manager.CanUseDht)
-                        continue;
+            await MainLoop;
+            foreach (TorrentManager manager in torrents) {
+                if (!manager.CanUseDht)
+                    continue;
 
-                    if (Listener is ISocketListener listener)
-                        DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
-                    else
-                        DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
-                    DhtEngine.GetPeers (manager.InfoHash);
-                }
-            });
+                if (Listener is ISocketListener listener)
+                    DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
+                else
+                    DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
+                DhtEngine.GetPeers (manager.InfoHash);
+            }
         }
 
         public async Task StartAll()
