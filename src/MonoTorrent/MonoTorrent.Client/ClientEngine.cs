@@ -413,8 +413,8 @@ namespace MonoTorrent.Client
 
             if (tickCount % 2 == 0)
             {
-                downloadLimiter.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
-                uploadLimiter.UpdateChunks(Settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
+                downloadLimiter.UpdateChunks(Settings.MaximumDownloadSpeed, TotalDownloadSpeed);
+                uploadLimiter.UpdateChunks(Settings.MaximumUploadSpeed, TotalUploadSpeed);
             }
 
             ConnectionManager.CancelPendingConnects();

@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MaxHalfOpenConnections
         {
-            get { return this.engine.Settings.GlobalMaxHalfOpenConnections; }
+            get { return this.engine.Settings.MaximumHalfOpenConnections; }
         }
 
 
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MaxOpenConnections
         {
-            get { return this.engine.Settings.GlobalMaxConnections; }
+            get { return this.engine.Settings.MaximumConnections; }
         }
 
         LinkedList<TorrentManager> TorrentManagers {
