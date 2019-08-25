@@ -32,6 +32,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 
@@ -123,6 +124,54 @@ namespace MonoTorrent.Client
             };
 
             dht.RaisePeersFound (manager.InfoHash, new [] { rig.CreatePeer (false).Peer });
+            var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
+            Assert.AreEqual (0, result.NewPeers, "#2");
+            Assert.AreEqual (0, result.ExistingPeers, "#3");
+            Assert.AreEqual (0, manager.Peers.AvailablePeers.Count, "#4");
+        }
+
+        [Test]
+        public async Task AddPeers_LocalPeerDiscovery ()
+        {
+            var localPeer = new ManualLocalPeerListener ();
+            rig.Engine.RegisterLocalPeerListener (localPeer);
+
+            var tcs = new TaskCompletionSource<LocalPeersAdded> ();
+            var manager = rig.Engine.Torrents[0];
+            manager.PeersFound += (o, e) => {
+                if (e is LocalPeersAdded args)
+                    tcs.TrySetResult (args);
+            };
+
+            localPeer.RaisePeerFound (manager.InfoHash, rig.CreatePeer (false).Uri);
+            var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
+            Assert.AreEqual (1, result.NewPeers, "#2");
+            Assert.AreEqual (0, result.ExistingPeers, "#3");
+            Assert.AreEqual (1, manager.Peers.AvailablePeers.Count, "#4");
+        }
+
+        [Test]
+        public async Task AddPeers_LocalPeerDiscovery_Private ()
+        {
+            // You can't manually add peers to private torrents
+            var editor = new TorrentEditor (rig.TorrentDict) {
+                CanEditSecureMetadata = true,
+                Private = true
+            };
+
+            var manager = new TorrentManager(editor.ToTorrent (), "path", new TorrentSettings());
+            await rig.Engine.Register (manager);
+
+            var localPeer = new ManualLocalPeerListener ();
+            rig.Engine.RegisterLocalPeerListener (localPeer);
+
+            var tcs = new TaskCompletionSource<LocalPeersAdded> ();
+            manager.PeersFound += (o, e) => {
+                if (e is LocalPeersAdded args)
+                    tcs.TrySetResult (args);
+            };
+
+            localPeer.RaisePeerFound (manager.InfoHash, rig.CreatePeer (false).Uri);
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
