@@ -89,12 +89,16 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public ExtendedHandshakeMessage()
             : base(Support.MessageId)
         {
-            supports = new ExtensionSupports(ExtensionMessage.SupportedMessages);
+            supports = new ExtensionSupports();
         }
 
-        public ExtendedHandshakeMessage(int metadataSize)
-            : this ()
+        public ExtendedHandshakeMessage(bool privateTorrent, int metadataSize)
+            : base(Support.MessageId)
         {
+            supports = new ExtensionSupports(ExtensionMessage.SupportedMessages);
+            if (privateTorrent)
+                supports.Remove (PeerExchangeMessage.Support);
+
             this.metadataSize = metadataSize;
         }
         #endregion
