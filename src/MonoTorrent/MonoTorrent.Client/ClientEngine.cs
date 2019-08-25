@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private LocalPeerManager localPeerManager;
-        private LocalPeerListener localPeerListener;
+        private ILocalPeerListener localPeerListener;
         private int tickCount;
         private List<TorrentManager> torrents;
         private ReadOnlyCollection<TorrentManager> torrentsReadonly;
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
 
         public bool LocalPeerSearchEnabled
         {
-            get { return localPeerListener.Status != ListenerStatus.NotListening; }
+            get { return localPeerListener != null && localPeerListener.Status != ListenerStatus.NotListening; }
             set
             {
                 if (value && !LocalPeerSearchEnabled)
@@ -196,10 +196,10 @@ namespace MonoTorrent.Client
             uploadLimiter = new RateLimiter();
             this.PeerId = GeneratePeerId();
 
-            localPeerListener = new LocalPeerListener();
-            localPeerListener.PeerFound += HandleLocalPeerFound;
-            localPeerManager = new LocalPeerManager();
+            RegisterLocalPeerListener (new LocalPeerListener ());
             LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
+
+            localPeerManager = new LocalPeerManager();
             listenManager.Register(listener);
         }
 
@@ -267,13 +267,14 @@ namespace MonoTorrent.Client
                     return;
 
                 // The torrent is marked as private, so we can't add random people
-                if (manager.HasMetadata && manager.Torrent.IsPrivate)
-                    return;
-
-                // Add new peer to matched Torrent
-                var peer = new Peer ("", args.Uri);
-                int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
-                manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
+                if (manager.HasMetadata && manager.Torrent.IsPrivate) {
+                    manager.RaisePeersFound (new LocalPeersAdded (manager, 0, 0));
+                } else {
+                    // Add new peer to matched Torrent
+                    var peer = new Peer ("", args.Uri);
+                    int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
+                    manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
+                }
             } catch {
                 // We don't care if the peer couldn't be added (for whatever reason)
             }
@@ -334,6 +335,23 @@ namespace MonoTorrent.Client
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
+        }
+
+        internal void RegisterLocalPeerListener (ILocalPeerListener listener)
+        {
+            var wasListening = LocalPeerSearchEnabled;
+            if (localPeerListener != null) {
+                localPeerListener.PeerFound -= HandleLocalPeerFound;
+                localPeerListener.Stop ();
+            }
+
+            localPeerListener = listener;
+
+            if (localPeerListener != null) {
+                localPeerListener.PeerFound += HandleLocalPeerFound;
+                if (wasListening && localPeerListener.Status != ListenerStatus.Listening)
+                    localPeerListener.Start ();
+            }
         }
 
         async void DhtEnginePeersFound (object o, PeersFoundEventArgs e)
