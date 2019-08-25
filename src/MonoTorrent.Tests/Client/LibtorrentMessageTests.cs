@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
         [Test]
         public void HandshakeSupportsTest()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
+            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage(false, 1234);
             byte[] encoded = m.Encode();
 
             Assert.AreEqual(m.ByteLength, encoded.Length, "#1");
@@ -73,9 +73,21 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void HandshakeSupportsTest_Private()
+        {
+            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage(true, 123);
+            byte[] encoded = m.Encode();
+
+            Assert.AreEqual(m.ByteLength, encoded.Length, "#1");
+            Assert.IsFalse(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(PeerExchangeMessage.Support.Name); }), "#2");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTChat.Support.Name); }), "#3");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTMetadata.Support.Name); }), "#4");
+        }
+
+        [Test]
         public void HandshakeDecodeTest()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
+            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage(false, 123);
             byte[] data = m.Encode();
             ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage)PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
 

@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
             SendMessage(new HandshakeMessage(rig.Manager.Torrent.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, true), connection);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(rig.TorrentDict.LengthInBytes());
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(false, rig.TorrentDict.LengthInBytes());
             exHand.Supports.Add(LTMetadata.Support);
             SendMessage(exHand, connection);
 
@@ -156,7 +156,7 @@ namespace MonoTorrent.Client
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
             SendMessage(new HandshakeMessage(rig.Manager.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, true), connection);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(rig.Torrent.Metadata.Length);
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(false, rig.Torrent.Metadata.Length);
             exHand.Supports.Add(LTMetadata.Support);
             SendMessage(exHand, connection);
 
