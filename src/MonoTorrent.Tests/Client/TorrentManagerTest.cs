@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
         public async Task AddPeers_LocalPeerDiscovery ()
         {
             var localPeer = new ManualLocalPeerListener ();
-            rig.Engine.RegisterLocalPeerListener (localPeer);
+            await rig.Engine.RegisterLocalPeerDiscoveryAsync (localPeer);
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
             var manager = rig.Engine.Torrents[0];
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client
             await rig.Engine.Register (manager);
 
             var localPeer = new ManualLocalPeerListener ();
-            rig.Engine.RegisterLocalPeerListener (localPeer);
+            await rig.Engine.RegisterLocalPeerDiscoveryAsync (localPeer);
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
             manager.PeersFound += (o, e) => {

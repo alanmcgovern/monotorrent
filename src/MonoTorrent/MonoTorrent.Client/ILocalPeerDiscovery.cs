@@ -1,5 +1,5 @@
 ﻿//
-// ManualLocalPeerListener.cs
+// ILocalPeerDiscovery.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,36 +28,22 @@
 
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
-    class ManualLocalPeerListener : ILocalPeerDiscovery
+    public interface ILocalPeerDiscovery : ISocketListener
     {
-        public ListenerStatus Status { get; private set; }
+        /// <summary>
+        /// This event is raised whenever a peer is discovered.
+        /// </summary>
+        event EventHandler<LocalPeerFoundEventArgs> PeerFound;
 
-        public IPEndPoint EndPoint { get; set; }
-
-        public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
-        public event EventHandler<EventArgs> StatusChanged;
-
-        public Task Announce (InfoHash infoHash)
-            => Task.CompletedTask;
-
-        public void RaisePeerFound (InfoHash infoHash, Uri uri)
-            => PeerFound?.Invoke (this, new LocalPeerFoundEventArgs (infoHash, uri));
-
-        public void Start ()
-        {
-            Status = ListenerStatus.Listening;
-            StatusChanged?.Invoke (this, EventArgs.Empty);
-        }
-
-        public void Stop ()
-        {
-            Status = ListenerStatus.NotListening;
-            StatusChanged?.Invoke (this, EventArgs.Empty);
-        }
+        /// <summary>
+        /// Send an announce request for this InfoHash to all available network adapters.
+        /// </summary>
+        /// <param name="infoHash"></param>
+        /// <returns></returns>
+        Task Announce (InfoHash infoHash);
     }
 }

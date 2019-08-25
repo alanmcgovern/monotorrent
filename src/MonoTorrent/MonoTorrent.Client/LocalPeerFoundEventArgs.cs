@@ -29,9 +29,9 @@
 
 using System;
 
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Client
 {
-    class LocalPeerFoundEventArgs : EventArgs
+    public class LocalPeerFoundEventArgs : EventArgs
     {
         public InfoHash InfoHash { get; }
         public Uri Uri { get; }

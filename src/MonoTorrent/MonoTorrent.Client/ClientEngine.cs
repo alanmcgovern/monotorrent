@@ -75,8 +75,6 @@ namespace MonoTorrent.Client
 
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
-        private LocalPeerManager localPeerManager;
-        private ILocalPeerListener localPeerListener;
         private int tickCount;
         private List<TorrentManager> torrents;
         private ReadOnlyCollection<TorrentManager> torrentsReadonly;
@@ -99,17 +97,7 @@ namespace MonoTorrent.Client
 
         public IPeerListener Listener { get; }
 
-        public bool LocalPeerSearchEnabled
-        {
-            get { return localPeerListener != null && localPeerListener.Status != ListenerStatus.NotListening; }
-            set
-            {
-                if (value && !LocalPeerSearchEnabled)
-                    localPeerListener.Start();
-                else if (!value && LocalPeerSearchEnabled)
-                    localPeerListener.Stop();
-            }
-        }
+        public ILocalPeerDiscovery LocalPeerDiscovery { get;  private set; }
 
         public bool IsRunning { get; private set; }
 
@@ -196,11 +184,10 @@ namespace MonoTorrent.Client
             uploadLimiter = new RateLimiter();
             this.PeerId = GeneratePeerId();
 
-            RegisterLocalPeerListener (new LocalPeerListener ());
-            LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
-
-            localPeerManager = new LocalPeerManager();
             listenManager.Register(listener);
+
+            if (SupportsLocalPeerDiscovery)
+                RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
         }
 
         #endregion
@@ -251,8 +238,7 @@ namespace MonoTorrent.Client
                 this.DhtEngine.Dispose();
                 this.DiskManager.Dispose();
                 this.listenManager.Dispose();
-                this.localPeerListener.Stop();
-                this.localPeerManager.Dispose();
+                this.LocalPeerDiscovery.Stop();
             });
         }
 
@@ -337,20 +323,24 @@ namespace MonoTorrent.Client
             DhtEngine.PeersFound += DhtEnginePeersFound;
         }
 
-        internal void RegisterLocalPeerListener (ILocalPeerListener listener)
+        public async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
         {
-            var wasListening = LocalPeerSearchEnabled;
-            if (localPeerListener != null) {
-                localPeerListener.PeerFound -= HandleLocalPeerFound;
-                localPeerListener.Stop ();
+            await MainLoop;
+            RegisterLocalPeerDiscovery (localPeerDiscovery);
+        }
+
+        internal void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
+        {
+            if (LocalPeerDiscovery != null) {
+                LocalPeerDiscovery.PeerFound -= HandleLocalPeerFound;
+                LocalPeerDiscovery.Stop ();
             }
 
-            localPeerListener = listener;
+            LocalPeerDiscovery = localPeerDiscovery ?? new NullLocalPeerDiscovery ();
 
-            if (localPeerListener != null) {
-                localPeerListener.PeerFound += HandleLocalPeerFound;
-                if (wasListening && localPeerListener.Status != ListenerStatus.Listening)
-                    localPeerListener.Start ();
+            if (LocalPeerDiscovery != null) {
+                LocalPeerDiscovery.PeerFound += HandleLocalPeerFound;
+                LocalPeerDiscovery.Start ();
             }
         }
 
@@ -434,12 +424,6 @@ namespace MonoTorrent.Client
 
 
         #region Private/Internal methods
-
-        internal void Broadcast(TorrentManager manager)
-        {
-            if (LocalPeerSearchEnabled)
-                localPeerManager.Broadcast(manager);
-        }
 
         private void LogicTick()
         {

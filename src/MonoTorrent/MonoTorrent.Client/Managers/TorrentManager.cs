@@ -91,6 +91,8 @@ namespace MonoTorrent.Client
 
         public bool CanUseDht => Settings.UseDht && (Torrent == null || !Torrent.IsPrivate);
 
+        public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate);
+
         public bool Complete => this.Bitfield.AllTrue;
 
         internal RateLimiterGroup DownloadLimiter { get; private set; }
@@ -151,6 +153,16 @@ namespace MonoTorrent.Client
         /// Internal timer used to trigger Dht announces every <see cref="MonoTorrent.Dht.DhtEngine.AnnounceInternal"/> seconds.
         /// </summary>
         internal Stopwatch LastDhtAnnounceTimer { get; private set; }
+
+        /// <summary>
+        /// The time the last announce using Local Peer Discovery occurred
+        /// </summary>
+        public DateTime LastLocalPeerAnnounce { get; private set; }
+
+        /// <summary>
+        /// Internal timer used to trigger Local PeerDiscovery announces every <see cref="LocalPeerDiscovery.AnnounceInternal"/> seconds.
+        /// </summary>
+        internal Stopwatch LastLocalPeerAnnounceTimer { get; private set; }
 
         /// <summary>
         /// 
@@ -302,6 +314,7 @@ namespace MonoTorrent.Client
             this.Monitor = new ConnectionMonitor();
             this.InactivePeerManager = new InactivePeerManager(this);
             this.LastDhtAnnounceTimer = new Stopwatch ();
+            this.LastLocalPeerAnnounceTimer = new Stopwatch ();
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager();
             SetTrackerManager (new TrackerManager(new TrackerRequestFactory (this), announces));
@@ -548,11 +561,22 @@ namespace MonoTorrent.Client
                 Mode = new DownloadMode(this);
             }
 
-            Engine.Broadcast(this);
             DhtAnnounce();
+            await LocalPeerAnnounceAsync ();
 
             StartTime = DateTime.Now;
             PieceManager.Reset();
+        }
+
+        public async Task LocalPeerAnnounceAsync ()
+        {
+            await ClientEngine.MainLoop;
+
+            if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.MinimumAnnounceInternal)) {
+                LastLocalPeerAnnounce = DateTime.Now;
+                LastLocalPeerAnnounceTimer.Restart ();
+                await Engine.LocalPeerDiscovery.Announce (InfoHash);
+            }
         }
 
         /// <summary>

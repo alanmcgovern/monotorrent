@@ -1,10 +1,10 @@
 ﻿//
-// ILocalPeerListener.cs
+// NullLocalPeerDiscovery.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2019 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,11 +28,40 @@
 
 
 using System;
+using System.Net;
+using System.Threading.Tasks;
 
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Client
 {
-    interface ILocalPeerListener : IListener
+    class NullLocalPeerDiscovery : ILocalPeerDiscovery
     {
-        event EventHandler<LocalPeerFoundEventArgs> PeerFound;
+        #pragma warning disable 0067
+        public event EventHandler<LocalPeerFoundEventArgs> PeerFound {
+            add { }
+            remove { }
+        }
+
+        public event EventHandler<EventArgs> StatusChanged {
+            add { }
+            remove { }
+        }
+        #pragma warning restore 0067
+
+
+        public IPEndPoint EndPoint => null;
+        public ListenerStatus Status => ListenerStatus.NotListening;
+
+        public Task Announce (InfoHash infoHash)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Start ()
+        {
+        }
+
+        public void Stop ()
+        {
+        }
     }
 }
