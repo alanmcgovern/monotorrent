@@ -229,6 +229,26 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task AddPeers_Tracker_Private ()
+        {
+            var manager = TestRig.CreatePrivate ();
+            var tracker = new ManualTrackerManager ();
+            manager.SetTrackerManager (tracker);
+
+            var peersTask = new TaskCompletionSource<TrackerPeersAdded> ();
+            manager.PeersFound += (o, e) => {
+                if (e is TrackerPeersAdded args)
+                    peersTask.TrySetResult (args);
+            };
+
+            tracker.RaiseAnnounceComplete (tracker.CurrentTracker, true, new [] { rig.CreatePeer (false, true).Peer, rig.CreatePeer (false, true).Peer });
+
+            var addedArgs = await peersTask.Task.WithTimeout (5000);
+            Assert.AreEqual (2, addedArgs.NewPeers, "#1");
+            Assert.AreEqual (2, manager.Peers.AvailablePeers.Count, "#2");
+        }
+
+        [Test]
         public async Task ReregisterManager()
         {
             var hashingTask = rig.Manager.WaitForState(TorrentState.Stopped);
