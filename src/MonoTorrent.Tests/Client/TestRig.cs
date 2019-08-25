@@ -407,13 +407,15 @@ namespace MonoTorrent.Client
             dict["announce-list"] = announces;
         }
 
-        BEncodedDictionary CreateTorrent(int pieceLength, TorrentFile[] files, string[][] tier)
+        static BEncodedDictionary CreateTorrent(int pieceLength, TorrentFile[] files, string[][] tier)
         {
             BEncodedDictionary dict = new BEncodedDictionary();
             BEncodedDictionary infoDict = new BEncodedDictionary();
 
-            AddAnnounces(dict, tier);
-            AddFiles(infoDict, files);
+            if (tier != null)
+                AddAnnounces(dict, tier);
+
+            AddFiles(infoDict, files, pieceLength);
             if (files.Length == 1)
                 dict["url-list"] = (BEncodedString)(TestWebSeed.ListenerURL + "File1.exe");
             else
@@ -425,9 +427,9 @@ namespace MonoTorrent.Client
             return dict;
         }
 
-        void AddFiles(BEncodedDictionary dict, TorrentFile[] files)
+        static void AddFiles(BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
         {
-            long totalSize = piecelength - 1;
+            long totalSize = pieceLength - 1;
             BEncodedList bFiles = new BEncodedList();
             for (int i = 0; i < files.Length; i++)
             {
@@ -443,8 +445,8 @@ namespace MonoTorrent.Client
 
             dict[new BEncodedString("files")] = bFiles;
             dict[new BEncodedString("name")] = new BEncodedString("test.files");
-            dict[new BEncodedString("piece length")] = new BEncodedNumber(piecelength);
-            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * (totalSize / piecelength)]);
+            dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
+            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * (totalSize / pieceLength)]);
         }
 
         public static TestRig CreateSingleFile()
@@ -517,6 +519,16 @@ namespace MonoTorrent.Client
         #endregion Create standard fake data
 
         #endregion Rig Creation
+
+        internal static TorrentManager CreatePrivate ()
+        {
+            var dict = CreateTorrent (16 * 1024 * 8, Array.Empty<TorrentFile> (), null);
+            var editor = new TorrentEditor (dict) {
+                CanEditSecureMetadata = true,
+                Private = true,
+            };
+            return new TorrentManager (editor.ToTorrent (), "", new TorrentSettings ());
+        }
 
         internal static TestRig CreateSingleFile(int torrentSize, int pieceLength)
         {

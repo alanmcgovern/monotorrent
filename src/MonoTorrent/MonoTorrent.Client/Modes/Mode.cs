@@ -173,17 +173,21 @@ namespace MonoTorrent.Client
 
         protected virtual async void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
         {
-            // Ignore peer exchange messages on private torrents
-            if (id.TorrentManager.Torrent.IsPrivate || !id.TorrentManager.Settings.EnablePeerExchange)
-                return;
+            // Ignore peer exchange messages on private toirrents
+            if (Manager.Torrent.IsPrivate || !Manager.Settings.EnablePeerExchange) {
+                Manager.RaisePeersFound(new PeerExchangeAdded (Manager, 0, 0, id));
+            } else {
+                // If we already have lots of peers, don't process the messages anymore.
+                if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
+                    return;
 
-            // If we already have lots of peers, don't process the messages anymore.
-            if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
-                return;
-
-            var newPeers = Peer.Decode((BEncodedString)message.Added);
-            int count = await id.TorrentManager.AddPeersAsync(newPeers);
-            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAddedEventArgs(id.TorrentManager, count, newPeers.Count, id));
+                var newPeers = Peer.Decode((BEncodedString)message.Added);
+                for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++) {
+                    newPeers[i].IsSeeder = (message.AddedDotF [i] & 0x2) == 0x2;
+                }
+                int count = await Manager.AddPeersAsync(newPeers);
+                Manager.RaisePeersFound(new PeerExchangeAdded (Manager, count, newPeers.Count, id));
+            }
         }
 
         protected virtual void HandleLtChat(PeerId id, LTChat message)
