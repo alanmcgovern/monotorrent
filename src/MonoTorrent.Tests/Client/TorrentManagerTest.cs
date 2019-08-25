@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
@@ -176,6 +177,55 @@ namespace MonoTorrent.Client
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
             Assert.AreEqual (0, manager.Peers.AvailablePeers.Count, "#4");
+        }
+
+        [Test]
+        public async Task AddPeers_PeerExchangeMessage ()
+        {
+            var peer = new byte[] { 192, 168, 0, 1, 100, 0, 192, 168, 0, 2, 101, 0 };
+            var dotF = new byte[] { 0, 1 << 1}; // 0x2 means is a seeder
+            var id = rig.CreatePeer (true, true);
+            id.SupportsLTMessages = true;
+
+            var manager = rig.Manager;
+            var mode = new DownloadMode (manager);
+
+            var peersTask = new TaskCompletionSource<PeerExchangeAdded> ();
+            manager.PeersFound += (o, e) => {
+                if (e is PeerExchangeAdded args)
+                    peersTask.TrySetResult (args);
+            };
+
+            var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
+            mode.HandleMessage (id, exchangeMessage);
+
+            var addedArgs = await peersTask.Task.WithTimeout (5000);
+            Assert.AreEqual (2, addedArgs.NewPeers, "#1");
+            Assert.IsFalse (manager.Peers.AvailablePeers[0].IsSeeder, "#2");
+            Assert.IsTrue (manager.Peers.AvailablePeers[1].IsSeeder, "#3");
+        }
+
+        [Test]
+        public async Task AddPeers_PeerExchangeMessage_Private ()
+        {
+            var peer = new byte[] { 192, 168, 0, 1, 100, 0 };
+            var dotF = new byte[] { 1 << 0 | 1 << 2 }; // 0x1 means supports encryption, 0x2 means is a seeder
+            var id = rig.CreatePeer (true, true);
+            id.SupportsLTMessages = true;
+
+            var manager = TestRig.CreatePrivate ();
+            var mode = new DownloadMode (manager);
+            var peersTask = new TaskCompletionSource<PeerExchangeAdded> ();
+            manager.PeersFound += (o, e) => {
+                if (e is PeerExchangeAdded args)
+                    peersTask.TrySetResult (args);
+            };
+
+            var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
+            mode.HandleMessage (id, exchangeMessage);
+
+            var addedArgs = await peersTask.Task.WithTimeout (5000);
+            Assert.AreEqual (0, addedArgs.NewPeers, "#1");
         }
 
         [Test]
