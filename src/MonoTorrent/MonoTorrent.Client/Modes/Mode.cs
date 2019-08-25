@@ -485,6 +485,10 @@ namespace MonoTorrent.Client
         {
             PeerId id;
 
+            if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.AnnounceInternal)) {
+                _ = Manager.LocalPeerAnnounceAsync ();
+            }
+
             if (Manager.CanUseDht && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Dht.DhtEngine.AnnounceInternal)) {
                 Manager.DhtAnnounce ();
             }
