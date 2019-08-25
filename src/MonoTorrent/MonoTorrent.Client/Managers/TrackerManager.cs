@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Tracker
     /// <summary>
     /// Represents the connection to a tracker that an TorrentManager has
     /// </summary>
-    public class TrackerManager
+    public class TrackerManager : ITrackerManager
     {
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// The amount of time since the most recent Announce request was issued.
         /// </summary>
-        internal TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
+        public TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
 
         #endregion
 
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client.Tracker
         public async Task Announce()
             => await Announce (TorrentEvent.None);
 
-        internal async Task Announce(TorrentEvent clientEvent)
+        public async Task Announce(TorrentEvent clientEvent)
             => await Announce (clientEvent, null);
 
         public async Task Announce(ITracker tracker)

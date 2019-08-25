@@ -199,7 +199,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The tracker connection associated with this TorrentManager
         /// </summary>
-        public TrackerManager TrackerManager { get; private set; }
+        public ITrackerManager TrackerManager { get; private set; }
 
         /// <summary>
         /// The Torrent contained within this TorrentManager
@@ -304,20 +304,11 @@ namespace MonoTorrent.Client
             this.LastDhtAnnounceTimer = new Stopwatch ();
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager();
-            this.TrackerManager = new TrackerManager(new TrackerRequestFactory (this), announces);
+            SetTrackerManager (new TrackerManager(new TrackerRequestFactory (this), announces));
 
             Mode = new StoppedMode(this);            
             CreateRateLimiters();
 
-            TrackerManager.AnnounceComplete += async (o, e) => {
-                if (e.Successful) {
-                    await ClientEngine.MainLoop;
-
-                    Peers.BusyPeers.Clear ();
-                    int count = await AddPeersAsync (e.Peers, true);
-                    RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
-                }
-            };
 
             if (HasMetadata) {
                 foreach (TorrentFile file in Torrent.Files)
@@ -758,6 +749,30 @@ namespace MonoTorrent.Client
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
             return new FastResume(InfoHash, this.Bitfield);
+        }
+
+        internal void SetTrackerManager (ITrackerManager manager)
+        {
+            if (TrackerManager != null) {
+                TrackerManager.AnnounceComplete -= HandleTrackerAnnounceComplete;
+            }
+
+            TrackerManager = manager;
+
+            if (TrackerManager != null) {
+                TrackerManager.AnnounceComplete += HandleTrackerAnnounceComplete;
+            }
+        }
+
+        async void HandleTrackerAnnounceComplete (object o, AnnounceResponseEventArgs e)
+        {
+            if (e.Successful) {
+                await ClientEngine.MainLoop;
+
+                Peers.BusyPeers.Clear ();
+                int count = await AddPeersAsync (e.Peers, true);
+                RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
+            }
         }
 
         async Task VerifyHashState ()
