@@ -446,13 +446,13 @@ namespace MonoTorrent.Client
 
         internal void RaiseCriticalException(CriticalExceptionEventArgs e)
         {
-            Toolbox.RaiseAsyncEvent<CriticalExceptionEventArgs>(CriticalException, this, e); 
+            CriticalException?.InvokeAsync (this, e);
         }
 
 
         internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<StatsUpdateEventArgs>(StatsUpdate, this, args);
+            StatsUpdate?.InvokeAsync (this, args);
         }
 
         internal void Start()

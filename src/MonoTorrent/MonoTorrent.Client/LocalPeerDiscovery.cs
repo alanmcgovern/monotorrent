@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
                     var infoHash = InfoHash.FromHex(hashString.Split (' ').Last ());
                     var uri = new Uri("ipv4://" + result.RemoteEndPoint.Address + ':' + portcheck);
 
-                    PeerFound?.Invoke (this, new LocalPeerFoundEventArgs (infoHash, uri));
+                    PeerFound?.InvokeAsync (this, new LocalPeerFoundEventArgs (infoHash, uri));
                 } catch {
 
                 }

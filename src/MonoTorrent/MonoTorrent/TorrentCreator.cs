@@ -218,7 +218,7 @@ namespace MonoTorrent
                             torrentHashes.AddRange (shaHasher.Hash);
                             shaHasher.Initialize();
                         }
-                        RaiseHashed (new TorrentCreatorEventArgs (file.Path, fileRead, file.Length, overallRead, overallTotal));
+                        Hashed?.InvokeAsync (this, new TorrentCreatorEventArgs (file.Path, fileRead, file.Length, overallRead, overallTotal));
                     }
 
                     md5Hasher?.TransformFinalBlock (buffer, 0, 0);
@@ -255,9 +255,6 @@ namespace MonoTorrent
             if (mappings [0].MD5 != null)
                 infoDict ["md5sum"] = (BEncodedString) mappings [0].MD5;
         }
-
-        void RaiseHashed (TorrentCreatorEventArgs e)
-            => Toolbox.RaiseAsyncEvent (Hashed, this, e);
 
         static BEncodedValue ToFileInfoDict (TorrentFile file)
         {

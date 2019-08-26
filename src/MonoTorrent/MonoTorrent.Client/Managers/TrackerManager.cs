@@ -140,14 +140,14 @@ namespace MonoTorrent.Client.Tracker
 
                     var peers = await tuple.Item2.AnnounceAsync(actualArgs);
                     LastAnnounceSucceeded = true;
-                    Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
+                    AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
                     return;
                 } catch {
                 }
             }
 
             LastAnnounceSucceeded = false;
-            Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (null, false));
+            AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (null, false));
         }
 
         public async Task Scrape()
@@ -166,9 +166,9 @@ namespace MonoTorrent.Client.Tracker
             try {
                 var parameters = RequestFactory.CreateScrape ();
                 await tuple.Item2.ScrapeAsync (parameters);
-                Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, true));
+                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, true));
             } catch {
-                Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, false));
+                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, false));
             }
         }
 

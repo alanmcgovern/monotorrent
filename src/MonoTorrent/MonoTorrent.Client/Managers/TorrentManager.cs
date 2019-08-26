@@ -671,18 +671,18 @@ namespace MonoTorrent.Client
         
         internal void RaisePeerConnected(PeerConnectedEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<PeerConnectedEventArgs>(PeerConnected, this, args);
+            PeerConnected?.InvokeAsync (this, args);
         }
         
         internal void RaisePeerDisconnected(PeerDisconnectedEventArgs args)
         {
             Mode.HandlePeerDisconnected(args.Peer);
-            Toolbox.RaiseAsyncEvent<PeerDisconnectedEventArgs>(PeerDisconnected, this, args);
+            PeerDisconnected?.InvokeAsync (this, args);
         }
 
         internal void RaisePeersFound(PeersAddedEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<PeersAddedEventArgs>(PeersFound, this, args);
+            PeersFound?.InvokeAsync (this, args);
         }
 
         internal void OnPieceHashed(int index, bool hashPassed)
@@ -701,19 +701,18 @@ namespace MonoTorrent.Client
                     connected[i].IsAllowedFastPieces.Remove(index);
             }
 
-            if (PieceHashed != null)
-                Toolbox.RaiseAsyncEvent(PieceHashed, this, new PieceHashedEventArgs (this, index, hashPassed));
+            PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed));
         }
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
-            => Toolbox.RaiseAsyncEvent(TorrentStateChanged, this, e);
+            => TorrentStateChanged?.InvokeAsync (this, e);
 
         /// <summary>
         /// Raise the connection attempt failed event
         /// </summary>
         /// <param name="args"></param>
         internal void RaiseConnectionAttemptFailed(ConnectionAttemptFailedEventArgs args)
-            => Toolbox.RaiseAsyncEvent(ConnectionAttemptFailed, this, args);
+            => ConnectionAttemptFailed?.InvokeAsync (this, args);
 
         internal void UpdateLimiters ()
         {
