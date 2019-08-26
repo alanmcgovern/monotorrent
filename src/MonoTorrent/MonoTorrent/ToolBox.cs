@@ -59,17 +59,9 @@ namespace MonoTorrent
 			return count;
 		}
 
-        public static void RaiseAsyncEvent<T>(EventHandler<T> e, object o, T args)
-            where T : EventArgs
-        {
-            if (e == null)
-                return;
+        public static void InvokeAsync<T>(this EventHandler<T> handler, object o, T args)
+            => ThreadPool.QueueUserWorkItem (state => handler?.Invoke (o, args));
 
-            ThreadPool.QueueUserWorkItem(delegate {
-                if (e != null)
-                    e(o, args);
-            });
-        }
         /// <summary>
         /// Randomizes the contents of the array
         /// </summary>

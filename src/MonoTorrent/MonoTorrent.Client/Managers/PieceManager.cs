@@ -55,17 +55,17 @@ namespace MonoTorrent.Client
 
         internal void RaiseBlockReceived(BlockEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockReceived, args.TorrentManager, args);
+            BlockReceived?.InvokeAsync (args.TorrentManager, args);
         }
 
         internal void RaiseBlockRequested(BlockEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequested, args.TorrentManager, args);
+            BlockRequested?.InvokeAsync (args.TorrentManager, args);
         }
 
         internal void RaiseBlockRequestCancelled(BlockEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequestCancelled, args.TorrentManager, args);
+            BlockRequestCancelled?.InvokeAsync (args.TorrentManager, args);
         }
 
         #endregion Old
