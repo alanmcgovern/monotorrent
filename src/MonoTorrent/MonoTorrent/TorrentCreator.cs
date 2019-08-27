@@ -150,7 +150,7 @@ namespace MonoTorrent
             info ["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
 
-            using (PieceWriter reader = CreateReader ()) {
+            using (IPieceWriter reader = CreateReader ()) {
                 info ["pieces"] = (BEncodedString) CalcPiecesHash (files, reader, token);
 
                 if (files.Count == 1 && files [0].Path == name)
@@ -180,7 +180,7 @@ namespace MonoTorrent
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
-        byte [] CalcPiecesHash (List<TorrentFile> files, PieceWriter writer, CancellationToken token)
+        byte [] CalcPiecesHash (List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
         {
             int bufferRead = 0;
             long fileRead = 0;
@@ -236,19 +236,19 @@ namespace MonoTorrent
             return torrentHashes.ToArray ();
         }
 
-        void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer, string name)
+        void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, IPieceWriter writer, string name)
         {
             BEncodedDictionary info = (BEncodedDictionary) dictionary ["info"];
             List<BEncodedValue> files = mappings.ConvertAll<BEncodedValue> (ToFileInfoDict);
             info.Add ("files", new BEncodedList (files));
         }
 
-        protected virtual PieceWriter CreateReader ()
+        protected virtual IPieceWriter CreateReader ()
         {
             return new DiskWriter ();
         }
 
-        void CreateSingleFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer, string name)
+        void CreateSingleFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, IPieceWriter writer, string name)
         {
             BEncodedDictionary infoDict = (BEncodedDictionary) dictionary ["info"];
             infoDict.Add ("length", new BEncodedNumber (mappings [0].Length));

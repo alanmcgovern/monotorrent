@@ -36,43 +36,48 @@ using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
-    public class ExceptionWriter : PieceWriter
+    public class ExceptionWriter : IPieceWriter
     {
         public bool exist, close, flush, move, read, write;
 
-        public override bool Exists(TorrentFile file)
+        public bool Exists(TorrentFile file)
         {
             if (exist)
                 throw new Exception("exists");
             return true;
         }
 
-        public override void Close(TorrentFile file)
+        public void Close(TorrentFile file)
         {
             if (close)
                 throw new Exception("close");
         }
 
-        public override void Flush(TorrentFile file)
+        public void Dispose ()
+        {
+
+        }
+
+        public void Flush(TorrentFile file)
         {
             if (flush)
                 throw new Exception("flush");
         }
 
-        public override void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move(TorrentFile file, string newPath, bool overwrite)
         {
             if (move)
                 throw new Exception("move");
         }
 
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (read)
                 throw new Exception("read");
             return count;
         }
 
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (write)
                 throw new Exception("write");

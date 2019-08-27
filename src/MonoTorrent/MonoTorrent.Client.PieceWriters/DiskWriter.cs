@@ -32,7 +32,7 @@ using System.IO;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-    public class DiskWriter : PieceWriter
+    public class DiskWriter : IPieceWriter
     {
         private FileStreamBuffer streamsBuffer;
 
@@ -49,26 +49,25 @@ namespace MonoTorrent.Client.PieceWriters
 
         public DiskWriter(int maxOpenFiles)
         {
-            this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
+            streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-        public override void Close(TorrentFile file)
+        public void Close(TorrentFile file)
         {
             streamsBuffer.CloseStream(file.FullPath);
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
             streamsBuffer.Dispose();
-            base.Dispose();
         }
 
-        internal TorrentFileStream GetStream(TorrentFile file, FileAccess access)
+        TorrentFileStream GetStream(TorrentFile file, FileAccess access)
         {
             return streamsBuffer.GetStream(file, access);
         }
 
-        public override void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move(TorrentFile file, string newPath, bool overwrite)
         {
             streamsBuffer.CloseStream(file.FullPath);
             if (overwrite)
@@ -76,7 +75,7 @@ namespace MonoTorrent.Client.PieceWriters
             File.Move(file.FullPath, newPath);
         }
 
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File(file);
             Check.Buffer(buffer);
@@ -91,7 +90,7 @@ namespace MonoTorrent.Client.PieceWriters
             return s.Read(buffer, bufferOffset, count);
         }
 
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File(file);
             Check.Buffer(buffer);
@@ -104,12 +103,12 @@ namespace MonoTorrent.Client.PieceWriters
             stream.Write(buffer, bufferOffset, count);
         }
 
-        public override bool Exists(TorrentFile file)
+        public bool Exists(TorrentFile file)
         {
             return File.Exists(file.FullPath);
         }
 
-        public override void Flush(TorrentFile file)
+        public void Flush(TorrentFile file)
         {
             Stream s = streamsBuffer.FindStream(file.FullPath);
             if (s != null)

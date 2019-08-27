@@ -29,43 +29,38 @@
 
 namespace MonoTorrent.Client.PieceWriters
 {
-    public class NullWriter : PieceWriter
+    public class NullWriter : IPieceWriter
     {
-        public NullWriter()
+        public void Move(TorrentFile file, string newPath, bool overwrite)
         {
 
         }
 
-        public override void Move(TorrentFile file, string newPath, bool overwrite)
-        {
-
-        }
-
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return 0;
         }
 
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
 
         }
 
-        public override void Close(TorrentFile file)
+        public void Close(TorrentFile file)
         {
 
         }
 
-        public override void Flush(TorrentFile file)
+        public void Flush(TorrentFile file)
         {
 
         }
-        public override void Dispose()
+        public void Dispose()
         {
 
         }
 
-        public override bool Exists(TorrentFile file)
+        public bool Exists(TorrentFile file)
         {
             return false;
         }

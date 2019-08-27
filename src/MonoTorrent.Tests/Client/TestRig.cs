@@ -43,13 +43,13 @@ using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
-    public class TestWriter : PieceWriter
+    public class TestWriter : IPieceWriter
     {
         public List<TorrentFile> FilesThatExist = new List<TorrentFile>();
         public List<TorrentFile> DoNotReadFrom = new List<TorrentFile>();
         public bool DontWrite;
         public List<String> Paths = new List<string>();
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (DoNotReadFrom.Contains(file))
                 return 0;
@@ -63,27 +63,32 @@ namespace MonoTorrent.Client
             return count;
         }
 
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
 
         }
 
-        public override void Close(TorrentFile file)
+        public void Close(TorrentFile file)
         {
 
         }
 
-        public override void Flush(TorrentFile file)
+        public void Dispose ()
         {
 
         }
 
-        public override bool Exists(TorrentFile file)
+        public void Flush(TorrentFile file)
+        {
+
+        }
+
+        public bool Exists(TorrentFile file)
         {
             return FilesThatExist.Contains(file);
         }
 
-        public override void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move(TorrentFile file, string newPath, bool overwrite)
         {
             
         }
@@ -540,6 +545,16 @@ namespace MonoTorrent.Client
             TorrentFile[] files = StandardSingleFile();
             files[0] = new TorrentFile (files[0].Path, torrentSize);
             return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files, metadataMode);
+        }
+
+        internal static TorrentManager CreateSingleFileManager (int torrentSize, int pieceLength)
+        {
+            return CreateSingleFile (torrentSize, pieceLength, false).Manager;
+        }
+
+        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength)
+        {
+            return CreateMultiFile (files, pieceLength).Manager;
         }
     }
 }

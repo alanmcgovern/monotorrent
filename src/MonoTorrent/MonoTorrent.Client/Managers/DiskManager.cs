@@ -87,7 +87,6 @@ namespace MonoTorrent.Client
 
         readonly Queue<BufferedIO> bufferedReads;
         readonly Queue<BufferedIO> bufferedWrites;
-        readonly ClientEngine engine;
         int bufferedWriteBytes;
 
         readonly SpeedMonitor readMonitor;
@@ -128,18 +127,17 @@ namespace MonoTorrent.Client
         /// </summary>
         public long TotalWritten => writeMonitor.Total;
 
-        internal PieceWriter Writer { get; set; }
+        internal IPieceWriter Writer { get; set; }
 
         #endregion Properties
 
 
         #region Constructors
 
-        internal DiskManager(ClientEngine engine, PieceWriter writer)
+        internal DiskManager(EngineSettings settings, IPieceWriter writer)
         {
             this.bufferedReads = new Queue<BufferedIO>();
             this.bufferedWrites = new Queue<BufferedIO>();
-            this.engine = engine;
             this.ReadLimiter = new RateLimiter();
             this.readMonitor = new SpeedMonitor();
             this.writeMonitor = new SpeedMonitor();
@@ -150,8 +148,8 @@ namespace MonoTorrent.Client
                 readMonitor.Tick ();
                 writeMonitor.Tick ();
 
-                WriteLimiter.UpdateChunks (engine.Settings.MaximumDiskWriteRate, WriteRate);
-                ReadLimiter.UpdateChunks (engine.Settings.MaximumDiskReadRate, ReadRate);
+                WriteLimiter.UpdateChunks (settings.MaximumDiskWriteRate, WriteRate);
+                ReadLimiter.UpdateChunks (settings.MaximumDiskReadRate, ReadRate);
 
                 ProcessBufferedIO ();
 
@@ -224,21 +222,14 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal async Task FlushAsync()
-        {
-            await IOLoop;
-
-            foreach (TorrentManager manager in engine.Torrents)
-                Writer.Flush(manager.Torrent.Files);
-        }
-
         internal async Task FlushAsync(TorrentManager manager)
         {
             await IOLoop;
 
             try
             {
-                Writer.Flush(manager.Torrent.Files);
+                foreach (var file in manager.Torrent.Files)
+                    Writer.Flush (file);
             }
             catch (Exception ex)
             {
@@ -336,8 +327,9 @@ namespace MonoTorrent.Client
             // Process all pending reads/writes then close any open streams
             try
             {
-                this.ProcessBufferedIO(true);
-                Writer.Close(manager.Torrent.Files);
+                ProcessBufferedIO(true);
+                foreach (var file in manager.Torrent.Files)
+                    Writer.Close (file);
             }
             catch (Exception ex)
             {
@@ -361,13 +353,17 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async Task MoveFilesAsync(TorrentManager manager, string newRoot, bool overWriteExisting)
+        internal async Task MoveFilesAsync(TorrentManager manager, string newRoot, bool overwrite)
         {
             await IOLoop;
 
             try
             {
-                Writer.Move(newRoot, manager.Torrent.Files, overWriteExisting);
+                foreach (TorrentFile file in manager.Torrent.Files) {
+                    string newPath = Path.Combine (newRoot, file.Path);
+                    Writer.Move(file, newPath, overwrite);
+                    file.FullPath = newPath;
+                }
             }
             catch (Exception ex)
             {
@@ -481,13 +477,76 @@ namespace MonoTorrent.Client
         bool Read (TorrentManager manager, long offset, byte [] buffer, int count)
         {
             readMonitor.AddDelta (count);
-            return Writer.Read (manager.Torrent.Files, offset, buffer, 0, count, manager.Torrent.PieceLength, manager.Torrent.Size);
+
+            if (offset < 0 || offset + count > manager.Torrent.Size)
+                throw new ArgumentOutOfRangeException("offset");
+
+            int i = 0;
+            int totalRead = 0;
+            var files = manager.Torrent.Files;
+
+            for (i = 0; i < files.Length; i++)
+            {
+                if (offset < files[i].Length)
+                    break;
+
+                offset -= files[i].Length;
+            }
+
+            while (totalRead < count)
+            {
+                int fileToRead = (int)Math.Min(files[i].Length - offset, count - totalRead);
+                fileToRead = Math.Min(fileToRead, Piece.BlockSize);
+
+                if (fileToRead != Writer.Read(files[i], offset, buffer, totalRead, fileToRead))
+                    return false;
+
+                offset += fileToRead;
+                totalRead += fileToRead;
+                if (offset >= files[i].Length)
+                {
+                    offset = 0;
+                    i++;
+                }
+            }
+
+            return true;
         }
 
         void Write (TorrentManager manager, long offset, byte [] buffer, int count)
         {
             writeMonitor.AddDelta (count);
-            Writer.Write (manager.Torrent.Files, offset, buffer, 0, count, manager.Torrent.PieceLength, manager.Torrent.Size);
+
+            if (offset < 0 || offset + count > manager.Torrent.Size)
+                throw new ArgumentOutOfRangeException("offset");
+
+            int i;
+            int totalWritten = 0;
+            var files = manager.Torrent.Files;
+
+            for (i = 0; i < files.Length; i++)
+            {
+                if (offset < files[i].Length)
+                    break;
+
+                offset -= files[i].Length;
+            }
+
+            while (totalWritten < count)
+            {
+                int fileToWrite = (int)Math.Min(files[i].Length - offset, count - totalWritten);
+                fileToWrite = Math.Min(fileToWrite, Piece.BlockSize);
+
+                Writer.Write(files[i], offset, buffer, totalWritten, fileToWrite);
+
+                offset += fileToWrite;
+                totalWritten += fileToWrite;
+                if (offset >= files[i].Length)
+                {
+                    offset = 0;
+                    i++;
+                }
+            }
         }
     }
 }

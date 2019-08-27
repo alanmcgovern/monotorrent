@@ -27,9 +27,11 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Client.PieceWriters
 {
-    public interface IPieceWriter
+    public interface IPieceWriter : IDisposable
     {
         void Close(TorrentFile file);
         bool Exists(TorrentFile file);

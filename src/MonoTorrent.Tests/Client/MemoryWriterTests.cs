@@ -27,6 +27,7 @@
 //
 
 
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.PieceWriters
@@ -37,29 +38,25 @@ namespace MonoTorrent.Client.PieceWriters
         MemoryWriter level1;
         MemoryWriter level2;
 
-        TorrentFile singleFile;
-        TorrentFile[] multiFile;
+        TorrentFile singleFile => singleTorrentManager.Torrent.Files [0];
+        TorrentManager singleTorrentManager;
 
-        int pieceLength;
-        long torrentSize;
-
-        [OneTimeSetUp]
-        public void FixtureSetup()
-        {
-            pieceLength = Piece.BlockSize * 2;
-            singleFile = new TorrentFile("path", Piece.BlockSize * 5);
-            multiFile = new TorrentFile[] {
-                new TorrentFile ("first", Piece.BlockSize - 550),
-                new TorrentFile ("second", 100),
-                new TorrentFile ("third", Piece.BlockSize)
-            };
-            buffer = new byte[Piece.BlockSize];
-            torrentSize = Toolbox.Accumulate<TorrentFile>(multiFile, delegate(TorrentFile f) { return f.Length; });
-        }
+        TorrentFile[] multiFile => multiTorrentManager.Torrent.Files;
+        TorrentManager multiTorrentManager;
 
 		[SetUp]
 		public void Setup()
 		{
+            var pieceLength = Piece.BlockSize * 2;
+
+            singleTorrentManager = TestRig.CreateSingleFileManager (Piece.BlockSize * 5, pieceLength);
+            multiTorrentManager = TestRig.CreateMultiFileManager (new TorrentFile[] {
+                new TorrentFile ("first", Piece.BlockSize - 550),
+                new TorrentFile ("second", 100),
+                new TorrentFile ("third", Piece.BlockSize)
+            }, pieceLength);
+            buffer = new byte[Piece.BlockSize];
+
             Initialise(buffer, 1);
 			level2 = new MemoryWriter(new NullWriter(), Piece.BlockSize * 3);
             level1 = new MemoryWriter(level2, Piece.BlockSize * 3);
@@ -101,7 +98,7 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
-        public void ReadWriteSpanningBlock()
+        public async Task ReadWriteSpanningBlock()
         {
             // Write one block of data to the memory stream. 
             int file1 = (int)multiFile[0].Length;
@@ -118,7 +115,8 @@ namespace MonoTorrent.Client.PieceWriters
             level1.Write(multiFile[2], 0, buffer, 0, file3);
 
             // Read the block from the memory stream
-            level1.Read(multiFile, 0, buffer, 0, Piece.BlockSize, pieceLength, torrentSize);
+            var manager = new DiskManager (new EngineSettings (), level1);
+            await manager.ReadAsync(multiTorrentManager, 0, buffer, Piece.BlockSize);
 
             // Ensure that the data is in the buffer exactly as expected.
             Verify(buffer, 0, file1, 1);

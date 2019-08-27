@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public ClientEngine(EngineSettings settings, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, IPieceWriter writer)
             : this(settings, new PeerListener(new IPEndPoint(IPAddress.Any, settings.ListenPort)), writer)
 
         {
@@ -156,7 +156,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public ClientEngine(EngineSettings settings, IPeerListener listener, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, IPeerListener listener, IPieceWriter writer)
         {
             Check.Settings(settings);
             Check.Listener(listener);
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client
 
             this.ConnectionManager = new ConnectionManager(this);
             DhtEngine = new NullDhtEngine();
-            this.DiskManager = new DiskManager(this, writer);
+            this.DiskManager = new DiskManager(settings, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
                 if (IsRunning && !Disposed)

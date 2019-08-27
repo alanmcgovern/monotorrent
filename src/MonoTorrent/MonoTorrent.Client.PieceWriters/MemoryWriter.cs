@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-    public class MemoryWriter : PieceWriter
+    public class MemoryWriter : IPieceWriter
     {
         struct CachedBlock
         {
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         private int capacity;
         private List<CachedBlock> cachedBlocks;
-        private PieceWriter writer;
+        private IPieceWriter writer;
 
 
         public int Capacity
@@ -58,13 +58,13 @@ namespace MonoTorrent.Client.PieceWriters
             get { return this.cachedBlocks.Count * Piece.BlockSize; }
         }
 
-        public MemoryWriter(PieceWriter writer)
+        public MemoryWriter(IPieceWriter writer)
             : this(writer, 2 * 1024 * 1024)
         {
 
         }
 
-        public MemoryWriter(PieceWriter writer, int capacity)
+        public MemoryWriter(IPieceWriter writer, int capacity)
         {
             Check.Writer(writer);
 
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.PieceWriters
             this.writer = writer;
         }
 
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File(file);
             Check.Buffer(buffer);
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client.PieceWriters
             return writer.Read(file, offset, buffer, bufferOffset, count);
         }
 
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Write(file, offset, buffer, bufferOffset, count, false);
         }
@@ -122,18 +122,18 @@ namespace MonoTorrent.Client.PieceWriters
             }
         }
         
-        public override void Close(TorrentFile file)
+        public void Close(TorrentFile file)
         {
             Flush(file);
             writer.Close(file);
         }
 
-        public override bool Exists(TorrentFile file)
+        public bool Exists(TorrentFile file)
         {
             return this.writer.Exists(file);
         }
 
-        public override void Flush(TorrentFile file)
+        public void Flush(TorrentFile file)
         {
             for (int i = 0; i < cachedBlocks.Count; i++)
             {
@@ -155,12 +155,12 @@ namespace MonoTorrent.Client.PieceWriters
             ClientEngine.BufferManager.FreeBuffer(b.Buffer);
         }
 
-        public override void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move(TorrentFile file, string newPath, bool overwrite)
         {
             writer.Move(file, newPath, overwrite);
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
             // Flush everything in memory to disk
             while (cachedBlocks.Count > 0)
@@ -168,8 +168,6 @@ namespace MonoTorrent.Client.PieceWriters
 
             // Dispose the held writer
             writer.Dispose();
-
-            base.Dispose();
         }
     }
 }
