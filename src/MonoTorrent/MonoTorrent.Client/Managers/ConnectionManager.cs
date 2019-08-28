@@ -384,7 +384,12 @@ namespace MonoTorrent.Client
                 try {
                     if (pm != null) {
                         pm.Data = ClientEngine.BufferManager.GetBuffer (pm.ByteLength);
-                        await engine.DiskManager.ReadAsync (id.TorrentManager, pm.StartOffset + ((long)pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength);
+                        try {
+                            await engine.DiskManager.ReadAsync (id.TorrentManager.Torrent, pm.StartOffset + ((long)pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength);
+                        } catch (Exception ex) {
+                            id.TorrentManager.TrySetError (Reason.ReadFailure, ex);
+                            return;
+                        }
                         id.PiecesSent++;
                     }
 

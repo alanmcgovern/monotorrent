@@ -122,7 +122,7 @@ namespace MonoTorrent
         /// <param name="offset2">The starting index for the second array</param>
         /// <param name="count">The number of bytes to check</param>
         /// <returns></returns>
-        public static bool ByteMatch(byte[] array1, int offset1, byte[] array2, int offset2, int count)
+        public static bool ByteMatch(byte[] array1, long offset1, byte[] array2, long offset2, long count)
         {
             if (array1 == null)
                 throw new ArgumentNullException("array1");

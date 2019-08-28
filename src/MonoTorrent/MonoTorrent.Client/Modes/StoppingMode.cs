@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
                     Manager.Engine.ConnectionManager.CleanupSocket (id);
 
                 var stoppingTasks = new List<Task>();
-                stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager));
+                stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
                 if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
                     stoppingTasks.Add(Manager.TrackerManager.Announce(TorrentEvent.Stopped));
 

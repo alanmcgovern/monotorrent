@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
 
         public ClientEngine Engine { get; internal set; }
 
-        public Error Error { get; internal set; }
+        public Error Error { get; private set; }
 
         internal Mode Mode
         {
@@ -467,7 +467,11 @@ namespace MonoTorrent.Client
             if (State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move files when the torrent is active");
 
-            await Engine.DiskManager.MoveFileAsync (this, file, path);
+            try {
+                await Engine.DiskManager.MoveFileAsync (file, path);
+            } catch (Exception ex) {
+                TrySetError (Reason.WriteFailure, ex);
+            }
         }
 
         public async Task MoveFilesAsync (string newRoot, bool overWriteExisting)
@@ -478,8 +482,12 @@ namespace MonoTorrent.Client
             if (State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move files when the torrent is active");
 
-            await Engine.DiskManager.MoveFilesAsync (this, newRoot, overWriteExisting);
-            SavePath = newRoot;
+            try {
+                await Engine.DiskManager.MoveFilesAsync (Torrent, newRoot, overWriteExisting);
+                SavePath = newRoot;
+            } catch (Exception ex) {
+                TrySetError (Reason.WriteFailure, ex);
+            }
         }
 
         /// <summary>
@@ -527,7 +535,13 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            await VerifyHashState ();
+            try {
+                await VerifyHashState ();
+            } catch (Exception ex) {
+                TrySetError (Reason.ReadFailure, ex);
+                return;
+            }
+
             // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
             // before attempting to start again
             if (!HashChecked)
@@ -806,11 +820,21 @@ namespace MonoTorrent.Client
             if (HasMetadata) {
                 foreach (var file in Torrent.Files)
                     if (!file.BitField.AllFalse && HashChecked && file.Length > 0)
-                        HashChecked &= await Engine.DiskManager.CheckFileExistsAsync (this, file);
+                        HashChecked &= await Engine.DiskManager.CheckFileExistsAsync (file);
             }
         }
 
         #endregion Private Methods
+
+        internal bool TrySetError (Reason reason, Exception ex)
+        {
+            if (Mode is ErrorMode)
+                return false;
+
+            Error = new Error (reason, ex);
+            Mode = new ErrorMode (this);
+            return true;
+        }
 
         internal void HandlePeerConnected(PeerId id)
         {

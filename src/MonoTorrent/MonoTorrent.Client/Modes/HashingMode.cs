@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -55,21 +56,25 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
             Manager.HashFails = 0;
-            if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager)) {
-                for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
-                    var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager, index);
+            try {
+                if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+                    for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+                        var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
 
-                    if (token.IsCancellationRequested) {
-                        await Manager.Engine.DiskManager.CloseFilesAsync (Manager);
-                        token.ThrowIfCancellationRequested();
+                        if (token.IsCancellationRequested) {
+                            await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
+                            token.ThrowIfCancellationRequested();
+                        }
+
+                        var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
+                        Manager.OnPieceHashed (index, hashPassed);
                     }
-
-                    var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
-                    Manager.OnPieceHashed (index, hashPassed);
+                } else {
+                    for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                        Manager.OnPieceHashed(i, false);
                 }
-            } else {
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.OnPieceHashed(i, false);
+            } catch (Exception ex) {
+                Manager.TrySetError (Reason.ReadFailure, ex);
             }
         }
 

@@ -166,9 +166,8 @@ namespace MonoTorrent.Client
                                 }
                                 catch (Exception ex)
                                 {
-									Logger.Log(null, "*METADATA EXCEPTION* - Can not write in {0} : {1}", savePath, ex);
-									Manager.Error = new Error (Reason.WriteFailure, ex);
-									Manager.Mode = new ErrorMode(Manager);
+                                    Logger.Log(null, "*METADATA EXCEPTION* - Can not write in {0} : {1}", savePath, ex);
+                                    Manager.TrySetError (Reason.WriteFailure, ex);
                                     return;
                                 }
                                 t.TorrentPath = savePath;
