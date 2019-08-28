@@ -71,10 +71,6 @@ namespace MonoTorrent.Client.Encryption
         {
             get { return streamDecryptor; }
         }
-        public byte[] InitialData
-        {
-            get { return RemoteInitialPayload; }
-        }
 
         #region Private members
 
@@ -118,8 +114,6 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] CryptoProvide = new byte[] { 0x00, 0x00, 0x00, 0x03 };
 
-        protected byte[] InitialPayload;
-        protected byte[] RemoteInitialPayload;
 
         protected byte[] CryptoSelect;
 
@@ -132,9 +126,6 @@ namespace MonoTorrent.Client.Encryption
 
             GenerateX();
             GenerateY();
-
-            InitialPayload = Array.Empty<byte> ();
-            RemoteInitialPayload = Array.Empty<byte> ();
 
             bytesReceived = 0;
 
@@ -162,10 +153,9 @@ namespace MonoTorrent.Client.Encryption
             {
                 await first;
                 await second;
-            } catch
-            {
+            } catch (Exception ex) {
                 socket.Dispose();
-                throw;
+                throw new EncryptionException ("Encrypted handshake failed", ex);
             }
         }
 
@@ -533,25 +523,6 @@ namespace MonoTorrent.Client.Encryption
             if (allowedEncryption.HasFlag (EncryptionTypes.RC4Header))
                 CryptoProvide[3] |= 1;
         }
-
         #endregion
-
-        public void AddPayload(byte[] buffer)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            AddPayload(buffer, 0, buffer.Length);
-        }
-
-        public void AddPayload(byte[] buffer, int offset, int count)
-        {
-            byte[] newBuffer = new byte[InitialPayload.Length + count];
-
-            Message.Write(newBuffer, 0, InitialPayload);
-            Message.Write(newBuffer, InitialPayload.Length, buffer, offset, count);
-
-            InitialPayload = buffer;
-        }
     }
 }

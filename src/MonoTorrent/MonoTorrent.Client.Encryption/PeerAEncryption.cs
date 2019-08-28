@@ -41,11 +41,20 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     sealed class PeerAEncryption : EncryptedSocket
     {
+        public byte[] InitialPayload { get; }
+
         private byte[] VerifyBytes;
 
         public PeerAEncryption(InfoHash InfoHash, EncryptionTypes allowedEncryption)
+            : this (InfoHash, allowedEncryption, null)
+        {
+
+        }
+
+        public PeerAEncryption(InfoHash InfoHash, EncryptionTypes allowedEncryption, byte[] initialPayload)
             : base(allowedEncryption)
         {
+            InitialPayload = initialPayload ?? Array.Empty<byte> ();
             SKEY = InfoHash;
         }
 
@@ -91,7 +100,6 @@ namespace MonoTorrent.Client.Encryption
                 
             // Send the entire message in one go
             await NetworkIO.SendAsync (socket, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
-            InitialPayload = Array.Empty<byte> ();
 
             await Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
         }
