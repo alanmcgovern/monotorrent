@@ -34,7 +34,7 @@ namespace MonoTorrent
 {
     public class SpeedMonitor
     {
-        const int DefaultAveragePeriod = 12;
+        internal const int DefaultAveragePeriod = 12;
 
         readonly Stopwatch lastUpdated;
         readonly int[] speeds;
