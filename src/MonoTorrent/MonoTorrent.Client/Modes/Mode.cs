@@ -331,7 +331,13 @@ namespace MonoTorrent.Client
         {
             long offset = (long) message.PieceIndex * id.TorrentManager.Torrent.PieceLength + message.StartOffset;
 
-            await id.TorrentManager.Engine.DiskManager.WriteAsync(Manager, offset, message.Data, message.RequestLength);
+            try {
+                await id.TorrentManager.Engine.DiskManager.WriteAsync(Manager.Torrent, offset, message.Data, message.RequestLength);
+            } catch (Exception ex) {
+                Manager.TrySetError (Reason.WriteFailure, ex);
+                return;
+            }
+
             piece.TotalWritten++;
 
             ClientEngine.BufferManager.FreeBuffer(message.Data);
@@ -340,7 +346,14 @@ namespace MonoTorrent.Client
                 return;
 
             // Hashcheck the piece as we now have all the blocks.
-            var hash = await id.Engine.DiskManager.GetHashAsync(id.TorrentManager, piece.Index);
+            byte[] hash;
+            try {
+                hash = await id.Engine.DiskManager.GetHashAsync(id.TorrentManager.Torrent, piece.Index);
+            } catch (Exception ex) {
+                Manager.TrySetError (Reason.ReadFailure, ex);
+                return;
+            }
+
             bool result = hash != null && id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
             Manager.OnPieceHashed(piece.Index, result);
             Manager.PieceManager.UnhashedPieces[piece.Index] = false;

@@ -38,7 +38,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
-    public class Torrent : IEquatable<Torrent>
+    public class Torrent : IEquatable<Torrent>, ITorrentData
     {
         #region Private Fields
 

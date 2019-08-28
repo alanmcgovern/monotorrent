@@ -65,13 +65,13 @@ namespace MonoTorrent.Client
 
         struct BufferedIO
         {
-            public TorrentManager manager;
+            public ITorrentData manager;
             public long offset;
             public byte [] buffer;
             public int count;
             public TaskCompletionSource<bool> tcs;
 
-            public BufferedIO (TorrentManager manager, long offset, byte [] buffer, int count, TaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentData manager, long offset, byte [] buffer, int count, TaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
                 this.offset = offset;
@@ -177,83 +177,26 @@ namespace MonoTorrent.Client
             });
         }
 
-        async Task SetError (TorrentManager manager, Reason reason, Exception ex)
-        {
-            await ClientEngine.MainLoop;
-            if (manager.Mode is ErrorMode)
-                return;
-
-            manager.Error = new Error (reason, ex);
-            manager.Mode = new ErrorMode (manager);
-        }
-
         #endregion
 
-        internal async Task<bool> CheckFileExistsAsync(TorrentManager manager, TorrentFile file)
+        internal async Task<bool> CheckFileExistsAsync(TorrentFile file)
         {
             await IOLoop;
 
-            try
-            {
-                return Writer.Exists(file);
-            }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.ReadFailure, ex);
-                return true;
-            }
+            return Writer.Exists(file);
         }
 
-        internal async Task<bool> CheckAnyFilesExistAsync(TorrentManager manager)
+        internal async Task<bool> CheckAnyFilesExistAsync(ITorrentData manager)
         {
             await IOLoop;
 
-            try
-            {
-                for (int i = 0; i < manager.Torrent.Files.Length; i++)
-                    if (Writer.Exists(manager.Torrent.Files[i]))
-                        return true;
-            }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.ReadFailure, ex);
-                return true;
-            }
+            for (int i = 0; i < manager.Files.Length; i++)
+                if (Writer.Exists(manager.Files[i]))
+                    return true;
             return false;
         }
 
-        internal async Task FlushAsync(TorrentManager manager)
-        {
-            await IOLoop;
-
-            try
-            {
-                foreach (var file in manager.Torrent.Files)
-                    Writer.Flush (file);
-            }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.WriteFailure, ex);
-            }
-        }
-
-        internal async Task FlushAsync(TorrentManager manager, int index)
-        {
-            await IOLoop;
-
-            try
-            {
-                foreach (TorrentFile file in manager.Torrent.Files)
-                    if (file.StartPieceIndex >= index && file.EndPieceIndex <= index)
-                        Writer.Flush(file);
-            }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.WriteFailure, ex);
-            }
-        }
-
-        internal async Task<byte[]> GetHashAsync(TorrentManager manager, int pieceIndex)
+        internal async Task<byte[]> GetHashAsync(ITorrentData manager, int pieceIndex)
         {
             await IOLoop;
 
@@ -263,8 +206,8 @@ namespace MonoTorrent.Client
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
-                if (incrementalHash.NextOffsetToHash == (long)manager.Torrent.PieceLength * (pieceIndex + 1)
-                 || incrementalHash.NextOffsetToHash == manager.Torrent.Size) {
+                if (incrementalHash.NextOffsetToHash == (long)manager.PieceLength * (pieceIndex + 1)
+                 || incrementalHash.NextOffsetToHash == manager.Size) {
                     incrementalHash.Hasher.TransformFinalBlock(Array.Empty<byte> (), 0, 0);
                     var result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
@@ -275,7 +218,7 @@ namespace MonoTorrent.Client
                 // If we have no partial hash data for this piece we could be doing a full
                 // hash check, so let's create a IncrementalHashData for our piece!
                 incrementalHash = IncrementalHashCache.Dequeue ();
-                incrementalHash.NextOffsetToHash = (long)manager.Torrent.PieceLength * pieceIndex;
+                incrementalHash.NextOffsetToHash = (long)manager.PieceLength * pieceIndex;
             }
 
             // We want to be sure we've actually written everything so when we go to hash the
@@ -285,7 +228,7 @@ namespace MonoTorrent.Client
 
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             long startOffset = incrementalHash.NextOffsetToHash;
-            long endOffset = Math.Min((long)manager.Torrent.PieceLength * (pieceIndex + 1), manager.Torrent.Size);
+            long endOffset = Math.Min((long)manager.PieceLength * (pieceIndex + 1), manager.Size);
 
             byte[] hashBuffer = ClientEngine.BufferManager.GetBuffer(Piece.BlockSize);
             try {
@@ -320,95 +263,74 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async Task CloseFilesAsync(TorrentManager manager)
+        internal async Task CloseFilesAsync(ITorrentData manager)
         {
             await IOLoop;
 
             // Process all pending reads/writes then close any open streams
-            try
-            {
-                ProcessBufferedIO(true);
-                foreach (var file in manager.Torrent.Files)
-                    Writer.Close (file);
-            }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.WriteFailure, ex);
-            }
+            ProcessBufferedIO(true);
+            foreach (var file in manager.Files)
+                Writer.Close (file);
         }
 
-        internal async Task MoveFileAsync (TorrentManager manager, TorrentFile file, string newPath)
+        internal async Task MoveFileAsync (TorrentFile file, string newPath)
         {
             await IOLoop;
 
-            try
-            {
-                newPath = Path.GetFullPath (newPath);
-                Writer.Move (file, newPath, false);
+            newPath = Path.GetFullPath (newPath);
+            Writer.Move (file, newPath, false);
+            file.FullPath = newPath;
+        }
+
+        internal async Task MoveFilesAsync(ITorrentData manager, string newRoot, bool overwrite)
+        {
+            await IOLoop;
+
+            foreach (TorrentFile file in manager.Files) {
+                string newPath = Path.Combine (newRoot, file.Path);
+                Writer.Move(file, newPath, overwrite);
                 file.FullPath = newPath;
             }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.WriteFailure, ex);
-            }
         }
 
-        internal async Task MoveFilesAsync(TorrentManager manager, string newRoot, bool overwrite)
+        internal async Task<bool> ReadAsync (ITorrentData manager, long offset, byte [] buffer, int count)
         {
             await IOLoop;
 
-            try
+            if (ReadLimiter.TryProcess(count))
             {
-                foreach (TorrentFile file in manager.Torrent.Files) {
-                    string newPath = Path.Combine (newRoot, file.Path);
-                    Writer.Move(file, newPath, overwrite);
-                    file.FullPath = newPath;
-                }
+                return Read(manager, offset, buffer, count);
             }
-            catch (Exception ex)
+            else
             {
-                await SetError(manager, Reason.WriteFailure, ex);
+                var tcs = new TaskCompletionSource<bool>();
+                bufferedReads.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
+                return await tcs.Task;
             }
         }
 
-        internal async Task<bool> ReadAsync (TorrentManager manager, long offset, byte [] buffer, int count)
-        {
-            await IOLoop;
-
-            try
-            {
-                if (ReadLimiter.TryProcess(count))
-                {
-                    return Read(manager, offset, buffer, count);
-                }
-                else
-                {
-                    var tcs = new TaskCompletionSource<bool>();
-                    bufferedReads.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
-                    return await tcs.Task;
-                }
-            }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.ReadFailure, ex);
-                return false;
-            }
-        }
-
-        internal async Task WriteAsync (TorrentManager manager, long offset, byte[] buffer, int count)
+        internal async Task WriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             Interlocked.Add(ref bufferedWriteBytes, count);
             await IOLoop;
 
-            int pieceIndex = (int)(offset / manager.Torrent.PieceLength);
+            int pieceIndex = (int)(offset / manager.PieceLength);
+            long pieceStart = (long) pieceIndex * manager.PieceLength;
+            long pieceEnd = pieceStart + manager.PieceLength;
+
             IncrementalHashData incrementalHash;
-            if (!IncrementalHashes.TryGetValue (pieceIndex , out incrementalHash)) {
+            if (!IncrementalHashes.TryGetValue (pieceIndex , out incrementalHash) && offset == pieceStart) {
                 incrementalHash = IncrementalHashes[pieceIndex] = IncrementalHashCache.Dequeue ();
-                incrementalHash.NextOffsetToHash = (long) manager.Torrent.PieceLength * pieceIndex;
+                incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
             }
-            if (incrementalHash.NextOffsetToHash == offset) {
-                incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
-                incrementalHash.NextOffsetToHash += count;
+
+            if (incrementalHash != null) {
+                if ((incrementalHash.NextOffsetToHash + count) > pieceEnd) {
+                    IncrementalHashes.Remove (pieceIndex);
+                } else if (incrementalHash.NextOffsetToHash == offset) {
+                    incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
+                    incrementalHash.NextOffsetToHash += count;
+                }
             }
 
             try
@@ -423,13 +345,9 @@ namespace MonoTorrent.Client
                     bufferedWrites.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
                     await tcs.Task;
                 }
+            } finally {
+                Interlocked.Add(ref bufferedWriteBytes, -count);
             }
-            catch (Exception ex)
-            {
-                await SetError(manager, Reason.WriteFailure, ex);
-            }
-
-            Interlocked.Add(ref bufferedWriteBytes, -count);
         }
 
         void ProcessBufferedIO (bool force = false)
@@ -474,16 +392,16 @@ namespace MonoTorrent.Client
             }
         }
 
-        bool Read (TorrentManager manager, long offset, byte [] buffer, int count)
+        bool Read (ITorrentData manager, long offset, byte [] buffer, int count)
         {
             readMonitor.AddDelta (count);
 
-            if (offset < 0 || offset + count > manager.Torrent.Size)
+            if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException("offset");
 
             int i = 0;
             int totalRead = 0;
-            var files = manager.Torrent.Files;
+            var files = manager.Files;
 
             for (i = 0; i < files.Length; i++)
             {
@@ -513,16 +431,16 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        void Write (TorrentManager manager, long offset, byte [] buffer, int count)
+        void Write (ITorrentData manager, long offset, byte [] buffer, int count)
         {
             writeMonitor.AddDelta (count);
 
-            if (offset < 0 || offset + count > manager.Torrent.Size)
+            if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException("offset");
 
             int i;
             int totalWritten = 0;
-            var files = manager.Torrent.Files;
+            var files = manager.Files;
 
             for (i = 0; i < files.Length; i++)
             {

@@ -1,0 +1,243 @@
+﻿//
+// DiskManagerTests.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2019 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+
+using MonoTorrent.Client.PieceWriters;
+
+using NUnit.Framework;
+
+namespace MonoTorrent.Client
+{
+    [TestFixture]
+    public class DiskManagerTests
+    {
+        class TestTorrentData : ITorrentData
+        {
+            public byte [][] Data { get; set; }
+            public TorrentFile [] Files { get; set; }
+            public byte [][] Hashes { get; set; }
+            public int PieceLength { get; set; }
+            public long Size { get; set; }
+        }
+
+        class PieceWriter : IPieceWriter
+        {
+            public Dictionary<TorrentFile, byte[]> Data = new Dictionary<TorrentFile, byte[]> ();
+            public List<Tuple<TorrentFile, byte[]>> WrittenData = new List<Tuple<TorrentFile, byte[]>> ();
+
+            public List<TorrentFile> ClosedFiles = new List<TorrentFile> ();
+            public List<TorrentFile> ExistsFiles = new List<TorrentFile> ();
+
+            public void Close (TorrentFile file)
+            {
+            }
+
+            public void Dispose ()
+            {
+            }
+
+            public bool Exists (TorrentFile file)
+            {
+
+                return true;
+            }
+
+            public void Flush (TorrentFile file)
+            {
+            }
+
+            public void Move (TorrentFile file, string fullPath, bool overwrite)
+            {
+            }
+
+            public int Read (TorrentFile file, long offset, byte [] buffer, int bufferOffset, int count)
+            {
+                var data = Data[file];
+                Buffer.BlockCopy (data, (int) offset, buffer, bufferOffset, count);
+                return count;
+            }
+
+            public void Write (TorrentFile file, long offset, byte [] buffer, int bufferOffset, int count)
+            {
+                var result = new byte [count];
+                Buffer.BlockCopy (buffer, bufferOffset, result, 0, count);
+                WrittenData.Add (Tuple.Create (file, result));
+            }
+        }
+
+        TestTorrentData fileData;
+        DiskManager diskManager;
+        PieceWriter writer;
+
+        [SetUp]
+        public void Setup()
+        {
+            var random = new Random ();
+            var files = new [] {
+                new TorrentFile ("First",  Piece.BlockSize / 2),
+                new TorrentFile ("Second", Piece.BlockSize),
+                new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
+                new TorrentFile ("Fourth", Piece.BlockSize * 2 + Piece.BlockSize / 2),
+            };
+
+            var fileBytes = files
+                .Select (f => { var b = new byte [f.Length]; random.NextBytes (b); return b; })
+                .ToArray ();
+
+
+            int pieceLength = Piece.BlockSize * 2;
+            // Turn all the files into one byte array. Group the byte array into bittorrent pieces. Hash that piece.
+            var hashes = fileBytes
+                .SelectMany (t => t)
+                .Partition (pieceLength)
+                .Select (t => SHA1.Create ().ComputeHash (t))
+                .ToArray ();
+
+            fileData = new TestTorrentData {
+                Data = fileBytes,
+                Files = files,
+                Hashes = hashes,
+                Size = files.Sum (f => f.Length),
+                PieceLength = pieceLength
+            };
+
+            writer = new PieceWriter ();
+            for (int i = 0; i < files.Length; i ++)
+                writer.Data.Add (files[i], fileBytes[i]);
+
+            diskManager = new DiskManager (new EngineSettings (), writer);
+        }
+
+        [Test]
+        public async Task ReadAllData ()
+        {
+            var buffer = new byte[fileData.Size];
+            Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
+
+            int offset = 0;
+            foreach (var data in fileData.Data) {
+                Assert.IsTrue (Toolbox.ByteMatch (buffer, offset, data, 0, data.Length), "#2");
+                offset += data.Length;
+            }
+        }
+
+        [Test]
+        public void ReadPastTheEnd ()
+        {
+            var buffer = new byte[Piece.BlockSize];
+            Assert.ThrowsAsync<ArgumentOutOfRangeException> (() => diskManager.ReadAsync (fileData, Piece.BlockSize * 1000, buffer, buffer.Length), "#1");
+        }
+
+        [Test]
+        public async Task ReadPieceOne ()
+        {
+            var buffer = new byte[Piece.BlockSize];
+            Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
+
+            var data1 = fileData.Data [0];
+            var data2 = fileData.Data [1];
+
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, 0, data1.Length), "#2");
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length, data2, 0, Piece.BlockSize - data1.Length), "#3");
+        }
+
+        [Test]
+        public async Task ReadPieceTwo ()
+        {
+            var buffer = new byte[Piece.BlockSize];
+            Assert.IsTrue (await diskManager.ReadAsync (fileData, Piece.BlockSize, buffer, buffer.Length), "#1");
+
+            var data0 = fileData.Data [0];
+            var data1 = fileData.Data [1];
+            var data2 = fileData.Data [2];
+
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, data0.Length, data1.Length - data0.Length), "#2");
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length - data0.Length, data2, 0, Piece.BlockSize - (data1.Length - data0.Length)), "#3");
+        }
+
+        [Test]
+        public async Task WriteAllData ()
+        {
+            var allData = fileData.Data.SelectMany (t => t).ToArray ();
+            await diskManager.WriteAsync (fileData, 0, allData, allData.Length);
+
+            var offset = 0;
+            foreach (var data in fileData.Data) {
+                Assert.IsTrue (Toolbox.ByteMatch (allData, offset, data, 0, data.Length), "#1");
+                offset += data.Length;
+            }
+
+            for (int i = 0; i < fileData.Hashes.Length; i ++) {
+                // Check twice because the first check should give us the result from the incremental hash.
+                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
+                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
+            }
+        }
+
+        [Test]
+        public async Task WriteAllData_ByBlock ()
+        {
+            var allData = fileData.Data.SelectMany (t => t).ToArray ();
+
+            int offset = 0;
+            foreach (var block in allData.Partition (Piece.BlockSize)) {
+                await diskManager.WriteAsync (fileData, offset, block, block.Length);
+                offset += block.Length;
+            }
+
+            offset = 0;
+            foreach (var data in fileData.Data) {
+                Assert.IsTrue (Toolbox.ByteMatch (allData, offset, data, 0, data.Length), "#1");
+                offset += data.Length;
+            }
+
+            for (int i = 0; i < fileData.Hashes.Length; i ++) {
+                // Check twice because the first check should give us the result from the incremental hash.
+                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
+                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
+            }
+        }
+
+        [Test]
+        public async Task WritePieceOne ()
+        {
+            var buffer = fileData.Data[0].Concat (fileData.Data[1]).Take (Piece.BlockSize).ToArray ();
+            await diskManager.WriteAsync (fileData, 0, buffer, buffer.Length);
+
+            Assert.AreEqual (2, writer.WrittenData.Count, "#1");
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Data [0], 0, buffer, 0, fileData.Data[0].Length), "#2");
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Data [1], fileData.Data[0].Length, buffer, 0, Piece.BlockSize - fileData.Data[1].Length), "#3");
+        }
+    }
+}
