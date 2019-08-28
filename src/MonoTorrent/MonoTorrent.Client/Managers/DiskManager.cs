@@ -83,70 +83,88 @@ namespace MonoTorrent.Client
 
         static readonly MainLoop IOLoop = new MainLoop("Disk IO");
 
-        #region Member Variables
+        int bufferedWrites;
 
-        readonly Queue<BufferedIO> bufferedReads;
-        readonly Queue<BufferedIO> bufferedWrites;
-        int bufferedWriteBytes;
-
-        readonly SpeedMonitor readMonitor;
-        readonly SpeedMonitor writeMonitor;
-
-        internal RateLimiter ReadLimiter { get; }
-        internal RateLimiter WriteLimiter { get; }
-
-        #endregion Member Variables
-
-
-        #region Properties
-
+        /// <summary>
+        /// True if the object has been disposed.
+        /// </summary>
         bool Disposed { get; set; }
 
         /// <summary>
         /// The number of bytes which are currently cached in memory, pending writing.
         /// </summary>
-        public int BufferedWrites => bufferedWriteBytes;
+        public int BufferedWrites => bufferedWrites;
+
+        /// <summary>
+        /// Limits how fast data is read from the disk.
+        /// </summary>
+        internal RateLimiter ReadLimiter { get; }
+
+        /// <summary>
+        /// Tracks how fast the disk is being read from.
+        /// </summary>
+        SpeedMonitor ReadMonitor { get; }
+
+        /// <summary>
+        /// Read requests which have been queued because the <see cref="EngineSettings.MaximumDiskReadRate"/> limit has been exceeded.
+        /// </summary>
+        Queue<BufferedIO> ReadQueue { get; }
 
         /// <summary>
         /// The amount of data, in bytes, being read per second.
         /// </summary>
-        public int ReadRate => readMonitor.Rate;
+        public int ReadRate => ReadMonitor.Rate;
+
+        /// <summary>
+        /// Limits how fast data is written to the disk.
+        /// </summary>
+        internal RateLimiter WriteLimiter { get; }
+
+        /// <summary>
+        /// Tracks how fast the disk is being written to.
+        /// </summary>
+        SpeedMonitor WriteMonitor { get; }
+
+        /// <summary>
+        /// Read requests which have been queued because the <see cref="EngineSettings.MaximumDiskWriteRate"/> limit has been exceeded.
+        /// </summary>
+        Queue<BufferedIO> WriteQueue { get; }
 
         /// <summary>
         /// The amount of data, in bytes, being written per second.
         /// </summary>
-        public int WriteRate => writeMonitor.Rate;
+        public int WriteRate => WriteMonitor.Rate;
 
         /// <summary>
         /// The total number of bytes which have been read.
         /// </summary>
-        public long TotalRead => readMonitor.Total;
+        public long TotalRead => ReadMonitor.Total;
 
         /// <summary>
         /// The total number of bytes which have been written.
         /// </summary>
-        public long TotalWritten => writeMonitor.Total;
+        public long TotalWritten => WriteMonitor.Total;
 
+        /// <summary>
+        /// The piece writer used to read/write data
+        /// </summary>
         internal IPieceWriter Writer { get; set; }
-
-        #endregion Properties
-
-
-        #region Constructors
 
         internal DiskManager(EngineSettings settings, IPieceWriter writer)
         {
-            this.bufferedReads = new Queue<BufferedIO>();
-            this.bufferedWrites = new Queue<BufferedIO>();
-            this.ReadLimiter = new RateLimiter();
-            this.readMonitor = new SpeedMonitor();
-            this.writeMonitor = new SpeedMonitor();
-            this.WriteLimiter = new RateLimiter();
-            this.Writer = writer;
+            ReadLimiter = new RateLimiter();
+            ReadMonitor = new SpeedMonitor();
+            ReadQueue = new Queue<BufferedIO>();
+
+            WriteLimiter = new RateLimiter();
+            WriteMonitor = new SpeedMonitor();
+            WriteQueue = new Queue<BufferedIO>();
+
+            Writer = writer;
 
             IOLoop.QueueTimeout (TimeSpan.FromSeconds (1), () => {
-                readMonitor.Tick ();
-                writeMonitor.Tick ();
+                ReadMonitor.Tick ();
+                WriteMonitor.Tick ();
 
                 WriteLimiter.UpdateChunks (settings.MaximumDiskWriteRate, WriteRate);
                 ReadLimiter.UpdateChunks (settings.MaximumDiskReadRate, ReadRate);
@@ -156,11 +174,6 @@ namespace MonoTorrent.Client
                 return !Disposed;
             });
         }
-
-        #endregion Constructors
-
-
-        #region Methods
 
         void IDisposable.Dispose ()
             => Dispose ();
@@ -176,8 +189,6 @@ namespace MonoTorrent.Client
                 Disposed = true;
             });
         }
-
-        #endregion
 
         internal async Task<bool> CheckFileExistsAsync(TorrentFile file)
         {
@@ -200,8 +211,7 @@ namespace MonoTorrent.Client
         {
             await IOLoop;
 
-            IncrementalHashData incrementalHash;
-            if (IncrementalHashes.TryGetValue (pieceIndex, out incrementalHash)) {
+            if (IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash)) {
                 // We request the blocks for most pieces sequentially, and most (all?) torrent clients
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
@@ -255,10 +265,10 @@ namespace MonoTorrent.Client
 
         async Task WaitForBufferedWrites ()
         {
-            if (bufferedWrites.Count > 0)
+            if (WriteQueue.Count > 0)
             {
                 TaskCompletionSource<bool> flushed = new TaskCompletionSource<bool>();
-                bufferedWrites.Enqueue(new BufferedIO(null, -1, null, -1, flushed));
+                WriteQueue.Enqueue(new BufferedIO(null, -1, null, -1, flushed));
                 await flushed.Task;
             }
         }
@@ -304,22 +314,21 @@ namespace MonoTorrent.Client
             else
             {
                 var tcs = new TaskCompletionSource<bool>();
-                bufferedReads.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
+                ReadQueue.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
                 return await tcs.Task;
             }
         }
 
         internal async Task WriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
-            Interlocked.Add(ref bufferedWriteBytes, count);
+            Interlocked.Add(ref bufferedWrites, count);
             await IOLoop;
 
             int pieceIndex = (int)(offset / manager.PieceLength);
             long pieceStart = (long) pieceIndex * manager.PieceLength;
             long pieceEnd = pieceStart + manager.PieceLength;
 
-            IncrementalHashData incrementalHash;
-            if (!IncrementalHashes.TryGetValue (pieceIndex , out incrementalHash) && offset == pieceStart) {
+            if (!IncrementalHashes.TryGetValue (pieceIndex , out IncrementalHashData incrementalHash) && offset == pieceStart) {
                 incrementalHash = IncrementalHashes[pieceIndex] = IncrementalHashCache.Dequeue ();
                 incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
             }
@@ -347,11 +356,11 @@ namespace MonoTorrent.Client
                 else
                 {
                     var tcs = new TaskCompletionSource<bool>();
-                    bufferedWrites.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
+                    WriteQueue.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
                     await tcs.Task;
                 }
             } finally {
-                Interlocked.Add(ref bufferedWriteBytes, -count);
+                Interlocked.Add(ref bufferedWrites, -count);
             }
         }
 
@@ -359,12 +368,12 @@ namespace MonoTorrent.Client
         {
             BufferedIO io;
 
-            while (bufferedWrites.Count > 0) {
-                io = bufferedWrites.Peek();
+            while (WriteQueue.Count > 0) {
+                io = WriteQueue.Peek();
                 // This means we wanted to wait until all the writes had been flushed
                 // before we attempt to generate the hash of a given piece.
                 if (io.manager == null && io.buffer == null)  {
-                    io = bufferedWrites.Dequeue();
+                    io = WriteQueue.Dequeue();
                     io.tcs.SetResult(true);
                     continue;
                 }
@@ -372,7 +381,7 @@ namespace MonoTorrent.Client
                 if (!force && !WriteLimiter.TryProcess (io.count))
                     break;
 
-                io = bufferedWrites.Dequeue ();
+                io = WriteQueue.Dequeue ();
 
                 try {
                     Write (io.manager, io.offset, io.buffer, io.count);
@@ -382,11 +391,11 @@ namespace MonoTorrent.Client
                 }
             }
 
-            while (bufferedReads.Count > 0) {
-                if (!force && !ReadLimiter.TryProcess (bufferedReads.Peek ().count))
+            while (ReadQueue.Count > 0) {
+                if (!force && !ReadLimiter.TryProcess (ReadQueue.Peek ().count))
                     break;
 
-                io = bufferedReads.Dequeue ();
+                io = ReadQueue.Dequeue ();
 
                 try {
                     var result = Read (io.manager, io.offset, io.buffer, io.count);
@@ -399,12 +408,12 @@ namespace MonoTorrent.Client
 
         bool Read (ITorrentData manager, long offset, byte [] buffer, int count)
         {
-            readMonitor.AddDelta (count);
+            ReadMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException(nameof (offset));
 
-            int i = 0;
+            int i;
             int totalRead = 0;
             var files = manager.Files;
 
@@ -438,10 +447,10 @@ namespace MonoTorrent.Client
 
         void Write (ITorrentData manager, long offset, byte [] buffer, int count)
         {
-            writeMonitor.AddDelta (count);
+            WriteMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException(nameof (offset));
 
             int i;
             int totalWritten = 0;
