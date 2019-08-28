@@ -41,13 +41,15 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     sealed class PeerBEncryption : EncryptedSocket
     {
-        private InfoHash[] possibleSKEYs = null;
-        private byte[] VerifyBytes;
+        public byte[] InitialData { get; private set; }
+
+        InfoHash[] PossibleSKEYs { get; }
 
         public PeerBEncryption(InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
             : base(allowedEncryption)
         {
-            this.possibleSKEYs = possibleSKEYs;
+            InitialData = Array.Empty<byte> ();
+            PossibleSKEYs = possibleSKEYs;
         }
 
         protected override async Task doneReceiveY()
@@ -56,19 +58,18 @@ namespace MonoTorrent.Client.Encryption
             await Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
         }
 
-
         protected override async Task doneSynchronize()
         {
             await base.doneSynchronize();
 
-            VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
+            var VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
             await ReceiveMessage(VerifyBytes, VerifyBytes.Length);
-            await gotVerification();
+            await gotVerification(VerifyBytes);
         }
 
         byte[] b;
-        private async Task gotVerification()
+        private async Task gotVerification(byte[] VerifyBytes)
         {
             byte[] torrentHash = new byte[20];
 
@@ -107,14 +108,14 @@ namespace MonoTorrent.Client.Encryption
             byte[] lenInitialPayload = new byte[2]; // ... len(IA))
             Array.Copy(PadC, PadC.Length - 2, lenInitialPayload, 0, 2);
 
-            RemoteInitialPayload = new byte[DeLen(lenInitialPayload)]; // ... ENCRYPT(IA)
-            await ReceiveMessage(RemoteInitialPayload, RemoteInitialPayload.Length);
+            InitialData = new byte[DeLen(lenInitialPayload)]; // ... ENCRYPT(IA)
+            await ReceiveMessage(InitialData, InitialData.Length);
             await gotInitialPayload();
         }
 
         private async Task gotInitialPayload()
         {
-            DoDecrypt(RemoteInitialPayload, 0, RemoteInitialPayload.Length); // ... ENCRYPT(IA)
+            DoDecrypt(InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
             await StepFour();
         }
 
@@ -145,9 +146,9 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>true if a match has been found</returns>
         private bool MatchSKEY(byte[] torrentHash)
         {
-            for (int i = 0; i < possibleSKEYs.Length; i++)
+            for (int i = 0; i < PossibleSKEYs.Length; i++)
             {
-                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i].Hash);
+                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), PossibleSKEYs[i].Hash);
                 byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
                     
                 bool match = true;
@@ -156,7 +157,7 @@ namespace MonoTorrent.Client.Encryption
 
                 if (match)
                 {
-                    SKEY = possibleSKEYs[i];
+                    SKEY = PossibleSKEYs[i];
                     return true;
                 }
             }

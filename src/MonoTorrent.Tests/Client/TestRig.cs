@@ -228,6 +228,11 @@ namespace MonoTorrent.Client
         public CustomConnection Incoming;
         public CustomConnection Outgoing;
 
+        public ConnectionPair ()
+            : this (0)
+        {
+        }
+
         public ConnectionPair(int port)
         {
             var incoming = new SocketStream ();

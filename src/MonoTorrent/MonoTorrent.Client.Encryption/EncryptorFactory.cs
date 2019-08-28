@@ -43,29 +43,29 @@ namespace MonoTorrent.Client.Encryption
         {
             public IEncryption Decryptor { get; }
             public IEncryption Encryptor { get; }
-            public byte [] InitialData { get; }
+            public HandshakeMessage Handshake { get; }
 
-            public EncryptorResult (IEncryption decryptor, IEncryption encryptor, byte [] data)
+            public EncryptorResult (IEncryption decryptor, IEncryption encryptor, HandshakeMessage handshake)
             {
                 Decryptor = decryptor;
                 Encryptor = encryptor;
-                InitialData = data;
+                Handshake = handshake;
             }
         }
 
         static TimeSpan Timeout => Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (10);
 
-        internal static async Task<EncryptorResult> CheckIncomingConnectionAsync (IConnection connection, EncryptionTypes encryption, EngineSettings settings, int bytesToReceive, InfoHash[] sKeys)
+        internal static async Task<EncryptorResult> CheckIncomingConnectionAsync (IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash[] sKeys)
         {
             if (!connection.IsIncoming)
                 throw new Exception ("oops");
 
             using (var cts = new CancellationTokenSource (Timeout))
             using (var registration = cts.Token.Register (connection.Dispose))
-                return await DoCheckIncomingConnectionAsync (connection, encryption, settings, bytesToReceive, sKeys);
+                return await DoCheckIncomingConnectionAsync (connection, encryption, settings, sKeys);
         }
 
-        static async Task<EncryptorResult> DoCheckIncomingConnectionAsync(IConnection connection, EncryptionTypes encryption, EngineSettings settings, int bytesToReceive, InfoHash[] sKeys)
+        static async Task<EncryptorResult> DoCheckIncomingConnectionAsync(IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash[] sKeys)
         {
             var allowedEncryption = (settings?.AllowedEncryption ?? EncryptionTypes.All) & encryption;
             var supportsRC4Header = allowedEncryption.HasFlag (EncryptionTypes.RC4Header);
@@ -75,15 +75,15 @@ namespace MonoTorrent.Client.Encryption
             // If the connection is incoming, receive the handshake before
             // trying to decide what encryption to use
 
-            var buffer = new byte[bytesToReceive];
-            await NetworkIO.ReceiveAsync(connection, buffer, 0, bytesToReceive, null, null, null).ConfigureAwait (false);
+            var buffer = new byte[HandshakeMessage.HandshakeLength];
+            await NetworkIO.ReceiveAsync(connection, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
 
             HandshakeMessage message = new HandshakeMessage();
             message.Decode(buffer, 0, buffer.Length);
 
             if (message.ProtocolString == VersionInfo.ProtocolStringV100) {
                 if (supportsPlainText)
-                    return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, buffer);
+                    return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, message);
             }
             else if (supportsRC4Header || supportsRC4Full)
             {
@@ -99,28 +99,31 @@ namespace MonoTorrent.Client.Encryption
                 // been consumed during the crypto handshake process. Now that the encrypted handshake has
                 // been established, we should ensure we read the data again.
                 var data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : null;
-                if (data == null && bytesToReceive > 0) {
+                if (data == null) {
                     data = buffer;
                     await NetworkIO.ReceiveAsync (connection, data, 0, data.Length, null, null, null);
                     encSocket.Decryptor.Decrypt (data);
                 }
-                return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, data);
+                message.Decode (data, 0, data.Length);
+                if (message.ProtocolString == VersionInfo.ProtocolStringV100)
+                    return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, message);
             }
 
+            connection.Dispose ();
             throw new EncryptionException("Invalid handshake received and no decryption works");
         }
 
-        internal static async Task<EncryptorResult> CheckOutgoingConnectionAsync(IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash infoHash)
+        internal static async Task<EncryptorResult> CheckOutgoingConnectionAsync(IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash infoHash, HandshakeMessage handshake = null)
         {
             if (connection.IsIncoming)
                 throw new Exception ("oops");
 
             using (var cts = new CancellationTokenSource (Timeout))
             using (var registration = cts.Token.Register (connection.Dispose))
-                return await DoCheckOutgoingConnectionAsync (connection, encryption, settings, infoHash);
+                return await DoCheckOutgoingConnectionAsync (connection, encryption, settings, infoHash, handshake);
         }
 
-        static async Task<EncryptorResult> DoCheckOutgoingConnectionAsync(IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash infoHash)
+        static async Task<EncryptorResult> DoCheckOutgoingConnectionAsync(IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash infoHash, HandshakeMessage handshake)
         {
             var allowedEncryption = settings.AllowedEncryption & encryption;
             var supportsRC4Header = allowedEncryption.HasFlag (EncryptionTypes.RC4Header);
@@ -128,20 +131,26 @@ namespace MonoTorrent.Client.Encryption
             var supportsPlainText = allowedEncryption.HasFlag (EncryptionTypes.PlainText);
 
             if ((settings.PreferEncryption || !supportsPlainText) && (supportsRC4Header || supportsRC4Full)) {
-                var encSocket = new PeerAEncryption(infoHash, allowedEncryption);
+                var encSocket = new PeerAEncryption(infoHash, allowedEncryption, handshake?.Encode ());
+
                 await encSocket.HandshakeAsync(connection);
                 if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                     throw new EncryptionException("Decryptor was RC4Header but that is not allowed");
                 if (encSocket.Decryptor is RC4 && !supportsRC4Full)
                     throw new EncryptionException("Decryptor was RC4Full but that is not allowed");
 
-                var data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : null;
-                return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, data);
+                return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, null);
             }
             else if (supportsPlainText)
             {
+                if (handshake != null) {
+                    var buffer = handshake.Encode ();
+                    await NetworkIO.SendAsync (connection, buffer, 0, buffer.Length, null, null, null);
+                }
                 return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, null);
             }
+
+            connection.Dispose ();
             throw new EncryptionException("Invalid handshake received and no decryption works");
         }
     }

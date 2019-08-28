@@ -282,30 +282,31 @@ namespace MonoTorrent.Client
         {
             EncryptorFactory.EncryptorResult result;
             if (connection.IsIncoming) {
-                result = await EncryptorFactory.CheckIncomingConnectionAsync(connection, allowedEncryption, rig.Engine.Settings, HandshakeMessage.HandshakeLength, new [] { rig.Manager.InfoHash });
+                result = await EncryptorFactory.CheckIncomingConnectionAsync(connection, allowedEncryption, rig.Engine.Settings, new [] { rig.Manager.InfoHash });
             } else {
                 result = await EncryptorFactory.CheckOutgoingConnectionAsync(connection, allowedEncryption, rig.Engine.Settings, rig.Manager.InfoHash);
             }
             decryptor = result.Decryptor;
             encryptor = result.Encryptor;
-            TestHandshake(result.InitialData, connection);
+            TestHandshake(result.Handshake, connection);
         }
 
-        public void TestHandshake(byte[] buffer, CustomConnection connection)
+        internal void TestHandshake(HandshakeMessage handshake, CustomConnection connection)
         {
             // 1) Send local handshake
             SendMessage(new HandshakeMessage(rig.Manager.Torrent.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false), connection);
 
             // 2) Receive remote handshake
-            if (buffer == null || buffer.Length == 0)
+            if (handshake == null)
             {
-                buffer = new byte[HandshakeMessage.HandshakeLength];
+                var buffer = new byte[HandshakeMessage.HandshakeLength];
                 Receive (connection, buffer, 0, HandshakeMessage.HandshakeLength);
                 decryptor.Decrypt(buffer);
+
+                handshake = new HandshakeMessage ();
+                handshake.Decode (buffer, 0, buffer.Length);
             }
 
-            HandshakeMessage handshake = new HandshakeMessage();
-            handshake.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(rig.Engine.PeerId, handshake.PeerId, "#2");
             Assert.AreEqual(VersionInfo.ProtocolStringV100, handshake.ProtocolString, "#3");
             Assert.AreEqual(ClientEngine.SupportsFastPeer, handshake.SupportsFastPeer, "#4");
