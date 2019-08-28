@@ -435,9 +435,10 @@ namespace MonoTorrent.Client
                 uploadLimiter.UpdateChunks(Settings.MaximumUploadSpeed, TotalUploadSpeed);
             }
 
-            ConnectionManager.CancelPendingConnects();
-
+            ConnectionManager.CancelPendingConnects ();
             ConnectionManager.TryConnect ();
+            DiskManager.Tick ();
+
             for (int i = 0; i < this.torrents.Count; i++)
                 this.torrents[i].Mode.Tick(tickCount);
 
@@ -474,7 +475,7 @@ namespace MonoTorrent.Client
         }
 
 
-        static int count = 0;
+        static int count;
         static BEncodedString GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
