@@ -325,6 +325,11 @@ namespace MonoTorrent.Client
             }
 
             if (incrementalHash != null) {
+                // Incremental hashing does not perform proper bounds checking to ensure
+                // that pieces are correctly incrementally hashed even if 'count' is greater
+                // than the PieceLength. This should never happen under normal operation, but
+                // unit tests do it for convenience sometimes. Keep things safe by cancelling
+                // incremental hashing if that occurs.
                 if ((incrementalHash.NextOffsetToHash + count) > pieceEnd) {
                     IncrementalHashes.Remove (pieceIndex);
                 } else if (incrementalHash.NextOffsetToHash == offset) {
