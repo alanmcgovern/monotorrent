@@ -54,7 +54,8 @@ namespace MonoTorrent.Client
         class PieceWriter : IPieceWriter
         {
             public Dictionary<TorrentFile, byte[]> Data = new Dictionary<TorrentFile, byte[]> ();
-            public List<Tuple<TorrentFile, byte[]>> WrittenData = new List<Tuple<TorrentFile, byte[]>> ();
+            public List<Tuple<TorrentFile, long, int>> ReadData = new List<Tuple<TorrentFile, long, int>> ();
+            public List<Tuple<TorrentFile, long, byte[]>> WrittenData = new List<Tuple<TorrentFile, long, byte[]>> ();
 
             public List<TorrentFile> ClosedFiles = new List<TorrentFile> ();
             public List<TorrentFile> ExistsFiles = new List<TorrentFile> ();
@@ -83,8 +84,19 @@ namespace MonoTorrent.Client
 
             public int Read (TorrentFile file, long offset, byte [] buffer, int bufferOffset, int count)
             {
-                var data = Data[file];
-                Buffer.BlockCopy (data, (int) offset, buffer, bufferOffset, count);
+                ReadData.Add (Tuple.Create (file, offset, count));
+
+                if (Data == null) {
+                    var fileData = WrittenData
+                        .Where (t => t.Item1 == file)
+                        .OrderBy (t => t.Item2)
+                        .SelectMany (t => t.Item3)
+                        .ToArray ();
+                    Buffer.BlockCopy (fileData, (int) offset, buffer, bufferOffset, count);
+                } else {
+                    var data = Data[file];
+                    Buffer.BlockCopy (data, (int) offset, buffer, bufferOffset, count);
+                }
                 return count;
             }
 
@@ -92,7 +104,7 @@ namespace MonoTorrent.Client
             {
                 var result = new byte [count];
                 Buffer.BlockCopy (buffer, bufferOffset, result, 0, count);
-                WrittenData.Add (Tuple.Create (file, result));
+                WrittenData.Add (Tuple.Create (file, offset, result));
             }
         }
 
@@ -108,7 +120,7 @@ namespace MonoTorrent.Client
                 new TorrentFile ("First",  Piece.BlockSize / 2),
                 new TorrentFile ("Second", Piece.BlockSize),
                 new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
-                new TorrentFile ("Fourth", Piece.BlockSize * 2 + Piece.BlockSize / 2),
+                new TorrentFile ("Fourth", Piece.BlockSize * 6 + Piece.BlockSize / 2),
             };
 
             var fileBytes = files
@@ -116,7 +128,7 @@ namespace MonoTorrent.Client
                 .ToArray ();
 
 
-            int pieceLength = Piece.BlockSize * 2;
+            int pieceLength = Piece.BlockSize * 3;
             // Turn all the files into one byte array. Group the byte array into bittorrent pieces. Hash that piece.
             var hashes = fileBytes
                 .SelectMany (t => t)
@@ -230,7 +242,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task WritePieceOne ()
+        public async Task WriteBlock_SpanTwoFiles ()
         {
             var buffer = fileData.Data[0].Concat (fileData.Data[1]).Take (Piece.BlockSize).ToArray ();
             await diskManager.WriteAsync (fileData, 0, buffer, buffer.Length);
@@ -238,6 +250,78 @@ namespace MonoTorrent.Client
             Assert.AreEqual (2, writer.WrittenData.Count, "#1");
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Data [0], 0, buffer, 0, fileData.Data[0].Length), "#2");
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Data [1], fileData.Data[0].Length, buffer, 0, Piece.BlockSize - fileData.Data[1].Length), "#3");
+        }
+
+        [Test]
+        public async Task WritePiece_FirstTwoSwapped()
+        {
+            writer.Data = null;
+
+            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
+            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
+            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
+            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
+
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#1");
+            Assert.AreEqual (Piece.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
+
+            writer.ReadData.Clear ();
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#3");
+            Assert.AreEqual (Piece.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
+        }
+
+        [Test]
+        public async Task WritePiece_InOrder ()
+        {
+            writer.Data = null;
+
+            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
+            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
+            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
+            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
+
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#1");
+            Assert.AreEqual (0, writer.ReadData.Sum (t => t.Item3), "#2");
+
+            writer.ReadData.Clear ();
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#3");
+            Assert.AreEqual (Piece.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
+        }
+
+        [Test]
+        public async Task WritePiece_LastTwoSwapped()
+        {
+            writer.Data = null;
+
+            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
+            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
+            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
+            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
+
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#1");
+            Assert.AreEqual (Piece.BlockSize, writer.ReadData.Sum (t => t.Item3), "#2");
+
+            writer.ReadData.Clear ();
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#3");
+            Assert.AreEqual (Piece.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
+        }
+
+        [Test]
+        public async Task WritePiece_ReverseOrder ()
+        {
+            writer.Data = null;
+
+            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
+            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
+            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
+            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
+
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#1");
+            Assert.AreEqual (Piece.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
+
+            writer.ReadData.Clear ();
+            Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes [0], await diskManager.GetHashAsync (fileData, 0)), "#3");
+            Assert.AreEqual (Piece.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
         }
     }
 }
