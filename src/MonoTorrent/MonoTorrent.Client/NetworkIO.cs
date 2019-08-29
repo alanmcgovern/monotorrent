@@ -116,6 +116,9 @@ namespace MonoTorrent.Client
             await connection.ConnectAsync ();
         }
 
+        public static Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count)
+            => ReceiveAsync (connection, buffer, offset, count, null, null, null);
+
         public static async Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
@@ -142,6 +145,9 @@ namespace MonoTorrent.Client
                 remaining -= transferred;
             } 
         }
+
+        public static Task SendAsync (IConnection connection, byte [] buffer, int offset, int count)
+            => SendAsync (connection, buffer, offset, count, null, null, null);
 
         public static async Task SendAsync (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {

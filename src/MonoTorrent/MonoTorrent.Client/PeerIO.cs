@@ -59,6 +59,9 @@ namespace MonoTorrent.Client
             }
         }
 
+        public static Task<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor)
+            => ReceiveMessageAsync (connection, decryptor, null, null, null);
+
         public static async Task<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor monitor, TorrentManager manager)
         {
             byte[] messageLengthBuffer = null;
@@ -104,6 +107,9 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.FreeBuffer (messageBuffer);
             }
         }
+
+        public static Task SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message)
+            => SendMessageAsync (connection, encryptor, message, null, null, null);
 
         public static async Task SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
