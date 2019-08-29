@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
         public void EnsureRandomlyPicked()
         {
             tester.ReturnNoPiece = false;
-            while (picker.PickPiece(id, new List<PeerId>(), 1) != null) { }
+            while (picker.PickPiece(id, id.BitField, new List<PeerId>(), 1) != null) { }
             Assert.AreEqual(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
             List<int> pieces = new List<int>(tester.PickedPieces);
             pieces.Sort();

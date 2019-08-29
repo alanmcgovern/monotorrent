@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(true);
             id.MaxPendingRequests = numberOfPieces;
             
-            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces));
+            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, id.BitField, new List<PeerId>(), numberOfPieces));
         }
 
         [TearDown]
@@ -173,7 +173,7 @@ namespace MonoTorrent.Client
             if (requests.Messages.Count != 0)
                 rig.Manager.PieceManager.Picker.CancelRequests(id);
             
-            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), 256));
+            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, id.BitField, new List<PeerId>(), 256));
 
             byte[] sendBuffer = requests.Encode();
             var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
@@ -337,7 +337,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(true);
             id.MaxPendingRequests = numberOfPieces;
 
-            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces));
+            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, id.BitField, new List<PeerId>(), numberOfPieces));
             await RecieveFirst();
             Assert.AreEqual(url, requestedUrl[0]);
         }

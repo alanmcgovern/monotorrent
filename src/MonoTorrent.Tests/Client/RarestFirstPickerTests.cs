@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void RarestPieceTest()
         {
-            rarest.PickPiece(peers[0], peers);
+            rarest.PickPiece(peers[0], peers[0].BitField, peers);
             Assert.AreEqual(5, tester.PickPieceBitfield.Count, "#1");
             BitField bf = tester.PickPieceBitfield[0];
             int[] trueIndices = new int[] { 1, 7, 11, 13, 17, 19, 23, 29, 31, 37 };

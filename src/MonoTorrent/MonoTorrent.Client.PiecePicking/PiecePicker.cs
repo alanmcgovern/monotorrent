@@ -95,19 +95,19 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             return picker.IsInteresting(bitfield);
         }
-        public PieceRequest PickPiece(PeerId peer, List<PeerId> otherPeers)
+        public PieceRequest PickPiece(PeerId peer, BitField available, List<PeerId> otherPeers)
         {
-            var bundle = PickPiece(peer, otherPeers, 1);
-            return bundle == null ? null : bundle.First ();
+            var bundle = PickPiece(peer, available, otherPeers, 1);
+            return bundle?.Single ();
         }
-        public IList<PieceRequest> PickPiece(PeerId peer, List<PeerId> otherPeers, int count)
+        public IList<PieceRequest> PickPiece(PeerId peer, BitField available, List<PeerId> otherPeers, int count)
         {
-            return PickPiece(peer, peer.BitField, otherPeers, count, 0, peer.BitField.Length);
+            return PickPiece(peer, available, otherPeers, count, 0, available.Length);
         }
-        public virtual IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public virtual IList<PieceRequest> PickPiece(PeerId id, BitField available, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             CheckOverriden();
-            return picker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            return picker.PickPiece(id, available, otherPeers, count, startIndex, endIndex);
         }
         public virtual void Reset()
         {
