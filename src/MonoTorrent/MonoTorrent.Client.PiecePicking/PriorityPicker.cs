@@ -109,15 +109,15 @@ namespace MonoTorrent.Client.PiecePicking
             return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, files, requests);
-            AllSamePriority = delegate(Files f) { return f.File.Priority == files[0].Priority; };
+            base.Initialise(bitfield, torrentData, requests);
+            AllSamePriority = delegate(Files f) { return f.File.Priority == torrentData.Files[0].Priority; };
             temp = new BitField(bitfield.Length);
 
             this.files.Clear();
-            for (int i = 0; i < files.Length; i++)
-                this.files.Add(new Files(files[i], files[i].GetSelector(bitfield.Length)));
+            for (int i = 0; i < torrentData.Files.Length; i++)
+                this.files.Add(new Files(torrentData.Files[i], torrentData.Files[i].GetSelector(bitfield.Length)));
         }
 
         public override bool IsInteresting(BitField bitfield)

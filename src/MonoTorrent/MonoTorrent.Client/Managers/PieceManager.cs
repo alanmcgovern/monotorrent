@@ -156,7 +156,7 @@ namespace MonoTorrent.Client
             return Picker.IsInteresting(id.BitField);
         }
 
-        internal void ChangePicker(PiecePicker picker, BitField bitfield, TorrentFile[] files)
+        internal void ChangePicker(PiecePicker picker, BitField bitfield, ITorrentData data)
         {
             if (UnhashedPieces.Length != bitfield.Length)
                 UnhashedPieces = new BitField(bitfield.Length);
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client
             picker = new IgnoringPicker(bitfield, picker);
             picker = new IgnoringPicker(UnhashedPieces, picker);
             IEnumerable<Piece> pieces = Picker == null ? new List<Piece>() : Picker.ExportActiveRequests();
-            picker.Initialise(bitfield, files, pieces);
+            picker.Initialise(bitfield, data, pieces);
             Picker = picker;
         }
 

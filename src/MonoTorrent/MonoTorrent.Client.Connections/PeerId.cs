@@ -42,6 +42,23 @@ namespace MonoTorrent.Client
 {
     public class PeerId
     {
+        /// <summary>
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
+        /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
+        /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
+        /// </summary>
+        /// <param name="bitfieldLength"></param>
+        /// <returns></returns>
+        internal static PeerId CreateNull (int bitfieldLength)
+        {
+            return new PeerId {
+                IsChoking = true,
+                AmChoking = true,
+                BitField = new BitField (bitfieldLength),
+                ProcessingQueue = true
+            };
+        }
+
         #region Choke/Unchoke
 
         internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
@@ -123,16 +140,8 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
+        PeerId ()
         {
-            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
-            Peer = peer ?? throw new ArgumentNullException (nameof (peer));
-            TorrentManager = manager ?? throw new ArgumentNullException (nameof (manager));
-
-            Engine = manager.Engine;
-            if(TorrentManager.HasMetadata)
-                BitField = new BitField(TorrentManager.Torrent.Pieces.Count);
-
             SuggestedPieces = new List<int>();
             AmChoking = true;
             IsChoking = true;
@@ -146,6 +155,18 @@ namespace MonoTorrent.Client
             ExtensionSupports = new ExtensionSupports();
 
             InitializeTyrant();
+        }
+
+        internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
+            : this ()
+        {
+            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
+            Peer = peer ?? throw new ArgumentNullException (nameof (peer));
+            TorrentManager = manager ?? throw new ArgumentNullException (nameof (manager));
+
+            Engine = manager.Engine;
+            if(TorrentManager.HasMetadata)
+                BitField = new BitField(TorrentManager.Torrent.Pieces.Count);
         }
 
         #endregion
