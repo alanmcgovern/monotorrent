@@ -35,9 +35,9 @@ namespace MonoTorrent.Client.PiecePicking
     class TestPicker : PiecePicker
     {
         public List<BitField> IsInterestingBitfield = new List<BitField>();
-        public List<PeerId> PickPieceId = new List<PeerId>();
+        public List<IPieceRequester> PickPieceId = new List<IPieceRequester>();
         public List<BitField> PickPieceBitfield = new List<BitField>();
-        public List<List<PeerId>> PickPiecePeers = new List<List<PeerId>>();
+        public List<IReadOnlyList<IPieceRequester>> PickPiecePeers = new List<IReadOnlyList<IPieceRequester>>();
         public List<int> PickPieceStartIndex = new List<int>();
         public List<int> PickPieceEndIndex = new List<int>();
         public List<int> PickPieceCount = new List<int>();
@@ -50,9 +50,9 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField available, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            PickPieceId.Add(id);
+            PickPieceId.Add(peer);
             BitField clone = new BitField(available.Length);
             clone.Or(available);
             PickPieceBitfield.Add(clone);

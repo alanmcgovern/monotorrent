@@ -62,10 +62,10 @@ namespace MonoTorrent.Client.PiecePicking
 
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer
-            if (peerBitfield.AllFalse)
+            if (available.AllFalse)
                 return null;
 
             if (files.Count == 1)
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PiecePicking
                 if (files[0].File.Priority == Priority.DoNotDownload)
                     return null;
                 else
-                    return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+                    return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
             }
 
             files.Sort();
@@ -84,17 +84,17 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Fast Path - If all the files are the same priority, call straight into the base picker
             if (files.TrueForAll(AllSamePriority))
-                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+                return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
 
             temp.From(files[0].Selector);
             for (int i = 1; i < files.Count && files[i].File.Priority != Priority.DoNotDownload; i++)
             {
                 if (files[i].File.Priority != files[i - 1].File.Priority)
                 {
-                    temp.And(peerBitfield);
+                    temp.And(available);
                     if (!temp.AllFalse)
                     {
-                        var message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+                        var message = base.PickPiece(peer, temp, otherPeers, count, startIndex, endIndex);
                         if (message != null)
                             return message;
                         temp.SetAll(false);
@@ -104,9 +104,9 @@ namespace MonoTorrent.Client.PiecePicking
                 temp.Or(files[i].Selector);
             }
 
-            if (temp.AllFalse || temp.And(peerBitfield).AllFalse)
+            if (temp.AllFalse || temp.And(available).AllFalse)
                 return null;
-            return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece(peer, temp, otherPeers, count, startIndex, endIndex);
         }
 
         public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)

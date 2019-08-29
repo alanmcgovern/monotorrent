@@ -40,7 +40,7 @@ using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
-    public class PeerId
+    public partial class PeerId
     {
         /// <summary>
         /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.

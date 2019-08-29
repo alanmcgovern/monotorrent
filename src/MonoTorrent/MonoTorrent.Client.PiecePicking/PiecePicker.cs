@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         protected static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(45);
 
-        PiecePicker picker;
+        readonly PiecePicker picker;
 
         protected PiecePicker(PiecePicker picker)
         {
@@ -50,12 +50,12 @@ namespace MonoTorrent.Client.PiecePicking
                 throw new InvalidOperationException("This method must be overridden");
         }
 
-        public virtual void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        public virtual void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
         {
             CheckOverriden();
             picker.CancelRequest(peer, piece, startOffset, length);
         }
-        public virtual void CancelRequests(PeerId peer)
+        public virtual void CancelRequests(IPieceRequester peer)
         {
             CheckOverriden();
             picker.CancelRequests(peer);
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             picker.CancelTimedOutRequests();
         }
-        public virtual PieceRequest ContinueExistingRequest(PeerId peer)
+        public virtual PieceRequest ContinueExistingRequest(IPieceRequester peer)
         {
             CheckOverriden();
             return picker.ContinueExistingRequest(peer);
@@ -95,26 +95,26 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             return picker.IsInteresting(bitfield);
         }
-        public PieceRequest PickPiece(PeerId peer, BitField available, List<PeerId> otherPeers)
+        public PieceRequest PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
         {
             var bundle = PickPiece(peer, available, otherPeers, 1);
             return bundle?.Single ();
         }
-        public IList<PieceRequest> PickPiece(PeerId peer, BitField available, List<PeerId> otherPeers, int count)
+        public IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)
         {
             return PickPiece(peer, available, otherPeers, count, 0, available.Length);
         }
-        public virtual IList<PieceRequest> PickPiece(PeerId id, BitField available, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public virtual IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             CheckOverriden();
-            return picker.PickPiece(id, available, otherPeers, count, startIndex, endIndex);
+            return picker.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
         }
         public virtual void Reset()
         {
             CheckOverriden();
             picker.Reset();
         }
-        public virtual bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public virtual bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             CheckOverriden();
             return picker.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);

@@ -33,32 +33,30 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class IgnoringPicker : PiecePicker
     {
-        BitField bitfield;
-        BitField temp;
+        BitField Bitfield;
+        BitField Temp;
 
         public IgnoringPicker(BitField bitfield, PiecePicker picker)
             : base(picker)
         {
-            this.bitfield = bitfield;
-            this.temp = new BitField(bitfield.Length);
+            Bitfield = bitfield;
+            Temp = new BitField(bitfield.Length);
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
-            temp.From(peerBitfield).NAnd(bitfield);
-            if (temp.AllFalse)
+            Temp.From(available).NAnd(Bitfield);
+            if (Temp.AllFalse)
                 return null;
-            return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece(peer, Temp, otherPeers, count, startIndex, endIndex);
         }
 
         public override bool IsInteresting(BitField bitfield)
         {
-            temp.From(bitfield).NAnd(this.bitfield);
-            if (temp.AllFalse)
-                return false;
-            return base.IsInteresting(temp);
+            Temp.From(bitfield).NAnd(Bitfield);
+            return !Temp.AllFalse && base.IsInteresting(Temp);
         }
     }
 }

@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.PiecePicking
             requests = new SortList<Piece>();
         }
 
-        public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        public override void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
         {
             CancelWhere(delegate(Block b)
             {
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.PiecePicking
             });
         }
 
-        public override void CancelRequests(PeerId peer)
+        public override void CancelRequests(IPieceRequester peer)
         {
             CancelWhere(delegate(Block b) { return peer == b.RequestedOff; });
         }
@@ -132,22 +132,22 @@ namespace MonoTorrent.Client.PiecePicking
             return !bitfield.AllFalse;
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField available, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             PieceRequest message;
             IList<PieceRequest> bundle;
 
             // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
             // requests that could be continued would be existing "Fast" pieces.
-            if ((message = ContinueExistingRequest(id)) != null)
+            if ((message = ContinueExistingRequest(peer)) != null)
                 return new [] { message };
 
             // Then we check if there are any allowed "Fast" pieces to download
-            if (id.IsChoking && (message = GetFromList(id, available, id.IsAllowedFastPieces)) != null)
+            if (peer.IsChoking && (message = GetFromList(peer, available, peer.IsAllowedFastPieces)) != null)
                 return new [] { message };
 
             // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
-            if (id.IsChoking)
+            if (peer.IsChoking)
                 return null;
 
             // Disable this particular piece of logic to increase the likelihood we'll be able
@@ -160,17 +160,17 @@ namespace MonoTorrent.Client.PiecePicking
             //    return new [] { message };
 
             // We see if the peer has suggested any pieces we should request
-            if ((message = GetFromList(id, available, id.SuggestedPieces)) != null)
+            if ((message = GetFromList(peer, available, peer.SuggestedPieces)) != null)
                 return new [] { message };
 
             // Now we see what pieces the peer has that we don't have and try and request one
-            if ((bundle = GetStandardRequest(id, available, startIndex, endIndex, count)) != null)
+            if ((bundle = GetStandardRequest(peer, available, startIndex, endIndex, count)) != null)
                 return bundle;
 
             // If all else fails we should request blocks from a piece another peer is retrieving. If we do
             // this we should start requesting from the end of the piece to give the best chance of having a
             // good incremental hash
-            if ((message = ContinueAnyExisting(id)) != null)
+            if ((message = ContinueAnyExisting(peer)) != null)
                 return new [] { message };
 
             return null;
@@ -181,7 +181,7 @@ namespace MonoTorrent.Client.PiecePicking
             requests.Clear();
         }
 
-        public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public override bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             Comparer.Index = pieceIndex;
             int pIndex = requests.BinarySearch(null, Comparer);
@@ -224,7 +224,7 @@ namespace MonoTorrent.Client.PiecePicking
 
 
 
-        public override PieceRequest ContinueExistingRequest(PeerId peer)
+        public override PieceRequest ContinueExistingRequest(IPieceRequester peer)
         {
             for (int req = 0; req < requests.Count; req++)
             {
@@ -247,11 +247,11 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        protected PieceRequest ContinueAnyExisting(PeerId id)
+        protected PieceRequest ContinueAnyExisting(IPieceRequester peer)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
-            if (id.Peer.RepeatedHashFails != 0)
+            if (peer.RepeatedHashFails != 0)
                 return null;
 
             // Otherwise, if this peer has any of the pieces that are currently being requested, try to
@@ -260,19 +260,19 @@ namespace MonoTorrent.Client.PiecePicking
             {
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
-                if (p.AllBlocksRequested || p.AllBlocksReceived || !id.BitField[p.Index] ||
-                    (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0))
+                if (p.AllBlocksRequested || p.AllBlocksReceived || !peer.BitField[p.Index] ||
+                    (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.RepeatedHashFails != 0))
                     continue;
 
                 for (int i = p.Blocks.Length - 1; i >= 0; i--)
                     if (!p.Blocks[i].Requested && !p.Blocks[i].Received)
-                        return p.Blocks[i].CreateRequest(id);
+                        return p.Blocks[i].CreateRequest(peer);
             }
 
             return null;
         }
 
-        protected PieceRequest GetFromList(PeerId peer, BitField bitfield, IList<int> pieces)
+        protected PieceRequest GetFromList(IPieceRequester peer, BitField bitfield, IList<int> pieces)
         {
             if (!peer.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
                 return null;
@@ -294,7 +294,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public IList<PieceRequest> GetStandardRequest(PeerId peer, BitField current, int startIndex, int endIndex, int count)
+        public IList<PieceRequest> GetStandardRequest(IPieceRequester peer, BitField current, int startIndex, int endIndex, int count)
         {
             int piecesNeeded = (count * Piece.BlockSize) / TorrentData.PieceLength;
             if ((count * Piece.BlockSize) % TorrentData.PieceLength != 0)
