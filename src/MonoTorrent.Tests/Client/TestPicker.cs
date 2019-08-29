@@ -50,11 +50,11 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(PeerId id, BitField available, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             PickPieceId.Add(id);
-            BitField clone = new BitField(peerBitfield.Length);
-            clone.Or(peerBitfield);
+            BitField clone = new BitField(available.Length);
+            clone.Or(available);
             PickPieceBitfield.Add(clone);
             PickPiecePeers.Add(otherPeers);
             PickPieceStartIndex.Add(startIndex);
