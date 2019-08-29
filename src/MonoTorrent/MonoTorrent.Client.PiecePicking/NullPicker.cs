@@ -39,12 +39,12 @@ namespace MonoTorrent.Client.PiecePicking
 
         }
 
-        public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        public override void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
         {
             
         }
 
-        public override void CancelRequests(PeerId peer)
+        public override void CancelRequests(IPieceRequester peer)
         {
             
         }
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client.PiecePicking
             return false;
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField available, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             return null;
         }
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.PiecePicking
             
         }
 
-        public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public override bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             piece = null;
             return false;

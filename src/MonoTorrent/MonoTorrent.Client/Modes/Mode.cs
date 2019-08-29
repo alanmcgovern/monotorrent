@@ -34,6 +34,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
@@ -326,7 +327,7 @@ namespace MonoTorrent.Client
             Manager.PieceManager.AddPieceRequests(id);
         }
 
-        HashSet<PeerId> peers = new HashSet<PeerId>();
+        HashSet<IPieceRequester> peers = new HashSet<IPieceRequester>();
         async void WritePieceAsync (PeerId id, PieceMessage message, Piece piece)
         {
             long offset = (long) message.PieceIndex * id.TorrentManager.Torrent.PieceLength + message.StartOffset;
@@ -364,10 +365,10 @@ namespace MonoTorrent.Client
                 if (piece.Blocks[i].RequestedOff != null)
                     peers.Add(piece.Blocks[i].RequestedOff);
 
-            foreach (PeerId peer in peers) {
-                peer.Peer.HashedPiece(result);
-                if (peer.Peer.TotalHashFails == 5)
-                    Manager.Engine.ConnectionManager.CleanupSocket (peer, "Too many hash fails");
+            foreach (var peer in peers) {
+                peer.HashedPiece(result);
+                if (peer.TotalHashFails == 5)
+                    peer.Close ();
             }
             peers.Clear ();
 

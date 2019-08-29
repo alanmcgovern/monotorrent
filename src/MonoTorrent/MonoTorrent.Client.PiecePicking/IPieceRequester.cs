@@ -1,10 +1,10 @@
-//
-// RandomisedPicker.cs
+﻿//
+// IPieceRequester.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,32 +27,28 @@
 //
 
 
-using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class RandomisedPicker : PiecePicker
+    public interface IPieceRequester
     {
-        readonly Random random = new Random();
+        // FIXME: Make these readonly
+        bool IsChoking { get; set; }
+        bool SupportsFastPeer { get; set; }
+        // FIXME: Make these readonly
 
-        public RandomisedPicker(PiecePicker picker)
-            :base(picker)
-        {
+        int AmRequestingPiecesCount { get; set; }
+        BitField BitField { get; }
+        List<int> IsAllowedFastPieces { get; }
+        Stopwatch LastMessageReceived { get; }
+        int RepeatedHashFails { get; }
+        List<int> SuggestedPieces { get; }
+        int TotalHashFails { get; }
 
-        }
-
-        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
-        {
-            if (available.AllFalse)
-                return null;
-
-            if (count > 1)
-                return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
-
-            int midpoint = random.Next(startIndex, endIndex);
-            return base.PickPiece(peer, available, otherPeers, count, midpoint, endIndex) ??
-                   base.PickPiece(peer, available, otherPeers, count, startIndex, midpoint);
-        }
+        void Cancel (int pieceIndex, int pieceOffset, int requestLength);
+        void Close ();
+        void HashedPiece(bool succeeded);
     }
 }

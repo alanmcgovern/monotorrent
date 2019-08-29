@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
 
         private Piece piece;
         private int startOffset;
-        private PeerId requestedOff;
+        private IPieceRequester requestedOff;
         private int requestLength;
         private bool requested;
         private bool received;
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal PeerId RequestedOff
+        internal IPieceRequester RequestedOff
         {
             get { return this.requestedOff; }
             private set { this.requestedOff = value; }
@@ -131,10 +131,10 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal PieceRequest CreateRequest(PeerId id)
+        internal PieceRequest CreateRequest(IPieceRequester peer)
         {
             Requested = true;
-            RequestedOff = id;
+            RequestedOff = peer;
             RequestedOff.AmRequestingPiecesCount++;
             return new PieceRequest (PieceIndex, StartOffset, RequestLength);
         }

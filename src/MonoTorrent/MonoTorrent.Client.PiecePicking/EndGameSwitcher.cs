@@ -59,12 +59,12 @@ namespace MonoTorrent.Client.PiecePicking
 			this.torrentManager = torrentManager;
         }
 
-        public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        public override void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
         {
             ActivePicker.CancelRequest(peer, piece, startOffset, length);
         }
 
-        public override void CancelRequests(PeerId peer)
+        public override void CancelRequests(IPieceRequester peer)
         {
             ActivePicker.CancelRequests(peer);
         }
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
             ActivePicker.CancelTimedOutRequests();
         }
 
-        public override PieceRequest ContinueExistingRequest(PeerId peer)
+        public override PieceRequest ContinueExistingRequest(IPieceRequester peer)
         {
             return ActivePicker.ContinueExistingRequest(peer);
         }
@@ -109,11 +109,11 @@ namespace MonoTorrent.Client.PiecePicking
             return ActivePicker.IsInteresting(bitfield);
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            var bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            var bundle = ActivePicker.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame())
-                return ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+                return ActivePicker.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
             return bundle;
         }
 
@@ -159,7 +159,7 @@ namespace MonoTorrent.Client.PiecePicking
             endgame.Reset();
         }
 
-        public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public override bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             return ActivePicker.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
         }

@@ -166,7 +166,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         #region Methods
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             IList<PieceRequest> bundle;
             int start, end;
@@ -175,7 +175,7 @@ namespace MonoTorrent.Client.PiecePicking
             {
                 start = HighPrioritySetStart;
                 end = Math.Min(endIndex, HighPrioritySetStart + HighPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
+                if ((bundle = base.PickPiece(peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
@@ -183,11 +183,11 @@ namespace MonoTorrent.Client.PiecePicking
             {
                 start = MediumPrioritySetStart;
                 end = Math.Min(endIndex, MediumPrioritySetStart + MediumPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
+                if ((bundle = base.PickPiece(peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
-            return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
         }
 
         #endregion

@@ -132,7 +132,7 @@ namespace MonoTorrent.Client
                 while (id.AmRequestingPiecesCount < maxRequests)
                 {
                     var otherPeers = id.TorrentManager?.Peers.ConnectedPeers ?? new List<PeerId> ();
-                    var request = Picker.PickPiece(id, id.BitField, otherPeers, count);
+                    var request = Picker.PickPiece(id, id.BitField, new List<IPieceRequester> (otherPeers), count);
                     if (request != null && request.Count > 0)
                         for (int i = 0; i < request.Count; i ++)
                             id.Enqueue(new RequestMessage (request[i].PieceIndex, request[i].StartOffset, request[i].RequestLength));
