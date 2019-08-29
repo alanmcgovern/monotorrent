@@ -63,33 +63,24 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     abstract class EncryptedSocket : IEncryptor
     {
-        public IEncryption Encryptor
-        {
-            get { return streamEncryptor; }
-        }
-        public IEncryption Decryptor
-        {
-            get { return streamDecryptor; }
-        }
+        // Cryptors for the data transmission
+        public IEncryption Decryptor { get; private set; }
+        public IEncryption Encryptor { get; private set; }
 
         #region Private members
 
-        private RandomNumberGenerator random;
-        private SHA1 hasher;
+        readonly RandomNumberGenerator random;
+        readonly SHA1 hasher;
 
         // Cryptors for the handshaking
-        private RC4 encryptor = null;
-        private RC4 decryptor = null;
-
-        // Cryptors for the data transmission
-        private IEncryption streamEncryptor;
-        private IEncryption streamDecryptor;
+        private RC4 encryptor;
+        private RC4 decryptor;
 
         private EncryptionTypes allowedEncryption;
 
-        private byte[] X; // A 160 bit random integer
-        private byte[] Y; // 2^X mod P
-        private byte[] OtherY = null;
+        readonly byte[] X; // A 160 bit random integer
+        readonly byte[] Y; // 2^X mod P
+        private byte[] OtherY;
         
         protected IConnection socket;
 
@@ -104,30 +95,26 @@ namespace MonoTorrent.Client.Encryption
         #endregion
 
         #region Protected members
-        protected byte[] S = null;
-        protected InfoHash SKEY = null;
-
-        protected byte[] PadC = null;
-        protected byte[] PadD = null;
+        protected byte[] S;
+        protected InfoHash SKEY;
 
         protected byte[] VerificationConstant = new byte[8];
 
-        protected byte[] CryptoProvide = new byte[] { 0x00, 0x00, 0x00, 0x03 };
+        protected byte[] CryptoProvide = { 0x00, 0x00, 0x00, 0x03 };
 
 
         protected byte[] CryptoSelect;
 
         #endregion
 
-        public EncryptedSocket(EncryptionTypes allowedEncryption)
+        protected EncryptedSocket(EncryptionTypes allowedEncryption)
         {
-            random = RNGCryptoServiceProvider.Create();
+            random = RandomNumberGenerator.Create ();
             hasher = HashAlgoFactory.Create<SHA1>();
 
-            GenerateX();
-            GenerateY();
-
-            bytesReceived = 0;
+            X = new byte[20];
+            random.GetBytes(X);
+            Y = ModuloCalculator.Calculate(ModuloCalculator.TWO, X);
 
             SetMinCryptoAllowed(allowedEncryption);
         }
@@ -140,10 +127,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="socket">The socket to perform handshaking with</param>
         public virtual async Task HandshakeAsync(IConnection socket)
         {
-            if (socket == null)
-                throw new ArgumentNullException("socket");
-
-            this.socket = socket;
+            this.socket = socket ?? throw new ArgumentNullException(nameof (socket));
 
             // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
             // These two steps will be done simultaneously to save time due to latency
@@ -179,23 +163,23 @@ namespace MonoTorrent.Client.Encryption
         /// <summary>
         /// Encrypts some data (should only be called after onEncryptorReady)
         /// </summary>
-        /// <param name="buffer">Buffer with the data to encrypt</param>
+        /// <param name="data">Buffer with the data to encrypt</param>
         /// <param name="offset">Offset to begin encryption</param>
-        /// <param name="count">Number of bytes to encrypt</param>
+        /// <param name="length">Number of bytes to encrypt</param>
         public void Encrypt(byte[] data, int offset, int length)
         {
-            streamEncryptor.Encrypt(data, offset, data, offset, length);
+            Encryptor.Encrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
         /// Decrypts some data (should only be called after onEncryptorReady)
         /// </summary>
-        /// <param name="buffer">Buffer with the data to decrypt</param>
+        /// <param name="data">Buffer with the data to decrypt</param>
         /// <param name="offset">Offset to begin decryption</param>
-        /// <param name="count">Number of bytes to decrypt</param>
+        /// <param name="length">Number of bytes to decrypt</param>
         public void Decrypt(byte[] data, int offset, int length)
         {
-            streamDecryptor.Decrypt(data, offset, data, offset, length);
+            Decryptor.Decrypt(data, offset, data, offset, length);
         }
 
         private int RandomNumber(int max)
@@ -336,24 +320,6 @@ namespace MonoTorrent.Client.Encryption
 
         #region Cryptography Setup
         /// <summary>
-        /// Generate a 160 bit random number for X
-        /// </summary>
-        private void GenerateX()
-        {
-            X = new byte[20];
-
-            random.GetBytes(X);
-        }
-
-        /// <summary>
-        /// Calculate 2^X mod P
-        /// </summary>
-        private void GenerateY()
-        {
-            Y = ModuloCalculator.Calculate(ModuloCalculator.TWO, X);
-        }
-
-        /// <summary>
         /// Instantiate the cryptors with the keys: Hash(encryptionSalt, S, SKEY) for the encryptor and
         /// Hash(encryptionSalt, S, SKEY) for the decryptor.
         /// (encryptionSalt should be "keyA" if you're A, "keyB" if you're B, and reverse for decryptionSalt)
@@ -380,8 +346,8 @@ namespace MonoTorrent.Client.Encryption
                 CryptoSelect[3] |= 2;
                 if (replace)
                 {
-                    streamEncryptor = encryptor;
-                    streamDecryptor = decryptor;
+                    Encryptor = encryptor;
+                    Decryptor = decryptor;
                 }
                 return 2;
             }
@@ -392,8 +358,8 @@ namespace MonoTorrent.Client.Encryption
                 CryptoSelect[3] |= 1;
                 if (replace)
                 {
-                    streamEncryptor = new RC4Header();
-                    streamDecryptor = new RC4Header();
+                    Encryptor = new RC4Header();
+                    Decryptor = new RC4Header();
                 }
                 return 1;
             }
@@ -470,40 +436,27 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] DoEncrypt(byte[] data)
         {
-            byte[] d = (byte[])data.Clone();
-            encryptor.Encrypt(d);
-            return d;
+            encryptor.Encrypt(data);
+            return data;
         }
 
         /// <summary>
         /// Encrypts some data with the RC4 encryptor used in handshaking
         /// </summary>
-        /// <param name="buffer">Buffer with the data to encrypt</param>
+        /// <param name="data">Buffer with the data to encrypt</param>
         /// <param name="offset">Offset to begin encryption</param>
-        /// <param name="count">Number of bytes to encrypt</param>
+        /// <param name="length">Number of bytes to encrypt</param>
         protected void DoEncrypt(byte[] data, int offset, int length)
         {
             encryptor.Encrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
-        /// Decrypts some data with the RC4 encryptor used in handshaking
-        /// </summary>
-        /// <param name="data">Buffers with the data to decrypt</param>
-        /// <returns>Buffer with decrypted data</returns>
-        protected byte[] DoDecrypt(byte[] data)
-        {
-            byte[] d = (byte[])data.Clone();
-            decryptor.Decrypt(d);
-            return d;
-        }
-
-        /// <summary>
         /// Decrypts some data with the RC4 decryptor used in handshaking
         /// </summary>
-        /// <param name="buffer">Buffer with the data to decrypt</param>
+        /// <param name="data">Buffer with the data to decrypt</param>
         /// <param name="offset">Offset to begin decryption</param>
-        /// <param name="count">Number of bytes to decrypt</param>
+        /// <param name="length">Number of bytes to decrypt</param>
         protected void DoDecrypt(byte[] data, int offset, int length)
         {
             decryptor.Decrypt(data, offset, data, offset, length);

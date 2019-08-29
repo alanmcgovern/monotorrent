@@ -43,8 +43,6 @@ namespace MonoTorrent.Client.Encryption
     {
         public byte[] InitialPayload { get; }
 
-        private byte[] VerifyBytes;
-
         public PeerAEncryption(InfoHash InfoHash, EncryptionTypes allowedEncryption)
             : this (InfoHash, allowedEncryption, null)
         {
@@ -59,11 +57,6 @@ namespace MonoTorrent.Client.Encryption
         }
 
         protected override async Task doneReceiveY()
-        {
-            await StepThree();
-        }
-
-        private async Task StepThree()
         {
             CreateCryptors("keyA", "keyB");
 
@@ -85,11 +78,11 @@ namespace MonoTorrent.Client.Encryption
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
             byte[] buffer = new byte[req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                                     + 2 + padC.Length + 2 + InitialPayload.Length];
-                
+
             int offset = 0;
             offset += Message.Write(buffer, offset, req1);
             offset += Message.Write(buffer, offset, req2);
-            offset += Message.Write(buffer, offset, DoEncrypt(VerificationConstant));
+            offset += Message.Write(buffer, offset, DoEncrypt((byte[])VerificationConstant.Clone ()));
             offset += Message.Write(buffer, offset, DoEncrypt(CryptoProvide));
             offset += Message.Write(buffer, offset, DoEncrypt(Len(padC)));
             offset += Message.Write(buffer, offset, DoEncrypt(padC));
@@ -101,42 +94,30 @@ namespace MonoTorrent.Client.Encryption
             // Send the entire message in one go
             await NetworkIO.SendAsync (socket, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
 
-            await Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
+            DoDecrypt (VerificationConstant, 0, VerificationConstant.Length);
+            await Synchronize(VerificationConstant, 616); // 4 B->A: ENCRYPT(VC)
         }
 
         protected override async Task doneSynchronize()
         {
             await base.doneSynchronize(); // 4 B->A: ENCRYPT(VC, ...
 
-            VerifyBytes = new byte[4 + 2];
-            await ReceiveMessage(VerifyBytes, VerifyBytes.Length); // crypto_select, len(padD) ...
-            await gotVerification ();
-        }
+            var verifyBytes = new byte[4 + 2];
+            await ReceiveMessage(verifyBytes, verifyBytes.Length); // crypto_select, len(padD) ...
 
-        private byte[] b;
-        private async Task gotVerification()
-        {
             byte[] myCS = new byte[4];
             byte[] lenPadD = new byte[2];
 
-            DoDecrypt(VerifyBytes, 0, VerifyBytes.Length);
+            DoDecrypt(verifyBytes, 0, verifyBytes.Length);
 
-            Array.Copy(VerifyBytes, 0, myCS, 0, myCS.Length); // crypto_select
+            Array.Copy(verifyBytes, 0, myCS, 0, myCS.Length); // crypto_select
+            Array.Copy(verifyBytes, myCS.Length, lenPadD, 0, lenPadD.Length); // len(padD)
 
-            //SelectCrypto(myCS);
-            b = myCS;
-            Array.Copy(VerifyBytes, myCS.Length, lenPadD, 0, lenPadD.Length); // len(padD)
+            var padD = new byte[DeLen(lenPadD)];
 
-            PadD = new byte[DeLen(lenPadD)];
-
-            await ReceiveMessage(PadD, PadD.Length);
-            gotPadD();
-        }
-
-        private void gotPadD()
-        {
-            DoDecrypt(PadD, 0, PadD.Length); // padD
-            SelectCrypto(b, true);
+            await ReceiveMessage(padD, padD.Length);
+            DoDecrypt(padD, 0, padD.Length);
+            SelectCrypto(myCS, true);
         }
     }
 }
