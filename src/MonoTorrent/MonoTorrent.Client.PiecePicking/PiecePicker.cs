@@ -85,10 +85,10 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             return picker.ExportActiveRequests();
         }
-        public virtual void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public virtual void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             CheckOverriden();
-            picker.Initialise(bitfield, files, requests);
+            picker.Initialise(bitfield, torrentData, requests);
         }
         public virtual bool IsInteresting(BitField bitfield)
         {

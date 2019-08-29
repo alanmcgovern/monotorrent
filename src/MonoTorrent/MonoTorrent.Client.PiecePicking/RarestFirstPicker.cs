@@ -49,9 +49,9 @@ namespace MonoTorrent.Client.PiecePicking
             spares = new Stack<BitField>();
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, files, requests);
+            base.Initialise(bitfield, torrentData, requests);
             this.length = bitfield.Length;
         }
 

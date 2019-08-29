@@ -147,12 +147,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="files"></param>
         /// <param name="requests"></param>
         /// <param name="unhashedPieces"></param>
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, files, requests);
+            base.Initialise(bitfield, torrentData, requests);
             
             // set the high priority set start to the beginning of the first file that we have to download
-            foreach (TorrentFile file in files)
+            foreach (TorrentFile file in torrentData.Files)
             {
                 if (file.Priority == Priority.DoNotDownload)
                     this.highPrioritySetStart = file.EndPieceIndex;

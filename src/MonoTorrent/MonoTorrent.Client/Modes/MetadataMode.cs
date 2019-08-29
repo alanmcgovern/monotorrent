@@ -206,7 +206,7 @@ namespace MonoTorrent.Client
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (id);
             Manager.Bitfield = new BitField(torrent.Pieces.Count);
-            Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
+            Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent);
             foreach (TorrentFile file in torrent.Files)
                 file.FullPath = Path.Combine (Manager.SavePath, file.Path);
             _ = Manager.StartAsync();

@@ -351,7 +351,7 @@ namespace MonoTorrent.Client
         {
             Check.Picker(picker);
 
-           PieceManager.ChangePicker(picker, Bitfield, Torrent.Files);
+           PieceManager.ChangePicker(picker, Bitfield, Torrent);
         }
 
         /// <summary>

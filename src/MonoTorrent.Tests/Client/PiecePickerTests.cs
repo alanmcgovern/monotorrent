@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.PiecePicking
             peers = new List<PeerId>();
 
             manager = new PieceManager ();
-            manager.ChangePicker ((standardPicker = new StandardPicker()), rig.Manager.Bitfield, rig.Manager.Torrent.Files);
+            manager.ChangePicker ((standardPicker = new StandardPicker()), rig.Manager.Bitfield, rig.Manager.Torrent);
             this.picker = manager.Picker;
 
             peer = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://BLAH")), rig.Manager, NullConnection.Incoming);
@@ -374,7 +374,7 @@ namespace MonoTorrent.Client.PiecePicking
             peer.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 4 });
             peer.BitField.SetAll(true);
             picker = new StandardPicker();
-            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent, new List<Piece>());
             var bundle = picker.PickPiece(peer, new BitField(peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
             Assert.IsNull(bundle);
         }
@@ -388,7 +388,7 @@ namespace MonoTorrent.Client.PiecePicking
             peer.SuggestedPieces.AddRange(new int[] { 1, 2, 3, 4 });
             peer.BitField.SetAll(true);
             picker = new StandardPicker();
-            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent, new List<Piece>());
             var bundle = picker.PickPiece(peer, new BitField(peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
             Assert.IsNull(bundle);
         }

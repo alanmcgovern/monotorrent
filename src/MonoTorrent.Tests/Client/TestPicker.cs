@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             
         }

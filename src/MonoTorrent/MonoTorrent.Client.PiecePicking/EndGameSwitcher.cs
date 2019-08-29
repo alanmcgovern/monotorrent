@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PiecePicking
         bool inEndgame;
         PiecePicker endgame;
         BitField endgameSelector;
-        TorrentFile[] files;
+        ITorrentData torrentData;
         PiecePicker standard;
 		TorrentManager torrentManager;
 
@@ -94,14 +94,14 @@ namespace MonoTorrent.Client.PiecePicking
             return ActivePicker.ExportActiveRequests();
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             this.bitfield = bitfield;
             this.endgameSelector = new BitField(bitfield.Length);
-            this.files = files;
+            this.torrentData = torrentData;
             inEndgame = false;
             TryEnableEndgame();
-            ActivePicker.Initialise(bitfield, files, requests);
+            ActivePicker.Initialise(bitfield, torrentData, requests);
         }
 
         public override bool IsInteresting(BitField bitfield)
@@ -131,9 +131,9 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Create the bitfield of pieces which are downloadable
             endgameSelector.SetAll(false);
-            for (int i = 0; i < files.Length; i++)
-                if (files[i].Priority != Priority.DoNotDownload)
-                    endgameSelector.Or(files[i].GetSelector(bitfield.Length));
+            for (int i = 0; i < torrentData.Files.Length; i++)
+                if (torrentData.Files[i].Priority != Priority.DoNotDownload)
+                    endgameSelector.Or(torrentData.Files[i].GetSelector(bitfield.Length));
 
             // NAND it with the pieces we already have (i.e. AND it with the pieces we still need to receive)
             endgameSelector.NAnd(bitfield);
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client.PiecePicking
             inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count < Threshold;
 			if (inEndgame)
 			{
-				endgame.Initialise(bitfield, files, standard.ExportActiveRequests());
+				endgame.Initialise(bitfield, torrentData, standard.ExportActiveRequests());
 				standard.Reset ();
 				// Set torrent's IsInEndGame flag
 				torrentManager.isInEndGame = true;
