@@ -201,8 +201,9 @@ namespace MonoTorrent.Client
             id.TorrentManager.Peers.ConnectedPeers.Add(id);
 
             try {
-                // Increase the count of the "open" connections
-                var result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, engine.Settings, id.TorrentManager.InfoHash);
+                // Create a handshake message to send to the peer
+                var handshake = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
+                var result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, engine.Settings, id.TorrentManager.InfoHash, handshake);
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
             } catch {
@@ -215,12 +216,8 @@ namespace MonoTorrent.Client
             }
 
             try {
-                // Create a handshake message to send to the peer
-                var handshake = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
-                await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, id.TorrentManager.UploadLimiter, id.Monitor, id.TorrentManager.Monitor);
-
                 // Receive their handshake
-                handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
+                var handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
                 handshake.Handle(id);
             } catch {
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
