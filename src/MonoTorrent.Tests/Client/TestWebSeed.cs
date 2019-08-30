@@ -215,7 +215,7 @@ namespace MonoTorrent.Client
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
 
-                PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager);
+                PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager.Torrent);
                 RequestMessage request = (RequestMessage)requests.Messages[0];
                 Assert.AreEqual(request.PieceIndex, m.PieceIndex, "#1");
                 Assert.AreEqual(request.RequestLength, m.RequestLength, "#1");

@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
                 await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageBuffer, messageLength, messageBody);
-                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager);
+                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager?.Torrent);
                 if (data is PieceMessage msg)
                 {
                     monitor?.ProtocolDown.AddDelta(-msg.RequestLength);
