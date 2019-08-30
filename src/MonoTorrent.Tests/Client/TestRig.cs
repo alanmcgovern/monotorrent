@@ -532,7 +532,7 @@ namespace MonoTorrent.Client
 
         internal static TorrentManager CreatePrivate ()
         {
-            var dict = CreateTorrent (16 * 1024 * 8, Array.Empty<TorrentFile> (), null);
+            var dict = CreateTorrent (16 * 1024 * 8, new [] { new TorrentFile ("File", 16 * 1024 * 8) } , null);
             var editor = new TorrentEditor (dict) {
                 CanEditSecureMetadata = true,
                 Private = true,
