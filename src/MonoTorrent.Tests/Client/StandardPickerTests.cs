@@ -52,8 +52,8 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         BitField bitfield;
-        IPieceRequester peer;
-        List<IPieceRequester> peers;
+        PeerId peer;
+        List<PeerId> peers;
         PiecePicker picker;
         TestTorrentData torrentData;
 
@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.PiecePicking
                 PieceLength = pieceLength,
                 Size = pieceLength * pieceCount
             };
-            peers = new List<IPieceRequester>();
+            peers = new List<PeerId>();
 
             picker = new StandardPicker();
             picker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             peers [1].IsChoking = false;
             peers [1].BitField.SetAll (true);
-            peers [1].HashedPiece (false);
+            peers [1].Peer.HashedPiece (false);
             message = picker.PickPiece (peers [1], bitfield.Clone ().Not (), peers, 1, 0, 10);
             Assert.AreEqual (2, message[0].PieceIndex);
         }
