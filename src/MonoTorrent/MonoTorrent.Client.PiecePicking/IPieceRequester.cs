@@ -34,17 +34,14 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public interface IPieceRequester
     {
-        // FIXME: Make these readonly
-        bool IsChoking { get; set; }
-        bool SupportsFastPeer { get; set; }
-        // FIXME: Make these readonly
-
         int AmRequestingPiecesCount { get; set; }
         BitField BitField { get; }
         List<int> IsAllowedFastPieces { get; }
+        bool IsChoking { get; }
         Stopwatch LastMessageReceived { get; }
         int RepeatedHashFails { get; }
         List<int> SuggestedPieces { get; }
+        bool SupportsFastPeer { get; }
         int TotalHashFails { get; }
 
         void Cancel (int pieceIndex, int pieceOffset, int requestLength);

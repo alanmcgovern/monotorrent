@@ -39,11 +39,11 @@ namespace MonoTorrent.Client
     {
         int       IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
         List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool      IPieceRequester.IsChoking { get => IsChoking; set => IsChoking = value; }
+        bool      IPieceRequester.IsChoking => IsChoking;
         Stopwatch IPieceRequester.LastMessageReceived => LastMessageReceived;
         int       IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
         List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
-        bool      IPieceRequester.SupportsFastPeer { get => SupportsFastPeer; set => SupportsFastPeer = value; }
+        bool      IPieceRequester.SupportsFastPeer => SupportsFastPeer;
         int       IPieceRequester.TotalHashFails => Peer.TotalHashFails;
 
         void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
