@@ -37,39 +37,38 @@ using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client.Messages
 {
-    delegate PeerMessage CreateMessage(ITorrentData manager);
     abstract class PeerMessage : Message
     {
-        private static Dictionary<byte, CreateMessage> messageDict;
+        readonly static Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
 
         static PeerMessage()
         {
-            messageDict = new Dictionary<byte, CreateMessage>();
+            messageDict = new Dictionary<byte, Func<ITorrentData, PeerMessage>>();
 
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
             //      - Handshake messages aren't registered as they are always the first message sent/received
-            Register(AllowedFastMessage.MessageId,   delegate (ITorrentData manager) { return new AllowedFastMessage(); });
-            Register(BitfieldMessage.MessageId,      delegate (ITorrentData manager) { return new BitfieldMessage((int)Math.Ceiling ((double)manager.Size / manager.PieceLength)); });
-            Register(CancelMessage.MessageId,        delegate (ITorrentData manager) { return new CancelMessage(); });
-            Register(ChokeMessage.MessageId,         delegate (ITorrentData manager) { return new ChokeMessage(); });
-            Register(HaveAllMessage.MessageId,       delegate (ITorrentData manager) { return new HaveAllMessage(); });
-            Register(HaveMessage.MessageId,          delegate (ITorrentData manager) { return new HaveMessage(); });
-            Register(HaveNoneMessage.MessageId,      delegate (ITorrentData manager) { return new HaveNoneMessage(); });
-            Register(InterestedMessage.MessageId,    delegate (ITorrentData manager) { return new InterestedMessage(); });
-            Register(NotInterestedMessage.MessageId, delegate (ITorrentData manager) { return new NotInterestedMessage(); });
-            Register(PieceMessage.MessageId,         delegate (ITorrentData manager) { return new PieceMessage(); });
-            Register(PortMessage.MessageId,          delegate (ITorrentData manager) { return new PortMessage(); });
-            Register(RejectRequestMessage.MessageId, delegate (ITorrentData manager) { return new RejectRequestMessage(); });
-            Register(RequestMessage.MessageId,       delegate (ITorrentData manager) { return new RequestMessage(); });
-            Register(SuggestPieceMessage.MessageId,  delegate (ITorrentData manager) { return new SuggestPieceMessage(); });
-            Register(UnchokeMessage.MessageId,       delegate (ITorrentData manager) { return new UnchokeMessage(); });
+            Register(AllowedFastMessage.MessageId,   data => new AllowedFastMessage());
+            Register(BitfieldMessage.MessageId,      data => new BitfieldMessage((int)Math.Ceiling ((double)data.Size / data.PieceLength)));
+            Register(CancelMessage.MessageId,        data => new CancelMessage());
+            Register(ChokeMessage.MessageId,         data => new ChokeMessage());
+            Register(HaveAllMessage.MessageId,       data => new HaveAllMessage());
+            Register(HaveMessage.MessageId,          data => new HaveMessage());
+            Register(HaveNoneMessage.MessageId,      data => new HaveNoneMessage());
+            Register(InterestedMessage.MessageId,    data => new InterestedMessage());
+            Register(NotInterestedMessage.MessageId, data => new NotInterestedMessage());
+            Register(PieceMessage.MessageId,         data => new PieceMessage());
+            Register(PortMessage.MessageId,          data => new PortMessage());
+            Register(RejectRequestMessage.MessageId, data => new RejectRequestMessage());
+            Register(RequestMessage.MessageId,       data => new RequestMessage());
+            Register(SuggestPieceMessage.MessageId,  data => new SuggestPieceMessage());
+            Register(UnchokeMessage.MessageId,       data => new UnchokeMessage());
             
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection
             Register(ExtensionMessage.MessageId, delegate(ITorrentData manager) { throw new MessageException("Shouldn't decode extension message this way"); });
         }
 
-        private static void Register(byte identifier, CreateMessage creator)
+        private static void Register(byte identifier, Func<ITorrentData, PeerMessage> creator)
         {
             if (creator == null)
                 throw new ArgumentNullException(nameof (creator));
@@ -81,7 +80,7 @@ namespace MonoTorrent.Client.Messages
         public static PeerMessage DecodeMessage(byte[] buffer, int offset, int count, ITorrentData manager)
         {
             PeerMessage message;
-            CreateMessage creator;
+            Func<ITorrentData, PeerMessage> creator;
 
             if (count < 4)
                 throw new ArgumentException("A message must contain a 4 byte length prefix");

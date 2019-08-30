@@ -93,6 +93,7 @@ namespace MonoTorrent.Client
                 await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageBuffer, messageLength, messageBody);
+                // FIXME: manager should never be null, except some of the unit tests do that.
                 var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager?.Torrent);
                 if (data is PieceMessage msg)
                 {
