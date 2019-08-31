@@ -38,8 +38,7 @@ namespace MonoTorrent.Client.PiecePicking
         public List<IPieceRequester> PickPieceId = new List<IPieceRequester>();
         public List<BitField> PickPieceBitfield = new List<BitField>();
         public List<IReadOnlyList<IPieceRequester>> PickPiecePeers = new List<IReadOnlyList<IPieceRequester>>();
-        public List<int> PickPieceStartIndex = new List<int>();
-        public List<int> PickPieceEndIndex = new List<int>();
+        public List<Tuple<int, int>> PickedIndex = new List<Tuple<int, int>>();
         public List<int> PickPieceCount = new List<int>();
 
         public List<int> PickedPieces = new List<int>();
@@ -57,8 +56,7 @@ namespace MonoTorrent.Client.PiecePicking
             clone.Or(available);
             PickPieceBitfield.Add(clone);
             PickPiecePeers.Add(otherPeers);
-            PickPieceStartIndex.Add(startIndex);
-            PickPieceEndIndex.Add(endIndex);
+            PickedIndex.Add (Tuple.Create (startIndex, endIndex));
             PickPieceCount.Add(count);
 
             for (int i = startIndex; i < endIndex; i++)

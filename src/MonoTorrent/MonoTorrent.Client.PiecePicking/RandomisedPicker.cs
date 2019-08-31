@@ -47,10 +47,13 @@ namespace MonoTorrent.Client.PiecePicking
             if (available.AllFalse)
                 return null;
 
-            if (count > 1)
+            // If there's only one piece to choose then there isn't any midpoint.
+            if (endIndex - startIndex < 2)
                 return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
 
-            int midpoint = random.Next(startIndex, endIndex);
+            // If there are two or more pieces to choose, ensure we always start *at least* one
+            // piece beyond the start index.
+            var midpoint = random.Next(startIndex + 1, endIndex);
             return base.PickPiece(peer, available, otherPeers, count, midpoint, endIndex) ??
                    base.PickPiece(peer, available, otherPeers, count, startIndex, midpoint);
         }

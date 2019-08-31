@@ -30,54 +30,77 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.PiecePicking;
-
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     [TestFixture]
     public class RandomisedPickerTests
     {
-        PeerId id;
+        TestPicker checker;
+        PeerId peer;
         RandomisedPicker picker;
-        TestRig rig;
-        TestPicker tester;
-
-        [OneTimeSetUp]
-        public void FixtureSetup()
-        {
-            rig = TestRig.CreateMultiFile();
-            id = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://BLAH")), rig.Manager, NullConnection.Incoming);
-            for (int i = 0; i < id.BitField.Length; i += 2)
-                id.BitField[i] = true;
-        }
-
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Dispose();
-        }
+        int pieceCount;
 
         [SetUp]
         public void Setup()
         {
-            tester = new TestPicker();
-            picker = new RandomisedPicker(tester);
+            checker = new TestPicker();
+            picker = new RandomisedPicker(checker);
+
+            pieceCount = 40;
+            peer = PeerId.CreateNull (pieceCount);
+            peer.BitField.SetAll (true);
         }
 
         [Test]
-        public void EnsureRandomlyPicked()
+        public void Pick()
         {
-            tester.ReturnNoPiece = false;
-            while (picker.PickPiece(id, id.BitField, new List<PeerId>(), 1) != null) { }
-            Assert.AreEqual(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
-            List<int> pieces = new List<int>(tester.PickedPieces);
-            pieces.Sort();
-            for (int i = 0; i < pieces.Count; i++)
-                if (pieces[i] != tester.PickedPieces[i])
-                    return;
-            Assert.Fail("The piece were picked in order");
+            picker.PickPiece(peer, peer.BitField, new List<PeerId>());
+
+            // We should pick a random midpoint and select a piece starting from there.
+            // If that fails we should wrap around to 0 and scan from the beginning.
+            Assert.IsTrue (checker.PickedIndex[0].Item1 > 0, "#1");
+            Assert.IsTrue (checker.PickedIndex[0].Item2 == pieceCount, "#2");
+
+            Assert.AreEqual (0, checker.PickedIndex[1].Item1, "#3");
+            Assert.AreEqual (checker.PickedIndex [0].Item1, checker.PickedIndex[1].Item2, "#4");
+
+            foreach (var bf in checker.PickPieceBitfield)
+                Assert.IsTrue (bf.AllTrue, "#5");
+        }
+
+        [Test]
+        public void SinglePieceBitfield()
+        {
+            picker.PickPiece(peer, new BitField (1).SetAll (true), new List<PeerId>());
+
+            Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
+            Assert.AreEqual (0, checker.PickedIndex[0].Item1, "#2");
+            Assert.AreEqual (1, checker.PickedIndex[0].Item2, "#2");
+        }
+
+        [Test]
+        public void SinglePieceRange()
+        {
+            picker.PickPiece(peer, peer.BitField, new List<PeerId> (), 1, 12, 13);
+
+            Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
+            Assert.AreEqual (12, checker.PickedIndex[0].Item1, "#2");
+            Assert.AreEqual (13, checker.PickedIndex[0].Item2, "#3");
+        }
+
+        [Test]
+        public void TwoPieceRange()
+        {
+            picker.PickPiece(peer, peer.BitField, new List<PeerId> (), 1, 12, 14);
+
+            Assert.AreEqual (2, checker.PickPieceBitfield.Count, "#1");
+            Assert.AreEqual (13, checker.PickedIndex[0].Item1, "#2");
+            Assert.AreEqual (14, checker.PickedIndex[0].Item2, "#3");
+
+            Assert.AreEqual (12, checker.PickedIndex[1].Item1, "#4");
+            Assert.AreEqual (13, checker.PickedIndex[1].Item2, "#5");
         }
     }
 }
