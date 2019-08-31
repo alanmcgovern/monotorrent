@@ -38,6 +38,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 
+using MonoTorrent.Client.PiecePicking;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -75,13 +76,14 @@ namespace MonoTorrent.Client
             listener.Close();
         }
 
-        [SetUp]
-        public void Setup()
+        [SetUp] public void Setup()
         {
             requestedUrl.Clear();
             partialData = false;
 
             rig = TestRig.CreateMultiFile();
+            rig.Manager.ChangePicker (new StandardPicker ());
+
             connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
 
