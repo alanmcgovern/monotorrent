@@ -86,7 +86,6 @@ namespace MonoTorrent.Client
 
             tracker = (UdpTracker)TrackerFactory.Create(new Uri($"udp://127.0.0.1:{listener.EndPoint.Port}/announce/"));
             announceparams = announceparams.WithPort (listener.EndPoint.Port);
-            tracker.RetryDelay = TimeSpan.FromMilliseconds (50);
 
             listener.IgnoreAnnounces = false;
             listener.IgnoreConnects = false;
@@ -254,6 +253,7 @@ namespace MonoTorrent.Client
         [Test]
         public void AnnounceTest_NoConnect()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
         }
@@ -261,9 +261,11 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceTest_NoConnect_ThenConnect()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
 
+            tracker.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreConnects = false;
             await tracker.AnnounceAsync (announceparams);
         }
@@ -271,6 +273,7 @@ namespace MonoTorrent.Client
         [Test]
         public void AnnounceTest_NoAnnounce()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreAnnounces = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
         }
@@ -278,9 +281,11 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceTest_NoAnnounce_ThenAnnounce()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreAnnounces = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
 
+            tracker.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreAnnounces = false;
             await tracker.AnnounceAsync (announceparams);
         }
@@ -297,6 +302,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ScrapeTest_NoConnect()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
         }
@@ -304,9 +310,11 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ScrapeTest_NoConnect_ThenConnect()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
 
+            tracker.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreConnects = false;
             await tracker.ScrapeAsync (scrapeParams);
         }
@@ -314,6 +322,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ScrapeTest_NoScrapes()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreScrapes = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
         }
@@ -321,9 +330,11 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ScrapeTest_NoScrapes_ThenScrape()
         {
+            tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreScrapes = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
 
+            tracker.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreScrapes = false;
             await tracker.ScrapeAsync (scrapeParams);
         }
