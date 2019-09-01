@@ -27,9 +27,10 @@
 //
 
 
+using System;
 using System.Net;
 using System.Net.Sockets;
-
+using System.Threading.Tasks;
 using MonoTorrent.Client.Connections;
 
 using NUnit.Framework;
@@ -58,21 +59,27 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void DisposeWhileReceiving ()
+        public async Task DisposeWhileReceiving ()
         {
             var task = Incoming.ReceiveAsync (new byte[100], 0, 100);
             Incoming.Dispose ();
 
-            Assert.ThrowsAsync <SocketException> (() => task.WithTimeout (), "#1");
+            // All we care about is that the task is marked as 'Complete'.
+            _ = await Task.WhenAny (task).WithTimeout (1000);
+            Assert.IsTrue (task.IsCompleted, "#1");
+            GC.KeepAlive (task.Exception); // observe the exception (if any)
         }
 
         [Test]
-        public void DisposeWhileSending ()
+        public async Task DisposeWhileSending ()
         {
             var task = Incoming.SendAsync (new byte[1000000], 0, 1000000);
             Incoming.Dispose ();
 
-            Assert.ThrowsAsync <SocketException> (() => task.WithTimeout (), "#1");
+            // All we care about is that the task is marked as 'Complete'.
+            _ = await Task.WhenAny (task).WithTimeout (1000);
+            Assert.IsTrue (task.IsCompleted, "#1");
+            GC.KeepAlive (task.Exception); // observe the exception (if any)
         }
 
         [TearDown]
