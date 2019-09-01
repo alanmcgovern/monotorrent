@@ -161,7 +161,7 @@ namespace MonoTorrent.Client.Tracker
         {
             TaskCompletionSource<bool> s = new TaskCompletionSource<bool>();
             listener.AnnounceReceived += (o, e) => s.Task.Wait ();
-            tracker.RequestTimeout = TimeSpan.FromMilliseconds (500);
+            tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try
             {
                 Assert.ThrowsAsync<TrackerException>(() => tracker.AnnounceAsync(announceParams));
@@ -232,7 +232,7 @@ namespace MonoTorrent.Client.Tracker
         {
             var tcs = new TaskCompletionSource<bool>();
             listener.ScrapeReceived += (o, e) => tcs.Task.Wait();
-            tracker.RequestTimeout = TimeSpan.FromMilliseconds (500);
+            tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try
             {
                 Assert.ThrowsAsync<TrackerException>(() => tracker.ScrapeAsync(scrapeParams));
@@ -257,8 +257,8 @@ namespace MonoTorrent.Client.Tracker
             listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
 
             await tracker.AnnounceAsync (announceParams);
-            Assert.IsTrue (argsTask.Task.Wait (5000), "#3");
-            Assert.AreEqual (trackerId, argsTask.Task.Result.TrackerId, "#4");
+            var result = await argsTask.Task.WithTimeout ("#3");
+            Assert.AreEqual (trackerId, result.TrackerId, "#4");
         }
     }
 }
