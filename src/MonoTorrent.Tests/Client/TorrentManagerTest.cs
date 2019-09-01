@@ -31,8 +31,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
