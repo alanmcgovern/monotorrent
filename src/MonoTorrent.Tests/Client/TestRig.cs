@@ -444,6 +444,12 @@ namespace MonoTorrent.Client
             return dict;
         }
 
+        internal static Torrent CreateMultiFileTorrent (TorrentFile [] files, int pieceLength)
+        {
+            using (var rig = CreateMultiFile (files, pieceLength))
+               return rig.Torrent;
+        }
+
         static void AddFiles(BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
         {
             long totalSize = pieceLength - 1;

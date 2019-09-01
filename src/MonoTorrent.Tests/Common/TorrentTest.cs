@@ -31,7 +31,7 @@ using System;
 using System.IO;
 
 using MonoTorrent.BEncoding;
-
+using MonoTorrent.Client;
 using NUnit.Framework;
 
 namespace MonoTorrent.Common
@@ -41,7 +41,7 @@ namespace MonoTorrent.Common
     {
         private Torrent torrent;
         private long creationTime;
-        private System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();
+        readonly System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();
 
         /// <summary>
         /// 
@@ -55,35 +55,37 @@ namespace MonoTorrent.Common
             creationTime = (long)span.TotalSeconds;
             Console.WriteLine(creationTime.ToString() + "Creation seconds");
 
-            BEncodedDictionary torrentInfo = new BEncodedDictionary();
-            torrentInfo.Add("announce", new BEncodedString("http://myannouceurl/announce"));
-            torrentInfo.Add("creation date", new BEncodedNumber(creationTime));
-            torrentInfo.Add("nodes", new BEncodedList());                    //FIXME: What is this?
-            torrentInfo.Add("comment.utf-8", new BEncodedString("my big long comment"));
-            torrentInfo.Add("comment", new BEncodedString("my big long comment"));
-            torrentInfo.Add("azureus_properties", new BEncodedDictionary()); //FIXME: What is this?
-            torrentInfo.Add("created by", new BEncodedString("MonoTorrent/" + VersionInfo.ClientVersion));
-            torrentInfo.Add("encoding", new BEncodedString("UTF-8"));
-            torrentInfo.Add("info", CreateInfoDict());
-            torrentInfo.Add("private", new BEncodedString("1"));
+            BEncodedDictionary torrentInfo = new BEncodedDictionary {
+                { "announce", new BEncodedString ("http://myannouceurl/announce") },
+                { "creation date", new BEncodedNumber (creationTime) },
+                { "nodes", new BEncodedList () },                    //FIXME: What is this?
+                { "comment.utf-8", new BEncodedString ("my big long comment") },
+                { "comment", new BEncodedString ("my big long comment") },
+                { "azureus_properties", new BEncodedDictionary () }, //FIXME: What is this?
+                { "created by", new BEncodedString ("MonoTorrent/" + VersionInfo.ClientVersion) },
+                { "encoding", new BEncodedString ("UTF-8") },
+                { "info", CreateInfoDict () },
+                { "private", new BEncodedString ("1") }
+            };
             torrent = Torrent.Load(torrentInfo);
         }
         private BEncodedDictionary CreateInfoDict()
         {
-            BEncodedDictionary dict = new BEncodedDictionary();
-            dict.Add("source", new BEncodedString("http://www.thisiswhohostedit.com"));
-            dict.Add("sha1", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
-            dict.Add("ed2k", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
-            dict.Add("publisher-url.utf-8", new BEncodedString("http://www.iamthepublisher.com"));
-            dict.Add("publisher-url", new BEncodedString("http://www.iamthepublisher.com"));
-            dict.Add("publisher.utf-8", new BEncodedString("MonoTorrent Inc."));
-            dict.Add("publisher", new BEncodedString("MonoTorrent Inc."));
-            dict.Add("files", CreateFiles());
-            dict.Add("name.utf-8", new BEncodedString("MyBaseFolder"));
-            dict.Add("name", new BEncodedString("MyBaseFolder"));
-            dict.Add("piece length", new BEncodedNumber(512));
-            dict.Add("private", new BEncodedString("1"));
-            dict.Add("pieces", new BEncodedString(new byte[((26000 + 512) / 512) * 20])); // Total size is 26000, piecelength is 512
+            BEncodedDictionary dict = new BEncodedDictionary {
+                { "source", new BEncodedString ("http://www.thisiswhohostedit.com") },
+                { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))) },
+                { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("ed2k isn't a sha, but who cares"))) },
+                { "publisher-url.utf-8", new BEncodedString ("http://www.iamthepublisher.com") },
+                { "publisher-url", new BEncodedString ("http://www.iamthepublisher.com") },
+                { "publisher.utf-8", new BEncodedString ("MonoTorrent Inc.") },
+                { "publisher", new BEncodedString ("MonoTorrent Inc.") },
+                { "files", CreateFiles () },
+                { "name.utf-8", new BEncodedString ("MyBaseFolder") },
+                { "name", new BEncodedString ("MyBaseFolder") },
+                { "piece length", new BEncodedNumber (512) },
+                { "private", new BEncodedString ("1") },
+                { "pieces", new BEncodedString (new byte [((26000 + 512) / 512) * 20]) } // Total size is 26000, piecelength is 512
+            };
             return dict;
         }
         private BEncodedList CreateFiles()
@@ -92,63 +94,71 @@ namespace MonoTorrent.Common
             BEncodedDictionary file;
             BEncodedList path;
 
-            path = new BEncodedList();
-            path.Add(new BEncodedString("file1.txt"));
+            path = new BEncodedList {
+                new BEncodedString ("file1.txt")
+            };
 
-            file = new BEncodedDictionary();
-            file.Add("sha1", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash1"))));
-            file.Add("ed2k", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash2"))));
-            file.Add("length", new BEncodedNumber(50000));
-            file.Add("md5sum", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash3"))));
-            file.Add("path.utf-8", path);
-            file.Add("path", path);
-
-            files.Add(file);
-
-
-            path = new BEncodedList();
-            path.Add(new BEncodedString("subfolder1"));
-            path.Add(new BEncodedString("file2.txt"));
-
-            file = new BEncodedDictionary();
-            file.Add("sha1", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash1"))));
-            file.Add("ed2k", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash2"))));
-            file.Add("length", new BEncodedNumber(60000));
-            file.Add("md5sum", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash3"))));
-            file.Add("path.utf-8", path);
-            file.Add("path", path);
+            file = new BEncodedDictionary {
+                { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
+                { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
+                { "length", new BEncodedNumber (50000) },
+                { "md5sum", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash3"))) },
+                { "path.utf-8", path },
+                { "path", path }
+            };
 
             files.Add(file);
 
 
-            path = new BEncodedList();
-            path.Add(new BEncodedString("subfolder1"));
-            path.Add(new BEncodedString("subfolder2"));
-            path.Add(new BEncodedString("file3.txt"));
+            path = new BEncodedList {
+                new BEncodedString ("subfolder1"),
+                new BEncodedString ("file2.txt")
+            };
 
-            file = new BEncodedDictionary();
-            file.Add("sha1", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash1"))));
-            file.Add("ed2k", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash2"))));
-            file.Add("length", new BEncodedNumber(70000));
-            file.Add("md5sum", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash3"))));
-            file.Add("path.utf-8", path);
-            file.Add("path", path);
+            file = new BEncodedDictionary {
+                { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
+                { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
+                { "length", new BEncodedNumber (60000) },
+                { "md5sum", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash3"))) },
+                { "path.utf-8", path },
+                { "path", path }
+            };
 
             files.Add(file);
 
 
-            path = new BEncodedList();
-            path.Add(new BEncodedString("subfolder1"));
-            path.Add(new BEncodedString("subfolder2"));
-            path.Add(new BEncodedString("file4.txt"));
+            path = new BEncodedList {
+                new BEncodedString ("subfolder1"),
+                new BEncodedString ("subfolder2"),
+                new BEncodedString ("file3.txt")
+            };
 
-            file = new BEncodedDictionary();
-            file.Add("sha1", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash1"))));
-            file.Add("ed2k", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash2"))));
-            file.Add("length", new BEncodedNumber(80000));
-            file.Add("md5sum", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("file1 hash3"))));
-            file.Add("path.utf-8", path);
-            file.Add("path", path);
+            file = new BEncodedDictionary {
+                { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
+                { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
+                { "length", new BEncodedNumber (70000) },
+                { "md5sum", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash3"))) },
+                { "path.utf-8", path },
+                { "path", path }
+            };
+
+            files.Add(file);
+
+
+            path = new BEncodedList {
+                new BEncodedString ("subfolder1"),
+                new BEncodedString ("subfolder2"),
+                new BEncodedString ("file4.txt")
+            };
+
+            file = new BEncodedDictionary {
+                { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
+                { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
+                { "length", new BEncodedNumber (80000) },
+                { "md5sum", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash3"))) },
+                { "path.utf-8", path },
+                { "path", path }
+            };
 
             files.Add(file);
 
@@ -296,7 +306,7 @@ namespace MonoTorrent.Common
         public void StartEndIndices()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
+            TorrentFile[] files = {
                 new TorrentFile ("File0", 0),
                 new TorrentFile ("File1", pieceLength),
                 new TorrentFile ("File2", 0),
@@ -305,7 +315,7 @@ namespace MonoTorrent.Common
                 new TorrentFile ("File5", 236),
                 new TorrentFile ("File6", pieceLength * 7)
             };
-            Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
 
             Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#0a");
             Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#0b");
@@ -333,11 +343,11 @@ namespace MonoTorrent.Common
         public void StartEndIndices2()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
+            TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength),
                 new TorrentFile ("File1", 0)
             };
-            Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
 
             Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
@@ -350,11 +360,11 @@ namespace MonoTorrent.Common
         public void StartEndIndices3()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
+            TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 10)
             };
-            Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
 
             Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
@@ -367,11 +377,11 @@ namespace MonoTorrent.Common
         public void StartEndIndices4()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
+            TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 11)
             };
-            Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
 
             Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
@@ -384,12 +394,12 @@ namespace MonoTorrent.Common
         public void StartEndIndices5()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
+            TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 10),
                 new TorrentFile ("File1", 1)
             };
-            Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
 
             Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
