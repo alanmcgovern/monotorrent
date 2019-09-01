@@ -6,6 +6,11 @@ namespace MonoTorrent
 {
     public static class TaskExtensions
     {
+        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
+
+        public static Task WithTimeout (this Task task, string message = null)
+            => task.WithTimeout (Timeout, message);
+
         public static Task WithTimeout (this Task task, int timeout, string message = null)
             => task.WithTimeout (TimeSpan.FromMilliseconds (timeout), message);
 
@@ -19,6 +24,9 @@ namespace MonoTorrent
                 throw new TimeoutException ("This is just to keep the compiler happy :p");
             }
         }
+
+        public static Task<T> WithTimeout<T> (this Task<T> task, string message = null)
+            => task.WithTimeout (Timeout, message);
 
         public static Task<T> WithTimeout<T> (this Task<T> task, int timeout, string message = null)
             => task.WithTimeout (TimeSpan.FromMilliseconds (timeout), message);
