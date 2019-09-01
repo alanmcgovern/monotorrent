@@ -75,9 +75,11 @@ namespace MonoTorrent.Client
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
 
-                messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0)); ;
-                if (messageBody < 0 || messageBody > MaxMessageLength)
-                    throw new Exception ($"Invalid message length received. Value was '{messageBody}'");
+                messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0));
+                if (messageBody < 0 || messageBody > MaxMessageLength) {
+                    connection.Dispose ();
+                    throw new ProtocolException ($"Invalid message length received. Value was '{messageBody}'");
+                }
 
                 if (messageBody == 0)
                     return new KeepAliveMessage ();

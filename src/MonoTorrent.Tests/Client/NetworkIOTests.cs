@@ -28,12 +28,7 @@
 
 
 using System;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Encryption;
 
 using NUnit.Framework;
 
@@ -44,13 +39,9 @@ namespace MonoTorrent.Client
     {
         ConnectionPair pair;
 
-        CustomConnection Incoming {
-            get { return pair.Incoming; }
-        }
+        CustomConnection Incoming => pair.Incoming;
 
-        CustomConnection Outgoing {
-            get { return pair.Outgoing; }
-        }
+        CustomConnection Outgoing => pair.Outgoing;
 
         [SetUp]
         public void Setup ()
@@ -156,37 +147,6 @@ namespace MonoTorrent.Client
             }
             Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (1)), "Data should be all sent");
             Assert.IsTrue (Toolbox.ByteMatch (buffer, data), "Data matches");
-        }
-
-        [Test]
-        public async Task InvalidMessage ()
-        {
-            var data = new byte[20];
-            Buffer.BlockCopy (BitConverter.GetBytes (IPAddress.HostToNetworkOrder (16)), 0, data, 0, 4);
-            for (int i = 4; i < 16; i++)
-                data [i] = byte.MaxValue;
-            var task = PeerIO.ReceiveMessageAsync (Incoming, PlainTextEncryption.Instance, null, null, null);
-            await NetworkIO.SendAsync(Outgoing, data, 0, 20, null, null, null);
-
-            Assert.ThrowsAsync <ProtocolException> (() => task, "#1");
-        }
-
-        [Test]
-        public async Task ReceiveTwoKeepAlives ()
-        {
-            var message = new KeepAliveMessage ();
-            var buffer = message.Encode ();
-            var handle = new AutoResetEvent (false);
-
-            await NetworkIO.SendAsync(Outgoing, buffer, 0, buffer.Length, null, null, null);
-            var sendTask = NetworkIO.SendAsync (Outgoing, buffer, 0, buffer.Length, null, null, null);
-
-            var task = PeerIO.ReceiveMessageAsync (Incoming, PlainTextEncryption.Instance, null, null, null);
-            Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (2)), "#Should receive first message");
-
-            task = PeerIO.ReceiveMessageAsync (Incoming, PlainTextEncryption.Instance, null, null, null);
-            Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (2)), "#Should receive second message");
-            await sendTask;
         }
 
         [Test]
