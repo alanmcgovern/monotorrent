@@ -42,8 +42,6 @@ namespace MonoTorrent.Client.Encryption
     [TestFixture]
     public class EncryptorFactoryTests
     {
-        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
-
         ConnectionPair pair;
         IConnection Incoming => pair.Incoming;
         IConnection Outgoing => pair.Outgoing;
@@ -57,7 +55,7 @@ namespace MonoTorrent.Client.Encryption
         [SetUp]
         public void Setup()
         {
-            pair = new ConnectionPair();
+            pair = new ConnectionPair().WithTimeout ();
 
             InfoHash = new InfoHash (Enumerable.Repeat ((byte)255, 20).ToArray ());
             SKeys = new [] {
@@ -149,19 +147,19 @@ namespace MonoTorrent.Client.Encryption
             var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, new EngineSettings (), InfoHash, appendInitialPayload ? handshakeOut : null);
 
             // If the handshake was not part of the initial payload, send it now.
-            var outgoingCrypto = await outgoingTask.WithTimeout (Timeout);
+            var outgoingCrypto = await outgoingTask;
             if (!appendInitialPayload)
-                await PeerIO.SendMessageAsync (Outgoing, outgoingCrypto.Encryptor, handshakeOut, null, null, null).WithTimeout (Timeout);
+                await PeerIO.SendMessageAsync (Outgoing, outgoingCrypto.Encryptor, handshakeOut, null, null, null);
 
             // Receive the handshake and make sure it decrypted correctly.
-            var incomingCrypto = await incomingTask.WithTimeout (Timeout);
+            var incomingCrypto = await incomingTask;
             Assert.AreEqual (OutgoingId, incomingCrypto.Handshake.PeerId, "#1a");
 
             // Send the other handshake.
-            await PeerIO.SendMessageAsync (Incoming, incomingCrypto.Encryptor, handshakeIn, null, null,null).WithTimeout (Timeout);
+            await PeerIO.SendMessageAsync (Incoming, incomingCrypto.Encryptor, handshakeIn, null, null,null);
 
             // Receive the other handshake and make sure it decrypted ok on the other side.
-            handshakeIn = await PeerIO.ReceiveHandshakeAsync (Outgoing, outgoingCrypto.Decryptor).WithTimeout (Timeout);
+            handshakeIn = await PeerIO.ReceiveHandshakeAsync (Outgoing, outgoingCrypto.Decryptor);
             Assert.AreEqual (IncomingId, handshakeIn.PeerId, "#1b");
 
             // Make sure we got the crypto we asked for.

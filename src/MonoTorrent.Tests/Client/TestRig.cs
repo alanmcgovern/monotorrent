@@ -225,15 +225,14 @@ namespace MonoTorrent.Client
 
     public class ConnectionPair : IDisposable
     {
-        public CustomConnection Incoming;
-        public CustomConnection Outgoing;
+        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
 
-        public ConnectionPair ()
-            : this (0)
-        {
-        }
+        IDisposable CancellationRegistration { get; set; }
 
-        public ConnectionPair(int port)
+        public CustomConnection Incoming { get; }
+        public CustomConnection Outgoing { get ; }
+
+        public ConnectionPair()
         {
             var incoming = new SocketStream ();
             var outgoing = new SocketStream ();
@@ -243,8 +242,16 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
+            CancellationRegistration?.Dispose ();
             Incoming.Dispose();
             Outgoing.Dispose();
+        }
+
+        public ConnectionPair WithTimeout ()
+        {
+            CancellationTokenSource cancellation = new CancellationTokenSource (Timeout);
+            CancellationRegistration = cancellation.Token.Register (Dispose);
+            return this;
         }
     }
 

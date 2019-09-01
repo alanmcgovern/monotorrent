@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
         public async Task Setup(bool metadataMode, string metadataPath)
         {
-            pair = new ConnectionPair(55432);
+            pair = new ConnectionPair().WithTimeout ();
             rig = TestRig.CreateSingleFile(1024 * 1024 * 1024, 32768, metadataMode);
             rig.MetadataPath = metadataPath;
             rig.RecreateManager().Wait();

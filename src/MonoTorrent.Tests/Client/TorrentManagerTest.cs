@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             rig = TestRig.CreateMultiFile (new TestWriter());
-            conn = new ConnectionPair(51515);
+            conn = new ConnectionPair().WithTimeout ();
         }
         [TearDown]
         public void Teardown()
