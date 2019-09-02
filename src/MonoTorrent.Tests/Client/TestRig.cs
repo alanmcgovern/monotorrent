@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -568,6 +569,12 @@ namespace MonoTorrent.Client
         internal static TorrentManager CreateSingleFileManager (int torrentSize, int pieceLength)
         {
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;
+        }
+
+        internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength)
+        {
+            var files = fileSizes.Select ((size, index) => new TorrentFile ("File " + index, size)).ToArray ();
+            return CreateMultiFileManager (files, pieceLength);
         }
 
         internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength)

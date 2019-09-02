@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
             => Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
 
         void IPieceRequester.Close ()
-            => Engine.ConnectionManager.CleanupSocket (this, "Too many hash fails");
+            => Engine.ConnectionManager.CleanupSocket (this);
 
         void IPieceRequester.HashedPiece(bool succeeded)
             => Peer.HashedPiece (succeeded);

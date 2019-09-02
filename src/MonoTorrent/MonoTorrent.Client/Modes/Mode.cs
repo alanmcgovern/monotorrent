@@ -40,17 +40,21 @@ namespace MonoTorrent.Client
 {
     abstract class Mode
     {
-        public abstract TorrentState State
-        {
-            get;
-        }
 
+        protected ConnectionManager ConnectionManager { get; }
+        protected DiskManager DiskManager { get; }
         protected TorrentManager Manager { get; }
+        protected EngineSettings Settings { get; }
+        public abstract TorrentState State { get; }
 
-        protected Mode(TorrentManager manager)
+        protected Mode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
         {
             CanAcceptConnections = true;
+            ConnectionManager = connectionManager;
+            DiskManager = diskManager;
             Manager = manager;
+            Settings = settings;
+
             manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
         }
 
@@ -175,7 +179,7 @@ namespace MonoTorrent.Client
         protected virtual async void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
         {
             // Ignore peer exchange messages on private toirrents
-            if (Manager.Torrent.IsPrivate || !Manager.Settings.EnablePeerExchange) {
+            if ((Manager.Torrent != null && Manager.Torrent.IsPrivate) || !Manager.Settings.EnablePeerExchange) {
                 Manager.RaisePeersFound(new PeerExchangeAdded (Manager, 0, 0, id));
             } else {
                 // If we already have lots of peers, don't process the messages anymore.
@@ -333,7 +337,7 @@ namespace MonoTorrent.Client
             long offset = (long) message.PieceIndex * id.TorrentManager.Torrent.PieceLength + message.StartOffset;
 
             try {
-                await id.TorrentManager.Engine.DiskManager.WriteAsync(Manager.Torrent, offset, message.Data, message.RequestLength);
+                await DiskManager.WriteAsync(Manager.Torrent, offset, message.Data, message.RequestLength);
             } catch (Exception ex) {
                 Manager.TrySetError (Reason.WriteFailure, ex);
                 return;
@@ -349,7 +353,7 @@ namespace MonoTorrent.Client
             // Hashcheck the piece as we now have all the blocks.
             byte[] hash;
             try {
-                hash = await id.Engine.DiskManager.GetHashAsync(id.TorrentManager.Torrent, piece.Index);
+                hash = await DiskManager.GetHashAsync(id.TorrentManager.Torrent, piece.Index);
             } catch (Exception ex) {
                 Manager.TrySetError (Reason.ReadFailure, ex);
                 return;
@@ -440,7 +444,7 @@ namespace MonoTorrent.Client
 
                 id.Enqueue(bundle);
             } else {
-               Manager.Engine.ConnectionManager.CleanupSocket (id);
+               ConnectionManager.CleanupSocket (id);
             }
         }
 
@@ -556,7 +560,7 @@ namespace MonoTorrent.Client
                 if (id.QueueLength > 0 && !id.ProcessingQueue)
                 {
                     id.ProcessingQueue = true;
-                    Manager.Engine.ConnectionManager.ProcessQueue(id);
+                    ConnectionManager.ProcessQueue(id);
                 }
 
                 if (id.LastMessageSent.Elapsed > nintySeconds)
@@ -567,13 +571,13 @@ namespace MonoTorrent.Client
 
                 if (id.LastMessageReceived.Elapsed > onhundredAndEightySeconds)
                 {
-                    Manager.Engine.ConnectionManager.CleanupSocket(id, "Inactivity");
+                    ConnectionManager.CleanupSocket(id);
                     continue;
                 }
 
                 if (id.LastMessageReceived.Elapsed > thirtySeconds && id.AmRequestingPiecesCount > 0)
                 {
-                    Manager.Engine.ConnectionManager.CleanupSocket(id, "Didn't send pieces");
+                    ConnectionManager.CleanupSocket(id);
                     continue;
                 }
             }
@@ -691,7 +695,7 @@ namespace MonoTorrent.Client
                     }
 
                     // Check to see if have supression is enabled and send the have message accordingly
-                    if (!hasPiece || (hasPiece && !Manager.Engine.Settings.HaveSupressionEnabled))
+                    if (!hasPiece || (hasPiece && !Settings.HaveSupressionEnabled))
                         bundle.Messages.Add(haveMessage);
                 }
 

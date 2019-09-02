@@ -62,6 +62,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<ConnectionAttemptFailedEventArgs> ConnectionAttemptFailed;
 
+        internal event Action<Mode, Mode> ModeChanged;
+
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
         public event EventHandler<PieceHashedEventArgs> PieceHashed;
@@ -107,6 +109,7 @@ namespace MonoTorrent.Client
             set {
                 Mode oldMode = mode;
                 mode = value;
+                ModeChanged?.Invoke (oldMode, mode);
                 if (oldMode != null)
                     RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(this, oldMode.State, mode.State));
                 oldMode?.Dispose ();
@@ -319,7 +322,7 @@ namespace MonoTorrent.Client
             this.PieceManager = new PieceManager(this);
             SetTrackerManager (new TrackerManager(new TrackerRequestFactory (this), announces));
 
-            Mode = new StoppedMode(this);            
+            Mode = new StoppedMode(this, null, null, null);
             CreateRateLimiters();
 
 
@@ -422,11 +425,13 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
-        /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
+        /// Performs a full hash check, ignoring any previously loaded Fast Resume data or previous hash checks.
         /// </summary>
-        /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
-        public async Task HashCheckAsync(bool autoStart)
+        /// <param name="autoStart">True if a the TorrentManager should be started as soon as the hashcheck completes.</param>
+        public Task HashCheckAsync(bool autoStart)
+            => HashCheckAsync (autoStart, true);
+
+        internal async Task HashCheckAsync(bool autoStart, bool setStoppedModeWhenDone)
         {
             if (!HasMetadata)
                 throw new TorrentException ("A hashcheck cannot be performed if the TorrentManager was created with a Magnet link and the metadata has not been downloaded.");
@@ -438,22 +443,22 @@ namespace MonoTorrent.Client
             CheckRegisteredAndDisposed();
             StartTime = DateTime.Now;
 
-            var hashingMode = new HashingMode (this);
+            var hashingMode = new HashingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             Mode = hashingMode;
             try {
                 await hashingMode.WaitForHashingToComplete ();
                 HashChecked = true;
                 if (autoStart) {
                     await StartAsync ();
-                } else {
-                    Mode = new StoppedMode (this);
+                } else if (setStoppedModeWhenDone) {
+                    Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 }
             } catch {
                 HashChecked = false;
                 // If the hash check was cancelled (by virtue of a new Mode being set on the TorrentManager) then
                 // we don't want to overwrite the Mode which was set.
                 if (Mode == hashingMode)
-                    Mode = new StoppedMode (this);
+                    Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
         }
 
@@ -502,7 +507,7 @@ namespace MonoTorrent.Client
 
             // By setting the state to "paused", peers will not be dequeued from the either the
             // sending or receiving queues, so no traffic will be allowed.
-            Mode = new PausedMode(this);
+            Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             this.SaveFastResume();
         }
 
@@ -522,64 +527,15 @@ namespace MonoTorrent.Client
             Engine.Start();
             // If the torrent was "paused", then just update the state to Downloading and forcefully
             // make sure the peers begin sending/receiving again
-            if (State == TorrentState.Paused)
-            {
-                Mode = new DownloadMode(this);
-                return;
+            if (State == TorrentState.Paused) {
+                Mode = new DownloadMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            } else if (!HasMetadata) {
+                StartTime = DateTime.Now;
+                Mode = new MetadataMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
+            } else {
+                StartTime = DateTime.Now;
+                Mode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
-
-            if (!HasMetadata)
-            {
-                Mode = new MetadataMode(this, torrentSave);
-                DhtAnnounce ();
-                return;
-            }
-
-            try {
-                await VerifyHashState ();
-            } catch (Exception ex) {
-                TrySetError (Reason.ReadFailure, ex);
-                return;
-            }
-
-            // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
-            // before attempting to start again
-            if (!HashChecked)
-            {
-                // Deliberately do not wait for the entire hash check to complete in this scenario.
-                // Here we want to Task returned by this method to be 'Complete' as soon as the
-                // TorrentManager moves to any state that is not Stopped. The idea is that 'StartAsync'
-                // will simply kick off 'Hashing' mode, or 'MetadataMode', or 'InitialSeeding' mode
-                // and then the user is free to call StopAsync etc whenever they want.
-                if (State != TorrentState.Hashing)
-                    _ = HashCheckAsync(true);
-                return;
-            }
-
-            if (State == TorrentState.Seeding || State == TorrentState.Downloading)
-                return;
-
-            // We need to announce before going into Downloading mode, otherwise we will
-            // send a regular announce instead of a 'Started' announce.
-            if (TrackerManager.CurrentTracker != null)
-            {
-                if (TrackerManager.CurrentTracker.CanScrape)
-                    _ = TrackerManager.Scrape();
-                _ = TrackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-            }
-
-            if (Complete && Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
-                Mode = new InitialSeedingMode(this);
-            }
-            else {
-                Mode = new DownloadMode(this);
-            }
-
-            DhtAnnounce();
-            await LocalPeerAnnounceAsync ();
-
-            StartTime = DateTime.Now;
-            PieceManager.Reset();
         }
 
         public async Task LocalPeerAnnounceAsync ()
@@ -589,7 +545,7 @@ namespace MonoTorrent.Client
             if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.MinimumAnnounceInternal)) {
                 LastLocalPeerAnnounce = DateTime.Now;
                 LastLocalPeerAnnounceTimer.Restart ();
-                await Engine.LocalPeerDiscovery.Announce (InfoHash);
+                await Engine?.LocalPeerDiscovery.Announce (InfoHash);
             }
         }
 
@@ -609,7 +565,7 @@ namespace MonoTorrent.Client
             if (CanUseDht && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > MonoTorrent.Dht.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
-                Engine.DhtEngine.GetPeers(InfoHash);
+                Engine?.DhtEngine.GetPeers(InfoHash);
             }
         }
 
@@ -620,19 +576,18 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
-            if (State == TorrentState.Error)
-            {
+            if (Mode is StoppingMode)
+                throw new TorrentException("The manager cannot be stopped while it is already in the Stopping state.");
+
+            if (State == TorrentState.Error) {
                 Error = null;
-				Mode = new StoppedMode(this);
-                return;
-            }
-
-            if (State != TorrentState.Stopped) {
-                var stoppingMode = new StoppingMode(this);
+				Mode = new StoppedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            } else if (State != TorrentState.Stopped) {
+                var stoppingMode = new StoppingMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
-
                 await stoppingMode.WaitForStoppingToComplete ();
-                Mode = new StoppedMode (this);
+
+                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Engine.Stop();
             }
         }
@@ -812,18 +767,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task VerifyHashState ()
-        {
-            // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
-            // a zero length file and someone deletes it after the first piece has been written to disk, it will
-            // never be recreated. If the downloaded data requires this file to exist, we have an issue.
-            if (HasMetadata) {
-                foreach (var file in Torrent.Files)
-                    if (!file.BitField.AllFalse && HashChecked && file.Length > 0)
-                        HashChecked &= await Engine.DiskManager.CheckFileExistsAsync (file);
-            }
-        }
-
         #endregion Private Methods
 
         internal bool TrySetError (Reason reason, Exception ex)
@@ -832,7 +775,7 @@ namespace MonoTorrent.Client
                 return false;
 
             Error = new Error (reason, ex);
-            Mode = new ErrorMode (this);
+            Mode = new ErrorMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             return true;
         }
 

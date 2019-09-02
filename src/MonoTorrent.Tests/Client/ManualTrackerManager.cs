@@ -40,7 +40,10 @@ namespace MonoTorrent.Client
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
-        public ITracker CurrentTracker { get; }
+        public List<Tuple<ITracker, TorrentEvent>> Announces { get; }
+        public List<ITracker> Scrapes { get; }
+
+        public ITracker CurrentTracker { get; private set; }
 
         public bool LastAnnounceSucceeded { get; }
 
@@ -52,23 +55,35 @@ namespace MonoTorrent.Client
 
         public ManualTrackerManager ()
         {
-            var trackers = new [] { "http://127.0.3.5:1243" };
+            Announces = new List<Tuple<ITracker, TorrentEvent>> ();
+            Scrapes = new List<ITracker> ();
+        }
+
+        public ManualTrackerManager (string tracker)
+            : this ()
+        {
+            AddTracker (tracker);
+        }
+
+        public void AddTracker (string tracker)
+        {
+            var trackers = new [] { tracker };
             Tiers.Add (new TrackerTier (trackers));
             CurrentTracker = Tiers[0].Trackers[0];
         }
 
         public Task Announce ()
-        {
-            return Task.CompletedTask;
-        }
+            => Announce (CurrentTracker, TorrentEvent.None);
 
         public Task Announce (TorrentEvent clientEvent)
-        {
-            return Task.CompletedTask;
-        }
+            => Announce (CurrentTracker, clientEvent);
 
         public Task Announce (ITracker tracker)
+            => Announce (tracker, TorrentEvent.None);
+
+        Task Announce (ITracker tracker, TorrentEvent clientEvent)
         {
+            Announces.Add (Tuple.Create (tracker, clientEvent));
             return Task.CompletedTask;
         }
 
@@ -79,12 +94,11 @@ namespace MonoTorrent.Client
             => ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, successful));
 
         public Task Scrape ()
-        {
-            return Task.CompletedTask;
-        }
+            => Scrape (CurrentTracker);
 
         public Task Scrape (ITracker tracker)
         {
+            Scrapes.Add (tracker);
             return Task.CompletedTask;
         }
     }

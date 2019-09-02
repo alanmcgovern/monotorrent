@@ -36,8 +36,8 @@ namespace MonoTorrent.Client
 			get { return TorrentState.Paused; }
 		}
 
-        public PausedMode(TorrentManager manager)
-            : base(manager)
+        public PausedMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
             // When in the Paused mode, a special RateLimiter will
             // activate and disable transfers. PauseMode itself

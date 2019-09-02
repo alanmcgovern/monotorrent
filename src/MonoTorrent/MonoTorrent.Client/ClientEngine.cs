@@ -77,7 +77,6 @@ namespace MonoTorrent.Client
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private int tickCount;
         private List<TorrentManager> torrents;
-        private ReadOnlyCollection<TorrentManager> torrentsReadonly;
         private IRateLimiter uploadLimiter;
         private IRateLimiter downloadLimiter;
 
@@ -105,10 +104,7 @@ namespace MonoTorrent.Client
 
         public EngineSettings Settings { get; }
 
-        public IList<TorrentManager> Torrents
-        {
-            get { return torrentsReadonly; }
-        }
+        public IList<TorrentManager> Torrents { get; }
 
         public int TotalDownloadSpeed
         {
@@ -162,27 +158,28 @@ namespace MonoTorrent.Client
             Check.Listener(listener);
             Check.Writer(writer);
 
-            this.Listener = listener;
-            this.Settings = settings;
+            PeerId = GeneratePeerId();
+            Listener = listener ?? throw new ArgumentNullException (nameof (listener));
+            Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
-            this.ConnectionManager = new ConnectionManager(this);
+            torrents = new List<TorrentManager>();
+            Torrents = new ReadOnlyCollection<TorrentManager> (torrents);
+
+            DiskManager = new DiskManager(Settings, writer);
+            ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
             DhtEngine = new NullDhtEngine();
-            this.DiskManager = new DiskManager(settings, writer);
-            this.listenManager = new ListenManager(this);
+            listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
                 if (IsRunning && !Disposed)
                     LogicTick();
                 return !Disposed;
             });
-            this.torrents = new List<TorrentManager>();
-            this.torrentsReadonly = new ReadOnlyCollection<TorrentManager> (torrents);
+
             downloadLimiter = new RateLimiterGroup {
                 new DiskWriterLimiter(DiskManager),
                 new RateLimiter()
             };
-
             uploadLimiter = new RateLimiter();
-            this.PeerId = GeneratePeerId();
 
             listenManager.Register(listener);
 

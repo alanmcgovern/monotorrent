@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
 			// We've found a peer to disconnect
 			// Add it to the inactive list for this torrent and disconnect it
 			InactivePeerList.Add(TorrentManager.Peers.ConnectedPeers[peerToDisconnect].Uri);
-			ConnectionManager.CleanupSocket(TorrentManager.Peers.ConnectedPeers[peerToDisconnect], "Marked as inactive");
+			ConnectionManager.CleanupSocket(TorrentManager.Peers.ConnectedPeers[peerToDisconnect]);
 
 		}
 

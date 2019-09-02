@@ -61,8 +61,8 @@ namespace MonoTorrent.Client
     {
         public override TorrentState State => TorrentState.Error;
 
-        public ErrorMode(TorrentManager manager)
-            : base(manager)
+        public ErrorMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
             CanAcceptConnections = false;
         }

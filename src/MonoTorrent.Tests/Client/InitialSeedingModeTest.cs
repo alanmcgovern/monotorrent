@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         {
             Rig = TestRig.CreateSingleFile(Piece.BlockSize * 20, Piece.BlockSize * 2);
             Rig.Manager.Bitfield.Not ();
-            Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager);
+            Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
         }
 
         [TearDown]

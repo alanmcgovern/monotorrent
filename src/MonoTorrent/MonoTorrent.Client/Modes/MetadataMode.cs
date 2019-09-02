@@ -52,8 +52,8 @@ namespace MonoTorrent.Client
         public override TorrentState State => TorrentState.Metadata;
         internal MemoryStream Stream { get; set; }
 
-        public MetadataMode(TorrentManager manager, string savePath)
-            : base(manager)
+        public MetadataMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, string savePath)
+            : base (manager, diskManager, connectionManager, settings)
         {
             this.savePath = savePath;
         }
@@ -85,11 +85,6 @@ namespace MonoTorrent.Client
             } catch {
                 // Nothing.
             }
-        }
-
-        protected override void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
-        {
-            // Nothing
         }
 
         private void SendRequestToNextPeer()

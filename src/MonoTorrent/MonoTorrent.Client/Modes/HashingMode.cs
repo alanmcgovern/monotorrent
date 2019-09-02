@@ -40,8 +40,8 @@ namespace MonoTorrent.Client
         public override bool CanHashCheck => false;
         public override TorrentState State => TorrentState.Hashing;
 
-        public HashingMode(TorrentManager manager)
-            : base(manager)
+        public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
             CanAcceptConnections = false;
             Cancellation = new CancellationTokenSource();

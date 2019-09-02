@@ -43,8 +43,8 @@ namespace MonoTorrent.Client
 			get { return TorrentState.Seeding; }
 		}
             
-        public InitialSeedingMode(TorrentManager manager)
-            : base(manager)
+        public InitialSeedingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
             unchoker = new InitialSeedUnchoker(manager);
             manager.chokeUnchoker = unchoker;
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
                     PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
                     peer.Enqueue(message);
                 }
-                Manager.Mode = new DownloadMode(Manager);
+                Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
             }
         }
     }

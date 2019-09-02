@@ -248,5 +248,19 @@ namespace MonoTorrent.Client
             for (int i = 1; i < trackers.Count; i++)
                 Assert.AreEqual(0, trackers[i][0].ScrapedAt.Count, "#4." + i);
         }
+
+        [Test]
+        public void UnsupportedTrackers ()
+        {
+            RawTrackerTier [] tiers = {
+                new RawTrackerTier { "unregistered://1.1.1.1:1111", "unregistered://1.1.1.2:1112" },
+                new RawTrackerTier { "unregistered://2.2.2.2:2221" },
+                new RawTrackerTier { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
+            };
+
+            var manager = new TrackerManager (new RequestFactory (), tiers);
+            Assert.AreEqual (0, manager.Tiers.Count, "#1");
+            Assert.IsNull (manager.CurrentTracker, "#2");
+        }
     }
 }
