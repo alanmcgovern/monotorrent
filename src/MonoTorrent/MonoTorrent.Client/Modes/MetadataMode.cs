@@ -28,9 +28,10 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
@@ -40,27 +41,16 @@ namespace MonoTorrent.Client
 {
     class MetadataMode : Mode
     {
-        private MemoryStream stream;//the stream of the torrent metadata
         private BitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds(10);
         private PeerId currentId;
         string savePath;
         private DateTime requestTimeout;
 
-		public override bool CanHashCheck
-		{
-			get { return true; }
-		}
-		
-		public override TorrentState State
-		{
-			get { return TorrentState.Metadata; }
-		}
-
-        internal MemoryStream Stream
-        {
-            get { return this.stream; }
-        }
+        public override bool CanHashCheck => true;
+        bool HasAnnounced { get; set; }
+        public override TorrentState State => TorrentState.Metadata;
+        internal MemoryStream Stream { get; set; }
 
         public MetadataMode(TorrentManager manager, string savePath)
             : base(manager)
@@ -70,6 +60,11 @@ namespace MonoTorrent.Client
 
         public override void Tick(int counter)
         {
+            if (!HasAnnounced) {
+                HasAnnounced = true;
+                SendAnnounces ();
+            }
+
             //if one request have been sent and we have wait more than timeout
             // request the next peer
             if (requestTimeout < DateTime.Now)
@@ -77,6 +72,19 @@ namespace MonoTorrent.Client
                 SendRequestToNextPeer();
             }
             
+        }
+
+        async void SendAnnounces ()
+        {
+            try {
+                Manager.DhtAnnounce ();
+                await Task.WhenAll (
+                    Manager.TrackerManager.Announce (),
+                    Manager.LocalPeerAnnounceAsync ()
+                );
+            } catch {
+                // Nothing.
+            }
         }
 
         protected override void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
@@ -131,18 +139,18 @@ namespace MonoTorrent.Client
             switch (message.MetadataMessageType)
             {
                 case LTMetadata.eMessageType.Data:
-                    if (stream == null)
+                    if (Stream == null)
                         throw new Exception("Need extention handshake before ut_metadata message.");
 
-                    stream.Seek(message.Piece * LTMetadata.BlockSize, SeekOrigin.Begin);
-                    stream.Write(message.MetadataPiece, 0, message.MetadataPiece.Length);
+                    Stream.Seek(message.Piece * LTMetadata.BlockSize, SeekOrigin.Begin);
+                    Stream.Write(message.MetadataPiece, 0, message.MetadataPiece.Length);
                     bitField[message.Piece] = true;
                     if (bitField.AllTrue)
                     {
                         byte[] hash;
-                        stream.Position = 0;
+                        Stream.Position = 0;
                         using (SHA1 hasher = HashAlgoFactory.Create<SHA1>())
-                            hash = hasher.ComputeHash(stream);
+                            hash = hasher.ComputeHash(Stream);
 
                         if (!Manager.InfoHash.Equals (hash))
                         {
@@ -151,9 +159,9 @@ namespace MonoTorrent.Client
                         else
                         {
                             Torrent t;
-                            stream.Position = 0;
+                            Stream.Position = 0;
                             BEncodedDictionary dict = new BEncodedDictionary();
-                            dict.Add ("info", BEncodedValue.Decode(stream));
+                            dict.Add ("info", BEncodedValue.Decode(Stream));
                             // FIXME: Add the trackers too
                             if (Torrent.TryLoad(dict.Encode (), out t))
                             {
@@ -252,11 +260,11 @@ namespace MonoTorrent.Client
         {
             byte[] calculatedInfoHash;
             using (SHA1 sha = HashAlgoFactory.Create<SHA1>())
-                calculatedInfoHash = sha.ComputeHash(stream.ToArray());
+                calculatedInfoHash = sha.ComputeHash(Stream.ToArray());
             if (!Manager.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception("invalid metadata");//restart ?
 
-            BEncodedValue d = BEncodedValue.Decode(stream);
+            BEncodedValue d = BEncodedValue.Decode(Stream);
             BEncodedDictionary dict = new BEncodedDictionary();
             dict.Add("info", d);
 
@@ -275,7 +283,7 @@ namespace MonoTorrent.Client
 
             if (id.ExtensionSupports.Supports(LTMetadata.Support.Name))
             {
-                stream = new MemoryStream(new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
+                Stream = new MemoryStream(new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
                 int size = message.MetadataSize % LTMetadata.BlockSize;
                 if (size > 0)
                     size = 1;
