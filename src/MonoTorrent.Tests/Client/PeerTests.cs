@@ -129,6 +129,63 @@ namespace MonoTorrent.Client
             Assert.AreEqual (peerId, peer.PeerId, "#1");
         }
 
+        [Test]
+        public void Equality_EmptyPeerId ()
+        {
+            var one = new Peer ("", new Uri ("ipv4://1.1.1.1:1111"));
+            var other = new Peer ("", new Uri ("ipv4://1.1.1.1:1111"));
+
+            Assert.AreEqual (one, other, "#1");
+            Assert.AreEqual (one.GetHashCode (), other.GetHashCode (), "#2");
+        }
+
+        [Test]
+        public void Equality_EmptyPeerId_DifferentIP ()
+        {
+            var one = new Peer ("", new Uri ("ipv4://1.1.1.1:1111"));
+            var other = new Peer ("", new Uri ("ipv4://2.2.2.2:2222"));
+
+            Assert.AreNotEqual (one, other, "#1");
+        }
+
+        [Test]
+        public void Equality_EmptyPeerId_DifferentPort ()
+        {
+            var one = new Peer ("", new Uri ("ipv4://1.1.1.1:1111"));
+            var other = new Peer ("", new Uri ("ipv4://1.1.1.1:2222"));
+
+            Assert.AreNotEqual (one, other, "#1");
+        }
+
+        [Test]
+        public void Equality_SamePeerId_DifferentIP ()
+        {
+            var one = new Peer ("test", new Uri ("ipv4://1.1.1.1:1111"));
+            var other = new Peer ("test", new Uri ("ipv4://2.2.2.2:2222"));
+
+            Assert.AreEqual (one, other, "#1");
+            Assert.AreEqual (one.GetHashCode (), other.GetHashCode (), "#2");
+        }
+
+        [Test]
+        public void Equality_SamePeerId_DifferentPort ()
+        {
+            var one = new Peer ("test", new Uri ("ipv4://1.1.1.1:1111"));
+            var other = new Peer ("test", new Uri ("ipv4://1.1.1.1:2222"));
+
+            Assert.AreEqual (one, other, "#1");
+        }
+
+        [Test]
+        public void Equality_SamePeerId_SameIP ()
+        {
+            var one = new Peer ("test", new Uri ("ipv4://1.1.1.1:1111"));
+            var otherOne = new Peer ("test", new Uri ("ipv4://1.1.1.1:1111"));
+
+            Assert.AreEqual (one, otherOne, "#1");
+            Assert.AreEqual (one.GetHashCode (), otherOne.GetHashCode (), "#2");
+        }
+
         private void VerifyDecodedPeers(IList<Peer> decoded)
         {
             Assert.AreEqual(peers.Count, decoded.Count, "#1");

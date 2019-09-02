@@ -115,13 +115,13 @@ namespace MonoTorrent.Client
 
             // FIXME: Don't compare the port, just compare the IP
             if (BEncodedString.IsNullOrEmpty (PeerId) || BEncodedString.IsNullOrEmpty(other.PeerId))
-                return ConnectionUri.Host.Equals(other.ConnectionUri.Host);
+                return ConnectionUri.Equals(other.ConnectionUri);
 
             return PeerId.Equals (other.PeerId);
         }
 
         public override int GetHashCode()
-            => PeerId?.GetHashCode () ?? ConnectionUri.Host.GetHashCode ();
+            => PeerId?.GetHashCode () ?? ConnectionUri.GetHashCode ();
 
         internal byte[] CompactPeer()
         {
