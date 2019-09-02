@@ -69,11 +69,13 @@ namespace MonoTorrent.Client
 
         #endregion Old
 
+        TorrentManager Manager { get; }
         internal PiecePicker Picker { get; private set; }
         internal BitField UnhashedPieces { get; private set; }
 
-        internal PieceManager()
+        internal PieceManager(TorrentManager manager)
         {
+            Manager = manager;
             Picker = new NullPicker();
             UnhashedPieces = new BitField(0);
         }
@@ -87,7 +89,7 @@ namespace MonoTorrent.Client
                 var block = piece.Blocks [message.StartOffset / Piece.BlockSize];
 
                 if (BlockReceived != null)
-                    RaiseBlockReceived(new BlockEventArgs(id.TorrentManager, block, piece, id));
+                    RaiseBlockReceived(new BlockEventArgs(Manager, block, piece, id));
 
                 if (piece.AllBlocksReceived)
                     UnhashedPieces[message.PieceIndex] = true;
@@ -107,12 +109,12 @@ namespace MonoTorrent.Client
             if (id.Connection is HttpConnection)
             {
                 // How many whole pieces fit into 2MB
-                count = (2 * 1024 * 1024) / id.TorrentManager.Torrent.PieceLength;
+                count = (2 * 1024 * 1024) / Manager.Torrent.PieceLength;
 
                 // Make sure we have at least one whole piece
                 count = Math.Max(count, 1);
                 
-                count *= id.TorrentManager.Torrent.PieceLength / Piece.BlockSize;
+                count *= Manager.Torrent.PieceLength / Piece.BlockSize;
             }
 
             if (!id.IsChoking || id.SupportsFastPeer)
@@ -131,7 +133,7 @@ namespace MonoTorrent.Client
             {
                 while (id.AmRequestingPiecesCount < maxRequests)
                 {
-                    var otherPeers = id.TorrentManager?.Peers.ConnectedPeers ?? new List<PeerId> ();
+                    var otherPeers = Manager.Peers.ConnectedPeers ?? new List<PeerId> ();
                     var request = Picker.PickPiece(id, id.BitField, new List<IPieceRequester> (otherPeers), count);
                     if (request != null && request.Count > 0)
                         for (int i = 0; i < request.Count; i ++)
@@ -145,7 +147,7 @@ namespace MonoTorrent.Client
         internal bool IsInteresting(PeerId id)
         {
             // If i have completed the torrent, then no-one is interesting
-            if (id.TorrentManager.Complete)
+            if (Manager.Complete)
                 return false;
 
             // If the peer is a seeder, then he is definately interesting

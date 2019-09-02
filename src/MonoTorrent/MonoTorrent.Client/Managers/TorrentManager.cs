@@ -316,7 +316,7 @@ namespace MonoTorrent.Client
             this.LastDhtAnnounceTimer = new Stopwatch ();
             this.LastLocalPeerAnnounceTimer = new Stopwatch ();
             this.Peers = new PeerManager();
-            this.PieceManager = new PieceManager();
+            this.PieceManager = new PieceManager(this);
             SetTrackerManager (new TrackerManager(new TrackerRequestFactory (this), announces));
 
             Mode = new StoppedMode(this);            

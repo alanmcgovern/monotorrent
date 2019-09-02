@@ -54,8 +54,10 @@ namespace MonoTorrent.Client.PiecePicking
         BitField bitfield;
         PeerId peer;
         List<PeerId> peers;
+        MagnetLink magnetLink;
         PieceManager manager;
         TestTorrentData torrentData;
+        TorrentManager torrentManager;
 
         [SetUp]
         public void Setup()
@@ -70,7 +72,9 @@ namespace MonoTorrent.Client.PiecePicking
             };
             peers = new List<PeerId>();
 
-            manager = new PieceManager ();
+            magnetLink = new MagnetLink (new InfoHash (new byte[20]));
+            torrentManager = new TorrentManager (magnetLink, "", new TorrentSettings (), "");
+            manager = new PieceManager (torrentManager);
             manager.ChangePicker (new StandardPicker (), bitfield, torrentData);
 
             peer = PeerId.CreateNull (pieceCount);
