@@ -420,7 +420,7 @@ namespace MonoTorrent.Client
         internal void TryConnect()
         {
             // If we have already reached our max connections globally, don't try to connect to a new peer
-            while (OpenConnections < this.MaxOpenConnections && PendingConnects.Count < this.MaxHalfOpenConnections) {
+            while (OpenConnections <= MaxOpenConnections && PendingConnects.Count <= MaxHalfOpenConnections) {
                 var node = TorrentManagers.First;
                 while (node != null) {
                     // If we successfully connect, then break out of this loop and restart our
