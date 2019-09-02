@@ -27,18 +27,27 @@
 //
 
 
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
     public static class TorrentManagerExtensions
     {
+        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
+
         public static Task WaitForState(this TorrentManager manager, TorrentState state)
         {
             var tcs = new TaskCompletionSource<object> ();
+            var cancellation = new CancellationTokenSource (Timeout);
+            var token = cancellation.Token.Register (() => tcs.TrySetCanceled ());
+
             manager.TorrentStateChanged += (o, e) => {
-                if (e.NewState == state)
+                if (e.NewState == state) {
+                    token.Dispose ();
                     tcs.TrySetResult (null);
+                }
             };
 
             return tcs.Task;
