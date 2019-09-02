@@ -28,12 +28,9 @@
 
 
 using System;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
@@ -52,6 +49,7 @@ namespace MonoTorrent.Client
             rig = TestRig.CreateMultiFile (new TestWriter());
             conn = new ConnectionPair().WithTimeout ();
         }
+
         [TearDown]
         public void Teardown()
         {
@@ -158,21 +156,20 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ReregisterManager()
         {
-            var hashingTask = rig.Manager.WaitForState(TorrentState.Stopped);
-            await rig.Manager.HashCheckAsync(false);
-            await hashingTask;
+            var downloadLimiters = rig.Manager.DownloadLimiter.ToArray ();
+            var uploadLimiters = rig.Manager.UploadLimiter.ToArray ();
 
             await rig.Engine.Unregister(rig.Manager);
-            TestRig rig2 = TestRig.CreateMultiFile (new TestWriter());
-            await rig2.Engine.Unregister(rig2.Manager);
-            await rig.Engine.Register(rig2.Manager);
+            Assert.IsNull (rig.Manager.Engine, "#1");
+            CollectionAssert.AreNotEquivalent (downloadLimiters, rig.Manager.DownloadLimiter, "#2");
+            CollectionAssert.AreNotEquivalent (uploadLimiters, rig.Manager.UploadLimiter, "#3");
+            Assert.IsFalse (rig.Engine.ConnectionManager.Contains (rig.Manager), "#4");
 
-            hashingTask = rig2.Manager.WaitForState(TorrentState.Downloading);
-            await rig2.Manager.HashCheckAsync(true);
-            await hashingTask;
-            await rig2.Manager.StopAsync();
-
-            rig2.Dispose();
+            await rig.Engine.Register (rig.Manager);
+            Assert.AreEqual (rig.Engine, rig.Manager.Engine, "#5");
+            CollectionAssert.AreEquivalent (downloadLimiters, rig.Manager.DownloadLimiter, "#6");
+            CollectionAssert.AreEquivalent (uploadLimiters, rig.Manager.UploadLimiter, "#7");
+            Assert.IsTrue (rig.Engine.ConnectionManager.Contains (rig.Manager), "#8");
         }
 
         [Test]

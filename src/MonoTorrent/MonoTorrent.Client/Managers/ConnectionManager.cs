@@ -163,6 +163,8 @@ namespace MonoTorrent.Client
             }
         }
 
+        internal bool Contains (TorrentManager manager)
+            => Torrents.Contains (manager);
 
         internal async void ProcessNewOutgoingConnection (PeerId id)
         {

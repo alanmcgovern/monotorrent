@@ -87,7 +87,6 @@ namespace MonoTorrent.Client
 
         public ConnectionManager ConnectionManager { get; }
 
-
         public IDhtEngine DhtEngine { get; private set; }
 
         public DiskManager DiskManager { get; }
