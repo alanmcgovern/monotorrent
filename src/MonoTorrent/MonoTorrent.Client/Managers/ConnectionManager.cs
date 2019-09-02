@@ -35,6 +35,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
@@ -133,14 +134,13 @@ namespace MonoTorrent.Client
             }
 
             PendingConnects.Remove (state);
-            if (manager.Engine == null ||
-                !manager.Mode.CanAcceptConnections) {
+            manager.Peers.ConnectingToPeers.Remove (peer);
+            if (manager.Engine == null || !manager.Mode.CanAcceptConnections) {
                 connection.Dispose ();
                 return;
             }
 
             try {
-                manager.Peers.ConnectingToPeers.Remove (peer);
                 if (!succeeded) {
                     peer.FailedConnectionAttempts++;
                     connection.Dispose ();
@@ -172,12 +172,9 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            // The peer is no longer in the 'ConnectingToPeers' list, so we should
-            // add it immediately to the 'Connected' list so it is always in one of
-            // the lists.
             id.ProcessingQueue = true;
             id.TorrentManager.Peers.ActivePeers.Add(id.Peer);
-            id.TorrentManager.Peers.ConnectedPeers.Add(id);
+            id.TorrentManager.Peers.HandshakingPeers.Add(id);
 
             try {
                 // Create a handshake message to send to the peer
@@ -208,6 +205,7 @@ namespace MonoTorrent.Client
             }
 
             try {
+                id.TorrentManager.Peers.HandshakingPeers.Remove (id);
                 id.TorrentManager.HandlePeerConnected(id);
 
                 // If there are any pending messages, send them otherwise set the queue
@@ -268,10 +266,9 @@ namespace MonoTorrent.Client
                 if (!id.AmChoking)
                     id.TorrentManager.UploadingTo--;
 
-                id.TorrentManager.Peers.ConnectedPeers.RemoveAll(delegate(PeerId other) { return id == other; });
-
-                if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
-                    id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
+                id.TorrentManager.Peers.ConnectedPeers.Remove (id);
+                id.TorrentManager.Peers.HandshakingPeers.Remove (id);
+                id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
                 if (canReuse && !LocalPeerId.Equals (id.Peer.PeerId))
@@ -329,7 +326,6 @@ namespace MonoTorrent.Client
                 Logger.Log(id.Connection, "ConnectionManager - Incoming connection fully accepted");
                 id.TorrentManager.Peers.AvailablePeers.Remove(id.Peer);
                 id.TorrentManager.Peers.ActivePeers.Add(id.Peer);
-                id.TorrentManager.Peers.ConnectedPeers.Add(id);
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
                 id.LastBlockReceived.Restart ();

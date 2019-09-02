@@ -29,7 +29,7 @@
 
 using System;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     // In the error mode, we just disable all connections
     // Usually we enter this because the HD is full

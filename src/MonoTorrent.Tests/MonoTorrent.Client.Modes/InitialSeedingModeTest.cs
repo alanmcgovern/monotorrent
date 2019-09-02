@@ -1,5 +1,5 @@
 //
-// IPieceWriter.cs
+// InitialSeedingModeTests.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -32,10 +32,10 @@ using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     [TestFixture]
-    public class InitialSeedingModeTest
+    public class InitialSeedingModeTests
     {
         InitialSeedingMode Mode {
             get { return Rig.Manager.Mode as InitialSeedingMode; }

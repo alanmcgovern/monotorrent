@@ -27,7 +27,7 @@
 //
 
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class StoppedMode : Mode
     {

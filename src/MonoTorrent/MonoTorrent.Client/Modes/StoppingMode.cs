@@ -29,11 +29,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class StoppingMode : Mode
     {

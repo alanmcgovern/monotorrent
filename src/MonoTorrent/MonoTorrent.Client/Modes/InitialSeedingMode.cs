@@ -31,7 +31,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class InitialSeedingMode : Mode
     {

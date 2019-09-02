@@ -37,7 +37,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {

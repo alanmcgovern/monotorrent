@@ -37,7 +37,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    public class Peer
+    public class Peer : IEquatable<Peer>
     {
         /// <summary>
         /// The number of times this peer has had it's connection closed
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         }
 
         public override int GetHashCode()
-            =>ConnectionUri.Host.GetHashCode();
+            => PeerId?.GetHashCode () ?? ConnectionUri.Host.GetHashCode ();
 
         internal byte[] CompactPeer()
         {

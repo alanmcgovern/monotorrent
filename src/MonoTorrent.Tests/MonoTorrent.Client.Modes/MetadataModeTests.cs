@@ -4,7 +4,7 @@
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -39,7 +39,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     [TestFixture]
     public class MetadataModeTests

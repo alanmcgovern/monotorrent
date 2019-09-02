@@ -30,7 +30,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class StartingMode : Mode
     {

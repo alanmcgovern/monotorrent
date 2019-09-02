@@ -34,6 +34,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
@@ -783,6 +784,7 @@ namespace MonoTorrent.Client
         {
             // The only message sent/received so far is the Handshake message.
             // The current mode decides what additional messages need to be sent.
+            Peers.ConnectedPeers.Add (id);
             RaisePeerConnected(new PeerConnectedEventArgs(id));
             Mode.HandlePeerConnected(id);
         }

@@ -36,7 +36,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.PiecePicking;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     abstract class Mode
     {
