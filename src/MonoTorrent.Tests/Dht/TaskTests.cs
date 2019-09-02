@@ -112,8 +112,8 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < 5; i++)
                 nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
 
-            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(25);
-            engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(75);
+            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(5);
+            engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(25);
             listener.MessageSent += (message, endpoint) => {
                 Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(endpoint.Port); });
                 if (current == null)
@@ -150,7 +150,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void ReplaceNodeTest()
         {
-            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(25);
+            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(0);
             Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
             for(int i=0; i < 4; i++)
             {
