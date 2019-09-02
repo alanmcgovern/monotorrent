@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
 
         private bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
-        internal bool isInEndGame = false;       // Set true when the torrent enters end game processing
+        internal bool isInEndGame;       // Set true when the torrent enters end game processing
         private Mode mode;
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
