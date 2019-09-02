@@ -31,14 +31,17 @@ using System;
 
 namespace MonoTorrent.Client
 {
-    public class PeerExchangeAdded : PeersAddedEventArgs
+    /// <summary>
+    /// Indicates peers were received using Peer Exchange
+    /// </summary>
+    public sealed class PeerExchangePeersAdded : PeersAddedEventArgs
     {
         /// <summary>
         /// The peer who provided the list of additional peers.
         /// </summary>
         public PeerId Id { get; }
 
-        public PeerExchangeAdded (TorrentManager manager, int count, int total, PeerId id)
+        public PeerExchangePeersAdded (TorrentManager manager, int count, int total, PeerId id)
             : base(manager, count, total)
         {
             Id = id ?? throw new ArgumentNullException(nameof (id));

@@ -180,7 +180,7 @@ namespace MonoTorrent.Client.Modes
         {
             // Ignore peer exchange messages on private toirrents
             if ((Manager.Torrent != null && Manager.Torrent.IsPrivate) || !Manager.Settings.EnablePeerExchange) {
-                Manager.RaisePeersFound(new PeerExchangeAdded (Manager, 0, 0, id));
+                Manager.RaisePeersFound(new PeerExchangePeersAdded (Manager, 0, 0, id));
             } else {
                 // If we already have lots of peers, don't process the messages anymore.
                 if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
@@ -191,7 +191,7 @@ namespace MonoTorrent.Client.Modes
                     newPeers[i].IsSeeder = (message.AddedDotF [i] & 0x2) == 0x2;
                 }
                 int count = await Manager.AddPeersAsync(newPeers);
-                Manager.RaisePeersFound(new PeerExchangeAdded (Manager, count, newPeers.Count, id));
+                Manager.RaisePeersFound(new PeerExchangePeersAdded (Manager, count, newPeers.Count, id));
             }
         }
 

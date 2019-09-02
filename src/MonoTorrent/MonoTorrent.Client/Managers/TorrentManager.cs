@@ -63,12 +63,27 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<ConnectionAttemptFailedEventArgs> ConnectionAttemptFailed;
 
+        /// <summary>
+        /// This event is raised synchronously and is only used supposed to be used by tests.
+        /// </summary>
         internal event Action<Mode, Mode> ModeChanged;
 
+        /// <summary>
+        /// Raised whenever new peers are discovered and added. The object will be of type
+        /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded>"/>, <see cref="LocalPeersAdded"/>
+        /// or <see cref="DhtPeersAdded"/> depending on the source of the new peers.
+        /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
+        /// <summary>
+        /// This asynchronous event is raised whenever a piece is hashed, either as part of
+        /// regular downloading, or as part of a <see cref="HashCheckAsync(bool)"/>.
+        /// </summary>
         public event EventHandler<PieceHashedEventArgs> PieceHashed;
 
+        /// <summary>
+        /// This asynchronous event is raised whenever the TorrentManager changes state.
+        /// </summary>
         public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
 
         internal event EventHandler<PeerAddedEventArgs> OnPeerFound;

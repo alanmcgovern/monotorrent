@@ -29,7 +29,10 @@
 
 namespace MonoTorrent.Client
 {
-    public class DhtPeersAdded : PeersAddedEventArgs
+    /// <summary>
+    /// Indicates peers were received using DHT
+    /// </summary>
+    public sealed class DhtPeersAdded : PeersAddedEventArgs
     {
         public DhtPeersAdded(TorrentManager manager, int peersAdded, int total)
             : base(manager, peersAdded, total)

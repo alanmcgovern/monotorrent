@@ -93,9 +93,9 @@ namespace MonoTorrent.Client.Modes
             };
 
             foreach (var mode in modes) {
-               var peersTask = new TaskCompletionSource<PeerExchangeAdded> ();
+               var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
                 Manager.PeersFound += (o, e) => {
-                    if (e is PeerExchangeAdded args)
+                    if (e is PeerExchangePeersAdded args)
                         peersTask.TrySetResult (args);
                 };
 
@@ -121,9 +121,9 @@ namespace MonoTorrent.Client.Modes
 
             var manager = TestRig.CreatePrivate ();
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
-            var peersTask = new TaskCompletionSource<PeerExchangeAdded> ();
+            var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
             manager.PeersFound += (o, e) => {
-                if (e is PeerExchangeAdded args)
+                if (e is PeerExchangePeersAdded args)
                     peersTask.TrySetResult (args);
             };
 
