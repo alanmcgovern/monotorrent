@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
 
-                    Engine.ConnectionManager.ProcessNewOutgoingConnection(id);
+                    Engine.ConnectionManager.ProcessNewOutgoingConnection(e.TorrentManager, id);
                     return;
                 }
 
@@ -133,14 +133,14 @@ namespace MonoTorrent.Client
                 Encryptor = encryptor
             };
 
-            message.Handle(id);
+            message.Handle(man, id);
             Logger.Log(id.Connection, "ListenManager - Handshake successful handled");
 
             id.ClientApp = new Software(message.PeerId);
 
-            message = new HandshakeMessage(id.TorrentManager.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
-            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, id.TorrentManager.UploadLimiter, id.Monitor, id.TorrentManager.Monitor);
-            Engine.ConnectionManager.IncomingConnectionAccepted (id);
+            message = new HandshakeMessage(man.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
+            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, man.UploadLimiter, id.Monitor, man.Monitor);
+            Engine.ConnectionManager.IncomingConnectionAccepted (man, id);
             return true;
         }
     }

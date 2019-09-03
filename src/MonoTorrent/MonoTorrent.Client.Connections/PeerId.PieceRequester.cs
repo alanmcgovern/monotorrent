@@ -49,9 +49,6 @@ namespace MonoTorrent.Client
         void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
             => Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
 
-        void IPieceRequester.Close ()
-            => Engine.ConnectionManager.CleanupSocket (this);
-
         void IPieceRequester.HashedPiece(bool succeeded)
             => Peer.HashedPiece (succeeded);
     }

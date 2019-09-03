@@ -207,7 +207,7 @@ namespace MonoTorrent.Client.Modes
         {
             Torrent torrent = Manager.Torrent;
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
-                Manager.Engine.ConnectionManager.CleanupSocket (id);
+                Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
             Manager.Bitfield = new BitField(torrent.Pieces.Count);
             Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent);
             foreach (TorrentFile file in torrent.Files)

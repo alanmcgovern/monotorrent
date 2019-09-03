@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Modes
 
                 Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
                 foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
-                    Manager.Engine.ConnectionManager.CleanupSocket (id);
+                    Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
                 var stoppingTasks = new List<Task>();
                 stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
