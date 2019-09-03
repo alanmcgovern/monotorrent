@@ -73,29 +73,13 @@ namespace MonoTorrent.Client
 
         #endregion
 
-        #region Member Variables
-
-        private List<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
-
-        #endregion Member Variables
-
         #region Properties
 
-        internal byte [] AddressBytes => Connection.AddressBytes;
-
-        /// <summary>
-        /// The remote peer can request these and we'll fulfill the request if we're choking them
-        /// </summary>
-        internal List<int> AmAllowedFastPieces { get; set; }
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
         public BitField BitField { get; internal set; }
         public Software ClientApp { get; internal set; }
-        ConnectionManager ConnectionManager { get; }
-        internal IEncryption Decryptor { get; set; }
-        internal bool Disposed { get; private set; }
-        internal IEncryption Encryptor { get; set; }
         public EncryptionTypes EncryptionType {
             get {
                 if (Encryptor is RC4)
@@ -107,31 +91,45 @@ namespace MonoTorrent.Client
                 return EncryptionTypes.None;
             }
         }
-        internal ExtensionSupports ExtensionSupports { get; set; }
-        internal List<int> IsAllowedFastPieces { get; set; }
         public bool IsChoking { get; internal set; }
         public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }
-        public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public int IsRequestingPiecesCount { get; internal set; }
-        internal Stopwatch LastMessageReceived { get; } = new Stopwatch ();
-        internal Stopwatch LastMessageSent { get; } = new Stopwatch ();
-        internal Stopwatch WhenConnected { get; } = new Stopwatch ();
-        internal int MaxPendingRequests { get; set; }
-        internal int MaxSupportedPendingRequests { get; set; }
+        public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public ConnectionMonitor Monitor { get; }
-        internal Peer Peer { get; }
-        internal PeerExchangeManager PeerExchangeManager { get; set; }
-        public BEncodedString Id => Peer.PeerId;
+        public BEncodedString PeerID => Peer.PeerId;
         public int PiecesSent { get; internal set; }
         public int PiecesReceived { get; internal set; }
-        internal ushort Port { get; set; }
-        internal bool ProcessingQueue { get; set; }
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
+        public Uri Uri => Peer.ConnectionUri;
+
+        internal byte [] AddressBytes => Connection.AddressBytes;
+
+        /// <summary>
+        /// The remote peer can request these and we'll fulfill the request if we're choking them
+        /// </summary>
+        internal List<int> AmAllowedFastPieces { get; set; }
+        internal IEncryption Decryptor { get; set; }
+        internal bool Disposed { get; private set; }
+        internal IEncryption Encryptor { get; set; }
+        internal ExtensionSupports ExtensionSupports { get; set; }
+        internal List<int> IsAllowedFastPieces { get; set; }
+        internal Stopwatch LastMessageReceived { get; }
+        internal Stopwatch LastMessageSent { get; }
+        internal Stopwatch WhenConnected { get; }
+        internal int MaxPendingRequests { get; set; }
+        internal int MaxSupportedPendingRequests { get; set; }
+        internal Peer Peer { get; }
+        internal PeerExchangeManager PeerExchangeManager { get; set; }
+        internal ushort Port { get; set; }
+        internal bool ProcessingQueue { get; set; }
+        internal int QueueLength => SendQueue.Count;
         internal List<int> SuggestedPieces { get; }
         internal TorrentManager TorrentManager { get; }
-        public Uri Uri => Peer.ConnectionUri;
+
+        ConnectionManager ConnectionManager { get; }
+        List<PeerMessage> SendQueue { get; }
 
         #endregion Properties
 
@@ -141,17 +139,23 @@ namespace MonoTorrent.Client
         {
             Peer = peer;
 
-            SuggestedPieces = new List<int>();
             AmChoking = true;
             IsChoking = true;
 
-            IsAllowedFastPieces = new List<int>();
+            LastMessageReceived = new Stopwatch ();
+            LastMessageSent = new Stopwatch ();
+            WhenConnected = new Stopwatch ();
+
             AmAllowedFastPieces = new List<int>();
+            IsAllowedFastPieces = new List<int>();
+            SuggestedPieces = new List<int>();
+
             MaxPendingRequests = 2;
             MaxSupportedPendingRequests = 50;
-            Monitor = new ConnectionMonitor();
-            sendQueue = new List<PeerMessage>(12);
+
             ExtensionSupports = new ExtensionSupports();
+            Monitor = new ConnectionMonitor();
+            SendQueue = new List<PeerMessage>(12);
 
             InitializeTyrant();
         }
@@ -183,31 +187,26 @@ namespace MonoTorrent.Client
 
         internal PeerMessage Dequeue()
         {
-            var message = sendQueue[0];
-            sendQueue.RemoveAt (0);
+            var message = SendQueue[0];
+            SendQueue.RemoveAt (0);
             return message;
         }
 
         internal void Enqueue(PeerMessage message)
-            => EnqueueAt (message, sendQueue.Count);
+            => EnqueueAt (message, SendQueue.Count);
 
         internal void EnqueueAt(PeerMessage message, int index)
         {
-            if (sendQueue.Count == 0 || index >= sendQueue.Count)
-                sendQueue.Add (message);
+            if (SendQueue.Count == 0 || index >= SendQueue.Count)
+                SendQueue.Add (message);
             else
-                sendQueue.Insert(index, message);
+                SendQueue.Insert(index, message);
 
             if (!ProcessingQueue)
             {
                 ProcessingQueue = true;
                 ConnectionManager.ProcessQueue(TorrentManager, this);
             }
-        }
-
-        internal int QueueLength
-        {
-            get { return sendQueue.Count; }
         }
 
         public override string ToString()
@@ -232,7 +231,6 @@ namespace MonoTorrent.Client
             HaveMessagesReceived = 0;
             TyrantStartTime.Restart ();
 
-            RateLimiter = new RateLimiter();
             UploadRateForRecip = MARKET_RATE;
             LastRateReductionTime.Restart ();
             lastMeasuredDownloadRate = 0;
@@ -280,11 +278,6 @@ namespace MonoTorrent.Client
         /// Last time we looked that this peer was choking us
         /// </summary>
         internal Stopwatch LastChokedTime { get; } = new Stopwatch ();
-
-        /// <summary>
-        /// Used to check how much upload capacity we are giving this peer
-        /// </summary>
-        internal IRateLimiter RateLimiter { get; private set; }
 
         internal short RoundsChoked { get; private set; }
 
