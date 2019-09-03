@@ -49,7 +49,7 @@ namespace MonoTorrent.Dht
         internal BigInteger Capacity => Max.Value - Min.Value;
         public TimeSpan LastChanged => LastChangedTimer.Elapsed + LastChangedDelta;
         TimeSpan LastChangedDelta { get; set; }
-        Stopwatch LastChangedTimer { get; }
+        ValueStopwatch LastChangedTimer;
         public NodeId Max { get; }
         public NodeId Min { get; }
         public List<Node> Nodes { get; }
@@ -67,7 +67,7 @@ namespace MonoTorrent.Dht
             Max = max ?? throw new ArgumentNullException (nameof (max));
 
             LastChangedDelta = TimeSpan.FromDays(1);
-            LastChangedTimer = new Stopwatch();
+            LastChangedTimer = new ValueStopwatch();
             Nodes = new List<Node>(MaxCapacity);
         }
 		

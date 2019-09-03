@@ -36,7 +36,6 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
@@ -61,15 +60,15 @@ namespace MonoTorrent.Client
 
         #region Choke/Unchoke
 
-        internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
         internal IConnection Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
-        internal Stopwatch LastBlockReceived { get; } = new Stopwatch ();
-        internal Stopwatch LastPeerExchangeReview { get; } = new Stopwatch ();
+        internal ValueStopwatch LastBlockReceived;
+        internal ValueStopwatch LastPeerExchangeReview;
+        internal ValueStopwatch LastUnchoked;
 
         #endregion
 
@@ -115,9 +114,9 @@ namespace MonoTorrent.Client
         internal IEncryption Encryptor { get; set; }
         internal ExtensionSupports ExtensionSupports { get; set; }
         internal List<int> IsAllowedFastPieces { get; set; }
-        internal Stopwatch LastMessageReceived { get; }
-        internal Stopwatch LastMessageSent { get; }
-        internal Stopwatch WhenConnected { get; }
+        internal ValueStopwatch LastMessageReceived;
+        internal ValueStopwatch LastMessageSent;
+        internal ValueStopwatch WhenConnected;
         internal int MaxPendingRequests { get; set; }
         internal int MaxSupportedPendingRequests { get; set; }
         internal Peer Peer { get; }
@@ -140,9 +139,9 @@ namespace MonoTorrent.Client
             AmChoking = true;
             IsChoking = true;
 
-            LastMessageReceived = new Stopwatch ();
-            LastMessageSent = new Stopwatch ();
-            WhenConnected = new Stopwatch ();
+            LastMessageReceived = new ValueStopwatch ();
+            LastMessageSent = new ValueStopwatch ();
+            WhenConnected = new ValueStopwatch ();
 
             AmAllowedFastPieces = new List<int>();
             IsAllowedFastPieces = new List<int>();
@@ -207,9 +206,9 @@ namespace MonoTorrent.Client
         #region BitTyrantasaurus implementation
 
         private const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
-        private Stopwatch LastRateReductionTime { get; } = new Stopwatch ();    // last time we reduced rate of this peer
+        ValueStopwatch LastRateReductionTime;                   // last time we reduced rate of this peer
         private int lastMeasuredDownloadRate;                                   // last download rate measured
-        private Stopwatch TyrantStartTime { get; } = new Stopwatch ();
+        ValueStopwatch TyrantStartTime;
 
         // stats
         private int maxObservedDownloadSpeed;
@@ -265,7 +264,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Last time we looked that this peer was choking us
         /// </summary>
-        internal Stopwatch LastChokedTime { get; } = new Stopwatch ();
+        internal ValueStopwatch LastChokedTime;
 
         internal short RoundsChoked { get; private set; }
 

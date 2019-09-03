@@ -27,8 +27,8 @@
 //
 
 
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace MonoTorrent.Client.PiecePicking
 {
@@ -38,10 +38,10 @@ namespace MonoTorrent.Client.PiecePicking
         BitField BitField { get; }
         List<int> IsAllowedFastPieces { get; }
         bool IsChoking { get; }
-        Stopwatch LastMessageReceived { get; }
         int RepeatedHashFails { get; }
         List<int> SuggestedPieces { get; }
         bool SupportsFastPeer { get; }
+        TimeSpan TimeSinceLastMessageReceived { get; }
         int TotalHashFails { get; }
 
         void Cancel (int pieceIndex, int pieceOffset, int requestLength);

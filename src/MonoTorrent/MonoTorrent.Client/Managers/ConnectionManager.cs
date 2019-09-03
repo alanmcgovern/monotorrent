@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
     {
         struct AsyncConnectState
         {
-            public AsyncConnectState (TorrentManager manager, IConnection connection, Stopwatch timer)
+            public AsyncConnectState (TorrentManager manager, IConnection connection, ValueStopwatch timer)
             {
                 Manager = manager;
                 Connection = connection;
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
 
             public IConnection Connection;
             public TorrentManager Manager;
-            public Stopwatch Timer;
+            public ValueStopwatch Timer;
         }
 
         public event EventHandler<AttemptConnectionEventArgs> BanPeer;
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
             if (connection == null)
                 return;
 
-            var state = new AsyncConnectState(manager, connection, Stopwatch.StartNew ());
+            var state = new AsyncConnectState(manager, connection, ValueStopwatch.StartNew ());
             PendingConnects.Add(state);
             manager.Peers.ConnectingToPeers.Add(peer);
 

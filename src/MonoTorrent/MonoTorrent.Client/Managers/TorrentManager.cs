@@ -171,7 +171,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Internal timer used to trigger Dht announces every <see cref="MonoTorrent.Dht.DhtEngine.AnnounceInternal"/> seconds.
         /// </summary>
-        internal Stopwatch LastDhtAnnounceTimer { get; private set; }
+        internal ValueStopwatch LastDhtAnnounceTimer;
 
         /// <summary>
         /// The time the last announce using Local Peer Discovery occurred
@@ -181,7 +181,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Internal timer used to trigger Local PeerDiscovery announces every <see cref="LocalPeerDiscovery.AnnounceInternal"/> seconds.
         /// </summary>
-        internal Stopwatch LastLocalPeerAnnounceTimer { get; private set; }
+        internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
         /// <summary>
         /// 
@@ -332,8 +332,6 @@ namespace MonoTorrent.Client
             this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
             this.InactivePeerManager = new InactivePeerManager(this);
-            this.LastDhtAnnounceTimer = new Stopwatch ();
-            this.LastLocalPeerAnnounceTimer = new Stopwatch ();
             this.Peers = new PeerManager();
             this.PieceManager = new PieceManager(this);
             SetTrackerManager (new TrackerManager(new TrackerRequestFactory (this), announces));
