@@ -1,10 +1,10 @@
-//
-// RequestParameters.cs
+﻿//
+// NullLocalPeerDiscovery.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,45 +28,40 @@
 
 
 using System;
-using System.Collections.Specialized;
 using System.Net;
+using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
-
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Client
 {
-    public abstract class RequestParameters : EventArgs
+    class NullLocalPeerDiscovery : ILocalPeerDiscovery
     {
-        protected internal static readonly string FailureKey = "failure reason";
-        protected internal static readonly string WarningKey = "warning message";
-
-        private IPAddress remoteAddress;
-        private NameValueCollection parameters;
-        private BEncodedDictionary response;
-
-        public abstract bool IsValid { get; }
-        
-        public NameValueCollection Parameters
-        {
-            get { return parameters; }
+        #pragma warning disable 0067
+        public event EventHandler<LocalPeerFoundEventArgs> PeerFound {
+            add { }
+            remove { }
         }
 
-        public BEncodedDictionary Response
+        public event EventHandler<EventArgs> StatusChanged {
+            add { }
+            remove { }
+        }
+        #pragma warning restore 0067
+
+
+        public IPEndPoint EndPoint => null;
+        public ListenerStatus Status => ListenerStatus.NotListening;
+
+        public Task Announce (InfoHash infoHash)
         {
-            get { return response; }
+            return Task.CompletedTask;
         }
 
-        public IPAddress RemoteAddress
+        public void Start ()
         {
-            get { return remoteAddress; }
-            protected set { remoteAddress = value; }
         }
 
-        protected RequestParameters(NameValueCollection parameters, IPAddress address)
+        public void Stop ()
         {
-            this.parameters = parameters;
-            remoteAddress = address;
-            response = new BEncodedDictionary();
         }
     }
 }

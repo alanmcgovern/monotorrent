@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
@@ -65,17 +64,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             Leechers = ReadInt(buffer, offset + 12);
             Seeders = ReadInt(buffer, offset + 16);
 
-            LoadPeerDetails(buffer, 20);
-        }
-
-        private void LoadPeerDetails(byte[] buffer, int offset)
-        {
-            while(offset <= (buffer.Length - 6))
-            {
-                int ip = IPAddress.NetworkToHostOrder(ReadInt(buffer, ref offset));
-                ushort port = (ushort)ReadShort(buffer, ref offset);
-                Peers.Add(new Peer("", new Uri("ipv4://" + new IPEndPoint(new IPAddress(ip), port).ToString())));
-            }
+            var peers = Peer.FromCompact (buffer, 20);
+            Peers.AddRange (peers);
         }
 
         public override int Encode(byte[] buffer, int offset)

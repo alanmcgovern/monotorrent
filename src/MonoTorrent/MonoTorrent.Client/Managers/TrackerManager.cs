@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Tracker
     /// <summary>
     /// Represents the connection to a tracker that an TorrentManager has
     /// </summary>
-    public class TrackerManager
+    public class TrackerManager : ITrackerManager
     {
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// The amount of time since the most recent Announce request was issued.
         /// </summary>
-        internal TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
+        public TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
 
         #endregion
 
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client.Tracker
         public async Task Announce()
             => await Announce (TorrentEvent.None);
 
-        internal async Task Announce(TorrentEvent clientEvent)
+        public async Task Announce(TorrentEvent clientEvent)
             => await Announce (clientEvent, null);
 
         public async Task Announce(ITracker tracker)
@@ -140,14 +140,14 @@ namespace MonoTorrent.Client.Tracker
 
                     var peers = await tuple.Item2.AnnounceAsync(actualArgs);
                     LastAnnounceSucceeded = true;
-                    Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
+                    AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
                     return;
                 } catch {
                 }
             }
 
             LastAnnounceSucceeded = false;
-            Toolbox.RaiseAsyncEvent (AnnounceComplete, this, new AnnounceResponseEventArgs (null, false));
+            AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (null, false));
         }
 
         public async Task Scrape()
@@ -166,9 +166,9 @@ namespace MonoTorrent.Client.Tracker
             try {
                 var parameters = RequestFactory.CreateScrape ();
                 await tuple.Item2.ScrapeAsync (parameters);
-                Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, true));
+                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, true));
             } catch {
-                Toolbox.RaiseAsyncEvent (ScrapeComplete, this, new ScrapeResponseEventArgs (tuple.Item2, false));
+                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, false));
             }
         }
 

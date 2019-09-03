@@ -32,7 +32,10 @@ using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
-    public class TrackerPeersAdded : PeersAddedEventArgs
+    /// <summary>
+    /// Indicates peers were received from a Tracker
+    /// </summary>
+    public sealed class TrackerPeersAdded : PeersAddedEventArgs
     {
         public ITracker Tracker { get; }
 

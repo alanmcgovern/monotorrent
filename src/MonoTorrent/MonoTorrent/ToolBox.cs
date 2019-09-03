@@ -59,17 +59,9 @@ namespace MonoTorrent
 			return count;
 		}
 
-        public static void RaiseAsyncEvent<T>(EventHandler<T> e, object o, T args)
-            where T : EventArgs
-        {
-            if (e == null)
-                return;
+        public static void InvokeAsync<T>(this EventHandler<T> handler, object o, T args)
+            => ThreadPool.QueueUserWorkItem (state => handler?.Invoke (o, args));
 
-            ThreadPool.QueueUserWorkItem(delegate {
-                if (e != null)
-                    e(o, args);
-            });
-        }
         /// <summary>
         /// Randomizes the contents of the array
         /// </summary>
@@ -130,7 +122,7 @@ namespace MonoTorrent
         /// <param name="offset2">The starting index for the second array</param>
         /// <param name="count">The number of bytes to check</param>
         /// <returns></returns>
-        public static bool ByteMatch(byte[] array1, int offset1, byte[] array2, int offset2, int count)
+        public static bool ByteMatch(byte[] array1, long offset1, byte[] array2, long offset2, long count)
         {
             if (array1 == null)
                 throw new ArgumentNullException("array1");

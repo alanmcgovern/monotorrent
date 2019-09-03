@@ -1,10 +1,10 @@
 //
-// PeerTest.cs
+// ClientAddressComparer.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,26 +27,21 @@
 //
 
 
-using System;
-using System.Net;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client;
-using NUnit.Framework;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tracker
 {
-    [TestFixture]
-    public class PeerTest
+    /// <summary>
+    /// Uses the <see cref="AnnounceRequest.ClientAddress"/> field to compare peers when handling Announce or Scrape requests.
+    /// </summary>
+    public class ClientAddressComparer : IPeerComparer
     {
-        [Test]
-        public void CompactPeerTest()
+        /// <summary>
+        /// Returns the <see cref="AnnounceRequest.ClientAddress"/> field to use to compare peers.
+        /// </summary>
+        /// <param name="parameters">The data sent as part of the Announce request</param>
+        /// <returns></returns>
+        public object GetKey(AnnounceRequest parameters)
         {
-            string peerId = "12345abcde12345abcde";
-            Uri uri = new Uri("ipv4://192.168.0.5:12345");
-            Peer p = new Peer(peerId, uri);
-            byte[] compact = p.CompactPeer();
-            Peer peer = Peer.Decode((BEncoding.BEncodedString)compact)[0];
-            Assert.AreEqual(p.ConnectionUri, peer.ConnectionUri);
+            return parameters.ClientAddress;
         }
     }
 }

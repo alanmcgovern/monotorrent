@@ -27,34 +27,22 @@
 //
 
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
-	class StoppedMode : Mode
-	{
-		public override bool CanHashCheck
-		{
-			get { return true; }
-		}
-		
-		public override TorrentState State
-		{
-			get { return TorrentState.Stopped; }
-		}
+    class StoppedMode : Mode
+    {
+        public override bool CanHashCheck => true;
+        public override TorrentState State => TorrentState.Stopped;
 
-		public StoppedMode(TorrentManager manager)
-			: base(manager)
-		{
-			CanAcceptConnections = false;
-		}
+        public StoppedMode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base(manager, diskManager, connectionManager, settings)
+        {
+            CanAcceptConnections = false;
+        }
 
-		public override void HandlePeerConnected(PeerId id, Direction direction)
-		{
-			Manager.Engine.ConnectionManager.CleanupSocket (id);
-		}
-
-		public override void Tick(int counter)
-		{
-			// When stopped, do nothing
-		}
-	}
+        public override void Tick (int counter)
+        {
+            // Do not run any of the default 'Tick' logic as nothing happens during 'Stopped' mode.
+        }
+    }
 }

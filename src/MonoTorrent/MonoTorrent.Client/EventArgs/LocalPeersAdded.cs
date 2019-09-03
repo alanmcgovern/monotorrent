@@ -29,7 +29,10 @@
 
 namespace MonoTorrent.Client
 {
-    public class LocalPeersAdded : PeersAddedEventArgs
+    /// <summary>
+    /// Indicates peers were received from Local Peer Discovery
+    /// </summary>
+    public sealed class LocalPeersAdded : PeersAddedEventArgs
     {
         public LocalPeersAdded(TorrentManager manager, int peersAdded, int total)
             : base(manager, peersAdded, total)

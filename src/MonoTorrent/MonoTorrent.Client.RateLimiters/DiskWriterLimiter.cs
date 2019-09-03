@@ -31,18 +31,16 @@ namespace MonoTorrent.Client.RateLimiters
 {
     sealed class DiskWriterLimiter : IRateLimiter
     {
-        // 4MB / average write size.
+        // 4MB
         const int MaxPendingWriteBytes = 4 * 1024 * 1024;
-        DiskManager manager;
 
-        public bool Unlimited
-        {
-            get { return manager.BufferedWrites < MaxPendingWriteBytes; }
-        }
+        DiskManager Manager { get; }
+
+        public bool Unlimited => Manager.PendingWrites < MaxPendingWriteBytes;
 
         public DiskWriterLimiter(DiskManager manager)
         {
-            this.manager = manager;
+            Manager = manager;
         }
 
         public bool TryProcess(long amount)

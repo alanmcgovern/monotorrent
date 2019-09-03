@@ -43,6 +43,7 @@ namespace MonoTorrent.Client
     {
         Stopped,
         Paused,
+        Starting,
         Downloading,
         Seeding,
         Hashing,

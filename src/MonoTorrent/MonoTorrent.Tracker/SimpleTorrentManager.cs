@@ -51,7 +51,7 @@ namespace MonoTorrent.Tracker
         private Dictionary<object, Peer> peers;
         private Random random;
         private ITrackable trackable;
-        private Tracker tracker;
+        private TrackerServer tracker;
 
         #endregion Member Variables
 
@@ -104,7 +104,7 @@ namespace MonoTorrent.Tracker
 
         #region Constructors
 
-        public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer, Tracker tracker)
+        public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer, TrackerServer tracker)
         {
             this.comparer = comparer;
             this.trackable = trackable;
@@ -187,9 +187,9 @@ namespace MonoTorrent.Tracker
             }
 
             if (compact)
-                response.Add(Tracker.PeersKey, (BEncodedString)compactResponse);
+                response.Add(TrackerServer.PeersKey, (BEncodedString)compactResponse);
             else
-                response.Add(Tracker.PeersKey, nonCompactResponse);
+                response.Add(TrackerServer.PeersKey, nonCompactResponse);
         }
 
         internal void ClearZombiePeers(DateTime cutoff)
@@ -250,7 +250,7 @@ namespace MonoTorrent.Tracker
         /// Updates the peer in the tracker database based on the announce parameters
         /// </summary>
         /// <param name="par"></param>
-        internal void Update(AnnounceParameters par)
+        internal void Update(AnnounceRequest par)
         {
             Peer peer;
             object peerKey = comparer.GetKey(par);

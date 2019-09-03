@@ -28,8 +28,10 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
@@ -38,14 +40,32 @@ using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
-    public class PeerId
+    public partial class PeerId
     {
+        /// <summary>
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
+        /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
+        /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
+        /// </summary>
+        /// <param name="bitfieldLength"></param>
+        /// <returns></returns>
+        internal static PeerId CreateNull (int bitfieldLength)
+        {
+            return new PeerId {
+                Peer = new Peer ("null", new Uri ("ipv4://hardcodedvalue")),
+                IsChoking = true,
+                AmChoking = true,
+                BitField = new BitField (bitfieldLength),
+                ProcessingQueue = true
+            };
+        }
+
         #region Choke/Unchoke
 
         internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        internal IConnection Connection { get; set; }
+        internal IConnection Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
@@ -56,8 +76,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private MonoTorrentCollection<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
-        private TorrentManager torrentManager;
+        private List<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
 
         #endregion Member Variables
 
@@ -68,7 +87,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The remote peer can request these and we'll fulfill the request if we're choking them
         /// </summary>
-        internal MonoTorrentCollection<int> AmAllowedFastPieces { get; set; }
+        internal List<int> AmAllowedFastPieces { get; set; }
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
@@ -93,9 +112,9 @@ namespace MonoTorrent.Client
         internal ClientEngine Engine { get; private set;}
         internal ExtensionSupports ExtensionSupports { get; set; }
         public int HashFails => Peer.TotalHashFails;
-        internal MonoTorrentCollection<int> IsAllowedFastPieces { get; set; }
+        internal List<int> IsAllowedFastPieces { get; set; }
         public bool IsChoking { get; internal set; }
-        public bool IsConnected => Connection != null;
+        public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }
         public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public int IsRequestingPiecesCount { get; internal set; }
@@ -107,55 +126,48 @@ namespace MonoTorrent.Client
         public ConnectionMonitor Monitor { get; }
         internal Peer Peer { get; set; }
         internal PeerExchangeManager PeerExchangeManager { get; set; }
-        public string PeerID => Peer.PeerId;
+        public BEncodedString PeerID => Peer.PeerId;
         public int PiecesSent { get; internal set; }
         public int PiecesReceived { get; internal set; }
         internal ushort Port { get; set; }
         internal bool ProcessingQueue { get; set; }
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
-        internal MonoTorrentCollection<int> SuggestedPieces { get; }
-
-        internal TorrentManager TorrentManager
-        {
-            get { return torrentManager; }
-            set
-            {
-                torrentManager = value;
-                if (value != null)
-                {
-                    Engine = value.Engine;
-                    if(value.HasMetadata)
-                        BitField = new BitField(value.Torrent.Pieces.Count);
-                }
-            }
-        }
-
+        internal List<int> SuggestedPieces { get; }
+        internal TorrentManager TorrentManager { get; }
         public Uri Uri => Peer.ConnectionUri;
 
         #endregion Properties
 
         #region Constructors
 
-        internal PeerId(Peer peer, TorrentManager manager)
+        PeerId ()
         {
-            Peer = peer ?? throw new ArgumentNullException(nameof (peer));
-            TorrentManager = manager;
-
-
-            SuggestedPieces = new MonoTorrentCollection<int>();
+            SuggestedPieces = new List<int>();
             AmChoking = true;
             IsChoking = true;
 
-            IsAllowedFastPieces = new MonoTorrentCollection<int>();
-            AmAllowedFastPieces = new MonoTorrentCollection<int>();
+            IsAllowedFastPieces = new List<int>();
+            AmAllowedFastPieces = new List<int>();
             MaxPendingRequests = 2;
             MaxSupportedPendingRequests = 50;
             Monitor = new ConnectionMonitor();
-            sendQueue = new MonoTorrentCollection<PeerMessage>(12);
+            sendQueue = new List<PeerMessage>(12);
             ExtensionSupports = new ExtensionSupports();
 
             InitializeTyrant();
+        }
+
+        internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
+            : this ()
+        {
+            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
+            Peer = peer ?? throw new ArgumentNullException (nameof (peer));
+            TorrentManager = manager ?? throw new ArgumentNullException (nameof (manager));
+
+            Engine = manager.Engine;
+            if(TorrentManager.HasMetadata)
+                BitField = new BitField(TorrentManager.Torrent.Pieces.Count);
         }
 
         #endregion
@@ -168,13 +180,14 @@ namespace MonoTorrent.Client
                 return;
 
             Disposed = true;
-            Connection?.SafeDispose ();
-            Connection = null;
+            Connection.SafeDispose ();
         }
 
         internal PeerMessage Dequeue()
         {
-            return sendQueue.Dequeue();
+            var message = sendQueue[0];
+            sendQueue.RemoveAt (0);
+            return message;
         }
 
         internal void Enqueue(PeerMessage message)
@@ -194,17 +207,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        public override bool Equals(object obj)
-        {
-            PeerId id = obj as PeerId;
-            return id == null ? false : Peer.Equals(id.Peer);
-        }
-
-        public override int GetHashCode()
-        {
-            return Peer.ConnectionUri.GetHashCode();
-        }
-        
         internal int QueueLength
         {
             get { return sendQueue.Count; }

@@ -34,7 +34,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.RateLimiters;
@@ -75,11 +75,8 @@ namespace MonoTorrent.Client
 
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
-        private LocalPeerManager localPeerManager;
-        private LocalPeerListener localPeerListener;
         private int tickCount;
         private List<TorrentManager> torrents;
-        private ReadOnlyCollection<TorrentManager> torrentsReadonly;
         private IRateLimiter uploadLimiter;
         private IRateLimiter downloadLimiter;
 
@@ -90,7 +87,6 @@ namespace MonoTorrent.Client
 
         public ConnectionManager ConnectionManager { get; }
 
-
         public IDhtEngine DhtEngine { get; private set; }
 
         public DiskManager DiskManager { get; }
@@ -99,28 +95,15 @@ namespace MonoTorrent.Client
 
         public IPeerListener Listener { get; }
 
-        public bool LocalPeerSearchEnabled
-        {
-            get { return localPeerListener.Status != ListenerStatus.NotListening; }
-            set
-            {
-                if (value && !LocalPeerSearchEnabled)
-                    localPeerListener.Start();
-                else if (!value && LocalPeerSearchEnabled)
-                    localPeerListener.Stop();
-            }
-        }
+        public ILocalPeerDiscovery LocalPeerDiscovery { get;  private set; }
 
         public bool IsRunning { get; private set; }
 
-        public string PeerId { get; }
+        public BEncodedString PeerId { get; }
 
         public EngineSettings Settings { get; }
 
-        public IList<TorrentManager> Torrents
-        {
-            get { return torrentsReadonly; }
-        }
+        public IList<TorrentManager> Torrents { get; }
 
         public int TotalDownloadSpeed
         {
@@ -155,7 +138,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public ClientEngine(EngineSettings settings, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, IPieceWriter writer)
             : this(settings, new PeerListener(new IPEndPoint(IPAddress.Any, settings.ListenPort)), writer)
 
         {
@@ -168,39 +151,39 @@ namespace MonoTorrent.Client
 
         }
 
-        public ClientEngine(EngineSettings settings, IPeerListener listener, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, IPeerListener listener, IPieceWriter writer)
         {
             Check.Settings(settings);
             Check.Listener(listener);
             Check.Writer(writer);
 
-            this.Listener = listener;
-            this.Settings = settings;
+            PeerId = GeneratePeerId();
+            Listener = listener ?? throw new ArgumentNullException (nameof (listener));
+            Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
-            this.ConnectionManager = new ConnectionManager(this);
+            torrents = new List<TorrentManager>();
+            Torrents = new ReadOnlyCollection<TorrentManager> (torrents);
+
+            DiskManager = new DiskManager(Settings, writer);
+            ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
             DhtEngine = new NullDhtEngine();
-            this.DiskManager = new DiskManager(this, writer);
-            this.listenManager = new ListenManager(this);
+            listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
                 if (IsRunning && !Disposed)
                     LogicTick();
                 return !Disposed;
             });
-            this.torrents = new List<TorrentManager>();
-            this.torrentsReadonly = new ReadOnlyCollection<TorrentManager> (torrents);
+
             downloadLimiter = new RateLimiterGroup {
                 new DiskWriterLimiter(DiskManager),
                 new RateLimiter()
             };
-
             uploadLimiter = new RateLimiter();
-            this.PeerId = GeneratePeerId();
 
-            localPeerListener = new LocalPeerListener();
-            localPeerListener.PeerFound += HandleLocalPeerFound;
-            localPeerManager = new LocalPeerManager();
-            LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
             listenManager.Register(listener);
+
+            if (SupportsLocalPeerDiscovery)
+                RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
         }
 
         #endregion
@@ -251,8 +234,7 @@ namespace MonoTorrent.Client
                 this.DhtEngine.Dispose();
                 this.DiskManager.Dispose();
                 this.listenManager.Dispose();
-                this.localPeerListener.Stop();
-                this.localPeerManager.Dispose();
+                this.LocalPeerDiscovery.Stop();
             });
         }
 
@@ -267,13 +249,14 @@ namespace MonoTorrent.Client
                     return;
 
                 // The torrent is marked as private, so we can't add random people
-                if (manager.HasMetadata && manager.Torrent.IsPrivate)
-                    return;
-
-                // Add new peer to matched Torrent
-                var peer = new Peer ("", args.Uri);
-                int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
-                manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
+                if (manager.HasMetadata && manager.Torrent.IsPrivate) {
+                    manager.RaisePeersFound (new LocalPeersAdded (manager, 0, 0));
+                } else {
+                    // Add new peer to matched Torrent
+                    var peer = new Peer ("", args.Uri);
+                    int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
+                    manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
+                }
             } catch {
                 // We don't care if the peer couldn't be added (for whatever reason)
             }
@@ -326,31 +309,68 @@ namespace MonoTorrent.Client
 
             if (DhtEngine != null) {
                 DhtEngine.StateChanged -= DhtEngineStateChanged;
+                DhtEngine.PeersFound -= DhtEnginePeersFound;
                 await DhtEngine.StopAsync();
                 DhtEngine.Dispose();
             }
             DhtEngine = engine ?? new NullDhtEngine();
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
+            DhtEngine.PeersFound += DhtEnginePeersFound;
         }
 
-        void DhtEngineStateChanged (object o, EventArgs e)
+        public async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
+        {
+            await MainLoop;
+            RegisterLocalPeerDiscovery (localPeerDiscovery);
+        }
+
+        internal void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
+        {
+            if (LocalPeerDiscovery != null) {
+                LocalPeerDiscovery.PeerFound -= HandleLocalPeerFound;
+                LocalPeerDiscovery.Stop ();
+            }
+
+            LocalPeerDiscovery = localPeerDiscovery ?? new NullLocalPeerDiscovery ();
+
+            if (LocalPeerDiscovery != null) {
+                LocalPeerDiscovery.PeerFound += HandleLocalPeerFound;
+                LocalPeerDiscovery.Start ();
+            }
+        }
+
+        async void DhtEnginePeersFound (object o, PeersFoundEventArgs e)
+        {
+            await MainLoop;
+
+            var manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+            if (manager.CanUseDht) {
+                var successfullyAdded = await manager.AddPeersAsync (e.Peers);
+                manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
+            } else {
+                // This is only used for unit testing to validate that even if the DHT engine
+                // finds peers for a private torrent, we will not add them to the manager.
+                manager.RaisePeersFound (new DhtPeersAdded (manager, 0, 0));
+            }
+        }
+
+        async void DhtEngineStateChanged (object o, EventArgs e)
         {
             if (DhtEngine.State != DhtState.Ready)
                 return;
 
-            MainLoop.Queue (delegate {
-                foreach (TorrentManager manager in torrents) {
-                    if (!manager.CanUseDht)
-                        continue;
+            await MainLoop;
+            foreach (TorrentManager manager in torrents) {
+                if (!manager.CanUseDht)
+                    continue;
 
-                    if (Listener is ISocketListener listener)
-                        DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
-                    else
-                        DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
-                    DhtEngine.GetPeers (manager.InfoHash);
-                }
-            });
+                if (Listener is ISocketListener listener)
+                    DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
+                else
+                    DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
+                DhtEngine.GetPeers (manager.InfoHash);
+            }
         }
 
         public async Task StartAll()
@@ -401,25 +421,20 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-        internal void Broadcast(TorrentManager manager)
-        {
-            if (LocalPeerSearchEnabled)
-                localPeerManager.Broadcast(manager);
-        }
-
         private void LogicTick()
         {
             tickCount++;
 
             if (tickCount % 2 == 0)
             {
-                downloadLimiter.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
-                uploadLimiter.UpdateChunks(Settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
+                downloadLimiter.UpdateChunks(Settings.MaximumDownloadSpeed, TotalDownloadSpeed);
+                uploadLimiter.UpdateChunks(Settings.MaximumUploadSpeed, TotalUploadSpeed);
             }
 
-            ConnectionManager.CancelPendingConnects();
-
+            ConnectionManager.CancelPendingConnects ();
             ConnectionManager.TryConnect ();
+            DiskManager.Tick ();
+
             for (int i = 0; i < this.torrents.Count; i++)
                 this.torrents[i].Mode.Tick(tickCount);
 
@@ -428,13 +443,13 @@ namespace MonoTorrent.Client
 
         internal void RaiseCriticalException(CriticalExceptionEventArgs e)
         {
-            Toolbox.RaiseAsyncEvent<CriticalExceptionEventArgs>(CriticalException, this, e); 
+            CriticalException?.InvokeAsync (this, e);
         }
 
 
         internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<StatsUpdateEventArgs>(StatsUpdate, this, args);
+            StatsUpdate?.InvokeAsync (this, args);
         }
 
         internal void Start()
@@ -456,8 +471,8 @@ namespace MonoTorrent.Client
         }
 
 
-        static int count = 0;
-        static string GeneratePeerId()
+        static int count;
+        static BEncodedString GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
             sb.Append ("-");
@@ -468,7 +483,7 @@ namespace MonoTorrent.Client
             while (sb.Length < 20)
                 sb.Append(random.Next(0, 9));
 
-            return sb.ToString();
+            return new BEncodedString (sb.ToString());
         }
 
         #endregion

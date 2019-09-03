@@ -34,22 +34,27 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.PiecePicking;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     abstract class Mode
     {
-        public abstract TorrentState State
-        {
-            get;
-        }
 
+        protected ConnectionManager ConnectionManager { get; }
+        protected DiskManager DiskManager { get; }
         protected TorrentManager Manager { get; }
+        protected EngineSettings Settings { get; }
+        public abstract TorrentState State { get; }
 
-        protected Mode(TorrentManager manager)
+        protected Mode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
         {
             CanAcceptConnections = true;
+            ConnectionManager = connectionManager;
+            DiskManager = diskManager;
             Manager = manager;
+            Settings = settings;
+
             manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
         }
 
@@ -144,7 +149,7 @@ namespace MonoTorrent.Client
 
             // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
             // we just copy the one that is in the handshake. 
-            if (string.IsNullOrEmpty(id.Peer.PeerId))
+            if (BEncodedString.IsNullOrEmpty(id.Peer.PeerId))
                 id.Peer.PeerId = message.PeerId;
 
             // If the infohash doesn't match, dump the connection
@@ -155,7 +160,7 @@ namespace MonoTorrent.Client
             }
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
-            if (id.Peer.PeerId != message.PeerId)
+            if (!id.Peer.PeerId.Equals (message.PeerId))
             {
                 Logger.Log(id.Connection, "HandShake.Handle - Invalid peerid");
                 throw new TorrentException("Supplied PeerID didn't match the one the tracker gave us");
@@ -173,17 +178,21 @@ namespace MonoTorrent.Client
 
         protected virtual async void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
         {
-            // Ignore peer exchange messages on private torrents
-            if (id.TorrentManager.Torrent.IsPrivate || !id.TorrentManager.Settings.EnablePeerExchange)
-                return;
+            // Ignore peer exchange messages on private toirrents
+            if ((Manager.Torrent != null && Manager.Torrent.IsPrivate) || !Manager.Settings.EnablePeerExchange) {
+                Manager.RaisePeersFound(new PeerExchangePeersAdded (Manager, 0, 0, id));
+            } else {
+                // If we already have lots of peers, don't process the messages anymore.
+                if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
+                    return;
 
-            // If we already have lots of peers, don't process the messages anymore.
-            if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
-                return;
-
-            var newPeers = Peer.Decode((BEncodedString)message.Added);
-            int count = await id.TorrentManager.AddPeersAsync(newPeers);
-            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAddedEventArgs(id.TorrentManager, count, newPeers.Count, id));
+                var newPeers = Peer.Decode((BEncodedString)message.Added);
+                for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++) {
+                    newPeers[i].IsSeeder = (message.AddedDotF [i] & 0x2) == 0x2;
+                }
+                int count = await Manager.AddPeersAsync(newPeers);
+                Manager.RaisePeersFound(new PeerExchangePeersAdded (Manager, count, newPeers.Count, id));
+            }
         }
 
         protected virtual void HandleLtChat(PeerId id, LTChat message)
@@ -322,12 +331,18 @@ namespace MonoTorrent.Client
             Manager.PieceManager.AddPieceRequests(id);
         }
 
-        HashSet<PeerId> peers = new HashSet<PeerId>();
+        HashSet<IPieceRequester> peers = new HashSet<IPieceRequester>();
         async void WritePieceAsync (PeerId id, PieceMessage message, Piece piece)
         {
             long offset = (long) message.PieceIndex * id.TorrentManager.Torrent.PieceLength + message.StartOffset;
 
-            await id.TorrentManager.Engine.DiskManager.WriteAsync(Manager, offset, message.Data, message.RequestLength);
+            try {
+                await DiskManager.WriteAsync(Manager.Torrent, offset, message.Data, message.RequestLength);
+            } catch (Exception ex) {
+                Manager.TrySetError (Reason.WriteFailure, ex);
+                return;
+            }
+
             piece.TotalWritten++;
 
             ClientEngine.BufferManager.FreeBuffer(message.Data);
@@ -336,7 +351,14 @@ namespace MonoTorrent.Client
                 return;
 
             // Hashcheck the piece as we now have all the blocks.
-            var hash = await id.Engine.DiskManager.GetHashAsync(id.TorrentManager, piece.Index);
+            byte[] hash;
+            try {
+                hash = await DiskManager.GetHashAsync(id.TorrentManager.Torrent, piece.Index);
+            } catch (Exception ex) {
+                Manager.TrySetError (Reason.ReadFailure, ex);
+                return;
+            }
+
             bool result = hash != null && id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
             Manager.OnPieceHashed(piece.Index, result);
             Manager.PieceManager.UnhashedPieces[piece.Index] = false;
@@ -347,10 +369,10 @@ namespace MonoTorrent.Client
                 if (piece.Blocks[i].RequestedOff != null)
                     peers.Add(piece.Blocks[i].RequestedOff);
 
-            foreach (PeerId peer in peers) {
-                peer.Peer.HashedPiece(result);
-                if (peer.Peer.TotalHashFails == 5)
-                    Manager.Engine.ConnectionManager.CleanupSocket (peer, "Too many hash fails");
+            foreach (var peer in peers) {
+                peer.HashedPiece(result);
+                if (peer.TotalHashFails == 5)
+                    peer.Close ();
             }
             peers.Clear ();
 
@@ -411,15 +433,19 @@ namespace MonoTorrent.Client
                 SetAmInterestedStatus(id, true);
         }
 
-        public virtual void HandlePeerConnected(PeerId id, Direction direction)
+        public virtual void HandlePeerConnected(PeerId id)
         {
-            MessageBundle bundle = new MessageBundle();
+            if (CanAcceptConnections) {
+                MessageBundle bundle = new MessageBundle();
 
-            AppendBitfieldMessage(id, bundle);
-            AppendExtendedHandshake(id, bundle);
-            AppendFastPieces(id, bundle);
+                AppendBitfieldMessage(id, bundle);
+                AppendExtendedHandshake(id, bundle);
+                AppendFastPieces(id, bundle);
 
-            id.Enqueue(bundle);
+                id.Enqueue(bundle);
+            } else {
+               ConnectionManager.CleanupSocket (id);
+            }
         }
 
         public virtual void HandlePeerDisconnected(PeerId id)
@@ -430,7 +456,7 @@ namespace MonoTorrent.Client
         protected virtual void AppendExtendedHandshake(PeerId id, MessageBundle bundle)
         {
             if (id.SupportsLTMessages && ClientEngine.SupportsExtended)
-                bundle.Messages.Add(new ExtendedHandshakeMessage(Manager.HasMetadata ? Manager.Torrent.Metadata.Length : 0));
+                bundle.Messages.Add(new ExtendedHandshakeMessage(Manager.Torrent?.IsPrivate ?? false, Manager.HasMetadata ? Manager.Torrent.Metadata.Length : 0));
         }
 
         protected virtual void AppendFastPieces(PeerId id, MessageBundle bundle)
@@ -476,6 +502,14 @@ namespace MonoTorrent.Client
         void PreLogicTick(int counter)
         {
             PeerId id;
+
+            if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.AnnounceInternal)) {
+                _ = Manager.LocalPeerAnnounceAsync ();
+            }
+
+            if (Manager.CanUseDht && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Dht.DhtEngine.AnnounceInternal)) {
+                Manager.DhtAnnounce ();
+            }
 
             //Execute iniitial logic for individual peers
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
@@ -526,7 +560,7 @@ namespace MonoTorrent.Client
                 if (id.QueueLength > 0 && !id.ProcessingQueue)
                 {
                     id.ProcessingQueue = true;
-                    Manager.Engine.ConnectionManager.ProcessQueue(id);
+                    ConnectionManager.ProcessQueue(id);
                 }
 
                 if (id.LastMessageSent.Elapsed > nintySeconds)
@@ -537,13 +571,13 @@ namespace MonoTorrent.Client
 
                 if (id.LastMessageReceived.Elapsed > onhundredAndEightySeconds)
                 {
-                    Manager.Engine.ConnectionManager.CleanupSocket(id, "Inactivity");
+                    ConnectionManager.CleanupSocket(id);
                     continue;
                 }
 
                 if (id.LastMessageReceived.Elapsed > thirtySeconds && id.AmRequestingPiecesCount > 0)
                 {
-                    Manager.Engine.ConnectionManager.CleanupSocket(id, "Didn't send pieces");
+                    ConnectionManager.CleanupSocket(id);
                     continue;
                 }
             }
@@ -661,7 +695,7 @@ namespace MonoTorrent.Client
                     }
 
                     // Check to see if have supression is enabled and send the have message accordingly
-                    if (!hasPiece || (hasPiece && !Manager.Engine.Settings.HaveSupressionEnabled))
+                    if (!hasPiece || (hasPiece && !Settings.HaveSupressionEnabled))
                         bundle.Messages.Add(haveMessage);
                 }
 

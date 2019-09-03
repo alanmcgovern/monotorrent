@@ -130,16 +130,13 @@ namespace MonoTorrent
                         }
                     break;
                     case "tr" ://address tracker
-                        var urlBytes = UriHelper.UrlDecode(keyval[1]);
-                        announceUrls.Add(Encoding.UTF8.GetString(urlBytes));
+                        announceUrls.Add(keyval[1].UrlDecodeUTF8 ());
                     break;
                     case "as"://Acceptable Source
-                        var webseedBytes = UriHelper.UrlDecode(keyval[1]);
-                        webSeeds.Add(Encoding.UTF8.GetString (webseedBytes));
+                        webSeeds.Add(keyval[1].UrlDecodeUTF8 ());
                     break;
                     case "dn"://display name
-                        var nameBytes = UriHelper.UrlDecode(keyval[1]);
-                        name = Encoding.UTF8.GetString(nameBytes);
+                        name = keyval[1].UrlDecodeUTF8 ();
                     break;
                     case "xl"://exact length
                         size = long.Parse (keyval [1]);
@@ -180,17 +177,17 @@ namespace MonoTorrent
 
             if (!string.IsNullOrEmpty (Name)) {
                 sb.Append ("&dn=");
-                sb.Append (UriHelper.UrlEncode (Encoding.UTF8.GetBytes (Name)));
+                sb.Append (Name.UrlEncodeUTF8 ());
             }
 
             foreach (var tracker in AnnounceUrls) {
                 sb.Append ("&tr=");
-                sb.Append (UriHelper.UrlEncode (Encoding.UTF8.GetBytes (tracker)));
+                sb.Append (tracker.UrlEncodeUTF8 ());
             }
 
             foreach (var webseed in Webseeds) {
                 sb.Append ("&as=");
-                sb.Append (UriHelper.UrlEncode (Encoding.UTF8.GetBytes (webseed)));
+                sb.Append (webseed.UrlEncodeUTF8 ());
             }
 
             return sb.ToString ();

@@ -29,14 +29,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -44,16 +45,45 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        public event EventHandler<PeerConnectionEventArgs> PeerConnected;
+        /// <summary>
+        /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
+        /// has successfully completed the handshake process and has been fully established.
+        /// </summary>
+        public event EventHandler<PeerConnectedEventArgs> PeerConnected;
 
-        public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
+        /// <summary>
+        /// This asynchronous event is raised whenever an established connection has been
+        /// closed.
+        /// </summary>
+        public event EventHandler<PeerDisconnectedEventArgs> PeerDisconnected;
 
-        internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
+        /// <summary>
+        /// This asynchronous event is raised when an outgoing connection to a peer
+        /// could not be established.
+        /// </summary>
+        public event EventHandler<ConnectionAttemptFailedEventArgs> ConnectionAttemptFailed;
 
+        /// <summary>
+        /// This event is raised synchronously and is only used supposed to be used by tests.
+        /// </summary>
+        internal event Action<Mode, Mode> ModeChanged;
+
+        /// <summary>
+        /// Raised whenever new peers are discovered and added. The object will be of type
+        /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded>"/>, <see cref="LocalPeersAdded"/>
+        /// or <see cref="DhtPeersAdded"/> depending on the source of the new peers.
+        /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
+        /// <summary>
+        /// This asynchronous event is raised whenever a piece is hashed, either as part of
+        /// regular downloading, or as part of a <see cref="HashCheckAsync(bool)"/>.
+        /// </summary>
         public event EventHandler<PieceHashedEventArgs> PieceHashed;
 
+        /// <summary>
+        /// This asynchronous event is raised whenever the TorrentManager changes state.
+        /// </summary>
         public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
 
         internal event EventHandler<PeerAddedEventArgs> OnPeerFound;
@@ -65,12 +95,11 @@ namespace MonoTorrent.Client
 
         private bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
-        internal bool isInEndGame = false;       // Set true when the torrent enters end game processing
+        internal bool isInEndGame;       // Set true when the torrent enters end game processing
         private Mode mode;
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
-		private bool dhtInitialised;
         #endregion Member Variables
 
 
@@ -80,13 +109,15 @@ namespace MonoTorrent.Client
 
         public bool CanUseDht => Settings.UseDht && (Torrent == null || !Torrent.IsPrivate);
 
+        public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate);
+
         public bool Complete => this.Bitfield.AllTrue;
 
         internal RateLimiterGroup DownloadLimiter { get; private set; }
 
         public ClientEngine Engine { get; internal set; }
 
-        public Error Error { get; internal set; }
+        public Error Error { get; private set; }
 
         internal Mode Mode
         {
@@ -94,6 +125,7 @@ namespace MonoTorrent.Client
             set {
                 Mode oldMode = mode;
                 mode = value;
+                ModeChanged?.Invoke (oldMode, mode);
                 if (oldMode != null)
                     RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(this, oldMode.State, mode.State));
                 oldMode?.Dispose ();
@@ -130,6 +162,26 @@ namespace MonoTorrent.Client
         /// The number of peers that this torrent instance is connected to
         /// </summary>
         public int OpenConnections => Peers.ConnectedPeers.Count;
+
+        /// <summary>
+        /// The time the last announce to the DHT occurred
+        /// </summary>
+        public DateTime LastDhtAnnounce { get; private set; }
+
+        /// <summary>
+        /// Internal timer used to trigger Dht announces every <see cref="MonoTorrent.Dht.DhtEngine.AnnounceInternal"/> seconds.
+        /// </summary>
+        internal Stopwatch LastDhtAnnounceTimer { get; private set; }
+
+        /// <summary>
+        /// The time the last announce using Local Peer Discovery occurred
+        /// </summary>
+        public DateTime LastLocalPeerAnnounce { get; private set; }
+
+        /// <summary>
+        /// Internal timer used to trigger Local PeerDiscovery announces every <see cref="LocalPeerDiscovery.AnnounceInternal"/> seconds.
+        /// </summary>
+        internal Stopwatch LastLocalPeerAnnounceTimer { get; private set; }
 
         /// <summary>
         /// 
@@ -178,7 +230,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The tracker connection associated with this TorrentManager
         /// </summary>
-        public TrackerManager TrackerManager { get; private set; }
+        public ITrackerManager TrackerManager { get; private set; }
 
         /// <summary>
         /// The Torrent contained within this TorrentManager
@@ -280,22 +332,15 @@ namespace MonoTorrent.Client
             this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
             this.InactivePeerManager = new InactivePeerManager(this);
+            this.LastDhtAnnounceTimer = new Stopwatch ();
+            this.LastLocalPeerAnnounceTimer = new Stopwatch ();
             this.Peers = new PeerManager();
-            this.PieceManager = new PieceManager();
-            this.TrackerManager = new TrackerManager(new TrackerRequestFactory (this), announces);
+            this.PieceManager = new PieceManager(this);
+            SetTrackerManager (new TrackerManager(new TrackerRequestFactory (this), announces));
 
-            Mode = new StoppedMode(this);            
+            Mode = new StoppedMode(this, null, null, null);
             CreateRateLimiters();
 
-            TrackerManager.AnnounceComplete += async (o, e) => {
-                if (e.Successful) {
-                    await ClientEngine.MainLoop;
-
-                    Peers.BusyPeers.Clear ();
-                    int count = await AddPeersAsync (e.Peers);
-                    RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
-                }
-            };
 
             if (HasMetadata) {
                 foreach (TorrentFile file in Torrent.Files)
@@ -325,7 +370,7 @@ namespace MonoTorrent.Client
         {
             Check.Picker(picker);
 
-           PieceManager.ChangePicker(picker, Bitfield, Torrent.Files);
+           PieceManager.ChangePicker(picker, Bitfield, Torrent);
         }
 
         /// <summary>
@@ -396,20 +441,41 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
-        /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
+        /// Performs a full hash check, ignoring any previously loaded Fast Resume data or previous hash checks.
         /// </summary>
-        /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
-        public async Task HashCheckAsync(bool autoStart)
+        /// <param name="autoStart">True if a the TorrentManager should be started as soon as the hashcheck completes.</param>
+        public Task HashCheckAsync(bool autoStart)
+            => HashCheckAsync (autoStart, true);
+
+        internal async Task HashCheckAsync(bool autoStart, bool setStoppedModeWhenDone)
         {
+            if (!HasMetadata)
+                throw new TorrentException ("A hashcheck cannot be performed if the TorrentManager was created with a Magnet link and the metadata has not been downloaded.");
+
             await ClientEngine.MainLoop;
             if (!Mode.CanHashCheck)
                 throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
 
             CheckRegisteredAndDisposed();
-            this.StartTime = DateTime.Now;
-            Mode = new HashingMode(this, autoStart);
-            Engine.Start();
+            StartTime = DateTime.Now;
+
+            var hashingMode = new HashingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            Mode = hashingMode;
+            try {
+                await hashingMode.WaitForHashingToComplete ();
+                HashChecked = true;
+                if (autoStart) {
+                    await StartAsync ();
+                } else if (setStoppedModeWhenDone) {
+                    Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                }
+            } catch {
+                HashChecked = false;
+                // If the hash check was cancelled (by virtue of a new Mode being set on the TorrentManager) then
+                // we don't want to overwrite the Mode which was set.
+                if (Mode == hashingMode)
+                    Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            }
         }
 
         public async Task MoveFileAsync (TorrentFile file, string path)
@@ -422,7 +488,11 @@ namespace MonoTorrent.Client
             if (State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move files when the torrent is active");
 
-            await Engine.DiskManager.MoveFileAsync (this, file, path);
+            try {
+                await Engine.DiskManager.MoveFileAsync (file, path);
+            } catch (Exception ex) {
+                TrySetError (Reason.WriteFailure, ex);
+            }
         }
 
         public async Task MoveFilesAsync (string newRoot, bool overWriteExisting)
@@ -433,8 +503,12 @@ namespace MonoTorrent.Client
             if (State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move files when the torrent is active");
 
-            await Engine.DiskManager.MoveFilesAsync (this, newRoot, overWriteExisting);
-            SavePath = newRoot;
+            try {
+                await Engine.DiskManager.MoveFilesAsync (Torrent, newRoot, overWriteExisting);
+                SavePath = newRoot;
+            } catch (Exception ex) {
+                TrySetError (Reason.WriteFailure, ex);
+            }
         }
 
         /// <summary>
@@ -449,7 +523,7 @@ namespace MonoTorrent.Client
 
             // By setting the state to "paused", peers will not be dequeued from the either the
             // sending or receiving queues, so no traffic will be allowed.
-            Mode = new PausedMode(this);
+            Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             this.SaveFastResume();
         }
 
@@ -461,108 +535,76 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
+            if (Mode is StoppingMode)
+                throw new TorrentException("The manager cannot be restarted while it is in the Stopping state.");
+
             CheckRegisteredAndDisposed();
 
             Engine.Start();
             // If the torrent was "paused", then just update the state to Downloading and forcefully
             // make sure the peers begin sending/receiving again
-            if (State == TorrentState.Paused)
-            {
-                Mode = new DownloadMode(this);
-                return;
+            if (State == TorrentState.Paused) {
+                Mode = new DownloadMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            } else if (!HasMetadata) {
+                StartTime = DateTime.Now;
+                Mode = new MetadataMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
+            } else {
+                StartTime = DateTime.Now;
+                Mode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
-
-            if (!HasMetadata)
-            {
-                Mode = new MetadataMode(this, torrentSave);
-                StartDHT();
-                return;
-            }
-
-            VerifyHashState ();
-            // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
-            // before attempting to start again
-            if (!HashChecked)
-            {
-                if (State != TorrentState.Hashing)
-                    await HashCheckAsync(true);
-                return;
-            }
-
-            if (State == TorrentState.Seeding || State == TorrentState.Downloading)
-                return;
-
-            // We need to announce before going into Downloading mode, otherwise we will
-            // send a regular announce instead of a 'Started' announce.
-            if (TrackerManager.CurrentTracker != null)
-            {
-                if (TrackerManager.CurrentTracker.CanScrape)
-                    _ = TrackerManager.Scrape();
-                _ = TrackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-            }
-
-            if (Complete && Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
-                Mode = new InitialSeedingMode(this);
-            }
-            else {
-                Mode = new DownloadMode(this);
-            }
-
-            Engine.Broadcast(this);
-
-            StartDHT();
-
-            StartTime = DateTime.Now;
-            PieceManager.Reset();
         }
 
-        private void StartDHT()
+        public async Task LocalPeerAnnounceAsync ()
         {
-			if (dhtInitialised)
-				return;
-			dhtInitialised = true;
-            Engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
- 
-            // First get some peers
-            Engine.DhtEngine.GetPeers(InfoHash);
+            await ClientEngine.MainLoop;
 
-            // Second, get peers every 10 minutes (if we need them)
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
-                // Torrent is no longer active
-                if (!Mode.CanAcceptConnections)
-                    return false;
-
-                // Only use DHT if it hasn't been (temporarily?) disabled in settings
-                if (CanUseDht && Peers.AvailablePeers.Count < Settings.MaxConnections)
-                {
-                    Engine.DhtEngine.Announce(InfoHash, Engine.Settings.ListenPort);
-                    //announce ever done a get peers task
-                    //engine.DhtEngine.GetPeers(InfoHash);
-                }
-                return true;
-            });
+            if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.MinimumAnnounceInternal)) {
+                LastLocalPeerAnnounce = DateTime.Now;
+                LastLocalPeerAnnounceTimer.Restart ();
+                await Engine?.LocalPeerDiscovery.Announce (InfoHash);
+            }
         }
 
         /// <summary>
-        /// Stops the TorrentManager
+        /// Perform an announce using the <see cref="ClientEngine.DhtEngine"/> to retrieve more peers. The
+        /// returned task completes as soon as the Dht announce begins.
+        /// </summary>
+        /// <returns></returns>
+        public async Task DhtAnnounceAsync()
+        {
+            await ClientEngine.MainLoop;
+            DhtAnnounce ();
+        }
+
+        internal void DhtAnnounce ()
+        {
+            if (CanUseDht && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > MonoTorrent.Dht.DhtEngine.MinimumAnnounceInterval)) {
+                LastDhtAnnounce = DateTime.UtcNow;
+                LastDhtAnnounceTimer.Restart ();
+                Engine?.DhtEngine.GetPeers(InfoHash);
+            }
+        }
+
+        /// <summary>
+        /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped.
         /// </summary>
         public async Task StopAsync()
         {
             await ClientEngine.MainLoop;
 
-            if (State == TorrentState.Error)
-            {
+            if (Mode is StoppingMode)
+                throw new TorrentException("The manager cannot be stopped while it is already in the Stopping state.");
+
+            if (State == TorrentState.Error) {
                 Error = null;
-				Mode = new StoppedMode(this);
-                return;
-            }
+				Mode = new StoppedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            } else if (State != TorrentState.Stopped) {
+                var stoppingMode = new StoppingMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = stoppingMode;
+                await stoppingMode.WaitForStoppingToComplete ();
 
-			if (Mode is StoppingMode)
-                return;
-
-            if (State != TorrentState.Stopped) {
-                Engine.DhtEngine.PeersFound -= DhtPeersFound;
-				Mode = new StoppingMode(this);
+                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Engine.Stop();
             }
         }
 
@@ -571,10 +613,13 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        public async Task<bool> AddPeerAsync (Peer peer)
+        public Task<bool> AddPeerAsync(Peer peer)
+            => AddPeerAsync(peer, false);
+
+        internal async Task<bool> AddPeerAsync (Peer peer, bool fromTrackers)
         {
             Check.Peer (peer);
-            if (HasMetadata && Torrent.IsPrivate)
+            if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
             await ClientEngine.MainLoop;
@@ -592,34 +637,37 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        public async Task<int> AddPeersAsync (IEnumerable <Peer> peers)
+        public Task<int> AddPeersAsync(IEnumerable<Peer> peers)
+            => AddPeersAsync(peers, false);
+
+        async Task<int> AddPeersAsync (IEnumerable <Peer> peers, bool fromTrackers)
         {
             Check.Peers (peers);
-            if (HasMetadata && Torrent.IsPrivate)
+            if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
             await ClientEngine.MainLoop;
 
             int count = 0;
             foreach (Peer p in peers)
-                count += await AddPeerAsync(p) ? 1 : 0;
+                count += await AddPeerAsync(p, fromTrackers) ? 1 : 0;
             return count;
         }
         
-        internal void RaisePeerConnected(PeerConnectionEventArgs args)
+        internal void RaisePeerConnected(PeerConnectedEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerConnected, this, args);
+            PeerConnected?.InvokeAsync (this, args);
         }
         
-        internal void RaisePeerDisconnected(PeerConnectionEventArgs args)
+        internal void RaisePeerDisconnected(PeerDisconnectedEventArgs args)
         {
-			Mode.HandlePeerDisconnected(args.PeerID);
-            Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerDisconnected, this, args);
+            Mode.HandlePeerDisconnected(args.Peer);
+            PeerDisconnected?.InvokeAsync (this, args);
         }
 
         internal void RaisePeersFound(PeersAddedEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<PeersAddedEventArgs>(PeersFound, this, args);
+            PeersFound?.InvokeAsync (this, args);
         }
 
         internal void OnPieceHashed(int index, bool hashPassed)
@@ -638,26 +686,18 @@ namespace MonoTorrent.Client
                     connected[i].IsAllowedFastPieces.Remove(index);
             }
 
-            if (PieceHashed != null)
-                Toolbox.RaiseAsyncEvent(PieceHashed, this, new PieceHashedEventArgs (this, index, hashPassed));
+            PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed));
         }
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
-        {
-            // Whenever we have a state change, we need to make sure that we flush the buffers.
-            // For example, Started->Paused, Started->Stopped, Downloading->Seeding etc should all
-            // flush to disk.
-            Toolbox.RaiseAsyncEvent<TorrentStateChangedEventArgs>(TorrentStateChanged, this, e);
-        }
+            => TorrentStateChanged?.InvokeAsync (this, e);
 
         /// <summary>
         /// Raise the connection attempt failed event
         /// </summary>
         /// <param name="args"></param>
-        internal void RaiseConnectionAttemptFailed(PeerConnectionFailedEventArgs args)
-        {
-            Toolbox.RaiseAsyncEvent<PeerConnectionFailedEventArgs>(this.ConnectionAttemptFailed, this, args);
-        }
+        internal void RaiseConnectionAttemptFailed(ConnectionAttemptFailedEventArgs args)
+            => ConnectionAttemptFailed?.InvokeAsync (this, args);
 
         internal void UpdateLimiters ()
         {
@@ -696,16 +736,6 @@ namespace MonoTorrent.Client
             return picker;
         }
 
-        private async void DhtPeersFound(object o, PeersFoundEventArgs e)
-        {
-            if (InfoHash != e.InfoHash)
-                return;
-
-            await ClientEngine.MainLoop;
-            int count = await AddPeersAsync(e.Peers);
-            RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
-        }
-
         public void LoadFastResume(FastResume data)
         {
             Check.Data(data);
@@ -734,26 +764,49 @@ namespace MonoTorrent.Client
             return new FastResume(InfoHash, this.Bitfield, Peers.ActivePeers, Peers.AvailablePeers, Peers.BannedPeers, Peers.BusyPeers);
         }
 
-        void VerifyHashState ()
+        internal void SetTrackerManager (ITrackerManager manager)
         {
-            // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
-            // a zero length file and someone deletes it after the first piece has been written to disk, it will
-            // never be recreated. If the downloaded data requires this file to exist, we have an issue.
-            if (HasMetadata) {
-                foreach (var file in Torrent.Files)
-                    if (!file.BitField.AllFalse && HashChecked && file.Length > 0)
-                        HashChecked &= Engine.DiskManager.CheckFileExistsAsync (this, file).Result;
+            if (TrackerManager != null) {
+                TrackerManager.AnnounceComplete -= HandleTrackerAnnounceComplete;
+            }
+
+            TrackerManager = manager;
+
+            if (TrackerManager != null) {
+                TrackerManager.AnnounceComplete += HandleTrackerAnnounceComplete;
+            }
+        }
+
+        async void HandleTrackerAnnounceComplete (object o, AnnounceResponseEventArgs e)
+        {
+            if (e.Successful) {
+                await ClientEngine.MainLoop;
+
+                Peers.BusyPeers.Clear ();
+                int count = await AddPeersAsync (e.Peers, true);
+                RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
             }
         }
 
         #endregion Private Methods
 
-        internal void HandlePeerConnected(PeerId id, Direction direction)
+        internal bool TrySetError (Reason reason, Exception ex)
+        {
+            if (Mode is ErrorMode)
+                return false;
+
+            Error = new Error (reason, ex);
+            Mode = new ErrorMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            return true;
+        }
+
+        internal void HandlePeerConnected(PeerId id)
         {
             // The only message sent/received so far is the Handshake message.
             // The current mode decides what additional messages need to be sent.
-			Mode.HandlePeerConnected(id, direction);
-            RaisePeerConnected(new PeerConnectionEventArgs(this, id, direction));
+            Peers.ConnectedPeers.Add (id);
+            RaisePeerConnected(new PeerConnectedEventArgs(id));
+            Mode.HandlePeerConnected(id);
         }
     }
 }

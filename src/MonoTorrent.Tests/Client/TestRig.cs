@@ -29,9 +29,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -43,13 +46,13 @@ using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
-    public class TestWriter : PieceWriter
+    public class TestWriter : IPieceWriter
     {
         public List<TorrentFile> FilesThatExist = new List<TorrentFile>();
         public List<TorrentFile> DoNotReadFrom = new List<TorrentFile>();
         public bool DontWrite;
         public List<String> Paths = new List<string>();
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (DoNotReadFrom.Contains(file))
                 return 0;
@@ -63,27 +66,32 @@ namespace MonoTorrent.Client
             return count;
         }
 
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
 
         }
 
-        public override void Close(TorrentFile file)
+        public void Close(TorrentFile file)
         {
 
         }
 
-        public override void Flush(TorrentFile file)
+        public void Dispose ()
         {
 
         }
 
-        public override bool Exists(TorrentFile file)
+        public void Flush(TorrentFile file)
+        {
+
+        }
+
+        public bool Exists(TorrentFile file)
         {
             return FilesThatExist.Contains(file);
         }
 
-        public override void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move(TorrentFile file, string newPath, bool overwrite)
         {
             
         }
@@ -139,8 +147,8 @@ namespace MonoTorrent.Client
     {
         public byte[] AddressBytes => ((IPEndPoint)EndPoint).Address.GetAddressBytes();
         public bool CanReconnect => false;
-        public bool Connected  => Socket.Connected;
-        public EndPoint EndPoint => Socket.RemoteEndPoint;
+        public bool Connected  { get; private set; } = true;
+        public EndPoint EndPoint => new IPEndPoint (IPAddress.Parse (Uri.Host), Uri.Port);
         public bool IsIncoming { get; }
         public int? ManualBytesReceived { get; set; }
         public int? ManualBytesSent { get; set; }
@@ -148,11 +156,13 @@ namespace MonoTorrent.Client
         public bool SlowConnection { get; set; }
         public Uri Uri => new Uri("ipv4://127.0.0.1:1234");
 
-        Socket Socket { get; }
+        Stream ReadStream { get; }
+        Stream WriteStream { get; }
 
-        public CustomConnection(Socket socket, bool isIncoming)
+        public CustomConnection(Stream readStream, Stream writeStream, bool isIncoming)
         {
-            Socket = socket;
+            ReadStream = readStream;
+            WriteStream = writeStream;
             IsIncoming = isIncoming;
         }
         
@@ -160,14 +170,18 @@ namespace MonoTorrent.Client
             => throw new InvalidOperationException();
 
         public void Dispose()
-            => Socket.Close();
+        {
+            ReadStream.Dispose ();
+            WriteStream.Dispose ();
+            Connected = false;
+        }
 
         public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min(88, count);
 
-            var result = await Task.Factory.FromAsync (Socket.BeginReceive(buffer, offset, count, SocketFlags.None, null, null), Socket.EndReceive);
+            var result = await ReadStream.ReadAsync (buffer, offset, count, CancellationToken.None);
             return ManualBytesReceived ?? result;
         }
 
@@ -176,8 +190,8 @@ namespace MonoTorrent.Client
             if (SlowConnection)
                 count = Math.Min(88, count);
 
-            var result = await Task.Factory.FromAsync(Socket.BeginSend(buffer, offset, count, SocketFlags.None, null, null), Socket.EndSend);
-            return ManualBytesSent ?? result;
+            await WriteStream.WriteAsync(buffer, offset, count, CancellationToken.None);
+            return ManualBytesSent ?? count;
         }
 
         public override string ToString()
@@ -212,29 +226,33 @@ namespace MonoTorrent.Client
 
     public class ConnectionPair : IDisposable
     {
-        TcpListener socketListener;
-        public CustomConnection Incoming;
-        public CustomConnection Outgoing;
+        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
 
-        public ConnectionPair(int port)
+        IDisposable CancellationRegistration { get; set; }
+
+        public CustomConnection Incoming { get; }
+        public CustomConnection Outgoing { get ; }
+
+        public ConnectionPair()
         {
-            socketListener = new TcpListener(IPAddress.Loopback, port);
-            socketListener.Start();
-
-            Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            s1a.Connect(IPAddress.Loopback, port);
-            Socket s1b = socketListener.AcceptSocket();
-
-            Incoming = new CustomConnection(s1a, true);
-            Outgoing = new CustomConnection(s1b, false);
-            socketListener.Stop();
+            var incoming = new SocketStream ();
+            var outgoing = new SocketStream ();
+            Incoming = new CustomConnection(incoming, outgoing, true);
+            Outgoing = new CustomConnection(outgoing, incoming, false);
         }
 
         public void Dispose()
         {
+            CancellationRegistration?.Dispose ();
             Incoming.Dispose();
             Outgoing.Dispose();
-            socketListener.Stop();
+        }
+
+        public ConnectionPair WithTimeout ()
+        {
+            CancellationTokenSource cancellation = new CancellationTokenSource (Timeout);
+            CancellationRegistration = cancellation.Token.Register (Dispose);
+            return this;
         }
     }
 
@@ -336,7 +354,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 20; i++)
                 sb.Append((char)Random.Next((int)'a', (int)'z'));
             Peer peer = new Peer(sb.ToString(), new Uri("ipv4://127.0.0.1:" + (port++)));
-            PeerId id = new PeerId(peer, Manager);
+            PeerId id = new PeerId(peer, Manager, NullConnection.Incoming);
             id.SupportsFastPeer = supportsFastPeer;
             id.ProcessingQueue = processingQueue;
             return id;
@@ -407,13 +425,15 @@ namespace MonoTorrent.Client
             dict["announce-list"] = announces;
         }
 
-        BEncodedDictionary CreateTorrent(int pieceLength, TorrentFile[] files, string[][] tier)
+        static BEncodedDictionary CreateTorrent(int pieceLength, TorrentFile[] files, string[][] tier)
         {
             BEncodedDictionary dict = new BEncodedDictionary();
             BEncodedDictionary infoDict = new BEncodedDictionary();
 
-            AddAnnounces(dict, tier);
-            AddFiles(infoDict, files);
+            if (tier != null)
+                AddAnnounces(dict, tier);
+
+            AddFiles(infoDict, files, pieceLength);
             if (files.Length == 1)
                 dict["url-list"] = (BEncodedString)(TestWebSeed.ListenerURL + "File1.exe");
             else
@@ -425,9 +445,15 @@ namespace MonoTorrent.Client
             return dict;
         }
 
-        void AddFiles(BEncodedDictionary dict, TorrentFile[] files)
+        internal static Torrent CreateMultiFileTorrent (TorrentFile [] files, int pieceLength)
         {
-            long totalSize = piecelength - 1;
+            using (var rig = CreateMultiFile (files, pieceLength))
+               return rig.Torrent;
+        }
+
+        static void AddFiles(BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
+        {
+            long totalSize = pieceLength - 1;
             BEncodedList bFiles = new BEncodedList();
             for (int i = 0; i < files.Length; i++)
             {
@@ -443,8 +469,8 @@ namespace MonoTorrent.Client
 
             dict[new BEncodedString("files")] = bFiles;
             dict[new BEncodedString("name")] = new BEncodedString("test.files");
-            dict[new BEncodedString("piece length")] = new BEncodedNumber(piecelength);
-            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * (totalSize / piecelength)]);
+            dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
+            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * (totalSize / pieceLength)]);
         }
 
         public static TestRig CreateSingleFile()
@@ -518,6 +544,16 @@ namespace MonoTorrent.Client
 
         #endregion Rig Creation
 
+        internal static TorrentManager CreatePrivate ()
+        {
+            var dict = CreateTorrent (16 * 1024 * 8, new [] { new TorrentFile ("File", 16 * 1024 * 8) } , null);
+            var editor = new TorrentEditor (dict) {
+                CanEditSecureMetadata = true,
+                Private = true,
+            };
+            return new TorrentManager (editor.ToTorrent (), "", new TorrentSettings ());
+        }
+
         internal static TestRig CreateSingleFile(int torrentSize, int pieceLength)
         {
             return CreateSingleFile(torrentSize, pieceLength, false);
@@ -528,6 +564,22 @@ namespace MonoTorrent.Client
             TorrentFile[] files = StandardSingleFile();
             files[0] = new TorrentFile (files[0].Path, torrentSize);
             return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files, metadataMode);
+        }
+
+        internal static TorrentManager CreateSingleFileManager (int torrentSize, int pieceLength)
+        {
+            return CreateSingleFile (torrentSize, pieceLength, false).Manager;
+        }
+
+        internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength)
+        {
+            var files = fileSizes.Select ((size, index) => new TorrentFile ("File " + index, size)).ToArray ();
+            return CreateMultiFileManager (files, pieceLength);
+        }
+
+        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength)
+        {
+            return CreateMultiFile (files, pieceLength).Manager;
         }
     }
 }

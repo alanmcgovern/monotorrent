@@ -1,10 +1,10 @@
-//
-// MonoTorrentCollection.cs
+﻿//
+// EnumerableExtensions.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,44 +29,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MonoTorrent
 {
-    class MonoTorrentCollection<T> : List<T>, ICloneable
+    public static class EnumerableExtensions
     {
-        public MonoTorrentCollection()
-            : base()
+        public static IEnumerable<T[]> Partition<T> (this IEnumerable<T> enumerable, int partitionSize)
         {
-
-        }
-
-        public MonoTorrentCollection(IEnumerable<T> collection)
-            : base(collection)
-        {
-
-        }
-
-        public MonoTorrentCollection(int capacity)
-            : base(capacity)
-        {
-
-        }
-
-        object ICloneable.Clone()
-        {
-            return Clone();
-        }
-
-        public MonoTorrentCollection<T> Clone()
-        {
-            return new MonoTorrentCollection<T>(this);
-        }
-
-        public T Dequeue()
-        {
-            T result = this[0];
-            RemoveAt(0);
-            return result;
+            var array = enumerable.ToArray ();
+            for (int i = 0; i < array.Length; i+= partitionSize) {
+                var partition = new T[Math.Min (partitionSize, array.Length - i)];
+                Array.Copy (array, i, partition, 0, partition.Length);
+                yield return partition;
+            }
         }
     }
 }

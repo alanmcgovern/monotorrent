@@ -50,6 +50,9 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
+        internal static readonly TimeSpan AnnounceInternal = TimeSpan.FromMinutes (10);
+        internal static readonly TimeSpan MinimumAnnounceInterval = TimeSpan.FromMinutes (3);
+
         #region Events
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;
@@ -72,7 +75,6 @@ namespace MonoTorrent.Dht
         internal NodeId LocalId => RoutingTable.LocalNode.Id;
         internal MessageLoop MessageLoop { get; }
         internal RoutingTable RoutingTable { get; }
-        internal TimeSpan Timeout { get; set; }
         internal TokenManager TokenManager { get; }
         internal Dictionary<NodeId, List<Node>> Torrents { get; }
 
@@ -100,7 +102,6 @@ namespace MonoTorrent.Dht
             State = DhtState.NotReady;
             TokenManager = new TokenManager();
             Torrents = new Dictionary<NodeId, List<Node>>();
-            Timeout = TimeSpan.FromSeconds(15);
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {
                 if (!Disposed)
@@ -126,7 +127,7 @@ namespace MonoTorrent.Dht
         internal void Add(IEnumerable<Node> nodes)
         {
             if (nodes == null)
-                throw new ArgumentNullException("nodes");
+                throw new ArgumentNullException(nameof (nodes));
 
             foreach (Node n in nodes)
                 Add(n);
@@ -135,7 +136,7 @@ namespace MonoTorrent.Dht
         internal async void Add(Node node)
         {
             if (node == null)
-                throw new ArgumentNullException("node");
+                throw new ArgumentNullException(nameof (node));
 
             try {
                 await MainLoop;

@@ -32,6 +32,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
+using MonoTorrent.Tracker;
 using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
@@ -43,26 +45,25 @@ namespace MonoTorrent.Client.Tracker
     {
         AnnounceParameters announceParams;
         ScrapeParameters scrapeParams;
-        MonoTorrent.Tracker.Tracker server;
+        TrackerServer server;
         HttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
         Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
         HTTPTracker tracker;
 
         InfoHash infoHash;
-        string peerId;
-        string trackerId;
+        BEncodedString peerId;
+        BEncodedString trackerId;
 
-
-        readonly List<string> keys = new List<string> ();
+        readonly List<BEncodedString> keys = new List<BEncodedString> ();
 
         [OneTimeSetUp]
         public void FixtureSetup()
         {
-            peerId = "my peer id &&=?!<>  ";
-            trackerId = "&=?!<>   ";
+            peerId = Enumerable.Repeat ((byte)254, 20).ToArray ();
+            trackerId = Enumerable.Repeat ((byte)255, 20).ToArray ();
             listener = new HttpTrackerListener (ListeningPrefix);
-            listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
+            listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
                 keys.Add(e.Key);
             };
             
@@ -74,7 +75,7 @@ namespace MonoTorrent.Client.Tracker
         {
             keys.Clear();
 
-            server = new MonoTorrent.Tracker.Tracker(trackerId);
+            server = new TrackerServer(trackerId);
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener(listener);
 
@@ -141,7 +142,7 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public async Task Announce_ValidateParams()
         {
-            var argsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceParameters> ();
+            var argsTask = new TaskCompletionSource<AnnounceRequest> ();
             listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
 
             await tracker.AnnounceAsync(announceParams);
@@ -160,7 +161,7 @@ namespace MonoTorrent.Client.Tracker
         {
             TaskCompletionSource<bool> s = new TaskCompletionSource<bool>();
             listener.AnnounceReceived += (o, e) => s.Task.Wait ();
-            tracker.RequestTimeout = TimeSpan.FromMilliseconds (500);
+            tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try
             {
                 Assert.ThrowsAsync<TrackerException>(() => tracker.AnnounceAsync(announceParams));
@@ -198,6 +199,8 @@ namespace MonoTorrent.Client.Tracker
         {
             // make sure it's a unique infohash as the listener isn't re-created for every test.
             infoHash = new InfoHash (Enumerable.Repeat ((byte)1, 20).ToArray ());
+            var trackable = new InfoHashTrackable ("Test", infoHash);
+            server.Add (trackable);
             scrapeParams = new ScrapeParameters (infoHash);
 
             await tracker.ScrapeAsync(scrapeParams);
@@ -229,7 +232,7 @@ namespace MonoTorrent.Client.Tracker
         {
             var tcs = new TaskCompletionSource<bool>();
             listener.ScrapeReceived += (o, e) => tcs.Task.Wait();
-            tracker.RequestTimeout = TimeSpan.FromMilliseconds (500);
+            tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try
             {
                 Assert.ThrowsAsync<TrackerException>(() => tracker.ScrapeAsync(scrapeParams));
@@ -250,12 +253,12 @@ namespace MonoTorrent.Client.Tracker
             // Now we have the value, the next announce should contain it
             Assert.AreEqual (trackerId, tracker.TrackerId, "#2");
 
-            var argsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceParameters> ();
+            var argsTask = new TaskCompletionSource<AnnounceRequest> ();
             listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);
 
             await tracker.AnnounceAsync (announceParams);
-            Assert.IsTrue (argsTask.Task.Wait (5000), "#3");
-            Assert.AreEqual (trackerId, argsTask.Task.Result.TrackerId, "#4");
+            var result = await argsTask.Task.WithTimeout ("#3");
+            Assert.AreEqual (trackerId, result.TrackerId, "#4");
         }
     }
 }

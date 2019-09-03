@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < len; i++)
             {
                 addedPeers[i].CompactPeer(added, i * 6);
-                if ((addedPeers[i].Encryption & (EncryptionTypes.RC4Full | EncryptionTypes.RC4Header)) != EncryptionTypes.None)
+                if ((addedPeers[i].AllowedEncryption & (EncryptionTypes.RC4Full | EncryptionTypes.RC4Header)) != EncryptionTypes.None)
                 {
                     addedDotF[i] = 0x01;
                 }

@@ -35,12 +35,12 @@ using System.Diagnostics;
 
 namespace MonoTorrent.Dht
 {
-	/// <summary>
-	/// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
-	/// </summary>
-	class Bucket : IComparable<Bucket>, IEquatable<Bucket>, IEnumerable<Node>
-	{
-		public const int MaxCapacity = 8;
+    /// <summary>
+    /// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
+    /// </summary>
+    class Bucket : IComparable<Bucket>, IEquatable<Bucket>, IEnumerable<Node>
+    {
+        public const int MaxCapacity = 8;
 
         // The item at position 0 will be the one we have not seen in the longest time.
         // The last item in the list is one we have seen the most recently.
@@ -63,13 +63,13 @@ namespace MonoTorrent.Dht
 
         public Bucket(NodeId min, NodeId max)
         {
-            Min = min;
-            Max = max;
+            Min = min ?? throw new ArgumentNullException (nameof (min));
+            Max = max ?? throw new ArgumentNullException (nameof (max));
 
             LastChangedDelta = TimeSpan.FromDays(1);
             LastChangedTimer = new Stopwatch();
             Nodes = new List<Node>(MaxCapacity);
-		}
+        }
 		
         public bool Add(Node node)
         {
@@ -93,19 +93,19 @@ namespace MonoTorrent.Dht
                 return true;
             }
             return false;
-		}
+        }
 
         public bool CanContain(Node node)
         {
             if (node == null)
-                throw new ArgumentNullException("node");
+                throw new ArgumentNullException(nameof (node));
             return CanContain(node.Id);
         }
 
         public bool CanContain(NodeId id)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof (id));
 
             return Min <= id && Max > id;
         }
@@ -120,40 +120,27 @@ namespace MonoTorrent.Dht
         }
 
         public int CompareTo(Bucket other)
-        {
-            return Min.CompareTo(other.Min);
-        }
+            => Min.CompareTo(other?.Min);
 
         public override bool Equals(object obj)
-        {
-            return Equals(obj as Bucket);
-        }
+            => Equals(obj as Bucket);
 
         public bool Equals(Bucket other)
-        {
-            if (other == null)
-                return false;
-
-            return Min.Equals(other.Min) && Max.Equals(other.Max);
-        }
-
-        public override int GetHashCode()
-        {
-            return Min.GetHashCode() ^ Max.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return string.Format("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
-        }
-
-        internal void SortBySeen()
-            => Nodes.Sort(LastSeenComparer);
+            => Min.Equals (other?.Min) && Max.Equals(other?.Max);
 
         public IEnumerator<Node> GetEnumerator ()
             => Nodes.GetEnumerator ();
 
         IEnumerator IEnumerable.GetEnumerator ()
             => GetEnumerator ();
+
+        public override int GetHashCode()
+            => Min.GetHashCode() ^ Max.GetHashCode();
+
+        internal void SortBySeen()
+            => Nodes.Sort(LastSeenComparer);
+
+        public override string ToString()
+            => string.Format("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
     }
 }

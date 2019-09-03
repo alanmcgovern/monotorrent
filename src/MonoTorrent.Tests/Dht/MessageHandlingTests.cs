@@ -72,8 +72,17 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void SendPing()
+        public void SendPing_Synchronous()
+            => SendPing (false);
+
+        [Test]
+        public void SendPing_Asynchronous()
+            => SendPing (true);
+
+        void SendPing (bool asynchronous)
         {
+            listener.SendAsynchronously = asynchronous;
+
             var tcs = new TaskCompletionSource<object> ();
             listener.MessageSent += (DhtMessage message, IPEndPoint endpoint) => {
                 if (message is Ping && endpoint == node.EndPoint) {
@@ -130,7 +139,7 @@ namespace MonoTorrent.Dht
             Assert.IsTrue (engine.SendQueryAsync (ping, node).Wait (1000), "#0a");
             Assert.AreEqual (0, node.FailedCount, "#0b");
 
-            engine.Timeout = TimeSpan.Zero;
+            engine.MessageLoop.Timeout = TimeSpan.Zero;
             node.Seen (TimeSpan.FromHours (1));
 
             // Send a ping which will time out

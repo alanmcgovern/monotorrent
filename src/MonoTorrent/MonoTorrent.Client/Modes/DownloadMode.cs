@@ -27,7 +27,7 @@
 //
 
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class DownloadMode : Mode
     {
@@ -37,18 +37,18 @@ namespace MonoTorrent.Client
 			get { return state; }
 		}
 
-        public DownloadMode(TorrentManager manager)
-            : base(manager)
+        public DownloadMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
             manager.HashFails = 0;
             state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
         }
 
-        public override void HandlePeerConnected(PeerId id, Direction direction)
+        public override void HandlePeerConnected(PeerId id)
         {
             if (!ShouldConnect(id))
                 this.Manager.Engine.ConnectionManager.CleanupSocket (id);
-            base.HandlePeerConnected(id, direction);
+            base.HandlePeerConnected(id);
         }
 
         public override bool ShouldConnect(Peer peer)

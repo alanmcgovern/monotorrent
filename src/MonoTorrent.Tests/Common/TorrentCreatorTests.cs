@@ -15,7 +15,7 @@ namespace MonoTorrent.Common
 {
     public class TestTorrentCreator : TorrentCreator
     {
-        protected override PieceWriter CreateReader()
+        protected override IPieceWriter CreateReader()
         {
             TestWriter writer = new TestWriter();
             writer.DontWrite = true;

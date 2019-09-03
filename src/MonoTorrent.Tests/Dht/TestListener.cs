@@ -43,18 +43,23 @@ namespace MonoTorrent.Dht
         public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
+        public bool SendAsynchronously { get; set; }
+
         public IPEndPoint EndPoint { get; private set; } = new IPEndPoint(IPAddress.Loopback, 0);
         public ListenerStatus Status { get; private set; }
 
         public void RaiseMessageReceived(DhtMessage message, IPEndPoint endpoint)
             => MessageReceived?.Invoke (message.Encode (), endpoint);
 
-        public Task SendAsync(byte[] buffer, IPEndPoint endpoint)
+        public async Task SendAsync(byte[] buffer, IPEndPoint endpoint)
         {
-            DhtMessage message;
-            DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out message);
-            MessageSent?.Invoke (message, endpoint);
-            return Task.CompletedTask;
+            if (SendAsynchronously)
+                 await Task.Yield ();
+
+            if (DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out DhtMessage message))
+                MessageSent?.Invoke (message, endpoint);
+            else
+                throw new Exception ("Could not decode the message");
         }
 
         public void Start ()

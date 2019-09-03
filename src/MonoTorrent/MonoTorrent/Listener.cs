@@ -47,8 +47,7 @@ namespace MonoTorrent
         void RaiseStatusChanged(ListenerStatus status)
         {
             Status = status;
-            if (StatusChanged != null)
-                Toolbox.RaiseAsyncEvent(StatusChanged, this, EventArgs.Empty);
+            StatusChanged?.InvokeAsync (this, EventArgs.Empty);
         }
 
         public void Start()

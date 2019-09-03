@@ -38,6 +38,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 
+using MonoTorrent.Client.PiecePicking;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -75,24 +76,24 @@ namespace MonoTorrent.Client
             listener.Close();
         }
 
-        [SetUp]
-        public void Setup()
+        [SetUp] public void Setup()
         {
             requestedUrl.Clear();
             partialData = false;
 
             rig = TestRig.CreateMultiFile();
+            rig.Manager.ChangePicker (new StandardPicker ());
+
             connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
 
-            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager);
-            id.Connection = connection;
+            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager, connection);
             id.IsChoking = false;
             id.AmInterested = true;
             id.BitField.SetAll(true);
             id.MaxPendingRequests = numberOfPieces;
             
-            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces));
+            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, id.BitField, new List<PeerId>(), numberOfPieces));
         }
 
         [TearDown]
@@ -174,7 +175,7 @@ namespace MonoTorrent.Client
             if (requests.Messages.Count != 0)
                 rig.Manager.PieceManager.Picker.CancelRequests(id);
             
-            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), 256));
+            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, id.BitField, new List<PeerId>(), 256));
 
             byte[] sendBuffer = requests.Encode();
             var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
@@ -216,7 +217,7 @@ namespace MonoTorrent.Client
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
 
-                PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager);
+                PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager.Torrent);
                 RequestMessage request = (RequestMessage)requests.Messages[0];
                 Assert.AreEqual(request.PieceIndex, m.PieceIndex, "#1");
                 Assert.AreEqual(request.RequestLength, m.RequestLength, "#1");
@@ -332,14 +333,13 @@ namespace MonoTorrent.Client
             connection = new HttpConnection(new Uri (url));
             connection.Manager = rig.Manager;
 
-            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager);
-            id.Connection = connection;
+            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager, id.Connection);
             id.IsChoking = false;
             id.AmInterested = true;
             id.BitField.SetAll(true);
             id.MaxPendingRequests = numberOfPieces;
 
-            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces));
+            requests = new MessageBundle (rig.Manager.PieceManager.Picker.PickPiece(id, id.BitField, new List<PeerId>(), numberOfPieces));
             await RecieveFirst();
             Assert.AreEqual(url, requestedUrl[0]);
         }

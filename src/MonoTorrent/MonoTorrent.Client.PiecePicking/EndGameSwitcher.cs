@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PiecePicking
         bool inEndgame;
         PiecePicker endgame;
         BitField endgameSelector;
-        TorrentFile[] files;
+        ITorrentData torrentData;
         PiecePicker standard;
 		TorrentManager torrentManager;
 
@@ -59,12 +59,12 @@ namespace MonoTorrent.Client.PiecePicking
 			this.torrentManager = torrentManager;
         }
 
-        public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        public override void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
         {
             ActivePicker.CancelRequest(peer, piece, startOffset, length);
         }
 
-        public override void CancelRequests(PeerId peer)
+        public override void CancelRequests(IPieceRequester peer)
         {
             ActivePicker.CancelRequests(peer);
         }
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
             ActivePicker.CancelTimedOutRequests();
         }
 
-        public override PieceRequest ContinueExistingRequest(PeerId peer)
+        public override PieceRequest ContinueExistingRequest(IPieceRequester peer)
         {
             return ActivePicker.ContinueExistingRequest(peer);
         }
@@ -94,14 +94,14 @@ namespace MonoTorrent.Client.PiecePicking
             return ActivePicker.ExportActiveRequests();
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             this.bitfield = bitfield;
             this.endgameSelector = new BitField(bitfield.Length);
-            this.files = files;
+            this.torrentData = torrentData;
             inEndgame = false;
             TryEnableEndgame();
-            ActivePicker.Initialise(bitfield, files, requests);
+            ActivePicker.Initialise(bitfield, torrentData, requests);
         }
 
         public override bool IsInteresting(BitField bitfield)
@@ -109,11 +109,11 @@ namespace MonoTorrent.Client.PiecePicking
             return ActivePicker.IsInteresting(bitfield);
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            var bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            var bundle = ActivePicker.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame())
-                return ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+                return ActivePicker.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
             return bundle;
         }
 
@@ -131,9 +131,9 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Create the bitfield of pieces which are downloadable
             endgameSelector.SetAll(false);
-            for (int i = 0; i < files.Length; i++)
-                if (files[i].Priority != Priority.DoNotDownload)
-                    endgameSelector.Or(files[i].GetSelector(bitfield.Length));
+            for (int i = 0; i < torrentData.Files.Length; i++)
+                if (torrentData.Files[i].Priority != Priority.DoNotDownload)
+                    endgameSelector.Or(torrentData.Files[i].GetSelector(bitfield.Length));
 
             // NAND it with the pieces we already have (i.e. AND it with the pieces we still need to receive)
             endgameSelector.NAnd(bitfield);
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client.PiecePicking
             inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count < Threshold;
 			if (inEndgame)
 			{
-				endgame.Initialise(bitfield, files, standard.ExportActiveRequests());
+				endgame.Initialise(bitfield, torrentData, standard.ExportActiveRequests());
 				standard.Reset ();
 				// Set torrent's IsInEndGame flag
 				torrentManager.isInEndGame = true;
@@ -159,7 +159,7 @@ namespace MonoTorrent.Client.PiecePicking
             endgame.Reset();
         }
 
-        public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public override bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             return ActivePicker.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
         }

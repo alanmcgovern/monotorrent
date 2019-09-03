@@ -35,11 +35,10 @@ namespace MonoTorrent.Client.PiecePicking
     class TestPicker : PiecePicker
     {
         public List<BitField> IsInterestingBitfield = new List<BitField>();
-        public List<PeerId> PickPieceId = new List<PeerId>();
+        public List<IPieceRequester> PickPieceId = new List<IPieceRequester>();
         public List<BitField> PickPieceBitfield = new List<BitField>();
-        public List<List<PeerId>> PickPiecePeers = new List<List<PeerId>>();
-        public List<int> PickPieceStartIndex = new List<int>();
-        public List<int> PickPieceEndIndex = new List<int>();
+        public List<IReadOnlyList<IPieceRequester>> PickPiecePeers = new List<IReadOnlyList<IPieceRequester>>();
+        public List<Tuple<int, int>> PickedIndex = new List<Tuple<int, int>>();
         public List<int> PickPieceCount = new List<int>();
 
         public List<int> PickedPieces = new List<int>();
@@ -50,15 +49,14 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            PickPieceId.Add(id);
-            BitField clone = new BitField(peerBitfield.Length);
-            clone.Or(peerBitfield);
+            PickPieceId.Add(peer);
+            BitField clone = new BitField(available.Length);
+            clone.Or(available);
             PickPieceBitfield.Add(clone);
             PickPiecePeers.Add(otherPeers);
-            PickPieceStartIndex.Add(startIndex);
-            PickPieceEndIndex.Add(endIndex);
+            PickedIndex.Add (Tuple.Create (startIndex, endIndex));
             PickPieceCount.Add(count);
 
             for (int i = startIndex; i < endIndex; i++)
@@ -74,7 +72,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             
         }

@@ -34,12 +34,13 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class ConnectMessage : UdpTrackerMessage
     {
+        public const long InitialiseConnectionId = 0x41727101980;
         public long ConnectionId { get; private set; }
 
         public ConnectMessage()
             : base(0, DateTime.Now.GetHashCode())
         {
-            ConnectionId = IPAddress.NetworkToHostOrder(0x41727101980); // Init connectionId as per spec
+            ConnectionId = InitialiseConnectionId; // Init connectionId as per spec
         }
 
         public override int ByteLength

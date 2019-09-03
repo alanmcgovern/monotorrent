@@ -1,8 +1,8 @@
 ﻿//
-// ILocalPeerListener.cs
+// ManualLocalPeerListener.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
 // Copyright (C) 2019 Alan McGovern
 //
@@ -28,11 +28,36 @@
 
 
 using System;
+using System.Net;
+using System.Threading.Tasks;
 
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Client
 {
-    interface ILocalPeerListener : IListener
+    class ManualLocalPeerListener : ILocalPeerDiscovery
     {
-        event EventHandler<LocalPeerFoundEventArgs> PeerFound;
+        public ListenerStatus Status { get; private set; }
+
+        public IPEndPoint EndPoint { get; set; }
+
+        public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
+        public event EventHandler<EventArgs> StatusChanged;
+
+        public Task Announce (InfoHash infoHash)
+            => Task.CompletedTask;
+
+        public void RaisePeerFound (InfoHash infoHash, Uri uri)
+            => PeerFound?.Invoke (this, new LocalPeerFoundEventArgs (infoHash, uri));
+
+        public void Start ()
+        {
+            Status = ListenerStatus.Listening;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
+        }
+
+        public void Stop ()
+        {
+            Status = ListenerStatus.NotListening;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
+        }
     }
 }

@@ -59,6 +59,9 @@ namespace MonoTorrent.Client
             }
         }
 
+        public static Task<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor)
+            => ReceiveMessageAsync (connection, decryptor, null, null, null);
+
         public static async Task<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor monitor, TorrentManager manager)
         {
             byte[] messageLengthBuffer = null;
@@ -72,9 +75,11 @@ namespace MonoTorrent.Client
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
 
-                messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0)); ;
-                if (messageBody < 0 || messageBody > MaxMessageLength)
-                    throw new Exception ($"Invalid message length received. Value was '{messageBody}'");
+                messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0));
+                if (messageBody < 0 || messageBody > MaxMessageLength) {
+                    connection.Dispose ();
+                    throw new ProtocolException ($"Invalid message length received. Value was '{messageBody}'");
+                }
 
                 if (messageBody == 0)
                     return new KeepAliveMessage ();
@@ -90,7 +95,8 @@ namespace MonoTorrent.Client
                 await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageBuffer, messageLength, messageBody);
-                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager);
+                // FIXME: manager should never be null, except some of the unit tests do that.
+                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager?.Torrent);
                 if (data is PieceMessage msg)
                 {
                     monitor?.ProtocolDown.AddDelta(-msg.RequestLength);
@@ -104,6 +110,9 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.FreeBuffer (messageBuffer);
             }
         }
+
+        public static Task SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message)
+            => SendMessageAsync (connection, encryptor, message, null, null, null);
 
         public static async Task SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {

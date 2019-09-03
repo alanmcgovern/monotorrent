@@ -31,102 +31,59 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
-	class HashingMode : Mode
-	{
-		CancellationTokenSource cts;
+    class HashingMode : Mode
+    {
+        CancellationTokenSource Cancellation { get; }
 
-		bool autostart;
-		Task hashingTask;
+        public override bool CanHashCheck => false;
+        public override TorrentState State => TorrentState.Hashing;
 
-		public override TorrentState State
-		{
-			get { return TorrentState.Hashing; }
-		}
+        public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
+        {
+            CanAcceptConnections = false;
+            Cancellation = new CancellationTokenSource();
+        }
 
-		public HashingMode(TorrentManager manager, bool autostart)
-			: base(manager)
-		{
-			CanAcceptConnections = false;
-			cts = new CancellationTokenSource();
-			this.autostart = autostart;
+        public Task WaitForHashingToComplete ()
+            => WaitForHashingToComplete (Cancellation.Token);
 
-            manager.HashFails = 0;
-		}
+        async Task WaitForHashingToComplete (CancellationToken token)
+        {
+            if (!Manager.HasMetadata)
+                throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
-		private async Task BeginHashing()
-		{
-			try
-			{
-				for (int index = 0; index < Manager.Torrent.Pieces.Count; index++)
-				{
-					var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager, index);
-					cts.Token.ThrowIfCancellationRequested();
-					var hashPassed = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
-					Manager.OnPieceHashed (index, hashPassed);
-				}
+            Manager.HashFails = 0;
+            try {
+                if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+                    for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+                        var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
 
-                cts.Token.ThrowIfCancellationRequested();
-                if (Manager.Mode == this)
-				    await HashingComplete();
-			} catch (OperationCanceledException) {
+                        if (token.IsCancellationRequested) {
+                            await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
+                            token.ThrowIfCancellationRequested();
+                        }
 
-			}
-		}
+                        var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
+                        Manager.OnPieceHashed (index, hashPassed);
+                    }
+                } else {
+                    for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                        Manager.OnPieceHashed(i, false);
+                }
+            } catch (Exception ex) {
+                Manager.TrySetError (Reason.ReadFailure, ex);
+            }
+        }
 
-		private async Task HashingComplete()
-		{
-			Manager.HashChecked = true;
+        public override void Tick (int counter)
+        {
+            // Do not run any of the default 'Tick' logic as nothing happens during 'Hashing' mode, except for hashing.
+        }
 
-			if (Manager.Engine != null && Manager.HasMetadata && await Manager.Engine.DiskManager.CheckAnyFilesExistAsync(Manager))
-				await Manager.Engine.DiskManager.CloseFilesAsync (Manager);
-
-			cts.Token.ThrowIfCancellationRequested();
-
-			if (autostart)
-			{
-				await Manager.StartAsync();
-			}
-			else
-			{
-				Manager.Mode = new StoppedMode(Manager);
-			}
-		}
-
-		public override void HandlePeerConnected(PeerId id, Direction direction)
-		{
-			Manager.Engine.ConnectionManager.CleanupSocket (id);
-		}
-
-		public override async void Tick(int counter)
-		{
-			try
-			{
-				if (hashingTask == null)
-				{
-					if (Manager.HasMetadata && await Manager.Engine.DiskManager.CheckAnyFilesExistAsync(Manager))
-					{
-						hashingTask = BeginHashing();
-					}
-					else
-					{
-						for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-							Manager.OnPieceHashed(i, false);
-						hashingTask = HashingComplete();
-					}
-				}
-			} catch (OperationCanceledException)
-			{
-
-			}
-
-			// Do nothing else while in hashing mode.
-		}
-
-		public override void Dispose ()
-		{
-			cts.Cancel ();
-		}
-	}
+        public override void Dispose ()
+            => Cancellation.Cancel ();
+    }
 }

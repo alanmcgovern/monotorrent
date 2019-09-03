@@ -42,14 +42,14 @@ namespace MonoTorrent.Tracker
     {
         Uri uri = new Uri("http://127.0.0.1:23456/");
         HttpTrackerListener listener;
-        MonoTorrent.Tracker.Tracker server;
+        TrackerServer server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
         [OneTimeSetUp]
         public void FixtureSetup()
         {
             listener = new HttpTrackerListener(uri.OriginalString);
             listener.Start();
-            server = new MonoTorrent.Tracker.Tracker();
+            server = new TrackerServer();
             server.RegisterListener(listener);
             listener.Start();
         }

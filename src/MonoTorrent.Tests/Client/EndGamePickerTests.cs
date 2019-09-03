@@ -27,64 +27,64 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.PiecePicking;
-
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PiecePicking
 {
     [TestFixture]
     public class EndGamePickerTests
     {
+        class TestTorrentData : ITorrentData
+        {
+            public TorrentFile [] Files { get; set; }
+            public int PieceCount => (int)(Size / PieceLength);
+            public int PieceLength { get; set; }
+            public long Size { get; set; }
+        }
+
         BitField bitfield;
-        PeerId id;
-        PeerId other;
         EndGamePicker picker;
         List<Piece> pieces;
-        TestRig rig;
+        TestTorrentData torrentData;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
-        {
-            rig = TestRig.CreateMultiFile();
-        }
+        PeerId id;
+        PeerId other;
 
         [SetUp]
         public void Setup()
         {
-            bitfield = new BitField(40).SetAll(true)
-                                       .Set(4, false)
-                                       .Set(6, false)
-                                       .Set(24, false)
-                                       .Set(36, false);
+            var pieceCount = 40;
+            var pieceLength = 256 * 1024;
+
+            torrentData = new TestTorrentData {
+                Files = new [] { new TorrentFile ("One File", pieceLength * pieceCount, 0, pieceCount) },
+                PieceLength = pieceLength,
+                Size = pieceLength * pieceCount
+            };
+
+            bitfield = new BitField(torrentData.PieceCount)
+                .SetAll(true)
+                .Set(4, false)
+                .Set(6, false)
+                .Set(24, false)
+                .Set(36, false);
+
             picker = new EndGamePicker();
             pieces = new List<Piece>(new Piece[] { 
-                new Piece(4, rig.Torrent.PieceLength, rig.Torrent.Size),
-                new Piece(6, rig.Torrent.PieceLength, rig.Torrent.Size),
-                new Piece(24, rig.Torrent.PieceLength, rig.Torrent.Size),
-                new Piece(36, rig.Torrent.PieceLength, rig.Torrent.Size)
+                new Piece(4, torrentData.PieceLength, torrentData.Size),
+                new Piece(6, torrentData.PieceLength, torrentData.Size),
+                new Piece(24, torrentData.PieceLength, torrentData.Size),
+                new Piece(36, torrentData.PieceLength, torrentData.Size)
             });
 
-            id = new PeerId(new Peer("peerid", new Uri("ipv4://weburl.com")), rig.Manager);
-            id.Encryptor = id.Decryptor = PlainTextEncryption.Instance;
+            id = PeerId.CreateNull (torrentData.PieceCount);
             id.IsChoking = false;
-            id.BitField.SetAll(false);
 
-            other = new PeerId(new Peer("other", new Uri("ipv4://other.com")), rig.Manager);
-            other.Decryptor = other.Encryptor = PlainTextEncryption.Instance;
+            other = PeerId.CreateNull (torrentData.PieceCount);
             other.IsChoking = false;
-            other.BitField.SetAll(false);
-        }
-
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Dispose();
         }
 
         [Test]
@@ -101,12 +101,12 @@ namespace MonoTorrent.Client
                 }
             }
 
-            picker.Initialise(bitfield, rig.Manager.Torrent.Files, pieces);
+            picker.Initialise(bitfield, torrentData, pieces);
             picker.CancelRequests(id);
             picker.CancelRequests(other);
 
             id.BitField[4] = true;
-            Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+            Assert.IsNotNull(picker.PickPiece(id, id.BitField, new List<PeerId>()));
         }
 
         [Test]
@@ -117,15 +117,15 @@ namespace MonoTorrent.Client
 
             for (int i = 2; i < pieces[0].BlockCount; i++)
             {
-                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
+                pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount));
                 pieces[0].Blocks[i].Received = true;
             }
             
-            picker.Initialise(bitfield, rig.Torrent.Files, pieces);
+            picker.Initialise(bitfield, torrentData, pieces);
 
             // Pick blocks 1 and 2 for both peers
-            while (picker.PickPiece(id, new List<PeerId>()) != null) ;
-            while (picker.PickPiece(other, new List<PeerId>()) != null) ;
+            while (picker.PickPiece(id, id.BitField, new List<PeerId>()) != null) { }
+            while (picker.PickPiece(other, id.BitField, new List<PeerId>()) != null) { }
 
             Assert.AreEqual(2, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual(2, other.AmRequestingPiecesCount, "#1");
@@ -147,31 +147,30 @@ namespace MonoTorrent.Client
         [Test]
         public void HashFail()
         {
-            Piece piece;
             PieceRequest m;
             List<PieceRequest> requests = new List<PieceRequest>();
 
             id.BitField[0] = true;
-            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+            picker.Initialise(bitfield, torrentData, new List<Piece>());
 
-            while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
+            while ((m = picker.PickPiece(id, id.BitField, new List<PeerId>())) != null)
                 requests.Add(m);
 
             foreach (var message in requests)
-                Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
+                Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece));
 
-            Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+            Assert.IsNotNull(picker.PickPiece(id, id.BitField, new List<PeerId>()));
         }
 
         [Test]
         public void ReceivedPiecesAreNotRequested()
         {
             for (int i = 2; i < pieces[0].BlockCount; i++) {
-                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
+                pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount));
                 pieces[0].Blocks[i].Received = true;
             }
 
-            picker.Initialise(bitfield, rig.Torrent.Files, pieces);
+            picker.Initialise(bitfield, torrentData, pieces);
             Assert.IsTrue (picker.Requests.All (t => !t.Block.Received), "#1");
         }
     }

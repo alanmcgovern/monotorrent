@@ -27,55 +27,49 @@
 //
 
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
-	class StoppingMode : Mode
-	{
-		List<Task> announcingTasks = new List<Task>();
-		Task stopDiskManagerTask;
+    class StoppingMode : Mode
+    {
+        public override bool CanHashCheck => false;
+        public override TorrentState State => TorrentState.Stopping;
 
-		public override TorrentState State
-		{
-			get { return TorrentState.Stopping; }
-		}
+        public StoppingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
+        {
+            CanAcceptConnections = false;
+        }
 
-		public StoppingMode(TorrentManager manager)
-			: base(manager)
-		{
-			CanAcceptConnections = false;
-			ClientEngine engine = manager.Engine;
+        public async Task WaitForStoppingToComplete ()
+        {
+            try {
+                Manager.Monitor.Reset();
+                Manager.Peers.ClearAll();
+                Manager.PieceManager.Reset();
 
-			if (manager.TrackerManager.CurrentTracker != null && manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
-				announcingTasks.Add(manager.TrackerManager.Announce(TorrentEvent.Stopped));
+                Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
+                foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
+                    Manager.Engine.ConnectionManager.CleanupSocket (id);
 
-			foreach (PeerId id in manager.Peers.ConnectedPeers)
-				if (id.Connection != null)
-					id.Connection.Dispose();
+                var stoppingTasks = new List<Task>();
+                stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
+                if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
+                    stoppingTasks.Add(Manager.TrackerManager.Announce(TorrentEvent.Stopped));
 
-			manager.Peers.ClearAll();
-
-			stopDiskManagerTask = engine.DiskManager.CloseFilesAsync (manager);
-
-			manager.Monitor.Reset();
-			manager.PieceManager.Reset();
-			engine.ConnectionManager.CancelPendingConnects (manager);
-			engine.Stop();
-		}
-
-		public override void HandlePeerConnected(PeerId id, Direction direction)
-		{
-			Manager.Engine.ConnectionManager.CleanupSocket (id);
-		}
-
-		public override void Tick(int counter)
-		{
-			if (announcingTasks.TrueForAll (t => t.IsCompleted) && stopDiskManagerTask.IsCompleted)
-				Manager.Mode = new StoppedMode(Manager);
-		}
-	}
+                var delayTask = Task.Delay (TimeSpan.FromMinutes (1));
+                var overallTasks = Task.WhenAll (stoppingTasks);
+                if (await Task.WhenAny (overallTasks, delayTask) == delayTask)
+                    Logger.Log (null, "Timed out waiting for the announce request to complete");
+            } catch (Exception ex) {
+                Logger.Log (null, "Unexpected exception stopping a TorrentManager: {0}", ex);
+            }
+        }
+    }
 }

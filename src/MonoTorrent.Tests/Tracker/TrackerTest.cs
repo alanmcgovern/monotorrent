@@ -28,6 +28,7 @@
 
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 using MonoTorrent.BEncoding;
@@ -162,6 +163,34 @@ namespace MonoTorrent.Tracker
         }
 
         [Test]
+        public void Scrape_One ()
+        {
+            AddAllTrackables ();
+
+            var trackable = rig.Trackables.Last ();
+
+            var query = $"?info_hash={trackable.InfoHash.UrlEncode()}";
+            var result = rig.Listener.Handle (query, IPAddress.Broadcast, true);
+            var files = (BEncodedDictionary) result["files"];
+
+            Assert.AreEqual (1, files.Count, "#1");
+                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Hash)), "#1");
+        }
+
+        [Test]
+        public void Scrape_Ten()
+        {
+            AddAllTrackables ();
+
+            var query = string.Join ("&", rig.Trackables.Select (t => $"info_hash={t.InfoHash.UrlEncode ()}"));
+            var result = rig.Listener.Handle (query, IPAddress.Broadcast, true);
+            var files = (BEncodedDictionary) result["files"];
+            Assert.AreEqual (rig.Trackables.Count, files.Count, "#1");
+            foreach (var trackable in rig.Trackables)
+                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Hash)), "#2");
+        }
+
+        [Test]
         public void TestReturnedPeers()
         {
             rig.Tracker.AllowNonCompact = true;
@@ -182,10 +211,10 @@ namespace MonoTorrent.Tracker
             {
                 IPAddress up = IPAddress.Parse(d["ip"].ToString());
                 int port = (int)((BEncodedNumber)d["port"]).Number;
-                string peerId = ((BEncodedString)d["peer id"]).Text;
+                BEncodedString peerId = (BEncodedString)d["peer id"];
 
                 Assert.IsTrue(peers.Exists(delegate(PeerDetails pd) {
-                    return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId == peerId;
+                    return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId.Equals (peerId);
                 }), "#2");
             }
         }

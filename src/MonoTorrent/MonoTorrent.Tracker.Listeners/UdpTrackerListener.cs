@@ -123,7 +123,12 @@ namespace MonoTorrent.Tracker.Listeners
         
         protected virtual async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
-            UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID (remotePeer));
+            UdpTrackerMessage m;
+            if (connectMessage.ConnectionId == ConnectMessage.InitialiseConnectionId)
+                m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID (remotePeer));
+            else
+                m = new ErrorMessage (connectMessage.TransactionId, $"The connection_id was {connectMessage.ConnectionId} but expected {ConnectMessage.InitialiseConnectionId}");
+
             byte[] data = m.Encode();
             try {
                 await client.SendAsync(data, data.Length, remotePeer);
@@ -146,9 +151,9 @@ namespace MonoTorrent.Tracker.Listeners
         {
             UdpTrackerMessage m;
             BEncodedDictionary dict = Handle(getCollection(announceMessage), remotePeer.Address, false);
-            if (dict.ContainsKey(RequestParameters.FailureKey))
+            if (dict.ContainsKey(TrackerRequest.FailureKey))
             {
-                m = new ErrorMessage(announceMessage.TransactionId, dict[RequestParameters.FailureKey].ToString());
+                m = new ErrorMessage(announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString());
             }
             else
             {
@@ -192,15 +197,15 @@ namespace MonoTorrent.Tracker.Listeners
         private NameValueCollection getCollection(AnnounceMessage announceMessage)
         {
             NameValueCollection res = new NameValueCollection();
-            res.Add("info_hash", announceMessage.Infohash.UrlEncode());
-            res.Add("peer_id", announceMessage.PeerId);
+            res.Add("info_hash", announceMessage.InfoHash.UrlEncode());
+            res.Add("peer_id", announceMessage.PeerId.UrlEncode ());
             res.Add("port", announceMessage.Port.ToString());
             res.Add("uploaded", announceMessage.Uploaded.ToString());
             res.Add("downloaded", announceMessage.Downloaded.ToString());
             res.Add("left", announceMessage.Left.ToString());
             res.Add("compact", "1");//hardcode
             res.Add("numwant", announceMessage.NumWanted.ToString());
-            res.Add("ip", announceMessage.Ip.ToString());
+            res.Add("ip", announceMessage.IP.ToString());
             res.Add("key", announceMessage.Key.ToString());
             res.Add("event", announceMessage.TorrentEvent.ToString().ToLower());
             return res;
@@ -212,9 +217,9 @@ namespace MonoTorrent.Tracker.Listeners
 
             UdpTrackerMessage m;
             byte[] data;
-            if (val.ContainsKey(RequestParameters.FailureKey))
+            if (val.ContainsKey(TrackerRequest.FailureKey))
             {
-                m = new ErrorMessage(scrapeMessage.TransactionId, val[RequestParameters.FailureKey].ToString());
+                m = new ErrorMessage(scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString());
             }
             else
             {

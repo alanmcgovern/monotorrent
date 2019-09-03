@@ -147,12 +147,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="files"></param>
         /// <param name="requests"></param>
         /// <param name="unhashedPieces"></param>
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, files, requests);
+            base.Initialise(bitfield, torrentData, requests);
             
             // set the high priority set start to the beginning of the first file that we have to download
-            foreach (TorrentFile file in files)
+            foreach (TorrentFile file in torrentData.Files)
             {
                 if (file.Priority == Priority.DoNotDownload)
                     this.highPrioritySetStart = file.EndPieceIndex;
@@ -166,7 +166,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         #region Methods
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             IList<PieceRequest> bundle;
             int start, end;
@@ -175,7 +175,7 @@ namespace MonoTorrent.Client.PiecePicking
             {
                 start = HighPrioritySetStart;
                 end = Math.Min(endIndex, HighPrioritySetStart + HighPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
+                if ((bundle = base.PickPiece(peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
@@ -183,11 +183,11 @@ namespace MonoTorrent.Client.PiecePicking
             {
                 start = MediumPrioritySetStart;
                 end = Math.Min(endIndex, MediumPrioritySetStart + MediumPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
+                if ((bundle = base.PickPiece(peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
-            return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
         }
 
         #endregion

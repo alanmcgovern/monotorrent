@@ -1,5 +1,5 @@
 //
-// ScrapeParameters.cs
+// ScrapeRequest.cs
 //
 // Authors:
 //   Gregor Burger burger.gregor@gmail.com
@@ -27,60 +27,46 @@
 //
 
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Net;
 
 
 namespace MonoTorrent.Tracker
 {
-    public class ScrapeParameters : RequestParameters
+    public class TrackerScrapeRequest : TrackerRequest
     {
-        private List<InfoHash> hashs;
-        
-        public int Count
-        {
-            get { return hashs.Count; }
-        }
-        
-        public List<InfoHash> InfoHashes
-        {
-            get { return hashs; }
-        }
-        
-        public override bool IsValid
-        {
-            get { return true; }
-        }
-        
-        public ScrapeParameters(NameValueCollection collection, IPAddress address)
+        static readonly char[] HashSeparators = { ',' };
+
+        /// <summary>
+        /// The list of infohashes contained in the scrape request
+        /// </summary>
+        public IList<InfoHash> InfoHashes { get; }
+
+        /// <summary>
+        /// Returns false if any required parameters are missing from the original request.
+        /// </summary>
+        public override bool IsValid => true;
+
+        public TrackerScrapeRequest(NameValueCollection collection, IPAddress address)
             : base(collection, address)
         {
-            hashs = new List<InfoHash>();
-            ParseHashes(Parameters["info_hash"]);
-        }
-        
-        private void ParseHashes(string infoHash)
-        {
-            if (string.IsNullOrEmpty(infoHash))
-                return;
-            
-            if (infoHash.IndexOf(',') > 0)
-            {
-                string[] stringHashs = infoHash.Split(',');
-                for (int i = 0; i < stringHashs.Length; i++)
-                    hashs.Add(InfoHash.UrlDecode(stringHashs[i]));
-            }
-            else
-            {
-                hashs.Add(InfoHash.UrlDecode(infoHash));
-            }
+            InfoHashes = ParseHashes(Parameters["info_hash"]);
         }
 
-        public IEnumerator GetEnumerator()
+        static IList<InfoHash> ParseHashes(string infoHash)
         {
-            return hashs.GetEnumerator();
+            if (string.IsNullOrEmpty(infoHash))
+                return Array.Empty<InfoHash> ();
+
+            var split = infoHash.Split (HashSeparators, StringSplitOptions.RemoveEmptyEntries);
+            var result = new InfoHash[split.Length];
+            for (int i = 0; i < split.Length; i ++)
+                result [i] = InfoHash.UrlDecode (split [i]);
+            return result;
         }
     }
 }

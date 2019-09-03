@@ -31,7 +31,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     class InitialSeedingMode : Mode
     {
@@ -43,8 +43,8 @@ namespace MonoTorrent.Client
 			get { return TorrentState.Seeding; }
 		}
             
-        public InitialSeedingMode(TorrentManager manager)
-            : base(manager)
+        public InitialSeedingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
             unchoker = new InitialSeedUnchoker(manager);
             manager.chokeUnchoker = unchoker;
@@ -77,9 +77,9 @@ namespace MonoTorrent.Client
             unchoker.ReceivedNotInterested(id);
         }
 
-        public override void HandlePeerConnected(PeerId id, Direction direction)
+        public override void HandlePeerConnected(PeerId id)
         {
-            base.HandlePeerConnected(id, direction);
+            base.HandlePeerConnected(id);
             unchoker.PeerConnected(id);
         }
 
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
                     PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
                     peer.Enqueue(message);
                 }
-                Manager.Mode = new DownloadMode(Manager);
+                Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
             }
         }
     }

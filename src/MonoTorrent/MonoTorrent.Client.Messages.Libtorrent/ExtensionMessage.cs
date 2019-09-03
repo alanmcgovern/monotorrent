@@ -35,47 +35,45 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     abstract class ExtensionMessage : PeerMessage
     {
         internal static readonly byte MessageId = 20;
-        private static Dictionary<byte, CreateMessage> messageDict;
-        private static byte nextId;
+        readonly static Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport>();
 
-        private byte extensionId;
-
-        public byte ExtensionId
-        {
-            get { return extensionId; }
-            protected set { extensionId = value; }
-        }
+        public byte ExtensionId { get; protected set; }
 
         static ExtensionMessage()
         {
-            messageDict = new Dictionary<byte, CreateMessage>();
+            messageDict = new Dictionary<byte, Func<ITorrentData, PeerMessage>>();
 
-            Register(nextId++, delegate { return new ExtendedHandshakeMessage(); });
+            var id = Register(data => new ExtendedHandshakeMessage());
+            if (id != 0)
+                throw new InvalidOperationException ("The handshake message should be registered with id '0'");
 
-            Register(nextId, delegate { return new LTChat(); });
-            SupportedMessages.Add(new ExtensionSupport("LT_chat", nextId++));
+            id = Register(data => new LTChat());
+            SupportedMessages.Add(new ExtensionSupport("LT_chat", id));
 
-            Register(nextId, delegate { return new LTMetadata(); });
-            SupportedMessages.Add(new ExtensionSupport("ut_metadata", nextId++));
+            id = Register(data => new LTMetadata());
+            SupportedMessages.Add(new ExtensionSupport("ut_metadata", id));
 
-            Register(nextId, delegate { return new PeerExchangeMessage(); });
-            SupportedMessages.Add(new ExtensionSupport("ut_pex", nextId++));
+            id = Register(data => new PeerExchangeMessage());
+            SupportedMessages.Add(new ExtensionSupport("ut_pex", id));
         }
 
-        public ExtensionMessage(byte messageId)
+        protected ExtensionMessage(byte messageId)
         {
-            this.extensionId = messageId;
+            ExtensionId = messageId;
         }
 
-        public static void Register(byte identifier, CreateMessage creator)
+        public static byte Register(Func<ITorrentData, PeerMessage> creator)
         {
             if (creator == null)
-                throw new ArgumentNullException("creator");
+                throw new ArgumentNullException(nameof (creator));
 
-            lock (messageDict)
-                messageDict.Add(identifier, creator);
+            lock (messageDict) {
+                var id = (byte) messageDict.Count;
+                messageDict.Add(id, creator);
+                return id;
+            }
         }
 
         protected static ExtensionSupport CreateSupport(string name)
@@ -83,18 +81,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             return SupportedMessages.Find(delegate(ExtensionSupport s) { return s.Name == name; });
         }
 
-        public new static PeerMessage DecodeMessage(byte[] buffer, int offset, int count, TorrentManager manager)
+        public static PeerMessage DecodeExtensionMessage(byte[] buffer, int offset, int count, ITorrentData manager)
         {
-            CreateMessage creator;
-            PeerMessage message;
-
             if (!ClientEngine.SupportsExtended)
                 throw new MessageException("Extension messages are not supported");
 
-            if (!messageDict.TryGetValue(buffer[offset], out creator))
+            if (!messageDict.TryGetValue(buffer[offset], out Func<ITorrentData, PeerMessage> creator))
                 throw new ProtocolException("Unknown extension message received");
 
-            message = creator(manager);
+            var message = creator(manager);
             message.Decode(buffer, offset + 1, count - 1);
             return message;
         }

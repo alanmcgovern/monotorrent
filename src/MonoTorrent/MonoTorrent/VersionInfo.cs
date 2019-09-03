@@ -29,6 +29,7 @@
 
 using System;
 using System.Reflection;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {

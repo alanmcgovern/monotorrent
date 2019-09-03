@@ -28,12 +28,7 @@
 
 
 using System;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Encryption;
 
 using NUnit.Framework;
 
@@ -42,26 +37,16 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class NetworkIOTests
     {
-        byte[] buffer;
-        byte[] data;
         ConnectionPair pair;
 
-        CustomConnection Incoming {
-            get { return pair.Incoming; }
-        }
+        CustomConnection Incoming => pair.Incoming;
 
-        CustomConnection Outgoing {
-            get { return pair.Outgoing; }
-        }
+        CustomConnection Outgoing => pair.Outgoing;
 
         [SetUp]
         public void Setup ()
         {
-            if (data == null) {
-                data = new byte [16384];
-                new Random ().NextBytes (data);
-            }
-            pair = new ConnectionPair (34567);
+            pair = new ConnectionPair ().WithTimeout ();
         }
 
         [TearDown]
@@ -99,8 +84,11 @@ namespace MonoTorrent.Client
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
+            var data = new byte [16384];
+            new Random ().NextBytes (data);
+
             int sent = 0;
-            buffer = new byte [data.Length];
+            var buffer = new byte [data.Length];
 
             var task = NetworkIO.ReceiveAsync(Outgoing, buffer, 0, buffer.Length, null, null, null);
 
@@ -146,6 +134,8 @@ namespace MonoTorrent.Client
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
+            var data = new byte [16384];
+            new Random ().NextBytes (data);
             var task = NetworkIO.SendAsync(Outgoing, data, 0, data.Length, null, null, null);
 
             int received = 0;
@@ -160,69 +150,26 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task InvalidMessage ()
-        {
-            Buffer.BlockCopy (BitConverter.GetBytes (IPAddress.HostToNetworkOrder (16)), 0, data, 0, 4);
-            for (int i = 4; i < 16; i++)
-                data [i] = byte.MaxValue;
-            var task = PeerIO.ReceiveMessageAsync (Incoming, PlainTextEncryption.Instance, null, null, null);
-            await NetworkIO.SendAsync(Outgoing, data, 0, 20, null, null, null);
-
-            try
-            {
-                await task;
-                Assert.Fail("An exception should've been thrown");
-            }
-            catch
-            {
-
-            }
-        }
-
-        [Test]
-        public async Task ReceiveTwoKeepAlives ()
-        {
-            var message = new KeepAliveMessage ();
-            var buffer = message.Encode ();
-            var handle = new AutoResetEvent (false);
-
-            await NetworkIO.SendAsync(Outgoing, buffer, 0, buffer.Length, null, null, null);
-            var sendTask = NetworkIO.SendAsync (Outgoing, buffer, 0, buffer.Length, null, null, null);
-
-            var task = PeerIO.ReceiveMessageAsync (Incoming, PlainTextEncryption.Instance, null, null, null);
-            Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (2)), "#Should receive first message");
-
-            task = PeerIO.ReceiveMessageAsync (Incoming, PlainTextEncryption.Instance, null, null, null);
-            Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (2)), "#Should receive second message");
-            await sendTask;
-        }
-
-        [Test]
         public async Task ZeroReceivedClosesConnection ()
         {
+            var data = new byte[100];
             Incoming.ManualBytesReceived = 0;
-            var receiveTask = NetworkIO.ReceiveAsync(Incoming, data, 0, 100, null, null, null);
+            var receiveTask = NetworkIO.ReceiveAsync(Incoming, data, 0, data.Length, null, null, null);
 
-            var sendTask = NetworkIO.SendAsync (Outgoing, data, 0, 100, null, null, null);
-            try
-            {
-                await receiveTask;
-            }
-            catch { }
-            Assert.IsTrue(receiveTask.IsFaulted);
+            var sendTask = NetworkIO.SendAsync (Outgoing, data, 0, data.Length, null, null, null);
+            Assert.ThrowsAsync<Exception> (() => receiveTask);
             await sendTask;
         }
 
         [Test]
-        public async Task ZeroSentClosesConnection ()
+        public void ZeroSentClosesConnection ()
         {
+            var data = new byte[100];
             Incoming.ManualBytesSent = 0;
-            var task = NetworkIO.SendAsync (Incoming, data, 0, 100, null, null, null);
+            var task = NetworkIO.SendAsync (Incoming, data, 0, data.Length, null, null, null);
 
-            _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, 100, null, null, null);
-            try { await task; }
-            catch { }
-            Assert.IsTrue(task.IsFaulted);
+            _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, data.Length, null, null, null);
+            Assert.ThrowsAsync<Exception> (() => task);
         }
     }
 }

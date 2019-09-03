@@ -53,6 +53,19 @@ namespace MonoTorrent
 
         public BEncodedDictionary ToDictionary ()
         {
+            if (Announces.Count == 0) {
+                RemoveCustom ("announce-list");
+            } else {
+                var list = new BEncodedList ();
+                foreach (var rawTier in Announces) {
+                    var tier  = new BEncodedList ();
+                    foreach (var announce in rawTier)
+                        tier.Add ((BEncodedString) announce);
+                    list.Add (tier);
+                }
+                SetCustom ("announce-list", list);
+            }
+
             return BEncodedValue.Clone (Metadata);
         }
 

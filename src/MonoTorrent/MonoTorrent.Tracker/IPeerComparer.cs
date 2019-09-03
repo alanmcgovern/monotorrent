@@ -1,5 +1,5 @@
-//
-// IPAddressComparer.cs
+﻿//
+// IPeerComparer.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
@@ -29,16 +29,18 @@
 
 namespace MonoTorrent.Tracker
 {
+    /// <summary>
+    /// Returns one of the properties from a peers <see cref="AnnounceRequest"/>, or a value derived from
+    /// properties on the <see cref="AnnounceRequest"/>, to use when comparing peers.
+    /// </summary>
     public interface IPeerComparer
     {
-        object GetKey(AnnounceParameters parameters);
-    }
-
-    class IPAddressComparer : IPeerComparer
-    {
-        public object GetKey(AnnounceParameters parameters)
-        {
-            return parameters.ClientAddress;
-        }
+        /// <summary>
+        /// Returns one of the properties from the <see cref="AnnounceRequest"/> object, or a value derived from
+        /// properties on the <see cref="AnnounceRequest"/> object, to use when comparing peers.
+        /// </summary>
+        /// <param name="parameters">The data sent as part of the Announce request</param>
+        /// <returns></returns>
+        object GetKey(AnnounceRequest parameters);
     }
 }

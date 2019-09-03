@@ -45,10 +45,16 @@ namespace MonoTorrent.Tracker
         private int downloadSpeed;
         private int uploadSpeed;
         private DateTime lastAnnounceTime;
-        private string peerId;
+        private BEncodedString peerId;
 
 
-        internal Peer(AnnounceParameters par, object dictionaryKey)
+        internal Peer (IPEndPoint endPoint, object dictionaryKey)
+        {
+            ClientAddress = endPoint;
+            this.dictionaryKey = dictionaryKey;
+        }
+
+        internal Peer(AnnounceRequest par, object dictionaryKey)
         {
             this.dictionaryKey = dictionaryKey;
             Update(par);
@@ -61,6 +67,7 @@ namespace MonoTorrent.Tracker
         public IPEndPoint ClientAddress
         {
             get { return clientAddress; }
+            private set { clientAddress = value; }
         }
 
         ///<summary>
@@ -117,7 +124,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         ///The Id of the client software
         ///</summary>
-        public string PeerId
+        public BEncodedString PeerId
         {
             get { return peerId; }
         }
@@ -163,7 +170,7 @@ namespace MonoTorrent.Tracker
             return dictionaryKey.GetHashCode();
         }
 
-        internal void Update(AnnounceParameters parameters)
+        internal void Update(AnnounceRequest parameters)
         {
             DateTime now = DateTime.Now;
             double elapsedTime = (now - lastAnnounceTime).TotalSeconds;
@@ -183,14 +190,14 @@ namespace MonoTorrent.Tracker
 
         private BEncodedDictionary GeneratePeersEntry()
         {
-            BEncodedString encPeerId = new BEncodedString(PeerId);
+            BEncodedString encPeerId = PeerId;
             BEncodedString encAddress = new BEncodedString(ClientAddress.Address.ToString());
             BEncodedNumber encPort = new BEncodedNumber(ClientAddress.Port);
 
             BEncodedDictionary dictionary = new BEncodedDictionary();
-            dictionary.Add(Tracker.PeerIdKey, encPeerId);
-            dictionary.Add(Tracker.Ip, encAddress);
-            dictionary.Add(Tracker.Port, encPort);
+            dictionary.Add(TrackerServer.PeerIdKey, encPeerId);
+            dictionary.Add(TrackerServer.Ip, encAddress);
+            dictionary.Add(TrackerServer.Port, encPort);
             return dictionary;
         }
         private byte[] GenerateCompactPeersEntry()

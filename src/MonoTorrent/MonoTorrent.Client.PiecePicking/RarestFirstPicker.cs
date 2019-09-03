@@ -49,26 +49,26 @@ namespace MonoTorrent.Client.PiecePicking
             spares = new Stack<BitField>();
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
+        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, files, requests);
+            base.Initialise(bitfield, torrentData, requests);
             this.length = bitfield.Length;
         }
 
-        public override IList<PieceRequest> PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            if (peerBitfield.AllFalse)
+            if (available.AllFalse)
                 return null;
 
             if (count > 1)
-                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+                return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
             
-            GenerateRarestFirst(peerBitfield, otherPeers);
+            GenerateRarestFirst(available, otherPeers);
 
             while (rarest.Count > 0)
             {
                 BitField current = rarest.Pop();
-                var bundle = base.PickPiece(id, current, otherPeers, count, startIndex, endIndex);
+                var bundle = base.PickPiece(peer, current, otherPeers, count, startIndex, endIndex);
                 spares.Push(current);
 
                 if (bundle != null)
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        void GenerateRarestFirst(BitField peerBitfield, List<PeerId> otherPeers)
+        void GenerateRarestFirst(BitField peerBitfield, IReadOnlyList<IPieceRequester> otherPeers)
         {
             // Move anything in the rarest buffer into the spares
             while (rarest.Count > 0)

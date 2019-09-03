@@ -59,7 +59,6 @@ namespace MonoTorrent.Tracker.Listeners
             Prefix = httpPrefix;
         }
 
-        #region Methods
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
@@ -70,51 +69,33 @@ namespace MonoTorrent.Tracker.Listeners
 
             listener.Prefixes.Add(Prefix);
             listener.Start();
-            listener.BeginGetContext(EndGetRequest, listener);
+            GetContextAsync (listener, token);
         }
 
-        private void EndGetRequest(IAsyncResult result)
+        async void GetContextAsync (HttpListener listener, CancellationToken token)
         {
-			HttpListenerContext context = null;
-			HttpListener listener = (HttpListener) result.AsyncState;
-            
-            try
-            {
-                context = listener.EndGetContext(result);
-                using (context.Response)
-                    HandleRequest(context);
-            }
-            catch(Exception ex)
-            {
-                Console.Write("Exception in listener: {0}{1}", Environment.NewLine, ex);
-            }
-            finally
-            {
-                try
-                {
-                    if (listener.IsListening)
-                        listener.BeginGetContext(EndGetRequest, listener);
-                }
-                catch
-                {
-                    Stop();
+            while (!token.IsCancellationRequested) {
+                try {
+                    var context = await listener.GetContextAsync ().ConfigureAwait (false);
+                    ProcessContextAsync (context, token);
+                } catch {
                 }
             }
         }
 
-        private void HandleRequest(HttpListenerContext context)
+        async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
         {
-            bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
+            using (context.Response) {
+                bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
 
-            BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
+                BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
 
-            byte[] response = responseData.Encode();
-            context.Response.ContentType = "text/plain";
-            context.Response.StatusCode = 200;
-            context.Response.ContentLength64 = response.LongLength;
-            context.Response.Close (response, true);
+                byte[] response = responseData.Encode();
+                context.Response.ContentType = "text/plain";
+                context.Response.StatusCode = 200;
+                context.Response.ContentLength64 = response.LongLength;
+                await context.Response.OutputStream.WriteAsync (response, 0, response.Length, token);
+            }
         }
-
-        #endregion Methods
     }
 }

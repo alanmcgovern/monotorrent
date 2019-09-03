@@ -51,7 +51,7 @@ namespace MonoTorrent
             try
             {
                if (endpoint.Address != IPAddress.Any)
-                    await Client.SendAsync (buffer, buffer.Length, endpoint);
+                    await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
             }
             catch(Exception ex)
             {

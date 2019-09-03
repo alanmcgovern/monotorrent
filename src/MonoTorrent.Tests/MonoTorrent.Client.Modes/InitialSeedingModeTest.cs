@@ -1,5 +1,5 @@
 //
-// IPieceWriter.cs
+// InitialSeedingModeTests.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -32,10 +32,10 @@ using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Modes
 {
     [TestFixture]
-    public class InitialSeedingModeTest
+    public class InitialSeedingModeTests
     {
         InitialSeedingMode Mode {
             get { return Rig.Manager.Mode as InitialSeedingMode; }
@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         {
             Rig = TestRig.CreateSingleFile(Piece.BlockSize * 20, Piece.BlockSize * 2);
             Rig.Manager.Bitfield.Not ();
-            Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager);
+            Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
         }
 
         [TearDown]
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
 
             var peer = Rig.CreatePeer(true);
             peer.BitField.SetAll(true);
-            Mode.HandlePeerConnected(peer, Direction.Incoming);
+            Mode.HandlePeerConnected(peer);
             Mode.Tick(0);
 
             Assert.IsTrue(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage, "#1");

@@ -56,9 +56,9 @@ namespace MonoTorrent.Client.Tracker
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
-                await ConnectionIdTask;
+                var connectionId = await ConnectionIdTask;
 
-                var message = new AnnounceMessage (DateTime.Now.GetHashCode (), ConnectionIdTask.Result, parameters);
+                var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters);
                 var announce = (AnnounceResponseMessage) await SendAndReceiveAsync (message);
                 MinUpdateInterval = announce.Interval;
 
@@ -74,10 +74,10 @@ namespace MonoTorrent.Client.Tracker
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
-                await ConnectionIdTask;
+                var connectionId = await ConnectionIdTask;
 
                 var infohashes = new List<byte[]> { parameters.InfoHash.Hash };
-                var message = new ScrapeMessage (DateTime.Now.GetHashCode (), ConnectionIdTask.Result, infohashes);
+                var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
                 var response = (ScrapeResponseMessage) await SendAndReceiveAsync (message);
 
                 if (response.Scrapes.Count == 1) {

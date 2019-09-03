@@ -217,10 +217,9 @@ namespace MonoTorrent
 
         protected string GetString (BEncodedDictionary dictionary, BEncodedString key)
         {
-            BEncodedValue value;
-            if (dictionary.TryGetValue (key, out value))
-                return value.ToString ();
-            return "";
+            if (dictionary.TryGetValue (key, out BEncodedValue value))
+                return ((BEncodedString)value).Text;
+            return null;
         }
 
         protected void SetDictionary (BEncodedDictionary dictionary, BEncodedString key, BEncodedDictionary value)
@@ -241,7 +240,11 @@ namespace MonoTorrent
         {
             if (dictionary == InfoDict)
                 CheckCanEditSecure ();
-            dictionary [key] = new BEncodedString (value);
+
+            if (value == null)
+                dictionary.Remove (key);
+            else
+                dictionary [key] = new BEncodedString (value);
         }
     }
 }

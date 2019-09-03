@@ -1,10 +1,10 @@
 ﻿//
-// LocalPeerFoundEventArgs.cs
+// PeerIdComparer.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2019 Jared Hendry
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,19 +27,21 @@
 //
 
 
-using System;
-
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Tracker
 {
-    class LocalPeerFoundEventArgs : EventArgs
+    /// <summary>
+    /// Uses the <see cref="AnnounceRequest.PeerId"/> field to compare peers when handling Announce or Scrape requests.
+    /// </summary>
+    public class PeerIdComparer : IPeerComparer
     {
-        public InfoHash InfoHash { get; }
-        public Uri Uri { get; }
-
-        public LocalPeerFoundEventArgs (InfoHash infoHash, Uri uri)
+        /// <summary>
+        /// Returns the <see cref="AnnounceRequest.PeerId"/> field to use to compare peers.
+        /// </summary>
+        /// <param name="parameters">The data sent as part of the Announce request</param>
+        /// <returns></returns>
+        public object GetKey(AnnounceRequest parameters)
         {
-            InfoHash = infoHash;
-            Uri = uri;
+            return parameters.PeerId;
         }
     }
 }
