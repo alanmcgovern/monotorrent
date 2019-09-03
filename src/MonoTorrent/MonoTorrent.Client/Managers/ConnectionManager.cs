@@ -136,6 +136,7 @@ namespace MonoTorrent.Client
             PendingConnects.Remove (state);
             manager.Peers.ConnectingToPeers.Remove (peer);
             if (manager.Engine == null || !manager.Mode.CanAcceptConnections) {
+                manager.Peers.AvailablePeers.Add (peer);
                 connection.Dispose ();
                 return;
             }
@@ -147,7 +148,7 @@ namespace MonoTorrent.Client
                     manager.Peers.BusyPeers.Add (peer);
                     manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer, ConnectionFailureReason.Unreachable, manager));
                 } else {
-                    PeerId id = new PeerId (peer, manager, connection);
+                    PeerId id = new PeerId (peer, connection, manager.Bitfield?.Clone ().SetAll (false));
                     id.LastMessageReceived.Restart ();
                     id.LastMessageSent.Restart ();
 

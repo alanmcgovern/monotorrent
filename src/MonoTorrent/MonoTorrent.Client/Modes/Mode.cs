@@ -112,6 +112,11 @@ namespace MonoTorrent.Client.Modes
                 HandleGenericExtensionMessage(id, (ExtensionMessage)message);
             else
                 throw new MessageException(string.Format("Unsupported message found: {0}", message.GetType().Name));
+
+            if (id.QueueLength > 0 && !id.ProcessingQueue) {
+                id.ProcessingQueue = true;
+                ConnectionManager.ProcessQueue (Manager, id);
+            }
         }
 
         public bool CanAcceptConnections
@@ -419,7 +424,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleHaveMessage(PeerId id, HaveMessage message)
         {
-            id.HaveMessagesReceived++;
+            id.HaveMessageEstimatedDownloadedBytes += Manager.Torrent.PieceLength;
 
             // First set the peers bitfield to true for that piece
             id.BitField[message.PieceIndex] = true;
@@ -443,6 +448,10 @@ namespace MonoTorrent.Client.Modes
                 AppendFastPieces(id, bundle);
 
                 id.Enqueue(bundle);
+                if (!id.ProcessingQueue) {
+                    id.ProcessingQueue = true;
+                    ConnectionManager.ProcessQueue (Manager, id);
+                }
             } else {
                ConnectionManager.CleanupSocket (Manager, id);
             }
