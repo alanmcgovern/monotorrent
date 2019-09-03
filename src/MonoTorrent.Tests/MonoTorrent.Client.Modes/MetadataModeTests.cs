@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Modes
             rig.AddConnection(pair.Outgoing);
 
             var connection = pair.Incoming;
-            PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager, connection);
+            PeerId id = new PeerId(new Peer("", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
 
             var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new InfoHash[] { rig.Manager.InfoHash });
             decryptor = id.Decryptor = result.Decryptor;

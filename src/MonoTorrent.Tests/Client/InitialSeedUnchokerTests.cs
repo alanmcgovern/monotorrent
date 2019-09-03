@@ -257,10 +257,10 @@ namespace MonoTorrent.Client
         [Test]
         public void ConnectDisconnect()
         {
-            PeerId a = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://127.0.0.5:5353")), rig.Manager, NullConnection.Incoming);
-            PeerId b = new PeerId(new Peer(new string('b', 20), new Uri("ipv4://127.0.0.5:5354")), rig.Manager, NullConnection.Incoming);
-            PeerId c = new PeerId(new Peer(new string('c', 20), new Uri("ipv4://127.0.0.5:5355")), rig.Manager, NullConnection.Incoming);
-            PeerId d = new PeerId(new Peer(new string('d', 20), new Uri("ipv4://127.0.0.5:5356")), rig.Manager, NullConnection.Incoming);
+            PeerId a = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://127.0.0.5:5353")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            PeerId b = new PeerId(new Peer(new string('b', 20), new Uri("ipv4://127.0.0.5:5354")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            PeerId c = new PeerId(new Peer(new string('c', 20), new Uri("ipv4://127.0.0.5:5355")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            PeerId d = new PeerId(new Peer(new string('d', 20), new Uri("ipv4://127.0.0.5:5356")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
 
             unchoker.PeerDisconnected(a);
             Assert.AreEqual(1, unchoker.PeerCount, "#1");

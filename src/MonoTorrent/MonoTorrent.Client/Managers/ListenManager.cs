@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
                 }
 
                 if (!e.Connection.IsIncoming) {
-                    var id = new PeerId(e.Peer, e.TorrentManager, e.Connection);
+                    var id = new PeerId(e.Peer, e.Connection, e.TorrentManager.Bitfield?.Clone ().SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
 
@@ -128,7 +128,7 @@ namespace MonoTorrent.Client
                 return false;
 
             peer.PeerId = message.PeerId;
-            var id = new PeerId (peer, man, connection) {
+            var id = new PeerId (peer, connection, man.Bitfield?.Clone ().SetAll (false)) {
                 Decryptor = decryptor,
                 Encryptor = encryptor
             };

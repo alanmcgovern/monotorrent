@@ -126,9 +126,7 @@ namespace MonoTorrent.Client
         internal bool ProcessingQueue { get; set; }
         internal int QueueLength => SendQueue.Count;
         internal List<int> SuggestedPieces { get; }
-        internal TorrentManager TorrentManager { get; }
 
-        ConnectionManager ConnectionManager { get; }
         List<PeerMessage> SendQueue { get; }
 
         #endregion Properties
@@ -160,16 +158,12 @@ namespace MonoTorrent.Client
             InitializeTyrant();
         }
 
-        internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
+        internal PeerId(Peer peer, IConnection connection, BitField bitfield)
             : this (peer)
         {
             Connection = connection ?? throw new ArgumentNullException (nameof (connection));
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
-            TorrentManager = manager ?? throw new ArgumentNullException (nameof (manager));
-
-            ConnectionManager = manager.Engine.ConnectionManager;
-            if(manager.HasMetadata)
-                BitField = new BitField(manager.Torrent.Pieces.Count);
+            BitField = bitfield;
         }
 
         #endregion
@@ -201,12 +195,6 @@ namespace MonoTorrent.Client
                 SendQueue.Add (message);
             else
                 SendQueue.Insert(index, message);
-
-            if (!ProcessingQueue)
-            {
-                ProcessingQueue = true;
-                ConnectionManager.ProcessQueue(TorrentManager, this);
-            }
         }
 
         public override string ToString()
@@ -228,7 +216,7 @@ namespace MonoTorrent.Client
 
         private void InitializeTyrant()
         {
-            HaveMessagesReceived = 0;
+            HaveMessageEstimatedDownloadedBytes = 0;
             TyrantStartTime.Restart ();
 
             UploadRateForRecip = MARKET_RATE;
@@ -240,7 +228,7 @@ namespace MonoTorrent.Client
             RoundsUnchoked = 0;
         }
 
-        internal int HaveMessagesReceived { get; set; }
+        internal long HaveMessageEstimatedDownloadedBytes { get; set; }
 
         /// <summary>
         /// This is Up
@@ -258,7 +246,7 @@ namespace MonoTorrent.Client
             get
             {
                 int timeElapsed = (int)TyrantStartTime.Elapsed.TotalSeconds;
-                return (int) (timeElapsed == 0 ? 0 : ((long) this.HaveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed);
+                return (int) (timeElapsed == 0 ? 0 : ((long) HaveMessageEstimatedDownloadedBytes) / timeElapsed);
             }
         }
 
