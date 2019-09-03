@@ -49,7 +49,7 @@ namespace MonoTorrent.Dht
         public NodeId Id { get; }
         public TimeSpan LastSeen => LastSeenTimer.Elapsed + LastSeenDelta;
         TimeSpan LastSeenDelta { get; set; }
-        Stopwatch LastSeenTimer { get; }
+        ValueStopwatch LastSeenTimer;
         public NodeState State
         {
             get {
@@ -70,7 +70,7 @@ namespace MonoTorrent.Dht
             Id = id;
 
             LastSeenDelta = TimeSpan.FromDays(1);
-            LastSeenTimer = new Stopwatch();
+            LastSeenTimer = new ValueStopwatch();
         }
 
         internal void Seen()

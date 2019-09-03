@@ -36,7 +36,7 @@ namespace MonoTorrent
     {
         internal const int DefaultAveragePeriod = 12;
 
-        readonly Stopwatch lastUpdated;
+        ValueStopwatch lastUpdated;
         readonly int[] speeds;
         int speedsIndex;
         long tempRecvCount;
@@ -56,7 +56,7 @@ namespace MonoTorrent
             if (averagingPeriod < 0)
                 throw new ArgumentOutOfRangeException ("averagingPeriod");
 
-            this.lastUpdated = Stopwatch.StartNew ();
+            this.lastUpdated = ValueStopwatch.StartNew ();
             this.speeds = new int [Math.Max (1, averagingPeriod)];
             this.speedsIndex = -speeds.Length;
         }

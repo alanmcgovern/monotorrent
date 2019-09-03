@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public long TotalWritten => WriteMonitor.Total;
 
-        Stopwatch UpdateTimer { get ; }
+        ValueStopwatch UpdateTimer;
 
         /// <summary>
         /// The piece writer used to read/write data
@@ -175,7 +175,7 @@ namespace MonoTorrent.Client
             WriteMonitor = new SpeedMonitor();
             WriteQueue = new Queue<BufferedIO>();
 
-            UpdateTimer = Stopwatch.StartNew();
+            UpdateTimer = ValueStopwatch.StartNew();
 
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));

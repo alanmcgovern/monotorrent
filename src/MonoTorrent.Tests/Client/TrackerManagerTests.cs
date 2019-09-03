@@ -79,16 +79,16 @@ namespace MonoTorrent.Client
 
         static readonly string[][] trackerUrls = {
             new [] {
+                "custom://tracker0.com/announce",
                 "custom://tracker1.com/announce",
                 "custom://tracker2.com/announce",
-                "custom://tracker3.com/announce",
-                "custom://tracker4.com/announce"
+                "custom://tracker3.com/announce"
             },
             new [] {
+                "custom://tracker4.com/announce",
                 "custom://tracker5.com/announce",
                 "custom://tracker6.com/announce",
-                "custom://tracker7.com/announce",
-                "custom://tracker8.com/announce"
+                "custom://tracker7.com/announce"
             }
         };
 

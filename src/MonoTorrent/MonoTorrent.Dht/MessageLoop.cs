@@ -49,13 +49,13 @@ namespace MonoTorrent.Dht
                 Destination = destination;
                 Node = node;
                 Message = message;
-                SentAt = null;
+                SentAt = new ValueStopwatch ();
             }
             public TaskCompletionSource<SendQueryEventArgs> CompletionSource;
             public IPEndPoint Destination;
             public DhtMessage Message;
             public Node Node;
-            public Stopwatch SentAt;
+            public ValueStopwatch SentAt;
         }
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
@@ -174,7 +174,7 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < 5 && SendQueue.Count > 0; i ++) {
                 var details = SendQueue.Dequeue();
 
-                details.SentAt = Stopwatch.StartNew();
+                details.SentAt = ValueStopwatch.StartNew();
                 if (details.Message is QueryMessage)
                     WaitingResponse.Add(details.Message.TransactionId, details);
 
