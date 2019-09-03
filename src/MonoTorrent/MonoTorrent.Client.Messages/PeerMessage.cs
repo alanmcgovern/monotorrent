@@ -103,9 +103,9 @@ namespace MonoTorrent.Client.Messages
             return message;
         }
 
-        internal void Handle(PeerId id)
+        internal void Handle(TorrentManager manager, PeerId id)
         {
-            id.TorrentManager.Mode.HandleMessage(id, this);
+            manager.Mode.HandleMessage(id, this);
         }
     }
 }

@@ -43,8 +43,8 @@ namespace MonoTorrent.Client
             get { return peer; }
         }
 
-        public PeerEventArgs(PeerId peer)
-            : base(peer.TorrentManager)
+        public PeerEventArgs(TorrentManager manager, PeerId peer)
+            : base(manager)
         {
             this.peer = peer;
         }

@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Monitor.Reset();
             foreach (var id in Manager.Peers.ConnectedPeers.ToArray ())
-                Manager.Engine.ConnectionManager.CleanupSocket (id);
+                Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
         }
     }
 }

@@ -800,7 +800,7 @@ namespace MonoTorrent.Client
             // The only message sent/received so far is the Handshake message.
             // The current mode decides what additional messages need to be sent.
             Peers.ConnectedPeers.Add (id);
-            RaisePeerConnected(new PeerConnectedEventArgs(id));
+            RaisePeerConnected(new PeerConnectedEventArgs(this, id));
             Mode.HandlePeerConnected(id);
         }
     }

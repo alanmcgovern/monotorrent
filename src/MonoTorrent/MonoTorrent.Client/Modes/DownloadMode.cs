@@ -47,7 +47,7 @@ namespace MonoTorrent.Client.Modes
         public override void HandlePeerConnected(PeerId id)
         {
             if (!ShouldConnect(id))
-                this.Manager.Engine.ConnectionManager.CleanupSocket (id);
+                ConnectionManager.CleanupSocket (Manager, id);
             base.HandlePeerConnected(id);
         }
 
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             }
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 if (!ShouldConnect(Manager.Peers.ConnectedPeers[i])) {
-                    Manager.Engine.ConnectionManager.CleanupSocket (Manager.Peers.ConnectedPeers[i]);
+                    ConnectionManager.CleanupSocket (Manager, Manager.Peers.ConnectedPeers[i]);
                     i--;
                 }
             }

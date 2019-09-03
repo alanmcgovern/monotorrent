@@ -77,7 +77,6 @@ namespace MonoTorrent.Client
     {
         List<SeededPiece> advertisedPieces;
         BitField bitfield;
-        TorrentManager manager;
         List<ChokeData> peers;
         BitField temp;
 
@@ -102,10 +101,10 @@ namespace MonoTorrent.Client
         }
 
         public InitialSeedUnchoker(TorrentManager manager)
+            : base (manager)
         {
             this.advertisedPieces = new List<SeededPiece>();
             this.bitfield = new BitField(manager.Bitfield.Length);
-            this.manager = manager;
             this.peers = new List<ChokeData>();
             this.temp = new BitField(bitfield.Length);
         }
@@ -188,7 +187,7 @@ namespace MonoTorrent.Client
 
             int advertised = advertisedPieces.FindAll(delegate(SeededPiece p) { return p.Peer == data.Peer; }).Count;
             int max = MaxAdvertised;
-            if (manager.UploadingTo < manager.Settings.UploadSlots)
+            if (Manager.UploadingTo < Manager.Settings.UploadSlots)
                 max = MaxAdvertised;
             else if (data.ShareRatio < 0.25)
                 max = 1;
@@ -224,7 +223,7 @@ namespace MonoTorrent.Client
                 advertised++;
                 data.TotalPieces++;
                 data.CurrentPieces[index] = true;
-                advertisedPieces.Add(new SeededPiece(data.Peer, index, data.Peer.TorrentManager.Torrent.PieceLength / Piece.BlockSize));
+                advertisedPieces.Add(new SeededPiece(data.Peer, index, Manager.Torrent.PieceLength / Piece.BlockSize));
                 data.Peer.Enqueue(new HaveMessage(index));
                 index++;
             }
@@ -262,7 +261,7 @@ namespace MonoTorrent.Client
                 return;
 
             // Don't unchoke if we are have maxed our slots
-            if (manager.UploadingTo >= manager.Settings.UploadSlots)
+            if (Manager.UploadingTo >= Manager.Settings.UploadSlots)
                 return;
 
             data.LastUnchoked = DateTime.Now;
