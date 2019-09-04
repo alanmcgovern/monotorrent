@@ -10,6 +10,9 @@
     <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
     <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
 
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha</MonoTorrentReleaseSuffix>
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
+
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
     <PackDependsOn>$(PackDependsOn);CreatePlainZip</PackDependsOn>
   </PropertyGroup>
@@ -68,7 +71,7 @@ Notable features include:
       <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
       <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
       <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-      <PackageVersion>$(MonoTorrentFileVersion)</PackageVersion>
+      <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
       <PackageTags>bittorrent;torrent</PackageTags>
 
       <IncludeSource>true</IncludeSource>
