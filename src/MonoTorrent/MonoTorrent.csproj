@@ -66,8 +66,10 @@ Notable features include:
 -Per torrent and global rate limiting
 -Individual file relocation</PackageDescription>
       <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+      <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
+      <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
       <PackageVersion>$(MonoTorrentFileVersion)</PackageVersion>
-      <Tags>bittorrent;torrent</Tags>
+      <PackageTags>bittorrent;torrent</PackageTags>
 
       <IncludeSource>true</IncludeSource>
       <IncludeSymbols>true</IncludeSymbols>
@@ -76,8 +78,8 @@ Notable features include:
       <RepositoryBranch>$(GitBranch)</RepositoryBranch>
       <RepositoryCommit>$(GitSha)</RepositoryCommit>
       <RepositoryUrl>https://github.com/mono/monotorrent</RepositoryUrl>
-      <ProjectUrl>https://github.com/mono/monotorrent</ProjectUrl>
 
+      <Copyright>Alan McGovern, Gregor Burger</Copyright>
     </PropertyGroup>
   </Target>
 
