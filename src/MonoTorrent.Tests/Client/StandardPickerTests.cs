@@ -267,16 +267,30 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void RequestBlock()
+        public void RequestBlocks_50()
         {
             peer.IsChoking = false;
             peer.BitField.SetAll(true);
-            for (int i = 0; i < 1000; i++)
-            {
-                var b = picker.PickPiece(peer, peer.BitField, peers, i);
-                Assert.AreEqual(Math.Min(i, torrentData.TotalBlocks), b.Count);
-                picker.CancelRequests(peer);
-            }
+            var b = picker.PickPiece(peer, peer.BitField, peers, 50);
+            Assert.AreEqual(50, b.Count, "#1");
+        }
+
+        [Test]
+        public void RequestBlocks_All()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            var b = picker.PickPiece(peer, peer.BitField, peers, torrentData.TotalBlocks);
+            Assert.AreEqual(torrentData.TotalBlocks, b.Count, "#1");
+        }
+
+        [Test]
+        public void RequestBlocks_TooMany()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            var b = picker.PickPiece(peer, peer.BitField, peers, torrentData.TotalBlocks * 2);
+            Assert.AreEqual(torrentData.TotalBlocks, b.Count, "#1");
         }
 
         [Test]
