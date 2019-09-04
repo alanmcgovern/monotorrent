@@ -40,8 +40,31 @@
       to ensure our GitInfo related properties have been calculated correctly. -->
   <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
     <PropertyGroup>
-      <Authors>Alan McGovern</Authors>
-      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links</PackageDescription>
+      <Authors>Alan McGovern,Olivier Dufour</Authors>
+      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links.
+Notable features include:
+-Encryption
+-Dht
+-Peer Exchange (uTorrent style)
+-Local Peer Discovery
+-Web Seeding (getright style)
+-Magnet Links / Metadata download
+-IPV6
+-FAST Extensions
+-Sparse files (NTFS file system)
+-Multi-tracker torrents
+-Compact tracker responses
+-IP Address white listing / black listing
+-Fast Resume
+-Initial Seeding (super seeding)
+-Selective downloading
+-Prioritised downloading
+-Full bittorrent tracker
+-Dynamic request queue size
+-Memory Cache
+-Endgame mode
+-Per torrent and global rate limiting
+-Individual file relocation</PackageDescription>
       <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
       <PackageVersion>$(MonoTorrentFileVersion)</PackageVersion>
       <Tags>bittorrent;torrent</Tags>
