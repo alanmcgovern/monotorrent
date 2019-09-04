@@ -401,6 +401,7 @@ namespace MonoTorrent.Client
             MetadataPath = "metadataSave.torrent";
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
+            engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
             Writer = writer;
 
             RecreateManager().Wait();
