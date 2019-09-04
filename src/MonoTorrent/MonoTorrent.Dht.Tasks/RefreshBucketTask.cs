@@ -27,6 +27,7 @@
 //
 
 
+using System.Threading.Tasks;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
@@ -42,7 +43,7 @@ namespace MonoTorrent.Dht.Tasks
             this.bucket = bucket;
         }
 
-        public async void Execute ()
+        public async Task Execute ()
         {
             if (bucket.Nodes.Count == 0)
                 return;
