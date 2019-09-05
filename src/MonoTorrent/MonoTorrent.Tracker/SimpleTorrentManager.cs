@@ -39,7 +39,7 @@ namespace MonoTorrent.Tracker
     ///This class is a TorrentManager which uses .Net Generics datastructures, such 
     ///as Dictionary and List to manage Peers from a Torrent.
     ///</summary>
-    public class SimpleTorrentManager
+    class SimpleTorrentManager : ITrackerItem
     {
         #region Member Variables
 
@@ -61,16 +61,16 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The number of active seeds
         /// </summary>
-        public long Complete
+        public int Complete
         {
-            get { return complete.Number; }
+            get { return (int) complete.Number; }
         }
 
-        public long Incomplete
+        public int Incomplete
         {
             get
             {
-                return incomplete.Number;
+                return (int) incomplete.Number;
             }
         }
 
@@ -86,9 +86,9 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The total number of times the torrent has been fully downloaded
         /// </summary>
-        public long Downloaded
+        public int Downloaded
         {
-            get { return downloaded.Number; }
+            get { return (int) downloaded.Number; }
         }
 
         /// <summary>

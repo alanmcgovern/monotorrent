@@ -88,12 +88,12 @@ namespace MonoTorrent.Tracker
             AddAllTrackables();
             rig.Peers.ForEach(delegate(PeerDetails d) { rig.Listener.Handle(d, TorrentEvent.Started, rig.Trackables[0]); });
 
-            SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[0]);
+            var manager = rig.Tracker.GetManager(rig.Trackables[0]);
 
             Assert.AreEqual(rig.Peers.Count, manager.Count, "#1");
             foreach (ITrackable t in rig.Trackables)
             {
-                SimpleTorrentManager m = rig.Tracker.GetManager(t);
+                var m = rig.Tracker.GetManager(t);
                 if (m == manager)
                     continue;
                 Assert.AreEqual(0, m.Count, "#2");
@@ -133,7 +133,7 @@ namespace MonoTorrent.Tracker
 
             for (i = 0; i < 4; i++)
             {
-                SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[i]);
+                var manager = rig.Tracker.GetManager(rig.Trackables[i]);
                 List<Peer> peers = manager.GetPeers();
                 Assert.AreEqual(25, peers.Count, "#1");
 
