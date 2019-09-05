@@ -1,10 +1,10 @@
-//
-// ErrorMode.cs
+﻿//
+// Error.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,23 +27,25 @@
 //
 
 
-namespace MonoTorrent.Client.Modes
+using System;
+
+namespace MonoTorrent.Client
 {
-    class ErrorMode : Mode
+    public enum Reason
     {
-        public override TorrentState State => TorrentState.Error;
+        ReadFailure,
+        WriteFailure
+    }
 
-        public ErrorMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
-        {
-            CanAcceptConnections = false;
-        }
+    public class Error
+    {
+        public Exception Exception { get; }
+        public Reason Reason { get; }
 
-        public override void Tick(int counter)
+        public Error(Reason reason, Exception exception)
         {
-            Manager.Monitor.Reset();
-            foreach (var id in Manager.Peers.ConnectedPeers.ToArray ())
-                Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
+            Reason = reason;
+            Exception = exception;
         }
     }
 }
