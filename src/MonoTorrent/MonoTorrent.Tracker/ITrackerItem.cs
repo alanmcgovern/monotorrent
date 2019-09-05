@@ -1,10 +1,10 @@
-//
-// ScrapeEventArgs.cs
+﻿//
+// ITrackerItem.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,16 +29,47 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+
+using MonoTorrent.BEncoding;
+
 
 namespace MonoTorrent.Tracker
 {
-    public class ScrapeEventArgs : EventArgs
+    /// <summary>
+    /// Represents the metadata for a torrent when it is being tracked in a <see cref="TrackerServer"/>
+    /// </summary>
+    public interface ITrackerItem
     {
-        public IList<ITrackerItem> Torrents { get; }
+        /// <summary>
+        /// The number of active seeders
+        /// </summary>
+        int Complete { get; }
 
-        public ScrapeEventArgs(List<ITrackerItem> torrents)
-        {
-            Torrents = new List<ITrackerItem> (torrents).AsReadOnly ();
-        }
+        /// <summary>
+        /// The total number of peers being tracked
+        /// </summary>
+        int Count { get; }
+
+        /// <summary>
+        /// The total number of times the torrent has been fully downloaded
+        /// </summary>
+        int Downloaded { get; }
+
+        /// <summary>
+        /// The number of active leechers
+        /// </summary>
+        int Incomplete { get; }
+
+        /// <summary>
+        /// Represents the InfoHash (or equivalent) of the torrent which is being tracked.
+        /// </summary>
+        ITrackable Trackable { get; }
+
+        /// <summary>
+        /// Return a copy of the list of peers
+        /// </summary>
+        /// <returns></returns>
+        List<Peer> GetPeers();
     }
 }

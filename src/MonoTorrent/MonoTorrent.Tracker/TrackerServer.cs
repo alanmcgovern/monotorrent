@@ -218,7 +218,7 @@ namespace MonoTorrent.Tracker
         /// </summary>
         /// <param name="trackable"></param>
         /// <returns></returns>
-        public SimpleTorrentManager GetManager(ITrackable trackable)
+        public ITrackerItem GetManager(ITrackable trackable)
         {
             CheckDisposed();
             if (trackable == null)
@@ -236,9 +236,10 @@ namespace MonoTorrent.Tracker
         /// Returns the list of current active torrents
         /// </summary>
         /// <returns>List<SimpleTorrentManager></returns>
-        public List<SimpleTorrentManager> GetTorrents() {
+        public List<ITrackerItem> GetTorrents()
+        {
             lock (Torrents)
-                return new List<SimpleTorrentManager>(Torrents.Values);
+                return new List<ITrackerItem>(Torrents.Values);
         }
 
         public bool IsRegistered(ITrackerListener listener)
@@ -332,7 +333,8 @@ namespace MonoTorrent.Tracker
                 e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"You must specify at least one infohash when scraping this tracker");
                 return;
             }
-            List<SimpleTorrentManager> managers = new List<SimpleTorrentManager>();
+
+            var managers = new List<ITrackerItem>();
             BEncodedDictionary files = new BEncodedDictionary();
             for (int i = 0; i < e.InfoHashes.Count; i++)
             {
