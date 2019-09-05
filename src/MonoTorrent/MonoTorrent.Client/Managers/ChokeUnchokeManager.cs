@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private int minimumTimeBetweenReviews = 30; //seconds.  Minimum time that needs to pass before we execute a review
+        private TimeSpan minimumTimeBetweenReviews = TimeSpan.FromSeconds (30); //  Minimum time that needs to pass before we execute a review
         private int percentOfMaxRateToSkipReview = 90; //If the latest download/upload rate is >= to this percentage of the maximum rate we should skip the review
 
         private DateTime timeOfLastReview; //When we last reviewed the choke/unchoke position
@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
         /// Creates a new choke/unchoke manager for a torrent manager
         /// </summeary>
         /// <param name="TorrentManager">The torrent manager this choke/unchoke manager belongs to</param>
-        public ChokeUnchokeManager(TorrentManager TorrentManager, int MinimumTimeBetweenReviews, int PercentOfMaxRateToSkipReview)
+        public ChokeUnchokeManager(TorrentManager TorrentManager, TimeSpan MinimumTimeBetweenReviews, int PercentOfMaxRateToSkipReview)
         {
             owningTorrent = TorrentManager;
             minimumTimeBetweenReviews = MinimumTimeBetweenReviews;
@@ -67,11 +67,11 @@ namespace MonoTorrent.Client
             int interestedCount = 0;
             int unchokedCount = 0;
 
-            bool skipDownload = (isDownloading && (owningTorrent.Monitor.DownloadSpeed < (owningTorrent.Settings.MaxDownloadSpeed * percentOfMaxRateToSkipReview / 100.0)));
-            bool skipUpload = (!isDownloading && (owningTorrent.Monitor.UploadSpeed < (owningTorrent.Settings.MaxUploadSpeed * percentOfMaxRateToSkipReview / 100.0)));
+            bool skipDownload = (isDownloading && (owningTorrent.Monitor.DownloadSpeed < (owningTorrent.Settings.MaximumDownloadSpeed * percentOfMaxRateToSkipReview / 100.0)));
+            bool skipUpload = (!isDownloading && (owningTorrent.Monitor.UploadSpeed < (owningTorrent.Settings.MaximumUploadSpeed * percentOfMaxRateToSkipReview / 100.0)));
             
-            skipDownload = skipDownload && owningTorrent.Settings.MaxDownloadSpeed > 0;
-            skipUpload = skipUpload && owningTorrent.Settings.MaxUploadSpeed > 0;
+            skipDownload = skipDownload && owningTorrent.Settings.MaximumDownloadSpeed > 0;
+            skipUpload = skipUpload && owningTorrent.Settings.MaximumUploadSpeed > 0;
 
             foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
                 //Since we have enough slots to satisfy everyone that's interested, unchoke them all; no review needed
                 UnchokePeerList(chokedInterestedPeers);
 
-            else if (minimumTimeBetweenReviews > 0 && (SecondsBetween(timeOfLastReview, DateTime.Now) >= minimumTimeBetweenReviews) &&
+            else if (minimumTimeBetweenReviews != TimeSpan.Zero && ((DateTime.Now - timeOfLastReview) >= minimumTimeBetweenReviews) &&
                 (skipDownload || skipUpload))
                 //Based on the time of the last review, a new review is due
                 //There are more interested peers than available upload slots
@@ -273,11 +273,11 @@ namespace MonoTorrent.Client
                     if (!connectedPeer.Peer.IsSeeder)
                     {
                         //Determine common values for use in this routine
-                        double timeSinceLastReview = SecondsBetween(timeOfLastReview, DateTime.Now);
-                        double timeUnchoked = 0;
+                        TimeSpan timeSinceLastReview = DateTime.Now - timeOfLastReview;
+                        TimeSpan timeUnchoked = TimeSpan.Zero;
                         if (!connectedPeer.AmChoking)
                         {
-                            timeUnchoked = connectedPeer.LastUnchoked.Elapsed.TotalSeconds;
+                            timeUnchoked = connectedPeer.LastUnchoked.Elapsed;
                             unchokedPeers++;
                         }
                         long bytesTransferred = 0;
@@ -305,8 +305,8 @@ namespace MonoTorrent.Client
                             //Add to peers that are candidates for unchoking based on their performance
                             candidatePeers.Add(connectedPeer);
                             //Calculate the latest up/downloadrate
-                            connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview;
-                            connectedPeer.LastReviewDownloadRate = (connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview;
+                            connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.TotalSeconds;
+                            connectedPeer.LastReviewDownloadRate = (connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.TotalSeconds;
                         }
 
                         else if (isDownloading && connectedPeer.IsInterested && connectedPeer.AmChoking && bytesTransferred > 0)
@@ -317,8 +317,8 @@ namespace MonoTorrent.Client
                             //Add to peers that are candidates for unchoking based on their performance
                             candidatePeers.Add(connectedPeer);
                             //Calculate the latest up/downloadrate
-                            connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview;
-                            connectedPeer.LastReviewDownloadRate = Math.Max((connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview,
+                            connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.TotalSeconds;
+                            connectedPeer.LastReviewDownloadRate = Math.Max((connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.TotalSeconds,
                                 connectedPeer.Monitor.DownloadSpeed);
                         }
 
@@ -438,7 +438,7 @@ namespace MonoTorrent.Client
             foreach (PeerId pid in sortedPeers)
             {
                 // unchoke the top interested peers till we reach the max bandwidth allotted.
-                if (uploadBandwidthUsed < this.owningTorrent.Settings.MaxUploadSpeed && pid.IsInterested)
+                if (uploadBandwidthUsed < this.owningTorrent.Settings.MaximumUploadSpeed && pid.IsInterested)
                 {
                     Unchoke( pid );
 

@@ -56,7 +56,10 @@ namespace SampleClient
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
-            EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
+            EngineSettings engineSettings = new EngineSettings {
+                SavePath = downloadsPath,
+                ListenPort = port
+            };
             engineSettings.PreferEncryption = false;
             engineSettings.AllowedEncryption = EncryptionTypes.All;
 
@@ -64,13 +67,8 @@ namespace SampleClient
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
             //engineSettings.MaxReadRate = 1 * 1024 * 1024;
 
-
             // Create the default settings which a torrent will have.
-            // 4 Upload slots - a good ratio is one slot per 5kB of upload speed
-            // 50 open connections - should never really need to be changed
-            // Unlimited download speed - valid range from 0 -> int.Max
-            // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
+            TorrentSettings torrentDefaults = new TorrentSettings ();
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);

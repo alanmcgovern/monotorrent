@@ -184,11 +184,11 @@ namespace MonoTorrent.Client.Modes
         protected virtual async void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
         {
             // Ignore peer exchange messages on private toirrents
-            if ((Manager.Torrent != null && Manager.Torrent.IsPrivate) || !Manager.Settings.EnablePeerExchange) {
+            if ((Manager.Torrent != null && Manager.Torrent.IsPrivate) || !Manager.Settings.AllowPeerExchange) {
                 Manager.RaisePeersFound(new PeerExchangePeersAdded (Manager, 0, 0, id));
             } else {
                 // If we already have lots of peers, don't process the messages anymore.
-                if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
+                if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaximumConnections)
                     return;
 
                 var newPeers = Peer.Decode((BEncodedString)message.Added);
@@ -704,7 +704,7 @@ namespace MonoTorrent.Client.Modes
                     }
 
                     // Check to see if have supression is enabled and send the have message accordingly
-                    if (!hasPiece || (hasPiece && !Settings.HaveSupressionEnabled))
+                    if (!hasPiece || (hasPiece && !Settings.AllowHaveSuppression))
                         bundle.Messages.Add(haveMessage);
                 }
 

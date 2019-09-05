@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Modes
 
             SendAnnounces ();
 
-            if (Manager.Complete && Manager.Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
+            if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
                 Manager.Mode = new InitialSeedingMode(Manager, DiskManager, ConnectionManager, Settings);
             }
             else {

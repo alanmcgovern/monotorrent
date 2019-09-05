@@ -310,7 +310,7 @@ namespace MonoTorrent.Client
         {
             try
             {
-                bool maxAlreadyOpen = OpenConnections >= Math.Min(this.MaxOpenConnections, manager.Settings.MaxConnections);
+                bool maxAlreadyOpen = OpenConnections >= Math.Min(MaxOpenConnections, manager.Settings.MaximumConnections);
                 if (LocalPeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen)
                 {
                     CleanupSocket (manager, id);
@@ -420,7 +420,7 @@ namespace MonoTorrent.Client
                 return false;
             
             // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
-            if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaxConnections)
+            if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaximumConnections)
                 return false;
             
             // If the torrent isn't active, don't connect to a peer for it
