@@ -5,7 +5,7 @@
     <LangVersion>7.2</LangVersion>
     <NoWarn>$(NoWarn);1591;1572;1573;1570;1584</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <MonoTorrentABIVersion>0.99.0.0</MonoTorrentABIVersion>
+    <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 

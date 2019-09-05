@@ -47,7 +47,7 @@ namespace MonoTorrent
         /// </summary>
         internal static readonly string ClientVersion;
 
-        internal static readonly string DhtClientVersion = $"{ClientIdentifier}06";
+        internal static readonly string DhtClientVersion;
 
         /// <summary>
         /// The full version of this library.
@@ -56,18 +56,39 @@ namespace MonoTorrent
 
         static VersionInfo ()
         {
-            Version  = System.Version.Parse(typeof(VersionInfo).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version);
+            Version  = new Version (
+                int.Parse (ThisAssembly.Git.SemVer.Major),
+                int.Parse (ThisAssembly.Git.SemVer.Minor),
+                int.Parse (ThisAssembly.Git.SemVer.Patch)
+            );
+
+            // The scheme for generating the peerid includes the version number using the scheme:
+            // ABCC, where A is the major, B is the minor and CC is the build version.
+            if (Version.Major > 9)
+                throw new ArgumentException ("The major version should be between 0 and 9 (inclusive)");
+            if (Version.Minor > 9)
+                throw new ArgumentException ("The minor version should be between 0 and 9 (inclusive)");
+             if (Version.Build > 99)
+                throw new ArgumentException ("The build version should be between 0 and 99 (inclusive)");
 
             // 'MO' for MonoTorrent then four digit version number
-            string version = string.Format ("{0}{1}{2}{3}", Math.Max (Version.Major, 0),
+            string version = string.Format ("{0}{1}{2:00}", Math.Max (Version.Major, 0),
                                                             Math.Max (Version.Minor, 0),
-                                                            Math.Max (Version.Build, 0),
-                                                            Math.Max (Version.Revision, 0));
+                                                            Math.Max (Version.Build, 0));
             if (version.Length > 4)
                 version = version.Substring (0, 4);
             else
                 version = version.PadRight (4, '0');
             ClientVersion = $"{ClientIdentifier}{version}";
+
+            // The DHT spec calls for a 2 char version identifier... urgh. I'm just going to
+            // generate a 4 character version identifier anyway as, hopefully, anyone using
+            // this field treats it like the opaque identifier it is supposed to be.
+            //
+            // If this causes issues then we should just trim the first 2 digits from this
+            // and accept that it's not a unique identifier anymore. If we keep the last
+            // two then we're more likely to be able to disambiguate.
+            DhtClientVersion = $"{ClientIdentifier}{version}";
         }
     }
 }
