@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Dht;
 
 namespace SampleClient

@@ -27,10 +27,6 @@
 //
 
 
-using System.Net;
-
-using MonoTorrent.Client.Encryption;
-
 namespace MonoTorrent.Client.Tracker
 {
     class TrackerRequestFactory : ITrackerRequestFactory

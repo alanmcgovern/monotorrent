@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;

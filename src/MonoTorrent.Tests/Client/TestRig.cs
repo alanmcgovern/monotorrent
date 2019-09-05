@@ -32,14 +32,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Tracker;

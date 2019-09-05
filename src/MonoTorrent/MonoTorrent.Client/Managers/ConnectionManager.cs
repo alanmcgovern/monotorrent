@@ -29,13 +29,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client

@@ -30,8 +30,6 @@
 using System;
 using System.Net;
 
-using MonoTorrent.Client.Encryption;
-
 namespace MonoTorrent.Client
 {
     /// <summary>

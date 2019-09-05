@@ -30,11 +30,11 @@
 using System;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
-using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {

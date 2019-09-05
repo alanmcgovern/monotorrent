@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
