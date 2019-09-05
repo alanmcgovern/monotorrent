@@ -47,15 +47,15 @@ namespace MonoTorrent.Client
         public bool AllowDht { get; set; } = true;
 
         /// <summary>
-        /// If set to false then Peer Exchange messages will never be used to locate additional peers. Defaults to true.
-        /// </summary>
-        public bool AllowPeerExchange { get; set; } = true;
-
-        /// <summary>
         /// If set to true, and there are no other seeders for this torrent, then Initial Seeding mode may be used to
         /// prioritise sharing pieces which are not already available in the swarm.
         /// </summary>
         public bool AllowInitialSeeding { get; set; }
+
+        /// <summary>
+        /// If set to false then Peer Exchange messages will never be used to locate additional peers. Defaults to true.
+        /// </summary>
+        public bool AllowPeerExchange { get; set; } = true;
 
         /// <summary>
         /// The maximum number of concurrent open connections for this torrent. Defaults to 60.

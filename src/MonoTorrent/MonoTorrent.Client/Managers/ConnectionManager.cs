@@ -61,19 +61,19 @@ namespace MonoTorrent.Client
 
         internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
 
-        public DiskManager DiskManager { get; }
+        internal DiskManager DiskManager { get; }
 
-        public BEncodedString LocalPeerId { get; }
+        internal BEncodedString LocalPeerId { get; }
 
         /// <summary>
         /// The maximum number of half open connections
         /// </summary>
-        public int MaxHalfOpenConnections => Settings.MaximumHalfOpenConnections;
+        internal int MaxHalfOpenConnections => Settings.MaximumHalfOpenConnections;
 
         /// <summary>
         /// The maximum number of open connections
         /// </summary>
-        public int MaxOpenConnections => Settings.MaximumConnections;
+        internal int MaxOpenConnections => Settings.MaximumConnections;
 
         /// <summary>
         /// The number of open connections
