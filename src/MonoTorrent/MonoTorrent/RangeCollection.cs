@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
-    public struct RangeComparer : IComparer<AddressRange>
+    struct RangeComparer : IComparer<AddressRange>
     {
         public int Compare(AddressRange x, AddressRange y)
         {
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class RangeCollection
+    class RangeCollection
     {
         List<AddressRange> ranges = new List<AddressRange>();
 
