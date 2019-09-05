@@ -232,6 +232,15 @@ namespace MonoTorrent.Tracker
             return null;
         }
 
+        /// <summary>
+        /// Returns the list of current active torrents
+        /// </summary>
+        /// <returns>List<SimpleTorrentManager></returns>
+        public List<SimpleTorrentManager> GetTorrents() {
+            lock (Torrents)
+                return new List<SimpleTorrentManager>(Torrents.Values);
+        }
+
         public bool IsRegistered(ITrackerListener listener)
         {
             CheckDisposed();
