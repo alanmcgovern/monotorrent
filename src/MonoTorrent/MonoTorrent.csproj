@@ -21,7 +21,7 @@
     <PackDependsOn>$(PackDependsOn);CreatePlainZip</PackDependsOn>
   </PropertyGroup>
 
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(Configuration)' == 'Debug' ">
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' ">
     <PropertyGroup>
       <Version>0.0.0.1</Version>
       <AssemblyVersion>$(Version)</AssemblyVersion>
