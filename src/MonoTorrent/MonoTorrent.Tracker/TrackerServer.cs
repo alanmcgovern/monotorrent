@@ -215,7 +215,7 @@ namespace MonoTorrent.Tracker
         /// </summary>
         /// <param name="trackable"></param>
         /// <returns></returns>
-        public ITrackerItem GetManager(ITrackable trackable)
+        public ITrackerItem GetTrackerItem(ITrackable trackable)
         {
             CheckDisposed();
             if (trackable == null)
@@ -233,7 +233,7 @@ namespace MonoTorrent.Tracker
         /// Returns the list of current active torrents
         /// </summary>
         /// <returns>List<SimpleTorrentManager></returns>
-        public List<ITrackerItem> GetTorrents()
+        public List<ITrackerItem> GetTrackerItems()
         {
             lock (Torrents)
                 return new List<ITrackerItem>(Torrents.Values);

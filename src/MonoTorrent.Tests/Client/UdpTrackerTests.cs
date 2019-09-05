@@ -239,7 +239,7 @@ namespace MonoTorrent.Client
         {
             var trackable = new MonoTorrent.Tracker.InfoHashTrackable ("Test", InfoHash);
             server.Add (trackable);
-            var manager = (MonoTorrent.Tracker.SimpleTorrentManager) server.GetManager (trackable);
+            var manager = (MonoTorrent.Tracker.SimpleTorrentManager) server.GetTrackerItem (trackable);
             foreach (var p in peerEndpoints)
                 manager.Add (new MonoTorrent.Tracker.Peer (p, p));
 
