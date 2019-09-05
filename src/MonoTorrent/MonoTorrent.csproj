@@ -2,8 +2,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <NoWarn>$(NoWarn);1591;1572;1573;1570;1584</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
     <MonoTorrentABIVersion>0.99.0.0</MonoTorrentABIVersion>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <GitVersionFile>version.txt</GitVersionFile>
     <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
