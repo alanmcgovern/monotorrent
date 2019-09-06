@@ -105,22 +105,22 @@ namespace MonoTorrent.Client
 
         public IList<TorrentManager> Torrents { get; }
 
-        public int TotalDownloadSpeed
+        public long TotalDownloadSpeed
         {
             get
             {
-                int total = 0;
+                long total = 0;
                 for (int i = 0; i < torrents.Count; i++)
                     total += torrents[i].Monitor.DownloadSpeed;
                 return total;
             }
         }
 
-        public int TotalUploadSpeed
+        public long TotalUploadSpeed
         {
             get
             {
-                int total = 0;
+                long total = 0;
                 for (int i = 0; i < torrents.Count; i++)
                     total += torrents[i].Monitor.UploadSpeed;
                 return total;

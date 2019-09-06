@@ -206,11 +206,11 @@ namespace MonoTorrent.Client
 
         private const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
         ValueStopwatch LastRateReductionTime;                   // last time we reduced rate of this peer
-        private int lastMeasuredDownloadRate;                                   // last download rate measured
+        long lastMeasuredDownloadRate;                                   // last download rate measured
         ValueStopwatch TyrantStartTime;
 
         // stats
-        private int maxObservedDownloadSpeed;
+        long maxObservedDownloadSpeed;
 
         private void InitializeTyrant()
         {
@@ -279,7 +279,7 @@ namespace MonoTorrent.Client
         ///     - divide this upload rate by the standard implementation's active set size for that rate
         /// </summary>
         /// <returns></returns>
-        internal int GetDownloadRate()
+        internal long GetDownloadRate()
         {
             if (this.lastMeasuredDownloadRate > 0)
             {

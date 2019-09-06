@@ -52,7 +52,7 @@ namespace MonoTorrent
             }
         }
 
-        public long ElapsedMilliseconds => Elapsed.Milliseconds;
+        public long ElapsedMilliseconds => (long)Elapsed.TotalMilliseconds;
 
         public long ElapsedTicks => Elapsed.Ticks;
 

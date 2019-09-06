@@ -7,13 +7,25 @@ namespace MonoTorrent.Common
     public class SpeedMonitorTest
     {
         [Test]
-        public void ZeroAveragingPeriod ()
+        public void VeryFastRate ()
         {
-            var monitor = new SpeedMonitor (0);
-            monitor.AddDelta (1000);
-            monitor.Tick (1000);
+            // We're reporting 500MB every 750ms period
+            var speed = 500 * 1024 * 1024;
 
-            Assert.AreEqual (1000, monitor.Rate, "#1");
+            // The actual speed averaged over a 1 second period would be this
+            var estimatedActualSpeed = speed * 4 / 3;
+
+            var monitor = new SpeedMonitor ();
+            for (int i = 0; i < 37; i ++) {
+                monitor.AddDelta (speed);
+                monitor.Tick (750);
+
+                Assert.Greater (monitor.Rate, 0, "#1." + i);
+                Assert.Less (monitor.Rate, estimatedActualSpeed + (1 * 1024 * 1024), "#2." + i);
+            }
+
+            // Should be somewhere between 499 and 501 MB/sec
+            Assert.IsTrue((monitor.Rate - estimatedActualSpeed) < (1 * 1024 * 1024), "#3");
         }
 
         [Test]
@@ -64,6 +76,16 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
 
             Assert.AreEqual (0, monitor.Rate, "#1");
+        }
+
+        [Test]
+        public void ZeroAveragingPeriod ()
+        {
+            var monitor = new SpeedMonitor (0);
+            monitor.AddDelta (1000);
+            monitor.Tick (1000);
+
+            Assert.AreEqual (1000, monitor.Rate, "#1");
         }
     }
 }

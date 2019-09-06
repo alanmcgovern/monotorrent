@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being read per second.
         /// </summary>
-        public int ReadRate => ReadMonitor.Rate;
+        public long ReadRate => ReadMonitor.Rate;
 
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being written per second.
         /// </summary>
-        public int WriteRate => WriteMonitor.Rate;
+        public long WriteRate => WriteMonitor.Rate;
 
         /// <summary>
         /// The total number of bytes which have been read.

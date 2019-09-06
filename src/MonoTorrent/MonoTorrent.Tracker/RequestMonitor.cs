@@ -37,12 +37,12 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// This is the number of announce requests handled per second.
         /// </summary>
-        public int AnnounceRate => Announces.Rate;
+        public int AnnounceRate => (int) Announces.Rate;
 
         /// <summary>
         /// This is the number of scrape requests handled per second.
         /// </summary>
-        public int ScrapeRate => Scrapes.Rate;
+        public int ScrapeRate => (int) Scrapes.Rate;
 
         /// <summary>
         /// The total number of announces handled.
