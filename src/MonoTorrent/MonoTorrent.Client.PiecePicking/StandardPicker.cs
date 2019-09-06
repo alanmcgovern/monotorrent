@@ -231,7 +231,7 @@ namespace MonoTorrent.Client.PiecePicking
                 Piece p = requests[req];
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if (p.AllBlocksRequested || !peer.Equals(p.Blocks[0].RequestedOff))
+                if (peer != p.Blocks[0].RequestedOff || p.AllBlocksRequested)
                     continue;
 
                 for (int i = 0; i < p.BlockCount; i++)
