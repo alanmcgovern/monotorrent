@@ -43,7 +43,7 @@ namespace MonoTorrent
         static readonly string ClientIdentifier = "MO";
 
         /// <summary>
-        /// The current version of the client in the form "MO1234", which represents 'MonoTorrent version 1.2.3.4'.
+        /// The current version of the client in the form "MO1234", which represents a version triplet of '1.2.34'.
         /// </summary>
         internal static readonly string ClientVersion;
 

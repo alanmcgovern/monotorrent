@@ -47,7 +47,13 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
-        internal static MainLoop MainLoop = new MainLoop("Client Engine Loop");
+        internal static readonly MainLoop MainLoop = new MainLoop("Client Engine Loop");
+
+        /// <summary>
+        /// An un-seeded random number generator which will not generate the same
+        /// random sequence when the application is restarted.
+        /// </summary>
+        static readonly Random PeerIdRandomGenerator = new Random ();
         #region Global Constants
 
         public static readonly bool SupportsInitialSeed = true;
@@ -470,8 +476,6 @@ namespace MonoTorrent.Client
                 Listener.Stop();
         }
 
-
-        static int peerIdSeed;
         static BEncodedString GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
@@ -479,15 +483,13 @@ namespace MonoTorrent.Client
             sb.Append(VersionInfo.ClientVersion);
             sb.Append ("-");
 
-            if (peerIdSeed == 0)
-            {
-                var seedRandom = new Random();
-                peerIdSeed = seedRandom.Next();
+            // Create and use a single Random instance which *does not* use a seed so that
+            // the random sequence generated is definitely not the same between application
+            // restarts.
+            lock (PeerIdRandomGenerator) {
+                while (sb.Length < 20)
+                    sb.Append(PeerIdRandomGenerator.Next(0, 9));
             }
-
-            var random = new Random(peerIdSeed++);
-            while (sb.Length < 20)
-                sb.Append(random.Next(0, 9));
 
             return new BEncodedString (sb.ToString());
         }
