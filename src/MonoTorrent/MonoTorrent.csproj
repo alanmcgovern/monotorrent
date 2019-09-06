@@ -80,6 +80,7 @@ Notable features include:
 
       <IncludeSource>true</IncludeSource>
       <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
       <RepositoryType>git</RepositoryType>
       <RepositoryBranch>$(GitBranch)</RepositoryBranch>
