@@ -471,7 +471,7 @@ namespace MonoTorrent.Client
         }
 
 
-        static int count;
+        static int peerIdSeed;
         static BEncodedString GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
@@ -479,7 +479,13 @@ namespace MonoTorrent.Client
             sb.Append(VersionInfo.ClientVersion);
             sb.Append ("-");
 
-            var random = new Random(count++);
+            if (peerIdSeed == 0)
+            {
+                var seedRandom = new Random();
+                peerIdSeed = seedRandom.Next();
+            }
+
+            var random = new Random(peerIdSeed++);
             while (sb.Length < 20)
                 sb.Append(random.Next(0, 9));
 
