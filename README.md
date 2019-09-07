@@ -1,5 +1,7 @@
 [![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
 
+NuGet package: [https://www.nuget.org/packages/MonoTorrent](https://www.nuget.org/packages/MonoTorrent)
+
 # Supported Specifications
 
 This is a list of all the BEPs which have been implemented in MonoTorrent. A full list of all available BEPs can be seen [here](http://www.bittorrent.org/beps/bep_0000.html)
