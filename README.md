@@ -1,6 +1,10 @@
-[![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
+MonoTorrent
+========
 
 NuGet package: [https://www.nuget.org/packages/MonoTorrent](https://www.nuget.org/packages/MonoTorrent)
+
+[![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
+
 
 # Supported Specifications
 
