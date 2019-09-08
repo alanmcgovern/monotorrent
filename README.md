@@ -1,7 +1,7 @@
 MonoTorrent
 ========
 
-NuGet package: [https://www.nuget.org/packages/MonoTorrent](https://www.nuget.org/packages/MonoTorrent)
+[![NuGet version](https://badge.fury.io/nu/monotorrent.svg)](https://badge.fury.io/nu/monotorrent)
 
 [![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
 
