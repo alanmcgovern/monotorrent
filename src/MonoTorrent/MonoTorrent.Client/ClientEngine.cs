@@ -351,6 +351,9 @@ namespace MonoTorrent.Client
             await MainLoop;
 
             var manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+
+            if (manager == null) return;
+
             if (manager.CanUseDht) {
                 var successfullyAdded = await manager.AddPeersAsync (e.Peers);
                 manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));

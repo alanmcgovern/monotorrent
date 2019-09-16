@@ -453,8 +453,9 @@ namespace MonoTorrent
                     if ((size + length) % pieceLength == 0)
                         endIndex--;
                 }
+
+                files.Add(new TorrentFile(path, length, path, startIndex, endIndex, (int)(size % pieceLength), md5sum, ed2k, sha1));
                 size += length;
-                files.Add(new TorrentFile(path, length, path, startIndex, endIndex, md5sum, ed2k, sha1));
             }
 
             this.torrentFiles = files.ToArray();
@@ -548,7 +549,7 @@ namespace MonoTorrent
 
                 this.torrentFiles = new TorrentFile[1];
                 int endPiece = Math.Min(Pieces.Count - 1, (int)((size + (pieceLength - 1)) / pieceLength));
-                this.torrentFiles[0] = new TorrentFile(path, length, path, 0, endPiece, md5, ed2k, sha1);
+                this.torrentFiles[0] = new TorrentFile(path, length, path, 0, endPiece, 0, md5, ed2k, sha1);
             }
         }
 
