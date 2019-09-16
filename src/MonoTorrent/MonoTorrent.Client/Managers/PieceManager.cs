@@ -181,31 +181,5 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
             return Picker.CurrentRequestCount();
         }
-        
-        public T GetPicker<T>() where T : PiecePicker
-        {
-            if (CheckType(Picker, out T result))
-                return result;
-
-            var p = Picker;
-
-            while ((p = p.BasePicker) != null)
-            {
-                if (CheckType(p, out result))
-                    return result;
-            }
-
-            return null;
-        }
-
-        private bool CheckType<T>(PiecePicker picker, out T obj) where T : PiecePicker
-        {
-            obj = null;
-
-            if (!(picker is T piecePicker)) return false;
-
-            obj = piecePicker;
-            return true;
-        }
     }
 }
