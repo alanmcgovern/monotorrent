@@ -60,8 +60,6 @@ namespace SampleClient
                 SavePath = downloadsPath,
                 ListenPort = port
             };
-            engineSettings.PreferEncryption = false;
-            engineSettings.AllowedEncryption = EncryptionTypes.All;
 
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
@@ -154,6 +152,14 @@ namespace SampleClient
             // in the torrent manager and start the engine.
             foreach (TorrentManager manager in torrents)
             {
+                manager.PeerConnected += (o, e) => {
+                    lock (listener)
+                        listener.WriteLine (string.Format ("Connection succeeded: {0}", e.Peer.Uri));
+                };
+                manager.ConnectionAttemptFailed += (o, e) => {
+                    lock (listener)
+                        listener.WriteLine (string.Format ("Connection failed: {0} - {1} - {2}", e.Peer.ConnectionUri, e.Reason, e.Peer.AllowedEncryption));
+                };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate(object o, PieceHashedEventArgs e) {
                     lock (listener)
