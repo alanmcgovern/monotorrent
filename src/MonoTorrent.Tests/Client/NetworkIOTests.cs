@@ -29,7 +29,7 @@
 
 using System;
 using System.Threading.Tasks;
-
+using MonoTorrent.Client.RateLimiters;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -53,6 +53,33 @@ namespace MonoTorrent.Client
         public void Teardown ()
         {
             pair.Dispose ();
+        }
+
+        [Test]
+        public async Task ReceiveData_RateLimited ()
+        {
+            // Allow 1 megabyte worth of data
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiter ();
+            limiter.UpdateChunks (oneMegabyte, oneMegabyte);
+
+            await Outgoing.SendAsync (new byte [oneMegabyte], 0, oneMegabyte);
+            await NetworkIO.ReceiveAsync (Incoming, new byte[oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            var expectedChunks = (int)Math.Ceiling (oneMegabyte / (double)NetworkIO.ChunkLength);
+            Assert.AreEqual (expectedChunks, Incoming.Receives.Count, "#1");
+        }
+
+        [Test]
+        public async Task ReceiveData_Unlimited ()
+        {
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiterGroup ();
+
+            await Outgoing.SendAsync (new byte [oneMegabyte], 0, oneMegabyte);
+            await NetworkIO.ReceiveAsync (Incoming, new byte[oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            Assert.AreEqual (1, Incoming.Receives.Count, "#1");
         }
 
         [Test]
@@ -127,6 +154,31 @@ namespace MonoTorrent.Client
         public async Task SendData ()
         {
             await DoSend (false, false);
+        }
+
+        [Test]
+        public async Task SendData_RateLimited ()
+        {
+            // Allow 1 megabyte worth of data
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiter ();
+            limiter.UpdateChunks (oneMegabyte, oneMegabyte);
+
+            await NetworkIO.SendAsync (Incoming, new byte [oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            var expectedChunks = (int)Math.Ceiling (oneMegabyte / (double)NetworkIO.ChunkLength);
+            Assert.AreEqual (expectedChunks, Incoming.Sends.Count, "#1");
+        }
+
+        [Test]
+        public async Task SendData_Unlimited ()
+        {
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiterGroup ();
+
+            await NetworkIO.SendAsync (Incoming, new byte [oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            Assert.AreEqual (1, Incoming.Sends.Count, "#1");
         }
 
         async Task DoSend (bool slowOutgoing, bool slowIncoming)
