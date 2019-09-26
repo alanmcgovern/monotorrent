@@ -38,13 +38,33 @@ namespace MonoTorrent.Client.Modes
         CancellationTokenSource Cancellation { get; }
 
         public override bool CanHashCheck => false;
-        public override TorrentState State => TorrentState.Hashing;
+
+        bool Paused { get; set; }
+        TaskCompletionSource<object> PausedCompletionSource { get; set; }
+
+        public override TorrentState State => Paused ? TorrentState.HashingPaused : TorrentState.Hashing;
 
         public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
             CanAcceptConnections = false;
             Cancellation = new CancellationTokenSource();
+
+            // Mark it as completed so we are *not* paused by default;
+            PausedCompletionSource = new TaskCompletionSource<object> ();
+            PausedCompletionSource.TrySetResult (null);
+        }
+
+        public void Pause ()
+        {
+            PausedCompletionSource?.TrySetResult (null);
+            PausedCompletionSource = new TaskCompletionSource<object> ();
+            Cancellation.Token.Register (() => PausedCompletionSource.TrySetCanceled ());
+        }
+
+        public void Resume ()
+        {
+            PausedCompletionSource.TrySetResult (null);
         }
 
         public Task WaitForHashingToComplete ()
@@ -59,6 +79,10 @@ namespace MonoTorrent.Client.Modes
             try {
                 if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
                     for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+
+                        if (!PausedCompletionSource.Task.IsCompleted)
+                            await PausedCompletionSource.Task;
+
                         var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
 
                         if (token.IsCancellationRequested) {
@@ -70,6 +94,9 @@ namespace MonoTorrent.Client.Modes
                         Manager.OnPieceHashed (index, hashPassed);
                     }
                 } else {
+                    if (!PausedCompletionSource.Task.IsCompleted)
+                        await PausedCompletionSource.Task;
+
                     for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
                         Manager.OnPieceHashed(i, false);
                 }
