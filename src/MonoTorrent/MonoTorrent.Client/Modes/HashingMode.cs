@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,12 +58,17 @@ namespace MonoTorrent.Client.Modes
 
             Manager.HashFails = 0;
             try {
-                if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+                if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
                     for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
-                        var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
+                        if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
+                            Manager.Bitfield [index] = false;
+                            continue;
+                        }
+
+                        var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
 
                         if (token.IsCancellationRequested) {
-                            await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
+                            await DiskManager.CloseFilesAsync (Manager.Torrent);
                             token.ThrowIfCancellationRequested();
                         }
 
