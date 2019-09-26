@@ -134,6 +134,8 @@ namespace MonoTorrent.Client
 			}
         }
 
+        internal BitField UnhashedPieces { get; set; }
+
         internal int PeerReviewRoundsComplete
         {
             get
@@ -144,7 +146,6 @@ namespace MonoTorrent.Client
                     return 0;
             }
         }
-
 
         public bool HashChecked { get; internal set; }
 
@@ -331,6 +332,7 @@ namespace MonoTorrent.Client
         void Initialise(string savePath, string baseDirectory, IList<RawTrackerTier> announces)
         {
             this.Bitfield = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
+            this.UnhashedPieces = new BitField(HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
             this.SavePath = Path.Combine(savePath, baseDirectory);
             this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
@@ -372,8 +374,7 @@ namespace MonoTorrent.Client
         internal void ChangePicker(PiecePicker picker)
         {
             Check.Picker(picker);
-
-           PieceManager.ChangePicker(picker, Bitfield, Torrent);
+            PieceManager.ChangePicker(new IgnoringPicker (UnhashedPieces, picker), Bitfield, Torrent);
         }
 
         /// <summary>
@@ -461,6 +462,11 @@ namespace MonoTorrent.Client
 
             CheckRegisteredAndDisposed();
             StartTime = DateTime.Now;
+
+            // An IgnoringPicker is created to ensure pieces which *have not* been hash checked
+            // are not requested from other peers. The intention is that files marked as DoNotDownload
+            // will not be hashed, or downloaded.
+            UnhashedPieces.SetAll (true);
 
             var hashingMode = new HashingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             Mode = hashingMode;
@@ -678,6 +684,9 @@ namespace MonoTorrent.Client
         internal void OnPieceHashed(int index, bool hashPassed)
         {
             Bitfield[index] = hashPassed;
+            // The PiecePickers will no longer ignore this piece as it has now been hash checked.
+            UnhashedPieces[index] = false;
+
             TorrentFile[] files = this.Torrent.Files;
             
             for (int i = 0; i < files.Length; i++)
@@ -738,6 +747,7 @@ namespace MonoTorrent.Client
             picker = new RandomisedPicker(picker);
             picker = new RarestFirstPicker(picker);
             picker = new PriorityPicker(picker);
+
             return picker;
         }
 

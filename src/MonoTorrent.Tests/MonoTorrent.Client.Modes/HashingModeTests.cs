@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
@@ -121,6 +123,46 @@ namespace MonoTorrent.Client.Modes
             mode.Resume ();
             Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
             Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
+        }
+
+        public async Task DoNotDownload_All ()
+        {
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files) {
+                PieceWriter.FilesThatExist.Add (f);
+                f.Priority = Priority.DoNotDownload;
+            }
+
+            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = hashingMode;
+            await hashingMode.WaitForHashingToComplete ();
+
+            // No piece should be marked as available, and no pieces should actually be hashchecked.
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#1");
+            Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#2");
+        }
+
+        [Test]
+        public async Task DoNotDownload_OneFile ()
+        {
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files.Skip (1)) {
+                PieceWriter.FilesThatExist.Add (f);
+                f.Priority = Priority.DoNotDownload;
+            }
+
+            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = hashingMode;
+            await hashingMode.WaitForHashingToComplete ();
+
+            // No piece should be marked as available
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#1");
+
+            // Only one piece should actually have been hash checked.
+            Assert.AreEqual (1, Manager.UnhashedPieces.Length - Manager.UnhashedPieces.TrueCount, "#2");
+            Assert.IsFalse (Manager.UnhashedPieces[0], "#3");
         }
 
         [Test]

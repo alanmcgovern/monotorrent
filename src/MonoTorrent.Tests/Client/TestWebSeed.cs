@@ -86,6 +86,7 @@ namespace MonoTorrent.Client
 
             connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
+            rig.Manager.UnhashedPieces.SetAll (false);
 
             id = new PeerId(new Peer("this is my id", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
             id.IsChoking = false;
@@ -332,6 +333,7 @@ namespace MonoTorrent.Client
             string url = rig.Torrent.GetRightHttpSeeds[0];
             connection = new HttpConnection(new Uri (url));
             connection.Manager = rig.Manager;
+            rig.Manager.UnhashedPieces.SetAll (false);
 
             id = new PeerId(new Peer("this is my id", connection.Uri), id.Connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
             id.IsChoking = false;
