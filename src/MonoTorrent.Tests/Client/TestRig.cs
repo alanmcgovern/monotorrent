@@ -154,6 +154,9 @@ namespace MonoTorrent.Client
         public bool SlowConnection { get; set; }
         public Uri Uri => new Uri("ipv4://127.0.0.1:1234");
 
+        public List<int> Receives { get; } = new List<int> ();
+        public List<int> Sends { get; } = new List<int> ();
+
         Stream ReadStream { get; }
         Stream WriteStream { get; }
 
@@ -180,6 +183,7 @@ namespace MonoTorrent.Client
                 count = Math.Min(88, count);
 
             var result = await ReadStream.ReadAsync (buffer, offset, count, CancellationToken.None);
+            Receives.Add (result);
             return ManualBytesReceived ?? result;
         }
 
@@ -189,6 +193,7 @@ namespace MonoTorrent.Client
                 count = Math.Min(88, count);
 
             await WriteStream.WriteAsync(buffer, offset, count, CancellationToken.None);
+            Sends.Add (count);
             return ManualBytesSent ?? count;
         }
 
