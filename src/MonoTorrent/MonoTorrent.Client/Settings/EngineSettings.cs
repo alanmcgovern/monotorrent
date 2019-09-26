@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
         /// allows <see cref="EncryptionTypes.RC4Full"/> or <see cref="EncryptionTypes.RC4Header"/> then an encrypted connection
         /// will be used by default for new outgoing connections. Defaults to <see langword="true" />.
         /// </summary>
-        public bool PreferEncryption { get; set; }
+        public bool PreferEncryption { get; set; } = true;
 
         /// <summary>
         /// This is the path where the .torrent metadata will be saved when magnet links are used to start a download.
