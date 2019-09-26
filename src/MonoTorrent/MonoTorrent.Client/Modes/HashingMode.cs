@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -80,15 +81,19 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
             Manager.HashFails = 0;
-            if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+            if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+                    if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
+                        Manager.Bitfield [index] = false;
+                        continue;
+                    }
 
                     await PausedCompletionSource.Task;
 
-                    var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
+                    var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
 
                     if (token.IsCancellationRequested) {
-                        await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
+                        await DiskManager.CloseFilesAsync (Manager.Torrent);
                         token.ThrowIfCancellationRequested();
                     }
 
