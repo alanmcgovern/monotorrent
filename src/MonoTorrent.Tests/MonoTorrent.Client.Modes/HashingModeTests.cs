@@ -88,6 +88,24 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task PauseResumeHashingMode ()
+        {
+            var pieceHashed = new TaskCompletionSource<object> ();
+            Manager.PieceHashed += (o, e) => pieceHashed.TrySetResult (null);
+
+            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.Pause ();
+
+            var hashingTask = mode.WaitForHashingToComplete ();
+            await Task.Delay (50);
+            Assert.IsFalse (pieceHashed.Task.IsCompleted, "#1");
+
+            mode.Resume ();
+            Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
+        }
+
+        [Test]
         public async Task ReadZeroFromDisk ()
         {
             PieceWriter.FilesThatExist.AddRange(new[]{

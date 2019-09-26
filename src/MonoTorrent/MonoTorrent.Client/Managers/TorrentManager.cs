@@ -521,15 +521,13 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
             CheckRegisteredAndDisposed();
-            if (State != TorrentState.Downloading && State != TorrentState.Seeding)
-                return;
 
-            // By setting the state to "paused", peers will not be dequeued from the either the
-            // sending or receiving queues, so no traffic will be allowed.
-            Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-            this.SaveFastResume();
+            if (Mode is HashingMode hashing) {
+                hashing.Pause ();
+            } else if (State == TorrentState.Downloading && State == TorrentState.Seeding) {
+                Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            }
         }
-
 
         /// <summary>
         /// Starts the TorrentManager
@@ -548,6 +546,8 @@ namespace MonoTorrent.Client
             // make sure the peers begin sending/receiving again
             if (State == TorrentState.Paused) {
                 Mode = new DownloadMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            } else if (Mode is HashingMode hashing) {
+                hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
                 Mode = new MetadataMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
