@@ -193,6 +193,11 @@ namespace MonoTorrent.Dht
 
         async void InitializeAsync (byte[] initialNodes)
         {
+            if (initialNodes == null)
+            {
+                initialNodes = Array.Empty<byte>();
+            }
+
             var initTask = new InitialiseTask(this, Node.FromCompactNode (initialNodes));
             await initTask.ExecuteAsync ();
             RaiseStateChanged(DhtState.Ready);
