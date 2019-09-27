@@ -88,6 +88,22 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public void CancelHashing ()
+        {
+            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.Pause ();
+
+            var hashingTask = mode.WaitForHashingToComplete ();
+            var stoppedMode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = stoppedMode;
+
+            // Ensure the hashing mode ends and does not throw exceptions.
+            Assert.ThrowsAsync<TaskCanceledException> (() => hashingTask, "#1");
+            Assert.AreSame (stoppedMode, Manager.Mode, "#2");
+        }
+
+        [Test]
         public async Task PauseResumeHashingMode ()
         {
             var pieceHashed = new TaskCompletionSource<object> ();
@@ -134,6 +150,20 @@ namespace MonoTorrent.Client.Modes
             Assert.IsTrue(Manager.Bitfield.AllFalse, "#3");
             foreach (TorrentFile file in Manager.Torrent.Files)
                 Assert.IsTrue (file.BitField.AllFalse, "#4." + file.Path);
+        }
+
+        [Test]
+        public async Task StopWhileHashing ()
+        {
+            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.Pause ();
+
+            var hashingTask = mode.WaitForHashingToComplete ();
+            await Manager.StopAsync ();
+
+            Assert.ThrowsAsync<TaskCanceledException> (() => hashingTask, "#1");
+            Assert.AreEqual (Manager.State, TorrentState.Stopped, "#2");
         }
     }
 }

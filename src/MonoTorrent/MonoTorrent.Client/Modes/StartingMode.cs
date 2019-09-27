@@ -72,6 +72,12 @@ namespace MonoTorrent.Client.Modes
                     await Manager.HashCheckAsync(false, false);
             }
 
+            if (!Manager.HashChecked) {
+                if (Manager.Mode == this)
+                    Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+                return;
+            }
+
             SendAnnounces ();
 
             if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
