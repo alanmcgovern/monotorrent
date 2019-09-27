@@ -553,7 +553,9 @@ namespace MonoTorrent.Client
                 Mode = new MetadataMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
             } else {
                 StartTime = DateTime.Now;
-                Mode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = startingMode;
+                _ = startingMode.WaitForStartingToComplete ();
             }
         }
 

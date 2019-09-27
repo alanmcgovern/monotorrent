@@ -39,10 +39,9 @@ namespace MonoTorrent.Client.Modes
 
         public override bool CanHashCheck => false;
 
-        bool Paused { get; set; }
         TaskCompletionSource<object> PausedCompletionSource { get; set; }
 
-        public override TorrentState State => Paused ? TorrentState.HashingPaused : TorrentState.Hashing;
+        public override TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
 
         public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
@@ -57,14 +56,22 @@ namespace MonoTorrent.Client.Modes
 
         public void Pause ()
         {
+            if (State == TorrentState.HashingPaused)
+                return;
+
             PausedCompletionSource?.TrySetResult (null);
             PausedCompletionSource = new TaskCompletionSource<object> ();
             Cancellation.Token.Register (() => PausedCompletionSource.TrySetCanceled ());
+            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Hashing, State));
         }
 
         public void Resume ()
         {
+            if (State == TorrentState.Hashing)
+                return;
+
             PausedCompletionSource.TrySetResult (null);
+            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.HashingPaused, State));
         }
 
         public Task WaitForHashingToComplete ()
