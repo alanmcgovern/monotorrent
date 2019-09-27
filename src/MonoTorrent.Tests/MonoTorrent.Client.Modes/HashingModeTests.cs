@@ -96,6 +96,7 @@ namespace MonoTorrent.Client.Modes
             var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
             mode.Pause ();
+            Assert.AreEqual (TorrentState.HashingPaused, mode.State, "#a");
 
             var hashingTask = mode.WaitForHashingToComplete ();
             await Task.Delay (50);
@@ -103,6 +104,7 @@ namespace MonoTorrent.Client.Modes
 
             mode.Resume ();
             Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
+            Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
         }
 
         [Test]
