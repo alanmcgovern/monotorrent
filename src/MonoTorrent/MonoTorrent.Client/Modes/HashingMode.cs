@@ -83,32 +83,26 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
             Manager.HashFails = 0;
-            try {
-                if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
-                    for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+            if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+                for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
 
-                        if (!PausedCompletionSource.Task.IsCompleted)
-                            await PausedCompletionSource.Task;
+                    await PausedCompletionSource.Task;
 
-                        var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
+                    var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
 
-                        if (token.IsCancellationRequested) {
-                            await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
-                            token.ThrowIfCancellationRequested();
-                        }
-
-                        var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
-                        Manager.OnPieceHashed (index, hashPassed);
+                    if (token.IsCancellationRequested) {
+                        await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
+                        token.ThrowIfCancellationRequested();
                     }
-                } else {
-                    if (!PausedCompletionSource.Task.IsCompleted)
-                        await PausedCompletionSource.Task;
 
-                    for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                        Manager.OnPieceHashed(i, false);
+                    var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
+                    Manager.OnPieceHashed (index, hashPassed);
                 }
-            } catch (Exception ex) {
-                Manager.TrySetError (Reason.ReadFailure, ex);
+            } else {
+                await PausedCompletionSource.Task;
+
+                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                    Manager.OnPieceHashed(i, false);
             }
         }
 

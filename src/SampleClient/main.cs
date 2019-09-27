@@ -37,10 +37,10 @@ namespace SampleClient
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
             // or an unhandled exception happens
-            Console.CancelKeyPress += delegate { shutdown().Wait(); };
-            AppDomain.CurrentDomain.ProcessExit += delegate { shutdown().Wait(); };
-            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown().Wait(); };
-            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown().Wait(); };
+            Console.CancelKeyPress += delegate { Shutdown().Wait(); };
+            AppDomain.CurrentDomain.ProcessExit += delegate { Shutdown().Wait(); };
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); Shutdown().Wait(); };
+            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); Shutdown().Wait(); };
 
             StartEngine().Wait();
         }
@@ -234,7 +234,7 @@ namespace SampleClient
                     listener.ExportTo(Console.Out);
                 }
 
-                System.Threading.Thread.Sleep(500);
+                Thread.Sleep(500);
             }
         }
 
@@ -250,28 +250,31 @@ namespace SampleClient
             AppendFormat(sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
             AppendFormat(sb, "", null);
         }
-		private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
-		{
+
+        private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
+        {
             if (formatting != null)
                 sb.AppendFormat(str, formatting);
             else
                 sb.Append(str);
-			sb.AppendLine();
-		}
+            sb.AppendLine();
+        }
 
-		private static async Task shutdown()
+		private static async Task Shutdown()
 		{
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
             {
-                await torrents[i].StopAsync(); ;
+                var stoppingTask = torrents[i].StopAsync();
                 while (torrents[i].State != TorrentState.Stopped)
                 {
                     Console.WriteLine("{0} is {1}", torrents[i].Torrent.Name, torrents[i].State);
                     Thread.Sleep(250);
                 }
+                await stoppingTask;
 
-                fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
+                if (torrents[i].HashChecked)
+                    fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
             }
 
             var nodes = await engine.DhtEngine.SaveNodesAsync ();
