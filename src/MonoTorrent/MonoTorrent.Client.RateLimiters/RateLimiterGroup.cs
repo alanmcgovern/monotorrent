@@ -75,12 +75,6 @@ namespace MonoTorrent.Client.RateLimiters
             return true;
         }
 
-        public void UpdateChunks (long maxRate, long actualRate)
-        {
-            for (int i = 0; i < limiters.Count; i++)
-                limiters [i].UpdateChunks (maxRate, actualRate);
-        }
-
         public IEnumerator<IRateLimiter> GetEnumerator()
         {
             return limiters.GetEnumerator();

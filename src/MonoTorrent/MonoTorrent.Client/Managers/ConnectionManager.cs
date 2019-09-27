@@ -216,7 +216,7 @@ namespace MonoTorrent.Client
                 else
                     id.ProcessingQueue = false;
 
-                ReceiveMessagesAsync(id.Connection, id.Decryptor, manager.DownloadLimiter, id.Monitor, manager, id);
+                ReceiveMessagesAsync(id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
 
                 id.WhenConnected.Restart ();
                 id.LastBlockReceived.Restart ();
@@ -334,7 +334,7 @@ namespace MonoTorrent.Client
                 manager.HandlePeerConnected(id);
 
                 // We've sent our handshake so begin our looping to receive incoming message
-                ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiter, id.Monitor, manager, id);
+                ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
             }
             catch
             {
@@ -361,7 +361,7 @@ namespace MonoTorrent.Client
                         id.PiecesSent++;
                     }
 
-                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiter, id.Monitor, manager.Monitor);
+                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor);
                     if (msg is PieceMessage)
                         id.IsRequestingPiecesCount--;
 

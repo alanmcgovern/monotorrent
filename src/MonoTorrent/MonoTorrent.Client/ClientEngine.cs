@@ -83,8 +83,11 @@ namespace MonoTorrent.Client
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private int tickCount;
         private List<TorrentManager> torrents;
-        private IRateLimiter uploadLimiter;
-        private IRateLimiter downloadLimiter;
+
+        private RateLimiter uploadLimiter;
+        private RateLimiterGroup uploadLimiters;
+        private RateLimiter downloadLimiter;
+        private RateLimiterGroup downloadLimiters;
 
         #endregion
 
@@ -180,11 +183,16 @@ namespace MonoTorrent.Client
                 return !Disposed;
             });
 
-            downloadLimiter = new RateLimiterGroup {
+            downloadLimiter = new RateLimiter ();
+            downloadLimiters = new RateLimiterGroup {
                 new DiskWriterLimiter(DiskManager),
-                new RateLimiter()
+                downloadLimiter,
             };
+
             uploadLimiter = new RateLimiter();
+            uploadLimiters = new RateLimiterGroup {
+                uploadLimiter
+            };
 
             listenManager.Register(listener);
 
@@ -294,8 +302,8 @@ namespace MonoTorrent.Client
             ConnectionManager.Add (manager);
 
             manager.Engine = this;
-            manager.DownloadLimiter.Add(downloadLimiter);
-            manager.UploadLimiter.Add(uploadLimiter);
+            manager.DownloadLimiters.Add(downloadLimiters);
+            manager.UploadLimiters.Add(uploadLimiters);
             if (DhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && DhtEngine.State != DhtState.Ready)
             {
                 try
@@ -421,8 +429,8 @@ namespace MonoTorrent.Client
             ConnectionManager.Remove(manager);
 
             manager.Engine = null;
-            manager.DownloadLimiter.Remove(downloadLimiter);
-            manager.UploadLimiter.Remove(uploadLimiter);
+            manager.DownloadLimiters.Remove(downloadLimiters);
+            manager.UploadLimiters.Remove(uploadLimiters);
         }
 
         #endregion

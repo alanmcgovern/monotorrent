@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
             id.ClientApp = new Software(message.PeerId);
 
             message = new HandshakeMessage(man.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
-            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, man.UploadLimiter, id.Monitor, man.Monitor);
+            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, man.UploadLimiters, id.Monitor, man.Monitor);
             Engine.ConnectionManager.IncomingConnectionAccepted (man, id);
             return true;
         }

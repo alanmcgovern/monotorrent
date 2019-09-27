@@ -33,6 +33,5 @@ namespace MonoTorrent.Client.RateLimiters
     {
         bool TryProcess(long amount);
         bool Unlimited { get; }
-        void UpdateChunks (long maxRate, long actualRate);
     }
 }

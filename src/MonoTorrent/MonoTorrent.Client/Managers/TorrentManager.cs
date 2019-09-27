@@ -112,7 +112,9 @@ namespace MonoTorrent.Client
 
         public bool Complete => this.Bitfield.AllTrue;
 
-        internal RateLimiterGroup DownloadLimiter { get; private set; }
+        RateLimiter DownloadLimiter { get; set; }
+
+        internal RateLimiterGroup DownloadLimiters { get; private set; }
 
         public ClientEngine Engine { get; internal set; }
 
@@ -241,7 +243,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public int UploadingTo { get; internal set; }
 
-        internal RateLimiterGroup UploadLimiter { get; private set; }
+        RateLimiter UploadLimiter { get; set; }
+
+        internal RateLimiterGroup UploadLimiters { get; private set; }
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
@@ -347,15 +351,17 @@ namespace MonoTorrent.Client
 
         void CreateRateLimiters()
         {
-            RateLimiter downloader = new RateLimiter();
-            DownloadLimiter = new RateLimiterGroup();
-            DownloadLimiter.Add(new PauseLimiter(this));
-            DownloadLimiter.Add(downloader);
+            DownloadLimiter = new RateLimiter();
+            DownloadLimiters = new RateLimiterGroup {
+                new PauseLimiter(this),
+                DownloadLimiter
+            };
 
-            RateLimiter uploader = new RateLimiter();
-            UploadLimiter = new RateLimiterGroup();
-            UploadLimiter.Add(new PauseLimiter(this));
-            UploadLimiter.Add(uploader);
+            UploadLimiter = new RateLimiter();
+            UploadLimiters = new RateLimiterGroup {
+                new PauseLimiter(this),
+                UploadLimiter
+            };
         }
 
         #endregion
