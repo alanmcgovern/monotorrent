@@ -28,7 +28,6 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -66,8 +65,10 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
-                ProcessingQueue = true
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (true)) {
+                ProcessingQueue = true,
+                IsChoking = false,
+                AmInterested = true,
             };
         }
 
@@ -125,6 +126,7 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
         }
 
+        [Test]
         public async Task DoNotDownload_All ()
         {
             Manager.Bitfield.SetAll (true);
@@ -138,9 +140,47 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = hashingMode;
             await hashingMode.WaitForHashingToComplete ();
 
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1");
+
             // No piece should be marked as available, and no pieces should actually be hashchecked.
-            Assert.IsTrue (Manager.Bitfield.AllFalse, "#1");
-            Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#2");
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#2");
+            Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#3");
+        }
+
+        [Test]
+        public async Task DoNotDownload_ThenDownload ()
+        {
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files) {
+                PieceWriter.FilesThatExist.Add (f);
+                f.Priority = Priority.DoNotDownload;
+            }
+
+            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = hashingMode;
+            await hashingMode.WaitForHashingToComplete ();
+            Assert.IsTrue (Manager.UnhashedPieces.AllTrue, "#1");
+
+            // Nothing should be available to download.
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1b");
+
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            foreach (var file in Manager.Torrent.Files) {
+                file.Priority = Priority.Normal;
+                await Manager.Mode.TryHashPendingFilesAsync ();
+                for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i ++)
+                    Assert.IsFalse (Manager.UnhashedPieces [i], "#2." + i);
+            }
+
+            // No piece should be marked as available, and no pieces should actually be hashchecked.
+            Assert.IsTrue (Manager.UnhashedPieces.AllFalse, "#3");
+
+            // These pieces should now be available for download
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreNotEqual (0, Peer.AmRequestingPiecesCount, "#4");
         }
 
         [Test]
@@ -163,6 +203,9 @@ namespace MonoTorrent.Client.Modes
             // Only one piece should actually have been hash checked.
             Assert.AreEqual (1, Manager.UnhashedPieces.Length - Manager.UnhashedPieces.TrueCount, "#2");
             Assert.IsFalse (Manager.UnhashedPieces[0], "#3");
+
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreNotEqual (0, Peer.AmRequestingPiecesCount, "#4");
         }
 
         [Test]

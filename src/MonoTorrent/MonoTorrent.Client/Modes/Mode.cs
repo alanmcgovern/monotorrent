@@ -26,6 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -41,6 +42,7 @@ namespace MonoTorrent.Client.Modes
 {
     abstract class Mode
     {
+        bool hashingPendingFiles;
 
         protected CancellationTokenSource Cancellation { get; }
         protected ConnectionManager ConnectionManager { get; }
@@ -515,6 +517,10 @@ namespace MonoTorrent.Client.Modes
         {
             PeerId id;
 
+            // If any files were changed from DoNotDownload -> Any other priority, then we should hash them if they
+            // had been skipped in the original hashcheck.
+            _ = TryHashPendingFilesAsync ();
+
             if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.AnnounceInternal)) {
                 _ = Manager.LocalPeerAnnounceAsync ();
             }
@@ -684,6 +690,31 @@ namespace MonoTorrent.Client.Modes
             {
                 id.AmInterested = false;
                 id.Enqueue(new NotInterestedMessage());
+            }
+        }
+
+        internal async Task TryHashPendingFilesAsync ()
+        {
+            if (hashingPendingFiles || !Manager.HasMetadata)
+                return;
+
+            // FIXME: Handle errors from DiskManager and also handle cancellation if the Mode is replaced.
+            hashingPendingFiles = true;
+            try {
+                foreach (var file in Manager.Torrent.Files) {
+                    // If the start piece *and* end piece have been hashed, then every piece in between must've been hashed!
+                    if (file.Priority != Priority.DoNotDownload && (Manager.UnhashedPieces[file.StartPieceIndex] || Manager.UnhashedPieces[file.EndPieceIndex])) {
+                        for (int index = file.StartPieceIndex; index <= file.EndPieceIndex; index ++) {
+                            if (Manager.UnhashedPieces [index]) {
+                                var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
+                                var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
+                                Manager.OnPieceHashed (index, hashPassed);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                hashingPendingFiles = false;
             }
         }
 
