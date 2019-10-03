@@ -134,6 +134,11 @@ namespace MonoTorrent.Client
 			}
         }
 
+        /// <summary>
+        /// If <see cref="TorrentFile.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
+        /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
+        /// to ensure pieces which have not been hash checked are never downloaded.
+        /// </summary>
         internal BitField UnhashedPieces { get; set; }
 
         internal int PeerReviewRoundsComplete
@@ -762,6 +767,7 @@ namespace MonoTorrent.Client
 
             for (int i = 0; i < Torrent.Pieces.Count; i++)
                 OnPieceHashed (i, data.Bitfield[i]);
+            UnhashedPieces.From (data.UnhashedPieces);
 
             this.HashChecked = true;
         }
@@ -771,7 +777,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
-            return new FastResume(InfoHash, this.Bitfield);
+            return new FastResume(InfoHash, Bitfield, UnhashedPieces);
         }
 
         internal void SetTrackerManager (ITrackerManager manager)
