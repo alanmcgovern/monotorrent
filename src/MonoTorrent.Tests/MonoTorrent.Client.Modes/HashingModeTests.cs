@@ -127,6 +127,21 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public void SaveLoadFastResume ()
+        {
+            Manager.Bitfield.SetAll (true).Set (0, false);
+            Manager.UnhashedPieces.SetAll (false).Set (0, true);
+            Manager.HashChecked = true;
+
+            var origUnhashed = Manager.UnhashedPieces.Clone ();
+            var origBitfield = Manager.Bitfield.Clone ();
+            Manager.LoadFastResume (Manager.SaveFastResume ());
+
+            Assert.AreEqual (origUnhashed, Manager.UnhashedPieces, "#3");
+            Assert.AreEqual (origBitfield, Manager.Bitfield, "#4");
+        }
+
+        [Test]
         public async Task DoNotDownload_All ()
         {
             Manager.Bitfield.SetAll (true);
@@ -222,7 +237,7 @@ namespace MonoTorrent.Client.Modes
             });
 
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf));
+            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)

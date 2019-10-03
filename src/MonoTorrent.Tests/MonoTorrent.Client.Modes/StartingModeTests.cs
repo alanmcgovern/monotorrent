@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.Modes
         public async Task FastResume_NoneExist()
         {
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf));
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Torrent.Files [2],
             });
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf));
+            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)
