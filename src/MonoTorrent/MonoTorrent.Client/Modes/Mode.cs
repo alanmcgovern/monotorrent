@@ -709,6 +709,9 @@ namespace MonoTorrent.Client.Modes
                                 var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
                                 var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
                                 Manager.OnPieceHashed (index, hashPassed);
+
+                                if (hashPassed)
+                                    Manager.finishedPieces.Enqueue(new HaveMessage (index));
                             }
                         }
                     }

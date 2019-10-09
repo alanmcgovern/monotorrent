@@ -166,6 +166,12 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task DoNotDownload_ThenDownload ()
         {
+            DiskManager.GetHashAsyncOverride = (manager, index) => {
+                if (index >= 0 && index <= 4)
+                    return Manager.Torrent.Pieces.ReadHash (index);
+
+                return Enumerable.Repeat ((byte)255, 20).ToArray ();
+            };
             Manager.Bitfield.SetAll (true);
 
             foreach (var f in Manager.Torrent.Files) {
@@ -196,6 +202,8 @@ namespace MonoTorrent.Client.Modes
             // These pieces should now be available for download
             Manager.PieceManager.AddPieceRequests (Peer);
             Assert.AreNotEqual (0, Peer.AmRequestingPiecesCount, "#4");
+
+            Assert.AreEqual (5, Manager.finishedPieces.Count, "#5");
         }
 
         [Test]

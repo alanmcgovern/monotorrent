@@ -213,8 +213,13 @@ namespace MonoTorrent.Client
             return false;
         }
 
+        internal Func<ITorrentData, int, byte[]> GetHashAsyncOverride;
+
         internal async Task<byte[]> GetHashAsync(ITorrentData manager, int pieceIndex)
         {
+            if (GetHashAsyncOverride != null)
+                return GetHashAsyncOverride (manager, pieceIndex);
+
             await IOLoop;
 
             if (IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash)) {
