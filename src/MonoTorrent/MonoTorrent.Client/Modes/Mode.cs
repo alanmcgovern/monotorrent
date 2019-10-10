@@ -28,19 +28,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Modes
 {
     abstract class Mode
     {
 
+        protected CancellationTokenSource Cancellation { get; }
         protected ConnectionManager ConnectionManager { get; }
         protected DiskManager DiskManager { get; }
         protected TorrentManager Manager { get; }
@@ -49,6 +51,7 @@ namespace MonoTorrent.Client.Modes
 
         protected Mode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
         {
+            Cancellation = new CancellationTokenSource ();
             CanAcceptConnections = true;
             ConnectionManager = connectionManager;
             DiskManager = diskManager;
@@ -713,9 +716,9 @@ namespace MonoTorrent.Client.Modes
             Manager.finishedPieces.Clear();
         }
 
-        public virtual void Dispose ()
+        public void Dispose ()
         {
-            // There's nothing to cancel when this mode ends.
+            Cancellation.Cancel ();
         }
     }
 }
