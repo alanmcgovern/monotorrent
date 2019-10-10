@@ -72,10 +72,7 @@ namespace MonoTorrent.Client.Modes
             Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.HashingPaused, State));
         }
 
-        public Task WaitForHashingToComplete ()
-            => WaitForHashingToComplete (Cancellation.Token);
-
-        async Task WaitForHashingToComplete (CancellationToken token)
+        public async Task WaitForHashingToComplete ()
         {
             if (!Manager.HasMetadata)
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
@@ -92,9 +89,9 @@ namespace MonoTorrent.Client.Modes
 
                     var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
 
-                    if (token.IsCancellationRequested) {
+                    if (Cancellation.Token.IsCancellationRequested) {
                         await DiskManager.CloseFilesAsync (Manager.Torrent);
-                        token.ThrowIfCancellationRequested();
+                        Cancellation.Token.ThrowIfCancellationRequested();
                     }
 
                     var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
