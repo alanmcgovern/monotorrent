@@ -35,8 +35,6 @@ namespace MonoTorrent.Client.Modes
 {
     class HashingMode : Mode
     {
-        CancellationTokenSource Cancellation { get; }
-
         public override bool CanHashCheck => false;
 
         TaskCompletionSource<object> PausedCompletionSource { get; set; }
@@ -47,7 +45,6 @@ namespace MonoTorrent.Client.Modes
             : base (manager, diskManager, connectionManager, settings)
         {
             CanAcceptConnections = false;
-            Cancellation = new CancellationTokenSource();
 
             // Mark it as completed so we are *not* paused by default;
             PausedCompletionSource = new TaskCompletionSource<object> ();
@@ -110,8 +107,5 @@ namespace MonoTorrent.Client.Modes
         {
             // Do not run any of the default 'Tick' logic as nothing happens during 'Hashing' mode, except for hashing.
         }
-
-        public override void Dispose ()
-            => Cancellation.Cancel ();
     }
 }
