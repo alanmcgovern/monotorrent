@@ -207,6 +207,31 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public void StopWhileHashingPendingFiles ()
+        {
+            var pieceHashCount = 0;
+            DiskManager.GetHashAsyncOverride = (manager, index) => {
+                pieceHashCount ++;
+                if (pieceHashCount == 3)
+                    Manager.StopAsync ().Wait ();
+
+                return Enumerable.Repeat ((byte)0, 20).ToArray ();
+            };
+
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files)
+                f.Priority = Priority.DoNotDownload;
+
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.Normal;
+
+            Assert.ThrowsAsync<TaskCanceledException> (() => Manager.Mode.TryHashPendingFilesAsync (), "#1");
+            Assert.AreEqual (3, pieceHashCount, "#2");
+        }
+
+        [Test]
         public async Task DoNotDownload_OneFile ()
         {
             Manager.Bitfield.SetAll (true);

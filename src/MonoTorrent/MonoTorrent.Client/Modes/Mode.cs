@@ -707,6 +707,8 @@ namespace MonoTorrent.Client.Modes
                         for (int index = file.StartPieceIndex; index <= file.EndPieceIndex; index ++) {
                             if (Manager.UnhashedPieces [index]) {
                                 var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
+                                Cancellation.Token.ThrowIfCancellationRequested ();
+
                                 var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
                                 Manager.OnPieceHashed (index, hashPassed);
 
