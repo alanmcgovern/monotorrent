@@ -104,12 +104,16 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public BitField Bitfield { get; internal set; }
+        public BitField Bitfield { get; internal set;  }
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
         public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate);
 
+        /// <summary>
+        /// Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
+        /// torrent will not be considered to be Complete until they are downloaded.
+        /// </summary>
         public bool Complete => this.Bitfield.AllTrue;
 
         RateLimiter DownloadLimiter { get; set; }
@@ -190,6 +194,8 @@ namespace MonoTorrent.Client
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
+        internal BitField PartialProgressSelector { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -207,9 +213,34 @@ namespace MonoTorrent.Client
         /// </summary>
         internal InactivePeerManager InactivePeerManager { get; private set; }
 
+        /// <summary>
+        /// The download progress in percent (0 -> 100.0) for the files whose priority
+        /// is not set to <see cref="Priority.DoNotDownload"/>. If every file is marked
+        /// as <see cref="Priority.DoNotDownload"/> then this returns 0. If no file is
+        /// marked as 'DoNotDownload' then this returns the same value as <see cref="Progress"/>.
+        /// </summary>
+        public double PartialProgress {
+            get {
+                if (!HasMetadata)
+                    return Progress;
+
+                if (PartialProgressSelector.TrueCount == 0)
+                    return 0;
+
+                // This is an optimisation so we can fastpath the Bitfield operations when
+                // all files are marked as downloadable.
+                if (PartialProgressSelector.TrueCount == Bitfield.Length)
+                    return Progress;
+
+                var totalTrue = Bitfield.CountTrue (PartialProgressSelector);
+                return (totalTrue  * 100.0) / PartialProgressSelector.TrueCount;
+            }
+        }
 
         /// <summary>
-        /// The current progress of the torrent in percent
+        /// The download progress in percent (0 -> 100.0). This includes all files, even
+        /// if they are marked as <see cref="Priority.DoNotDownload"/>. This will return
+        /// '100.0' when all files in the torrent have been downloaded.
         /// </summary>
         public double Progress => Bitfield.PercentComplete;
 
@@ -337,6 +368,7 @@ namespace MonoTorrent.Client
         void Initialise(string savePath, string baseDirectory, IList<RawTrackerTier> announces)
         {
             this.Bitfield = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
+            this.PartialProgressSelector = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
             this.UnhashedPieces = new BitField(HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
             this.SavePath = Path.Combine(savePath, baseDirectory);
             this.finishedPieces = new Queue<HaveMessage>();

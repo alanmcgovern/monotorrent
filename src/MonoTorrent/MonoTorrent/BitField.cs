@@ -30,6 +30,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace MonoTorrent
@@ -290,6 +291,17 @@ namespace MonoTorrent
                 yield return Get(i);
         }
 
+        internal int CountTrue (BitField selector)
+        {
+            if (selector.Length != Length)
+                throw new ArgumentException ("The selector should be the same length as this bitfield");
+
+            uint count = 0;
+            for (int i = 0; i < array.Length; i++)
+                count += CountBits ((uint) (array [i] & selector.array [i]));
+            return (int) count;
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
@@ -417,13 +429,16 @@ namespace MonoTorrent
             // Update the population count
             uint count = 0;
             for (int i = 0; i < array.Length; i++)
-            {
-                uint v = (uint)array[i];
-                v = v - ((v >> 1) & 0x55555555);
-                v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-                count += (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101)) >> 24;
-            }
+                count += CountBits ((uint)array[i]);
             trueCount = (int)count ;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint CountBits (uint v)
+        {
+            v = v - ((v >> 1) & 0x55555555);
+            v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+            return (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101)) >> 24;
         }
 
         void ZeroUnusedBits()
