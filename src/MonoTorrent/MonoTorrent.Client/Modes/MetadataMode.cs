@@ -208,6 +208,7 @@ namespace MonoTorrent.Client.Modes
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
             Manager.Bitfield = new BitField(Manager.Torrent.Pieces.Count);
+            Manager.PartialProgressSelector = new BitField (Manager.Torrent.Pieces.Count);
             Manager.UnhashedPieces = new BitField(Manager.Torrent.Pieces.Count).SetAll (true);
 
             Manager.ChangePicker(Manager.CreateStandardPicker());
