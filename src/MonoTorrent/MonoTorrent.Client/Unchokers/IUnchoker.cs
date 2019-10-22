@@ -31,8 +31,6 @@ namespace MonoTorrent.Client
 {
     interface IUnchoker
     {
-        void Choke(PeerId id);
         void UnchokeReview();
-        void Unchoke(PeerId id);
     }
 }
