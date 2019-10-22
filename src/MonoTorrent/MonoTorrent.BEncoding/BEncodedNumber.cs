@@ -58,7 +58,7 @@ namespace MonoTorrent.BEncoding
         /// <summary>
         /// Create a new BEncoded number with the given value
         /// </summary>
-        /// <param name="initialValue">The inital value of the BEncodedNumber</param>
+        /// <param name="value">The value of the BEncodedNumber</param>
         public BEncodedNumber(long value)
         {
             this.number = value;

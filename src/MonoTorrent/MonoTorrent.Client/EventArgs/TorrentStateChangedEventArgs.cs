@@ -47,6 +47,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Creates a new TorrentStateChangedEventArgs
         /// </summary>
+        /// <param name="manager">The <see cref="TorrentManager"/> whose state has changed.</param>
         /// <param name="oldState">The old state of the Torrent</param>
         /// <param name="newState">The new state of the Torrent</param>
         internal TorrentStateChangedEventArgs(TorrentManager manager, TorrentState oldState, TorrentState newState)

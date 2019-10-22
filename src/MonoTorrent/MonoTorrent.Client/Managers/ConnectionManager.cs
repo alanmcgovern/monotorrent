@@ -305,7 +305,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This method is called when the ClientEngine recieves a valid incoming connection
         /// </summary>
-        /// <param name="id">The peer which just connected</param>
+        /// <param name="manager">The torrent which the peer is associated with.</param>
+        /// <param name="id">The peer who just conencted</param>
         internal void IncomingConnectionAccepted(TorrentManager manager, PeerId id)
         {
             try
@@ -342,6 +343,10 @@ namespace MonoTorrent.Client
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="manager">The torrent which the peer is associated with.</param>
         /// <param name="id">The peer whose message queue you want to start processing</param>
         internal async void ProcessQueue(TorrentManager manager, PeerId id)
         {

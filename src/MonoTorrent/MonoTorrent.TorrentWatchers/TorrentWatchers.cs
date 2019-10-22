@@ -41,7 +41,6 @@ namespace MonoTorrent.TorrentWatcher
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="settings"></param>
         public TorrentWatchers()
         {
 

@@ -88,7 +88,8 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
-        /// <param name="manager">The TorrentManager to create the tracker connection for</param>
+        /// <param name="requestFactory">The factory used to create tracker requests. Typically a <see cref="TorrentManager"/> instance.</param>
+        /// <param name="announces">The list of tracker tiers</param>
         internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
         {
             RequestFactory = requestFactory;

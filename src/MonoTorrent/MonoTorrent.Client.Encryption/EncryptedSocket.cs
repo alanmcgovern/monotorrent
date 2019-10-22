@@ -336,6 +336,7 @@ namespace MonoTorrent.Client.Encryption
         /// Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
         /// </summary>
         /// <param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param>
+        /// <param name="replace">True if the existing Encryptor/Decryptor object should be replaced with a new instance</param>
         protected virtual int SelectCrypto(byte[] remoteCryptoBytes, bool replace)
         {
             CryptoSelect = new byte[remoteCryptoBytes.Length];

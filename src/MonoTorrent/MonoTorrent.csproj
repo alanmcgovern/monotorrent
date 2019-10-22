@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <LangVersion>7.2</LangVersion>
-    <NoWarn>$(NoWarn);1591;1572;1573;1570;1584</NoWarn>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
     <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
 

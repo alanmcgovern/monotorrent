@@ -41,8 +41,10 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// Creates a new choke/unchoke manager for a torrent manager
-        /// </summeary>
+        /// </summary>
         /// <param name="TorrentManager">The torrent manager this choke/unchoke manager belongs to</param>
+        /// <param name="MinimumTimeBetweenReviews"></param>
+        /// <param name="PercentOfMaxRateToSkipReview"></param>
         public ChokeUnchokeManager(TorrentManager TorrentManager, TimeSpan MinimumTimeBetweenReviews, int PercentOfMaxRateToSkipReview)
         {
             owningTorrent = TorrentManager;
@@ -459,7 +461,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Reallocates the specified number of upload slots
         /// </summary>
-        /// <param name="NumberOfSlots"></param>The number of slots we should reallocate
+        /// <param name="NumberOfSlots">The number of slots we should reallocate</param>
+        /// <param name="NumberOfUnchokedPeers">The number of peers which are currently unchoked.</param>
         private void ReallocateSlots(int NumberOfSlots, int NumberOfUnchokedPeers)
         {
             //First determine the maximum number of peers we can unchoke in this review = maximum of:
@@ -488,7 +491,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="NumberOfSlots"></param>The number of slots left to reallocate
         /// <param name="MaximumUnchokes"></param>The number of peers we can unchoke
-        /// <param name="Peer"></param>The peer to consider for reallocation
+        /// <param name="peer"></param>The peer to consider for reallocation
         private void ReallocateSlot(ref int NumberOfSlots, ref int MaximumUnchokes, PeerId peer)
         {
             if (!peer.AmChoking)

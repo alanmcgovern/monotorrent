@@ -230,9 +230,8 @@ namespace MonoTorrent.Tracker
         }
 
         /// <summary>
-        /// Returns the list of current active torrents
+        /// Returns a duplicate of the list of active torrents
         /// </summary>
-        /// <returns>List<SimpleTorrentManager></returns>
         public List<ITrackerItem> GetTrackerItems()
         {
             lock (Torrents)

@@ -69,7 +69,7 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// Raised whenever new peers are discovered and added. The object will be of type
-        /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded>"/>, <see cref="LocalPeersAdded"/>
+        /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded"/>, <see cref="LocalPeersAdded"/>
         /// or <see cref="DhtPeersAdded"/> depending on the source of the new peers.
         /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;

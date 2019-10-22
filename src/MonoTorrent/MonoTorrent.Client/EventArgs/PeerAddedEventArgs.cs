@@ -50,7 +50,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Creates a new PeersAddedEventArgs
         /// </summary>
-        /// <param name="peersAdded">The number of peers just added</param>
+        /// <param name="manager">The <see cref="TorrentManager"/> which the peer was added to.</param>
+        /// <param name="peerAdded">The peer which was added.</param>
         public PeerAddedEventArgs(TorrentManager manager, Peer peerAdded)
             : base(manager)
         {
