@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Executed each tick of the client engine
         /// </summary>
-        public void TimePassed()
+        public void UnchokeReview()
         {
             //Start by identifying:
             //  the choked and interested peers
@@ -578,46 +578,6 @@ namespace MonoTorrent.Client
         {
             //Unchoke all the peers in the supplied list
             PeerList.ForEach(Unchoke);
-        }
-
-        #endregion
-
-        #region Temporary stuff for logging
-
-        //FileStream logStream;
-        //StreamWriter logStreamWriter;
-        //bool isLogging = true;
-
-        //private void Send2Log(string LogEntry)
-        //{
-        //    if (isLogging)
-        //    {
-        //        if (logStream == null)
-        //        {
-        //            string logFileName = owningTorrent.Torrent.Name + ".ChokeUnchoke.Log";
-        //            logStream = new FileStream(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal),logFileName),FileMode.Append);
-        //            logStreamWriter = new StreamWriter(logStream, System.Text.Encoding.ASCII);
-        //            logStreamWriter.AutoFlush=true;
-        //        }
-        //        logStreamWriter.WriteLine(DateTime.Now.ToString() + ":" + LogEntry);
-        //    }
-        //}
-
-        //private string B2YN(bool Boolean)
-        //{
-        //    if (Boolean)
-        //        return "Y,";
-        //    else
-        //        return "N,";
-        //}
-
-        #endregion
-
-        #region IUnchoker Members
-
-        public void UnchokeReview()
-        {
-            this.TimePassed();
         }
 
         #endregion
