@@ -163,14 +163,14 @@ namespace MonoTorrent.Client
         public void ReadFail()
         {
             writer.read = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, 0, buffer, buffer.Length));
+            Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, 0, buffer, buffer.Length).AsTask ());
         }
 
         [Test]
         public void WriteFail()
         {
             writer.write = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync(data, 0, buffer, buffer.Length));
+            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync(data, 0, buffer, buffer.Length).AsTask ());
         }
     }
 }

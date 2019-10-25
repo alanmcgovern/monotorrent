@@ -27,9 +27,8 @@
 //
 
 
-using System.Threading.Tasks;
-
 using MonoTorrent.Client.Connections;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {

@@ -64,8 +64,8 @@ namespace MonoTorrent.Client
             await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
-            Assert.ThrowsAsync<ProtocolException> (() => receiveTask, "#1");
-            Assert.ThrowsAsync<Exception> (() => PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance), "#2");
+            Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
+            Assert.ThrowsAsync<Exception> (async () => await PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance), "#2");
         }
 
         [Test]
@@ -77,8 +77,8 @@ namespace MonoTorrent.Client
             await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
-            Assert.ThrowsAsync<ProtocolException> (() => receiveTask, "#1");
-            Assert.ThrowsAsync<Exception> (() => PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance), "#2");
+            Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
+            Assert.ThrowsAsync<Exception> (async () => await PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance), "#2");
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
             var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null);
             await NetworkIO.SendAsync(pair.Outgoing, data, 0, 20, null, null, null);
 
-            Assert.ThrowsAsync <ProtocolException> (() => task, "#1");
+            Assert.ThrowsAsync <ProtocolException> (async () => await task, "#1");
         }
 
         [Test]

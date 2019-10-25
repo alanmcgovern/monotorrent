@@ -36,6 +36,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
