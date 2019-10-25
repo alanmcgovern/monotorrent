@@ -41,6 +41,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Tracker;
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {

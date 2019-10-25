@@ -33,6 +33,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client.Connections
 {
     class SocketConnection : IConnection
@@ -99,6 +101,10 @@ namespace MonoTorrent.Client.Connections
 
         public bool IsIncoming { get; }
 
+        ReusableTaskCompletionSource<int> ReceiveTcs { get; }
+
+        ReusableTaskCompletionSource<int> SendTcs { get; }
+
         Socket Socket { get; set; }
 
         public Uri Uri { get; protected set; }
@@ -124,6 +130,8 @@ namespace MonoTorrent.Client.Connections
 
         SocketConnection (Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
+            ReceiveTcs = new ReusableTaskCompletionSource<int> ();
+            SendTcs = new ReusableTaskCompletionSource<int> ();
             Socket = socket;
             EndPoint = endpoint;
             IsIncoming = isIncoming;
@@ -133,7 +141,7 @@ namespace MonoTorrent.Client.Connections
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (TaskCompletionSource<int>)e.UserToken;
+            var tcs = (ReusableTaskCompletionSource<int>)e.UserToken;
             var error = e.SocketError;
             var transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
@@ -149,7 +157,6 @@ namespace MonoTorrent.Client.Connections
                 tcs.SetException(new SocketException((int) error));
             else
                 tcs.SetResult(transferred);
-
         }
 
         #endregion
@@ -157,48 +164,49 @@ namespace MonoTorrent.Client.Connections
 
         #region Async Methods
 
-        public Task ConnectAsync ()
+        public async Task ConnectAsync ()
         {
-            var tcs = new TaskCompletionSource<int>();
+            var tcs = new ReusableTaskCompletionSource<int> ();
             var args = GetSocketAsyncEventArgs (null);
             args.RemoteEndPoint = EndPoint;
             args.UserToken = tcs;
 
             if (!Socket.ConnectAsync(args))
-                return Task.FromResult(true);
-            return tcs.Task;
+                tcs.SetResult (0);
+
+            await tcs.Task;
         }
 
-        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
             if (Socket == null)
-                return FailedTask;
+                return await FailedTask;
 
-            var tcs = new TaskCompletionSource<int>();
             var args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
-            args.UserToken = tcs;
+            args.UserToken = ReceiveTcs;
 
             if (!Socket.ReceiveAsync(args))
-                tcs.SetResult (args.BytesTransferred);
-            return tcs.Task;
+                ReceiveTcs.SetResult (args.BytesTransferred);
+
+            return await ReceiveTcs.Task;
         }
 
-        public Task<int> SendAsync(byte[] buffer, int offset, int count)
+        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
             if (Socket == null)
-                return FailedTask;
+                return await FailedTask;
 
-            var tcs = new TaskCompletionSource<int>();
             var args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
-            args.UserToken = tcs;
+            args.UserToken = SendTcs;
 
             if (!Socket.SendAsync(args))
-                tcs.SetResult (args.BytesTransferred);
-            return tcs.Task;
+                SendTcs.SetResult (count);
+
+            return await SendTcs.Task;
         }
 
         public void Dispose()

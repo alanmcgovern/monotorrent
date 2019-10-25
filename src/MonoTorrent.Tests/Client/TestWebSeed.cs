@@ -37,8 +37,8 @@ using System.Threading.Tasks;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-
 using MonoTorrent.Client.PiecePicking;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -155,7 +155,8 @@ namespace MonoTorrent.Client
             var receiveTask = NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
             var task = Send (requests.Encode (), 0, requests.ByteLength);
 
-            await CompleteSendOrReceiveFirst(buffer, receiveTask.ContinueWith (t=> 4));
+            await receiveTask;
+            await CompleteSendOrReceiveFirst(buffer);
             await task;
         }
 
@@ -166,7 +167,8 @@ namespace MonoTorrent.Client
             var task = Send (requests.Encode (), 0, requests.ByteLength);
             var receiveTask  = connection.ReceiveAsync (buffer, 0, 4);
 
-            await CompleteSendOrReceiveFirst(buffer, receiveTask);
+            await receiveTask;
+            await CompleteSendOrReceiveFirst(buffer);
             await task;
         }
 
@@ -209,11 +211,10 @@ namespace MonoTorrent.Client
             }
         }
 
-        private async Task CompleteSendOrReceiveFirst(byte[] buffer, Task receiveTask)
+        private async Task CompleteSendOrReceiveFirst(byte[] buffer)
         {
             while (requests.Messages.Count > 0)
             {
-                await receiveTask;
                 int size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, 0));
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
@@ -236,7 +237,7 @@ namespace MonoTorrent.Client
                 }
                 else
                 {
-                    receiveTask = NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
+                    await NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
                 }
             }
 

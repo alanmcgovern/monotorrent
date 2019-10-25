@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
                 sent += r;
             }
 
-            Assert.IsTrue (task.Wait(TimeSpan.FromSeconds (10)), "Data should be all received");
+            Assert.DoesNotThrowAsync (() => task.WithTimeout (TimeSpan.FromSeconds (10)), "Data should be all received");
             for (int i = 0; i < buffer.Length; i++) {
                 if (data[i] != buffer[i])
                     Assert.Fail ("Buffers differ at position " + i);
@@ -197,7 +197,7 @@ namespace MonoTorrent.Client
                 Assert.AreNotEqual (0, r, "#Received data");
                 received += r;
             }
-            Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (1)), "Data should be all sent");
+            Assert.DoesNotThrowAsync (() => task.WithTimeout (TimeSpan.FromSeconds (1)), "Data should be all sent");
             Assert.IsTrue (Toolbox.ByteMatch (buffer, data), "Data matches");
         }
 
@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
             var receiveTask = NetworkIO.ReceiveAsync(Incoming, data, 0, data.Length, null, null, null);
 
             var sendTask = NetworkIO.SendAsync (Outgoing, data, 0, data.Length, null, null, null);
-            Assert.ThrowsAsync<Exception> (() => receiveTask);
+            Assert.ThrowsAsync<Exception> (async () => await receiveTask);
             await sendTask;
         }
 
@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
             var task = NetworkIO.SendAsync (Incoming, data, 0, data.Length, null, null, null);
 
             _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, data.Length, null, null, null);
-            Assert.ThrowsAsync<Exception> (() => task);
+            Assert.ThrowsAsync<Exception> (async () => await task);
         }
     }
 }
