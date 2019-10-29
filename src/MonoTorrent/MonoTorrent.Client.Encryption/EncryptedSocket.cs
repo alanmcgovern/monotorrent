@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.Encryption
         readonly byte[] Y; // 2^X mod P
         private byte[] OtherY;
         
-        protected IConnection socket;
+        protected IConnection2 socket;
 
         // Data to be passed to initial ReceiveMessage requests
         private byte[] initialBuffer;
@@ -126,7 +126,7 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual async Task HandshakeAsync(IConnection socket)
+        public virtual async ReusableTask HandshakeAsync(IConnection2 socket)
         {
             this.socket = socket ?? throw new ArgumentNullException(nameof (socket));
 
@@ -152,7 +152,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual async Task HandshakeAsync(IConnection socket, byte[] initialBuffer, int offset, int count)
+        public virtual async ReusableTask HandshakeAsync(IConnection2 socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;

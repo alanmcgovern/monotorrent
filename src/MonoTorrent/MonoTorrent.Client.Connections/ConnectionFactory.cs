@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Connections
         public static IConnection Create(Uri connectionUri)
         {
             if (connectionUri == null)
-                throw new ArgumentNullException("connectionUrl");
+                throw new ArgumentNullException(nameof (connectionUri));
 
             if (connectionUri.Scheme == "ipv4" && connectionUri.Port == -1)
                 return null;

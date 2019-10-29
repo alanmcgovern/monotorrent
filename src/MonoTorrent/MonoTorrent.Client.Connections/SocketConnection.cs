@@ -37,7 +37,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    class SocketConnection : IConnection
+    class SocketConnection : IConnection2
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
@@ -164,7 +164,10 @@ namespace MonoTorrent.Client.Connections
 
         #region Async Methods
 
-        public async Task ConnectAsync ()
+        async Task IConnection.ConnectAsync ()
+            => await ConnectAsync ();
+
+        public async ReusableTask ConnectAsync ()
         {
             var tcs = new ReusableTaskCompletionSource<int> ();
             var args = GetSocketAsyncEventArgs (null);
@@ -177,7 +180,10 @@ namespace MonoTorrent.Client.Connections
             await tcs.Task;
         }
 
-        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
+            => await ReceiveAsync (buffer, offset, count);
+
+        public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
             if (Socket == null)
@@ -193,7 +199,10 @@ namespace MonoTorrent.Client.Connections
             return await ReceiveTcs.Task;
         }
 
-        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
+            => await SendAsync (buffer, offset, count);
+
+        public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
             if (Socket == null)

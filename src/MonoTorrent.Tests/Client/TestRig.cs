@@ -142,7 +142,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class CustomConnection : IConnection
+    public class CustomConnection : IConnection2
     {
         public byte[] AddressBytes => ((IPEndPoint)EndPoint).Address.GetAddressBytes();
         public bool CanReconnect => false;
@@ -168,7 +168,10 @@ namespace MonoTorrent.Client
             IsIncoming = isIncoming;
         }
         
-        public Task ConnectAsync()
+        Task IConnection.ConnectAsync()
+            => throw new InvalidOperationException();
+
+        public ReusableTask ConnectAsync()
             => throw new InvalidOperationException();
 
         public void Dispose()
@@ -178,7 +181,10 @@ namespace MonoTorrent.Client
             Connected = false;
         }
 
-        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.ReceiveAsync(byte[] buffer, int offset, int count)
+            => await ReceiveAsync (buffer, offset, count);
+
+        public async ReusableTask<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min(88, count);
@@ -188,7 +194,10 @@ namespace MonoTorrent.Client
             return ManualBytesReceived ?? result;
         }
 
-        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
+            => await SendAsync (buffer, offset, count);
+
+        public async ReusableTask<int> SendAsync(byte[] buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min(88, count);
