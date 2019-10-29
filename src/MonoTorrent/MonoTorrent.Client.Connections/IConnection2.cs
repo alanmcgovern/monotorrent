@@ -1,10 +1,10 @@
 //
-// IEncryptor.cs
+// IConnection2.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,18 +27,16 @@
 //
 
 
-using MonoTorrent.Client.Connections;
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Encryption
+namespace MonoTorrent.Client.Connections
 {
-    interface IEncryptor
+    public interface IConnection2 : IConnection
     {
-        ReusableTask HandshakeAsync(IConnection2 socket);
+        new ReusableTask ConnectAsync();
 
-        ReusableTask HandshakeAsync(IConnection2 socket, byte[] initialBuffer, int offset, int count);
+        new ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count);
 
-        IEncryption Encryptor { get; }
-        IEncryption Decryptor { get; }
-    }
+        new ReusableTask<int> SendAsync (byte[] buffer, int offset, int count);
+	}
 }

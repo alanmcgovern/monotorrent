@@ -106,7 +106,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_ReceiveFirst ()
         {
-            var task = connection.ReceiveAsync (new byte[100], 0, 100);
+            var task = connection.ReceiveAsync (new byte[100], 0, 100).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
         }
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendFirst ()
         {
-            var task = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength);
+            var task = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
         }
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendAndReceiveFirst ()
         {
-            var sendTask = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength);
+            var sendTask = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength).AsTask ();
             var receiveTask = connection.ReceiveAsync (new byte[100000], 0, 100000);
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => sendTask, "#1");
