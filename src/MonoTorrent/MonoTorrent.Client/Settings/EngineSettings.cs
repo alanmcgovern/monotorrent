@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
         int maximumDiskReadRate;
         int maximumDiskWriteRate;
         int maximumDownloadSpeed;
-        int maximumHalfOpenConnections = 5;
+        int maximumHalfOpenConnections = 8;
         int maximumOpenFiles = 20;
         int maximumUploadSpeed;
 
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The maximum number of concurrent connection attempts overall. Defaults to 5.
+        /// The maximum number of concurrent connection attempts overall. Defaults to 8.
         /// </summary>
         public int MaximumHalfOpenConnections {
             get => maximumHalfOpenConnections;

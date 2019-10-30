@@ -194,6 +194,12 @@ namespace MonoTorrent.Client
 
                 manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs(id.Peer, ConnectionFailureReason.EncryptionNegiotiationFailed, manager));
                 CleanupSocket(manager, id);
+
+                // CleanupSocket will contain the peer only if AllowedEncryption is not set to None. If
+                // the peer was re-added, then we should try to reconnect to it immediately to try an
+                // unencrypted connection.
+                if (manager.Peers.AvailablePeers.Remove (id.Peer))
+                    ConnectToPeer (manager, id.Peer);
                 return;
             }
 
@@ -207,6 +213,13 @@ namespace MonoTorrent.Client
 
                 manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs(id.Peer, ConnectionFailureReason.HandshakeFailed, manager));
                 CleanupSocket(manager, id);
+
+                // CleanupSocket will contain the peer only if AllowedEncryption is not set to None. If
+                // the peer was re-added, then we should try to reconnect to it immediately to try an
+                // encrypted connection, assuming the previous connection was unencrypted and it failed.
+              if (manager.Peers.AvailablePeers.Remove (id.Peer))
+                    ConnectToPeer (manager, id.Peer);
+
                 return;
             }
 
@@ -262,7 +275,10 @@ namespace MonoTorrent.Client
             try
             {
                 // We can reuse this peer if the connection says so and it's not marked as inactive
-                bool canReuse = (id.Connection?.CanReconnect ?? false) && !manager.InactivePeerManager.InactivePeerList.Contains(id.Uri);
+                bool canReuse = (id.Connection?.CanReconnect ?? false)
+                    && !manager.InactivePeerManager.InactivePeerList.Contains(id.Uri)
+                    && id.Peer.AllowedEncryption != EncryptionTypes.None;
+
                 manager.PieceManager.Picker.CancelRequests(id);
                 id.Peer.CleanedUpCount++;
 
@@ -401,7 +417,7 @@ namespace MonoTorrent.Client
         internal void TryConnect()
         {
             // If we have already reached our max connections globally, don't try to connect to a new peer
-            while (OpenConnections <= MaxOpenConnections && PendingConnects.Count <= MaxHalfOpenConnections) {
+            while (OpenConnections <= MaxOpenConnections && PendingConnects.Count < MaxHalfOpenConnections) {
                 var node = Torrents.First;
                 while (node != null) {
                     // If we successfully connect, then break out of this loop and restart our
