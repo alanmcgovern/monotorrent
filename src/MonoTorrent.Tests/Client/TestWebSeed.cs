@@ -33,7 +33,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
@@ -44,7 +44,7 @@ using NUnit.Framework;
 namespace MonoTorrent.Client
 {
     [TestFixture]
-    public class TestWebSeed
+    public class WebSeedTests
     {
         Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
        
@@ -133,6 +133,17 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void CreatePeerIds ()
+        {
+            var ids = new HashSet<BEncodedString> ();
+            for (int i = 0; i < 20; i ++) {
+                var id = HttpConnection.CreatePeerId ();
+                Assert.AreEqual (20, id.TextBytes.Length, "#1");
+                Assert.IsTrue (ids.Add (id), "#2");
+            }
+        }
+
+        [Test]
         public void TestPartialData()
         {
             partialData = true;
@@ -184,6 +195,24 @@ namespace MonoTorrent.Client
             var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
 
             Assert.ThrowsAsync<ArgumentException>(() => sendTask);
+        }
+
+        [Test]
+        public void CompleteChunkBeforeRequestNext ()
+        {
+            var messages = requests.ToRequestMessages ().ToList ();
+            for (int i = 0; i < messages.Count - 1; i ++) {
+                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength));
+                int orig = id.AmRequestingPiecesCount;
+                rig.Manager.PieceManager.AddPieceRequests (id);
+                Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
+            }
+
+            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength));
+            Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
+
+            rig.Manager.PieceManager.AddPieceRequests (id);
+            Assert.AreNotEqual (0, id.AmRequestingPiecesCount, "#3");
         }
 
         [Test]

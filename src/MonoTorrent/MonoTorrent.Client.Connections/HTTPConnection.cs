@@ -33,7 +33,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using ReusableTasks;
@@ -42,6 +42,15 @@ namespace MonoTorrent.Client.Connections
 {
     sealed class HttpConnection : IConnection2
     {
+        static int webSeedId;
+
+        internal static BEncodedString CreatePeerId ()
+        {
+            var peerId = "-WebSeed-";
+            peerId += Interlocked.Increment (ref webSeedId).ToString().PadLeft(20 - peerId.Length, '0');
+            return peerId;
+        }
+
         class HttpRequestData
         {
             public RequestMessage Request;
