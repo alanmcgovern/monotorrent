@@ -43,9 +43,6 @@ namespace MonoTorrent.Client
         {
             public Action Action;
 
-            public AsyncCallback Callback;
-            public IAsyncResult CallbackResult;
-
             public SendOrPostCallback SendOrPostCallback;
             public object State;
 
@@ -95,7 +92,6 @@ namespace MonoTorrent.Client
                         try
                         {
                             task.Value.Action?.Invoke();
-                            task.Value.Callback?.Invoke(task.Value.CallbackResult);
                             task.Value.SendOrPostCallback?.Invoke(task.Value.State);
                         }
                         catch (Exception ex)
@@ -108,11 +104,6 @@ namespace MonoTorrent.Client
                         }
                     }
                 }
-        }
-
-        public void Queue(Action action)
-        {
-            Queue (new QueuedTask { Action = action });
         }
 
         public void QueueWait(Action action)
@@ -152,13 +143,6 @@ namespace MonoTorrent.Client
                 if (actions.Count == 1)
                     actionsWaiter.Set ();
             }
-        }
-
-        public AsyncCallback Wrap(AsyncCallback callback)
-        {
-            return delegate(IAsyncResult result) {
-                Queue (new QueuedTask { Callback = callback, CallbackResult = result });
-            };
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
