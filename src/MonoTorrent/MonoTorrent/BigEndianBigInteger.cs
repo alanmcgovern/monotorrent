@@ -29,13 +29,86 @@
 
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
+using System.Reflection;
 using MonoTorrent.Client;
 
 namespace MonoTorrent
 {
     public struct BigEndianBigInteger : IComparable<BigEndianBigInteger>, IEquatable<BigEndianBigInteger>
     {
+#if !NETSTANDARD2_1
+        // If we are not targeting netstandard 2.1 then the methods we want to use may exist
+        // at runtime even though they do not exist at compiletime. Let's do a quick reflection
+        // check for the .ctor and ToByteArray overloads which allow us to ensure the byte[] is
+        // always treated as big endian and unsigned.
+        readonly static Func<byte[], BigInteger> OptimisedCtor;
+        readonly static Func<BigInteger, byte[]> OptimisedToByteArray;
+
+        static BigEndianBigInteger ()
+        {
+            Type readonlySpanByte = null;
+            var ctor = typeof (BigInteger).GetConstructors ()
+                .FirstOrDefault (c => {
+                    var parameters = c.GetParameters ();
+                    if (parameters.Length != 3)
+                        return false;
+                    if (!parameters [0].ParameterType.Name.Contains ("ReadOnlySpan"))
+                        return false;
+                    if (parameters [0].ParameterType.GenericTypeArguments.FirstOrDefault () != typeof (byte))
+                        return false;
+
+                    readonlySpanByte = parameters[0].ParameterType;
+                    if (parameters [1].ParameterType != typeof (bool))
+                        return false;
+                    if (parameters [2].ParameterType != typeof (bool))
+                        return false;
+                    return true;
+                });
+
+            if (ctor == null) {
+                OptimisedCtor = value => {
+                    var littleEndianArray = new byte[value.Length + 1];
+
+                    // Swap endian-ness and append a trailing '0' to ensure the value is treated as
+                    // a positive integer
+                    for (int i = 0; i < value.Length; i ++)
+                        littleEndianArray[value.Length - 1 - i] = value [i];
+
+                    return new BigInteger (littleEndianArray);
+                };
+            } else {
+                var arrayParam = Expression.Parameter (typeof (byte[]));
+
+                OptimisedCtor = Expression.Lambda<Func<byte[], BigInteger>> (
+                    Expression.New (ctor, Expression.New (readonlySpanByte.GetConstructor (new [] { typeof (byte[]) }), arrayParam), Expression.Constant (true), Expression.Constant (true)),
+                    arrayParam
+                ).Compile ();
+           }
+
+            var method = typeof (BigInteger).GetMethod ("ToByteArray", new [] { typeof (bool), typeof (bool) });
+            if (method == null) {
+                OptimisedToByteArray = value => {
+                    var littleEndianArray = value.ToByteArray ();
+                    int count = littleEndianArray.Length;
+                    while (littleEndianArray [count - 1] == 0)
+                        count --;
+
+                    var result = new byte [count];
+                    for (int i = 0; i < count; i ++)
+                        result [i] =  littleEndianArray [count - i - 1];
+                    return result;
+                };
+            } else {
+                var param = Expression.Parameter (typeof (BigInteger));
+                OptimisedToByteArray = Expression.Lambda<Func<BigInteger, byte[]>> (
+                    Expression.Call (param, method, Expression.Constant (true), Expression.Constant (true)),
+                    param
+                ).Compile ();
+            }
+        }
+#endif
         public static BigEndianBigInteger Parse (string value)
             => new BigEndianBigInteger (BigInteger.Parse (value));
 
@@ -53,17 +126,11 @@ namespace MonoTorrent
 
         public BigEndianBigInteger (byte[] value)
         {
-            var littleEndianArray = ClientEngine.BufferManager.GetBuffer (value.Length + 1);
-
-            // Swap endian-ness and append a trailing '0' to ensure the value is treated as
-            // a positive integer
-            for (int i = 0; i < value.Length; i ++)
-                littleEndianArray[value.Length - 1 - i] = value [i];
-            for (int i = value.Length; i < littleEndianArray.Length; i ++)
-                littleEndianArray[i] = 0;
-
-            Value = new BigInteger (littleEndianArray);
-            ClientEngine.BufferManager.FreeBuffer (littleEndianArray);
+#if NETSTANDARD2_1
+            Value = new BigInteger (littleEndianArray, true, true);
+#else
+            Value = OptimisedCtor (value);
+#endif
         }
 
         public static BigEndianBigInteger operator +(BigEndianBigInteger left, BigEndianBigInteger right)
@@ -130,16 +197,10 @@ namespace MonoTorrent
             => new BigEndianBigInteger (BigInteger.ModPow (Value, exponent.Value, modulus.Value));
 
         public byte[] ToByteArray ()
-        {
-            var littleEndianArray = Value.ToByteArray ();
-            int count = littleEndianArray.Length;
-            while (littleEndianArray [count - 1] == 0)
-                count --;
-
-            var result = new byte [count];
-            for (int i = 0; i < count; i ++)
-                result [i] =  littleEndianArray [count - i - 1];
-            return result;
-        }
+#if NETSTANDARD2_1
+            => Value.ToByteArray (true, true);
+#else
+            => OptimisedToByteArray (Value);
+#endif
     }
 }
