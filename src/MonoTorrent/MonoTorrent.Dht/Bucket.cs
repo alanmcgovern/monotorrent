@@ -46,7 +46,7 @@ namespace MonoTorrent.Dht
         // The last item in the list is one we have seen the most recently.
         static readonly Comparison<Node> LastSeenComparer = (l, r) => r.LastSeen.CompareTo (l.LastSeen);
 
-        internal BigInteger Capacity => Max.Value - Min.Value;
+        internal BigEndianBigInteger Capacity => Max.Value - Min.Value;
         public TimeSpan LastChanged => LastChangedTimer.Elapsed + LastChangedDelta;
         TimeSpan LastChangedDelta { get; set; }
         ValueStopwatch LastChangedTimer;
