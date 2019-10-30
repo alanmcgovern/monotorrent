@@ -109,6 +109,9 @@ namespace MonoTorrent.Client
             int count = 1;
             if (id.Connection is HttpConnection)
             {
+                if (id.AmRequestingPiecesCount > 0)
+                    return;
+
                 // How many whole pieces fit into 2MB
                 count = (2 * 1024 * 1024) / Manager.Torrent.PieceLength;
 
