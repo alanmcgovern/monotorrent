@@ -66,7 +66,12 @@ namespace MonoTorrent.Client
         internal BEncodedString LocalPeerId { get; }
 
         /// <summary>
-        /// The maximum number of half open connections
+        /// The number of concurrent connection attempts
+        /// </summary>
+        public int HalfOpenConnections => PendingConnects.Count;
+
+        /// <summary>
+        /// The maximum number of concurrent connection attempts
         /// </summary>
         internal int MaxHalfOpenConnections => Settings.MaximumHalfOpenConnections;
 
