@@ -170,13 +170,18 @@ namespace MonoTorrent.Client.Modes
         public void AnnounceWhenComplete ()
         {
             TrackerManager.AddTracker ("http://1.1.1.1");
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
 
+            Manager.Bitfield [0] = false;
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
 
             Assert.AreEqual (0, TrackerManager.Announces.Count, "#0");
-            Manager.Bitfield.SetAll (true);
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#0b");
+
+            Manager.Bitfield[0] = true;
             mode.Tick (0);
+            Assert.AreEqual (TorrentState.Seeding, Manager.State, "#0c");
 
             Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
