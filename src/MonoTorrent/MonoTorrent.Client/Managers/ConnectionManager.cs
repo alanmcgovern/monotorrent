@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
         internal void Remove (TorrentManager manager)
             => Torrents.Remove (manager);
 
-        internal async void ConnectToPeer(TorrentManager manager, Peer peer)
+        async void ConnectToPeer(TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
             IConnection2 connection = ConnectionConverter.Convert (ConnectionFactory.Create(peer.ConnectionUri));
