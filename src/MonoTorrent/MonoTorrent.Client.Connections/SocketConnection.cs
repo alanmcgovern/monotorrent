@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 using ReusableTasks;
@@ -193,8 +194,17 @@ namespace MonoTorrent.Client.Connections
             args.SetBuffer (offset, count);
             args.UserToken = ReceiveTcs;
 
-            if (!Socket.ReceiveAsync(args))
-                ReceiveTcs.SetResult (args.BytesTransferred);
+            AsyncFlowControl? control = null;
+            if (!ExecutionContext.IsFlowSuppressed ())
+                control = ExecutionContext.SuppressFlow ();
+
+            try {
+                if (!Socket.ReceiveAsync(args))
+                    ReceiveTcs.SetResult (args.BytesTransferred);
+            } finally {
+                if (control.HasValue)
+                    control.Value.Undo ();
+            }
 
             return await ReceiveTcs.Task;
         }
@@ -212,8 +222,17 @@ namespace MonoTorrent.Client.Connections
             args.SetBuffer (offset, count);
             args.UserToken = SendTcs;
 
-            if (!Socket.SendAsync(args))
-                SendTcs.SetResult (count);
+            AsyncFlowControl? control = null;
+            if (!ExecutionContext.IsFlowSuppressed ())
+                control = ExecutionContext.SuppressFlow ();
+
+            try {
+                if (!Socket.SendAsync(args))
+                    SendTcs.SetResult (count);
+            } finally {
+                if (control.HasValue)
+                    control.Value.Undo ();
+            }
 
             return await SendTcs.Task;
         }
