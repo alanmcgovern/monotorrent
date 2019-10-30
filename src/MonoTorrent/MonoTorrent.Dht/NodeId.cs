@@ -42,12 +42,12 @@ namespace MonoTorrent.Dht
         static readonly Random random = new Random();
 
         public byte[] Bytes { get; }
-        public BigInteger Value { get; }
+        public BigEndianBigInteger Value { get; }
 
-        internal NodeId(BigInteger value)
+        internal NodeId(BigEndianBigInteger value)
         {
             Value  = value;
-            Bytes = value.GetBytes ();
+            Bytes = value.ToByteArray ();
             if (Bytes.Length < 20) {
                 var newBytes = new byte[20];
                 Buffer.BlockCopy (Bytes, 0, newBytes, newBytes.Length - Bytes.Length, Bytes.Length);
@@ -64,7 +64,7 @@ namespace MonoTorrent.Dht
                 throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
 
             Bytes = value;
-            Value  = new BigInteger(value);
+            Value  = new BigEndianBigInteger(value);
         }
 
         internal NodeId(InfoHash infoHash)
@@ -90,19 +90,14 @@ namespace MonoTorrent.Dht
             if ((object)other == null)
                 return 1;
 
-            BigInteger.Sign s = Value.Compare(other.Value);
-            if (s == BigInteger.Sign.Zero)
-                return 0;
-            else if (s == BigInteger.Sign.Positive)
-                return 1;
-            else return -1;
+            return Value.CompareTo (other.Value);
         }
 
         public override bool Equals(object obj)
             => Equals(obj as NodeId);
 
         public bool Equals(NodeId other)
-            => Value.Equals (other?.Value);
+            => other != null && Value.Equals (other.Value);
 
         public override int GetHashCode()
             => Value.GetHashCode();
@@ -114,7 +109,12 @@ namespace MonoTorrent.Dht
             => new NodeId ((min.Value + max.Value) / 2);
 
         public static NodeId operator ^(NodeId left, NodeId right)
-            => new NodeId (left.Value.Xor (right.Value));
+        {
+            var clone = (byte[])left.Bytes.Clone ();
+            for (int i = 0; i < right.Bytes.Length; i ++)
+                clone [i] ^= right.Bytes [i];
+            return new NodeId (clone);
+        }
 
         public static NodeId operator - (NodeId first, NodeId second)
             => new NodeId (first.Value - second.Value);
