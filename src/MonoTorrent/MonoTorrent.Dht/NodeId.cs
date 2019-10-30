@@ -86,12 +86,7 @@ namespace MonoTorrent.Dht
             => CompareTo(obj as NodeId);
 
         public int CompareTo(NodeId other)
-        {
-            if ((object)other == null)
-                return 1;
-
-            return Value.CompareTo (other.Value);
-        }
+            => other is null ? 1 : Value.CompareTo (other.Value);
 
         public override bool Equals(object obj)
             => Equals(obj as NodeId);
