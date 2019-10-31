@@ -595,6 +595,7 @@ namespace MonoTorrent
             if (stream == null)
                 throw new ArgumentNullException("stream");
 
+			stream.Position = 0;
             return Torrent.Load(stream, "");
         }
 
