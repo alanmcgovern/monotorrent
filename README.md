@@ -1,4 +1,10 @@
+MonoTorrent
+========
+
+[![NuGet version](https://badge.fury.io/nu/monotorrent.svg)](https://badge.fury.io/nu/monotorrent)
+
 [![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
+
 
 # Supported Specifications
 
@@ -51,6 +57,7 @@ The client downloads torrents and has a wide range of functionality.
 * Creating torrents from a single file, a folder, or arbitrary files in arbitrary folders.
 * Fast resume data can be saved/restored to avoid hashing the data every time a torrent is started.
 * Incremental piece hashing (reduces disk reads by incrementally hashing each block in a piece as it is received).
+* Partial Hash Checking. If a `TorrentFile` has its `Priority` set to `DoNotDownload` then these files will be skipped when the hash check runs. If the priority is raised then the files will be automatically hash checked (if needed) before any piece is downloaded.
 * Sparse files (NTFS filesystem).
 
 * [UPnP port forwarding](https://github.com/mono/Mono.Nat).

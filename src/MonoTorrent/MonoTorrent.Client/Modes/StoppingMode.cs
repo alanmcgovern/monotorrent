@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Modes
                 if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
                     stoppingTasks.Add(Manager.TrackerManager.Announce(TorrentEvent.Stopped));
 
-                var delayTask = Task.Delay (TimeSpan.FromMinutes (1));
+                var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);
                 var overallTasks = Task.WhenAll (stoppingTasks);
                 if (await Task.WhenAny (overallTasks, delayTask) == delayTask)
                     Logger.Log (null, "Timed out waiting for the announce request to complete");

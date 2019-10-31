@@ -1,10 +1,10 @@
 //
-// AnnounceEventArgs.cs
+// IConnection2.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,14 +27,16 @@
 //
 
 
-namespace MonoTorrent.Tracker
-{
-    public sealed class AnnounceEventArgs : PeerEventArgs
-    {
-        public AnnounceEventArgs(Peer peer, ITrackerItem torrent)
-            : base(peer, torrent)
-        {
+using ReusableTasks;
 
-        }
-    }
+namespace MonoTorrent.Client.Connections
+{
+    public interface IConnection2 : IConnection
+    {
+        new ReusableTask ConnectAsync();
+
+        new ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count);
+
+        new ReusableTask<int> SendAsync (byte[] buffer, int offset, int count);
+	}
 }

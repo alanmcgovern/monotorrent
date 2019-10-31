@@ -33,7 +33,6 @@ using System.Net.Sockets;
 using System.Threading;
 
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Listeners
 {

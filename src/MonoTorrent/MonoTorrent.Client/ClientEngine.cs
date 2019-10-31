@@ -47,7 +47,13 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
-        internal static MainLoop MainLoop = new MainLoop("Client Engine Loop");
+        internal static readonly MainLoop MainLoop = new MainLoop("Client Engine Loop");
+
+        /// <summary>
+        /// An un-seeded random number generator which will not generate the same
+        /// random sequence when the application is restarted.
+        /// </summary>
+        static readonly Random PeerIdRandomGenerator = new Random ();
         #region Global Constants
 
         public static readonly bool SupportsInitialSeed = true;
@@ -77,8 +83,11 @@ namespace MonoTorrent.Client
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private int tickCount;
         private List<TorrentManager> torrents;
-        private IRateLimiter uploadLimiter;
-        private IRateLimiter downloadLimiter;
+
+        private RateLimiter uploadLimiter;
+        private RateLimiterGroup uploadLimiters;
+        private RateLimiter downloadLimiter;
+        private RateLimiterGroup downloadLimiters;
 
         #endregion
 
@@ -105,22 +114,22 @@ namespace MonoTorrent.Client
 
         public IList<TorrentManager> Torrents { get; }
 
-        public int TotalDownloadSpeed
+        public long TotalDownloadSpeed
         {
             get
             {
-                int total = 0;
+                long total = 0;
                 for (int i = 0; i < torrents.Count; i++)
                     total += torrents[i].Monitor.DownloadSpeed;
                 return total;
             }
         }
 
-        public int TotalUploadSpeed
+        public long TotalUploadSpeed
         {
             get
             {
-                int total = 0;
+                long total = 0;
                 for (int i = 0; i < torrents.Count; i++)
                     total += torrents[i].Monitor.UploadSpeed;
                 return total;
@@ -174,11 +183,16 @@ namespace MonoTorrent.Client
                 return !Disposed;
             });
 
-            downloadLimiter = new RateLimiterGroup {
+            downloadLimiter = new RateLimiter ();
+            downloadLimiters = new RateLimiterGroup {
                 new DiskWriterLimiter(DiskManager),
-                new RateLimiter()
+                downloadLimiter,
             };
+
             uploadLimiter = new RateLimiter();
+            uploadLimiters = new RateLimiterGroup {
+                uploadLimiter
+            };
 
             listenManager.Register(listener);
 
@@ -288,8 +302,8 @@ namespace MonoTorrent.Client
             ConnectionManager.Add (manager);
 
             manager.Engine = this;
-            manager.DownloadLimiter.Add(downloadLimiter);
-            manager.UploadLimiter.Add(uploadLimiter);
+            manager.DownloadLimiters.Add(downloadLimiters);
+            manager.UploadLimiters.Add(uploadLimiters);
             if (DhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && DhtEngine.State != DhtState.Ready)
             {
                 try
@@ -345,6 +359,9 @@ namespace MonoTorrent.Client
             await MainLoop;
 
             var manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+
+            if (manager == null) return;
+
             if (manager.CanUseDht) {
                 var successfullyAdded = await manager.AddPeersAsync (e.Peers);
                 manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
@@ -412,8 +429,8 @@ namespace MonoTorrent.Client
             ConnectionManager.Remove(manager);
 
             manager.Engine = null;
-            manager.DownloadLimiter.Remove(downloadLimiter);
-            manager.UploadLimiter.Remove(uploadLimiter);
+            manager.DownloadLimiters.Remove(downloadLimiters);
+            manager.UploadLimiters.Remove(uploadLimiters);
         }
 
         #endregion
@@ -470,8 +487,6 @@ namespace MonoTorrent.Client
                 Listener.Stop();
         }
 
-
-        static int count;
         static BEncodedString GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
@@ -479,9 +494,13 @@ namespace MonoTorrent.Client
             sb.Append(VersionInfo.ClientVersion);
             sb.Append ("-");
 
-            var random = new Random(count++);
-            while (sb.Length < 20)
-                sb.Append(random.Next(0, 9));
+            // Create and use a single Random instance which *does not* use a seed so that
+            // the random sequence generated is definitely not the same between application
+            // restarts.
+            lock (PeerIdRandomGenerator) {
+                while (sb.Length < 20)
+                    sb.Append(PeerIdRandomGenerator.Next(0, 9));
+            }
 
             return new BEncodedString (sb.ToString());
         }

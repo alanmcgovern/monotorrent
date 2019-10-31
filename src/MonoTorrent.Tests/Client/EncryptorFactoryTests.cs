@@ -43,8 +43,8 @@ namespace MonoTorrent.Client.Encryption
     public class EncryptorFactoryTests
     {
         ConnectionPair pair;
-        IConnection Incoming => pair.Incoming;
-        IConnection Outgoing => pair.Outgoing;
+        IConnection2 Incoming => pair.Incoming;
+        IConnection2 Outgoing => pair.Outgoing;
 
         InfoHash InfoHash;
         InfoHash[] SKeys;

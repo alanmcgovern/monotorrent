@@ -29,10 +29,10 @@
 
 namespace MonoTorrent.Tracker
 {
-    public class TimedOutEventArgs : PeerEventArgs
+    public sealed class TimedOutEventArgs : PeerEventArgs
     {
-        public TimedOutEventArgs(Peer peer, SimpleTorrentManager manager)
-            : base(peer, manager)
+        public TimedOutEventArgs(Peer peer, ITrackerItem torrent)
+            : base(peer, torrent)
         {
 
         }

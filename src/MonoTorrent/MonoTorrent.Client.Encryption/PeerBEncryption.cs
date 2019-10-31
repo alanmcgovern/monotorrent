@@ -33,6 +33,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -52,13 +53,13 @@ namespace MonoTorrent.Client.Encryption
             PossibleSKEYs = possibleSKEYs;
         }
 
-        protected override async Task doneReceiveY()
+        protected override async ReusableTask doneReceiveY()
         {
             byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
             await Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
         }
 
-        protected override async Task doneSynchronize()
+        protected override async ReusableTask doneSynchronize()
         {
             await base.doneSynchronize();
 
@@ -68,7 +69,7 @@ namespace MonoTorrent.Client.Encryption
             await gotVerification(verifyBytes);
         }
 
-        private async Task gotVerification(byte[] verifyBytes)
+        private async ReusableTask gotVerification(byte[] verifyBytes)
         {
             byte[] torrentHash = new byte[20];
 

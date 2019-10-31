@@ -47,6 +47,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Creates a new PieceHashedEventArgs
         /// </summary>
+        /// <param name="manager">The <see cref="TorrentManager"/> whose piece was hashed</param>
         /// <param name="pieceIndex">The index of the piece that was hashed</param>
         /// <param name="hashPassed">True if the piece passed the hashcheck, false otherwise</param>
         internal PieceHashedEventArgs(TorrentManager manager, int pieceIndex, bool hashPassed)

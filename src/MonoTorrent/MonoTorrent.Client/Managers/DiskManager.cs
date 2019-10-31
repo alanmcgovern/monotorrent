@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
@@ -37,6 +36,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.RateLimiters;
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
@@ -70,9 +70,9 @@ namespace MonoTorrent.Client
             public long offset;
             public byte [] buffer;
             public int count;
-            public TaskCompletionSource<bool> tcs;
+            public ReusableTaskCompletionSource<bool> tcs;
 
-            public BufferedIO (ITorrentData manager, long offset, byte [] buffer, int count, TaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentData manager, long offset, byte [] buffer, int count, ReusableTaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
                 this.offset = offset;
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being read per second.
         /// </summary>
-        public int ReadRate => ReadMonitor.Rate;
+        public long ReadRate => ReadMonitor.Rate;
 
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being written per second.
         /// </summary>
-        public int WriteRate => WriteMonitor.Rate;
+        public long WriteRate => WriteMonitor.Rate;
 
         /// <summary>
         /// The total number of bytes which have been read.
@@ -213,8 +213,13 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal async Task<byte[]> GetHashAsync(ITorrentData manager, int pieceIndex)
+        internal Func<ITorrentData, int, byte[]> GetHashAsyncOverride;
+
+        internal async ReusableTask<byte[]> GetHashAsync(ITorrentData manager, int pieceIndex)
         {
+            if (GetHashAsyncOverride != null)
+                return GetHashAsyncOverride (manager, pieceIndex);
+
             await IOLoop;
 
             if (IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash)) {
@@ -271,11 +276,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task WaitForPendingWrites ()
+        async ReusableTask WaitForPendingWrites ()
         {
-            TaskCompletionSource<bool> flushed = new TaskCompletionSource<bool>();
-            WriteQueue.Enqueue(new BufferedIO(null, -1, null, -1, flushed));
-            await flushed.Task;
+            var tcs = new ReusableTaskCompletionSource<bool>();
+            WriteQueue.Enqueue(new BufferedIO(null, -1, null, -1, tcs));
+            await tcs.Task;
         }
 
         internal async Task CloseFilesAsync(ITorrentData manager)
@@ -308,28 +313,25 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async Task<bool> ReadAsync (ITorrentData manager, long offset, byte [] buffer, int count)
+        internal async ReusableTask<bool> ReadAsync (ITorrentData manager, long offset, byte [] buffer, int count)
         {
             Interlocked.Add (ref pendingReads, count);
             await IOLoop;
 
-            try {
-                if (ReadLimiter.TryProcess(count))
-                {
-                    return Read(manager, offset, buffer, count);
-                }
-                else
-                {
-                    var tcs = new TaskCompletionSource<bool>();
-                    ReadQueue.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
-                    return await tcs.Task;
-                }
-            } finally {
+            if (ReadLimiter.TryProcess(count))
+            {
                 Interlocked.Add (ref pendingReads, -count);
+                return Read(manager, offset, buffer, count);
+            }
+            else
+            {
+                var tcs = new ReusableTaskCompletionSource<bool>();
+                ReadQueue.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
+                return await tcs.Task;
             }
         }
 
-        internal async Task WriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        internal async ReusableTask WriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             Interlocked.Add(ref pendingWrites, count);
             await IOLoop;
@@ -357,20 +359,16 @@ namespace MonoTorrent.Client
                 }
             }
 
-            try
+            if (WriteLimiter.TryProcess(count))
             {
-                if (WriteLimiter.TryProcess(count))
-                {
-                    Write(manager, offset, buffer, count);
-                }
-                else
-                {
-                    var tcs = new TaskCompletionSource<bool>();
-                    WriteQueue.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
-                    await tcs.Task;
-                }
-            } finally {
                 Interlocked.Add(ref pendingWrites, -count);
+                Write(manager, offset, buffer, count);
+            }
+            else
+            {
+                var tcs = new ReusableTaskCompletionSource<bool>();
+                WriteQueue.Enqueue(new BufferedIO(manager, offset, buffer, count, tcs));
+                await tcs.Task;
             }
         }
 
@@ -400,6 +398,7 @@ namespace MonoTorrent.Client
                 io = WriteQueue.Dequeue ();
 
                 try {
+                    Interlocked.Add (ref pendingWrites, -io.count);
                     Write (io.manager, io.offset, io.buffer, io.count);
                     io.tcs.SetResult (true);
                 } catch (Exception ex) {
@@ -414,6 +413,7 @@ namespace MonoTorrent.Client
                 io = ReadQueue.Dequeue ();
 
                 try {
+                    Interlocked.Add (ref pendingReads, -io.count);
                     var result = Read (io.manager, io.offset, io.buffer, io.count);
                     io.tcs.SetResult (result);
                 } catch (Exception ex) {

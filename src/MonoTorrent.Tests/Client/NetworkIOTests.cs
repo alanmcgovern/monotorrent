@@ -29,7 +29,7 @@
 
 using System;
 using System.Threading.Tasks;
-
+using MonoTorrent.Client.RateLimiters;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -53,6 +53,33 @@ namespace MonoTorrent.Client
         public void Teardown ()
         {
             pair.Dispose ();
+        }
+
+        [Test]
+        public async Task ReceiveData_RateLimited ()
+        {
+            // Allow 1 megabyte worth of data
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiter ();
+            limiter.UpdateChunks (oneMegabyte, oneMegabyte);
+
+            await Outgoing.SendAsync (new byte [oneMegabyte], 0, oneMegabyte);
+            await NetworkIO.ReceiveAsync (Incoming, new byte[oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            var expectedChunks = (int)Math.Ceiling (oneMegabyte / (double)NetworkIO.ChunkLength);
+            Assert.AreEqual (expectedChunks, Incoming.Receives.Count, "#1");
+        }
+
+        [Test]
+        public async Task ReceiveData_Unlimited ()
+        {
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiterGroup ();
+
+            await Outgoing.SendAsync (new byte [oneMegabyte], 0, oneMegabyte);
+            await NetworkIO.ReceiveAsync (Incoming, new byte[oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            Assert.AreEqual (1, Incoming.Receives.Count, "#1");
         }
 
         [Test]
@@ -98,7 +125,7 @@ namespace MonoTorrent.Client
                 sent += r;
             }
 
-            Assert.IsTrue (task.Wait(TimeSpan.FromSeconds (10)), "Data should be all received");
+            Assert.DoesNotThrowAsync (() => task.WithTimeout (TimeSpan.FromSeconds (10)), "Data should be all received");
             for (int i = 0; i < buffer.Length; i++) {
                 if (data[i] != buffer[i])
                     Assert.Fail ("Buffers differ at position " + i);
@@ -129,6 +156,31 @@ namespace MonoTorrent.Client
             await DoSend (false, false);
         }
 
+        [Test]
+        public async Task SendData_RateLimited ()
+        {
+            // Allow 1 megabyte worth of data
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiter ();
+            limiter.UpdateChunks (oneMegabyte, oneMegabyte);
+
+            await NetworkIO.SendAsync (Incoming, new byte [oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            var expectedChunks = (int)Math.Ceiling (oneMegabyte / (double)NetworkIO.ChunkLength);
+            Assert.AreEqual (expectedChunks, Incoming.Sends.Count, "#1");
+        }
+
+        [Test]
+        public async Task SendData_Unlimited ()
+        {
+            var oneMegabyte = 1 * 1024 * 1024;
+            var limiter = new RateLimiterGroup ();
+
+            await NetworkIO.SendAsync (Incoming, new byte [oneMegabyte], 0, oneMegabyte, limiter, null, null);
+
+            Assert.AreEqual (1, Incoming.Sends.Count, "#1");
+        }
+
         async Task DoSend (bool slowOutgoing, bool slowIncoming)
         {
             Incoming.SlowConnection = slowIncoming;
@@ -145,7 +197,7 @@ namespace MonoTorrent.Client
                 Assert.AreNotEqual (0, r, "#Received data");
                 received += r;
             }
-            Assert.IsTrue (task.Wait (TimeSpan.FromSeconds (1)), "Data should be all sent");
+            Assert.DoesNotThrowAsync (() => task.WithTimeout (TimeSpan.FromSeconds (1)), "Data should be all sent");
             Assert.IsTrue (Toolbox.ByteMatch (buffer, data), "Data matches");
         }
 
@@ -157,7 +209,7 @@ namespace MonoTorrent.Client
             var receiveTask = NetworkIO.ReceiveAsync(Incoming, data, 0, data.Length, null, null, null);
 
             var sendTask = NetworkIO.SendAsync (Outgoing, data, 0, data.Length, null, null, null);
-            Assert.ThrowsAsync<Exception> (() => receiveTask);
+            Assert.ThrowsAsync<Exception> (async () => await receiveTask);
             await sendTask;
         }
 
@@ -169,7 +221,7 @@ namespace MonoTorrent.Client
             var task = NetworkIO.SendAsync (Incoming, data, 0, data.Length, null, null, null);
 
             _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, data.Length, null, null, null);
-            Assert.ThrowsAsync<Exception> (() => task);
+            Assert.ThrowsAsync<Exception> (async () => await task);
         }
     }
 }

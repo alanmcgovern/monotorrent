@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Libtorrent;
@@ -66,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123"), Encryption.EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
                 ProcessingQueue = true
             };
         }
@@ -169,17 +170,155 @@ namespace MonoTorrent.Client.Modes
         public void AnnounceWhenComplete ()
         {
             TrackerManager.AddTracker ("http://1.1.1.1");
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
 
+            Manager.Bitfield [0] = false;
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
 
-            Assert.AreEqual (0, TrackerManager.Announces.Count, "#1");
-            Manager.Bitfield.SetAll (true);
+            Assert.AreEqual (0, TrackerManager.Announces.Count, "#0");
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#0b");
+
+            Manager.Bitfield[0] = true;
             mode.Tick (0);
+            Assert.AreEqual (TorrentState.Seeding, Manager.State, "#0c");
 
             Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[0].Item2, "#3");
+        }
+
+        [Test]
+        public void PartialProgress_AllDownloaded_AllDownloadable ()
+        {
+            for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                Manager.OnPieceHashed (i, true);
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.AreEqual (100.0, Manager.Progress, "#3");
+            Assert.AreEqual (100.0, Manager.PartialProgress, "#4");
+            Assert.AreEqual (TorrentState.Seeding, Manager.State, "#5");
+        }
+
+        [Test]
+        public void PartialProgress_AllDownloaded_SomeDownloadable ()
+        {
+            for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                Manager.OnPieceHashed (i, true);
+
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            Manager.Torrent.Files.Last ().Priority = Priority.Normal;
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.AreNotEqual (0, Manager.Progress, "#3");
+            Assert.AreEqual (100.0, Manager.PartialProgress, "#4");
+            Assert.AreEqual (TorrentState.Seeding, Manager.State, "#5");
+        }
+
+       [Test]
+        public void PartialProgress_NoneDownloaded ()
+        {
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.AreEqual (0, Manager.Progress, "#1");
+            Assert.AreEqual (0, Manager.PartialProgress, "#2");
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#3");
+        }
+
+        [Test]
+        public void PartialProgress_NoneDownloaded_AllDoNotDownload ()
+        {
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.AreEqual (0, Manager.Progress, "#1");
+            Assert.AreEqual (0, Manager.PartialProgress, "#2");
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#3");
+        }
+
+        [Test]
+        public void PartialProgress_RelatedDownloaded ()
+        {
+            Manager.OnPieceHashed (0, true);
+
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            Manager.Torrent.Files.First ().Priority = Priority.Normal;
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.That (Manager.Progress, Is.GreaterThan (0.0), "#3a");
+            Assert.That (Manager.Progress, Is.LessThan (100.0), "#3b");
+
+            Assert.That (Manager.PartialProgress, Is.EqualTo (100.0), "#4");
+            Assert.AreEqual (TorrentState.Seeding, Manager.State, "#5");
+        }
+
+        [Test]
+        public void PartialProgress_RelatedDownloaded2 ()
+        {
+            var lastFile = Manager.Torrent.Files.Last ();
+            Manager.OnPieceHashed (Manager.Torrent.Pieces.Count - 1, true);
+
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            lastFile.Priority = Priority.Normal;
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            var totalPieces = lastFile.EndPieceIndex - lastFile.StartPieceIndex + 1;
+            Assert.That (Manager.PartialProgress, Is.EqualTo (100.0 / totalPieces).Within (1).Percent, "#1");
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#2");
+        }
+
+        [Test]
+        public void PartialProgress_UnrelatedDownloaded_AllDoNotDownload()
+        {
+            Manager.OnPieceHashed (0, true);
+
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.AreNotEqual (0, Manager.Progress, "#3");
+            Assert.AreEqual (0, Manager.PartialProgress, "#4");
+        }
+
+        [Test]
+        public void PartialProgress_UnrelatedDownloaded_SomeDoNotDownload ()
+        {
+            Manager.OnPieceHashed (0, true);
+
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            Manager.Torrent.Files.Last ().Priority = Priority.Normal;
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.UpdateSeedingDownloadingState ();
+
+            Assert.AreNotEqual (0, Manager.Progress, "#3");
+            Assert.AreEqual (0, Manager.PartialProgress, "#4");
         }
     }
 }

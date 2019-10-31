@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Dht;
 
 namespace SampleClient
@@ -38,10 +37,10 @@ namespace SampleClient
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
             // or an unhandled exception happens
-            Console.CancelKeyPress += delegate { shutdown().Wait(); };
-            AppDomain.CurrentDomain.ProcessExit += delegate { shutdown().Wait(); };
-            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown().Wait(); };
-            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown().Wait(); };
+            Console.CancelKeyPress += delegate { Shutdown().Wait(); };
+            AppDomain.CurrentDomain.ProcessExit += delegate { Shutdown().Wait(); };
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); Shutdown().Wait(); };
+            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); Shutdown().Wait(); };
 
             StartEngine().Wait();
         }
@@ -57,21 +56,17 @@ namespace SampleClient
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
-            EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
-            engineSettings.PreferEncryption = false;
-            engineSettings.AllowedEncryption = EncryptionTypes.All;
+            EngineSettings engineSettings = new EngineSettings {
+                SavePath = downloadsPath,
+                ListenPort = port
+            };
 
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
             //engineSettings.MaxReadRate = 1 * 1024 * 1024;
 
-
             // Create the default settings which a torrent will have.
-            // 4 Upload slots - a good ratio is one slot per 5kB of upload speed
-            // 50 open connections - should never really need to be changed
-            // Unlimited download speed - valid range from 0 -> int.Max
-            // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
+            TorrentSettings torrentDefaults = new TorrentSettings ();
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
@@ -157,6 +152,14 @@ namespace SampleClient
             // in the torrent manager and start the engine.
             foreach (TorrentManager manager in torrents)
             {
+                manager.PeerConnected += (o, e) => {
+                    lock (listener)
+                        listener.WriteLine (string.Format ("Connection succeeded: {0}", e.Peer.Uri));
+                };
+                manager.ConnectionAttemptFailed += (o, e) => {
+                    lock (listener)
+                        listener.WriteLine (string.Format ("Connection failed: {0} - {1} - {2}", e.Peer.ConnectionUri, e.Reason, e.Peer.AllowedEncryption));
+                };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate(object o, PieceHashedEventArgs e) {
                     lock (listener)
@@ -231,7 +234,7 @@ namespace SampleClient
                     listener.ExportTo(Console.Out);
                 }
 
-                System.Threading.Thread.Sleep(500);
+                Thread.Sleep(500);
             }
         }
 
@@ -247,28 +250,31 @@ namespace SampleClient
             AppendFormat(sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
             AppendFormat(sb, "", null);
         }
-		private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
-		{
+
+        private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
+        {
             if (formatting != null)
                 sb.AppendFormat(str, formatting);
             else
                 sb.Append(str);
-			sb.AppendLine();
-		}
+            sb.AppendLine();
+        }
 
-		private static async Task shutdown()
+		private static async Task Shutdown()
 		{
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
             {
-                await torrents[i].StopAsync(); ;
+                var stoppingTask = torrents[i].StopAsync();
                 while (torrents[i].State != TorrentState.Stopped)
                 {
                     Console.WriteLine("{0} is {1}", torrents[i].Torrent.Name, torrents[i].State);
                     Thread.Sleep(250);
                 }
+                await stoppingTask;
 
-                fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
+                if (torrents[i].HashChecked)
+                    fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
             }
 
             var nodes = await engine.DhtEngine.SaveNodesAsync ();

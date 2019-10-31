@@ -1,10 +1,10 @@
-//
-// AnnounceEventArgs.cs
+﻿//
+// Error.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,14 +27,25 @@
 //
 
 
-namespace MonoTorrent.Tracker
-{
-    public sealed class AnnounceEventArgs : PeerEventArgs
-    {
-        public AnnounceEventArgs(Peer peer, ITrackerItem torrent)
-            : base(peer, torrent)
-        {
+using System;
 
+namespace MonoTorrent.Client
+{
+    public enum Reason
+    {
+        ReadFailure,
+        WriteFailure
+    }
+
+    public class Error
+    {
+        public Exception Exception { get; }
+        public Reason Reason { get; }
+
+        public Error(Reason reason, Exception exception)
+        {
+            Reason = reason;
+            Exception = exception;
         }
     }
 }

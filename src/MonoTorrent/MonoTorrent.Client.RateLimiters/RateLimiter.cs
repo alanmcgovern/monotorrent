@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.RateLimiters
             long c;
             do
             {
-                c = chunks;
+                c = Interlocked.Read (ref chunks);
                 if (c < amount)
                     return false;
 

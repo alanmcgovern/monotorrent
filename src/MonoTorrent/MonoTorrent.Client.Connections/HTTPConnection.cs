@@ -36,10 +36,11 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class HttpConnection : IConnection
+    sealed class HttpConnection : IConnection2
     {
         class HttpRequestData
         {
@@ -115,13 +116,18 @@ namespace MonoTorrent.Client.Connections
 
         #endregion Constructors
 
+        Task IConnection.ConnectAsync ()
+            => Task.CompletedTask;
 
-        public Task ConnectAsync()
+        public ReusableTask ConnectAsync ()
         {
-            return Task.CompletedTask;
+            return ReusableTask.CompletedTask;
         }
 
-        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
+            => await ReceiveAsync (buffer, offset, count);
+
+        public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
             // This is a little tricky, so let's spell it out in comments...
             if (Disposed)
@@ -239,7 +245,10 @@ namespace MonoTorrent.Client.Connections
             throw new WebException ("Unable to download the required data from the server");
         }
 
-        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
+            => await SendAsync (buffer, offset, count);
+
+        public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
         {
             SendResult = new TaskCompletionSource<object>();
 

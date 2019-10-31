@@ -1,10 +1,10 @@
-//
-// TorrentWatcher.cs
+﻿//
+// ITrackerItem.cs
 //
 // Authors:
-//   Stephane Zanoni   stephane@ethernal.net
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Stephane Zanoni
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,26 +28,48 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace MonoTorrent.TorrentWatcher
+using MonoTorrent.BEncoding;
+
+
+namespace MonoTorrent.Tracker
 {
     /// <summary>
-    /// Provides the data needed to handle a TorrentWatcher event
+    /// Represents the metadata for a torrent when it is being tracked in a <see cref="TrackerServer"/>
     /// </summary>
-    public class TorrentWatcherEventArgs : EventArgs
+    public interface ITrackerItem
     {
         /// <summary>
-        /// The full path of the torrent
+        /// The number of active seeders
         /// </summary>
-        public string TorrentPath { get; }
+        int Complete { get; }
 
         /// <summary>
-        /// Creates a new TorrentWatcherEventArgs
+        /// The total number of peers being tracked
         /// </summary>
-        /// <param name="torrentPath">The full path to the torrent file</param>
-        public TorrentWatcherEventArgs(string torrentPath)
-        {
-            TorrentPath = torrentPath;
-        }
+        int Count { get; }
+
+        /// <summary>
+        /// The total number of times the torrent has been fully downloaded
+        /// </summary>
+        int Downloaded { get; }
+
+        /// <summary>
+        /// The number of active leechers
+        /// </summary>
+        int Incomplete { get; }
+
+        /// <summary>
+        /// Represents the InfoHash (or equivalent) of the torrent which is being tracked.
+        /// </summary>
+        ITrackable Trackable { get; }
+
+        /// <summary>
+        /// Return a copy of the list of peers
+        /// </summary>
+        /// <returns></returns>
+        List<Peer> GetPeers();
     }
 }

@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
@@ -76,7 +75,7 @@ namespace MonoTorrent.Client
 
         internal void OnTick()
         {
-            if (!Manager.Settings.EnablePeerExchange)
+            if (!Manager.Settings.AllowPeerExchange)
                 return;
 
             int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;

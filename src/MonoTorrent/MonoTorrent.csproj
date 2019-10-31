@@ -2,8 +2,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <MonoTorrentABIVersion>0.99.0.0</MonoTorrentABIVersion>
+    <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <GitVersionFile>version.txt</GitVersionFile>
     <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
@@ -14,10 +17,10 @@
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
-    <PackDependsOn>$(PackDependsOn);CreatePlainZip</PackDependsOn>
+    <PackDependsOn>$(PackDependsOn)</PackDependsOn>
   </PropertyGroup>
 
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(Configuration)' == 'Debug' ">
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' ">
     <PropertyGroup>
       <Version>0.0.0.1</Version>
       <AssemblyVersion>$(Version)</AssemblyVersion>
@@ -76,6 +79,7 @@ Notable features include:
 
       <IncludeSource>true</IncludeSource>
       <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
       <RepositoryType>git</RepositoryType>
       <RepositoryBranch>$(GitBranch)</RepositoryBranch>
@@ -86,12 +90,9 @@ Notable features include:
     </PropertyGroup>
   </Target>
 
-  <Target Name="CreatePlainZip" DependsOnTargets="SetAssemblyVersion" Inputs="$(TargetPath)" Outputs="$(PackageOutputPath)\MonoTorrent-$(MonoTorrentFileVersion).zip">
-    <ZipDirectory SourceDirectory="$(OutputPath)" DestinationFile="$(PackageOutputPath)\MonoTorrent-$(MonoTorrentFileVersion).zip" Overwrite="true" Condition="'$(PackageOutputPath)' != ''" />
-  </Target>
-
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.20" PrivateAssets="all" />
+    <PackageReference Include="ReusableTasks" Version="0.99.4" />
   </ItemGroup>
 
   <ItemGroup>

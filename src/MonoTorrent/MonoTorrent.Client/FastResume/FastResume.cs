@@ -36,50 +36,68 @@ namespace MonoTorrent.Client
 {
     public class FastResume
     {
-        private static readonly BEncodedString VersionKey = (BEncodedString)"version";
-        private static readonly BEncodedString InfoHashKey = (BEncodedString)"infohash";
-        private static readonly BEncodedString BitfieldKey = (BEncodedString)"bitfield";
-        private static readonly BEncodedString BitfieldLengthKey = (BEncodedString)"bitfield_length";
+        // Version 1 stored the Bitfield and Infohash.
+        //
+        // Version 2 added the UnhashedPieces bitfield.
+        //
+        static readonly BEncodedNumber FastResumeVersion = 2;
 
-        private BitField bitfield;
-        private InfoHash infoHash;
+        internal static readonly BEncodedString BitfieldKey = "bitfield";
+        internal static readonly BEncodedString BitfieldLengthKey = "bitfield_length";
+        internal static readonly BEncodedString InfoHashKey = "infohash";
+        internal static readonly BEncodedString UnhashedPiecesKey = "unhashed_pieces";
+        internal static readonly BEncodedString VersionKey = "version";
 
-        public BitField Bitfield
+        public BitField Bitfield { get; }
+
+        public InfoHash Infohash { get; }
+
+        public BitField UnhashedPieces { get; }
+
+        [Obsolete ("This constructor should not be used")]
+        public FastResume ()
         {
-            get { return bitfield; }
         }
 
-        public InfoHash Infohash
+        [Obsolete("The constructor overload which takes an 'unhashedPieces' parameter should be used instead of this.")]
+        public FastResume (InfoHash infoHash, BitField bitfield)
         {
-            get { return infoHash; }
+            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            Bitfield = bitfield ?? throw new ArgumentNullException (nameof (bitfield));
+            UnhashedPieces = new BitField (Bitfield.Length);
         }
 
-        public FastResume()
+        public FastResume(InfoHash infoHash, BitField bitfield, BitField unhashedPieces)
         {
-        }
+            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            Bitfield = bitfield?.Clone () ?? throw new ArgumentNullException (nameof (bitfield));
+            UnhashedPieces = unhashedPieces?.Clone () ?? throw new ArgumentNullException (nameof (UnhashedPieces));
 
-        public FastResume(InfoHash infoHash, BitField bitfield)
-        {
-            if (infoHash==null)
-                throw new ArgumentNullException("infoHash");
-            if(bitfield == null)
-                throw new ArgumentNullException("bitfield");
-
-            this.infoHash = infoHash;
-            this.bitfield = bitfield;
+            for (int i = 0; i < Bitfield.Length; i ++) {
+                if (bitfield [i] && unhashedPieces [i])
+                    throw new ArgumentException ($"The bitfield is set to true at index {i} but that piece is marked as unhashed.");
+            }
         }
 
         public FastResume(BEncodedDictionary dict)
         {
-            CheckContent(dict, VersionKey, (BEncodedNumber)1);
+            CheckVersion(dict);
             CheckContent(dict, InfoHashKey);
             CheckContent(dict, BitfieldKey);
             CheckContent(dict, BitfieldLengthKey);
 
-            infoHash = new InfoHash(((BEncodedString)dict[InfoHashKey]).TextBytes);
-            bitfield = new BitField((int)((BEncodedNumber)dict[BitfieldLengthKey]).Number);
+            Infohash = new InfoHash(((BEncodedString)dict[InfoHashKey]).TextBytes);
+
+            Bitfield = new BitField((int)((BEncodedNumber)dict[BitfieldLengthKey]).Number);
             byte[] data = ((BEncodedString)dict[BitfieldKey]).TextBytes;
-            bitfield.FromArray(data, 0, data.Length);
+            Bitfield.FromArray(data, 0, data.Length);
+
+            UnhashedPieces = new BitField (Bitfield.Length);
+            // If we're loading up an older version of the FastResume data then we
+            if (dict.ContainsKey (UnhashedPiecesKey)) {
+                data = ((BEncodedString)dict[UnhashedPiecesKey]).TextBytes;
+                UnhashedPieces.FromArray(data, 0, data.Length);
+            }
         }
 
         private void CheckContent(BEncodedDictionary dict, BEncodedString key, BEncodedNumber value)
@@ -95,14 +113,24 @@ namespace MonoTorrent.Client
                 throw new TorrentException(string.Format("Invalid FastResume data. Key '{0}' was not present", key));
         }
 
+        private void CheckVersion (BEncodedDictionary dict)
+        {
+            var version = (dict [VersionKey] as BEncodedNumber)?.Number;
+            if (version.GetValueOrDefault () == 1 || version.GetValueOrDefault () == 2)
+                return;
+
+            throw new ArgumentException ($"This FastResume is version {version}, but only version  '1' and '2' are supported");
+        }
+
         public BEncodedDictionary Encode()
         {
-            BEncodedDictionary dict = new BEncodedDictionary();
-            dict.Add(VersionKey, (BEncodedNumber)1);
-            dict.Add(InfoHashKey, new BEncodedString(infoHash.Hash));
-            dict.Add(BitfieldKey, new BEncodedString(bitfield.ToByteArray()));
-            dict.Add(BitfieldLengthKey, (BEncodedNumber)bitfield.Length);
-            return dict;
+            return new BEncodedDictionary {
+                { VersionKey, (BEncodedNumber)FastResumeVersion },
+                { InfoHashKey, new BEncodedString(Infohash.Hash) },
+                { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
+                { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },
+                { UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) }
+            };
         }
 
         public void Encode(Stream s)

@@ -1,4 +1,5 @@
 *.cs text
+*.csproj text
 *.dll.config text
 *.exe.config text
 *.md text

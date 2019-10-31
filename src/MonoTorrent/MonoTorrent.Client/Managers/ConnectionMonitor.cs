@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
             get { return DataUp.Total; }
         }
 
-        public int DownloadSpeed
+        public long DownloadSpeed
         {
             get { return DataDown.Rate + ProtocolDown.Rate; }
         }
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
             get { return ProtocolUp.Total; }
         }
 
-        public int UploadSpeed
+        public long UploadSpeed
         {
             get { return DataUp.Rate + ProtocolUp.Rate; }
         }

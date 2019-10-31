@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -70,7 +69,7 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// Raised whenever new peers are discovered and added. The object will be of type
-        /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded>"/>, <see cref="LocalPeersAdded"/>
+        /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded"/>, <see cref="LocalPeersAdded"/>
         /// or <see cref="DhtPeersAdded"/> depending on the source of the new peers.
         /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
@@ -105,15 +104,21 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public BitField Bitfield { get; internal set; }
+        public BitField Bitfield { get; internal set;  }
 
-        public bool CanUseDht => Settings.UseDht && (Torrent == null || !Torrent.IsPrivate);
+        public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
         public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate);
 
+        /// <summary>
+        /// Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
+        /// torrent will not be considered to be Complete until they are downloaded.
+        /// </summary>
         public bool Complete => this.Bitfield.AllTrue;
 
-        internal RateLimiterGroup DownloadLimiter { get; private set; }
+        RateLimiter DownloadLimiter { get; set; }
+
+        internal RateLimiterGroup DownloadLimiters { get; private set; }
 
         public ClientEngine Engine { get; internal set; }
 
@@ -133,6 +138,13 @@ namespace MonoTorrent.Client
 			}
         }
 
+        /// <summary>
+        /// If <see cref="TorrentFile.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
+        /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
+        /// to ensure pieces which have not been hash checked are never downloaded.
+        /// </summary>
+        internal BitField UnhashedPieces { get; set; }
+
         internal int PeerReviewRoundsComplete
         {
             get
@@ -143,7 +155,6 @@ namespace MonoTorrent.Client
                     return 0;
             }
         }
-
 
         public bool HashChecked { get; internal set; }
 
@@ -183,6 +194,8 @@ namespace MonoTorrent.Client
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
+        internal BitField PartialProgressSelector { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -200,9 +213,34 @@ namespace MonoTorrent.Client
         /// </summary>
         internal InactivePeerManager InactivePeerManager { get; private set; }
 
+        /// <summary>
+        /// The download progress in percent (0 -> 100.0) for the files whose priority
+        /// is not set to <see cref="Priority.DoNotDownload"/>. If every file is marked
+        /// as <see cref="Priority.DoNotDownload"/> then this returns 0. If no file is
+        /// marked as 'DoNotDownload' then this returns the same value as <see cref="Progress"/>.
+        /// </summary>
+        public double PartialProgress {
+            get {
+                if (!HasMetadata)
+                    return Progress;
+
+                if (PartialProgressSelector.TrueCount == 0)
+                    return 0;
+
+                // This is an optimisation so we can fastpath the Bitfield operations when
+                // all files are marked as downloadable.
+                if (PartialProgressSelector.TrueCount == Bitfield.Length)
+                    return Progress;
+
+                var totalTrue = Bitfield.CountTrue (PartialProgressSelector);
+                return (totalTrue  * 100.0) / PartialProgressSelector.TrueCount;
+            }
+        }
 
         /// <summary>
-        /// The current progress of the torrent in percent
+        /// The download progress in percent (0 -> 100.0). This includes all files, even
+        /// if they are marked as <see cref="Priority.DoNotDownload"/>. This will return
+        /// '100.0' when all files in the torrent have been downloaded.
         /// </summary>
         public double Progress => Bitfield.PercentComplete;
 
@@ -242,7 +280,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public int UploadingTo { get; internal set; }
 
-        internal RateLimiterGroup UploadLimiter { get; private set; }
+        RateLimiter UploadLimiter { get; set; }
+
+        internal RateLimiterGroup UploadLimiters { get; private set; }
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
@@ -328,6 +368,8 @@ namespace MonoTorrent.Client
         void Initialise(string savePath, string baseDirectory, IList<RawTrackerTier> announces)
         {
             this.Bitfield = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
+            this.PartialProgressSelector = new BitField(HasMetadata ? Torrent.Pieces.Count : 1);
+            this.UnhashedPieces = new BitField(HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
             this.SavePath = Path.Combine(savePath, baseDirectory);
             this.finishedPieces = new Queue<HaveMessage>();
             this.Monitor = new ConnectionMonitor();
@@ -348,15 +390,17 @@ namespace MonoTorrent.Client
 
         void CreateRateLimiters()
         {
-            RateLimiter downloader = new RateLimiter();
-            DownloadLimiter = new RateLimiterGroup();
-            DownloadLimiter.Add(new PauseLimiter(this));
-            DownloadLimiter.Add(downloader);
+            DownloadLimiter = new RateLimiter();
+            DownloadLimiters = new RateLimiterGroup {
+                new PauseLimiter(this),
+                DownloadLimiter
+            };
 
-            RateLimiter uploader = new RateLimiter();
-            UploadLimiter = new RateLimiterGroup();
-            UploadLimiter.Add(new PauseLimiter(this));
-            UploadLimiter.Add(uploader);
+            UploadLimiter = new RateLimiter();
+            UploadLimiters = new RateLimiterGroup {
+                new PauseLimiter(this),
+                UploadLimiter
+            };
         }
 
         #endregion
@@ -367,8 +411,7 @@ namespace MonoTorrent.Client
         internal void ChangePicker(PiecePicker picker)
         {
             Check.Picker(picker);
-
-           PieceManager.ChangePicker(picker, Bitfield, Torrent);
+            PieceManager.ChangePicker(new IgnoringPicker (UnhashedPieces, picker), Bitfield, Torrent);
         }
 
         /// <summary>
@@ -457,6 +500,11 @@ namespace MonoTorrent.Client
             CheckRegisteredAndDisposed();
             StartTime = DateTime.Now;
 
+            // An IgnoringPicker is created to ensure pieces which *have not* been hash checked
+            // are not requested from other peers. The intention is that files marked as DoNotDownload
+            // will not be hashed, or downloaded.
+            UnhashedPieces.SetAll (true);
+
             var hashingMode = new HashingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             Mode = hashingMode;
             try {
@@ -516,15 +564,13 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
             CheckRegisteredAndDisposed();
-            if (State != TorrentState.Downloading && State != TorrentState.Seeding)
-                return;
 
-            // By setting the state to "paused", peers will not be dequeued from the either the
-            // sending or receiving queues, so no traffic will be allowed.
-            Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-            this.SaveFastResume();
+            if (Mode is HashingMode hashing) {
+                hashing.Pause ();
+            } else if (State == TorrentState.Downloading && State == TorrentState.Seeding) {
+                Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            }
         }
-
 
         /// <summary>
         /// Starts the TorrentManager
@@ -543,12 +589,16 @@ namespace MonoTorrent.Client
             // make sure the peers begin sending/receiving again
             if (State == TorrentState.Paused) {
                 Mode = new DownloadMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            } else if (Mode is HashingMode hashing) {
+                hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
                 Mode = new MetadataMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
             } else {
                 StartTime = DateTime.Now;
-                Mode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = startingMode;
+                _ = startingMode.WaitForStartingToComplete ();
             }
         }
 
@@ -671,6 +721,9 @@ namespace MonoTorrent.Client
         internal void OnPieceHashed(int index, bool hashPassed)
         {
             Bitfield[index] = hashPassed;
+            // The PiecePickers will no longer ignore this piece as it has now been hash checked.
+            UnhashedPieces[index] = false;
+
             TorrentFile[] files = this.Torrent.Files;
             
             for (int i = 0; i < files.Length; i++)
@@ -699,8 +752,8 @@ namespace MonoTorrent.Client
 
         internal void UpdateLimiters ()
         {
-            DownloadLimiter.UpdateChunks (Settings.MaxDownloadSpeed, Monitor.DownloadSpeed);
-            UploadLimiter.UpdateChunks (Settings.MaxUploadSpeed, Monitor.UploadSpeed);
+            DownloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, Monitor.DownloadSpeed);
+            UploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, Monitor.UploadSpeed);
         }
         #endregion Internal Methods
 
@@ -731,6 +784,7 @@ namespace MonoTorrent.Client
             picker = new RandomisedPicker(picker);
             picker = new RarestFirstPicker(picker);
             picker = new PriorityPicker(picker);
+
             return picker;
         }
 
@@ -745,6 +799,7 @@ namespace MonoTorrent.Client
 
             for (int i = 0; i < Torrent.Pieces.Count; i++)
                 OnPieceHashed (i, data.Bitfield[i]);
+            UnhashedPieces.From (data.UnhashedPieces);
 
             this.HashChecked = true;
         }
@@ -754,7 +809,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
-            return new FastResume(InfoHash, this.Bitfield);
+            return new FastResume(InfoHash, Bitfield, UnhashedPieces);
         }
 
         internal void SetTrackerManager (ITrackerManager manager)

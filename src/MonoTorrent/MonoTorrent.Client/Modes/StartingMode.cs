@@ -37,8 +37,6 @@ namespace MonoTorrent.Client.Modes
         public override bool CanHashCheck => true;
         public override TorrentState State => TorrentState.Starting;
 
-        public Task StartingTask { get; private set; }
-
         public StartingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
@@ -47,8 +45,6 @@ namespace MonoTorrent.Client.Modes
 
         public override void Tick (int counter)
         {
-            if (StartingTask == null)
-                StartingTask = WaitForStartingToComplete ();
         }
 
         public async Task WaitForStartingToComplete ()
@@ -76,9 +72,15 @@ namespace MonoTorrent.Client.Modes
                     await Manager.HashCheckAsync(false, false);
             }
 
+            if (!Manager.HashChecked) {
+                if (Manager.Mode == this)
+                    Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+                return;
+            }
+
             SendAnnounces ();
 
-            if (Manager.Complete && Manager.Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
+            if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
                 Manager.Mode = new InitialSeedingMode(Manager, DiskManager, ConnectionManager, Settings);
             }
             else {

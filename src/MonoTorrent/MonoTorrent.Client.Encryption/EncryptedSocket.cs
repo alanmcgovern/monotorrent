@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -82,7 +83,7 @@ namespace MonoTorrent.Client.Encryption
         readonly byte[] Y; // 2^X mod P
         private byte[] OtherY;
         
-        protected IConnection socket;
+        protected IConnection2 socket;
 
         // Data to be passed to initial ReceiveMessage requests
         private byte[] initialBuffer;
@@ -125,7 +126,7 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual async Task HandshakeAsync(IConnection socket)
+        public virtual async ReusableTask HandshakeAsync(IConnection2 socket)
         {
             this.socket = socket ?? throw new ArgumentNullException(nameof (socket));
 
@@ -151,7 +152,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual async Task HandshakeAsync(IConnection socket, byte[] initialBuffer, int offset, int count)
+        public virtual async ReusableTask HandshakeAsync(IConnection2 socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
@@ -197,7 +198,7 @@ namespace MonoTorrent.Client.Encryption
         /// Send Y to the remote client, with a random padding that is 0 to 512 bytes long
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async Task SendY()
+        protected async ReusableTask SendY()
         {
             byte[] toSend = new byte[96 + RandomNumber(512)];
             random.GetBytes(toSend);
@@ -210,7 +211,7 @@ namespace MonoTorrent.Client.Encryption
         /// Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async Task ReceiveY()
+        protected async ReusableTask ReceiveY()
         {
             OtherY = new byte[96];
             await ReceiveMessage(OtherY, 96);
@@ -218,7 +219,7 @@ namespace MonoTorrent.Client.Encryption
             await doneReceiveY ();
         }
 
-        protected abstract Task doneReceiveY ();
+        protected abstract ReusableTask doneReceiveY ();
 
         #endregion
 
@@ -230,7 +231,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="syncData">Buffer with the data to synchronize to</param>
         /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
-        protected async Task Synchronize(byte[] syncData, int syncStopPoint)
+        protected async ReusableTask Synchronize(byte[] syncData, int syncStopPoint)
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
@@ -276,14 +277,14 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException("Couldn't synchronise 1");
         }
 
-        protected virtual Task doneSynchronize()
+        protected virtual ReusableTask doneSynchronize()
         {
-            return Task.CompletedTask;
+            return ReusableTask.CompletedTask;
         }
         #endregion
 
         #region I/O Functions
-        protected async Task ReceiveMessage(byte[] buffer, int length)
+        protected async ReusableTask ReceiveMessage(byte[] buffer, int length)
         {
             if (length == 0)
             {
@@ -336,6 +337,7 @@ namespace MonoTorrent.Client.Encryption
         /// Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
         /// </summary>
         /// <param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param>
+        /// <param name="replace">True if the existing Encryptor/Decryptor object should be replaced with a new instance</param>
         protected virtual int SelectCrypto(byte[] remoteCryptoBytes, bool replace)
         {
             CryptoSelect = new byte[remoteCryptoBytes.Length];

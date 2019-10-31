@@ -47,6 +47,7 @@ namespace MonoTorrent.Client
         Downloading,
         Seeding,
         Hashing,
+        HashingPaused,
         Stopping,
         Error,
 		Metadata

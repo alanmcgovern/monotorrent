@@ -28,7 +28,7 @@
 
 
 using System;
-using System.Diagnostics;
+using System.Threading;
 
 namespace MonoTorrent
 {
@@ -37,13 +37,15 @@ namespace MonoTorrent
         internal const int DefaultAveragePeriod = 12;
 
         ValueStopwatch lastUpdated;
-        readonly int[] speeds;
+        long rate;
+        readonly long[] speeds;
         int speedsIndex;
         long tempRecvCount;
+        long total;
 
-        public int Rate { get; private set; }
+        public long Rate => Interlocked.Read (ref rate);
 
-        public long Total { get; private set; }
+        public long Total => Interlocked.Read (ref total);
 
         public SpeedMonitor()
             : this(DefaultAveragePeriod)
@@ -54,39 +56,50 @@ namespace MonoTorrent
         public SpeedMonitor(int averagingPeriod)
         {
             if (averagingPeriod < 0)
-                throw new ArgumentOutOfRangeException ("averagingPeriod");
+                throw new ArgumentOutOfRangeException (nameof (averagingPeriod));
 
-            this.lastUpdated = ValueStopwatch.StartNew ();
-            this.speeds = new int [Math.Max (1, averagingPeriod)];
-            this.speedsIndex = -speeds.Length;
+            lastUpdated = ValueStopwatch.StartNew ();
+            speeds = new long [Math.Max (1, averagingPeriod)];
+            speedsIndex = -speeds.Length;
         }
 
-
+        /// <summary>
+        /// This method is threadsafe and can be called at any point.
+        /// </summary>
+        /// <param name="speed"></param>
         public void AddDelta(int speed)
         {
-            lock (speeds)
-            {
-                this.Total += speed;
-                this.tempRecvCount += speed;
-            }
+            Interlocked.Add (ref total, speed);
+            Interlocked.Add (ref tempRecvCount, speed);
         }
 
         public void Reset()
         {
-            lock (speeds)
-            {
-                Total = 0;
-                Rate = 0;
-                tempRecvCount = 0;
-                lastUpdated.Restart ();
-                speedsIndex = -speeds.Length;
-            }
+            Interlocked.Exchange (ref total, 0);
+            Interlocked.Exchange (ref tempRecvCount, 0);
+
+            rate = 0;
+            lastUpdated.Restart ();
+            speedsIndex = -speeds.Length;
         }
 
-        private void TimePeriodPassed(int difference)
+        public void Tick()
         {
-            int currSpeed = (int)(tempRecvCount * 1000 / difference);
-            tempRecvCount = 0;
+            int difference = (int) lastUpdated.Elapsed.TotalMilliseconds;
+            if (difference > 800)
+                Tick (difference);
+        }
+
+        internal void Tick (int difference)
+        {
+            lastUpdated.Restart ();
+            TimePeriodPassed(difference);
+        }
+
+        void TimePeriodPassed(int difference)
+        {
+            long currSpeed = Interlocked.Exchange (ref tempRecvCount, 0);
+            currSpeed = (currSpeed * 1000) / difference;
 
             int speedsCount;
             if( speedsIndex < 0 )
@@ -108,27 +121,13 @@ namespace MonoTorrent
         
                 speedsIndex = (speedsIndex + 1) % speeds.Length;
             }
-        
-            int total = speeds[0];
+
+            var sumTotal = speeds[0];
             for( int i = 1; i < speedsCount; i++ )
-                total += speeds[i];
+                sumTotal += speeds[i];
 
-            Rate = total / speedsCount;
+            Interlocked.Exchange (ref rate, sumTotal / speedsCount);
         }
 
-        public void Tick()
-        {
-            int difference = (int) lastUpdated.Elapsed.TotalMilliseconds;
-            if (difference > 800)
-                Tick (difference);
-        }
-
-        internal void Tick (int difference)
-        {
-            lock (speeds)  {
-                lastUpdated.Restart ();
-                TimePeriodPassed(difference);
-            }
-        }
     }
 }

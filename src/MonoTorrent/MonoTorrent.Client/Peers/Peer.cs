@@ -33,7 +33,6 @@ using System.Net;
 using System.Text;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {

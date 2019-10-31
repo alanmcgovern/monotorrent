@@ -205,12 +205,14 @@ namespace MonoTorrent.Client.Modes
 
         private void SwitchToRegular()
         {
-            Torrent torrent = Manager.Torrent;
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
-            Manager.Bitfield = new BitField(torrent.Pieces.Count);
-            Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent);
-            foreach (TorrentFile file in torrent.Files)
+            Manager.Bitfield = new BitField(Manager.Torrent.Pieces.Count);
+            Manager.PartialProgressSelector = new BitField (Manager.Torrent.Pieces.Count);
+            Manager.UnhashedPieces = new BitField(Manager.Torrent.Pieces.Count).SetAll (true);
+
+            Manager.ChangePicker(Manager.CreateStandardPicker());
+            foreach (TorrentFile file in Manager.Torrent.Files)
                 file.FullPath = Path.Combine (Manager.SavePath, file.Path);
             _ = Manager.StartAsync();
         }

@@ -29,10 +29,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.RateLimiters;
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
@@ -42,14 +42,14 @@ namespace MonoTorrent.Client
 
         public struct QueuedIO
         {
-            public IConnection connection;
+            public IConnection2 connection;
             public byte [] buffer;
             public int offset;
             public int count;
             public IRateLimiter rateLimiter;
-            public TaskCompletionSource<int> tcs;
+            public ReusableTaskCompletionSource<int> tcs;
 
-            public QueuedIO (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, TaskCompletionSource<int> tcs)
+            public QueuedIO (IConnection2 connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
             {
                 this.connection = connection;
                 this.buffer = buffer;
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
 
         // The biggest message is a PieceMessage which is 16kB + some overhead
         // so send in chunks of 2kB + a little so we do 8 transfers per piece.
-        const int ChunkLength = 2048 + 32;
+        internal const int ChunkLength = 2048 + 32;
 
         static readonly Queue<QueuedIO> receiveQueue = new Queue<QueuedIO> ();
         static readonly Queue<QueuedIO> sendQueue = new Queue<QueuedIO> ();
@@ -109,30 +109,32 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static async Task ConnectAsync (IConnection connection)
+        public static async ReusableTask ConnectAsync (IConnection2 connection)
         {
             await IOLoop;
 
             await connection.ConnectAsync ();
         }
 
-        public static Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count)
+        public static ReusableTask ReceiveAsync(IConnection2 connection, byte [] buffer, int offset, int count)
             => ReceiveAsync (connection, buffer, offset, count, null, null, null);
 
-        public static async Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask ReceiveAsync(IConnection2 connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
-            int remaining = count;
-            while (remaining > 0) {
+            while (count > 0) {
                 int transferred;
-                if (rateLimiter != null && !rateLimiter.Unlimited && !rateLimiter.TryProcess (Math.Min (ChunkLength, remaining))) {
-                    var tcs = new TaskCompletionSource<int> ();
+                bool unlimited = rateLimiter?.Unlimited ?? true;
+                var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+
+                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
+                    var tcs = new ReusableTaskCompletionSource<int> ();
                     await IOLoop;
-                    receiveQueue.Enqueue (new QueuedIO (connection, buffer, offset, Math.Min (ChunkLength, remaining), rateLimiter, tcs));
+                    receiveQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait(false);
                 } else {
-                    transferred = await connection.ReceiveAsync(buffer, offset, remaining).ConfigureAwait(false);
+                    transferred = await connection.ReceiveAsync(buffer, offset, shouldRead).ConfigureAwait(false);
                 }
 
                 if (transferred == 0)
@@ -142,28 +144,30 @@ namespace MonoTorrent.Client
                 managerMonitor?.AddDelta(transferred);
 
                 offset += transferred;
-                remaining -= transferred;
+                count -= transferred;
             } 
         }
 
-        public static Task SendAsync (IConnection connection, byte [] buffer, int offset, int count)
+        public static ReusableTask SendAsync (IConnection2 connection, byte [] buffer, int offset, int count)
             => SendAsync (connection, buffer, offset, count, null, null, null);
 
-        public static async Task SendAsync (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask SendAsync (IConnection2 connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
-            int remaining = count;
-            while (remaining > 0)
+            while (count > 0)
             {
                 int transferred;
-                if (rateLimiter != null && !rateLimiter.Unlimited && !rateLimiter.TryProcess (Math.Min (ChunkLength, remaining))) {
-                    var tcs = new TaskCompletionSource<int> ();
+                bool unlimited = rateLimiter?.Unlimited ?? true;
+                var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+
+                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
+                    var tcs = new ReusableTaskCompletionSource<int> ();
                     await IOLoop;
-                    sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, Math.Min (ChunkLength, remaining), rateLimiter, tcs));
+                    sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait(false);
                 } else {
-                    transferred = await connection.SendAsync(buffer, offset, remaining).ConfigureAwait(false);
+                    transferred = await connection.SendAsync(buffer, offset, shouldRead).ConfigureAwait(false);
                 }
 
                 if (transferred == 0)
@@ -173,7 +177,7 @@ namespace MonoTorrent.Client
                 managerMonitor?.AddDelta(transferred);
 
                 offset += transferred;
-                remaining -= transferred;
+                count -= transferred;
             }
         }
     }

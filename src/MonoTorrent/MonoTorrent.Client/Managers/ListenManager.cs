@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
@@ -93,9 +94,10 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < Engine.Torrents.Count; i++)
                     skeys.Add(Engine.Torrents[i].InfoHash);
 
-                var result = await EncryptorFactory.CheckIncomingConnectionAsync(e.Connection, e.Peer.AllowedEncryption, Engine.Settings, skeys.ToArray());
-                if (!await HandleHandshake(e.Peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
-                    e.Connection.Dispose();
+                var connection = ConnectionConverter.Convert (e.Connection);
+                var result = await EncryptorFactory.CheckIncomingConnectionAsync(connection, e.Peer.AllowedEncryption, Engine.Settings, skeys.ToArray());
+                if (!await HandleHandshake(e.Peer, connection, result.Handshake, result.Decryptor, result.Encryptor))
+                    connection.Dispose();
             }
             catch
             {
@@ -139,7 +141,7 @@ namespace MonoTorrent.Client
             id.ClientApp = new Software(message.PeerId);
 
             message = new HandshakeMessage(man.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
-            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, man.UploadLimiter, id.Monitor, man.Monitor);
+            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, man.UploadLimiters, id.Monitor, man.Monitor);
             Engine.ConnectionManager.IncomingConnectionAccepted (man, id);
             return true;
         }
