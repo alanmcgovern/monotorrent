@@ -86,6 +86,7 @@ namespace MonoTorrent.Client.Tracker
 
             infoHash = new InfoHash (infoHashBytes.Concat (infoHashBytes).ToArray ());
             announceParams = new AnnounceParameters()
+                .WithPort (5555)
                 .WithPeerId (peerId)
                 .WithInfoHash (infoHash);
 
