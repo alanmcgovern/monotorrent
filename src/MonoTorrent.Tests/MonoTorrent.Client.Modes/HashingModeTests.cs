@@ -107,6 +107,20 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task HashCheckAsync_Autostart ()
+        {
+            await Manager.HashCheckAsync (true);
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#1");
+        }
+
+        [Test]
+        public async Task HashCheckAsync_DoNotAutostart ()
+        {
+            await Manager.HashCheckAsync (false);
+            Assert.AreEqual (TorrentState.Stopped, Manager.State, "#1");
+        }
+
+        [Test]
         public async Task PauseResumeHashingMode ()
         {
             var pieceHashed = new TaskCompletionSource<object> ();

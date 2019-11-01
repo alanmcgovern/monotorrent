@@ -589,7 +589,7 @@ namespace MonoTorrent.Client
             // make sure the peers begin sending/receiving again
             if (State == TorrentState.Paused) {
                 Mode = new DownloadMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-            } else if (Mode is HashingMode hashing) {
+            } else if (Mode is HashingMode hashing && !HashChecked) {
                 hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
