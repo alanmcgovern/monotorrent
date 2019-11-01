@@ -33,6 +33,7 @@ using System.Net;
 using System.Text;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -132,7 +133,7 @@ namespace MonoTorrent.Client
         internal void CompactPeer(byte[] data, int offset)
         {
             Buffer.BlockCopy(IPAddress.Parse(ConnectionUri.Host).GetAddressBytes(), 0, data, offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(((short)ConnectionUri.Port))), 0, data, offset + 4, 2);
+            Message.Write(data, offset + 4, (short)ConnectionUri.Port);
         }
 
         internal void HashedPiece(bool succeeded)
