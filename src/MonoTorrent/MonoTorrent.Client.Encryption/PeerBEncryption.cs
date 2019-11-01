@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Encryption
 
         protected override async ReusableTask doneReceiveY()
         {
-            byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
+            byte[] req1 = Hash(Req1Bytes, S);
             await Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
         }
 
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.Encryption
             if (!MatchSKEY(torrentHash))
                 throw new EncryptionException("No valid SKey found");
 
-            CreateCryptors("keyB", "keyA");
+            CreateCryptors(KeyBBytes, KeyABytes);
 
             DoDecrypt(verifyBytes, 20, 14); // ENCRYPT(VC, ...
 
@@ -135,8 +135,8 @@ namespace MonoTorrent.Client.Encryption
         {
             for (int i = 0; i < PossibleSKEYs.Length; i++)
             {
-                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), PossibleSKEYs[i].Hash);
-                byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+                byte[] req2 = Hash(Req2Bytes, PossibleSKEYs[i].Hash);
+                byte[] req3 = Hash(Req3Bytes, S);
                     
                 bool match = true;
                 for (int j = 0; j < req2.Length && match; j++)
