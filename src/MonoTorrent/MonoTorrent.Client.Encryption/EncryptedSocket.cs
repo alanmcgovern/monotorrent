@@ -64,6 +64,13 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     abstract class EncryptedSocket : IEncryptor
     {
+        protected static readonly byte[] Req1Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'1' };
+        protected static readonly byte[] Req2Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'2' };
+        protected static readonly byte[] Req3Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'3' };
+
+        protected static readonly byte[] KeyABytes = { (byte)'k', (byte)'e', (byte)'y', (byte)'A' };
+        protected static readonly byte[] KeyBBytes = { (byte)'k', (byte)'e', (byte)'y', (byte)'B' };
+
         // Cryptors for the data transmission
         public IEncryption Decryptor { get; private set; }
         public IEncryption Encryptor { get; private set; }
@@ -327,10 +334,10 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="encryptionSalt">The salt to calculate the encryption key with</param>
         /// <param name="decryptionSalt">The salt to calculate the decryption key with</param>
-        protected void CreateCryptors(string encryptionSalt, string decryptionSalt)
+        protected void CreateCryptors(byte[] encryptionSalt, byte[] decryptionSalt)
         {
-            encryptor = new RC4(Hash(Encoding.ASCII.GetBytes(encryptionSalt), S, SKEY.Hash));
-            decryptor = new RC4(Hash(Encoding.ASCII.GetBytes(decryptionSalt), S, SKEY.Hash));
+            encryptor = new RC4(Hash(encryptionSalt, S, SKEY.Hash));
+            decryptor = new RC4(Hash(decryptionSalt, S, SKEY.Hash));
         }
 
         /// <summary>
@@ -397,11 +404,19 @@ namespace MonoTorrent.Client.Encryption
         /// <summary>
         /// Hash some data with SHA1
         /// </summary>
-        /// <param name="data">Buffers to hash</param>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <param name="third"></param>
         /// <returns>20-byte hash</returns>
-        protected byte[] Hash(params byte[][] data)
+        protected byte[] Hash(byte[] first, byte[] second, byte[] third = null)
         {
-            return hasher.ComputeHash(Combine(data));
+            hasher.Initialize ();
+            hasher.TransformBlock (first, 0, first.Length, first, 0);
+            hasher.TransformBlock (second, 0, second.Length, second, 0);
+            if (third != null)
+                hasher.TransformBlock (third, 0, third.Length, third, 0);
+            hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+            return hasher.Hash;
         }
 
         /// <summary>
