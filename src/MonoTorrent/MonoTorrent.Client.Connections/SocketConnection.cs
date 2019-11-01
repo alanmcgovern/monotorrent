@@ -150,9 +150,13 @@ namespace MonoTorrent.Client.Connections
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferManager, then we should put it back in the 'other' cache.
-            if (e.Buffer == null || !ClientEngine.BufferManager.OwnsBuffer (e.Buffer))
-                lock (bufferCache)
-                    otherCache.Enqueue (e);
+            if (e.Buffer == null || !ClientEngine.BufferManager.OwnsBuffer(e.Buffer))  {
+                lock (bufferCache) {
+                    if (e.Buffer != null)
+                        e.SetBuffer(null, 0, 0);
+                    otherCache.Enqueue(e);
+                }
+            }
 
             if (error != SocketError.Success)
                 tcs.SetException(new SocketException((int) error));
