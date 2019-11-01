@@ -75,38 +75,43 @@ namespace MonoTorrent.Client.Encryption
             // If the connection is incoming, receive the handshake before
             // trying to decide what encryption to use
 
-            var buffer = new byte[HandshakeMessage.HandshakeLength];
-            await NetworkIO.ReceiveAsync(connection, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
-
-            HandshakeMessage message = new HandshakeMessage();
-            message.Decode(buffer, 0, buffer.Length);
-
-            if (message.ProtocolString == VersionInfo.ProtocolStringV100) {
-                if (supportsPlainText)
-                    return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, message);
-            }
-            else if (supportsRC4Header || supportsRC4Full)
+            var buffer = ClientEngine.BufferManager.GetBuffer(HandshakeMessage.HandshakeLength);
+            var message = new HandshakeMessage();
+            try
             {
-                // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
-                var encSocket = new PeerBEncryption(sKeys, EncryptionTypes.All);
-                await encSocket.HandshakeAsync(connection, buffer, 0, buffer.Length);
-                if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
-                    throw new EncryptionException("Decryptor was RC4Header but that is not allowed");
-                if (encSocket.Decryptor is RC4 && !supportsRC4Full)
-                    throw new EncryptionException("Decryptor was RC4Full but that is not allowed");
+                await NetworkIO.ReceiveAsync(connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait(false);
+                message.Decode(buffer, 0, HandshakeMessage.HandshakeLength);
 
-                // As the connection was encrypted, the data we got from the initial Receive call will have
-                // been consumed during the crypto handshake process. Now that the encrypted handshake has
-                // been established, we should ensure we read the data again.
-                var data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : null;
-                if (data == null) {
-                    data = buffer;
-                    await NetworkIO.ReceiveAsync (connection, data, 0, data.Length, null, null, null);
-                    encSocket.Decryptor.Decrypt (data);
+
+                if (message.ProtocolString == VersionInfo.ProtocolStringV100) {
+                    if (supportsPlainText)
+                        return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, message);
                 }
-                message.Decode (data, 0, data.Length);
-                if (message.ProtocolString == VersionInfo.ProtocolStringV100)
-                    return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, message);
+                else if (supportsRC4Header || supportsRC4Full)
+                {
+                    // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
+                    var encSocket = new PeerBEncryption(sKeys, EncryptionTypes.All);
+                    await encSocket.HandshakeAsync(connection, buffer, 0, HandshakeMessage.HandshakeLength);
+                    if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
+                        throw new EncryptionException("Decryptor was RC4Header but that is not allowed");
+                    if (encSocket.Decryptor is RC4 && !supportsRC4Full)
+                        throw new EncryptionException("Decryptor was RC4Full but that is not allowed");
+
+                    // As the connection was encrypted, the data we got from the initial Receive call will have
+                    // been consumed during the crypto handshake process. Now that the encrypted handshake has
+                    // been established, we should ensure we read the data again.
+                    var data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : null;
+                    if (data == null)  {
+                        data = buffer;
+                        await NetworkIO.ReceiveAsync(connection, data, 0, HandshakeMessage.HandshakeLength, null, null, null);
+                        encSocket.Decryptor.Decrypt(data, 0, HandshakeMessage.HandshakeLength);
+                    }
+                    message.Decode(data, 0, HandshakeMessage.HandshakeLength);
+                    if (message.ProtocolString == VersionInfo.ProtocolStringV100)
+                        return new EncryptorResult(encSocket.Decryptor, encSocket.Encryptor, message);
+                }
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer(buffer);
             }
 
             connection.Dispose ();
@@ -144,8 +149,14 @@ namespace MonoTorrent.Client.Encryption
             else if (supportsPlainText)
             {
                 if (handshake != null) {
-                    var buffer = handshake.Encode ();
-                    await NetworkIO.SendAsync (connection, buffer, 0, buffer.Length, null, null, null);
+                    var length = handshake.ByteLength;
+                    var buffer = ClientEngine.BufferManager.GetBuffer(length);
+                    handshake.Encode(buffer, 0);
+                    try  {
+                        await NetworkIO.SendAsync(connection, buffer, 0, length, null, null, null);
+                    } finally  {
+                        ClientEngine.BufferManager.FreeBuffer(buffer);
+                    }
                 }
                 return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, null);
             }
