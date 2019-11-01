@@ -41,9 +41,9 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Public Properties
 
         public override int ByteLength => messageLength + 4;
-        public int PieceIndex { get; private set; }
-        public int RequestLength { get; private set; }
-        public int StartOffset { get; private set; }
+        public int PieceIndex { get; protected set; }
+        public int RequestLength { get; protected set; }
+        public int StartOffset { get; protected set; }
 
         #endregion
 
