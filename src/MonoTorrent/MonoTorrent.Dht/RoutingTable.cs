@@ -100,7 +100,7 @@ namespace MonoTorrent.Dht
 
         private bool Split(Bucket bucket)
         {
-            if (bucket.Capacity < Bucket.MaxCapacity)
+            if (!bucket.CanSplit)
                 return false;//to avoid infinite loop when add same node
             
             NodeId median = NodeId.Median (bucket.Min, bucket.Max);
