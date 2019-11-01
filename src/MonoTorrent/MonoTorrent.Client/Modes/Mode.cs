@@ -725,29 +725,33 @@ namespace MonoTorrent.Client.Modes
 
         void SendHaveMessagesToAll()
         {
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)
-            {
-                if (Manager.Peers.ConnectedPeers[i].Connection == null)
-                    continue;
+            if (Manager.finishedPieces.Count == 0)
+                return;
 
-                MessageBundle bundle = new MessageBundle();
-
-                foreach (var haveMessage in Manager.finishedPieces)
-                {
-                    // If the peer has the piece already, we need to recalculate his "interesting" status.
-                    bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[haveMessage.PieceIndex];
-                    if (hasPiece)
-                    {
-                        bool isInteresting = Manager.PieceManager.IsInteresting(Manager.Peers.ConnectedPeers[i]);
-                        SetAmInterestedStatus(Manager.Peers.ConnectedPeers[i], isInteresting);
+            if (Settings.AllowHaveSuppression) {
+                for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
+                    var bundle = new MessageBundle();
+                    foreach (var haveMessage in Manager.finishedPieces)  {
+                        // If the peer has the piece already, we need to recalculate his "interesting" status.
+                        bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[haveMessage.PieceIndex];
+                        if (!hasPiece)
+                            bundle.Messages.Add(haveMessage);
                     }
 
-                    // Check to see if have supression is enabled and send the have message accordingly
-                    if (!hasPiece || (hasPiece && !Settings.AllowHaveSuppression))
-                        bundle.Messages.Add(haveMessage);
+                    Manager.Peers.ConnectedPeers[i].Enqueue(bundle);
                 }
+            } else {
+                var bundle = new MessageBundle (Manager.finishedPieces.Count);
+                foreach (var haveMessage in Manager.finishedPieces)
+                    bundle.Messages.Add (haveMessage);
 
-                Manager.Peers.ConnectedPeers[i].Enqueue(bundle);
+                foreach (var peer in Manager.Peers.ConnectedPeers)
+                    peer.Enqueue (bundle);
+            }
+
+            foreach (var peer in Manager.Peers.ConnectedPeers) {
+                bool isInteresting = Manager.PieceManager.IsInteresting(peer);
+                SetAmInterestedStatus(peer, isInteresting);
             }
             Manager.finishedPieces.Clear();
         }

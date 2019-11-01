@@ -44,6 +44,11 @@ namespace MonoTorrent.Client.Messages
             Messages = new List<PeerMessage>();
         }
 
+        public MessageBundle(int capacity)
+        {
+            Messages = new List<PeerMessage>(capacity);
+        }
+
         public MessageBundle(PeerMessage message)
             : this()
         {
