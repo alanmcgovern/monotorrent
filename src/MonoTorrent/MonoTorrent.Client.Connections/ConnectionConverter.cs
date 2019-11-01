@@ -39,6 +39,9 @@ namespace MonoTorrent.Client.Connections
     {
         public static IConnection2 Convert (IConnection connection)
         {
+            if (connection is null)
+                return null;
+
             if (connection is IConnection2 v2)
                 return v2;
             return new V1ToV2Converter (connection);
