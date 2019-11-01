@@ -59,6 +59,11 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public int Seeds { get; private set; }
 
+        /// <summary>
+        /// This is the total number of known peers. It is the sum of <see cref="Seeds"/>, <see cref="Leechs"/> and <see cref="Available"/>.
+        /// </summary>
+        internal int TotalPeers => ActivePeers.Count + AvailablePeers.Count;
+
         internal PeerManager()
         {
             ConnectedPeers = new List<PeerId>();

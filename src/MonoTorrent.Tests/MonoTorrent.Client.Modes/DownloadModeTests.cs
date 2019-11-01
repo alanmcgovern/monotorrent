@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -77,6 +78,18 @@ namespace MonoTorrent.Client.Modes
         {
             conn.Dispose();
             DiskManager.Dispose ();
+        }
+
+        [Test]
+        public async Task AddPeers_TooMany ()
+        {
+            Manager.Settings.MaximumConnections = 100;
+            var peers = new List<Peer> ();
+            for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i ++)
+                peers.Add (new Peer ("", new Uri ($"ipv4://192.168.0.1:{i + 1000}")));
+            var added = await Manager.AddPeersAsync (peers);
+            Assert.AreEqual (added, Manager.Settings.MaximumPeerDetails, "#1");
+            Assert.AreEqual (added, Manager.Peers.AvailablePeers.Count, "#2");
         }
 
         [Test]

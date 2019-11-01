@@ -37,6 +37,7 @@ using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
@@ -661,16 +662,20 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        public Task<bool> AddPeerAsync(Peer peer)
-            => AddPeerAsync(peer, false);
+        public async Task<bool> AddPeerAsync(Peer peer)
+        {
+            await ClientEngine.MainLoop;
+            return AddPeer(peer, false);
+        }
 
-        internal async Task<bool> AddPeerAsync (Peer peer, bool fromTrackers)
+        bool AddPeer (Peer peer, bool fromTrackers)
         {
             Check.Peer (peer);
             if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
-            await ClientEngine.MainLoop;
+            if (Peers.TotalPeers >= Settings.MaximumPeerDetails)
+                return false;
 
             if (Peers.Contains(peer))
                 return false;
@@ -685,20 +690,21 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        public Task<int> AddPeersAsync(IEnumerable<Peer> peers)
-            => AddPeersAsync(peers, false);
+        public async Task<int> AddPeersAsync(IEnumerable<Peer> peers)
+        {
+            await ClientEngine.MainLoop;
+            return AddPeers(peers, false);
+        }
 
-        async Task<int> AddPeersAsync (IEnumerable <Peer> peers, bool fromTrackers)
+        int AddPeers (IEnumerable <Peer> peers, bool fromTrackers)
         {
             Check.Peers (peers);
             if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
-            await ClientEngine.MainLoop;
-
             int count = 0;
             foreach (Peer p in peers)
-                count += await AddPeerAsync(p, fromTrackers) ? 1 : 0;
+                count += AddPeer(p, fromTrackers) ? 1 : 0;
             return count;
         }
         
@@ -831,7 +837,7 @@ namespace MonoTorrent.Client
                 await ClientEngine.MainLoop;
 
                 Peers.BusyPeers.Clear ();
-                int count = await AddPeersAsync (e.Peers, true);
+                int count = AddPeers (e.Peers, true);
                 RaisePeersFound (new TrackerPeersAdded(this, count, e.Peers.Count, e.Tracker));
             }
         }
