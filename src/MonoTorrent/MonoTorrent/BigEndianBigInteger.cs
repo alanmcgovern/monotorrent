@@ -68,16 +68,7 @@ namespace MonoTorrent
                 });
 
             if (ctor == null) {
-                OptimisedCtor = value => {
-                    var littleEndianArray = new byte[value.Length + 1];
-
-                    // Swap endian-ness and append a trailing '0' to ensure the value is treated as
-                    // a positive integer
-                    for (int i = 0; i < value.Length; i ++)
-                        littleEndianArray[value.Length - 1 - i] = value [i];
-
-                    return new BigInteger (littleEndianArray);
-                };
+                OptimisedCtor = FallbackConstructor;
             } else {
                 var arrayParam = Expression.Parameter (typeof (byte[]));
 
@@ -89,17 +80,7 @@ namespace MonoTorrent
 
             var method = typeof (BigInteger).GetMethod ("ToByteArray", new [] { typeof (bool), typeof (bool) });
             if (method == null) {
-                OptimisedToByteArray = value => {
-                    var littleEndianArray = value.ToByteArray ();
-                    int count = littleEndianArray.Length;
-                    while (littleEndianArray [count - 1] == 0)
-                        count --;
-
-                    var result = new byte [count];
-                    for (int i = 0; i < count; i ++)
-                        result [i] =  littleEndianArray [count - i - 1];
-                    return result;
-                };
+                OptimisedToByteArray = FallbackToBigEndianByteArray;
             } else {
                 var param = Expression.Parameter (typeof (BigInteger));
                 OptimisedToByteArray = Expression.Lambda<Func<BigInteger, byte[]>> (
@@ -108,7 +89,36 @@ namespace MonoTorrent
                 ).Compile ();
             }
         }
+
+        internal static BigInteger FallbackConstructor(byte[] value)
+        {
+            var littleEndianArray = new byte[value.Length + 1];
+
+            // Swap endian-ness and append a trailing '0' to ensure the value is treated as
+            // a positive integer
+            for (int i = 0; i < value.Length; i++)
+                littleEndianArray[value.Length - 1 - i] = value[i];
+
+            return new BigInteger(littleEndianArray);
+        }
+
+        internal static byte[] FallbackToBigEndianByteArray(BigEndianBigInteger value)
+            => FallbackToBigEndianByteArray(value.Value);
+
+        internal static byte[] FallbackToBigEndianByteArray(BigInteger value)
+        {
+            var littleEndianArray = value.ToByteArray();
+            int count = littleEndianArray.Length;
+            while (count > 0 && littleEndianArray[count - 1] == 0)
+                count--;
+
+            var result = new byte[count];
+            for (int i = 0; i < count; i++)
+                result[i] = littleEndianArray[count - i - 1];
+            return result;
+        }
 #endif
+
         public static BigEndianBigInteger Parse (string value)
             => new BigEndianBigInteger (BigInteger.Parse (value));
 
