@@ -58,6 +58,14 @@ namespace MonoTorrent.Client
         public bool AllowPeerExchange { get; set; } = true;
 
         /// <summary>
+        /// The number of peers we should maintain in our internal lists. If we are allowed maintain 100 connections,
+        /// we will store 150 peer ip/port combos in memory. This should ensure we hit our maximum allowed connections.
+        /// </summary>
+        internal int MaximumPeerDetails {
+            get => MaximumConnections + 50;
+        }
+
+        /// <summary>
         /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
         /// </summary>
         public int MaximumConnections  {
