@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
                 ProcessingQueue = true
             };
         }
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             TrackerManager.AddTracker ("http://test.tracker");
-            TrackerManager.RaiseAnnounceComplete (TrackerManager.CurrentTracker, true, new [] { new Peer ("One", new Uri ("ipv4://1.1.1.1")), new Peer ("Two", new Uri ("ipv4://2.2.2.2")) });
+            TrackerManager.RaiseAnnounceComplete (TrackerManager.CurrentTracker, true, new [] { new Peer ("One", new Uri ("ipv4://1.1.1.1:1111")), new Peer ("Two", new Uri ("ipv4://2.2.2.2:2222")) });
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (2, addedArgs.NewPeers, "#1");

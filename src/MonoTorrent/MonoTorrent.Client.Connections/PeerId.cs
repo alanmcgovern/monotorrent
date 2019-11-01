@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength)
         {
-            return new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue"))) {
+            return new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345"))) {
                 IsChoking = true,
                 AmChoking = true,
                 BitField = new BitField (bitfieldLength),
