@@ -207,11 +207,15 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected async ReusableTask SendY()
         {
-            byte[] toSend = new byte[96 + RandomNumber(512)];
-            random.GetBytes(toSend);
+            var length = 96 + RandomNumber(512);
+            var toSend = ClientEngine.BufferManager.GetBuffer (length);
             Buffer.BlockCopy(Y, 0, toSend, 0, 96);
-
-            await NetworkIO.SendAsync(socket, toSend, 0, toSend.Length, null, null, null).ConfigureAwait (false);
+            random.GetBytes(toSend, 96, length - 96);
+            try  {
+                await NetworkIO.SendAsync(socket, toSend, 0, length, null, null, null).ConfigureAwait(false);
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer(toSend);
+            }
         }
 
         /// <summary>
@@ -242,16 +246,16 @@ namespace MonoTorrent.Client.Encryption
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            var synchronizeWindow = new byte[syncData.Length];
+            var synchronizeWindow = ClientEngine.BufferManager.GetBuffer(syncData.Length);
 
             while (bytesReceived < syncStopPoint)
             {
-                int received = synchronizeWindow.Length - filled;
+                int received = syncData.Length - filled;
                 await NetworkIO.ReceiveAsync(socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
 
                 bytesReceived += received;
                 bool matched = true;
-                for (int i = 0; i < synchronizeWindow.Length && matched; i++)
+                for (int i = 0; i < syncData.Length && matched; i++)
                     matched &= syncData[i] == synchronizeWindow[i];
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
@@ -264,16 +268,16 @@ namespace MonoTorrent.Client.Encryption
                     // See if the current window contains the first byte of the expected synchronize data
                     // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
                     int shift = -1;
-                    for (int i = 1; i < synchronizeWindow.Length && shift == -1; i++)
+                    for (int i = 1; i < syncData.Length && shift == -1; i++)
                         if (synchronizeWindow[i] == syncData[0])
                             shift = i;
 
                     // The current data is all useless, so read an entire new window of data
                     if (shift > 0)
                     {
-                        filled = synchronizeWindow.Length - shift;
+                        filled = syncData.Length - shift;
                         // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
-                        Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, synchronizeWindow.Length - shift);
+                        Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
                     } else
                     {
                         // The start point we thought we had is actually garbage, so throw away all the data we have
