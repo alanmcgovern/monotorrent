@@ -26,7 +26,8 @@ namespace MonoTorrent.Common
         [Test]
         public void Zero_ToByteArray()
         {
-            Assert.IsEmpty(new BigEndianBigInteger(0).ToByteArray());
+            var result = new BigEndianBigInteger(0).ToByteArray();
+            Assert.IsTrue(result.Length == 0 || result.Single () == 0);
             Assert.IsEmpty(BigEndianBigInteger.FallbackToBigEndianByteArray(new BigEndianBigInteger(0)));
 
             // Check several arrays
@@ -36,7 +37,8 @@ namespace MonoTorrent.Common
 
                 foreach (var value in new[] { fastPath, slowPath })
                 {
-                    Assert.IsEmpty(value.ToByteArray());
+                    result = value.ToByteArray();
+                    Assert.IsTrue(result.Length == 0 || result.Single () == 0);
                     Assert.IsEmpty(BigEndianBigInteger.FallbackToBigEndianByteArray (value));
                 }
             }
