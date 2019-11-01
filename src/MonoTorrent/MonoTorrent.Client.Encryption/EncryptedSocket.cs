@@ -88,7 +88,6 @@ namespace MonoTorrent.Client.Encryption
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
-        private byte[] OtherY;
         
         protected IConnection2 socket;
 
@@ -224,9 +223,9 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected async ReusableTask ReceiveY()
         {
-            OtherY = new byte[96];
-            await ReceiveMessage(OtherY, 96);
-            S = ModuloCalculator.Calculate (OtherY, X);
+            var otherY = new byte[96];
+            await ReceiveMessage(otherY, 96);
+            S = ModuloCalculator.Calculate (otherY, X);
             await doneReceiveY ();
         }
 
