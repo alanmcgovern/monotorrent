@@ -665,10 +665,10 @@ namespace MonoTorrent.Client
         public async Task<bool> AddPeerAsync(Peer peer)
         {
             await ClientEngine.MainLoop;
-            return AddPeer(peer, false);
+            return AddPeer(peer, false, false);
         }
 
-        bool AddPeer (Peer peer, bool fromTrackers)
+        internal bool AddPeer (Peer peer, bool fromTrackers, bool prioritise)
         {
             Check.Peer (peer);
             if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
@@ -684,7 +684,10 @@ namespace MonoTorrent.Client
             if (InactivePeerManager.InactivePeerList.Contains(peer.ConnectionUri))
                 return false;
 
-            Peers.AvailablePeers.Add(peer);
+            if (prioritise)
+                Peers.AvailablePeers.Insert(0, peer);
+            else
+                Peers.AvailablePeers.Add(peer);
             OnPeerFound?.Invoke(this, new PeerAddedEventArgs(this, peer));
             // When we successfully add a peer we try to connect to the next available peer
             return true;
@@ -704,10 +707,10 @@ namespace MonoTorrent.Client
 
             int count = 0;
             foreach (Peer p in peers)
-                count += AddPeer(p, fromTrackers) ? 1 : 0;
+                count += AddPeer(p, fromTrackers, prioritise: false) ? 1 : 0;
             return count;
         }
-        
+
         internal void RaisePeerConnected(PeerConnectedEventArgs args)
         {
             PeerConnected?.InvokeAsync (this, args);

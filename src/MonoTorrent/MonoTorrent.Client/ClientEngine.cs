@@ -268,7 +268,7 @@ namespace MonoTorrent.Client
                 } else {
                     // Add new peer to matched Torrent
                     var peer = new Peer ("", args.Uri);
-                    int peersAdded = await manager.AddPeerAsync (peer) ? 1 : 0;
+                    int peersAdded = manager.AddPeer (peer, fromTrackers: false, prioritise: true) ? 1 : 0;
                     manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
                 }
             } catch {
