@@ -306,7 +306,7 @@ namespace MonoTorrent.Client.PiecePicking
             if (checkIndex == -1)
                 return null;
 
-            var bundle = new List<PieceRequest>();
+            var bundle = new List<PieceRequest>(count);
             for (int i = 0; bundle.Count < count && i < piecesNeeded; i++)
             {
                 // Request the piece
