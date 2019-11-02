@@ -138,11 +138,15 @@ namespace MonoTorrent.Client
 
         void Queue (QueuedTask task)
         {
+            var shouldSet = false;
             lock (actions) {
                 actions.Enqueue (task);
                 if (actions.Count == 1)
-                    actionsWaiter.Set ();
+                    shouldSet = true;
             }
+
+            if (shouldSet)
+                actionsWaiter.Set();
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
