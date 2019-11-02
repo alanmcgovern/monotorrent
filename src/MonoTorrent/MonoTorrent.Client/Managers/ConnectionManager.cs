@@ -148,7 +148,6 @@ namespace MonoTorrent.Client
                 if (!succeeded) {
                     peer.FailedConnectionAttempts++;
                     connection.Dispose ();
-                    manager.Peers.BusyPeers.Add (peer);
                     manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer, ConnectionFailureReason.Unreachable, manager));
                 } else {
                     PeerId id = new PeerId (peer, connection, manager.Bitfield?.Clone ().SetAll (false));
@@ -297,6 +296,8 @@ namespace MonoTorrent.Client
                 {
                     if (!manager.Peers.AvailablePeers.Contains(id.Peer) && id.Peer.CleanedUpCount < 5)
                         manager.Peers.AvailablePeers.Insert(0, id.Peer);
+                    else if (manager.Peers.BannedPeers.Contains(id.Peer) && id.Peer.CleanedUpCount >= 5)
+                        manager.Peers.BannedPeers.Add(id.Peer);
                 }
             }
             catch(Exception ex)
