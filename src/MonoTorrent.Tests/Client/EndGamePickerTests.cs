@@ -88,6 +88,29 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void CancelAllPendingWhenPieceReceived ()
+        {
+            id.BitField[0] = other.BitField [0] = true;
+            picker.Initialise(bitfield, torrentData, new List<Piece>());
+
+            var otherRequest = picker.PickPiece (other, other.BitField, new List<PeerId> ());
+
+            PieceRequest message;
+            Piece piece;
+            while ((message = picker.PickPiece(id, id.BitField, new List<PeerId>())) != null) {
+                Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
+                if (piece.AllBlocksReceived)
+                    break;
+            }
+
+            Assert.IsFalse (picker.ValidatePiece (other, otherRequest.PieceIndex, otherRequest.StartOffset, otherRequest.RequestLength, out piece), "#1");
+            Assert.IsNull (piece, "#2");
+
+            message = picker.PickPiece (other, other.BitField, new List<PeerId> ());
+            Assert.AreEqual (0, message.PieceIndex, "#3");
+        }
+
+        [Test]
         public void CancelTest()
         {
             foreach (Piece p in pieces)
