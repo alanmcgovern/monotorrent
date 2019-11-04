@@ -53,8 +53,6 @@ namespace MonoTorrent.Client.Connections
         /// </summary>
         static readonly Queue<SocketAsyncEventArgs> otherCache = new Queue<SocketAsyncEventArgs> ();
 
-        static readonly Task<int> FailedTask = Task.FromResult (0);
-
         /// <summary>
         /// Where possible we will use a SocketAsyncEventArgs object which has already had
         /// 'SetBuffer(byte[],int,int)' invoked on it for the given byte[]. Reusing these is
@@ -188,11 +186,13 @@ namespace MonoTorrent.Client.Connections
         async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
             => await ReceiveAsync (buffer, offset, count);
 
-        public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+        public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
-            if (Socket == null)
-                return await FailedTask;
+            if (Socket == null) {
+                ReceiveTcs.SetResult (0);
+                return ReceiveTcs.Task;
+            }
 
             var args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
@@ -210,17 +210,19 @@ namespace MonoTorrent.Client.Connections
                     control.Value.Undo ();
             }
 
-            return await ReceiveTcs.Task;
+            return ReceiveTcs.Task;
         }
 
         async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
             => await SendAsync (buffer, offset, count);
 
-        public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
+        public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
-            if (Socket == null)
-                return await FailedTask;
+            if (Socket == null) {
+                SendTcs.SetResult (0);
+                return SendTcs.Task;
+            }
 
             var args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
@@ -238,7 +240,7 @@ namespace MonoTorrent.Client.Connections
                     control.Value.Undo ();
             }
 
-            return await SendTcs.Task;
+            return SendTcs.Task;
         }
 
         public void Dispose()
