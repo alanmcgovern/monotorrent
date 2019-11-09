@@ -16,14 +16,7 @@ namespace MonoTorrent.Common
     public class TestTorrentCreator : TorrentCreator
     {
         protected override IPieceWriter CreateReader()
-        {
-            TestWriter writer = new TestWriter();
-            writer.DontWrite = true;
-            return writer;
-        }
-
-        public BEncodedDictionary Create (string name, List<TorrentFile> files)
-            => Create (name, files, CancellationToken.None);
+            => new TestWriter { DontWrite = true };
     }
 
     [TestFixture]
@@ -129,6 +122,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual(1, torrent.Files.Length, "#1");
             Assert.AreEqual(f, torrent.Files[0], "#2");
         }
+
         [Test]
         public void CreateSingleFromFolder()
         {

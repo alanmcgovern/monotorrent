@@ -189,6 +189,10 @@ namespace MonoTorrent.Client
         {
             Queue (new QueuedTask { Action = continuation });
         }
+
+        public static ThreadPoolAwaitable SwitchToThreadpool ()
+            => new ThreadPoolAwaitable ();
+
         #endregion
     }
 }
