@@ -1,8 +1,35 @@
+//
+// TaskTests.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2009 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -112,8 +139,6 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < 5; i++)
                 nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
 
-            engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(5);
-            engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(25);
             listener.MessageSent += (message, endpoint) => {
                 Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(endpoint.Port); });
                 if (current == null)
@@ -132,18 +157,21 @@ namespace MonoTorrent.Dht
                 }
             };
 
-            engine.Add(nodes);
+            foreach (var n in nodes)
+                engine.RoutingTable.Add(n);
 
-            foreach (Bucket b in engine.RoutingTable.Buckets)
-                b.Changed (TimeSpan.FromDays (-1));
+            foreach (Bucket b in engine.RoutingTable.Buckets) {
+                b.Changed (TimeSpan.FromDays (1));
+                foreach (var n in b.Nodes)
+                    n.Seen (TimeSpan.FromDays (1));
+            }
 
-            await engine.StartAsync();
-            await engine.WaitForState (DhtState.Ready);
+            await engine.RefreshBuckets ();
 
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
-                Assert.IsTrue(b.LastChanged < TimeSpan.FromMinutes (1));
-                Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen < TimeSpan.FromMilliseconds(900); }));
+                Assert.IsTrue(b.LastChanged < TimeSpan.FromHours (1));
+                Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen < TimeSpan.FromHours(1); }));
             }
         }
 
@@ -152,11 +180,11 @@ namespace MonoTorrent.Dht
         {
             engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds(0);
             Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
-            for(int i=0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
-                Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
-                node.Seen (TimeSpan.FromMinutes (i));
-                engine.RoutingTable.Add(node);
+                var n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
+                n.Seen(TimeSpan.FromDays(i));
+                engine.RoutingTable.Add(n);
             }
             Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
 

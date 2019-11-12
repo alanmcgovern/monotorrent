@@ -140,6 +140,11 @@ namespace MonoTorrent
             get { return this.startPiece; }
         }
 
+        /// <summary>
+        /// Piece byte offset of the file
+        /// </summary>
+        public int StartPieceOffset { get; private set; }
+
         #endregion
 
 
@@ -163,12 +168,12 @@ namespace MonoTorrent
         }
 
         public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex)
-            : this(path, length, fullPath, startIndex, endIndex, null, null, null)
+            : this(path, length, fullPath, startIndex, endIndex, 0, null, null, null)
         {
 
         }
 
-        public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
+        public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex, int startOffset, byte[] md5, byte[] ed2k, byte[] sha1)
         {
             this.bitfield = new BitField(endIndex - startIndex + 1);
             this.ed2k = ed2k;
@@ -180,6 +185,7 @@ namespace MonoTorrent
             this.priority = Priority.Normal;
             this.sha1 = sha1;
             this.startPiece = startIndex;
+            this.StartPieceOffset = startOffset;
         }
 
         #endregion

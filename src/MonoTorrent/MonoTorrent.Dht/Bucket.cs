@@ -46,10 +46,10 @@ namespace MonoTorrent.Dht
         // The last item in the list is one we have seen the most recently.
         static readonly Comparison<Node> LastSeenComparer = (l, r) => r.LastSeen.CompareTo (l.LastSeen);
 
-        internal BigInteger Capacity => Max.Value - Min.Value;
+        internal bool CanSplit { get; }
         public TimeSpan LastChanged => LastChangedTimer.Elapsed + LastChangedDelta;
         TimeSpan LastChangedDelta { get; set; }
-        Stopwatch LastChangedTimer { get; }
+        ValueStopwatch LastChangedTimer;
         public NodeId Max { get; }
         public NodeId Min { get; }
         public List<Node> Nodes { get; }
@@ -66,11 +66,12 @@ namespace MonoTorrent.Dht
             Min = min ?? throw new ArgumentNullException (nameof (min));
             Max = max ?? throw new ArgumentNullException (nameof (max));
 
+            CanSplit = (Max - Min) > MaxCapacity;
             LastChangedDelta = TimeSpan.FromDays(1);
-            LastChangedTimer = new Stopwatch();
+            LastChangedTimer = new ValueStopwatch();
             Nodes = new List<Node>(MaxCapacity);
         }
-		
+
         public bool Add(Node node)
         {
             // if the current bucket is not full we directly add the Node

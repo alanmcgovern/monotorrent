@@ -82,7 +82,7 @@ namespace MonoTorrent
         /// <summary>
         /// Parses a magnet link from the given string. The uri should be in the form magnet:?xt=urn:btih:
         /// </summary>
-        /// <param name="url"></param>
+        /// <param name="uri"></param>
         /// <returns></returns>
         public static MagnetLink Parse (string uri)
             => FromUri (new Uri (uri));
@@ -90,7 +90,7 @@ namespace MonoTorrent
         /// <summary>
         /// Parses a magnet link from the given Uri. The uri should be in the form magnet:?xt=urn:btih:
         /// </summary>
-        /// <param name="url"></param>
+        /// <param name="uri"></param>
         /// <returns></returns>
         public static MagnetLink FromUri (Uri uri)
         {

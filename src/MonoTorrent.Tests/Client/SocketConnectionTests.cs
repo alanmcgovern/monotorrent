@@ -31,7 +31,9 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+
 using MonoTorrent.Client.Connections;
+using ReusableTasks;
 
 using NUnit.Framework;
 
@@ -61,7 +63,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task DisposeWhileReceiving ()
         {
-            var task = Incoming.ReceiveAsync (new byte[100], 0, 100);
+            var task = Incoming.ReceiveAsync (new byte[100], 0, 100).AsTask ();
             Incoming.Dispose ();
 
             // All we care about is that the task is marked as 'Complete'.
@@ -73,7 +75,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task DisposeWhileSending ()
         {
-            var task = Incoming.SendAsync (new byte[1000000], 0, 1000000);
+            var task = Incoming.SendAsync (new byte[1000000], 0, 1000000).AsTask ();
             Incoming.Dispose ();
 
             // All we care about is that the task is marked as 'Complete'.

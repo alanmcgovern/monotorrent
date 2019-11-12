@@ -56,14 +56,14 @@ namespace MonoTorrent.Client.Modes
 
                 Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
                 foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
-                    Manager.Engine.ConnectionManager.CleanupSocket (id);
+                    Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
                 var stoppingTasks = new List<Task>();
                 stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
                 if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
                     stoppingTasks.Add(Manager.TrackerManager.Announce(TorrentEvent.Stopped));
 
-                var delayTask = Task.Delay (TimeSpan.FromMinutes (1));
+                var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);
                 var overallTasks = Task.WhenAll (stoppingTasks);
                 if (await Task.WhenAny (overallTasks, delayTask) == delayTask)
                     Logger.Log (null, "Timed out waiting for the announce request to complete");

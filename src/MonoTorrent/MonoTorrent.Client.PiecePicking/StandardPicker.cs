@@ -231,7 +231,7 @@ namespace MonoTorrent.Client.PiecePicking
                 Piece p = requests[req];
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if (p.AllBlocksRequested || !peer.Equals(p.Blocks[0].RequestedOff))
+                if (peer != p.Blocks[0].RequestedOff || p.AllBlocksRequested)
                     continue;
 
                 for (int i = 0; i < p.BlockCount; i++)
@@ -256,8 +256,9 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Otherwise, if this peer has any of the pieces that are currently being requested, try to
             // request a block from one of those pieces
-            foreach (Piece p in this.requests)
+            for (int pIndex = 0; pIndex < requests.Count; pIndex ++)
             {
+                var p = requests[pIndex];
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
                 if (p.AllBlocksRequested || p.AllBlocksReceived || !peer.BitField[p.Index] ||
@@ -305,7 +306,7 @@ namespace MonoTorrent.Client.PiecePicking
             if (checkIndex == -1)
                 return null;
 
-            var bundle = new List<PieceRequest>();
+            var bundle = new List<PieceRequest>(count);
             for (int i = 0; bundle.Count < count && i < piecesNeeded; i++)
             {
                 // Request the piece

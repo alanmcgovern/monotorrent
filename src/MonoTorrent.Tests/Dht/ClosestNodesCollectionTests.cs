@@ -25,7 +25,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void CloserNodes()
         {
-            var value = new BigInteger (1);
+            var value = new BigEndianBigInteger (1);
 
             var closeNodes = new List<Node> ();
             var farNodes = new List<Node> ();

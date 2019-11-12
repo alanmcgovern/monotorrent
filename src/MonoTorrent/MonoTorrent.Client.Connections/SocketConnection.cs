@@ -31,11 +31,14 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    class SocketConnection : IConnection
+    class SocketConnection : IConnection2
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
@@ -49,8 +52,6 @@ namespace MonoTorrent.Client.Connections
         /// to a peer and do not have a byte[] buffer to send/receive from.
         /// </summary>
         static readonly Queue<SocketAsyncEventArgs> otherCache = new Queue<SocketAsyncEventArgs> ();
-
-        static readonly Task<int> FailedTask = Task.FromResult (0);
 
         /// <summary>
         /// Where possible we will use a SocketAsyncEventArgs object which has already had
@@ -99,6 +100,10 @@ namespace MonoTorrent.Client.Connections
 
         public bool IsIncoming { get; }
 
+        ReusableTaskCompletionSource<int> ReceiveTcs { get; }
+
+        ReusableTaskCompletionSource<int> SendTcs { get; }
+
         Socket Socket { get; set; }
 
         public Uri Uri { get; protected set; }
@@ -124,6 +129,8 @@ namespace MonoTorrent.Client.Connections
 
         SocketConnection (Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
+            ReceiveTcs = new ReusableTaskCompletionSource<int> ();
+            SendTcs = new ReusableTaskCompletionSource<int> ();
             Socket = socket;
             EndPoint = endpoint;
             IsIncoming = isIncoming;
@@ -133,7 +140,7 @@ namespace MonoTorrent.Client.Connections
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (TaskCompletionSource<int>)e.UserToken;
+            var tcs = (ReusableTaskCompletionSource<int>)e.UserToken;
             var error = e.SocketError;
             var transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
@@ -141,15 +148,18 @@ namespace MonoTorrent.Client.Connections
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferManager, then we should put it back in the 'other' cache.
-            if (e.Buffer == null || !ClientEngine.BufferManager.OwnsBuffer (e.Buffer))
-                lock (bufferCache)
-                    otherCache.Enqueue (e);
+            if (e.Buffer == null || !ClientEngine.BufferManager.OwnsBuffer(e.Buffer))  {
+                lock (bufferCache) {
+                    if (e.Buffer != null)
+                        e.SetBuffer(null, 0, 0);
+                    otherCache.Enqueue(e);
+                }
+            }
 
             if (error != SocketError.Success)
                 tcs.SetException(new SocketException((int) error));
             else
                 tcs.SetResult(transferred);
-
         }
 
         #endregion
@@ -157,48 +167,80 @@ namespace MonoTorrent.Client.Connections
 
         #region Async Methods
 
-        public Task ConnectAsync ()
+        async Task IConnection.ConnectAsync ()
+            => await ConnectAsync ();
+
+        public async ReusableTask ConnectAsync ()
         {
-            var tcs = new TaskCompletionSource<int>();
+            var tcs = new ReusableTaskCompletionSource<int> ();
             var args = GetSocketAsyncEventArgs (null);
             args.RemoteEndPoint = EndPoint;
             args.UserToken = tcs;
 
             if (!Socket.ConnectAsync(args))
-                return Task.FromResult(true);
-            return tcs.Task;
+                tcs.SetResult (0);
+
+            await tcs.Task;
         }
 
-        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
+            => await ReceiveAsync (buffer, offset, count);
+
+        public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
-            if (Socket == null)
-                return FailedTask;
+            if (Socket == null) {
+                ReceiveTcs.SetResult (0);
+                return ReceiveTcs.Task;
+            }
 
-            var tcs = new TaskCompletionSource<int>();
             var args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
-            args.UserToken = tcs;
+            args.UserToken = ReceiveTcs;
 
-            if (!Socket.ReceiveAsync(args))
-                tcs.SetResult (args.BytesTransferred);
-            return tcs.Task;
+            AsyncFlowControl? control = null;
+            if (!ExecutionContext.IsFlowSuppressed ())
+                control = ExecutionContext.SuppressFlow ();
+
+            try {
+                if (!Socket.ReceiveAsync(args))
+                    ReceiveTcs.SetResult (args.BytesTransferred);
+            } finally {
+                if (control.HasValue)
+                    control.Value.Undo ();
+            }
+
+            return ReceiveTcs.Task;
         }
 
-        public Task<int> SendAsync(byte[] buffer, int offset, int count)
+        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
+            => await SendAsync (buffer, offset, count);
+
+        public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
-            if (Socket == null)
-                return FailedTask;
+            if (Socket == null) {
+                SendTcs.SetResult (0);
+                return SendTcs.Task;
+            }
 
-            var tcs = new TaskCompletionSource<int>();
             var args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
-            args.UserToken = tcs;
+            args.UserToken = SendTcs;
 
-            if (!Socket.SendAsync(args))
-                tcs.SetResult (args.BytesTransferred);
-            return tcs.Task;
+            AsyncFlowControl? control = null;
+            if (!ExecutionContext.IsFlowSuppressed ())
+                control = ExecutionContext.SuppressFlow ();
+
+            try {
+                if (!Socket.SendAsync(args))
+                    SendTcs.SetResult (count);
+            } finally {
+                if (control.HasValue)
+                    control.Value.Undo ();
+            }
+
+            return SendTcs.Task;
         }
 
         public void Dispose()

@@ -31,6 +31,8 @@ namespace MonoTorrent.Client.Modes
 {
     class DownloadMode : Mode
     {
+        BitField PartialProgressUpdater;
+
         TorrentState state;
 		public override TorrentState State
 		{
@@ -41,13 +43,17 @@ namespace MonoTorrent.Client.Modes
             : base (manager, diskManager, connectionManager, settings)
         {
             manager.HashFails = 0;
+
+            // Ensure the state is correct. We should either be downloading or seeding based on
+            // the files whose priority is not set to 'DoNotDownload'.
             state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
+            UpdateSeedingDownloadingState ();
         }
 
         public override void HandlePeerConnected(PeerId id)
         {
             if (!ShouldConnect(id))
-                this.Manager.Engine.ConnectionManager.CleanupSocket (id);
+                ConnectionManager.CleanupSocket (Manager, id);
             base.HandlePeerConnected(id);
         }
 
@@ -58,20 +64,56 @@ namespace MonoTorrent.Client.Modes
 
         public override void Tick(int counter)
         {
-            //If download is complete, set state to 'Seeding'
-            if (Manager.Complete && state == TorrentState.Downloading)
-            {
-                state = TorrentState.Seeding;
-                Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
-                _ = Manager.TrackerManager.Announce(TorrentEvent.Completed);
-            }
+            base.Tick(counter);
+
+            UpdateSeedingDownloadingState ();
+
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 if (!ShouldConnect(Manager.Peers.ConnectedPeers[i])) {
-                    Manager.Engine.ConnectionManager.CleanupSocket (Manager.Peers.ConnectedPeers[i]);
+                    ConnectionManager.CleanupSocket (Manager, Manager.Peers.ConnectedPeers[i]);
                     i--;
                 }
             }
-            base.Tick(counter);
+        }
+
+        
+        internal void UpdatePartialProgress ()
+        {
+            if (PartialProgressUpdater == null || PartialProgressUpdater.Length != Manager.Bitfield.Length)
+                PartialProgressUpdater = new BitField (Manager.Bitfield.Length);
+
+            PartialProgressUpdater.SetAll (false);
+            if (Manager.Torrent != null) {
+                foreach (var file in Manager.Torrent.Files) {
+                    if (file.Priority != Priority.DoNotDownload) {
+                        for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i ++)
+                            PartialProgressUpdater [i] = true;
+                    }
+                }
+            }
+            Manager.PartialProgressSelector.From (PartialProgressUpdater);
+        }
+
+        internal void UpdateSeedingDownloadingState ()
+        {
+            UpdatePartialProgress ();
+
+            //If download is fully complete, set state to 'Seeding' and send an announce to the tracker.
+            if (Manager.Complete && state == TorrentState.Downloading)  {
+                state = TorrentState.Seeding;
+                Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
+                _ = Manager.TrackerManager.Announce(TorrentEvent.Completed);
+            } else if (Manager.PartialProgressSelector.TrueCount > 0) {
+                // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
+                // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
+                if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) == Manager.PartialProgressSelector.TrueCount && state == TorrentState.Downloading) {
+                    state = TorrentState.Seeding;
+                    Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
+                } else if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) < Manager.PartialProgressSelector.TrueCount && state == TorrentState.Seeding) {
+                    state = TorrentState.Seeding;
+                    Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
+                }
+            }
         }
     }
 }

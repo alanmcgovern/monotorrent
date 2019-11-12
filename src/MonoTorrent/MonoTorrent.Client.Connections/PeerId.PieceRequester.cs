@@ -27,8 +27,8 @@
 //
 
 
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         int       IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
         List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
         bool      IPieceRequester.IsChoking => IsChoking;
-        Stopwatch IPieceRequester.LastMessageReceived => LastMessageReceived;
+        TimeSpan  IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
         int       IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
         List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
         bool      IPieceRequester.SupportsFastPeer => SupportsFastPeer;
@@ -48,9 +48,6 @@ namespace MonoTorrent.Client
 
         void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
             => Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
-
-        void IPieceRequester.Close ()
-            => Engine.ConnectionManager.CleanupSocket (this);
 
         void IPieceRequester.HashedPiece(bool succeeded)
             => Peer.HashedPiece (succeeded);

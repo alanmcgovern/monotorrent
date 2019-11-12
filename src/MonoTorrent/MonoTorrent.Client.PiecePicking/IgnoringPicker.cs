@@ -47,9 +47,13 @@ namespace MonoTorrent.Client.PiecePicking
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
+            if (Bitfield.AllFalse)
+                return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
+
             Temp.From(available).NAnd(Bitfield);
             if (Temp.AllFalse)
                 return null;
+
             return base.PickPiece(peer, Temp, otherPeers, count, startIndex, endIndex);
         }
 

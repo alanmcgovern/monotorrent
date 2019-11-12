@@ -156,19 +156,19 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ReregisterManager()
         {
-            var downloadLimiters = rig.Manager.DownloadLimiter.ToArray ();
-            var uploadLimiters = rig.Manager.UploadLimiter.ToArray ();
+            var downloadLimiters = rig.Manager.DownloadLimiters.ToArray ();
+            var uploadLimiters = rig.Manager.UploadLimiters.ToArray ();
 
             await rig.Engine.Unregister(rig.Manager);
             Assert.IsNull (rig.Manager.Engine, "#1");
-            CollectionAssert.AreNotEquivalent (downloadLimiters, rig.Manager.DownloadLimiter, "#2");
-            CollectionAssert.AreNotEquivalent (uploadLimiters, rig.Manager.UploadLimiter, "#3");
+            CollectionAssert.AreNotEquivalent (downloadLimiters, rig.Manager.DownloadLimiters, "#2");
+            CollectionAssert.AreNotEquivalent (uploadLimiters, rig.Manager.UploadLimiters, "#3");
             Assert.IsFalse (rig.Engine.ConnectionManager.Contains (rig.Manager), "#4");
 
             await rig.Engine.Register (rig.Manager);
             Assert.AreEqual (rig.Engine, rig.Manager.Engine, "#5");
-            CollectionAssert.AreEquivalent (downloadLimiters, rig.Manager.DownloadLimiter, "#6");
-            CollectionAssert.AreEquivalent (uploadLimiters, rig.Manager.UploadLimiter, "#7");
+            CollectionAssert.AreEquivalent (downloadLimiters, rig.Manager.DownloadLimiters, "#6");
+            CollectionAssert.AreEquivalent (uploadLimiters, rig.Manager.UploadLimiters, "#7");
             Assert.IsTrue (rig.Engine.ConnectionManager.Contains (rig.Manager), "#8");
         }
 

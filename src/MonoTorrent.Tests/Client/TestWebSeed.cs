@@ -37,8 +37,8 @@ using System.Threading.Tasks;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-
 using MonoTorrent.Client.PiecePicking;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -86,8 +86,9 @@ namespace MonoTorrent.Client
 
             connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
+            rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager, connection);
+            id = new PeerId(new Peer("this is my id", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
             id.IsChoking = false;
             id.AmInterested = true;
             id.BitField.SetAll(true);
@@ -105,7 +106,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_ReceiveFirst ()
         {
-            var task = connection.ReceiveAsync (new byte[100], 0, 100);
+            var task = connection.ReceiveAsync (new byte[100], 0, 100).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
         }
@@ -113,7 +114,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendFirst ()
         {
-            var task = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength);
+            var task = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
         }
@@ -121,7 +122,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendAndReceiveFirst ()
         {
-            var sendTask = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength);
+            var sendTask = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength).AsTask ();
             var receiveTask = connection.ReceiveAsync (new byte[100000], 0, 100000);
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => sendTask, "#1");
@@ -154,7 +155,8 @@ namespace MonoTorrent.Client
             var receiveTask = NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
             var task = Send (requests.Encode (), 0, requests.ByteLength);
 
-            await CompleteSendOrReceiveFirst(buffer, receiveTask.ContinueWith (t=> 4));
+            await receiveTask;
+            await CompleteSendOrReceiveFirst(buffer);
             await task;
         }
 
@@ -165,7 +167,8 @@ namespace MonoTorrent.Client
             var task = Send (requests.Encode (), 0, requests.ByteLength);
             var receiveTask  = connection.ReceiveAsync (buffer, 0, 4);
 
-            await CompleteSendOrReceiveFirst(buffer, receiveTask);
+            await receiveTask;
+            await CompleteSendOrReceiveFirst(buffer);
             await task;
         }
 
@@ -208,11 +211,10 @@ namespace MonoTorrent.Client
             }
         }
 
-        private async Task CompleteSendOrReceiveFirst(byte[] buffer, Task receiveTask)
+        private async Task CompleteSendOrReceiveFirst(byte[] buffer)
         {
             while (requests.Messages.Count > 0)
             {
-                await receiveTask;
                 int size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, 0));
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
@@ -235,7 +237,7 @@ namespace MonoTorrent.Client
                 }
                 else
                 {
-                    receiveTask = NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
+                    await NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
                 }
             }
 
@@ -332,8 +334,9 @@ namespace MonoTorrent.Client
             string url = rig.Torrent.GetRightHttpSeeds[0];
             connection = new HttpConnection(new Uri (url));
             connection.Manager = rig.Manager;
+            rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager, id.Connection);
+            id = new PeerId(new Peer("this is my id", connection.Uri), id.Connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
             id.IsChoking = false;
             id.AmInterested = true;
             id.BitField.SetAll(true);

@@ -36,31 +36,18 @@ namespace MonoTorrent.TorrentWatcher
     /// </summary>
     public class TorrentWatcherEventArgs : EventArgs
     {
-        #region Member Variables
-
         /// <summary>
-        /// The path of the torrent
+        /// The full path of the torrent
         /// </summary>
-        public string TorrentPath
-        {
-            get { return this.torrentPath; }
-        }
-        private string torrentPath;
-
-        #endregion
-
-
-        #region Constructors
+        public string TorrentPath { get; }
 
         /// <summary>
         /// Creates a new TorrentWatcherEventArgs
         /// </summary>
-        /// <param name="torrent">The torrent which is affected</param>
+        /// <param name="torrentPath">The full path to the torrent file</param>
         public TorrentWatcherEventArgs(string torrentPath)
         {
-            this.torrentPath = torrentPath;
+            TorrentPath = torrentPath;
         }
-
-        #endregion
     }
 }

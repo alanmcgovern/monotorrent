@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
@@ -48,17 +47,20 @@ namespace MonoTorrent.Client
         private bool disposed = false;
         private const int MAX_PEERS = 50;
 
+        TorrentManager Manager { get; }
+
         #endregion Member Variables
 
         #region Constructors
 
-        internal PeerExchangeManager(PeerId id)
+        internal PeerExchangeManager(TorrentManager manager, PeerId id)
         {
+            Manager = manager;
             this.id = id;
 
 			this.addedPeers = new List<Peer>();
 			this.droppedPeers = new List<Peer>();
-            id.TorrentManager.OnPeerFound += new EventHandler<PeerAddedEventArgs>(OnAdd);
+            manager.OnPeerFound += OnAdd;
         }
 
         internal void OnAdd(object source, PeerAddedEventArgs e)
@@ -73,7 +75,7 @@ namespace MonoTorrent.Client
 
         internal void OnTick()
         {
-            if (!id.TorrentManager.Settings.EnablePeerExchange)
+            if (!Manager.Settings.AllowPeerExchange)
                 return;
 
             int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
@@ -111,7 +113,7 @@ namespace MonoTorrent.Client
                 return;
 
             disposed = true;
-            id.TorrentManager.OnPeerFound -= new EventHandler<PeerAddedEventArgs>(OnAdd);
+            Manager.OnPeerFound -= OnAdd;
         }
 
         #endregion

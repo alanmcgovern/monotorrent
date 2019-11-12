@@ -39,8 +39,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public PeerId Peer { get; }
 
-        internal PeerDisconnectedEventArgs (PeerId id)
-            : base (id.TorrentManager)
+        internal PeerDisconnectedEventArgs (TorrentManager manager, PeerId id)
+            : base (manager)
         {
             Peer = id;
         }

@@ -193,6 +193,11 @@ namespace MonoTorrent.Dht
 
         async void InitializeAsync (byte[] initialNodes)
         {
+            if (initialNodes == null)
+            {
+                initialNodes = Array.Empty<byte>();
+            }
+
             var initTask = new InitialiseTask(this, Node.FromCompactNode (initialNodes));
             await initTask.ExecuteAsync ();
             RaiseStateChanged(DhtState.Ready);
@@ -207,6 +212,21 @@ namespace MonoTorrent.Dht
         {
             State = newState;
             StateChanged?.Invoke (this, EventArgs.Empty);
+        }
+
+        internal async Task RefreshBuckets ()
+        {
+            var refreshTasks = new List<Task> ();
+            foreach (Bucket b in RoutingTable.Buckets) {
+                if (b.LastChanged > BucketRefreshTimeout) {
+                    b.Changed ();
+                    RefreshBucketTask task = new RefreshBucketTask(this, b);
+                    refreshTasks.Add (task.Execute ());
+                }
+            }
+
+            if (refreshTasks.Count > 0)
+                await Task.WhenAll (refreshTasks).ConfigureAwait (false);
         }
 
         public async Task<byte[]> SaveNodesAsync()
@@ -267,19 +287,9 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged(DhtState.Ready);
             }
 
-            MainLoop.QueueTimeout(TimeSpan.FromSeconds(30), delegate
-            {
-                if (Disposed)
-                    return false;
-
-                foreach (Bucket b in RoutingTable.Buckets)
-                {
-                    if (b.LastChanged > BucketRefreshTimeout)
-                    {
-                        b.Changed ();
-                        RefreshBucketTask task = new RefreshBucketTask(this, b);
-                        task.Execute();
-                    }
+            MainLoop.QueueTimeout(TimeSpan.FromSeconds(30), delegate {
+                if (!Disposed) {
+                    _ = RefreshBuckets ();
                 }
                 return !Disposed;
             });

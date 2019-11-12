@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
 				return;
 
 			// If we've not reached the maximum peers for this torrent, there's nothing for us to do
-			if (TorrentManager.Settings.MaxConnections > TorrentManager.OpenConnections)
+			if (TorrentManager.Settings.MaximumConnections > TorrentManager.OpenConnections)
 				return;
 
 			// If there are no available peers, there's nothing for us to do
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client
 					if (indexOfFirstInterestingCandidate < 0 
 						&& TorrentManager.Settings.ConnectionRetentionFactor > 0
 						&& nextPeer.Monitor.DataBytesDownloaded > 0 
-						&& TorrentManager.Peers.Available >= TorrentManager.Settings.MaxConnections )
+						&& TorrentManager.Peers.Available >= TorrentManager.Settings.MaximumConnections )
 					{
 						// Calculate an inactive time.
 						// Base time is time since the last message (in seconds)
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
 			// We've found a peer to disconnect
 			// Add it to the inactive list for this torrent and disconnect it
 			InactivePeerList.Add(TorrentManager.Peers.ConnectedPeers[peerToDisconnect].Uri);
-			ConnectionManager.CleanupSocket(TorrentManager.Peers.ConnectedPeers[peerToDisconnect]);
+			ConnectionManager.CleanupSocket(TorrentManager, TorrentManager.Peers.ConnectedPeers[peerToDisconnect]);
 
 		}
 

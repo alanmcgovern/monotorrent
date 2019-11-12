@@ -41,13 +41,13 @@ namespace MonoTorrent.Dht
 
         static readonly Random random = new Random();
 
-        public byte[] Bytes { get; }
-        public BigInteger Value { get; }
+        public BigEndianBigInteger value;
 
-        internal NodeId(BigInteger value)
+        public byte[] Bytes { get; }
+
+        internal NodeId(BigEndianBigInteger value)
         {
-            Value  = value;
-            Bytes = value.GetBytes ();
+            Bytes = value.ToByteArray ();
             if (Bytes.Length < 20) {
                 var newBytes = new byte[20];
                 Buffer.BlockCopy (Bytes, 0, newBytes, newBytes.Length - Bytes.Length, Bytes.Length);
@@ -64,7 +64,6 @@ namespace MonoTorrent.Dht
                 throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
 
             Bytes = value;
-            Value  = new BigInteger(value);
         }
 
         internal NodeId(InfoHash infoHash)
@@ -87,55 +86,68 @@ namespace MonoTorrent.Dht
 
         public int CompareTo(NodeId other)
         {
-            if ((object)other == null)
+            if (other is null)
                 return 1;
 
-            BigInteger.Sign s = Value.Compare(other.Value);
-            if (s == BigInteger.Sign.Zero)
-                return 0;
-            else if (s == BigInteger.Sign.Positive)
-                return 1;
-            else return -1;
+            for (int i = 0; i < Bytes.Length; i ++) {
+                if (Bytes[i] != other.Bytes [i])
+                    return Bytes[i] - other.Bytes[i];
+            }
+            return 0;
         }
 
         public override bool Equals(object obj)
             => Equals(obj as NodeId);
 
         public bool Equals(NodeId other)
-            => Value.Equals (other?.Value);
+            => other != null && Toolbox.ByteMatch (Bytes, other.Bytes);
 
         public override int GetHashCode()
-            => Value.GetHashCode();
+            => Bytes [0] << 24
+             | Bytes [1] << 16
+             | Bytes [2] << 8
+             | Bytes [3];
 
         public override string ToString()
-            => Value.ToString();
+            => BitConverter.ToString (Bytes);
 
         internal static NodeId Median (NodeId min, NodeId max)
-            => new NodeId ((min.Value + max.Value) / 2);
+            => new NodeId ((new BigEndianBigInteger (min.Bytes) + new BigEndianBigInteger(max.Bytes)) / 2);
 
         public static NodeId operator ^(NodeId left, NodeId right)
-            => new NodeId (left.Value.Xor (right.Value));
+        {
+            var clone = (byte[])left.Bytes.Clone ();
+            for (int i = 0; i < right.Bytes.Length; i ++)
+                clone [i] ^= right.Bytes [i];
+            return new NodeId (clone);
+        }
 
         public static NodeId operator - (NodeId first, NodeId second)
-            => new NodeId (first.Value - second.Value);
+            => new NodeId (new BigEndianBigInteger (first.Bytes) - new BigEndianBigInteger (second.Bytes));
 
         public static bool operator >(NodeId first, NodeId second)
-            => first.Value > second.Value;
+            => first.CompareTo (second) > 0;
+
+        public static bool operator >(NodeId first, int second)
+            => new BigEndianBigInteger (first.Bytes) > second;
 
         public static bool operator <(NodeId first, NodeId second)
-            => first.Value < second.Value;
+            => first.CompareTo (second) < 0;
+
+        public static bool operator <(NodeId first, int second)
+            => new BigEndianBigInteger (first.Bytes) < second;
 
         public static bool operator <=(NodeId first, NodeId second)
-            => first.Value <= second.Value;
+            => first.CompareTo (second) <= 0;
 
         public static bool operator >=(NodeId first, NodeId second)
-            => first.Value >= second.Value;
+            => first.CompareTo (second) >= 0;
 
         public static bool operator ==(NodeId first, NodeId second)
-            => first?.Value == second?.Value;
+            => first is null ? second is null : first.CompareTo (second) == 0;
 
         public static bool operator !=(NodeId first, NodeId second)
-            => first?.Value != second?.Value;
+            => !(first == second);
 
         public static NodeId Create()
         {

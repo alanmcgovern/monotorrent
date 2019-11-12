@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,46 +36,72 @@ namespace MonoTorrent.Client.Modes
 {
     class HashingMode : Mode
     {
-        CancellationTokenSource Cancellation { get; }
-
         public override bool CanHashCheck => false;
-        public override TorrentState State => TorrentState.Hashing;
+
+        TaskCompletionSource<object> PausedCompletionSource { get; set; }
+
+        public override TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
 
         public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
             CanAcceptConnections = false;
-            Cancellation = new CancellationTokenSource();
+
+            // Mark it as completed so we are *not* paused by default;
+            PausedCompletionSource = new TaskCompletionSource<object> ();
+            PausedCompletionSource.TrySetResult (null);
         }
 
-        public Task WaitForHashingToComplete ()
-            => WaitForHashingToComplete (Cancellation.Token);
+        public void Pause ()
+        {
+            if (State == TorrentState.HashingPaused)
+                return;
 
-        async Task WaitForHashingToComplete (CancellationToken token)
+            PausedCompletionSource?.TrySetResult (null);
+            PausedCompletionSource = new TaskCompletionSource<object> ();
+            Cancellation.Token.Register (() => PausedCompletionSource.TrySetCanceled ());
+            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Hashing, State));
+        }
+
+        public void Resume ()
+        {
+            if (State == TorrentState.Hashing)
+                return;
+
+            PausedCompletionSource.TrySetResult (null);
+            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.HashingPaused, State));
+        }
+
+        public async Task WaitForHashingToComplete ()
         {
             if (!Manager.HasMetadata)
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
             Manager.HashFails = 0;
-            try {
-                if (await Manager.Engine.DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
-                    for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
-                        var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager.Torrent, index);
-
-                        if (token.IsCancellationRequested) {
-                            await Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent);
-                            token.ThrowIfCancellationRequested();
-                        }
-
-                        var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
-                        Manager.OnPieceHashed (index, hashPassed);
+            if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+                for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+                    if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
+                        Manager.Bitfield [index] = false;
+                        continue;
                     }
-                } else {
-                    for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                        Manager.OnPieceHashed(i, false);
+
+                    await PausedCompletionSource.Task;
+
+                    var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
+
+                    if (Cancellation.Token.IsCancellationRequested) {
+                        await DiskManager.CloseFilesAsync (Manager.Torrent);
+                        Cancellation.Token.ThrowIfCancellationRequested();
+                    }
+
+                    var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
+                    Manager.OnPieceHashed (index, hashPassed);
                 }
-            } catch (Exception ex) {
-                Manager.TrySetError (Reason.ReadFailure, ex);
+            } else {
+                await PausedCompletionSource.Task;
+
+                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                    Manager.OnPieceHashed(i, false);
             }
         }
 
@@ -82,8 +109,5 @@ namespace MonoTorrent.Client.Modes
         {
             // Do not run any of the default 'Tick' logic as nothing happens during 'Hashing' mode, except for hashing.
         }
-
-        public override void Dispose ()
-            => Cancellation.Cancel ();
     }
 }

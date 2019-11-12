@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 using MonoTorrent.BEncoding;
@@ -36,10 +37,19 @@ namespace MonoTorrent.Client
 {
     public class FastResume
     {
-        private static readonly BEncodedString VersionKey = (BEncodedString)"version";
-        private static readonly BEncodedString InfoHashKey = (BEncodedString)"infohash";
-        private static readonly BEncodedString BitfieldKey = (BEncodedString)"bitfield";
-        private static readonly BEncodedString BitfieldLengthKey = (BEncodedString)"bitfield_length";
+        // Version 1 stored the Bitfield and Infohash.
+        //
+        // Version 2 added the UnhashedPieces bitfield.
+        //
+        static readonly BEncodedNumber FastResumeVersion = 3;
+
+        internal static readonly BEncodedString InfoHashKey = "infohash";
+        internal static readonly BEncodedString UnhashedPiecesKey = "unhashed_pieces";
+
+        internal static readonly BEncodedString BitfieldKey = "bitfield";
+        internal static readonly BEncodedString BitfieldLengthKey = "bitfield_length";
+
+        internal static readonly BEncodedString VersionKey = "version";
 
         private static readonly BEncodedString ActivePeersKey         = (BEncodedString)"ActivePeers";
         //private static readonly BEncodedString ActivePeers_LengthKey  = (BEncodedString)"ActivePeers_Length";
@@ -50,58 +60,62 @@ namespace MonoTorrent.Client
         private static readonly BEncodedString BusyPeersKey           = (BEncodedString)"BusyPeers";
         //private static readonly BEncodedString BusyPeers_LengthKey    = (BEncodedString)"BusyPeers_Length";
 
-        private BitField bitfield;
-        private InfoHash infoHash;
 
-        private List<Peer> activePeers;
-        private List<Peer> availablePeers;
-        private List<Peer> bannedPeers;
-        private List<Peer> busyPeers;
+        public BitField Bitfield { get; }
+        public InfoHash Infohash { get; }
 
-        public BitField Bitfield
+        public BitField UnhashedPieces { get; }
+
+        private IList<Peer> activePeers;
+        private IList<Peer> availablePeers;
+        private IList<Peer> bannedPeers;
+        private IList<Peer> busyPeers;
+
+
+        [Obsolete ("This constructor should not be used")]
+        public FastResume ()
         {
-            get { return bitfield; }
         }
 
-        public InfoHash Infohash
-        {
-            get { return infoHash; }
-        }
-
-        public List<Peer> ActivePeers
+        public IList<Peer> ActivePeers
         {
             get { return activePeers; }
         }
 
-        public List<Peer> AvailablePeers
+        public IList<Peer> AvailablePeers
         {
             get { return availablePeers; }
         }
 
-        public List<Peer> BannedPeers
+        public IList<Peer> BannedPeers
         {
             get { return bannedPeers; }
         }
 
-        public List<Peer> BusyPeers
+        public IList<Peer> BusyPeers
         {
             get { return busyPeers; }
         }
 
-        public FastResume()
+        [Obsolete("The constructor overload which takes an 'unhashedPieces' parameter should be used instead of this.")]
+        public FastResume(InfoHash infoHash, BitField bitfield)
         {
+            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            Bitfield = bitfield ?? throw new ArgumentNullException (nameof (bitfield));
+            UnhashedPieces = new BitField (Bitfield.Length);
         }
 
+        [Obsolete("The constructor overload which takes an 'unhashedPieces' parameter should be used instead of this.")]
         public FastResume(InfoHash infoHash, BitField bitfield, List<Peer> activePeers, List<Peer> availablePeers, List<Peer> bannedPeers, List<Peer> busyPeers)
         {
+            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            Bitfield = bitfield?.Clone () ?? throw new ArgumentNullException (nameof (bitfield));
+
             if (infoHash==null)
                 throw new ArgumentNullException("infoHash");
 
             if(bitfield == null)
                 throw new ArgumentNullException("bitfield");
-
-            this.infoHash = infoHash;
-            this.bitfield = bitfield;
 
             this.activePeers    = activePeers;
             this.availablePeers = availablePeers;
@@ -109,9 +123,33 @@ namespace MonoTorrent.Client
             this.busyPeers      = busyPeers;
         }
 
+        public FastResume(InfoHash infoHash, BitField bitfield, BitField unhashedPieces, List<Peer> activePeers, List<Peer> availablePeers, List<Peer> bannedPeers, List<Peer> busyPeers)
+        {
+            Infohash = infoHash ?? throw new ArgumentNullException(nameof(infoHash));
+            Bitfield = bitfield?.Clone() ?? throw new ArgumentNullException(nameof(bitfield));
+            UnhashedPieces = unhashedPieces?.Clone() ?? throw new ArgumentNullException(nameof(UnhashedPieces));
+
+            if (infoHash == null)
+                throw new ArgumentNullException("infoHash");
+
+            if (bitfield == null)
+                throw new ArgumentNullException("bitfield");
+
+            for (int i = 0; i < Bitfield.Length; i++)
+            {
+                if (bitfield[i] && unhashedPieces[i])
+                    throw new ArgumentException($"The bitfield is set to true at index {i} but that piece is marked as unhashed.");
+            }
+
+            this.activePeers = activePeers;
+            this.availablePeers = availablePeers;
+            this.bannedPeers = bannedPeers;
+            this.busyPeers = busyPeers;
+        }
+
         public FastResume(BEncodedDictionary dict)
         {
-            CheckContent(dict, VersionKey, (BEncodedNumber)2);
+            CheckVersion(dict);
             CheckContent(dict, InfoHashKey);
             CheckContent(dict, BitfieldKey);
             CheckContent(dict, BitfieldLengthKey);
@@ -121,10 +159,18 @@ namespace MonoTorrent.Client
             CheckContent(dict, BannedPeersKey);
             CheckContent(dict, BusyPeersKey);
 
-            infoHash = new InfoHash(((BEncodedString)dict[InfoHashKey]).TextBytes);
-            bitfield = new BitField((int)((BEncodedNumber)dict[BitfieldLengthKey]).Number);
+            Infohash = new InfoHash(((BEncodedString)dict[InfoHashKey]).TextBytes);
+
+            Bitfield = new BitField((int)((BEncodedNumber)dict[BitfieldLengthKey]).Number);
             byte[] data = ((BEncodedString)dict[BitfieldKey]).TextBytes;
-            bitfield.FromArray(data, 0, data.Length);
+            Bitfield.FromArray(data, 0, data.Length);
+
+            UnhashedPieces = new BitField (Bitfield.Length);
+            // If we're loading up an older version of the FastResume data then we
+            if (dict.ContainsKey (UnhashedPiecesKey)) {
+                data = ((BEncodedString)dict[UnhashedPiecesKey]).TextBytes;
+                UnhashedPieces.FromArray(data, 0, data.Length);
+            }
 
             activePeers    = Peer.Decode((BEncodedList)dict[ActivePeersKey]);
             availablePeers = Peer.Decode((BEncodedList)dict[AvailablePeersKey]);
@@ -145,13 +191,27 @@ namespace MonoTorrent.Client
                 throw new TorrentException(string.Format("Invalid FastResume data. Key '{0}' was not present", key));
         }
 
+        private void CheckVersion (BEncodedDictionary dict)
+        {
+            var version = (dict [VersionKey] as BEncodedNumber)?.Number;
+
+            if (version.GetValueOrDefault () == 1 || version.GetValueOrDefault () == 2 || version.GetValueOrDefault() == 3)
+                return;
+
+            throw new ArgumentException ($"This FastResume is version {version}, but only version  '1' and '2' and '3' are supported");
+        }
+
         public BEncodedDictionary Encode()
         {
+
             BEncodedDictionary dict = new BEncodedDictionary();
-            dict.Add(VersionKey, (BEncodedNumber)2);
-            dict.Add(InfoHashKey, new BEncodedString(infoHash.Hash));
-            dict.Add(BitfieldKey, new BEncodedString(bitfield.ToByteArray()));
-            dict.Add(BitfieldLengthKey, (BEncodedNumber)bitfield.Length);
+
+            dict.Add(VersionKey, (BEncodedNumber)3);
+            dict.Add(InfoHashKey, new BEncodedString(Infohash.Hash));
+            dict.Add(BitfieldKey, new BEncodedString(Bitfield.ToByteArray()));
+            dict.Add(BitfieldLengthKey, (BEncodedNumber)Bitfield.Length);
+            dict.Add(UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) );
+
 
             dict.Add(ActivePeersKey,    new BEncodedList(Peer.Encode(activePeers)));
             dict.Add(AvailablePeersKey, new BEncodedList(Peer.Encode(availablePeers)));

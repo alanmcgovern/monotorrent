@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
@@ -64,8 +65,10 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123"), Encryption.EncryptionTypes.All), Manager, conn.Outgoing) {
-                ProcessingQueue = true
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (true)) {
+                ProcessingQueue = true,
+                IsChoking = false,
+                AmInterested = true,
             };
         }
 
@@ -88,6 +91,186 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public void CancelHashing ()
+        {
+            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.Pause ();
+
+            var hashingTask = mode.WaitForHashingToComplete ();
+            var stoppedMode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = stoppedMode;
+
+            // Ensure the hashing mode ends and does not throw exceptions.
+            Assert.ThrowsAsync<TaskCanceledException> (() => hashingTask, "#1");
+            Assert.AreSame (stoppedMode, Manager.Mode, "#2");
+        }
+
+        [Test]
+        public async Task HashCheckAsync_Autostart ()
+        {
+            await Manager.HashCheckAsync (true);
+            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#1");
+        }
+
+        [Test]
+        public async Task HashCheckAsync_DoNotAutostart ()
+        {
+            await Manager.HashCheckAsync (false);
+            Assert.AreEqual (TorrentState.Stopped, Manager.State, "#1");
+        }
+
+        [Test]
+        public async Task PauseResumeHashingMode ()
+        {
+            var pieceHashed = new TaskCompletionSource<object> ();
+            Manager.PieceHashed += (o, e) => pieceHashed.TrySetResult (null);
+
+            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.Pause ();
+            Assert.AreEqual (TorrentState.HashingPaused, mode.State, "#a");
+
+            var hashingTask = mode.WaitForHashingToComplete ();
+            await Task.Delay (50);
+            Assert.IsFalse (pieceHashed.Task.IsCompleted, "#1");
+
+            mode.Resume ();
+            Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
+            Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
+        }
+
+        [Test]
+        public void SaveLoadFastResume ()
+        {
+            Manager.Bitfield.SetAll (true).Set (0, false);
+            Manager.UnhashedPieces.SetAll (false).Set (0, true);
+            Manager.HashChecked = true;
+
+            var origUnhashed = Manager.UnhashedPieces.Clone ();
+            var origBitfield = Manager.Bitfield.Clone ();
+            Manager.LoadFastResume (Manager.SaveFastResume ());
+
+            Assert.AreEqual (origUnhashed, Manager.UnhashedPieces, "#3");
+            Assert.AreEqual (origBitfield, Manager.Bitfield, "#4");
+        }
+
+        [Test]
+        public async Task DoNotDownload_All ()
+        {
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files) {
+                PieceWriter.FilesThatExist.Add (f);
+                f.Priority = Priority.DoNotDownload;
+            }
+
+            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = hashingMode;
+            await hashingMode.WaitForHashingToComplete ();
+
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1");
+
+            // No piece should be marked as available, and no pieces should actually be hashchecked.
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#2");
+            Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#3");
+        }
+
+        [Test]
+        public async Task DoNotDownload_ThenDownload ()
+        {
+            DiskManager.GetHashAsyncOverride = (manager, index) => {
+                if (index >= 0 && index <= 4)
+                    return Manager.Torrent.Pieces.ReadHash (index);
+
+                return Enumerable.Repeat ((byte)255, 20).ToArray ();
+            };
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files) {
+                PieceWriter.FilesThatExist.Add (f);
+                f.Priority = Priority.DoNotDownload;
+            }
+
+            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = hashingMode;
+            await hashingMode.WaitForHashingToComplete ();
+            Assert.IsTrue (Manager.UnhashedPieces.AllTrue, "#1");
+
+            // Nothing should be available to download.
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1b");
+
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            foreach (var file in Manager.Torrent.Files) {
+                file.Priority = Priority.Normal;
+                await Manager.Mode.TryHashPendingFilesAsync ();
+                for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i ++)
+                    Assert.IsFalse (Manager.UnhashedPieces [i], "#2." + i);
+            }
+
+            // No piece should be marked as available, and no pieces should actually be hashchecked.
+            Assert.IsTrue (Manager.UnhashedPieces.AllFalse, "#3");
+
+            // These pieces should now be available for download
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreNotEqual (0, Peer.AmRequestingPiecesCount, "#4");
+
+            Assert.AreEqual (5, Manager.finishedPieces.Count, "#5");
+        }
+
+        [Test]
+        public void StopWhileHashingPendingFiles ()
+        {
+            var pieceHashCount = 0;
+            DiskManager.GetHashAsyncOverride = (manager, index) => {
+                pieceHashCount ++;
+                if (pieceHashCount == 3)
+                    Manager.StopAsync ().Wait ();
+
+                return Enumerable.Repeat ((byte)0, 20).ToArray ();
+            };
+
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files)
+                f.Priority = Priority.DoNotDownload;
+
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            foreach (var file in Manager.Torrent.Files)
+                file.Priority = Priority.Normal;
+
+            Assert.ThrowsAsync<OperationCanceledException> (() => Manager.Mode.TryHashPendingFilesAsync (), "#1");
+            Assert.AreEqual (3, pieceHashCount, "#2");
+        }
+
+        [Test]
+        public async Task DoNotDownload_OneFile ()
+        {
+            Manager.Bitfield.SetAll (true);
+
+            foreach (var f in Manager.Torrent.Files.Skip (1)) {
+                PieceWriter.FilesThatExist.Add (f);
+                f.Priority = Priority.DoNotDownload;
+            }
+
+            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = hashingMode;
+            await hashingMode.WaitForHashingToComplete ();
+
+            // No piece should be marked as available
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#1");
+
+            // Only one piece should actually have been hash checked.
+            Assert.AreEqual (1, Manager.UnhashedPieces.Length - Manager.UnhashedPieces.TrueCount, "#2");
+            Assert.IsFalse (Manager.UnhashedPieces[0], "#3");
+
+            Manager.PieceManager.AddPieceRequests (Peer);
+            Assert.AreNotEqual (0, Peer.AmRequestingPiecesCount, "#4");
+        }
+
+        [Test]
         public async Task ReadZeroFromDisk ()
         {
             PieceWriter.FilesThatExist.AddRange(new[]{
@@ -101,7 +284,7 @@ namespace MonoTorrent.Client.Modes
             });
 
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf));
+            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)
@@ -114,6 +297,20 @@ namespace MonoTorrent.Client.Modes
             Assert.IsTrue(Manager.Bitfield.AllFalse, "#3");
             foreach (TorrentFile file in Manager.Torrent.Files)
                 Assert.IsTrue (file.BitField.AllFalse, "#4." + file.Path);
+        }
+
+        [Test]
+        public async Task StopWhileHashing ()
+        {
+            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            mode.Pause ();
+
+            var hashingTask = mode.WaitForHashingToComplete ();
+            await Manager.StopAsync ();
+
+            Assert.ThrowsAsync<TaskCanceledException> (() => hashingTask, "#1");
+            Assert.AreEqual (Manager.State, TorrentState.Stopped, "#2");
         }
     }
 }

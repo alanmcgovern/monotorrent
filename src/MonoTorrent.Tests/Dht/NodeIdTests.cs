@@ -69,9 +69,9 @@ namespace MonoTorrent.Dht
         [Test]
         public void CompareTest2()
         {
-            byte[] data = new byte[] { 1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199 };
-            BigInteger a = new BigInteger(data);
-            BigInteger b = new BigInteger(new byte[0]);
+            byte[] data = { 1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199 };
+            var a = new BigEndianBigInteger(data);
+            var b = new BigEndianBigInteger(new byte[0]);
 
             Assert.AreNotEqual(a, b, "#1");
         }

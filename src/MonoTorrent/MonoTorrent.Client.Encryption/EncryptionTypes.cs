@@ -29,7 +29,7 @@
 
 using System;
 
-namespace MonoTorrent.Client.Encryption
+namespace MonoTorrent.Client
 {
     [Flags]
     public enum EncryptionTypes

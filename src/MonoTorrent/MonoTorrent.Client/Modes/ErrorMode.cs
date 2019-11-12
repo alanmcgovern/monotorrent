@@ -27,36 +27,8 @@
 //
 
 
-using System;
-
 namespace MonoTorrent.Client.Modes
 {
-    // In the error mode, we just disable all connections
-    // Usually we enter this because the HD is full
-    public enum Reason
-    {
-        ReadFailure,
-        WriteFailure
-    }
-    public class Error
-    {
-        Exception exception;
-        Reason reason;
-        public Error(Reason reason, Exception exception)
-        {
-            this.reason = reason;
-            this.exception = exception;
-        }
-        public Exception Exception
-        {
-            get { return exception; }
-        }
-        public Reason Reason
-        {
-            get { return reason; }
-        }
-    }
-
     class ErrorMode : Mode
     {
         public override TorrentState State => TorrentState.Error;
@@ -71,7 +43,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Monitor.Reset();
             foreach (var id in Manager.Peers.ConnectedPeers.ToArray ())
-                Manager.Engine.ConnectionManager.CleanupSocket (id);
+                Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
         }
     }
 }

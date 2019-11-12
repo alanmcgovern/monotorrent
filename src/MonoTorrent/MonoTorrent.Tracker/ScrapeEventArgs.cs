@@ -34,11 +34,11 @@ namespace MonoTorrent.Tracker
 {
     public class ScrapeEventArgs : EventArgs
     {
-        public IList<SimpleTorrentManager> Torrents { get; }
+        public IList<ITrackerItem> Torrents { get; }
 
-        public ScrapeEventArgs(List<SimpleTorrentManager> torrents)
+        public ScrapeEventArgs(List<ITrackerItem> torrents)
         {
-            Torrents = new List<SimpleTorrentManager> (torrents).AsReadOnly ();
+            Torrents = new List<ITrackerItem> (torrents).AsReadOnly ();
         }
     }
 }

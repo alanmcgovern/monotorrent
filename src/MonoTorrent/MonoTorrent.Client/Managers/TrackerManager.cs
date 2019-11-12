@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// The timer tracking the time since the most recent Announce request was sent.
         /// </summary>
-        Stopwatch LastAnnounce { get; }
+        ValueStopwatch LastAnnounce;
 
         /// <summary>
         /// The time, in UTC, when the most recent Announce request was sent
@@ -88,11 +88,12 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
-        /// <param name="manager">The TorrentManager to create the tracker connection for</param>
+        /// <param name="requestFactory">The factory used to create tracker requests. Typically a <see cref="TorrentManager"/> instance.</param>
+        /// <param name="announces">The list of tracker tiers</param>
         internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
         {
             RequestFactory = requestFactory;
-            LastAnnounce = new Stopwatch ();
+            LastAnnounce = new ValueStopwatch ();
 
             // Check if this tracker supports scraping
             var trackerTiers = new List<TrackerTier> ();

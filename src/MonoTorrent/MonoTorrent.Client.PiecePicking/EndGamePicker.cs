@@ -251,8 +251,10 @@ namespace MonoTorrent.Client.PiecePicking
             // Once a piece is completely received, remove it from our list.
             // If a piece *fails* the hashcheck, we need to add it back into the list so
             // we download it again.
-            if (piece.AllBlocksReceived)
+            if (piece.AllBlocksReceived) {
                 pieces.Remove(piece);
+                CancelWhere (r => r.Block.PieceIndex == pieceIndex, false);
+            }
 
             requests.Remove(r);
             peer.AmRequestingPiecesCount--;

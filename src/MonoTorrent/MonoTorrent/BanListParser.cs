@@ -47,10 +47,9 @@ namespace MonoTorrent.Client
                 MatchCollection collection = r.Matches(result);
                 if (collection.Count == 1)
                 {
-                    AddressRange range = new AddressRange();
                     string[] s = collection[0].Captures[0].Value.Split('.');
-                    range.Start = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3]));
-                    range.End = range.Start;
+                    var start =(int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3]));
+                    AddressRange range = new AddressRange(start, start);
                     yield return range;
                 }
                 else if (collection.Count == 2)
@@ -61,9 +60,7 @@ namespace MonoTorrent.Client
                     s = collection[1].Captures[0].Value.Split('.');
                     int end = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3]));
 
-                    AddressRange range = new AddressRange();
-                    range.Start = start;
-                    range.End = end;
+                    AddressRange range = new AddressRange(start, end);
                     yield return range;
                 }
             }

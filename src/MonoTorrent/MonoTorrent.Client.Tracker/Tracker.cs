@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.Tracker
         public int Downloaded { get; protected set; }
         public string FailureMessage { get; protected set; }
         public int Incomplete { get; protected set; }
-        Stopwatch LastAnnounced { get; }
+        ValueStopwatch LastAnnounced;
         public TimeSpan MinUpdateInterval { get; protected set; }
         public TrackerState Status { get; protected set; }
         public TimeSpan TimeSinceLastAnnounce => LastAnnounced.IsRunning ? LastAnnounced.Elapsed : TimeSpan.MaxValue;
@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Tracker
 
         protected Tracker (Uri uri)
         {
-            LastAnnounced = new Stopwatch ();
+            LastAnnounced = new ValueStopwatch ();
             MinUpdateInterval = TimeSpan.FromMinutes(3);
             UpdateInterval = TimeSpan.FromMinutes(30);
             Uri = uri ?? throw new ArgumentNullException (nameof (uri));

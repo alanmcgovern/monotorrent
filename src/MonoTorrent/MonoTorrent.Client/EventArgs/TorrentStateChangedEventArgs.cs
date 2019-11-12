@@ -32,42 +32,29 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a TorrentStateChanged event
     /// </summary>
-    public class TorrentStateChangedEventArgs : TorrentEventArgs
+    public sealed class TorrentStateChangedEventArgs : TorrentEventArgs
     {
-        #region Member Variables
         /// <summary>
         /// The old state for the torrent
         /// </summary>
-        public TorrentState OldState
-        {
-            get { return this.oldState; }
-        }
-        private TorrentState oldState;
-
+        public TorrentState OldState { get; }
 
         /// <summary>
         /// The new state for the torrent
         /// </summary>
-        public TorrentState NewState
-        {
-            get { return this.newState; }
-        }
-        private TorrentState newState;
-        #endregion
+        public TorrentState NewState { get; }
 
-
-        #region Constructors
         /// <summary>
         /// Creates a new TorrentStateChangedEventArgs
         /// </summary>
+        /// <param name="manager">The <see cref="TorrentManager"/> whose state has changed.</param>
         /// <param name="oldState">The old state of the Torrent</param>
         /// <param name="newState">The new state of the Torrent</param>
-        public TorrentStateChangedEventArgs(TorrentManager manager, TorrentState oldState, TorrentState newState)
+        internal TorrentStateChangedEventArgs(TorrentManager manager, TorrentState oldState, TorrentState newState)
             : base(manager)
         {
-            this.oldState = oldState;
-            this.newState = newState;
+            OldState = oldState;
+            NewState = newState;
         }
-        #endregion
     }
 }

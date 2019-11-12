@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            await mode.StartingTask;
+            await mode.WaitForStartingToComplete ();
 
             Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.Modes
             Assert.IsNull (Manager.TrackerManager.CurrentTracker, "#1");
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            await mode.StartingTask;
+            await mode.WaitForStartingToComplete ();
             Assert.IsInstanceOf<DownloadMode> (Manager.Mode, "#2");
         }
 
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.Modes
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.HashChecked = true;
             Manager.Mode = mode;
-            await mode.StartingTask;
+            await mode.WaitForStartingToComplete ();
 
             Assert.AreEqual (2, modeChanged.Count, "#1");
             Assert.IsInstanceOf<StartingMode> (modeChanged[0], "#2");
@@ -128,7 +128,7 @@ namespace MonoTorrent.Client.Modes
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.HashChecked = false;
             Manager.Mode = mode;
-            await mode.StartingTask;
+            await mode.WaitForStartingToComplete ();
 
             Assert.AreEqual (3, modeChanged.Count, "#1");
             Assert.IsInstanceOf<StartingMode> (modeChanged[0], "#2");
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.Modes
         public async Task FastResume_NoneExist()
         {
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf));
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Modes
 
             var startingMode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = startingMode;
-            await startingMode.StartingTask;
+            await startingMode.WaitForStartingToComplete ();
 
             Assert.IsTrue(Manager.Bitfield.AllFalse, "#3");
             foreach (var file in Manager.Torrent.Files)
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Torrent.Files [2],
             });
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf));
+            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)
@@ -171,7 +171,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            await mode.StartingTask;
+            await mode.WaitForStartingToComplete ();
 
             Assert.IsTrue(Manager.Bitfield.AllFalse, "#3");
             foreach (TorrentFile file in Manager.Torrent.Files)

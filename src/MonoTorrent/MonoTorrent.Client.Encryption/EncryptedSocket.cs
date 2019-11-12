@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -63,6 +64,13 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     abstract class EncryptedSocket : IEncryptor
     {
+        protected static readonly byte[] Req1Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'1' };
+        protected static readonly byte[] Req2Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'2' };
+        protected static readonly byte[] Req3Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'3' };
+
+        protected static readonly byte[] KeyABytes = { (byte)'k', (byte)'e', (byte)'y', (byte)'A' };
+        protected static readonly byte[] KeyBBytes = { (byte)'k', (byte)'e', (byte)'y', (byte)'B' };
+
         // Cryptors for the data transmission
         public IEncryption Decryptor { get; private set; }
         public IEncryption Encryptor { get; private set; }
@@ -80,9 +88,8 @@ namespace MonoTorrent.Client.Encryption
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
-        private byte[] OtherY;
         
-        protected IConnection socket;
+        protected IConnection2 socket;
 
         // Data to be passed to initial ReceiveMessage requests
         private byte[] initialBuffer;
@@ -125,7 +132,7 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual async Task HandshakeAsync(IConnection socket)
+        public virtual async ReusableTask HandshakeAsync(IConnection2 socket)
         {
             this.socket = socket ?? throw new ArgumentNullException(nameof (socket));
 
@@ -151,7 +158,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual async Task HandshakeAsync(IConnection socket, byte[] initialBuffer, int offset, int count)
+        public virtual async ReusableTask HandshakeAsync(IConnection2 socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
@@ -197,28 +204,32 @@ namespace MonoTorrent.Client.Encryption
         /// Send Y to the remote client, with a random padding that is 0 to 512 bytes long
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async Task SendY()
+        protected async ReusableTask SendY()
         {
-            byte[] toSend = new byte[96 + RandomNumber(512)];
-            random.GetBytes(toSend);
+            var length = 96 + RandomNumber(512);
+            var toSend = ClientEngine.BufferManager.GetBuffer (length);
             Buffer.BlockCopy(Y, 0, toSend, 0, 96);
-
-            await NetworkIO.SendAsync(socket, toSend, 0, toSend.Length, null, null, null).ConfigureAwait (false);
+            random.GetBytes(toSend, 96, length - 96);
+            try  {
+                await NetworkIO.SendAsync(socket, toSend, 0, length, null, null, null).ConfigureAwait(false);
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer(toSend);
+            }
         }
 
         /// <summary>
         /// Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async Task ReceiveY()
+        protected async ReusableTask ReceiveY()
         {
-            OtherY = new byte[96];
-            await ReceiveMessage(OtherY, 96);
-            S = ModuloCalculator.Calculate (OtherY, X);
+            var otherY = new byte[96];
+            await ReceiveMessage(otherY, 96);
+            S = ModuloCalculator.Calculate (otherY, X);
             await doneReceiveY ();
         }
 
-        protected abstract Task doneReceiveY ();
+        protected abstract ReusableTask doneReceiveY ();
 
         #endregion
 
@@ -230,20 +241,20 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="syncData">Buffer with the data to synchronize to</param>
         /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
-        protected async Task Synchronize(byte[] syncData, int syncStopPoint)
+        protected async ReusableTask Synchronize(byte[] syncData, int syncStopPoint)
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            var synchronizeWindow = new byte[syncData.Length];
+            var synchronizeWindow = ClientEngine.BufferManager.GetBuffer(syncData.Length);
 
             while (bytesReceived < syncStopPoint)
             {
-                int received = synchronizeWindow.Length - filled;
+                int received = syncData.Length - filled;
                 await NetworkIO.ReceiveAsync(socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
 
                 bytesReceived += received;
                 bool matched = true;
-                for (int i = 0; i < synchronizeWindow.Length && matched; i++)
+                for (int i = 0; i < syncData.Length && matched; i++)
                     matched &= syncData[i] == synchronizeWindow[i];
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
@@ -256,16 +267,16 @@ namespace MonoTorrent.Client.Encryption
                     // See if the current window contains the first byte of the expected synchronize data
                     // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
                     int shift = -1;
-                    for (int i = 1; i < synchronizeWindow.Length && shift == -1; i++)
+                    for (int i = 1; i < syncData.Length && shift == -1; i++)
                         if (synchronizeWindow[i] == syncData[0])
                             shift = i;
 
                     // The current data is all useless, so read an entire new window of data
                     if (shift > 0)
                     {
-                        filled = synchronizeWindow.Length - shift;
+                        filled = syncData.Length - shift;
                         // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
-                        Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, synchronizeWindow.Length - shift);
+                        Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
                     } else
                     {
                         // The start point we thought we had is actually garbage, so throw away all the data we have
@@ -276,14 +287,14 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException("Couldn't synchronise 1");
         }
 
-        protected virtual Task doneSynchronize()
+        protected virtual ReusableTask doneSynchronize()
         {
-            return Task.CompletedTask;
+            return ReusableTask.CompletedTask;
         }
         #endregion
 
         #region I/O Functions
-        protected async Task ReceiveMessage(byte[] buffer, int length)
+        protected async ReusableTask ReceiveMessage(byte[] buffer, int length)
         {
             if (length == 0)
             {
@@ -326,16 +337,17 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="encryptionSalt">The salt to calculate the encryption key with</param>
         /// <param name="decryptionSalt">The salt to calculate the decryption key with</param>
-        protected void CreateCryptors(string encryptionSalt, string decryptionSalt)
+        protected void CreateCryptors(byte[] encryptionSalt, byte[] decryptionSalt)
         {
-            encryptor = new RC4(Hash(Encoding.ASCII.GetBytes(encryptionSalt), S, SKEY.Hash));
-            decryptor = new RC4(Hash(Encoding.ASCII.GetBytes(decryptionSalt), S, SKEY.Hash));
+            encryptor = new RC4(Hash(encryptionSalt, S, SKEY.Hash));
+            decryptor = new RC4(Hash(decryptionSalt, S, SKEY.Hash));
         }
 
         /// <summary>
         /// Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
         /// </summary>
         /// <param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param>
+        /// <param name="replace">True if the existing Encryptor/Decryptor object should be replaced with a new instance</param>
         protected virtual int SelectCrypto(byte[] remoteCryptoBytes, bool replace)
         {
             CryptoSelect = new byte[remoteCryptoBytes.Length];
@@ -395,11 +407,19 @@ namespace MonoTorrent.Client.Encryption
         /// <summary>
         /// Hash some data with SHA1
         /// </summary>
-        /// <param name="data">Buffers to hash</param>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <param name="third"></param>
         /// <returns>20-byte hash</returns>
-        protected byte[] Hash(params byte[][] data)
+        protected byte[] Hash(byte[] first, byte[] second, byte[] third = null)
         {
-            return hasher.ComputeHash(Combine(data));
+            hasher.Initialize ();
+            hasher.TransformBlock (first, 0, first.Length, first, 0);
+            hasher.TransformBlock (second, 0, second.Length, second, 0);
+            if (third != null)
+                hasher.TransformBlock (third, 0, third.Length, third, 0);
+            hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+            return hasher.Hash;
         }
 
         /// <summary>

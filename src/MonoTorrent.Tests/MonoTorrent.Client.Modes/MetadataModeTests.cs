@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -62,9 +63,9 @@ namespace MonoTorrent.Client.Modes
             rig.AddConnection(pair.Outgoing);
 
             var connection = pair.Incoming;
-            PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager, connection);
+            PeerId id = new PeerId(new Peer("", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
 
-            var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new InfoHash[] { id.TorrentManager.InfoHash });
+            var result = await EncryptorFactory.CheckIncomingConnectionAsync(id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new InfoHash[] { rig.Manager.InfoHash });
             decryptor = id.Decryptor = result.Decryptor;
             encryptor = id.Encryptor = result.Encryptor;
         }
@@ -87,7 +88,7 @@ namespace MonoTorrent.Client.Modes
             // of the Connect method.
             var sendHandshake = new HandshakeMessage(rig.Manager.Torrent.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync(connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(false, rig.TorrentDict.LengthInBytes());
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(false, rig.TorrentDict.LengthInBytes(), 5555);
             exHand.Supports.Add(LTMetadata.Support);
             await PeerIO.SendMessageAsync(connection, encryptor, exHand);
 
@@ -158,7 +159,7 @@ namespace MonoTorrent.Client.Modes
             // of the Connect method.
             var sendHandshake = new HandshakeMessage(rig.Manager.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync(connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(false, rig.Torrent.Metadata.Length);
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(false, rig.Torrent.Metadata.Length, 5555);
             exHand.Supports.Add(LTMetadata.Support);
             await PeerIO.SendMessageAsync(connection, encryptor, exHand);
 

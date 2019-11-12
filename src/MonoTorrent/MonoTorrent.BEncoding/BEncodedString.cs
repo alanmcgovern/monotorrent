@@ -127,7 +127,6 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="buffer">The buffer to encode the string to</param>
         /// <param name="offset">The offset at which to save the data to</param>
-        /// <param name="e">The encoding to use</param>
         /// <returns>The number of bytes encoded</returns>
         public override int Encode(byte[] buffer, int offset)
         {

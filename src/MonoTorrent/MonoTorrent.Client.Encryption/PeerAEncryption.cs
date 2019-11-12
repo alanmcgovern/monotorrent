@@ -33,6 +33,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -56,18 +57,18 @@ namespace MonoTorrent.Client.Encryption
             SKEY = InfoHash;
         }
 
-        protected override async Task doneReceiveY()
+        protected override async ReusableTask doneReceiveY()
         {
-            CreateCryptors("keyA", "keyB");
+            CreateCryptors(KeyABytes, KeyBBytes);
 
             // 3 A->B: HASH('req1', S)
-            byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
+            byte[] req1 = Hash(Req1Bytes, S);
 
             // ... HASH('req2', SKEY)
-            byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY.Hash);
+            byte[] req2 = Hash(Req2Bytes, SKEY.Hash);
 
             // ... HASH('req3', S)
-            byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+            byte[] req3 = Hash(Req3Bytes, S);
 
             // HASH('req2', SKEY) xor HASH('req3', S)
             for (int i = 0; i < req2.Length; i++)
@@ -76,48 +77,61 @@ namespace MonoTorrent.Client.Encryption
             byte[] padC = GeneratePad();
 
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
-            byte[] buffer = new byte[req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
-                                    + 2 + padC.Length + 2 + InitialPayload.Length];
+            var bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
+                             + 2 + padC.Length + 2 + InitialPayload.Length;
+            var buffer = ClientEngine.BufferManager.GetBuffer (bufferLength);
 
             int offset = 0;
             offset += Message.Write(buffer, offset, req1);
             offset += Message.Write(buffer, offset, req2);
-            offset += Message.Write(buffer, offset, DoEncrypt((byte[])VerificationConstant.Clone ()));
+            offset += Message.Write(buffer, offset, VerificationConstant);
+            DoEncrypt (buffer, offset - VerificationConstant.Length, VerificationConstant.Length);
+
             offset += Message.Write(buffer, offset, DoEncrypt(CryptoProvide));
-            offset += Message.Write(buffer, offset, DoEncrypt(Len(padC)));
+            offset += Message.Write(buffer, offset, (short)padC.Length);
+            DoEncrypt (buffer, offset - 2, 2);
+
             offset += Message.Write(buffer, offset, DoEncrypt(padC));
 
             // ... PadC, len(IA)), ENCRYPT(IA)
-            offset += Message.Write(buffer, offset, DoEncrypt(Len(InitialPayload)));
+            offset += Message.Write(buffer, offset, (short)InitialPayload.Length);
+            DoEncrypt (buffer, offset - 2, 2);
+
             offset += Message.Write(buffer, offset, DoEncrypt(InitialPayload));
                 
             // Send the entire message in one go
-            await NetworkIO.SendAsync (socket, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
+            try {
+                await NetworkIO.SendAsync (socket, buffer, 0, bufferLength).ConfigureAwait (false);
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer (buffer);
+            }
 
             DoDecrypt (VerificationConstant, 0, VerificationConstant.Length);
             await Synchronize(VerificationConstant, 616); // 4 B->A: ENCRYPT(VC)
         }
 
-        protected override async Task doneSynchronize()
+        protected override async ReusableTask doneSynchronize()
         {
             await base.doneSynchronize(); // 4 B->A: ENCRYPT(VC, ...
 
-            var verifyBytes = new byte[4 + 2];
-            await ReceiveMessage(verifyBytes, verifyBytes.Length); // crypto_select, len(padD) ...
+            // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
+            byte[] padD = null;
+            var verifyBytesLength = 4 + 2;
+            var verifyBytes = ClientEngine.BufferManager.GetBuffer (verifyBytesLength);
+            try {
+                await ReceiveMessage(verifyBytes, verifyBytesLength); // crypto_select, len(padD) ...
+                DoDecrypt(verifyBytes, 0, verifyBytesLength);
 
-            byte[] myCS = new byte[4];
-            byte[] lenPadD = new byte[2];
+                var padDLength = Message.ReadShort (verifyBytes, 4);
+                padD = ClientEngine.BufferManager.GetBuffer (padDLength);
 
-            DoDecrypt(verifyBytes, 0, verifyBytes.Length);
-
-            Array.Copy(verifyBytes, 0, myCS, 0, myCS.Length); // crypto_select
-            Array.Copy(verifyBytes, myCS.Length, lenPadD, 0, lenPadD.Length); // len(padD)
-
-            var padD = new byte[DeLen(lenPadD)];
-
-            await ReceiveMessage(padD, padD.Length);
-            DoDecrypt(padD, 0, padD.Length);
-            SelectCrypto(myCS, true);
+                await ReceiveMessage(padD, padDLength);
+                DoDecrypt(padD, 0, padDLength);
+                SelectCrypto(verifyBytes, true);
+            } finally {
+                ClientEngine.BufferManager.FreeBuffer (verifyBytes);
+                ClientEngine.BufferManager.FreeBuffer (padD);
+            }
         }
     }
 }

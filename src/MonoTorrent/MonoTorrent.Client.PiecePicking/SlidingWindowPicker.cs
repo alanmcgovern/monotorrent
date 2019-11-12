@@ -115,8 +115,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// Creates a new piece picker with support for prioritization of files. The sliding window will be positioned to the start
         /// of the first file to be downloaded
         /// </summary>
-        /// <param name="bitField">The bitfield associated with the torrent</param>
-        /// <param name="torrentFiles">The files that are available in this torrent</param>
+        /// <param name="picker">The picker which requests should be forwarded to</param>
         /// <param name="highPrioritySetSize">Size of high priority set</param>
         internal SlidingWindowPicker(PiecePicker picker, int highPrioritySetSize)
             : this(picker, highPrioritySetSize, 4)
@@ -128,8 +127,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// Create a new SlidingWindowPicker with the given set sizes. The sliding window will be positioned to the start
         /// of the first file to be downloaded
         /// </summary>
-        /// <param name="bitField">The bitfield associated with the torrent</param>
-        /// <param name="torrentFiles">The files that are available in this torrent</param>
+        /// <param name="picker">The picker which requests should be forwarded to</param>
         /// <param name="highPrioritySetSize">Size of high priority set</param>
         /// <param name="mediumToHighRatio">Size of medium priority set as a multiple of the high priority set size</param>
         internal SlidingWindowPicker(PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
@@ -143,10 +141,9 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="ownBitfield"></param>
-        /// <param name="files"></param>
+        /// <param name="bitfield"></param>
+        /// <param name="torrentData"></param>
         /// <param name="requests"></param>
-        /// <param name="unhashedPieces"></param>
         public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             base.Initialise(bitfield, torrentData, requests);

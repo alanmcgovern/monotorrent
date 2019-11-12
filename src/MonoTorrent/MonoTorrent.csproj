@@ -2,19 +2,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <MonoTorrentABIVersion>0.99.0.0</MonoTorrentABIVersion>
+    <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <GitVersionFile>version.txt</GitVersionFile>
     <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
     <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
     <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
 
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha</MonoTorrentReleaseSuffix>
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
+
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
-    <PackDependsOn>$(PackDependsOn);CreatePlainZip</PackDependsOn>
+    <PackDependsOn>$(PackDependsOn)</PackDependsOn>
   </PropertyGroup>
 
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(Configuration)' == 'Debug' ">
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' ">
     <PropertyGroup>
       <Version>0.0.0.1</Version>
       <AssemblyVersion>$(Version)</AssemblyVersion>
@@ -40,30 +46,53 @@
       to ensure our GitInfo related properties have been calculated correctly. -->
   <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
     <PropertyGroup>
-      <Authors>Alan McGovern</Authors>
-      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links</PackageDescription>
+      <Authors>Alan McGovern,Olivier Dufour</Authors>
+      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links.
+Notable features include:
+-Encryption
+-Dht
+-Peer Exchange (uTorrent style)
+-Local Peer Discovery
+-Web Seeding (getright style)
+-Magnet Links / Metadata download
+-IPV6
+-FAST Extensions
+-Sparse files (NTFS file system)
+-Multi-tracker torrents
+-Compact tracker responses
+-IP Address white listing / black listing
+-Fast Resume
+-Initial Seeding (super seeding)
+-Selective downloading
+-Prioritised downloading
+-Full bittorrent tracker
+-Dynamic request queue size
+-Memory Cache
+-Endgame mode
+-Per torrent and global rate limiting
+-Individual file relocation</PackageDescription>
       <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-      <PackageVersion>$(MonoTorrentFileVersion)</PackageVersion>
-      <Tags>bittorrent;torrent</Tags>
+      <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
+      <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+      <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
+      <PackageTags>bittorrent;torrent</PackageTags>
 
       <IncludeSource>true</IncludeSource>
       <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
       <RepositoryType>git</RepositoryType>
       <RepositoryBranch>$(GitBranch)</RepositoryBranch>
       <RepositoryCommit>$(GitSha)</RepositoryCommit>
       <RepositoryUrl>https://github.com/mono/monotorrent</RepositoryUrl>
-      <ProjectUrl>https://github.com/mono/monotorrent</ProjectUrl>
 
+      <Copyright>Alan McGovern, Gregor Burger</Copyright>
     </PropertyGroup>
-  </Target>
-
-  <Target Name="CreatePlainZip" DependsOnTargets="SetAssemblyVersion" Inputs="$(TargetPath)" Outputs="$(PackageOutputPath)\MonoTorrent-$(MonoTorrentFileVersion).zip">
-    <ZipDirectory SourceDirectory="$(OutputPath)" DestinationFile="$(PackageOutputPath)\MonoTorrent-$(MonoTorrentFileVersion).zip" Overwrite="true" Condition="'$(PackageOutputPath)' != ''" />
   </Target>
 
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.20" PrivateAssets="all" />
+    <PackageReference Include="ReusableTasks" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>

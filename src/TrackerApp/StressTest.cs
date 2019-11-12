@@ -18,7 +18,7 @@ namespace TrackerApp
 
         public int RequestRate
         {
-            get { return requests.Rate; }
+            get { return (int) requests.Rate; }
         }
 
         public long TotalTrackerRequests

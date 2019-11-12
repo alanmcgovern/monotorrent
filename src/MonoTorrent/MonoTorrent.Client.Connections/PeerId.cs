@@ -29,21 +29,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.RateLimiters;
 
 namespace MonoTorrent.Client
 {
     public partial class PeerId
     {
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
+        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
         /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
@@ -51,8 +49,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength)
         {
-            return new PeerId {
-                Peer = new Peer ("null", new Uri ("ipv4://hardcodedvalue")),
+            return new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345"))) {
                 IsChoking = true,
                 AmChoking = true,
                 BitField = new BitField (bitfieldLength),
@@ -62,42 +59,25 @@ namespace MonoTorrent.Client
 
         #region Choke/Unchoke
 
-        internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        internal IConnection Connection { get; }
+        internal IConnection2 Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
-        internal Stopwatch LastBlockReceived { get; } = new Stopwatch ();
-        internal Stopwatch LastPeerExchangeReview { get; } = new Stopwatch ();
+        internal ValueStopwatch LastBlockReceived;
+        internal ValueStopwatch LastPeerExchangeReview;
+        internal ValueStopwatch LastUnchoked;
 
         #endregion
 
-        #region Member Variables
-
-        private List<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
-
-        #endregion Member Variables
-
         #region Properties
 
-        internal byte [] AddressBytes => Connection.AddressBytes;
-
-        /// <summary>
-        /// The remote peer can request these and we'll fulfill the request if we're choking them
-        /// </summary>
-        internal List<int> AmAllowedFastPieces { get; set; }
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
         public BitField BitField { get; internal set; }
         public Software ClientApp { get; internal set; }
-        ConnectionManager ConnectionManager => Engine.ConnectionManager;
-        internal IEncryption Decryptor { get; set; }
-        internal string DisconnectReason { get; set; }
-        internal bool Disposed { get; private set; }
-        internal IEncryption Encryptor { get; set; }
         public EncryptionTypes EncryptionType {
             get {
                 if (Encryptor is RC4)
@@ -109,65 +89,81 @@ namespace MonoTorrent.Client
                 return EncryptionTypes.None;
             }
         }
-        internal ClientEngine Engine { get; private set;}
-        internal ExtensionSupports ExtensionSupports { get; set; }
-        public int HashFails => Peer.TotalHashFails;
-        internal List<int> IsAllowedFastPieces { get; set; }
         public bool IsChoking { get; internal set; }
         public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }
-        public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public int IsRequestingPiecesCount { get; internal set; }
-        internal Stopwatch LastMessageReceived { get; } = new Stopwatch ();
-        internal Stopwatch LastMessageSent { get; } = new Stopwatch ();
-        internal Stopwatch WhenConnected { get; } = new Stopwatch ();
-        internal int MaxPendingRequests { get; set; }
-        internal int MaxSupportedPendingRequests { get; set; }
+        public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public ConnectionMonitor Monitor { get; }
-        internal Peer Peer { get; set; }
-        internal PeerExchangeManager PeerExchangeManager { get; set; }
         public BEncodedString PeerID => Peer.PeerId;
         public int PiecesSent { get; internal set; }
         public int PiecesReceived { get; internal set; }
-        internal ushort Port { get; set; }
-        internal bool ProcessingQueue { get; set; }
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
-        internal List<int> SuggestedPieces { get; }
-        internal TorrentManager TorrentManager { get; }
         public Uri Uri => Peer.ConnectionUri;
+
+        internal byte [] AddressBytes => Connection.AddressBytes;
+
+        /// <summary>
+        /// The remote peer can request these and we'll fulfill the request if we're choking them
+        /// </summary>
+        internal List<int> AmAllowedFastPieces { get; set; }
+        internal IEncryption Decryptor { get; set; }
+        internal bool Disposed { get; private set; }
+        internal IEncryption Encryptor { get; set; }
+        internal ExtensionSupports ExtensionSupports { get; set; }
+        internal List<int> IsAllowedFastPieces { get; set; }
+        internal ValueStopwatch LastMessageReceived;
+        internal ValueStopwatch LastMessageSent;
+        internal ValueStopwatch WhenConnected;
+        internal int MaxPendingRequests { get; set; }
+        internal int MaxSupportedPendingRequests { get; set; }
+        internal Peer Peer { get; }
+        internal PeerExchangeManager PeerExchangeManager { get; set; }
+        internal ushort Port { get; set; }
+        internal bool ProcessingQueue { get; set; }
+        internal int QueueLength => SendQueue.Count;
+        internal List<int> SuggestedPieces { get; }
+
+        List<PeerMessage> SendQueue { get; }
 
         #endregion Properties
 
         #region Constructors
 
-        PeerId ()
+        PeerId (Peer peer)
         {
-            SuggestedPieces = new List<int>();
+            Peer = peer;
+
             AmChoking = true;
             IsChoking = true;
 
-            IsAllowedFastPieces = new List<int>();
+            LastMessageReceived = new ValueStopwatch ();
+            LastMessageSent = new ValueStopwatch ();
+            WhenConnected = new ValueStopwatch ();
+
             AmAllowedFastPieces = new List<int>();
+            IsAllowedFastPieces = new List<int>();
+            SuggestedPieces = new List<int>();
+
             MaxPendingRequests = 2;
             MaxSupportedPendingRequests = 50;
-            Monitor = new ConnectionMonitor();
-            sendQueue = new List<PeerMessage>(12);
+
             ExtensionSupports = new ExtensionSupports();
+            Monitor = new ConnectionMonitor();
+            SendQueue = new List<PeerMessage>(12);
 
             InitializeTyrant();
         }
 
-        internal PeerId(Peer peer, TorrentManager manager, IConnection connection)
-            : this ()
+        internal PeerId(Peer peer, IConnection connection, BitField bitfield)
+            : this (peer)
         {
-            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
+            if (connection == null)
+                throw new ArgumentNullException (nameof (connection));
+            Connection = ConnectionConverter.Convert (connection);
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
-            TorrentManager = manager ?? throw new ArgumentNullException (nameof (manager));
-
-            Engine = manager.Engine;
-            if(TorrentManager.HasMetadata)
-                BitField = new BitField(TorrentManager.Torrent.Pieces.Count);
+            BitField = bitfield;
         }
 
         #endregion
@@ -185,31 +181,20 @@ namespace MonoTorrent.Client
 
         internal PeerMessage Dequeue()
         {
-            var message = sendQueue[0];
-            sendQueue.RemoveAt (0);
+            var message = SendQueue[0];
+            SendQueue.RemoveAt (0);
             return message;
         }
 
         internal void Enqueue(PeerMessage message)
-            => EnqueueAt (message, sendQueue.Count);
+            => EnqueueAt (message, SendQueue.Count);
 
         internal void EnqueueAt(PeerMessage message, int index)
         {
-            if (sendQueue.Count == 0 || index >= sendQueue.Count)
-                sendQueue.Add (message);
+            if (SendQueue.Count == 0 || index >= SendQueue.Count)
+                SendQueue.Add (message);
             else
-                sendQueue.Insert(index, message);
-
-            if (!ProcessingQueue)
-            {
-                ProcessingQueue = true;
-                ConnectionManager.ProcessQueue(this);
-            }
-        }
-
-        internal int QueueLength
-        {
-            get { return sendQueue.Count; }
+                SendQueue.Insert(index, message);
         }
 
         public override string ToString()
@@ -222,19 +207,18 @@ namespace MonoTorrent.Client
         #region BitTyrantasaurus implementation
 
         private const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
-        private Stopwatch LastRateReductionTime { get; } = new Stopwatch ();    // last time we reduced rate of this peer
-        private int lastMeasuredDownloadRate;                                   // last download rate measured
-        private Stopwatch TyrantStartTime { get; } = new Stopwatch ();
+        ValueStopwatch LastRateReductionTime;                   // last time we reduced rate of this peer
+        long lastMeasuredDownloadRate;                                   // last download rate measured
+        ValueStopwatch TyrantStartTime;
 
         // stats
-        private int maxObservedDownloadSpeed;
+        long maxObservedDownloadSpeed;
 
         private void InitializeTyrant()
         {
-            HaveMessagesReceived = 0;
+            HaveMessageEstimatedDownloadedBytes = 0;
             TyrantStartTime.Restart ();
 
-            RateLimiter = new RateLimiter();
             UploadRateForRecip = MARKET_RATE;
             LastRateReductionTime.Restart ();
             lastMeasuredDownloadRate = 0;
@@ -244,7 +228,7 @@ namespace MonoTorrent.Client
             RoundsUnchoked = 0;
         }
 
-        internal int HaveMessagesReceived { get; set; }
+        internal long HaveMessageEstimatedDownloadedBytes { get; set; }
 
         /// <summary>
         /// This is Up
@@ -262,7 +246,7 @@ namespace MonoTorrent.Client
             get
             {
                 int timeElapsed = (int)TyrantStartTime.Elapsed.TotalSeconds;
-                return (int) (timeElapsed == 0 ? 0 : ((long) this.HaveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed);
+                return (int) (timeElapsed == 0 ? 0 : ((long) HaveMessageEstimatedDownloadedBytes) / timeElapsed);
             }
         }
 
@@ -281,12 +265,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Last time we looked that this peer was choking us
         /// </summary>
-        internal Stopwatch LastChokedTime { get; } = new Stopwatch ();
-
-        /// <summary>
-        /// Used to check how much upload capacity we are giving this peer
-        /// </summary>
-        internal IRateLimiter RateLimiter { get; private set; }
+        internal ValueStopwatch LastChokedTime;
 
         internal short RoundsChoked { get; private set; }
 
@@ -302,7 +281,7 @@ namespace MonoTorrent.Client
         ///     - divide this upload rate by the standard implementation's active set size for that rate
         /// </summary>
         /// <returns></returns>
-        internal int GetDownloadRate()
+        internal long GetDownloadRate()
         {
             if (this.lastMeasuredDownloadRate > 0)
             {

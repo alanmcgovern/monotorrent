@@ -57,27 +57,29 @@ namespace MonoTorrent.Tracker
 
         /// <summary>
         /// If this false then all Announce requests which require non-compact peer encoding will
-        /// be fulfilled by returning an error response.
+        /// be fulfilled by returning an error response. Defaults to <see langword="true"/>.
         /// </summary>
-        public bool AllowNonCompact { get; set; }
+        public bool AllowNonCompact { get; set; } = true;
 
         /// <summary>
         /// If this is false then any Scrape requests will be fulfilled by returning an error response.
+        /// Defaults to <see langword="true"/>.
         /// </summary>
-        public bool AllowScrape { get; set; }
+        public bool AllowScrape { get; set; } = true;
 
         /// <summary>
         /// If this is true then the tracker will add any infohash to it's table as soon as the first
         /// Announce request is received. If it is false, an error response will be sent for any Announce
         /// or Scrape request which queries an infohash which has not been pre-registered with the tracker.
+        /// Defaults to <see langword="false"/>.
         /// </summary>
-        public bool AllowUnregisteredTorrents { get; set; }
+        public bool AllowUnregisteredTorrents { get; set; } = false;
 
         /// <summary>
         /// This is the regular interval in which peers should re-announce. It should be less than 1/2 the Timeout interval so
-        /// peers must miss two announce before timing out.
+        /// peers must miss two announce before timing out. Defaults to 45 minutes.
         /// </summary>
-        public TimeSpan AnnounceInterval { get; set; }
+        public TimeSpan AnnounceInterval { get; set; }  = TimeSpan.FromMinutes (45);
 
         /// <summary>
         /// The number of torrents being tracked
@@ -91,8 +93,9 @@ namespace MonoTorrent.Tracker
 
         /// <summary>
         /// This is the minimum time between Announce. No peer should announce more frequently than this.
+        /// Defaults to 10 minutes.
         /// </summary>
-        public TimeSpan MinAnnounceInterval { get; set; }
+        public TimeSpan MinAnnounceInterval { get; set; } = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// Tracks the number of Announce and Scrape requests, and the requests per second.
@@ -101,9 +104,9 @@ namespace MonoTorrent.Tracker
 
         /// <summary>
         /// This is the amount of time that has to elapse since an Announce or Scrape request until a peer is
-        /// considered offline and is removed from the list.
+        /// considered offline and is removed from the list. Defaults to 50 minutes.
         /// </summary>
-        public TimeSpan TimeoutInterval { get; set; }
+        public TimeSpan TimeoutInterval { get; set; } = TimeSpan.FromMinutes(50);
 
         /// <summary>
         /// The unique identifier for this tracker. It should be considered an arbitrary string with no
@@ -137,8 +140,6 @@ namespace MonoTorrent.Tracker
         /// <param name="trackerId">The unique identifier to use as the <see cref="TrackerId"/></param>
         public TrackerServer(BEncodedString trackerId)
         {
-            AllowNonCompact = true;
-            AllowScrape = true;
             Requests = new RequestMonitor();
             Torrents = new Dictionary<InfoHash, SimpleTorrentManager>();
 
@@ -148,10 +149,6 @@ namespace MonoTorrent.Tracker
                     trackerId = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
             }
             TrackerId = trackerId;
-
-            AnnounceInterval = TimeSpan.FromMinutes(45);
-            MinAnnounceInterval = TimeSpan.FromMinutes(10);
-            TimeoutInterval = TimeSpan.FromMinutes(50);
 
             Listeners = new List<ITrackerListener> ();
             MonoTorrent.Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
@@ -218,7 +215,7 @@ namespace MonoTorrent.Tracker
         /// </summary>
         /// <param name="trackable"></param>
         /// <returns></returns>
-        public SimpleTorrentManager GetManager(ITrackable trackable)
+        public ITrackerItem GetTrackerItem(ITrackable trackable)
         {
             CheckDisposed();
             if (trackable == null)
@@ -230,6 +227,15 @@ namespace MonoTorrent.Tracker
                     return value;
 
             return null;
+        }
+
+        /// <summary>
+        /// Returns a duplicate of the list of active torrents
+        /// </summary>
+        public List<ITrackerItem> GetTrackerItems()
+        {
+            lock (Torrents)
+                return new List<ITrackerItem>(Torrents.Values);
         }
 
         public bool IsRegistered(ITrackerListener listener)
@@ -323,7 +329,8 @@ namespace MonoTorrent.Tracker
                 e.Response.Add(TrackerRequest.FailureKey, (BEncodedString)"You must specify at least one infohash when scraping this tracker");
                 return;
             }
-            List<SimpleTorrentManager> managers = new List<SimpleTorrentManager>();
+
+            var managers = new List<ITrackerItem>();
             BEncodedDictionary files = new BEncodedDictionary();
             for (int i = 0; i < e.InfoHashes.Count; i++)
             {

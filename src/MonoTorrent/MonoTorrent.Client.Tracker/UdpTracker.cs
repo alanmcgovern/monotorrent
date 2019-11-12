@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.Tracker
     class UdpTracker : Tracker
     {
         Task<long> ConnectionIdTask { get; set; }
-        Stopwatch LastConnected { get; }  = new Stopwatch ();
+        ValueStopwatch LastConnected;
         int MaxRetries { get; } = 3;
         internal TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
 

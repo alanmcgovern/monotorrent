@@ -33,10 +33,10 @@ using System.Net;
 
 namespace MonoTorrent.Client
 {
-    public struct AddressRange
+    public readonly struct AddressRange
     {
-        public int Start;
-        public int End;
+        public readonly int Start;
+        public readonly int End;
 
         public AddressRange(int start, int end)
         {
