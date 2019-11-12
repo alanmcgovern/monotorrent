@@ -28,6 +28,7 @@
 
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -152,6 +153,8 @@ namespace MonoTorrent.Client
                     var uri = new Uri("ipv4://" + result.RemoteEndPoint.Address + ':' + portcheck);
 
                     PeerFound?.InvokeAsync (this, new LocalPeerFoundEventArgs (infoHash, uri));
+                } catch (FileNotFoundException ex) {
+                    throw ex;
                 } catch {
 
                 }
