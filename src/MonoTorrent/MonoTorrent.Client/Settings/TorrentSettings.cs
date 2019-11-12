@@ -98,6 +98,16 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
+        /// The delay before a torrent will start using web seeds.
+        /// </summary>
+        public TimeSpan WebSeedDelay { get; set; } = TimeSpan.FromMinutes (1);
+
+        /// <summary>
+        /// The download speed under which a torrent will start using web seeds.
+        /// </summary>
+        public int WebSeedSpeedTrigger { get; set; } = 15 * 1024;
+
+        /// <summary>
         /// The choke/unchoke manager reviews how each torrent is making use of its upload slots.  If appropriate, it releases one of the available slots and uses it to try a different peer
         /// in case it gives us more data.  This value determines how long (in seconds) needs to expire between reviews.  If set too short, peers will have insufficient time to start
         /// downloading data and the choke/unchoke manager will choke them too early.  If set too long, we will spend more time than is necessary waiting for a peer to give us data.
