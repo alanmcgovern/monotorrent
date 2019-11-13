@@ -166,6 +166,10 @@ namespace MonoTorrent.Client
             Check.Listener(listener);
             Check.Writer(writer);
 
+            // This is just a sanity check to make sure the ReusableTasks.dll assembly is
+            // loadable.
+            GC.KeepAlive (ReusableTasks.ReusableTask.CompletedTask);
+
             PeerId = GeneratePeerId();
             Listener = listener ?? throw new ArgumentNullException (nameof (listener));
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
