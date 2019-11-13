@@ -59,6 +59,8 @@ namespace MonoTorrent.Client
             if (!Paths.Contains(file.FullPath))
                 Paths.Add(file.FullPath);
 
+            if ((offset + count) > file.Length)
+                throw new ArgumentOutOfRangeException("Tried to read past the end of the file");
             if (!DontWrite)
                 for (int i = 0; i < count; i++)
                     buffer[bufferOffset + i] = (byte)(bufferOffset + i);
