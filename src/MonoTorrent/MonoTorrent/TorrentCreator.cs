@@ -37,7 +37,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
+using ReusableTasks;
 
 namespace MonoTorrent
 {
@@ -77,6 +79,16 @@ namespace MonoTorrent
         public List<string> GetrightHttpSeeds { get; }
         public bool StoreMD5 { get; set; }
 
+        internal TimeSpan ReadAllData_DequeueBufferTime;
+        internal TimeSpan ReadAllData_EnqueueFilledBufferTime;
+        internal TimeSpan ReadAllData_ReadTime;
+
+        internal TimeSpan Hashing_DequeueFilledTime { get; set; }
+        internal TimeSpan Hashing_HashingTime { get; set; }
+        internal TimeSpan Hashing_EnqueueEmptyTime { get; set; }
+
+        internal TimeSpan CreationTime { get; set; }
+
         public TorrentCreator ()
         {
             GetrightHttpSeeds = new List<string> ();
@@ -85,7 +97,12 @@ namespace MonoTorrent
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
-            => CreateAsync (fileSource, CancellationToken.None).GetAwaiter().GetResult();
+        {
+            var timer = ValueStopwatch.StartNew ();
+            var result = CreateAsync (fileSource, CancellationToken.None).GetAwaiter().GetResult();
+            CreationTime = timer.Elapsed;
+            return result;
+        }
 
         public void Create(ITorrentFileSource fileSource, Stream stream)
             => CreateAsync (fileSource, stream, CancellationToken.None).GetAwaiter().GetResult();
@@ -180,63 +197,212 @@ namespace MonoTorrent
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
+        public int ParallelFactor = Environment.ProcessorCount;
+
         async Task<byte []> CalcPiecesHash (List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
         {
-            int bufferRead = 0;
-            long fileRead = 0;
-            long overallRead = 0;
-            MD5 md5Hasher = null;
+            long totalLength = files.Sum(t => t.Length);
+            int pieceCount = (int)((totalLength + PieceLength - 1) / PieceLength);
 
-            var shaHasher = HashAlgoFactory.Create<SHA1> ();
-            var torrentHashes = new List<byte> ();
-            var overallTotal = files.Sum (t => t.Length);
-            var buffer = new byte [PieceLength];
+            var tasks = new List<Task<byte []>> ();
+            var partitionCount = pieceCount / ParallelFactor;
+            var synchronizers = Synchronizer.CreateLinked (ParallelFactor);
 
-            if (StoreMD5)
-                md5Hasher = HashAlgoFactory.Create<MD5> ();
+            for (int i = 0; i < ParallelFactor - 1; i++)
+                tasks.Add (CalcPiecesHash (i * partitionCount, partitionCount * PieceLength, synchronizers.Dequeue (), files, writer, token));
+            tasks.Add (CalcPiecesHash (partitionCount * (ParallelFactor - 1), totalLength - ((ParallelFactor - 1) * partitionCount * PieceLength), synchronizers.Dequeue (), files, writer, token));
+
+            var hashes = new List<byte> ();
+            foreach (var task in tasks)
+                hashes.AddRange (await task);
+            return hashes.ToArray ();
+        }
+
+        async Task<byte []> CalcPiecesHash (int startPiece, long totalBytesToRead, Synchronizer synchronizer, List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
+        {
+
+            // One buffer will be filled and will be passed to the hashing method.
+            // One buffer will be filled and will be waiting to be hashed.
+            // One buffer will be empty and will be filled from the disk.
+            // Aaaannd one extra buffer for good luck!
+            var emptyBuffers = new AsyncProducerConsumerQueue<byte[]>(4);
+
+            // Make this buffer one element larger so it can fit the placeholder which indicates a file has been completely read.
+            var filledBuffers = new AsyncProducerConsumerQueue<(byte[], int, TorrentFile)>(emptyBuffers.Capacity + 1);
+
+            // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
+            // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
+            for (int i = 0; i < emptyBuffers.Capacity; i++)
+                await emptyBuffers.EnqueueAsync(new byte[256 * 1024]);
+            token.ThrowIfCancellationRequested();
+
+            using var cancellation = token.Register(() => {
+                emptyBuffers.CompleteAdding();
+                filledBuffers.CompleteAdding();
+            });
+
+            // We're going to do single-threaded reading from disk, which (unfortunately) means we're (more or less) restricted
+            // to single threaded hashing too as it's unlikely we'll have sufficient data in our buffers to do any better.
+            var readAllTask = ReadAllDataAsync(startPiece * PieceLength, totalBytesToRead, synchronizer, files, writer, emptyBuffers, filledBuffers, token);
+
+            var hashAllTask = HashAllDataAsync(startPiece, totalBytesToRead, emptyBuffers, filledBuffers, token);
+
+            Task firstCompleted = null;
+            try {
+                // We first call 'WhenAny' so that if an exception is thrown in one of the tasks, execution will continue
+                // and we can kill the producer/consumer queues.
+                firstCompleted = await Task.WhenAny(readAllTask, hashAllTask);
+
+                // If the first completed task has faulted, force the exception to be thrown.
+                await firstCompleted;
+            } catch {
+                // We got an exception from the first or second task, so bail out now!
+                emptyBuffers.CompleteAdding ();
+                filledBuffers.CompleteAdding ();
+            }
 
             try {
-                foreach (TorrentFile file in files) {
-                    fileRead = 0;
-                    md5Hasher?.Initialize ();
-
-                    while (fileRead < file.Length) {
-                        int toRead = (int) Math.Min (buffer.Length - bufferRead, file.Length - fileRead);
-                        int read = writer.Read(file, fileRead, buffer, bufferRead, toRead);
-                        if (read == 0)
-                            throw new InvalidOperationException ("No data could be read from the file");
-
-                        token.ThrowIfCancellationRequested ();
-
-                        md5Hasher?.TransformBlock (buffer, bufferRead, read, buffer, bufferRead);
-                        shaHasher.TransformBlock (buffer, bufferRead, read, buffer, bufferRead);
-
-                        bufferRead += read;
-                        fileRead += read;
-                        overallRead += read;
-
-                        if (bufferRead == buffer.Length) {
-                            bufferRead = 0;
-                            shaHasher.TransformFinalBlock (buffer, 0, 0);
-                            torrentHashes.AddRange (shaHasher.Hash);
-                            shaHasher.Initialize();
-                        }
-                        Hashed?.InvokeAsync (this, new TorrentCreatorEventArgs (file.Path, fileRead, file.Length, overallRead, overallTotal));
-                    }
-
-                    md5Hasher?.TransformFinalBlock (buffer, 0, 0);
-                    md5Hasher?.Initialize ();
-                    file.MD5 = md5Hasher?.Hash;
-                }
-                if (bufferRead > 0) {
-                    shaHasher.TransformFinalBlock (buffer, 0, 0);
-                    torrentHashes.AddRange (shaHasher.Hash);
-                }
-            } finally {
-                shaHasher.Dispose ();
-                md5Hasher?.Dispose ();
+                // If there is no exception from the first completed task, just wait for the second one.
+                await Task.WhenAll(readAllTask, hashAllTask);
+            } catch {
+                token.ThrowIfCancellationRequested();
+                if (firstCompleted != null)
+                    await firstCompleted;
+                throw;
             }
-            return torrentHashes.ToArray ();
+            return await hashAllTask;
+        }
+
+        async Task ReadAllDataAsync (long startOffset, long totalBytesToRead, Synchronizer synchronizer, List<TorrentFile> files, IPieceWriter writer, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
+        {
+            long origStartOffset = startOffset;
+            int read;
+            await MainLoop.SwitchToThreadpool ();
+
+            await synchronizer.Self.Task;
+
+            foreach (TorrentFile file in files) {
+                long fileRead = 0;
+                if (startOffset >= file.Length) {
+                    startOffset -= file.Length;
+                    continue;
+                }
+
+                fileRead = startOffset;
+                startOffset = 0;
+
+                using var stream = new FileStream (file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.SequentialScan);
+                stream.Seek (fileRead, SeekOrigin.Begin);
+                while (fileRead < file.Length && totalBytesToRead > 0) {
+                    var timer = ValueStopwatch.StartNew ();
+                    var buffer = await emptyBuffers.DequeueAsync (token).ConfigureAwait (false);
+                    ReadAllData_DequeueBufferTime += timer.Elapsed;
+
+                    timer.Restart ();
+                    int toRead = (int)Math.Min(buffer.Length, file.Length - fileRead);
+                    toRead = (int)Math.Min (totalBytesToRead, toRead);
+                    
+                    read = stream.Read(buffer, 0, toRead);
+                    // lock (writer)
+                        //read = writer.Read(file, fileRead, buffer, 0, toRead);
+                    if (read != toRead)
+                        throw new InvalidOperationException("The required data could not be read from the file.");
+                    fileRead += read;
+                    totalBytesToRead -= read;
+                    ReadAllData_ReadTime += timer.Elapsed;
+
+                    timer.Restart ();
+                    await filledBuffers.EnqueueAsync((buffer, read, file), token);
+                    ReadAllData_EnqueueFilledBufferTime += timer.Elapsed;
+
+                    if (emptyBuffers.Count == 0 && synchronizer.Next != synchronizer.Self) {
+                        synchronizer.Next.SetResult (true);
+                        await synchronizer.Self.Task;
+                    }
+                }
+            }
+            var next = synchronizer.Next;
+            synchronizer.Disconnect ();
+            next.SetResult (true);
+            await filledBuffers.EnqueueAsync((null, 0, null));
+        }
+
+        async Task<byte[]> HashAllDataAsync(int startPiece, long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
+        {
+            await MainLoop.SwitchToThreadpool();
+
+            using var md5Hasher = StoreMD5 ? HashAlgoFactory.Create<MD5> () : null;
+            using var shaHasher = HashAlgoFactory.Create<SHA1> ();
+
+            md5Hasher?.Initialize ();
+            shaHasher?.Initialize ();
+
+            // The current piece we're working on
+            var piece = 0;
+            // The number of bytes which have already been hashed for the current piece;
+            int pieceHashedBytes = 0;
+            // The buffer which will hold each piece hash. Each hash is 20 bytes.
+            var hashes = new byte[((totalBytesToRead + PieceLength - 1) / PieceLength) * 20];
+            // The piece length
+            int pieceLength = (int) PieceLength;
+
+            long fileRead = 0;
+            long totalRead = 0;
+            while (true) {
+                var timer = ValueStopwatch.StartNew ();
+                (var buffer, int count, var file) = await filledBuffers.DequeueAsync(token);
+                Hashing_DequeueFilledTime += timer.Elapsed;
+
+                // If the buffer and file are both null then all files have been fully read.
+                if (buffer == null && file == null)
+                {
+                    shaHasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    Array.Copy(shaHasher.Hash, 0, hashes, piece * 20, shaHasher.Hash.Length);
+                    break;
+                }
+
+                // If only the buffer is null then the current file has been fully read, but there are still more files to read.
+                if (buffer == null) {
+                    fileRead = 0;
+
+                    if (md5Hasher != null) {
+                        md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                        file.MD5 = md5Hasher.Hash;
+                        md5Hasher.Initialize();
+                    }
+                } else {
+                    fileRead += count;
+                    totalRead += count;
+
+                    md5Hasher?.TransformBlock(buffer, 0, count, buffer, 0);
+                    int bufferRead = 0;
+
+                    timer.Restart ();
+                    while (bufferRead < count) {
+                        var bytesNeededForPiece = (int) (pieceLength - pieceHashedBytes);
+                        var bytesToHash = Math.Min(bytesNeededForPiece, count - bufferRead);
+                        shaHasher.TransformBlock(buffer, bufferRead, bytesToHash, buffer, bufferRead);
+
+                        pieceHashedBytes += bytesToHash;
+                        bufferRead += bytesToHash;
+
+                        if (bytesNeededForPiece == 0)  {
+                            shaHasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                            Array.Copy(shaHasher.Hash, 0, hashes, piece * 20, shaHasher.Hash.Length);
+                            shaHasher.Initialize ();
+                            pieceHashedBytes = 0;
+                            piece++;
+                        }
+                    }
+                    Hashing_HashingTime += timer.Elapsed;
+
+                    timer.Restart ();
+                    await emptyBuffers.EnqueueAsync(buffer, token);
+                    Hashing_EnqueueEmptyTime += timer.Elapsed;
+                }
+                Hashed?.InvokeAsync(this, new TorrentCreatorEventArgs(file.Path, fileRead, file.Length, totalRead, totalBytesToRead));
+            }
+            return hashes;
         }
 
         void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, IPieceWriter writer, string name)
