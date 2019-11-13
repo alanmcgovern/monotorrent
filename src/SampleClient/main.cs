@@ -26,6 +26,23 @@ namespace SampleClient
 
         static void Main(string[] args)
         {
+            while (true) {
+                var creator = new TorrentCreator ();
+                Console.WriteLine ("Enter parallel factor: ");
+                creator.ParallelFactor = int.Parse (Console.ReadLine ());
+                var bytes = creator.Create (new TorrentFileSource ("large.mov")).Encode ();
+                Console.WriteLine ("Total:             {0}", creator.CreationTime);
+                Console.WriteLine ();
+                Console.WriteLine ("ReadAll - Dequeue: {0}", creator.ReadAllData_DequeueBufferTime);
+                Console.WriteLine ("ReadAll - Read:    {0}", creator.ReadAllData_ReadTime);
+                Console.WriteLine ("ReadAll - Enqueue: {0}", creator.ReadAllData_EnqueueFilledBufferTime);
+                Console.WriteLine ();
+                Console.WriteLine ("Hashing - Dequeue: {0}", creator.Hashing_DequeueFilledTime);
+                Console.WriteLine ("Hashing - Hashing: {0}", creator.Hashing_HashingTime);
+                Console.WriteLine ("Hashing - Enqueue: {0}", creator.Hashing_EnqueueEmptyTime);
+                File.WriteAllBytes ("bigfile.torrent", bytes);
+            }
+
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
