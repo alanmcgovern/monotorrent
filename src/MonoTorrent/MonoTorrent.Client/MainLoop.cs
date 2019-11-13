@@ -189,6 +189,15 @@ namespace MonoTorrent.Client
         {
             Queue (new QueuedTask { Action = continuation });
         }
+
+        /// <summary>
+        /// When <see cref="ThreadSwitcher"/> is awaited the continuation will always be queued on
+        /// the ThreadPool for execution. It will never execute synchronously.
+        /// </summary>
+        /// <returns></returns>
+        public static ThreadSwitcher SwitchToThreadpool ()
+            => new ThreadSwitcher ();
+
         #endregion
     }
 }
