@@ -40,7 +40,6 @@ namespace MonoTorrent.Common
         RawTrackerTiers announces;
         TestTorrentCreator creator;
         List<TorrentFile> files;
-        TestWriter writer;
 
         [OneTimeSetUp]
         public void FixtureSetup()
@@ -75,9 +74,6 @@ namespace MonoTorrent.Common
                 new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir1"), "File4"), (int)(PieceLength * 1.22), 12, 15),
                 new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir2"), "File5"), (int)(PieceLength * 6.94), 15, 15),
             });
-
-            writer = new TestWriter();
-            writer.DontWrite = true;
         }
 
         [Test]
