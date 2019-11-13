@@ -43,20 +43,24 @@ namespace MonoTorrent
 {
     public class TorrentCreator : EditableTorrent
     {
+        const int BlockSize =              16 * 1024;  // 16kB
+        const int SmallestPieceSize =  2 * BlockSize;  // 32kB
+        const int LargestPieceSize = 512 * BlockSize;  // 8MB
+
         public static int RecommendedPieceSize (long totalSize)
         {
             // Check all piece sizes that are multiples of 32kB and
             // choose the smallest piece size which results in a
             // .torrent file smaller than 60kb
-            for (int i = 32768; i < 4 * 1024 * 1024; i *= 2) {
+            for (int i = SmallestPieceSize; i < LargestPieceSize; i *= 2) {
                 int pieces = (int) (totalSize / i) + 1;
                 if ((pieces * 20) < (60 * 1024))
                     return i;
             }
 
             // If we get here, we're hashing a massive file, so lets limit
-            // to a max of 4MB pieces.
-            return 4 * 1024 * 1024;
+            // to a reasonable maximum.
+            return LargestPieceSize;
         }
 
         public static int RecommendedPieceSize (IEnumerable<string> files)
