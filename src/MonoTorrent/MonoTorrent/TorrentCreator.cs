@@ -85,48 +85,41 @@ namespace MonoTorrent
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
-            => Create (fileSource, CancellationToken.None);
-
-        public Task<BEncodedDictionary> CreateAsync (ITorrentFileSource fileSource)
-            => Task.Run (() => Create (fileSource, CancellationToken.None));
-
-        public Task<BEncodedDictionary> CreateAsync (ITorrentFileSource fileSource, CancellationToken token)
-            => Task.Run (() => Create (fileSource, token));
+            => CreateAsync (fileSource, CancellationToken.None).GetAwaiter().GetResult();
 
         public void Create(ITorrentFileSource fileSource, Stream stream)
-            => Create (fileSource, stream, CancellationToken.None);
-
-        public Task CreateAsync (ITorrentFileSource fileSource, Stream stream)
-            => Task.Run (() => Create (fileSource, stream, CancellationToken.None));
-
-        public Task CreateAsync (ITorrentFileSource fileSource, Stream stream, CancellationToken token)
-            => Task.Run (() => Create (fileSource, stream, token));
+            => CreateAsync (fileSource, stream, CancellationToken.None).GetAwaiter().GetResult();
 
         public void Create(ITorrentFileSource fileSource, string savePath)
-            => Create (fileSource, savePath, CancellationToken.None);
+            => CreateAsync (fileSource, savePath, CancellationToken.None).GetAwaiter ().GetResult ();
 
-        public Task CreateAsync (ITorrentFileSource fileSource, string savePath)
-            => Task.Run (() => Create (fileSource, savePath, CancellationToken.None));
+        public Task<BEncodedDictionary> CreateAsync (ITorrentFileSource fileSource)
+            => CreateAsync (fileSource, CancellationToken.None);
 
-        public Task CreateAsync (ITorrentFileSource fileSource, string savePath, CancellationToken token)
-            => Task.Run (() => Create (fileSource, savePath, token));
+        public Task CreateAsync (ITorrentFileSource fileSource, Stream stream)
+            => CreateAsync (fileSource, stream, CancellationToken.None);
 
-        void Create(ITorrentFileSource fileSource, Stream stream, CancellationToken token)
+        public async Task CreateAsync(ITorrentFileSource fileSource, Stream stream, CancellationToken token)
         {
             Check.Stream(stream);
 
-            var data = Create(fileSource, token).Encode();
+            var dictionary = await CreateAsync (fileSource, token);
+            var data = dictionary.Encode();
             stream.Write(data, 0, data.Length);
         }
 
-        void Create(ITorrentFileSource fileSource, string savePath, CancellationToken token)
+        public Task CreateAsync (ITorrentFileSource fileSource, string savePath)
+            => CreateAsync (fileSource, savePath, CancellationToken.None);
+
+        public async Task CreateAsync(ITorrentFileSource fileSource, string savePath, CancellationToken token)
         {
             Check.SavePath(savePath);
 
-            File.WriteAllBytes(savePath, Create(fileSource, token).Encode());
+            var data = await CreateAsync (fileSource, token);
+            File.WriteAllBytes(savePath, data.Encode());
         }
 
-        BEncodedDictionary Create (ITorrentFileSource fileSource, CancellationToken token)
+        public async Task<BEncodedDictionary> CreateAsync (ITorrentFileSource fileSource, CancellationToken token)
         {
             Check.FileSource(fileSource);
 
@@ -140,10 +133,13 @@ namespace MonoTorrent
             List<TorrentFile> maps = new List <TorrentFile> ();
             foreach (FileMapping m in fileSource.Files)
                 maps.Add (new TorrentFile (m.Destination, new FileInfo (m.Source).Length, m.Source));
-            return Create(fileSource.TorrentName, maps, token);
+            return await CreateAsync(fileSource.TorrentName, maps, token);
         }
 
-        internal BEncodedDictionary Create(string name, List<TorrentFile> files, CancellationToken token)
+        internal async Task<BEncodedDictionary> CreateAsync(string name, List<TorrentFile> files)
+            => await CreateAsync(name, files, CancellationToken.None);
+
+        internal async Task<BEncodedDictionary> CreateAsync(string name, List<TorrentFile> files, CancellationToken token)
         {
             if (!InfoDict.ContainsKey (PieceLengthKey))
                 PieceLength = RecommendedPieceSize(files);
@@ -155,7 +151,7 @@ namespace MonoTorrent
             AddCommonStuff (torrent);
 
             using (IPieceWriter reader = CreateReader ()) {
-                info ["pieces"] = (BEncodedString) CalcPiecesHash (files, reader, token);
+                info ["pieces"] = (BEncodedString) await CalcPiecesHash (files, reader, token);
 
                 if (files.Count == 1 && files [0].Path == name)
                     CreateSingleFileTorrent (torrent, files, reader, name);
@@ -184,7 +180,7 @@ namespace MonoTorrent
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
-        byte [] CalcPiecesHash (List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
+        async Task<byte []> CalcPiecesHash (List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
         {
             int bufferRead = 0;
             long fileRead = 0;

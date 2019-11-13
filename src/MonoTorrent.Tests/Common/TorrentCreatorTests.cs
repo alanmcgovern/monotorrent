@@ -21,9 +21,6 @@ namespace MonoTorrent.Common
             writer.DontWrite = true;
             return writer;
         }
-
-        public BEncodedDictionary Create (string name, List<TorrentFile> files)
-            => Create (name, files, CancellationToken.None);
     }
 
     [TestFixture]
@@ -90,16 +87,16 @@ namespace MonoTorrent.Common
         public void AutoSelectPieceLength ()
         {
             var torrentCreator = new TestTorrentCreator ();
-            Assert.DoesNotThrow (() => torrentCreator.Create ("name", files, CancellationToken.None));
+            Assert.DoesNotThrowAsync (() => torrentCreator.CreateAsync ("name", files, CancellationToken.None));
         }
 
         [Test]
-        public void CreateMultiTest()
+        public async Task CreateMultiTest()
         {
             foreach (var v in announces)
                 creator.Announces.Add (v);
 
-            BEncodedDictionary dict = creator.Create("TorrentName", files);
+            BEncodedDictionary dict = await creator.CreateAsync("TorrentName", files);
             Torrent torrent = Torrent.Load(dict);
 
             VerifyCommonParts(torrent);
@@ -107,15 +104,15 @@ namespace MonoTorrent.Common
                 Assert.IsTrue(files.Exists (delegate(TorrentFile f) { return f.Equals(torrent.Files[i]); }));
         }
         [Test]
-        public void NoTrackersTest()
+        public async Task NoTrackersTest()
         {
-            BEncodedDictionary dict = creator.Create("TorrentName", files);
+            BEncodedDictionary dict = await creator.CreateAsync("TorrentName", files);
             Torrent t = Torrent.Load(dict);
             Assert.AreEqual(0, t.AnnounceUrls.Count, "#1");
         }
 
         [Test]
-        public void CreateSingleTest()
+        public async Task CreateSingleTest()
         {
             foreach (var v in announces)
                 creator.Announces.Add (v);
@@ -125,7 +122,7 @@ namespace MonoTorrent.Common
                                             files[0].StartPieceIndex,
                                             files[0].EndPieceIndex);
 
-            BEncodedDictionary dict = creator.Create(f.Path, new List<TorrentFile> (new TorrentFile[] { f }));
+            BEncodedDictionary dict = await creator.CreateAsync(f.Path, new List<TorrentFile> (new TorrentFile[] { f }));
             Torrent torrent = Torrent.Load(dict);
 
             VerifyCommonParts(torrent);
@@ -149,7 +146,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void LargeMultiTorrent()
+        public async Task LargeMultiTorrent()
         {
             string name1 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
             string name2 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
@@ -164,7 +161,7 @@ namespace MonoTorrent.Common
                 new TorrentFile(name5, (long)(PieceLength * 600.94), 15, 15),
             });
 
-            Torrent torrent = Torrent.Load (creator.Create("BaseDir", files));
+            Torrent torrent = Torrent.Load (await creator.CreateAsync("BaseDir", files));
             Assert.AreEqual(5, torrent.Files.Length, "#1");
             Assert.AreEqual(name1, torrent.Files[0].Path, "#2");
             Assert.AreEqual(name2, torrent.Files[1].Path, "#3");
