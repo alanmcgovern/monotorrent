@@ -42,7 +42,7 @@ namespace MonoTorrent
         static readonly BEncodedString CreatedByKey = "created by";
         static readonly BEncodedString EncodingKey = "encoding";
         static readonly BEncodedString InfoKey = "info";
-        static readonly BEncodedString PieceLengthKey = "piece length";
+        private protected static readonly BEncodedString PieceLengthKey = "piece length";
         static readonly BEncodedString PrivateKey = "private";
         static readonly BEncodedString PublisherKey = "publisher";
         static readonly BEncodedString PublisherUrlKey = "publisher-url";

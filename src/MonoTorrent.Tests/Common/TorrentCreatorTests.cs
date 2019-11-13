@@ -91,6 +91,13 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void AutoSelectPieceLength ()
+        {
+            var torrentCreator = new TestTorrentCreator ();
+            Assert.DoesNotThrow (() => torrentCreator.Create ("name", files, CancellationToken.None));
+        }
+
+        [Test]
         public void CreateMultiTest()
         {
             foreach (var v in announces)
