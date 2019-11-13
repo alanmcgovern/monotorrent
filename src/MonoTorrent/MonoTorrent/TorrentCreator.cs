@@ -141,7 +141,7 @@ namespace MonoTorrent
 
         internal BEncodedDictionary Create(string name, List<TorrentFile> files, CancellationToken token)
         {
-            if (PieceLength == 0)
+            if (!InfoDict.ContainsKey (PieceLengthKey))
                 PieceLength = RecommendedPieceSize(files);
 
             BEncodedDictionary torrent = BEncodedValue.Clone (Metadata);
@@ -203,6 +203,9 @@ namespace MonoTorrent
                     while (fileRead < file.Length) {
                         int toRead = (int) Math.Min (buffer.Length - bufferRead, file.Length - fileRead);
                         int read = writer.Read(file, fileRead, buffer, bufferRead, toRead);
+                        if (read == 0)
+                            throw new InvalidOperationException ("No data could be read from the file");
+
                         token.ThrowIfCancellationRequested ();
 
                         md5Hasher?.TransformBlock (buffer, bufferRead, read, buffer, bufferRead);
