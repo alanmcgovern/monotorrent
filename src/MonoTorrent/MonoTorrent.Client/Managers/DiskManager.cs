@@ -372,7 +372,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task ProcessBufferedIOAsync (bool force = false)
+        async ReusableTask ProcessBufferedIOAsync (bool force = false)
         {
             await IOLoop;
             ProcessBufferedIO (force);
@@ -481,10 +481,13 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="delta">The amount of time, in milliseconds, which has passed</param>
         /// <returns></returns>
-        internal Task Tick (int delta)
-            => Tick (delta, true);
+        internal async ReusableTask Tick(int delta)
+        {
+            await IOLoop;
+            await Tick(delta, true);
+        }
 
-        Task Tick (int delta, bool waitForBufferedIO)
+        ReusableTask Tick (int delta, bool waitForBufferedIO)
         {
             UpdateTimer.Restart ();
 
@@ -495,7 +498,7 @@ namespace MonoTorrent.Client
             ReadLimiter.UpdateChunks (Settings.MaximumDiskReadRate, ReadRate);
 
             var processTask = ProcessBufferedIOAsync ();
-            return waitForBufferedIO ? processTask : Task.CompletedTask;
+            return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
         }
 
         void Write (ITorrentData manager, long offset, byte [] buffer, int count)
