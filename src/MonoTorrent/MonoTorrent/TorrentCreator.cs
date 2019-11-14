@@ -197,20 +197,24 @@ namespace MonoTorrent
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
-        public int ParallelFactor = Environment.ProcessorCount;
-
         async Task<byte []> CalcPiecesHash (List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
         {
             long totalLength = files.Sum(t => t.Length);
             int pieceCount = (int)((totalLength + PieceLength - 1) / PieceLength);
 
-            var tasks = new List<Task<byte []>> ();
-            var partitionCount = pieceCount / ParallelFactor;
-            var synchronizers = Synchronizer.CreateLinked (ParallelFactor);
+            // If the torrent will not give us at least 8 pieces per thread, try fewer threads. Then just run it
+            // with parallel processing disabled if it's really tiny.
+            var parallelFactor = Environment.ProcessorCount;
+            while (pieceCount / parallelFactor < 8 && parallelFactor > 1)
+                parallelFactor = Math.Max (parallelFactor / 2, 1);
 
-            for (int i = 0; i < ParallelFactor - 1; i++)
-                tasks.Add (CalcPiecesHash (i * partitionCount, partitionCount * PieceLength, synchronizers.Dequeue (), files, writer, token));
-            tasks.Add (CalcPiecesHash (partitionCount * (ParallelFactor - 1), totalLength - ((ParallelFactor - 1) * partitionCount * PieceLength), synchronizers.Dequeue (), files, writer, token));
+            var tasks = new List<Task<byte []>> ();
+            var piecesPerPartition = pieceCount / parallelFactor;
+            var synchronizers = Synchronizer.CreateLinked (parallelFactor);
+
+            for (int i = 0; i < parallelFactor - 1; i++)
+                tasks.Add (CalcPiecesHash (i * piecesPerPartition, piecesPerPartition * PieceLength, synchronizers.Dequeue (), files, writer, token));
+            tasks.Add (CalcPiecesHash (piecesPerPartition * (parallelFactor - 1), totalLength - ((parallelFactor - 1) * piecesPerPartition * PieceLength), synchronizers.Dequeue (), files, writer, token));
 
             var hashes = new List<byte> ();
             foreach (var task in tasks)
@@ -303,8 +307,8 @@ namespace MonoTorrent
                     toRead = (int)Math.Min (totalBytesToRead, toRead);
                     
                     read = stream.Read(buffer, 0, toRead);
-                    // lock (writer)
-                        //read = writer.Read(file, fileRead, buffer, 0, toRead);
+                    //lock (writer)
+                    //    read = writer.Read(file, fileRead, buffer, 0, toRead);
                     if (read != toRead)
                         throw new InvalidOperationException("The required data could not be read from the file.");
                     fileRead += read;
