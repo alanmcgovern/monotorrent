@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        internal static readonly BufferManager BufferManager = new BufferManager();
+        internal static readonly BufferPool BufferPool = new BufferPool();
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private int tickCount;
         private List<TorrentManager> torrents;

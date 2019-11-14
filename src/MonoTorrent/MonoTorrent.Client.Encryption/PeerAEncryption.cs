@@ -79,7 +79,7 @@ namespace MonoTorrent.Client.Encryption
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
             var bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                              + 2 + padC.Length + 2 + InitialPayload.Length;
-            var buffer = ClientEngine.BufferManager.GetBuffer (bufferLength);
+            var buffer = ClientEngine.BufferPool.Rent (bufferLength);
 
             int offset = 0;
             offset += Message.Write(buffer, offset, req1);
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Encryption
             try {
                 await NetworkIO.SendAsync (socket, buffer, 0, bufferLength).ConfigureAwait (false);
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (buffer);
+                ClientEngine.BufferPool.Return (buffer);
             }
 
             DoDecrypt (VerificationConstant, 0, VerificationConstant.Length);
@@ -117,20 +117,20 @@ namespace MonoTorrent.Client.Encryption
             // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
             byte[] padD = null;
             var verifyBytesLength = 4 + 2;
-            var verifyBytes = ClientEngine.BufferManager.GetBuffer (verifyBytesLength);
+            var verifyBytes = ClientEngine.BufferPool.Rent (verifyBytesLength);
             try {
                 await ReceiveMessage(verifyBytes, verifyBytesLength); // crypto_select, len(padD) ...
                 DoDecrypt(verifyBytes, 0, verifyBytesLength);
 
                 var padDLength = Message.ReadShort (verifyBytes, 4);
-                padD = ClientEngine.BufferManager.GetBuffer (padDLength);
+                padD = ClientEngine.BufferPool.Rent (padDLength);
 
                 await ReceiveMessage(padD, padDLength);
                 DoDecrypt(padD, 0, padDLength);
                 SelectCrypto(verifyBytes, true);
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (verifyBytes);
-                ClientEngine.BufferManager.FreeBuffer (padD);
+                ClientEngine.BufferPool.Return (verifyBytes);
+                ClientEngine.BufferPool.Return (padD);
             }
         }
     }

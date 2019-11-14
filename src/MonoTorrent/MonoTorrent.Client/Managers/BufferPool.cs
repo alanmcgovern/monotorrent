@@ -1,5 +1,5 @@
 //
-// BufferManager.cs
+// BufferPool.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -31,7 +31,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
-    class BufferManager
+    class BufferPool
     {
         const int AllocateDelta = 8;
 
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
-        public BufferManager()
+        public BufferPool()
         {
             AllocatedBuffers = new HashSet<byte []>();
             LargeMessageBuffers = new Queue<byte []>();
@@ -62,14 +62,14 @@ namespace MonoTorrent.Client
             AllocateBuffers(AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
-        public void FreeBuffer(byte [] buffer)
+        public void Return (byte [] buffer)
         {
             if (buffer == null)
                 return;
 
             // All buffers should be allocated in this class, so if something else is passed in that isn't the right size
             // We just throw an exception as someone has done something wrong.
-            if (!OwnsBuffer (buffer))
+            if (!Owns (buffer))
                 throw new TorrentException("That buffer wasn't created by this manager");
 
             if (buffer.Length == SmallMessageBufferSize)
@@ -89,16 +89,16 @@ namespace MonoTorrent.Client
                     MassiveBuffers.Enqueue(buffer);
         }
 
-        public byte[] GetBuffer (int minCapacity)
+        public byte[] Rent (int minCapacity)
         {
             if (minCapacity <= SmallMessageBufferSize)
-                return GetBuffer(SmallMessageBuffers, SmallMessageBufferSize);
+                return Rent(SmallMessageBuffers, SmallMessageBufferSize);
 
             if (minCapacity <= MediumMessageBufferSize)
-                return GetBuffer(MediumMessageBuffers, MediumMessageBufferSize);
+                return Rent(MediumMessageBuffers, MediumMessageBufferSize);
 
             if (minCapacity <= LargeMessageBufferSize)
-                return GetBuffer(LargeMessageBuffers, LargeMessageBufferSize);
+                return Rent(LargeMessageBuffers, LargeMessageBufferSize);
 
             lock (MassiveBuffers)
             {
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        byte[] GetBuffer(Queue<byte []> buffers, int bufferSize)
+        byte[] Rent(Queue<byte []> buffers, int bufferSize)
         {
             lock (buffers) {
                 if (buffers.Count == 0)
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public bool OwnsBuffer (byte [] buffer)
+        public bool Owns (byte [] buffer)
         {
             lock (AllocatedBuffers)
                 return AllocatedBuffers.Contains (buffer);

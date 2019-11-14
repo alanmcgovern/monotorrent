@@ -84,7 +84,7 @@ namespace MonoTorrent.Client.Messages.Standard
             RequestLength = length - 8;
 
             // This buffer will be freed after the PieceWriter has finished with it
-            Data = ClientEngine.BufferManager.GetBuffer(RequestLength);
+            Data = ClientEngine.BufferPool.Rent(RequestLength);
             Buffer.BlockCopy(buffer, offset, Data, 0, RequestLength);
         }
 
