@@ -75,7 +75,7 @@ namespace MonoTorrent.Client.Encryption
             // If the connection is incoming, receive the handshake before
             // trying to decide what encryption to use
 
-            var buffer = ClientEngine.BufferManager.GetBuffer(HandshakeMessage.HandshakeLength);
+            var buffer = ClientEngine.BufferPool.Rent(HandshakeMessage.HandshakeLength);
             var message = new HandshakeMessage();
             try
             {
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.Encryption
                         return new EncryptorResult(encSocket.Decryptor, encSocket.Encryptor, message);
                 }
             } finally {
-                ClientEngine.BufferManager.FreeBuffer(buffer);
+                ClientEngine.BufferPool.Return(buffer);
             }
 
             connection.Dispose ();
@@ -150,12 +150,12 @@ namespace MonoTorrent.Client.Encryption
             {
                 if (handshake != null) {
                     var length = handshake.ByteLength;
-                    var buffer = ClientEngine.BufferManager.GetBuffer(length);
+                    var buffer = ClientEngine.BufferPool.Rent(length);
                     handshake.Encode(buffer, 0);
                     try  {
                         await NetworkIO.SendAsync(connection, buffer, 0, length, null, null, null);
                     } finally  {
-                        ClientEngine.BufferManager.FreeBuffer(buffer);
+                        ClientEngine.BufferPool.Return(buffer);
                     }
                 }
                 return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, null);

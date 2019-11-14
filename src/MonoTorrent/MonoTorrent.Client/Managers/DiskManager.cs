@@ -253,7 +253,7 @@ namespace MonoTorrent.Client
             long startOffset = incrementalHash.NextOffsetToHash;
             long endOffset = Math.Min((long)manager.PieceLength * (pieceIndex + 1), manager.Size);
 
-            byte[] hashBuffer = ClientEngine.BufferManager.GetBuffer(Piece.BlockSize);
+            byte[] hashBuffer = ClientEngine.BufferPool.Rent(Piece.BlockSize);
             try {
                 var hasher = incrementalHash.Hasher;
 
@@ -272,7 +272,7 @@ namespace MonoTorrent.Client
             } finally {
                 IncrementalHashCache.Enqueue (incrementalHash);
                 IncrementalHashes.Remove (pieceIndex);
-                ClientEngine.BufferManager.FreeBuffer(hashBuffer);
+                ClientEngine.BufferPool.Return(hashBuffer);
             }
         }
 

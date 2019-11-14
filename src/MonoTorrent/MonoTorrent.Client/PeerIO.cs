@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IConnection2 connection, IEncryption decryptor)
         {
-            var buffer = ClientEngine.BufferManager.GetBuffer (HandshakeMessage.HandshakeLength);
+            var buffer = ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength);
             try {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
 
@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
                 message.Decode (buffer, 0, HandshakeMessage.HandshakeLength);
                 return message;
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (buffer);
+                ClientEngine.BufferPool.Return (buffer);
             }
         }
 
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
             int messageLength = 4;
             int messageBody;
             try {
-                messageLengthBuffer = ClientEngine.BufferManager.GetBuffer (messageLength);
+                messageLengthBuffer = ClientEngine.BufferPool.Rent (messageLength);
                 await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
@@ -84,10 +84,10 @@ namespace MonoTorrent.Client
                 if (messageBody == 0)
                     return new KeepAliveMessage ();
 
-                messageBuffer = ClientEngine.BufferManager.GetBuffer (messageBody + messageLength);
+                messageBuffer = ClientEngine.BufferPool.Rent (messageBody + messageLength);
                 Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageLength);
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (messageLengthBuffer);
+                ClientEngine.BufferPool.Return (messageLengthBuffer);
             }
 
             try {
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
                 }
                 return data;
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (messageBuffer);
+                ClientEngine.BufferPool.Return (messageBuffer);
             }
         }
 
@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
         public static async ReusableTask SendMessageAsync (IConnection2 connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
             int count = message.ByteLength;
-            var buffer = ClientEngine.BufferManager.GetBuffer (count);
+            var buffer = ClientEngine.BufferPool.Rent (count);
 
             try {
                 var pieceMessage = message as PieceMessage;
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
                     managerMonitor?.DataUp.AddDelta(pieceMessage.RequestLength);
                 }
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (buffer);
+                ClientEngine.BufferPool.Return (buffer);
             }
         }
     }

@@ -93,14 +93,14 @@ namespace MonoTorrent.Client.Encryption
             // encryption will be used on the response
             int lenInitialPayload;
             var lenPadC = Message.ReadShort (verifyBytes, 32) + 2;
-            var padC = ClientEngine.BufferManager.GetBuffer (lenPadC);
+            var padC = ClientEngine.BufferPool.Rent (lenPadC);
             try {
                 await ReceiveMessage(padC, lenPadC); // padC
 
                 DoDecrypt(padC, 0, lenPadC);
                 lenInitialPayload = Message.ReadShort (padC, lenPadC - 2);
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (padC);
+                ClientEngine.BufferPool.Return (padC);
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client.Encryption
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             var finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
-            byte[] buffer = ClientEngine.BufferManager.GetBuffer (finalBufferLength);
+            byte[] buffer = ClientEngine.BufferPool.Rent (finalBufferLength);
                 
             int offset = 0;
             offset += Message.Write(buffer, offset, VerificationConstant);
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.Encryption
             try {
                 await NetworkIO.SendAsync(socket, buffer, 0, finalBufferLength).ConfigureAwait (false);
             } finally {
-                ClientEngine.BufferManager.FreeBuffer (buffer);
+                ClientEngine.BufferPool.Return (buffer);
             }
 
             SelectCrypto(myCP, true);

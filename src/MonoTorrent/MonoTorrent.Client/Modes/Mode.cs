@@ -336,7 +336,7 @@ namespace MonoTorrent.Client.Modes
             if (piece != null)
                 WritePieceAsync (message, piece);
             else
-                ClientEngine.BufferManager.FreeBuffer(message.Data);
+                ClientEngine.BufferPool.Return(message.Data);
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests(id);
         }
@@ -355,7 +355,7 @@ namespace MonoTorrent.Client.Modes
 
             piece.TotalWritten++;
 
-            ClientEngine.BufferManager.FreeBuffer(message.Data);
+            ClientEngine.BufferPool.Return(message.Data);
             // If we haven't received all the pieces to disk, there's no point in hash checking
             if (!piece.AllBlocksWritten)
                 return;

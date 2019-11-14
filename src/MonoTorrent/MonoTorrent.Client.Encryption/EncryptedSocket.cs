@@ -207,13 +207,13 @@ namespace MonoTorrent.Client.Encryption
         protected async ReusableTask SendY()
         {
             var length = 96 + RandomNumber(512);
-            var toSend = ClientEngine.BufferManager.GetBuffer (length);
+            var toSend = ClientEngine.BufferPool.Rent (length);
             Buffer.BlockCopy(Y, 0, toSend, 0, 96);
             random.GetBytes(toSend, 96, length - 96);
             try  {
                 await NetworkIO.SendAsync(socket, toSend, 0, length, null, null, null).ConfigureAwait(false);
             } finally {
-                ClientEngine.BufferManager.FreeBuffer(toSend);
+                ClientEngine.BufferPool.Return(toSend);
             }
         }
 
@@ -245,7 +245,7 @@ namespace MonoTorrent.Client.Encryption
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            var synchronizeWindow = ClientEngine.BufferManager.GetBuffer(syncData.Length);
+            var synchronizeWindow = ClientEngine.BufferPool.Rent(syncData.Length);
 
             while (bytesReceived < syncStopPoint)
             {

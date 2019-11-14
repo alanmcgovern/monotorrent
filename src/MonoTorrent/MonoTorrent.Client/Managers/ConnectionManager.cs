@@ -253,7 +253,7 @@ namespace MonoTorrent.Client
                     if (id.Disposed)
                     {
                         if (message is PieceMessage msg)
-                            ClientEngine.BufferManager.FreeBuffer(msg.Data);
+                            ClientEngine.BufferPool.Return(msg.Data);
                     }
                     else
                     {
@@ -378,7 +378,7 @@ namespace MonoTorrent.Client
 
                 try {
                     if (pm != null) {
-                        pm.Data = ClientEngine.BufferManager.GetBuffer (pm.ByteLength);
+                        pm.Data = ClientEngine.BufferPool.Rent (pm.ByteLength);
                         try {
                             await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long)pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength);
                         } catch (Exception ex) {
@@ -398,7 +398,7 @@ namespace MonoTorrent.Client
                     break;
                 } finally {
                     if (pm?.Data != null)
-                        ClientEngine.BufferManager.FreeBuffer (pm.Data);
+                        ClientEngine.BufferPool.Return (pm.Data);
                 }
             }
 
