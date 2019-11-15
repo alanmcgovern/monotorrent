@@ -38,6 +38,7 @@ namespace MonoTorrent.Client
     [Serializable]
     public class EngineSettings : ICloneable
     {
+        TimeSpan connectionTimeout = TimeSpan.FromSeconds (10);
         int listenPort = 52138;
         int maximumConnections = 150;
         int maximumDiskReadRate;
@@ -61,6 +62,19 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool AllowHaveSuppression { get; set; } = false;
 
+        /// <summary>
+        /// If a connection attempt does not complete within the given timeout, it will be cancelled so
+        /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
+        /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
+        /// </summary>
+        public TimeSpan ConnectionTimeout {
+            get => connectionTimeout;
+            set {
+                if (value < TimeSpan.Zero)
+                    throw new ArgumentOutOfRangeException (nameof (value), "The timeout must be greater than 0");
+                connectionTimeout = value;
+            }
+        }
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Defaults to 52138.
         /// </summary>

@@ -320,7 +320,7 @@ namespace MonoTorrent.Client
         internal void CancelPendingConnects (TorrentManager manager)
         {
             foreach (var pending in PendingConnects)
-                if (pending.Manager == manager || pending.Timer.ElapsedMilliseconds > 10 * 1000)
+                if (pending.Manager == manager || pending.Timer.Elapsed > Settings.ConnectionTimeout)
                     pending.Connection.Dispose ();
         }
 
