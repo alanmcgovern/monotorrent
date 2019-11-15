@@ -67,5 +67,11 @@ namespace MonoTorrent.Client.Messages
 
             return CheckWritten(written - offset);
         }
+
+        public IEnumerable<RequestMessage> ToRequestMessages ()
+        {
+            foreach (var req in Requests)
+                yield return new RequestMessage (req.PieceIndex, req.StartOffset, req.RequestLength);
+        }
     }
 }

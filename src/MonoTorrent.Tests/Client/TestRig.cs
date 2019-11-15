@@ -450,10 +450,6 @@ namespace MonoTorrent.Client
                 AddAnnounces(dict, tier);
 
             AddFiles(infoDict, files, pieceLength);
-            if (files.Length == 1)
-                dict["url-list"] = (BEncodedString)(TestWebSeed.ListenerURL + "File1.exe");
-            else
-                dict["url-list"] = (BEncodedString)TestWebSeed.ListenerURL;
             dict["creation date"] = (BEncodedNumber)(int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
             dict["encoding"] = (BEncodedString)"UTF-8";
             dict["info"] = infoDict;
