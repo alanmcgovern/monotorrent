@@ -209,7 +209,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             var standard = new StandardPicker ();
             var endgame = new EndGamePicker ();
-            var switcher = new EndGameSwitcher (standard, endgame, Piece.BlockSize * 2, null);
+            var switcher = new EndGameSwitcher (standard, endgame, null);
 
             switcher.Initialise (new BitField (3), data, Enumerable.Empty<Piece> ());
             Assert.IsNotNull (standard.PickPiece (id, new BitField (3).SetAll (true), Array.Empty<IPieceRequester> ()));
