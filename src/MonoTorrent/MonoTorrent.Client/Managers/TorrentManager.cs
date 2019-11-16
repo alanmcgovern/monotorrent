@@ -787,7 +787,7 @@ namespace MonoTorrent.Client
         {
             PiecePicker picker;
             if (ClientEngine.SupportsEndgameMode)
-                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), Torrent.PieceLength / Piece.BlockSize, this);
+                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), this);
             else
                 picker = new StandardPicker();
             picker = new RandomisedPicker(picker);

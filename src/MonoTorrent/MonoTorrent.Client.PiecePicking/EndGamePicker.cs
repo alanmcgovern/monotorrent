@@ -31,8 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Client.Messages.Standard;
-
 namespace MonoTorrent.Client.PiecePicking
 {
     // Keep a list of all the pieces which have not yet being fully downloaded
