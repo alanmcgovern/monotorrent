@@ -109,7 +109,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Always initialize both pickers, but we should only give the active requests to the active picker.
             endgame.Initialise  (bitfield, torrentData, inEndgame ? requests : Enumerable.Empty<Piece> ());
-            standard.Initialise (bitfield, torrentData, inEndgame ? requests : Enumerable.Empty<Piece> ());
+            standard.Initialise (bitfield, torrentData, inEndgame ? Enumerable.Empty<Piece> () : requests);
         }
 
         public override bool IsInteresting(BitField bitfield)
