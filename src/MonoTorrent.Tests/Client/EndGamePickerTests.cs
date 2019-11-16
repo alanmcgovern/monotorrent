@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -195,6 +196,24 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.Initialise(bitfield, torrentData, pieces);
             Assert.IsTrue (picker.Requests.All (t => !t.Block.Received), "#1");
+        }
+
+        [Test]
+        public void SmallTorrent_BeginEndgameImmediately ()
+        {
+            var data = new TestTorrentData {
+                Files = new [] { new TorrentFile ("foo", Piece.BlockSize * 3 * 2) },
+                PieceLength = Piece.BlockSize * 2,
+                Size = Piece.BlockSize * 3 * 2
+            };
+
+            var standard = new StandardPicker ();
+            var endgame = new EndGamePicker ();
+            var switcher = new EndGameSwitcher (standard, endgame, Piece.BlockSize * 2, null);
+
+            switcher.Initialise (new BitField (3), data, Enumerable.Empty<Piece> ());
+            Assert.IsNotNull (standard.PickPiece (id, new BitField (3).SetAll (true), Array.Empty<IPieceRequester> ()));
+            Assert.IsNotNull (endgame.PickPiece (id, new BitField (3).SetAll (true), Array.Empty<IPieceRequester> ()));
         }
     }
 }

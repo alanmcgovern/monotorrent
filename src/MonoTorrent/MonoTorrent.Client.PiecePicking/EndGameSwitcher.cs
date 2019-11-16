@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MonoTorrent.Client.PiecePicking
 {
@@ -101,7 +102,10 @@ namespace MonoTorrent.Client.PiecePicking
             this.torrentData = torrentData;
             inEndgame = false;
             TryEnableEndgame();
-            ActivePicker.Initialise(bitfield, torrentData, requests);
+
+            // Always initialize both pickers, but we should only give the active requests to the active picker.
+            endgame.Initialise  (bitfield, torrentData, inEndgame ? requests : Enumerable.Empty<Piece> ());
+            standard.Initialise (bitfield, torrentData, inEndgame ? requests : Enumerable.Empty<Piece> ());
         }
 
         public override bool IsInteresting(BitField bitfield)
