@@ -105,13 +105,13 @@ namespace MonoTorrent.Client
                     Directory.CreateDirectory (Path.GetDirectoryName(file.FullPath));
                     NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
                 }
-                s = new TorrentFileStream (file, FileMode.OpenOrCreate, access, FileShare.Read);
+                s = new TorrentFileStream (file, FileMode.OpenOrCreate, access, FileShare.ReadWrite);
 
                 // Ensure that we truncate existing files which are too large
                 if (s.Length > file.Length) {
                     if (!s.CanWrite) {
                         s.Close();
-                        s = new TorrentFileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+                        s = new TorrentFileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
                     }
                     s.SetLength(file.Length);
                 }
