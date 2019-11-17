@@ -167,14 +167,12 @@ namespace MonoTorrent
             info ["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
 
-            using (IPieceWriter reader = CreateReader ()) {
-                info ["pieces"] = (BEncodedString) await CalcPiecesHash (files, reader, token);
+            info ["pieces"] = (BEncodedString) await CalcPiecesHash (files, token);
 
-                if (files.Count == 1 && files [0].Path == name)
-                    CreateSingleFileTorrent (torrent, files, reader, name);
-                else
-                    CreateMultiFileTorrent (torrent, files, reader, name);
-            }
+            if (files.Count == 1 && files [0].Path == name)
+                CreateSingleFileTorrent (torrent, files);
+            else
+                CreateMultiFileTorrent (torrent, files);
 
             return torrent;
         }
@@ -197,7 +195,7 @@ namespace MonoTorrent
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
-        async Task<byte []> CalcPiecesHash (List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
+        async Task<byte []> CalcPiecesHash (List<TorrentFile> files, CancellationToken token)
         {
             long totalLength = files.Sum(t => t.Length);
             int pieceCount = (int)((totalLength + PieceLength - 1) / PieceLength);
@@ -213,8 +211,8 @@ namespace MonoTorrent
             var synchronizers = Synchronizer.CreateLinked (parallelFactor);
 
             for (int i = 0; i < parallelFactor - 1; i++)
-                tasks.Add (CalcPiecesHash (i * piecesPerPartition, piecesPerPartition * PieceLength, synchronizers.Dequeue (), files, writer, token));
-            tasks.Add (CalcPiecesHash (piecesPerPartition * (parallelFactor - 1), totalLength - ((parallelFactor - 1) * piecesPerPartition * PieceLength), synchronizers.Dequeue (), files, writer, token));
+                tasks.Add (CalcPiecesHash (i * piecesPerPartition, piecesPerPartition * PieceLength, synchronizers.Dequeue (), files, token));
+            tasks.Add (CalcPiecesHash (piecesPerPartition * (parallelFactor - 1), totalLength - ((parallelFactor - 1) * piecesPerPartition * PieceLength), synchronizers.Dequeue (), files, token));
 
             var hashes = new List<byte> ();
             foreach (var task in tasks)
@@ -222,9 +220,8 @@ namespace MonoTorrent
             return hashes.ToArray ();
         }
 
-        async Task<byte []> CalcPiecesHash (int startPiece, long totalBytesToRead, Synchronizer synchronizer, List<TorrentFile> files, IPieceWriter writer, CancellationToken token)
+        async Task<byte []> CalcPiecesHash (int startPiece, long totalBytesToRead, Synchronizer synchronizer, List<TorrentFile> files, CancellationToken token)
         {
-
             // One buffer will be filled and will be passed to the hashing method.
             // One buffer will be filled and will be waiting to be hashed.
             // One buffer will be empty and will be filled from the disk.
@@ -233,6 +230,9 @@ namespace MonoTorrent
 
             // Make this buffer one element larger so it can fit the placeholder which indicates a file has been completely read.
             var filledBuffers = new AsyncProducerConsumerQueue<(byte[], int, TorrentFile)>(emptyBuffers.Capacity + 1);
+
+            // This is the IPieceWriter which we'll use to get our filestream. Each thread gets it's own writer.
+            using var writer = CreateReader ();
 
             // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
             // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
@@ -295,8 +295,6 @@ namespace MonoTorrent
                 fileRead = startOffset;
                 startOffset = 0;
 
-                using var stream = new FileStream (file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.SequentialScan);
-                stream.Seek (fileRead, SeekOrigin.Begin);
                 while (fileRead < file.Length && totalBytesToRead > 0) {
                     var timer = ValueStopwatch.StartNew ();
                     var buffer = await emptyBuffers.DequeueAsync (token).ConfigureAwait (false);
@@ -306,9 +304,8 @@ namespace MonoTorrent
                     int toRead = (int)Math.Min(buffer.Length, file.Length - fileRead);
                     toRead = (int)Math.Min (totalBytesToRead, toRead);
                     
-                    read = stream.Read(buffer, 0, toRead);
-                    //lock (writer)
-                    //    read = writer.Read(file, fileRead, buffer, 0, toRead);
+                    lock (writer)
+                        read = writer.Read(file, fileRead, buffer, 0, toRead);
                     if (read != toRead)
                         throw new InvalidOperationException("The required data could not be read from the file.");
                     fileRead += read;
@@ -409,10 +406,10 @@ namespace MonoTorrent
             return hashes;
         }
 
-        void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, IPieceWriter writer, string name)
+        void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings)
         {
             BEncodedDictionary info = (BEncodedDictionary) dictionary ["info"];
-            List<BEncodedValue> files = mappings.ConvertAll<BEncodedValue> (ToFileInfoDict);
+            List<BEncodedValue> files = mappings.ConvertAll (ToFileInfoDict);
             info.Add ("files", new BEncodedList (files));
         }
 
@@ -421,7 +418,7 @@ namespace MonoTorrent
             return new DiskWriter ();
         }
 
-        void CreateSingleFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings, IPieceWriter writer, string name)
+        void CreateSingleFileTorrent (BEncodedDictionary dictionary, List<TorrentFile> mappings)
         {
             BEncodedDictionary infoDict = (BEncodedDictionary) dictionary ["info"];
             infoDict.Add ("length", new BEncodedNumber (mappings [0].Length));

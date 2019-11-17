@@ -86,7 +86,9 @@ namespace MonoTorrent.Client.PieceWriters
             Stream s = GetStream(file, FileAccess.Read);
             if (s.Length < offset + count)
                 return 0;
-            s.Seek(offset, SeekOrigin.Begin);
+
+            if (s.Position != offset)
+                s.Seek(offset, SeekOrigin.Begin);
             return s.Read(buffer, bufferOffset, count);
         }
 
