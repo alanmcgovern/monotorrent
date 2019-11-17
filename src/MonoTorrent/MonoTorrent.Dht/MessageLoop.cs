@@ -233,7 +233,8 @@ namespace MonoTorrent.Dht
                 // remove it from our list before handling it as that could cause an exception to be
                 // thrown.
                 if (message is ResponseMessage || message is ErrorMessage) {
-                    query = WaitingResponse [message.TransactionId];
+                    if (!WaitingResponse.TryGetValue (message.TransactionId, out query))
+                        return;
                     WaitingResponse.Remove (message.TransactionId);
                 }
 
