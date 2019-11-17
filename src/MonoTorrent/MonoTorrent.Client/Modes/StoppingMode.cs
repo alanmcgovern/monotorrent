@@ -50,13 +50,13 @@ namespace MonoTorrent.Client.Modes
         public async Task WaitForStoppingToComplete ()
         {
             try {
-                Manager.Monitor.Reset();
-                Manager.Peers.ClearAll();
-                Manager.PieceManager.Reset();
-
                 Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
                 foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
+
+                Manager.Monitor.Reset();
+                Manager.Peers.ClearAll();
+                Manager.PieceManager.Reset();
 
                 var stoppingTasks = new List<Task>();
                 stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));

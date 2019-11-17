@@ -100,5 +100,19 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Stopped, TrackerManager.Announces[0].Item2, "#3");
         }
+
+        [Test]
+        public async Task DisposeActiveConnections ()
+        {
+            Manager.Peers.ConnectedPeers.Add(Peer);
+            Assert.IsFalse (Peer.Disposed, "#1");
+
+            var mode = new StoppingMode(Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            await mode.WaitForStoppingToComplete();
+
+            Assert.IsTrue (Peer.Disposed, "#2");
+            Assert.AreEqual (0, Manager.Peers.AvailablePeers.Count, "#3");
+        }
     }
 }
