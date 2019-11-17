@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
             var receiveTask = NetworkIO.ReceiveAsync(Incoming, data, 0, data.Length, null, null, null);
 
             var sendTask = NetworkIO.SendAsync (Outgoing, data, 0, data.Length, null, null, null);
-            Assert.ThrowsAsync<Exception> (async () => await receiveTask);
+            Assert.ThrowsAsync<ConnectionClosedException> (async () => await receiveTask);
             await sendTask;
         }
 
@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
             var task = NetworkIO.SendAsync (Incoming, data, 0, data.Length, null, null, null);
 
             _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, data.Length, null, null, null);
-            Assert.ThrowsAsync<Exception> (async () => await task);
+            Assert.ThrowsAsync<ConnectionClosedException> (async () => await task);
         }
     }
 }

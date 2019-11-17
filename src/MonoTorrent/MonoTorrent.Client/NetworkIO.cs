@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
                 }
 
                 if (transferred == 0)
-                    throw new Exception("Socket is dead");
+                    throw new ConnectionClosedException("Socket receive returned 0, indicating the connection has been closed.");
 
                 peerMonitor?.AddDelta(transferred);
                 managerMonitor?.AddDelta(transferred);
@@ -171,7 +171,7 @@ namespace MonoTorrent.Client
                 }
 
                 if (transferred == 0)
-                    throw new Exception("Socket is dead");
+                    throw new ConnectionClosedException("Socket send returned 0, indicating the connection has been closed.");
 
                 peerMonitor?.AddDelta(transferred);
                 managerMonitor?.AddDelta(transferred);
