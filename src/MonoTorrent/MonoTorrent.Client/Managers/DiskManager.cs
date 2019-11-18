@@ -293,6 +293,36 @@ namespace MonoTorrent.Client
                 Writer.Close (file);
         }
 
+        /// <summary>
+        /// Iterates over every file in this torrent and flushes any pending data to disk. Typically a
+        /// <see cref="TorrentManager"/> will be passed to this method.
+        /// </summary>
+        /// <param name="manager">The torrent containing the files to flush</param>
+        /// <returns></returns>
+        public Task FlushAsync (ITorrentData manager)
+            => FlushAsync (manager, -1);
+
+        /// <summary>
+        /// Iterates over every file in this torrent which is contains data from the specified piece and
+        /// flushes that file to disk. Typically a <see cref="TorrentManager"/> will be passed to this method.
+        /// </summary>
+        /// <param name="manager">The torrent containing the files to flush</param>
+        /// <param name="pieceIndex">The index of the piece to flush.</param>
+        /// <returns></returns>
+        public async Task FlushAsync (ITorrentData manager, int pieceIndex)
+        {
+            if (manager is null)
+                throw new ArgumentNullException (nameof (manager));
+
+            await IOLoop;
+
+            await WaitForPendingWrites ();
+            foreach (var file in manager.Files) {
+                if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
+                    Writer.Flush (file);
+            }
+        }
+
         internal async Task MoveFileAsync (TorrentFile file, string newPath)
         {
             await IOLoop;
