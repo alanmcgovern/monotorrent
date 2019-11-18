@@ -35,7 +35,10 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class EndGameSwitcher : PiecePicker
     {
-        const int Threshold = 20;
+        /// <summary>
+        /// Allow entering endgame mode if there are fewer than 256 blocks outstanding.
+        /// </summary>
+        const int Threshold = 256;
 
         BitField bitfield;
         bool inEndgame;
@@ -47,7 +50,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public PiecePicker ActivePicker => inEndgame ? endgame : standard;
 
-        public EndGameSwitcher (StandardPicker standard, EndGamePicker endgame, TorrentManager torrentManager)
+        public EndGameSwitcher (PiecePicker standard, EndGamePicker endgame, TorrentManager torrentManager)
             : base (null)
         {
             this.standard = standard;
@@ -147,7 +150,7 @@ namespace MonoTorrent.Client.PiecePicking
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
             int count = standard.CurrentReceivedCount ();
             int blocksPerPiece = torrentData.PieceLength / Piece.BlockSize;
-            inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count < Threshold;
+            inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count <= Threshold;
             if (inEndgame)
             {
                 endgame.Initialise(bitfield, torrentData, standard.ExportActiveRequests());
