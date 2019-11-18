@@ -785,14 +785,13 @@ namespace MonoTorrent.Client
 
         internal PiecePicker CreateStandardPicker()
         {
-            PiecePicker picker;
-            if (ClientEngine.SupportsEndgameMode)
-                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), this);
-            else
-                picker = new StandardPicker();
+            PiecePicker picker = new StandardPicker();
             picker = new RandomisedPicker(picker);
             picker = new RarestFirstPicker(picker);
             picker = new PriorityPicker(picker);
+
+            if (ClientEngine.SupportsEndgameMode)
+                picker = new EndGameSwitcher(picker, new EndGamePicker(), this);
 
             return picker;
         }

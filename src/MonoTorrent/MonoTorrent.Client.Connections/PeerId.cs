@@ -57,6 +57,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="bitfieldLength"></param>
         /// <param name="seeder">True if the returned peer should be treated as a seeder (the bitfield will have all pieces set to 'true')</param>
+        /// <param name="isChoking"></param>
+        /// <param name="amInterested"></param>
         /// <returns></returns>
         internal static PeerId CreateNull(int bitfieldLength, bool seeder)
         {
