@@ -45,10 +45,7 @@ namespace MonoTorrent.Client.PiecePicking
         PiecePicker standard;
         TorrentManager torrentManager;
 
-        PiecePicker ActivePicker
-        {
-            get { return inEndgame ? endgame : standard; }
-        }
+        public PiecePicker ActivePicker => inEndgame ? endgame : standard;
 
         public EndGameSwitcher (StandardPicker standard, EndGamePicker endgame, TorrentManager torrentManager)
             : base (null)
@@ -105,11 +102,12 @@ namespace MonoTorrent.Client.PiecePicking
             this.endgameSelector = new BitField(bitfield.Length);
             this.torrentData = torrentData;
             inEndgame = false;
-            TryEnableEndgame();
 
-            // Always initialize both pickers, but we should only give the active requests to the active picker.
-            endgame.Initialise  (bitfield, torrentData, inEndgame ? requests : Enumerable.Empty<Piece> ());
-            standard.Initialise (bitfield, torrentData, inEndgame ? Enumerable.Empty<Piece> () : requests);
+            // Always initialize both pickers, but we should only give the active requests to the Standard picker.
+            // We should never *default* to endgame mode, we should always start in regular mode and enter endgame
+            // mode after we fail to pick a piece.
+            standard.Initialise (bitfield, torrentData, requests);
+            endgame.Initialise  (bitfield, torrentData, Enumerable.Empty<Piece> ());
         }
 
         public override bool IsInteresting(BitField bitfield)

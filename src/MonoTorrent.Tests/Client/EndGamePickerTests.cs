@@ -197,45 +197,5 @@ namespace MonoTorrent.Client.PiecePicking
             picker.Initialise(bitfield, torrentData, pieces);
             Assert.IsTrue (picker.Requests.All (t => !t.Block.Received), "#1");
         }
-
-        [Test]
-        public void SmallTorrent_BeginEndgameImmediately ()
-        {
-            var data = new TestTorrentData {
-                Files = new [] { new TorrentFile ("foo", Piece.BlockSize * 3 * 2) },
-                PieceLength = Piece.BlockSize * 2,
-                Size = Piece.BlockSize * 3 * 2
-            };
-
-            var standard = new StandardPicker ();
-            var endgame = new EndGamePicker ();
-            var switcher = new EndGameSwitcher (standard, endgame, null);
-
-            switcher.Initialise (new BitField (3), data, Enumerable.Empty<Piece> ());
-            Assert.IsNotNull (standard.PickPiece (id, new BitField (3).SetAll (true), Array.Empty<IPieceRequester> ()), "#1");
-            Assert.IsNotNull (endgame.PickPiece (id, new BitField (3).SetAll (true), Array.Empty<IPieceRequester> ()), "#2");
-        }
-
-        [Test]
-        public void SmallTorrent_BeginEndgameImmediately_WithActiveRequests ()
-        {
-            var data = new TestTorrentData {
-                Files = new [] { new TorrentFile ("foo", Piece.BlockSize * 3 * 2) },
-                PieceLength = Piece.BlockSize * 2,
-                Size = Piece.BlockSize * 3 * 2
-            };
-
-            var standard = new StandardPicker ();
-            var endgame = new EndGamePicker ();
-            var switcher = new EndGameSwitcher (standard, endgame, null);
-
-            var piece =  new Piece  (0, data.PieceLength, data.Size);
-            piece.Blocks [0].CreateRequest (id);
-
-            switcher.Initialise (new BitField (3), data, new [] { piece });
-            Assert.AreEqual (1, endgame.ExportActiveRequests ().Count, "#3");
-            Assert.AreEqual (0, standard.ExportActiveRequests ().Count, "#4");
-        }
-
     }
 }
