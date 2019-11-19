@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         /// <param name="bitfieldLength"></param>
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength)
-            => CreateNull (bitfieldLength, false);
+            => CreateNull (bitfieldLength, false, true, false);
 
         /// <summary>
         /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
@@ -60,11 +60,12 @@ namespace MonoTorrent.Client
         /// <param name="isChoking"></param>
         /// <param name="amInterested"></param>
         /// <returns></returns>
-        internal static PeerId CreateNull(int bitfieldLength, bool seeder)
+        internal static PeerId CreateNull(int bitfieldLength, bool seeder, bool isChoking, bool amInterested)
         {
             return new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345"))) {
-                IsChoking = true,
+                IsChoking = isChoking,
                 AmChoking = true,
+                AmInterested = amInterested,
                 BitField = new BitField (bitfieldLength).SetAll (seeder),
                 ProcessingQueue = true
             };
