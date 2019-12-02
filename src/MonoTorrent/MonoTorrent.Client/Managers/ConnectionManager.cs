@@ -312,11 +312,17 @@ namespace MonoTorrent.Client
             id.Dispose ();
         }
 
+        /// <summary>
+        /// Cancel all pending connection attempts which have exceeded <see cref="EngineSettings.ConnectionTimeout"/>
+        /// </summary>
         internal void CancelPendingConnects()
         {
             CancelPendingConnects(null);
         }
 
+        /// <summary>
+        /// Cancel all pending connection for the given <see cref="TorrentManager"/>, or which have exceeded <see cref="EngineSettings.ConnectionTimeout"/>
+        /// </summary>
         internal void CancelPendingConnects (TorrentManager manager)
         {
             foreach (var pending in PendingConnects)
