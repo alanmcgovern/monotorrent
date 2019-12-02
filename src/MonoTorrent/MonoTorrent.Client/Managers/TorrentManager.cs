@@ -508,20 +508,22 @@ namespace MonoTorrent.Client
 
             var hashingMode = new HashingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             Mode = hashingMode;
+
             try {
                 await hashingMode.WaitForHashingToComplete ();
-                HashChecked = true;
-                if (autoStart) {
-                    await StartAsync ();
-                } else if (setStoppedModeWhenDone) {
-                    Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-                }
-            } catch {
-                HashChecked = false;
-                // If the hash check was cancelled (by virtue of a new Mode being set on the TorrentManager) then
-                // we don't want to overwrite the Mode which was set.
-                if (Mode == hashingMode)
-                    Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                hashingMode.Token.ThrowIfCancellationRequested ();
+            } catch (OperationCanceledException) {
+                return;
+            } catch (Exception ex) {
+                TrySetError (Reason.ReadFailure, ex);
+                return;
+            }
+
+            HashChecked = true;
+            if (autoStart) {
+                await StartAsync ();
+            } else if (setStoppedModeWhenDone) {
+                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
         }
 
@@ -582,6 +584,8 @@ namespace MonoTorrent.Client
 
             if (Mode is StoppingMode)
                 throw new TorrentException("The manager cannot be restarted while it is in the Stopping state.");
+            if (Mode is StartingMode)
+                throw new TorrentException("The manager cannot be started a second time while it is already in the Starting state.");
 
             CheckRegisteredAndDisposed();
 
@@ -591,7 +595,8 @@ namespace MonoTorrent.Client
             if (State == TorrentState.Paused) {
                 Mode = new DownloadMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             } else if (Mode is HashingMode hashing && !HashChecked) {
-                hashing.Resume ();
+               if (State == TorrentState.HashingPaused)
+                    hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
                 Mode = new MetadataMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
@@ -647,11 +652,13 @@ namespace MonoTorrent.Client
             if (State == TorrentState.Error) {
                 Error = null;
 				Mode = new StoppedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Engine.Stop();
             } else if (State != TorrentState.Stopped) {
                 var stoppingMode = new StoppingMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
                 await stoppingMode.WaitForStoppingToComplete ();
 
+                stoppingMode.Token.ThrowIfCancellationRequested ();
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Engine.Stop();
             }
