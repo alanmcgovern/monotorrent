@@ -47,27 +47,42 @@ namespace MonoTorrent.Client.Modes
             CanAcceptConnections = false;
         }
 
-        public async Task WaitForStoppingToComplete ()
+        /// <summary>
+        /// </summary>
+        /// <param name="forced">If set as true, Tracker will not be announced with Stopped torrent event</param>
+        public async Task WaitForStoppingToComplete(bool forced = false)
         {
             try {
-                Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
-                foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
-                    Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
+                Manager.Engine.ConnectionManager.CancelPendingConnects(Manager);
+
+                foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray())
+                {
+                    Manager.Engine.ConnectionManager.CleanupSocket(Manager, id);
+                }
 
                 Manager.Monitor.Reset();
                 Manager.Peers.ClearAll();
                 Manager.PieceManager.Reset();
 
-                var stoppingTasks = new List<Task>();
-                stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
-                if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
+                var stoppingTasks = new List<Task>
+                {
+                    Manager.Engine.DiskManager.CloseFilesAsync(Manager.Torrent)
+                };
+
+                if (!forced && Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
+                {
                     stoppingTasks.Add(Manager.TrackerManager.Announce(TorrentEvent.Stopped));
+                }
 
                 var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);
                 var overallTasks = Task.WhenAll (stoppingTasks);
-                if (await Task.WhenAny (overallTasks, delayTask) == delayTask)
-                    Logger.Log (null, "Timed out waiting for the announce request to complete");
-            } catch (Exception ex) {
+
+                if (await Task.WhenAny(overallTasks, delayTask) == delayTask)
+                {
+                    Logger.Log(null, "Timed out waiting for the announce request to complete");
+                }
+            } 
+            catch (Exception ex) {
                 Logger.Log (null, "Unexpected exception stopping a TorrentManager: {0}", ex);
             }
         }

@@ -637,7 +637,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped.
         /// </summary>
-        public async Task StopAsync()
+        /// <param name="forced">If set as true, Tracker will not be announced with Stopped torrent event</param>
+        public async Task StopAsync(bool forced = false)
         {
             await ClientEngine.MainLoop;
 
@@ -650,7 +651,7 @@ namespace MonoTorrent.Client
             } else if (State != TorrentState.Stopped) {
                 var stoppingMode = new StoppingMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
-                await stoppingMode.WaitForStoppingToComplete ();
+                await stoppingMode.WaitForStoppingToComplete(forced);
 
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Engine.Stop();
