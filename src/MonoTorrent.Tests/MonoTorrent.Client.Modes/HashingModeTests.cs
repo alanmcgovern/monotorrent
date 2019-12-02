@@ -128,14 +128,19 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
+
+            var pausedEvent = Manager.WaitForState (TorrentState.HashingPaused);
             mode.Pause ();
+            await pausedEvent.WithTimeout ("#pause");
             Assert.AreEqual (TorrentState.HashingPaused, mode.State, "#a");
 
             var hashingTask = mode.WaitForHashingToComplete ();
             await Task.Delay (50);
             Assert.IsFalse (pieceHashed.Task.IsCompleted, "#1");
 
+            var resumeEvent = Manager.WaitForState (TorrentState.Hashing);
             mode.Resume ();
+            await resumeEvent.WithTimeout ("#resume");
             Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
             Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
         }
