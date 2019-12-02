@@ -33,10 +33,12 @@ namespace MonoTorrent.Client.Modes
     {
         public override TorrentState State => TorrentState.Error;
 
+        public override bool CanAcceptConnections => false;
+        public override bool CanHandleMessages => false;
+
         public ErrorMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
-            CanAcceptConnections = false;
         }
 
         public override void Tick(int counter)

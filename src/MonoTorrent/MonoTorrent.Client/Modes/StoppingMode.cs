@@ -38,13 +38,14 @@ namespace MonoTorrent.Client.Modes
 {
     class StoppingMode : Mode
     {
+        public override bool CanAcceptConnections => false;
+        public override bool CanHandleMessages => false;
         public override bool CanHashCheck => false;
         public override TorrentState State => TorrentState.Stopping;
 
         public StoppingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
-            CanAcceptConnections = false;
         }
 
         public async Task WaitForStoppingToComplete ()

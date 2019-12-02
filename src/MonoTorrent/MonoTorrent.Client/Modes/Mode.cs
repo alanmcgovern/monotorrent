@@ -51,12 +51,16 @@ namespace MonoTorrent.Client.Modes
         protected DiskManager DiskManager { get; }
         protected TorrentManager Manager { get; }
         protected EngineSettings Settings { get; }
+
+        public virtual bool CanAcceptConnections => true;
+        public virtual bool CanHandleMessages => true;
+        public virtual bool CanHashCheck => false;
         public abstract TorrentState State { get; }
+        public CancellationToken Token => Cancellation.Token;
 
         protected Mode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
         {
             Cancellation = new CancellationTokenSource ();
-            CanAcceptConnections = true;
             ConnectionManager = connectionManager;
             DiskManager = diskManager;
             Manager = manager;
@@ -67,6 +71,9 @@ namespace MonoTorrent.Client.Modes
 
         public void HandleMessage(PeerId id, PeerMessage message)
         {
+            if (!CanHandleMessages)
+                return;
+
             if (message is IFastPeerMessage && !id.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
@@ -126,11 +133,6 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        public bool CanAcceptConnections
-        {
-            get; protected set;
-        }
-
         public bool ShouldConnect(PeerId peer)
         {
             return ShouldConnect(peer.Peer);
@@ -139,11 +141,6 @@ namespace MonoTorrent.Client.Modes
         public virtual bool ShouldConnect(Peer peer)
         {
             return true;
-        }
-
-        public virtual bool CanHashCheck
-        {
-            get { return false; }
         }
 
         protected virtual void HandleGenericExtensionMessage(PeerId id, ExtensionMessage extensionMessage)
@@ -350,14 +347,17 @@ namespace MonoTorrent.Client.Modes
 
             try {
                 await DiskManager.WriteAsync(Manager.Torrent, offset, message.Data, message.RequestLength);
+                if (Cancellation.IsCancellationRequested)
+                    return;
             } catch (Exception ex) {
                 Manager.TrySetError (Reason.WriteFailure, ex);
                 return;
+            } finally {
+                ClientEngine.BufferPool.Return(message.Data);
             }
 
             piece.TotalWritten++;
 
-            ClientEngine.BufferPool.Return(message.Data);
             // If we haven't received all the pieces to disk, there's no point in hash checking
             if (!piece.AllBlocksWritten)
                 return;
@@ -366,6 +366,8 @@ namespace MonoTorrent.Client.Modes
             byte[] hash;
             try {
                 hash = await DiskManager.GetHashAsync(Manager.Torrent, piece.Index);
+                if (Cancellation.IsCancellationRequested)
+                    return;
             } catch (Exception ex) {
                 Manager.TrySetError (Reason.ReadFailure, ex);
                 return;
@@ -693,7 +695,11 @@ namespace MonoTorrent.Client.Modes
 
         internal async Task TryHashPendingFilesAsync ()
         {
-            if (hashingPendingFiles || !Manager.HasMetadata)
+            // If we cannot handle peer messages then we should not try to async hash.
+            // This adds a little bit of a double meaning to the property (for now).
+            // Any mode which doesn't allow processing peer messages also does not allow
+            // partial hashing.
+            if (hashingPendingFiles || !Manager.HasMetadata || !CanHandleMessages)
                 return;
 
             // FIXME: Handle errors from DiskManager and also handle cancellation if the Mode is replaced.

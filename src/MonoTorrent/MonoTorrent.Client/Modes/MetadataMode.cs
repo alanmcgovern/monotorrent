@@ -47,10 +47,11 @@ namespace MonoTorrent.Client.Modes
         string savePath;
         private DateTime requestTimeout;
 
-        public override bool CanHashCheck => true;
         bool HasAnnounced { get; set; }
-        public override TorrentState State => TorrentState.Metadata;
         internal MemoryStream Stream { get; set; }
+
+        public override bool CanHashCheck => true;
+        public override TorrentState State => TorrentState.Metadata;
 
         public MetadataMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, string savePath)
             : base (manager, diskManager, connectionManager, settings)

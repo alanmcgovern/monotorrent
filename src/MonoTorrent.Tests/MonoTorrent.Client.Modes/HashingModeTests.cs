@@ -51,10 +51,7 @@ namespace MonoTorrent.Client.Modes
         public void Setup()
         {
             conn = new ConnectionPair().WithTimeout ();
-            Settings = new EngineSettings ();
             PieceWriter = new TestWriter ();
-            DiskManager = new DiskManager (Settings, PieceWriter);
-            ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, DiskManager);
             TrackerManager = new ManualTrackerManager ();
 
             int[] fileSizes = {
@@ -65,6 +62,12 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
+            Manager.Engine.DiskManager.Writer = PieceWriter;
+
+            Settings = Manager.Engine.Settings;
+            DiskManager = Manager.Engine.DiskManager;
+            ConnectionManager = Manager.Engine.ConnectionManager; 
+
             Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (true)) {
                 ProcessingQueue = true,
                 IsChoking = false,
@@ -248,6 +251,32 @@ namespace MonoTorrent.Client.Modes
 
             Assert.ThrowsAsync<OperationCanceledException> (() => Manager.Mode.TryHashPendingFilesAsync (), "#1");
             Assert.AreEqual (3, pieceHashCount, "#2");
+        }
+
+        [Test]
+        public async Task StopWhileHashingPaused ()
+        {
+            PieceWriter.FilesThatExist.AddRange (Manager.Torrent.Files);
+
+            int getHashCount = 0;
+            DiskManager.GetHashAsyncOverride = (manager, index) => {
+                getHashCount++;
+                if (getHashCount == 2)
+                    Manager.PauseAsync ().Wait ();
+                return Enumerable.Repeat ((byte)0, 20).ToArray ();
+            };
+
+            var pausedState = Manager.WaitForState (TorrentState.HashingPaused);
+
+            // Start hashing and wait until we pause
+            var hashing = Manager.HashCheckAsync (false);
+            await pausedState;
+            Assert.AreEqual (2, getHashCount, "#1");
+
+            // Now make sure there are no more reads
+            await Manager.StopAsync ().WithTimeout ("#2");
+            await hashing.WithTimeout ("#3");
+            Assert.AreEqual (2, getHashCount, "#4");
         }
 
         [Test]

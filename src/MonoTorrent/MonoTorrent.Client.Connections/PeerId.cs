@@ -190,6 +190,7 @@ namespace MonoTorrent.Client
                 return;
 
             Disposed = true;
+            SendQueue.Clear ();
             Connection.SafeDispose ();
         }
 
