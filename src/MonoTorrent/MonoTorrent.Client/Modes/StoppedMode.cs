@@ -31,13 +31,14 @@ namespace MonoTorrent.Client.Modes
 {
     class StoppedMode : Mode
     {
+        public override bool CanAcceptConnections => false;
+        public override bool CanHandleMessages => false;
         public override bool CanHashCheck => true;
         public override TorrentState State => TorrentState.Stopped;
 
         public StoppedMode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base(manager, diskManager, connectionManager, settings)
         {
-            CanAcceptConnections = false;
         }
 
         public override void Tick (int counter)

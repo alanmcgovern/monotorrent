@@ -115,6 +115,7 @@ namespace MonoTorrent.Client.Modes
 
                 Manager.Peers.ClearAll ();
                 var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
+                Manager.Mode = mode;
                 Manager.Mode.HandleMessage (id, exchangeMessage);
 
                 var addedArgs = await peersTask.Task.WithTimeout ();

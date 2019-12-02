@@ -36,17 +36,17 @@ namespace MonoTorrent.Client.Modes
 {
     class HashingMode : Mode
     {
-        public override bool CanHashCheck => false;
 
         TaskCompletionSource<object> PausedCompletionSource { get; set; }
 
+        public override bool CanAcceptConnections => false;
+        public override bool CanHandleMessages => false;
+        public override bool CanHashCheck => false;
         public override TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
 
         public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
-            CanAcceptConnections = false;
-
             // Mark it as completed so we are *not* paused by default;
             PausedCompletionSource = new TaskCompletionSource<object> ();
             PausedCompletionSource.TrySetResult (null);
@@ -79,6 +79,7 @@ namespace MonoTorrent.Client.Modes
 
             Manager.HashFails = 0;
             if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+                Cancellation.Token.ThrowIfCancellationRequested ();
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
                     if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         Manager.Bitfield [index] = false;
@@ -86,6 +87,7 @@ namespace MonoTorrent.Client.Modes
                     }
 
                     await PausedCompletionSource.Task;
+                    Cancellation.Token.ThrowIfCancellationRequested ();
 
                     var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
 

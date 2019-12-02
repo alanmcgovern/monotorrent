@@ -50,7 +50,12 @@ namespace MonoTorrent.Client
         public List<TorrentFile> FilesThatExist = new List<TorrentFile>();
         public List<TorrentFile> DoNotReadFrom = new List<TorrentFile>();
         public bool DontWrite;
-        public List<String> Paths = new List<string>();
+
+        /// <summary>
+        /// this is the list of paths we have read from
+        /// </summary>
+        public List<string> Paths = new List<string>();
+
         public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (DoNotReadFrom.Contains(file))

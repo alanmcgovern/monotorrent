@@ -34,13 +34,14 @@ namespace MonoTorrent.Client.Modes
 {
     class StartingMode : Mode
     {
+        public override bool CanAcceptConnections => false;
+        public override bool CanHandleMessages => false;
         public override bool CanHashCheck => true;
         public override TorrentState State => TorrentState.Starting;
 
         public StartingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
-            CanAcceptConnections = false;
         }
 
         public override void Tick (int counter)
@@ -54,7 +55,9 @@ namespace MonoTorrent.Client.Modes
 
             try {
                 await VerifyHashState ();
+                Cancellation.Token.ThrowIfCancellationRequested ();
             } catch (Exception ex) {
+                Cancellation.Token.ThrowIfCancellationRequested ();
                 Manager.TrySetError (Reason.ReadFailure, ex);
                 return;
             }
@@ -68,8 +71,13 @@ namespace MonoTorrent.Client.Modes
                 // TorrentManager moves to any state that is not Stopped. The idea is that 'StartAsync'
                 // will simply kick off 'Hashing' mode, or 'MetadataMode', or 'InitialSeeding' mode
                 // and then the user is free to call StopAsync etc whenever they want.
-                if (State != TorrentState.Hashing)
+                if (State != TorrentState.Hashing) {
+                    // NOTE: 'StartingMode' will be implicitly cancelled by virtue of running a hash check
+                    // and the current mode will change from 'StartingMode' to 'HashingMode'. We should only
+                    // run the remainder of the 'StartingMode' logic if the HashingMode is not cancelled.
                     await Manager.HashCheckAsync(false, false);
+                    Manager.Mode.Token.ThrowIfCancellationRequested ();
+                }
             }
 
             if (!Manager.HashChecked) {
@@ -88,9 +96,8 @@ namespace MonoTorrent.Client.Modes
             }
 
             Manager.DhtAnnounce();
-            await Manager.LocalPeerAnnounceAsync ();
-
             Manager.PieceManager.Reset();
+            await Manager.LocalPeerAnnounceAsync ();
         }
 
         async void SendAnnounces ()
