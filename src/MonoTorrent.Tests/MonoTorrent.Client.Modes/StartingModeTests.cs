@@ -29,13 +29,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.PieceWriters;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.Modes
@@ -101,6 +96,14 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
             Assert.IsInstanceOf<DownloadMode> (Manager.Mode, "#2");
+        }
+
+        [Test]
+        public void StartTwiceTest ()
+        {
+            var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            Assert.ThrowsAsync<TorrentException> (() => Manager.StartAsync (), "#1");
         }
 
         [Test]
