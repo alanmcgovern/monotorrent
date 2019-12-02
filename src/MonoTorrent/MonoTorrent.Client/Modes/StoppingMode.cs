@@ -57,6 +57,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Monitor.Reset();
                 Manager.Peers.ClearAll();
                 Manager.PieceManager.Reset();
+                Manager.finishedPieces.Clear ();
 
                 var stoppingTasks = new List<Task>();
                 stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
