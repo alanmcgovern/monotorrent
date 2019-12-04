@@ -795,11 +795,11 @@ namespace MonoTorrent.Client
             PiecePicker picker = new StandardPicker();
             picker = new RandomisedPicker(picker);
             picker = new RarestFirstPicker(picker);
-            picker = new PriorityPicker(picker);
 
             if (ClientEngine.SupportsEndgameMode)
                 picker = new EndGameSwitcher(picker, new EndGamePicker(), this);
 
+            picker = new PriorityPicker(picker);
             return picker;
         }
 

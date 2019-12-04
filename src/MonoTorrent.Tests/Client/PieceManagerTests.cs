@@ -121,6 +121,22 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void RequestInEndgame_AllDoNotDownload ()
+        {
+            manager.ChangePicker (torrentManager.CreateStandardPicker (), bitfield, torrentData);
+            foreach (var file in torrentData.Files)
+                file.Priority = Priority.DoNotDownload;
+
+            bitfield.SetAll(true).Set (0, false);
+            peers[0].BitField.SetAll(true);
+            peers[0].IsChoking = false;
+
+            manager.AddPieceRequests(peers[0]);
+            Assert.AreEqual (0, peers[0].AmRequestingPiecesCount, "#1");
+            Assert.AreEqual (0, peers[0].QueueLength, "#2");
+        }
+
+        [Test]
         public void RequestWhenSeeder()
         {
             bitfield.SetAll(true);
@@ -131,6 +147,5 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.AreEqual (0, peers[0].AmRequestingPiecesCount, "#1");
             Assert.AreEqual (0, peers[0].QueueLength, "#2");
         }
-
     }
 }
