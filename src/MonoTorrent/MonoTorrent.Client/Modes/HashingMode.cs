@@ -82,7 +82,11 @@ namespace MonoTorrent.Client.Modes
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
                     if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
-                        Manager.Bitfield [index] = false;
+                        // If a file is marked 'do not download' ensure we update the TorrentFiles
+                        // so they also report that the piece is not available/downloaded.
+                        Manager.OnPieceHashed (index, false);
+                        // Then mark this piece as being unhashed so we don't try to download it.
+                        Manager.UnhashedPieces[index] = true;
                         continue;
                     }
 

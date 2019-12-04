@@ -171,6 +171,7 @@ namespace MonoTorrent.Client.Modes
             foreach (var f in Manager.Torrent.Files) {
                 PieceWriter.FilesThatExist.Add (f);
                 f.Priority = Priority.DoNotDownload;
+                f.BitField.SetAll (true);
             }
 
             var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -183,6 +184,8 @@ namespace MonoTorrent.Client.Modes
             // No piece should be marked as available, and no pieces should actually be hashchecked.
             Assert.IsTrue (Manager.Bitfield.AllFalse, "#2");
             Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#3");
+            foreach (var f in Manager.Torrent.Files)
+                Assert.IsTrue (f.BitField.AllFalse, "#4." + f.Path);
         }
 
         [Test]
