@@ -79,14 +79,14 @@ namespace MonoTorrent.Client.Modes
 
         public override void HandlePeerConnected(PeerId id)
         {
-            base.HandlePeerConnected(id);
             unchoker.PeerConnected(id);
+            base.HandlePeerConnected(id);
         }
 
         public override void HandlePeerDisconnected(PeerId id)
         {
-            unchoker.PeerDisconnected(id);
             base.HandlePeerDisconnected(id);
+            unchoker.PeerDisconnected(id);
         }
 
         public override void Tick(int counter)

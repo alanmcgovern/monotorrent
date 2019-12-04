@@ -124,6 +124,7 @@ namespace MonoTorrent.Client
 
         public void PeerConnected(PeerId id)
         {
+            bitfield.Or (id.BitField);
             peers.Add(new ChokeData(id));
         }
 

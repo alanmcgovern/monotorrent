@@ -283,6 +283,16 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void SeedConnects ()
+        {
+            unchoker.PeerConnected (PeerId.CreateNull (rig.Manager.Bitfield.Length, seeder: false, false, false));
+            Assert.IsFalse (unchoker.Complete);
+
+            unchoker.PeerConnected (PeerId.CreateNull (rig.Manager.Bitfield.Length, seeder: true, false, false));
+            Assert.IsTrue (unchoker.Complete);
+        }
+
+        [Test]
         public void Unchoke()
         {
             unchoker.UnchokeReview();
