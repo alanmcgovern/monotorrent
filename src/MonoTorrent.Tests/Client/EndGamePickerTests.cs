@@ -104,6 +104,7 @@ namespace MonoTorrent.Client.PiecePicking
                     break;
             }
 
+            Assert.AreEqual (0, id.AmRequestingPiecesCount, "#requesting");
             Assert.IsFalse (picker.ValidatePiece (other, otherRequest.PieceIndex, otherRequest.StartOffset, otherRequest.RequestLength, out piece), "#1");
             Assert.IsNull (piece, "#2");
 
