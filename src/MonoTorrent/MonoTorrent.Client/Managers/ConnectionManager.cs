@@ -224,6 +224,8 @@ namespace MonoTorrent.Client
 
             try {
                 manager.Peers.HandshakingPeers.Remove (id);
+                if (id.BitField.Length != manager.Bitfield.Length)
+                    throw new TorrentException($"The peer's bitfield was of length {id.BitField.Length} but the TorrentManager's bitfield was of length {manager.Bitfield.Length}.");
                 manager.HandlePeerConnected(id);
 
                 // If there are any pending messages, send them otherwise set the queue
