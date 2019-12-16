@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
 
             id.ProcessingQueue = true;
             manager.Peers.ActivePeers.Add(id.Peer);
-            manager.Peers.HandshakingPeers.Add(id);
+            manager.Peers.ConnectedPeers.Add(id);
 
             try {
                 // Create a handshake message to send to the peer
@@ -223,7 +223,6 @@ namespace MonoTorrent.Client
             }
 
             try {
-                manager.Peers.HandshakingPeers.Remove (id);
                 if (id.BitField.Length != manager.Bitfield.Length)
                     throw new TorrentException($"The peer's bitfield was of length {id.BitField.Length} but the TorrentManager's bitfield was of length {manager.Bitfield.Length}.");
                 manager.HandlePeerConnected(id);
@@ -290,7 +289,6 @@ namespace MonoTorrent.Client
                     manager.UploadingTo--;
 
                 manager.Peers.ConnectedPeers.Remove (id);
-                manager.Peers.HandshakingPeers.Remove (id);
                 manager.Peers.ActivePeers.Remove(id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
@@ -358,6 +356,8 @@ namespace MonoTorrent.Client
                 Logger.Log(id.Connection, "ConnectionManager - Incoming connection fully accepted");
                 manager.Peers.AvailablePeers.Remove(id.Peer);
                 manager.Peers.ActivePeers.Add(id.Peer);
+                manager.Peers.ConnectedPeers.Add (id);
+
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
                 id.LastBlockReceived.Restart ();

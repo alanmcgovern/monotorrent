@@ -34,7 +34,6 @@ namespace MonoTorrent.Client
     public class PeerManager
     {
         internal List<PeerId> ConnectedPeers;
-        internal List<PeerId> HandshakingPeers;
         internal List<Peer> ConnectingToPeers;
 
         internal List<Peer> ActivePeers;
@@ -67,7 +66,6 @@ namespace MonoTorrent.Client
         {
             ConnectedPeers = new List<PeerId>();
             ConnectingToPeers = new List<Peer>();
-            HandshakingPeers = new List<PeerId>();
 
             ActivePeers = new List<Peer>();
             AvailablePeers = new List<Peer>();
@@ -78,7 +76,6 @@ namespace MonoTorrent.Client
         {
             ConnectedPeers.Clear ();
             ConnectingToPeers.Clear ();
-            HandshakingPeers.Clear ();
 
             ActivePeers.Clear ();
             AvailablePeers.Clear ();
