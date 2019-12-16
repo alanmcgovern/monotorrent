@@ -86,6 +86,7 @@ namespace MonoTorrent.Client.Tracker
                 using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
                 using (cts.Token.Register (() => request.Abort ()))
                 using (var response = await request.GetResponseAsync ())
+                using (cts.Token.Register (() => response.Close ()))
                     peers = AnnounceReceived (request, response);
 
                 return peers;
@@ -116,6 +117,7 @@ namespace MonoTorrent.Client.Tracker
                 using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
                 using (cts.Token.Register (() => request.Abort ()))
                 using (var response = await request.GetResponseAsync ())
+                using (cts.Token.Register (() => response.Close ()))
                     ScrapeReceived (parameters.InfoHash, request, response);
             }
             catch (Exception ex)
