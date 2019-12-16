@@ -85,9 +85,9 @@ namespace MonoTorrent.Client.Tracker
 
                 using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
                 using (cts.Token.Register (() => request.Abort ()))
-                using (var response = await request.GetResponseAsync ())
+                using (var response = await request.GetResponseAsync ().ConfigureAwait (false))
                 using (cts.Token.Register (() => response.Close ()))
-                    peers = AnnounceReceived (request, response);
+                    peers = await AnnounceReceivedAsync (request, response).ConfigureAwait (false);
 
                 return peers;
             }
@@ -116,9 +116,9 @@ namespace MonoTorrent.Client.Tracker
 
                 using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
                 using (cts.Token.Register (() => request.Abort ()))
-                using (var response = await request.GetResponseAsync ())
+                using (var response = await request.GetResponseAsync ().ConfigureAwait (false))
                 using (cts.Token.Register (() => response.Close ()))
-                    ScrapeReceived (parameters.InfoHash, request, response);
+                    await ScrapeReceivedAsync (parameters.InfoHash, response).ConfigureAwait (false);
             }
             catch (Exception ex)
             {
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client.Tracker
             return b.ToUri ();
         }
 
-        BEncodedDictionary DecodeResponse(WebRequest request, WebResponse response)
+        async Task<BEncodedDictionary> DecodeResponseAsync(WebResponse response)
         {
             int bytesRead = 0;
             int totalRead = 0;
@@ -172,25 +172,22 @@ namespace MonoTorrent.Client.Tracker
 
             using (MemoryStream dataStream = new MemoryStream(response.ContentLength > 0 ? (int)response.ContentLength : 256))
             {
-                using (var responseStream = response.GetResponseStream())
-                using (var reader = new BinaryReader(responseStream))
+                using (var reader = response.GetResponseStream())
                 {
                     // If there is a ContentLength, use that to decide how much we read.
                     if (response.ContentLength > 0)
                     {
-                        while (totalRead < response.ContentLength)
+                        while ((bytesRead = await reader.ReadAsync(buffer, 0, (int)Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0)
                         {
-                            bytesRead = reader.Read(buffer, 0, buffer.Length);
                             dataStream.Write(buffer, 0, bytesRead);
                             totalRead += bytesRead;
+                            if (totalRead == response.ContentLength)
+                                break;
                         }
                     }
-
-
-
                     else    // A compact response doesn't always have a content length, so we
                     {       // just have to keep reading until we think we have everything.
-                        while ((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait (false)) > 0)
                             dataStream.Write(buffer, 0, bytesRead);
                     }
                 }
@@ -214,10 +211,10 @@ namespace MonoTorrent.Client.Tracker
             return Uri.GetHashCode();
         }
 
-        List<Peer> AnnounceReceived (WebRequest request, WebResponse response)
+        async Task<List<Peer>> AnnounceReceivedAsync (WebRequest request, WebResponse response)
         {
             try {
-                BEncodedDictionary dict = DecodeResponse (request, response);
+                BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
                 var peers = new List<Peer> ();
                 HandleAnnounce (dict, peers);
                 Status = TrackerState.Ok;
@@ -281,11 +278,13 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        void ScrapeReceived (InfoHash infoHash, WebRequest request, WebResponse response)
+        async Task ScrapeReceivedAsync (InfoHash infoHash, WebResponse response)
         {
             try
             {
-                BEncodedDictionary dict = DecodeResponse(request, response);
+                await MainLoop.SwitchToThreadpool ();
+
+                BEncodedDictionary dict = await DecodeResponseAsync(response).ConfigureAwait (false);
 
                 // FIXME: Log the failure?
                 if (!dict.ContainsKey("files"))
