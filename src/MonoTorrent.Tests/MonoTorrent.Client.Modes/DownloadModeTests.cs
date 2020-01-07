@@ -206,6 +206,27 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task PauseDownloading ()
+        {
+            Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
+
+            Assert.AreEqual(TorrentState.Downloading, Manager.State);
+            await Manager.PauseAsync();
+            Assert.AreEqual(TorrentState.Paused, Manager.State);
+        }
+
+        [Test]
+        public async Task PauseSeeding()
+        {
+            Manager.LoadFastResume(new FastResume(Manager.InfoHash, Manager.Bitfield.Clone().SetAll(true), Manager.Bitfield.Clone().SetAll(false)));
+            Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
+
+            Assert.AreEqual(TorrentState.Seeding, Manager.State);
+            await Manager.PauseAsync();
+            Assert.AreEqual(TorrentState.Paused, Manager.State);
+        }
+
+        [Test]
         public void PartialProgress_AllDownloaded_AllDownloadable ()
         {
             for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
