@@ -91,7 +91,7 @@ Notable features include:
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="GitInfo" Version="2.0.21" PrivateAssets="all" />
+    <PackageReference Include="GitInfo" Version="2.0.24" PrivateAssets="all" />
     <PackageReference Include="ReusableTasks" Version="1.0.6" />
   </ItemGroup>
 
