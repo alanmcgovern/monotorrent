@@ -209,6 +209,15 @@ namespace MonoTorrent.Common
             Assert.AreEqual(torrent.CreatedBy, "MonoTorrent/" + VersionInfo.ClientVersion);
         }
 
+        [Test]
+        public void NodesIsNotAList()
+        {
+            var dict = torrent.ToDictionary();
+            dict["nodes"] = new BEncodedString("192.168.0.1:12345");
+            torrent = Torrent.Load(dict);
+            Assert.IsNull(torrent.Nodes, "#1");
+        }
+
         /// <summary>
         /// 
         /// </summary>

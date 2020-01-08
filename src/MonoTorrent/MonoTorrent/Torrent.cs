@@ -801,7 +801,8 @@ namespace MonoTorrent
                             break;
 
                         case ("nodes"):
-                            nodes = (BEncodedList)keypair.Value;
+                            if (keypair.Value is BEncodedList list)
+                                nodes = list;
                             break;
 
                         case ("comment.utf-8"):
