@@ -570,7 +570,7 @@ namespace MonoTorrent.Client
 
             if (Mode is HashingMode hashing) {
                 hashing.Pause ();
-            } else if (State == TorrentState.Downloading || State == TorrentState.Seeding) {
+            } else if (Mode is DownloadMode) {
                 Mode = new PausedMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
         }
