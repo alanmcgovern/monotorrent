@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.Modes
         public async Task Setup(bool metadataMode, string metadataPath)
         {
             pair = new ConnectionPair().WithTimeout ();
-            rig = TestRig.CreateSingleFile(1024 * 1024 * 1024, 32768, metadataMode);
+            rig = TestRig.CreateMultiFile(32768, metadataMode);
             rig.MetadataPath = metadataPath;
             rig.RecreateManager().Wait();
 
@@ -149,6 +149,29 @@ namespace MonoTorrent.Client.Modes
         {
             await Setup(true, AppDomain.CurrentDomain.BaseDirectory);
             await SendMetadataCore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
+        }
+
+        [Test]
+        public async Task MultiFileSavePath()
+        {
+            var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
+            await Setup(true, torrent);
+            await SendMetadataCore(torrent);
+
+            var torrentFiles = rig.Manager.Torrent.Files;
+
+            Assert.AreEqual(@"test.files", rig.Manager.Torrent.Name);
+            Assert.AreEqual(@"test.files", rig.Manager.SavePath);
+
+            Assert.AreEqual(@"Dir1\File1", torrentFiles[0].Path);
+            Assert.AreEqual(@"Dir1\Dir2\File2", torrentFiles[1].Path);
+            Assert.AreEqual(@"File3", torrentFiles[2].Path);
+            Assert.AreEqual(@"File4", torrentFiles[3].Path);
+
+            Assert.AreEqual(@"test.files\Dir1\File1", torrentFiles[0].FullPath);
+            Assert.AreEqual(@"test.files\Dir1\Dir2\File2", torrentFiles[1].FullPath);
+            Assert.AreEqual(@"test.files\File3", torrentFiles[2].FullPath);
+            Assert.AreEqual(@"test.files\File4", torrentFiles[3].FullPath);
         }
 
         public async Task SendMetadataCore (string expectedPath)
