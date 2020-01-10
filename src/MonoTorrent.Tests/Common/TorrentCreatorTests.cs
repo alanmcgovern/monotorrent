@@ -149,10 +149,10 @@ namespace MonoTorrent.Common
         public async Task LargeMultiTorrent()
         {
             string name1 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
-            string name2 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
-            string name3 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
-            string name4 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
-            string name5 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
+            string name2 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File2");
+            string name3 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File3");
+            string name4 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File4");
+            string name5 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File5");
             files = new List<TorrentFile>(new TorrentFile[] { 
                 new TorrentFile(name1, (long)(PieceLength * 200.30), 0, 1),
                 new TorrentFile(name2, (long)(PieceLength * 42000.5), 1, 3),
@@ -183,7 +183,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void TwoFilesSameDestionation ()
+        public void TwoFilesSameDestination ()
         {
             Assert.Throws<ArgumentException> (() =>
             {
