@@ -583,6 +583,11 @@ namespace MonoTorrent.Client
             return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files, metadataMode);
         }
 
+        internal static TestRig CreateMultiFile(int pieceLength, bool metadataMode)
+        {
+            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), StandardMultiFile(), metadataMode);
+        }
+
         internal static TorrentManager CreateSingleFileManager (int torrentSize, int pieceLength)
         {
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;

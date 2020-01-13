@@ -213,6 +213,13 @@ namespace MonoTorrent.Client.Modes
             Manager.UnhashedPieces = new BitField(Manager.Torrent.Pieces.Count).SetAll (true);
 
             Manager.ChangePicker(Manager.CreateStandardPicker());
+
+            // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
+            if (Manager.Torrent.Files.Length > 1)
+            {
+                Manager.SavePath = Path.Combine(Manager.SavePath, Manager.Torrent.Name);
+            }
+
             foreach (TorrentFile file in Manager.Torrent.Files)
                 file.FullPath = Path.Combine (Manager.SavePath, file.Path);
             _ = Manager.StartAsync();

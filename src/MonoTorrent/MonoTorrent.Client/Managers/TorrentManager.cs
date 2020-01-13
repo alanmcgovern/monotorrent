@@ -248,7 +248,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The directory to download the files to
         /// </summary>
-        public string SavePath { get; private set; }
+        public string SavePath { get; internal set; }
 
         /// <summary>
         /// The settings for with this TorrentManager
