@@ -41,7 +41,7 @@ using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     [TestFixture]
     public class UdpTrackerTests
@@ -91,6 +91,7 @@ namespace MonoTorrent.Client
             listener.IgnoreConnects = false;
             listener.IgnoreErrors = false;
             listener.IgnoreScrapes = false;
+            listener.IncompleteAnnounce = listener.IncompleteConnect = listener.IncompleteScrape = false;
         }
 
         [TearDown]
@@ -251,11 +252,37 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task AnnounceTest_IncompleteAnnounce()
+        {
+            listener.IncompleteAnnounce = true;
+            Assert.ThrowsAsync<TrackerException>(() => tracker.AnnounceAsync(announceparams));
+            Assert.AreEqual(TrackerState.InvalidResponse, tracker.Status);
+
+            listener.IncompleteAnnounce = false;
+            await tracker.AnnounceAsync(announceparams);
+            Assert.AreEqual(TrackerState.Ok, tracker.Status);
+        }
+
+        [Test]
+        public async Task AnnounceTest_IncompleteConnect()
+        {
+            listener.IncompleteConnect = true;
+            Assert.ThrowsAsync<TrackerException>(() => tracker.AnnounceAsync(announceparams));
+            Assert.AreEqual(TrackerState.InvalidResponse, tracker.Status);
+
+            listener.IncompleteConnect = false;
+            await tracker.AnnounceAsync(announceparams);
+            Assert.AreEqual(TrackerState.Ok, tracker.Status);
+
+        }
+
+        [Test]
         public void AnnounceTest_NoConnect()
         {
             tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
+            Assert.AreEqual(TrackerState.Offline, tracker.Status);
         }
 
         [Test]
@@ -276,6 +303,7 @@ namespace MonoTorrent.Client
             tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreAnnounces = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
+            Assert.AreEqual(TrackerState.Offline, tracker.Status);
         }
 
         [Test]
@@ -320,11 +348,24 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task ScrapeTest_Incomplete()
+        {
+            listener.IncompleteScrape = true;
+            Assert.ThrowsAsync<TrackerException>(() => tracker.ScrapeAsync(scrapeParams));
+            Assert.AreEqual(TrackerState.InvalidResponse, tracker.Status);
+
+            listener.IncompleteScrape = false;
+            await tracker.ScrapeAsync(scrapeParams);
+            Assert.AreEqual(TrackerState.Ok, tracker.Status);
+        }
+
+        [Test]
         public void ScrapeTest_NoScrapes()
         {
             tracker.RetryDelay = TimeSpan.Zero;
             listener.IgnoreScrapes = true;
             Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
+            Assert.AreEqual(TrackerState.Offline, tracker.Status);
         }
 
         [Test]
@@ -347,6 +388,10 @@ namespace MonoTorrent.Client
         public bool IgnoreErrors;
         public bool IgnoreScrapes;
 
+        public bool IncompleteAnnounce { get; set; }
+        public bool IncompleteConnect { get; set; }
+        public bool IncompleteScrape { get; set; }
+
         public IgnoringListener(int port)
             : base(port)
         {
@@ -355,12 +400,23 @@ namespace MonoTorrent.Client
 
         protected override async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
+            if (IncompleteConnect)
+            {
+                await client.SendAsync(Enumerable.Repeat((byte)200, 50).ToArray(), 50, remotePeer);
+                return;
+            }
             if (!IgnoreConnects)
                 await base.ReceiveConnect(client, connectMessage, remotePeer);
         }
 
         protected override async Task ReceiveAnnounce(UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
         {
+            if (IncompleteAnnounce)
+            {
+                await client.SendAsync(Enumerable.Repeat ((byte)200, 50).ToArray (), 50, remotePeer);
+                return;
+            }
+
             if (!IgnoreAnnounces)
                 await base.ReceiveAnnounce(client, announceMessage, remotePeer);
         }
@@ -373,6 +429,11 @@ namespace MonoTorrent.Client
 
         protected override async Task ReceiveScrape(UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
         {
+            if (IncompleteScrape)
+            {
+                await client.SendAsync(Enumerable.Repeat((byte)200, 50).ToArray(), 50, remotePeer);
+                return;
+            }
             if (!IgnoreScrapes)
                 await base.ReceiveScrape(client, scrapeMessage, remotePeer);
         }

@@ -75,6 +75,8 @@ namespace MonoTorrent.Client.Tracker
         {
             keys.Clear();
 
+            listener.IncompleteAnnounce = listener.IncompleteScrape = false;
+
             server = new TrackerServer(trackerId);
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener(listener);
@@ -158,6 +160,18 @@ namespace MonoTorrent.Client.Tracker
         }
 
         [Test]
+        public async Task Announce_Incomplete()
+        {
+            listener.IncompleteAnnounce = true;
+            Assert.ThrowsAsync<TrackerException>(() => tracker.AnnounceAsync(announceParams));
+            Assert.AreEqual(TrackerState.InvalidResponse, tracker.Status);
+
+            listener.IncompleteAnnounce = false;
+            await tracker.AnnounceAsync(announceParams);
+            Assert.AreEqual(TrackerState.Ok, tracker.Status);
+        }
+
+        [Test]
         public void Announce_Timeout ()
         {
             TaskCompletionSource<bool> s = new TaskCompletionSource<bool>();
@@ -170,6 +184,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 s.SetResult(true);
             }
+            Assert.AreEqual(TrackerState.Offline, tracker.Status);
         }
 
         [Test]
@@ -229,6 +244,19 @@ namespace MonoTorrent.Client.Tracker
         }
 
         [Test]
+        public async Task Scrape_Incomplete()
+        {
+            listener.IncompleteScrape = true;
+            tracker.RequestTimeout = TimeSpan.FromHours(1);
+            Assert.ThrowsAsync<TrackerException>(() => tracker.ScrapeAsync(scrapeParams));
+            Assert.AreEqual(TrackerState.InvalidResponse, tracker.Status);
+
+            listener.IncompleteScrape = false;
+            await tracker.ScrapeAsync(scrapeParams);
+            Assert.AreEqual(TrackerState.Ok, tracker.Status);
+        }
+
+        [Test]
         public void Scrape_Timeout()
         {
             var tcs = new TaskCompletionSource<bool>();
@@ -242,6 +270,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 tcs.SetResult(true);
             }
+            Assert.AreEqual(TrackerState.Offline, tracker.Status);
         }
 
         [Test]

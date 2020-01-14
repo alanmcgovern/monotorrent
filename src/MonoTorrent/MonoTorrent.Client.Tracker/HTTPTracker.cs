@@ -76,54 +76,84 @@ namespace MonoTorrent.Client.Tracker
             WarningMessage = "";
             var peers = new List<Peer>();
 
+            var announceString = CreateAnnounceString(parameters);
+            var request = (HttpWebRequest)WebRequest.Create(announceString);
+            request.UserAgent = VersionInfo.ClientVersion;
+            request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
+
+            WebResponse response;
+            using var cts = new CancellationTokenSource(RequestTimeout);
+            using var registration = cts.Token.Register(() => request.Abort());
+
             try
             {
-                var announceString = CreateAnnounceString(parameters);
-                var request = (HttpWebRequest)WebRequest.Create(announceString);
-                request.UserAgent = VersionInfo.ClientVersion;
-                request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
-
-                using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
-                using (cts.Token.Register (() => request.Abort ()))
-                using (var response = await request.GetResponseAsync ().ConfigureAwait (false))
-                using (cts.Token.Register (() => response.Close ()))
-                    peers = await AnnounceReceivedAsync (request, response).ConfigureAwait (false);
-
-                return peers;
+                response = await request.GetResponseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
+                throw new TrackerException(FailureMessage, ex);
+            }
+
+            try
+            {
+                using var responseRegistration = cts.Token.Register(() => response.Close());
+                using (response)
+                {
+                    peers = await AnnounceReceivedAsync(request, response).ConfigureAwait(false);
+                    Status = TrackerState.Ok;
+                    return peers;
+                }
+            }
+            catch (Exception ex)
+            {
+                Status = TrackerState.InvalidResponse;
+                FailureMessage = "The tracker returned an invalid or incomplete response";
                 throw new TrackerException (FailureMessage, ex);
             }
         }
         
         protected override async Task DoScrapeAsync(ScrapeParameters parameters)
         {
+            string url = ScrapeUri.OriginalString;
+            // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
+            if (url.IndexOf('?') == -1)
+                url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
+            else
+                url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
+
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.UserAgent = VersionInfo.ClientVersion;
+            request.Proxy = new WebProxy ();
+
+            using var cts = new CancellationTokenSource(RequestTimeout);
+            using var registration = cts.Token.Register(() => request.Abort());
+
+            WebResponse response;
             try
             {
-                string url = ScrapeUri.OriginalString;
-                // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
-                if (url.IndexOf('?') == -1)
-                    url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
-                else
-                    url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
-
-                var request = (HttpWebRequest)WebRequest.Create(url);
-                request.UserAgent = VersionInfo.ClientVersion;
-                request.Proxy = new WebProxy ();
-
-                using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
-                using (cts.Token.Register (() => request.Abort ()))
-                using (var response = await request.GetResponseAsync ().ConfigureAwait (false))
-                using (cts.Token.Register (() => response.Close ()))
-                    await ScrapeReceivedAsync (parameters.InfoHash, response).ConfigureAwait (false);
+                response = await request.GetResponseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
+                Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
-                throw new TrackerException (FailureMessage, ex);
+                throw new TrackerException(FailureMessage, ex);
+            }
+
+            try
+            {
+                using var responseRegistration = cts.Token.Register(() => response.Close());
+                using (response)
+                    await ScrapeReceivedAsync(parameters.InfoHash, response).ConfigureAwait(false);
+                Status = TrackerState.Ok;
+            }
+            catch (Exception ex)
+            {
+                Status = TrackerState.InvalidResponse;
+                FailureMessage = "The tracker returned an invalid or incomplete response";
+                throw new TrackerException(FailureMessage, ex);
             }
         }
 
@@ -164,7 +194,7 @@ namespace MonoTorrent.Client.Tracker
             return b.ToUri ();
         }
 
-        async Task<BEncodedDictionary> DecodeResponseAsync(WebResponse response)
+        static async Task<BEncodedDictionary> DecodeResponseAsync(WebResponse response)
         {
             int bytesRead = 0;
             int totalRead = 0;
@@ -213,17 +243,13 @@ namespace MonoTorrent.Client.Tracker
 
         async Task<List<Peer>> AnnounceReceivedAsync (WebRequest request, WebResponse response)
         {
-            try {
-                BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
-                var peers = new List<Peer> ();
-                HandleAnnounce (dict, peers);
-                Status = TrackerState.Ok;
-                return peers;
-            } catch {
-                Status = TrackerState.InvalidResponse;
-                FailureMessage = "The tracker returned an invalid or incomplete response";
-                throw;
-            }
+            await MainLoop.SwitchToThreadpool();
+
+            BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
+            var peers = new List<Peer> ();
+            HandleAnnounce (dict, peers);
+            Status = TrackerState.Ok;
+            return peers;
         }
 
         void HandleAnnounce(BEncodedDictionary dict, List<Peer> peers)
@@ -280,51 +306,40 @@ namespace MonoTorrent.Client.Tracker
 
         async Task ScrapeReceivedAsync (InfoHash infoHash, WebResponse response)
         {
-            try
+            await MainLoop.SwitchToThreadpool ();
+
+            BEncodedDictionary dict = await DecodeResponseAsync(response).ConfigureAwait (false);
+
+            // FIXME: Log the failure?
+            if (!dict.ContainsKey("files"))
             {
-                await MainLoop.SwitchToThreadpool ();
-
-                BEncodedDictionary dict = await DecodeResponseAsync(response).ConfigureAwait (false);
-
-                // FIXME: Log the failure?
-                if (!dict.ContainsKey("files"))
-                {
-                    return;
-                }
-                BEncodedDictionary files = (BEncodedDictionary)dict["files"];
-                if (files.Count != 1)
-                    throw new TrackerException ("The scrape response contained unexpected data");
-
-                var d = (BEncodedDictionary) files[new BEncodedString (infoHash.Hash)];
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
-                {
-                    switch (kp.Key.ToString())
-                    {
-                        case ("complete"):
-                            Complete = (int)((BEncodedNumber)kp.Value).Number;
-                            break;
-
-                        case ("downloaded"):
-                            Downloaded = (int)((BEncodedNumber)kp.Value).Number;
-                            break;
-
-                        case ("incomplete"):
-                            Incomplete = (int)((BEncodedNumber)kp.Value).Number;
-                            break;
-
-                        default:
-                            Logger.Log(null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString(), kp.Value.ToString());
-                            break;
-                    }
-                }
+                return;
             }
-            catch (WebException)
+            BEncodedDictionary files = (BEncodedDictionary)dict["files"];
+            if (files.Count != 1)
+                throw new TrackerException ("The scrape response contained unexpected data");
+
+            var d = (BEncodedDictionary) files[new BEncodedString (infoHash.Hash)];
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
             {
-                throw;
-            }
-            catch
-            {
-                throw;
+                switch (kp.Key.ToString())
+                {
+                    case ("complete"):
+                        Complete = (int)((BEncodedNumber)kp.Value).Number;
+                        break;
+
+                    case ("downloaded"):
+                        Downloaded = (int)((BEncodedNumber)kp.Value).Number;
+                        break;
+
+                    case ("incomplete"):
+                        Incomplete = (int)((BEncodedNumber)kp.Value).Number;
+                        break;
+
+                    default:
+                        Logger.Log(null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString(), kp.Value.ToString());
+                        break;
+                }
             }
         }
 
