@@ -9,3 +9,4 @@
 *.sh text eol=lf
 *.sln text eol=crlf
 *.targets text
+*.txt text
