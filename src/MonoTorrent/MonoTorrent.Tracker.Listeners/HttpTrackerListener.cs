@@ -37,6 +37,10 @@ namespace MonoTorrent.Tracker.Listeners
 {
     class HttpTrackerListener : TrackerListener
     {
+        public bool IncompleteAnnounce { get; set; }
+
+        public bool IncompleteScrape { get; set; }
+
         string Prefix { get; }
 
         public HttpTrackerListener(IPAddress address, int port)
@@ -87,6 +91,12 @@ namespace MonoTorrent.Tracker.Listeners
         {
             using (context.Response) {
                 bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
+
+                if (IncompleteAnnounce || IncompleteScrape)
+                {
+                    await context.Response.OutputStream.WriteAsync(new byte[1024], 0, 1024);
+                    return;
+                }
 
                 BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
 

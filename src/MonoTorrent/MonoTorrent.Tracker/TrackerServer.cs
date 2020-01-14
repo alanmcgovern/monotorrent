@@ -348,7 +348,8 @@ namespace MonoTorrent.Tracker
                 files.Add(new BEncodedString (e.InfoHashes[i].Hash), dict);
             }
             RaisePeerScraped(new ScrapeEventArgs(managers));
-            e.Response.Add("files", files);
+            if (files.Count > 0)
+                e.Response.Add("files", files);
         }
 
         internal void RaisePeerAnnounced(AnnounceEventArgs e)
