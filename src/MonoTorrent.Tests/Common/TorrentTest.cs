@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -255,6 +256,21 @@ namespace MonoTorrent.Common
 
             Assert.AreEqual(Path.Combine(Path.Combine("subfolder1", "subfolder2"), "file4.txt"), torrent.Files[3].Path);
             Assert.AreEqual(80000, torrent.Files[3].Length);
+        }
+
+        [Test]
+        public void InvalidPath()
+        {
+            var dict = torrent.ToDictionary();
+            var files = ((BEncodedDictionary)dict["info"])["files"] as BEncodedList;
+
+            var newFile = new BEncodedDictionary();
+            var path = new BEncodedList (new BEncodedString[] { "test", "..", "bar" });
+            newFile["path"] = path;
+            newFile["length"] = (BEncodedNumber)15251;
+            files.Add(newFile);
+
+            Assert.Throws<ArgumentException>(() => Torrent.Load(dict));
         }
 
         /// <summary>

@@ -454,6 +454,7 @@ namespace MonoTorrent
                         endIndex--;
                 }
 
+                PathValidator.Validate (path);
                 files.Add(new TorrentFile(path, length, path, startIndex, endIndex, (int)(size % pieceLength), md5sum, ed2k, sha1));
                 size += length;
             }
@@ -760,150 +761,140 @@ namespace MonoTorrent
             originalDictionary = torrentInformation;
             torrentPath = "";
 
-            try
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation)
             {
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation)
+                switch (keypair.Key.Text)
                 {
-                    switch (keypair.Key.Text)
-                    {
-                        case ("announce"):
-                            // Ignore this if we have an announce-list
-                            if (torrentInformation.ContainsKey("announce-list"))
-                                break;
-                            announceUrls.Add(new RawTrackerTier ());
-                            announceUrls[0].Add(keypair.Value.ToString());
+                    case ("announce"):
+                        // Ignore this if we have an announce-list
+                        if (torrentInformation.ContainsKey("announce-list"))
                             break;
+                        announceUrls.Add(new RawTrackerTier ());
+                        announceUrls[0].Add(keypair.Value.ToString());
+                        break;
 
-                        case ("creation date"):
+                    case ("creation date"):
+                        try
+                        {
                             try
                             {
-                                try
-                                {
-                                    creationDate = creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
-                                }
-                                catch (Exception e)
-                                {
-                                    if (e is ArgumentOutOfRangeException)
-                                        creationDate = creationDate.AddMilliseconds(long.Parse(keypair.Value.ToString()));
-                                    else
-                                        throw;
-                                }
+                                creationDate = creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
                             }
                             catch (Exception e)
                             {
                                 if (e is ArgumentOutOfRangeException)
-                                    throw new BEncodingException("Argument out of range exception when adding seconds to creation date.", e);
-                                else if (e is FormatException)
-                                    throw new BEncodingException(String.Format("Could not parse {0} into a number", keypair.Value), e);
+                                    creationDate = creationDate.AddMilliseconds(long.Parse(keypair.Value.ToString()));
                                 else
                                     throw;
                             }
+                        }
+                        catch (Exception e)
+                        {
+                            if (e is ArgumentOutOfRangeException)
+                                throw new BEncodingException("Argument out of range exception when adding seconds to creation date.", e);
+                            else if (e is FormatException)
+                                throw new BEncodingException(String.Format("Could not parse {0} into a number", keypair.Value), e);
+                            else
+                                throw;
+                        }
+                        break;
+
+                    case ("nodes"):
+                        if (keypair.Value is BEncodedList list)
+                            nodes = list;
+                        break;
+
+                    case ("comment.utf-8"):
+                        if (keypair.Value.ToString().Length != 0)
+                            comment = keypair.Value.ToString();       // Always take the UTF-8 version
+                        break;                                          // even if there's an existing value
+
+                    case ("comment"):
+                        if (String.IsNullOrEmpty(comment))
+                            comment = keypair.Value.ToString();
+                        break;
+
+                    case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
+                        publisherUrl = keypair.Value.ToString();      // even if there's an existing value
+                        break;
+
+                    case ("publisher-url"):
+                        if (String.IsNullOrEmpty(publisherUrl))
+                            publisherUrl = keypair.Value.ToString();
+                        break;
+
+                    case ("azureus_properties"):
+                        azureusProperties = keypair.Value;
+                        break;
+
+                    case ("created by"):
+                        createdBy = keypair.Value.ToString();
+                        break;
+
+                    case ("encoding"):
+                        encoding = keypair.Value.ToString();
+                        break;
+
+                    case ("info"):
+                        using (SHA1 s = HashAlgoFactory.Create<SHA1>())
+                            infoHash = new InfoHash (s.ComputeHash(keypair.Value.Encode()));
+                        ProcessInfo(((BEncodedDictionary)keypair.Value));
+                        break;
+
+                    case ("name"):                                               // Handled elsewhere
+                        break;
+
+                    case ("announce-list"):
+                        if (keypair.Value is BEncodedString)
                             break;
+                        BEncodedList announces = (BEncodedList)keypair.Value;
 
-                        case ("nodes"):
-                            if (keypair.Value is BEncodedList list)
-                                nodes = list;
-                            break;
-
-                        case ("comment.utf-8"):
-                            if (keypair.Value.ToString().Length != 0)
-                                comment = keypair.Value.ToString();       // Always take the UTF-8 version
-                            break;                                          // even if there's an existing value
-
-                        case ("comment"):
-                            if (String.IsNullOrEmpty(comment))
-                                comment = keypair.Value.ToString();
-                            break;
-
-                        case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
-                            publisherUrl = keypair.Value.ToString();      // even if there's an existing value
-                            break;
-
-                        case ("publisher-url"):
-                            if (String.IsNullOrEmpty(publisherUrl))
-                                publisherUrl = keypair.Value.ToString();
-                            break;
-
-                        case ("azureus_properties"):
-                            azureusProperties = keypair.Value;
-                            break;
-
-                        case ("created by"):
-                            createdBy = keypair.Value.ToString();
-                            break;
-
-                        case ("encoding"):
-                            encoding = keypair.Value.ToString();
-                            break;
-
-                        case ("info"):
-                            using (SHA1 s = HashAlgoFactory.Create<SHA1>())
-                                infoHash = new InfoHash (s.ComputeHash(keypair.Value.Encode()));
-                            ProcessInfo(((BEncodedDictionary)keypair.Value));
-                            break;
-
-                        case ("name"):                                               // Handled elsewhere
-                            break;
-
-                        case ("announce-list"):
-                            if (keypair.Value is BEncodedString)
-                                break;
-                            BEncodedList announces = (BEncodedList)keypair.Value;
-
-                            for (int j = 0; j < announces.Count; j++)
+                        for (int j = 0; j < announces.Count; j++)
+                        {
+                            if (announces[j] is BEncodedList)
                             {
-                                if (announces[j] is BEncodedList)
-                                {
-                                    BEncodedList bencodedTier = (BEncodedList)announces[j];
-                                    List<string> tier = new List<string>(bencodedTier.Count);
+                                BEncodedList bencodedTier = (BEncodedList)announces[j];
+                                List<string> tier = new List<string>(bencodedTier.Count);
 
-                                    for (int k = 0; k < bencodedTier.Count; k++)
-                                        tier.Add(bencodedTier[k].ToString());
+                                for (int k = 0; k < bencodedTier.Count; k++)
+                                    tier.Add(bencodedTier[k].ToString());
 
-                                    Toolbox.Randomize<string>(tier);
+                                Toolbox.Randomize<string>(tier);
 
-                                    RawTrackerTier collection = new RawTrackerTier ();
-                                    for (int k = 0; k < tier.Count; k++)
-                                        collection.Add(tier[k]);
+                                RawTrackerTier collection = new RawTrackerTier ();
+                                for (int k = 0; k < tier.Count; k++)
+                                    collection.Add(tier[k]);
 
-                                    if (collection.Count != 0)
-                                        announceUrls.Add(collection);
-                                }
-                                else
-                                {
-                                    throw new BEncodingException(String.Format("Non-BEncodedList found in announce-list (found {0})",
-                                      announces[j].GetType()));
-                                }
+                                if (collection.Count != 0)
+                                    announceUrls.Add(collection);
                             }
-                            break;
-
-                        case ("httpseeds"):
-                            // This form of web-seeding is not supported.
-                            break;
-
-                        case ("url-list"):
-                            if (keypair.Value is BEncodedString)
+                            else
                             {
-                                getRightHttpSeeds.Add(((BEncodedString)keypair.Value).Text);
+                                throw new BEncodingException(String.Format("Non-BEncodedList found in announce-list (found {0})",
+                                    announces[j].GetType()));
                             }
-                            else if (keypair.Value is BEncodedList)
-                            {
-                                foreach (BEncodedString str in (BEncodedList)keypair.Value)
-                                    GetRightHttpSeeds.Add(str.Text);
-                            }
-                            break;
+                        }
+                        break;
 
-                        default:
-                            break;
-                    }
+                    case ("httpseeds"):
+                        // This form of web-seeding is not supported.
+                        break;
+
+                    case ("url-list"):
+                        if (keypair.Value is BEncodedString)
+                        {
+                            getRightHttpSeeds.Add(((BEncodedString)keypair.Value).Text);
+                        }
+                        else if (keypair.Value is BEncodedList)
+                        {
+                            foreach (BEncodedString str in (BEncodedList)keypair.Value)
+                                GetRightHttpSeeds.Add(str.Text);
+                        }
+                        break;
+
+                    default:
+                        break;
                 }
-            }
-            catch (Exception e)
-            {
-                if (e is BEncodingException)
-                    throw;
-                else
-                    throw new BEncodingException("", e);
             }
         }
 

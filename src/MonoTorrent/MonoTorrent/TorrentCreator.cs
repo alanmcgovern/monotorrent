@@ -445,23 +445,8 @@ namespace MonoTorrent
 
         static void Validate (List <FileMapping> maps)
         {
-            // Make sure the user doesn't try to overwrite system files. Ensure
-            // that the path is relative and doesn't try to access its parent folder
-            var sepLinux = "/";
-            var sepWindows = "\\";
-            var dropLinux = "../";
-            var dropWindows = "..\\";
-            foreach (var map in maps) {
-                if (map.Destination.StartsWith (sepLinux))
-                    throw new ArgumentException ("The destination path cannot start with the '{0}' character", sepLinux);
-                if (map.Destination.StartsWith (sepWindows))
-                    throw new ArgumentException ("The destination path cannot start with the '{0}' character", sepWindows);
-
-                if (map.Destination.Contains (dropLinux))
-                    throw new ArgumentException ("The destination path cannot contain '{0}'", dropLinux);
-                if (map.Destination.Contains (dropWindows))
-                    throw new ArgumentException ("The destination path cannot contain '{0}'", dropWindows);
-            }
+            foreach (var map in maps)
+                PathValidator.Validate (map.Destination);
 
             // Ensure all the destination files are unique too. The files should already be sorted.
             for (int i = 1; i < maps.Count; i++)
