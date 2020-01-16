@@ -141,13 +141,13 @@ namespace MonoTorrent
                     case "xl"://exact length
                         size = long.Parse (keyval [1]);
                     break;
-                    case "xs":// eXact Source - P2P link.
-                    case "kt"://keyword topic
-                    case "mt"://manifest topic
-                        //not supported for moment
-                    break;
+                    //case "xs":// eXact Source - P2P link.
+                    //case "kt"://keyword topic
+                    //case "mt"://manifest topic
+                        // Unused
+                    //break;
                     default:
-                        //not supported
+                        // Unknown/unsupported
                     break;
                 }
             }
@@ -156,24 +156,17 @@ namespace MonoTorrent
         }
 
         public string ToV1String ()
-            => ToString (1);
+            => ToString ();
 
         public Uri ToV1Uri ()
             => new Uri (ToV1String ());
 
-        string ToString (int formatVersion)
+        string ToString ()
         {
             var sb = new StringBuilder ();
             sb.Append ("magnet:?");
-            if (formatVersion == 1) {
-                sb.Append ("xt=urn:btih:");
-                sb.Append (InfoHash.ToHex ());
-            } else if (formatVersion == 2) {
-                sb.Append ("xt=urn:btmh");
-                throw new NotSupportedException ("Need to add support for the new 'multihash' thing");
-            } else {
-                throw new NotSupportedException ();
-            }
+            sb.Append ("xt=urn:btih:");
+            sb.Append (InfoHash.ToHex ());
 
             if (!string.IsNullOrEmpty (Name)) {
                 sb.Append ("&dn=");

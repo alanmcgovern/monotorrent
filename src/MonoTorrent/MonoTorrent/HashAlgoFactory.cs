@@ -29,10 +29,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Security.Cryptography;
 
 namespace MonoTorrent
 {
+    // FIXME: Make this internal in the future
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class HashAlgoFactory
     {
         static Dictionary<Type, Type> algos = new Dictionary<Type, Type>();
@@ -62,9 +65,7 @@ namespace MonoTorrent
         public static T Create<T>()
             where T : HashAlgorithm
         {
-            if (algos.ContainsKey(typeof(T)))
-                return (T)Activator.CreateInstance(algos[typeof(T)]);
-            return null;
+            return (T)Activator.CreateInstance(algos[typeof(T)]);
         }
     }
 }

@@ -7,6 +7,12 @@ namespace MonoTorrent.Common
     public class SpeedMonitorTest
     {
         [Test]
+        public void InvalidConstructor ()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new SpeedMonitor(-1));
+        }
+
+        [Test]
         public void VeryFastRate ()
         {
             // We're reporting 500MB every 750ms period

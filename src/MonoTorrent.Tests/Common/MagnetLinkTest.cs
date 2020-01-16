@@ -117,6 +117,12 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void InvalidMagnetLink_DoubleEquals()
+        {
+            Assert.Throws<FormatException>(() => MagnetLink.FromUri(new Uri("magnet://btih:?xt=urn=:btih:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C")));
+        }
+
+        [Test]
         public void NullMagnetLink()
         {
             Assert.Throws<ArgumentNullException>(() => new MagnetLink(null));
@@ -169,17 +175,31 @@ namespace MonoTorrent.Common
                 "http://whatever2.com/file.exe",
             };
             var magnetLink = new MagnetLink (infoHash, name, announces, webSeeds);
-            var uri = magnetLink.ToV1String ();
+            var uriString = magnetLink.ToV1String ();
 
-            Assert.IsFalse (uri.Contains (announces[0]), "The uri should be Uri encoded");
-            Assert.IsFalse (uri.Contains (webSeeds[0]), "The uri should be Uri encoded");
-            Assert.IsFalse (uri.Contains (name), "The name should be Uri encoded");
+            Assert.IsFalse (uriString.Contains (announces[0]), "The uri should be Uri encoded");
+            Assert.IsFalse (uriString.Contains (webSeeds[0]), "The uri should be Uri encoded");
+            Assert.IsFalse (uriString.Contains (name), "The name should be Uri encoded");
 
-            magnetLink = MagnetLink.Parse (uri);
+            magnetLink = MagnetLink.Parse (uriString);
             Assert.AreEqual (infoHash, magnetLink.InfoHash, "#1");
             Assert.AreEqual (name, magnetLink.Name, "#2");
             CollectionAssert.AreEquivalent (announces, magnetLink.AnnounceUrls, "#3");
             CollectionAssert.AreEquivalent (webSeeds, magnetLink.Webseeds, "#4");
+
+            Assert.AreEqual(magnetLink.ToV1String (), MagnetLink.FromUri(magnetLink.ToV1Uri()).ToV1String (), "#5");
+        }
+
+        [Test]
+        public void TwoInfoHashes ()
+        {
+            Assert.Throws<FormatException>(() => MagnetLink.FromUri(new Uri("magnet://btih:?foo=bar&xt=urn:btih:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C&xt=urn:btih:ANCKHTQCWBTRNJIV4WNAE52SJUQCZO5C")));
+        }
+
+        [Test]
+        public void UnsupportedScheme ()
+        {
+            Assert.Throws<FormatException> (() => MagnetLink.FromUri(new Uri("http://not_a_magnet_link.com")));
         }
     }
 }
