@@ -5,7 +5,6 @@ MonoTorrent
 
 [![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
 
-
 # Supported Specifications
 
 This is a list of all the BEPs which have been implemented in MonoTorrent. A full list of all available BEPs can be seen [here](http://www.bittorrent.org/beps/bep_0000.html)
@@ -73,4 +72,11 @@ This is a standard bittorrent tracker server.
 * UDP announce and scrape requests.
 * Compact peer responses (reduces bandwidth)
 * Optionally allows unregistered torrents. In this mode the tracker will begin maintaining peer lists for a torrent as soon as the first announce request is received. 
-* 
+
+
+## JetBrains
+
+A special thank you to [JetBrains](http://www.jetbrains.com/) for supplying a free license to their tooling so I can continue to deliver great features on this opensource project.
+
+* [dotTrace](http://www.jetbrains.com/dottrace) - Performance profiling
+* [dotMemory](http://www.jetbrains.com/dotmemory) - Memory allocation/retention profiling
