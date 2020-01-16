@@ -102,6 +102,19 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task Announce_StoppedEvent_Timeout()
+        {
+            TrackerManager.AddTracker("http://1.1.1.1");
+            TrackerManager.ResponseDelay = TimeSpan.FromMinutes(1);
+
+            var mode = new StoppingMode(Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+            await mode.WaitForStoppingToComplete(TimeSpan.FromMilliseconds(1)).WithTimeout ("Should've bailed");
+
+            Assert.AreEqual(0, TrackerManager.Announces.Count, "#1");
+        }
+
+        [Test]
         public async Task DisposeActiveConnections ()
         {
             Manager.Peers.ConnectedPeers.Add(Peer);

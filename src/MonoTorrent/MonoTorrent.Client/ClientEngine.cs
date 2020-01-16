@@ -30,9 +30,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
@@ -394,7 +396,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task StartAll()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public Task StartAll()
+            => StartAllAsync();
+
+        public async Task StartAllAsync()
         {
             CheckDisposed();
 
@@ -406,14 +412,31 @@ namespace MonoTorrent.Client
             await Task.WhenAll (tasks);
         }
 
-        public async Task StopAll()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public Task StopAll()
+            => StopAllAsync();
+
+        /// <summary>
+        /// Stops all active <see cref="TorrentManager"/> instances.
+        /// </summary>
+        /// <returns></returns>
+        public Task StopAllAsync()
+            => StopAllAsync(Timeout.InfiniteTimeSpan);
+
+        /// <summary>
+        /// Stops all active <see cref="TorrentManager"/> instances. The final announce for each <see cref="TorrentManager"/> will be limited
+        /// to the maximum of either 2 seconds or <paramref name="timeout"/> seconds.
+        /// </summary>
+        /// <param name="timeout">The timeout for the final tracker announce.</param>
+        /// <returns></returns>
+        public async Task StopAllAsync(TimeSpan timeout)
         {
             CheckDisposed();
 
             await MainLoop;
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < torrents.Count; i++)
-                tasks.Add (torrents[i].StopAsync());
+                tasks.Add (torrents[i].StopAsync(timeout));
             await Task.WhenAll(tasks);
         }
 
