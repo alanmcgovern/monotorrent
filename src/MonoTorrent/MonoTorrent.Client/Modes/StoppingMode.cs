@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
@@ -48,7 +49,10 @@ namespace MonoTorrent.Client.Modes
         {
         }
 
-        public async Task WaitForStoppingToComplete ()
+        public Task WaitForStoppingToComplete()
+            => WaitForStoppingToComplete(Timeout.InfiniteTimeSpan);
+
+        public async Task WaitForStoppingToComplete (TimeSpan timeout)
         {
             try {
                 Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
@@ -62,8 +66,12 @@ namespace MonoTorrent.Client.Modes
 
                 var stoppingTasks = new List<Task>();
                 stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
-                if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
-                    stoppingTasks.Add(Manager.TrackerManager.Announce(TorrentEvent.Stopped));
+                if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok) {
+                    var announceTask = Manager.TrackerManager.Announce(TorrentEvent.Stopped);
+                    if (timeout != Timeout.InfiniteTimeSpan)
+                        announceTask = Task.WhenAny(announceTask, Task.Delay(timeout));
+                    stoppingTasks.Add(announceTask);
+                }
 
                 var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);
                 var overallTasks = Task.WhenAll (stoppingTasks);

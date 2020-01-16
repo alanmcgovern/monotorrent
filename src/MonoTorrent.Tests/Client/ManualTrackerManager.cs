@@ -49,6 +49,8 @@ namespace MonoTorrent.Client
 
         public DateTime LastUpdated { get; }
 
+        public TimeSpan ResponseDelay { get; set; }
+
         public IList<TrackerTier> Tiers { get; } = new List<TrackerTier> ();
 
         public TimeSpan TimeSinceLastAnnounce { get; private set; }
@@ -81,10 +83,12 @@ namespace MonoTorrent.Client
         public Task Announce (ITracker tracker)
             => Announce (tracker, TorrentEvent.None);
 
-        Task Announce (ITracker tracker, TorrentEvent clientEvent)
+        async Task Announce (ITracker tracker, TorrentEvent clientEvent)
         {
+            if (ResponseDelay != TimeSpan.Zero)
+                await Task.Delay(ResponseDelay);
+
             Announces.Add (Tuple.Create (tracker, clientEvent));
-            return Task.CompletedTask;
         }
 
         public void RaiseAnnounceComplete (ITracker tracker, bool successful, IList<Peer> peers)

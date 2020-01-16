@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Standard;
@@ -642,7 +643,14 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped.
         /// </summary>
-        public async Task StopAsync()
+        public Task StopAsync()
+            => StopAsync(Timeout.InfiniteTimeSpan);
+
+        /// <summary>
+        /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped. The final
+        /// tracker announce will be limited to the maximum of either 2 seconds or <paramref name="timeout"/> seconds.
+        /// </summary>
+        public async Task StopAsync(TimeSpan timeout)
         {
             await ClientEngine.MainLoop;
 
@@ -656,7 +664,7 @@ namespace MonoTorrent.Client
             } else if (State != TorrentState.Stopped) {
                 var stoppingMode = new StoppingMode(this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
-                await stoppingMode.WaitForStoppingToComplete ();
+                await stoppingMode.WaitForStoppingToComplete (timeout);
 
                 stoppingMode.Token.ThrowIfCancellationRequested ();
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
