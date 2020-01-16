@@ -76,7 +76,7 @@ This is a standard bittorrent tracker server.
 
 ## JetBrains
 
-A special thank you to [JetBrains](http://www.jetbrains.com/) for supplying a free license to their tooling so I can continue to deliver great features on this opensource project.
+A special thank you to [JetBrains](http://www.jetbrains.com/?from=monotorrent) for supplying a free license to their tooling so I can continue to deliver great features on this opensource project.
 
-* [dotTrace](http://www.jetbrains.com/dottrace) - Performance profiling
-* [dotMemory](http://www.jetbrains.com/dotmemory) - Memory allocation/retention profiling
+* [dotTrace](http://www.jetbrains.com/dottrace/?from=monotorrent) - Performance profiling
+* [dotMemory](http://www.jetbrains.com/dotmemory/?from=monotorrent) - Memory allocation/retention profiling
