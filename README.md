@@ -3,7 +3,10 @@ MonoTorrent
 
 [![NuGet version](https://badge.fury.io/nu/monotorrent.svg)](https://badge.fury.io/nu/monotorrent)
 
-[![Build status](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build/latest?definitionId=2)
+[![Build status (master)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent?branchName=master) ![Test coverage (master)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/2/master)
+
+[![Build status (monotorrent-1.0)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent?branchName=monotorrent-1.0) ![Test coverage (master)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/2/monotorrent-1.0)
+
 
 # Supported Specifications
 
