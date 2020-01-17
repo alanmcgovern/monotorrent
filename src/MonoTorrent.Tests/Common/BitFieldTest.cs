@@ -55,6 +55,22 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void Constructor_Null ()
+        {
+            Assert.Throws<ArgumentNullException> (() => new BitField ((bool[]) null));
+            Assert.Throws<ArgumentNullException> (() => new BitField ((byte[]) null, 2));
+
+        }
+        [Test]
+        public void Constructor_TooSmall ()
+        {
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new bool[0]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (0));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (-1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new byte[0], 1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new byte[1], 0));
+        }
+        [Test]
         public void ConstructorIntTest ()
         {
             BitField bf2 = new BitField (initialByteValues, initalValues.Length);
@@ -189,12 +205,26 @@ namespace MonoTorrent.Common
             }
         }
 
+        [Test]
+        public void ToByteArray_Null ()
+        {
+            Assert.Throws<ArgumentNullException> (() => new BitField (1).ToByteArray (null, 0));
+        }
 
         [Test]
         public void Clone ()
         {
-            BitField clone = bf.Clone ();
+            BitField clone = (BitField) ((ICloneable) bf).Clone ();
             Assert.AreEqual (bf, clone);
+            Assert.IsTrue (bf.Equals (clone));
+            Assert.AreEqual (bf.GetHashCode (), clone.GetHashCode ());
+        }
+
+        [Test]
+        public void Get_OutOfRange ()
+        {
+            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new BitField (10)[-1]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new BitField (10)[10]));
         }
 
         [Test]
@@ -250,12 +280,39 @@ namespace MonoTorrent.Common
             r.NextBytes (a);
             r.NextBytes (b);
 
-            for (int i = 0; i < a.Length * 8; i++) {
+            for (int i = 1; i < a.Length * 8; i++) {
                 BitField first = new BitField (a, i);
                 BitField second = new BitField (b, i);
 
                 first.And (second);
             }
+        }
+
+        [Test]
+        public void And_DifferentLength ()
+        {
+            Assert.Throws<ArgumentException> (() => new BitField (10).And (new BitField (3)));
+        }
+
+        [Test]
+        public void CountTrue_InvalidSelector ()
+        {
+            Assert.Throws<ArgumentNullException> (() => new BitField (10).CountTrue (null));
+            Assert.Throws<ArgumentException> (() => new BitField (10).CountTrue (new BitField (5)));
+        }
+
+        [Test]
+        public void Equals_False ()
+        {
+            var bf = new BitField (10).SetAll (true);
+            var other = bf.Clone ().Set (5, false);
+            Assert.IsFalse (bf.Equals (other));
+            Assert.IsFalse (bf.Equals (null));
+            Assert.IsFalse (bf.Equals (new BitField (5)));
+
+            bf.Set (6, false);
+            Assert.AreEqual (bf.TrueCount, other.TrueCount);
+            Assert.IsFalse (bf.Equals (other));
         }
 
         [Test]
@@ -274,6 +331,13 @@ namespace MonoTorrent.Common
                     count++;
 
             Assert.AreEqual (count, bf.TrueCount, "#3");
+        }
+
+        [Test]
+        public void Set_OutOfRange ()
+        {
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (10).Set (-1, true));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (10).Set (10, true));
         }
 
         [Test]

@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
         {
             Manager = manager;
             Picker = new NullPicker ();
-            UnhashedPieces = new BitField (0);
+            UnhashedPieces = new BitField (1);
         }
 
         internal Piece PieceDataReceived (PeerId id, PieceMessage message)
