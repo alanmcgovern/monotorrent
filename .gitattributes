@@ -1,6 +1,7 @@
 *.cs text
 *.csproj text
 *.dll.config text
+*.DotSettings text
 *.exe.config text
 *.md text
 *.proj text
