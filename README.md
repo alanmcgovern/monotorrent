@@ -1,11 +1,11 @@
 MonoTorrent
 ========
 
-[![NuGet version](https://badge.fury.io/nu/monotorrent.svg)](https://badge.fury.io/nu/monotorrent)
+[![NuGet version](https://badge.fury.io/nu/monotorrent.svg)](https://www.nuget.org/packages/MonoTorrent/)
 
-[![Build status (master)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent?branchName=master) ![Test coverage (master)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/2/master)
+[![Build status - master](https://img.shields.io/azure-devops/build/alanmcgovern0144/MonoTorrent/2/master?label=Build%20%28master%29)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build?view=runs) [![Test coverage - master](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/2/master?label=Test%20coverage%20%28master%29)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build?view=runs)
 
-[![Build status (monotorrent-1.0)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_apis/build/status/MonoTorrent?branchName=monotorrent-1.0) ![Test coverage (master)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/2/monotorrent-1.0)
+[![Build status - release](https://img.shields.io/azure-devops/build/alanmcgovern0144/MonoTorrent/2/monotorrent-1.0?label=Build%20%28release%29)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build?view=runs) [![Test coverage -release](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/2/monotorrent-1.0?label=Test%20coverage%20%28release%29)](https://dev.azure.com/alanmcgovern0144/MonoTorrent/_build?view=runs)
 
 
 # Supported Specifications
