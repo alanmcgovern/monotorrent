@@ -30,6 +30,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -38,6 +40,7 @@ namespace MonoTorrent
     /// <summary>
     /// This class is for represting the Peer's bitfield
     /// </summary>
+    [DebuggerDisplay("{ToDebuggerString ()}")]
     public class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
@@ -69,13 +72,18 @@ namespace MonoTorrent
         public BitField (byte[] array, int length)
             : this (length)
         {
+            if (array == null)
+                throw new ArgumentNullException (nameof (array));
+            if (array.Length < 1)
+                throw new ArgumentOutOfRangeException (nameof (array), "Array length must be greater than zero");
+
             FromArray (array, 0, array.Length);
         }
 
         public BitField (int length)
         {
-            if (length < 0)
-                throw new ArgumentOutOfRangeException ("length");
+            if (length < 1)
+                throw new ArgumentOutOfRangeException ("length", "Length must be greater than zero");
 
             this.length = length;
             this.array = new int[(length + 31) / 32];
@@ -83,6 +91,12 @@ namespace MonoTorrent
 
         public BitField (bool[] array)
         {
+            if (array == null)
+                throw new ArgumentNullException (nameof (array));
+
+            if (array.Length < 1)
+                throw new ArgumentOutOfRangeException ("The array must contain at least one element", nameof (array));
+
             this.length = array.Length;
             this.array = new int[(array.Length + 31) / 32];
             for (int i = 0; i < array.Length; i++)
@@ -285,8 +299,11 @@ namespace MonoTorrent
 
         internal int CountTrue (BitField selector)
         {
+            if (selector == null)
+                throw new ArgumentNullException (nameof (selector));
+
             if (selector.Length != Length)
-                throw new ArgumentException ("The selector should be the same length as this bitfield");
+                throw new ArgumentException ("The selector should be the same length as this bitfield", nameof (selector));
 
             uint count = 0;
             for (int i = 0; i < array.Length; i++)
@@ -369,7 +386,7 @@ namespace MonoTorrent
         internal void ToByteArray (byte[] buffer, int offset)
         {
             if (buffer == null)
-                throw new ArgumentNullException ("buffer");
+                throw new ArgumentNullException (nameof (buffer));
 
             ZeroUnusedBits ();
             int end = Length / 32;
@@ -387,7 +404,8 @@ namespace MonoTorrent
             }
         }
 
-        public override string ToString ()
+        [ExcludeFromCodeCoverage]
+        string ToDebuggerString ()
         {
             StringBuilder sb = new StringBuilder (this.array.Length * 16);
             for (int i = 0; i < Length; i++) {
@@ -423,10 +441,6 @@ namespace MonoTorrent
 
         void ZeroUnusedBits ()
         {
-            if (array.Length == 0)
-                return;
-
-            // Zero the unused bits
             int shift = 32 - length % 32;
             if (shift != 0)
                 array[array.Length - 1] &= (-1 << shift);
