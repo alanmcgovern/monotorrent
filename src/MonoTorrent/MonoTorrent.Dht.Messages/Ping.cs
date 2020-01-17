@@ -35,14 +35,14 @@ namespace MonoTorrent.Dht.Messages
     {
         static readonly BEncodedString QueryName = "ping";
 
-        public Ping(NodeId id)
-            : base(id, QueryName)
+        public Ping (NodeId id)
+            : base (id, QueryName)
         {
 
         }
 
-        public Ping(BEncodedDictionary d)
-            : base(d)
+        public Ping (BEncodedDictionary d)
+            : base (d)
         {
 
         }
@@ -50,12 +50,12 @@ namespace MonoTorrent.Dht.Messages
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
             => new PingResponse (parameters);
 
-        public override void Handle(DhtEngine engine, Node node)
+        public override void Handle (DhtEngine engine, Node node)
         {
-            base.Handle(engine, node);
+            base.Handle (engine, node);
 
-            PingResponse m = new PingResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
-            engine.MessageLoop.EnqueueSend(m, node, node.EndPoint);
+            PingResponse m = new PingResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+            engine.MessageLoop.EnqueueSend (m, node, node.EndPoint);
         }
     }
 }

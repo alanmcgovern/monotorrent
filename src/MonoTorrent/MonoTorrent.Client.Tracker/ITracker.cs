@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Tracker
         bool CanAnnounce { get; }
         bool CanScrape { get; }
         int Complete { get; }
-        int Downloaded { get;}
+        int Downloaded { get; }
         string FailureMessage { get; }
         int Incomplete { get; }
         TimeSpan MinUpdateInterval { get; }
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Tracker
         Uri Uri { get; }
         string WarningMessage { get; }
 
-        Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters);
-        Task ScrapeAsync(ScrapeParameters parameters);
+        Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters);
+        Task ScrapeAsync (ScrapeParameters parameters);
     }
 }

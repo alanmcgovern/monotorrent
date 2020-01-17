@@ -27,9 +27,7 @@
 //
 
 
-using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Modes
@@ -93,21 +91,21 @@ namespace MonoTorrent.Client.Modes
                     await PausedCompletionSource.Task;
                     Cancellation.Token.ThrowIfCancellationRequested ();
 
-                    var hash = await DiskManager.GetHashAsync(Manager.Torrent, index);
+                    var hash = await DiskManager.GetHashAsync (Manager.Torrent, index);
 
                     if (Cancellation.Token.IsCancellationRequested) {
                         await DiskManager.CloseFilesAsync (Manager.Torrent);
-                        Cancellation.Token.ThrowIfCancellationRequested();
+                        Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 
-                    var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid(hash, index);
+                    var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
                     Manager.OnPieceHashed (index, hashPassed);
                 }
             } else {
                 await PausedCompletionSource.Task;
 
                 for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.OnPieceHashed(i, false);
+                    Manager.OnPieceHashed (i, false);
             }
         }
 

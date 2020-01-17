@@ -69,7 +69,7 @@ namespace MonoTorrent.Client
 
         public void AddTracker (string tracker)
         {
-            var trackers = new [] { tracker };
+            var trackers = new[] { tracker };
             Tiers.Add (new TrackerTier (trackers));
             CurrentTracker = Tiers[0].Trackers[0];
         }
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
         async Task Announce (ITracker tracker, TorrentEvent clientEvent)
         {
             if (ResponseDelay != TimeSpan.Zero)
-                await Task.Delay(ResponseDelay);
+                await Task.Delay (ResponseDelay);
 
             Announces.Add (Tuple.Create (tracker, clientEvent));
         }

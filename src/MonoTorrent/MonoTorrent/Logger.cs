@@ -29,8 +29,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
+using System.Text;
+
 using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent
@@ -39,25 +40,25 @@ namespace MonoTorrent
     {
         private static List<TraceListener> listeners;
 
-        static Logger()
+        static Logger ()
         {
-            listeners = new List<TraceListener>();
+            listeners = new List<TraceListener> ();
         }
 
-        public static void AddListener(TraceListener listener)
+        public static void AddListener (TraceListener listener)
         {
             if (listener == null)
-                throw new ArgumentNullException("listener");
+                throw new ArgumentNullException ("listener");
 
             lock (listeners)
-                listeners.Add(listener);
+                listeners.Add (listener);
         }
-		
-		public static void Flush()
-		{
-			lock (listeners)
-				listeners.ForEach (delegate (TraceListener l) { l.Flush(); } );
-		}
+
+        public static void Flush ()
+        {
+            lock (listeners)
+                listeners.ForEach (delegate (TraceListener l) { l.Flush (); });
+        }
         /*
         internal static void Log(PeerIdInternal id, string message)
         {
@@ -78,31 +79,30 @@ namespace MonoTorrent
                     listeners[i].WriteLine(p);
         }*/
 
-        [Conditional("DO_NOT_ENABLE")]
-        internal static void Log(IConnection connection, string message)
+        [Conditional ("DO_NOT_ENABLE")]
+        internal static void Log (IConnection connection, string message)
         {
-            Log(connection, message, null);
+            Log (connection, message, null);
         }
 
-        private static StringBuilder sb = new StringBuilder();
-        [Conditional("DO_NOT_ENABLE")]
-        internal static void Log(IConnection connection, string message, params object[] formatting)
+        private static StringBuilder sb = new StringBuilder ();
+        [Conditional ("DO_NOT_ENABLE")]
+        internal static void Log (IConnection connection, string message, params object[] formatting)
         {
-            lock (listeners)
-            {
-                sb.Remove(0, sb.Length);
-                sb.Append(Environment.TickCount);
-                sb.Append(": ");
+            lock (listeners) {
+                sb.Remove (0, sb.Length);
+                sb.Append (Environment.TickCount);
+                sb.Append (": ");
 
                 if (connection != null)
-                    sb.Append(connection.EndPoint.ToString());
+                    sb.Append (connection.EndPoint.ToString ());
 
                 if (formatting != null)
-                    sb.Append(string.Format(message, formatting));
+                    sb.Append (string.Format (message, formatting));
                 else
-                    sb.Append(message);
-				string s = sb.ToString();
-                listeners.ForEach(delegate(TraceListener l) { l.WriteLine(s); });
+                    sb.Append (message);
+                string s = sb.ToString ();
+                listeners.ForEach (delegate (TraceListener l) { l.WriteLine (s); });
             }
         }
     }

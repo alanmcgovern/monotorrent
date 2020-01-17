@@ -35,13 +35,14 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     class LTMetadata : ExtensionMessage
     {
-        public static readonly ExtensionSupport Support = CreateSupport("ut_metadata");
+        public static readonly ExtensionSupport Support = CreateSupport ("ut_metadata");
         private static readonly BEncodedString MessageTypeKey = "msg_type";
         private static readonly BEncodedString PieceKey = "piece";
         private static readonly BEncodedString TotalSizeKey = "total_size";
         internal static readonly int BlockSize = 16384;//16Kb
 
-        internal enum eMessageType {
+        internal enum eMessageType
+        {
             Request = 0,
             Data = 1,
             Reject = 2
@@ -55,106 +56,99 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         //and only a piece of metadata we receive message
         private byte[] metadata;
 
-        public int Piece
-        {
+        public int Piece {
             get { return piece; }
         }
 
-        public byte[] MetadataPiece
-        {
+        public byte[] MetadataPiece {
             get { return metadata; }
         }
 
-        internal eMessageType MetadataMessageType
-        {
+        internal eMessageType MetadataMessageType {
             get { return messageType; }
         }
 
         //only for register
-        public LTMetadata()
-            : base(Support.MessageId)
+        public LTMetadata ()
+            : base (Support.MessageId)
         {
 
         }
 
-        public LTMetadata(PeerId id, eMessageType type, int piece)
+        public LTMetadata (PeerId id, eMessageType type, int piece)
             : this (id, type, piece, null)
         {
 
         }
 
-        public LTMetadata(PeerId id, eMessageType type, int piece, byte[] metadata)
-            : this(id.ExtensionSupports.MessageId(Support), type, piece, metadata)
+        public LTMetadata (PeerId id, eMessageType type, int piece, byte[] metadata)
+            : this (id.ExtensionSupports.MessageId (Support), type, piece, metadata)
         {
 
         }
 
-        public LTMetadata(byte extensionId, eMessageType type, int piece, byte[] metadata)
-            : this()
+        public LTMetadata (byte extensionId, eMessageType type, int piece, byte[] metadata)
+            : this ()
         {
             ExtensionId = extensionId;
             this.messageType = type;
             this.metadata = metadata;
             this.piece = piece;
 
-            dict = new BEncodedDictionary();
-            dict.Add(MessageTypeKey, (BEncodedNumber)(int)messageType);
-            dict.Add(PieceKey, (BEncodedNumber)piece);
+            dict = new BEncodedDictionary ();
+            dict.Add (MessageTypeKey, (BEncodedNumber) (int) messageType);
+            dict.Add (PieceKey, (BEncodedNumber) piece);
 
-            if (messageType == eMessageType.Data)
-            {
-                Check.Metadata(metadata);
-                dict.Add(TotalSizeKey, (BEncodedNumber)metadata.Length);
+            if (messageType == eMessageType.Data) {
+                Check.Metadata (metadata);
+                dict.Add (TotalSizeKey, (BEncodedNumber) metadata.Length);
             }
         }
 
-        public override int ByteLength
-        {
+        public override int ByteLength {
             // 4 byte length, 1 byte BT id, 1 byte LT id, 1 byte payload
             get {
-                int length = 4 + 1 + 1 + dict.LengthInBytes();
+                int length = 4 + 1 + 1 + dict.LengthInBytes ();
                 if (messageType == eMessageType.Data)
-                    length += Math.Min(metadata.Length - piece * BlockSize, BlockSize);
+                    length += Math.Min (metadata.Length - piece * BlockSize, BlockSize);
                 return length;
             }
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
             BEncodedValue val;
-            using (RawReader reader = new RawReader(new MemoryStream(buffer, offset, length, false), false))
-            {
-                BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(reader);
+            using (RawReader reader = new RawReader (new MemoryStream (buffer, offset, length, false), false)) {
+                BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary> (reader);
                 int totalSize = 0;
 
-                if (d.TryGetValue(MessageTypeKey, out val))
-                    messageType = (eMessageType)((BEncodedNumber)val).Number;
-                if (d.TryGetValue(PieceKey, out val))
-                    piece = (int)((BEncodedNumber)val).Number;
-                if (d.TryGetValue(TotalSizeKey, out val))
-                {
-                    totalSize = (int)((BEncodedNumber)val).Number;
-                    metadata = new byte[Math.Min(totalSize - piece * BlockSize, BlockSize)];
-                    reader.Read(metadata, 0, metadata.Length);
+                if (d.TryGetValue (MessageTypeKey, out val))
+                    messageType = (eMessageType) ((BEncodedNumber) val).Number;
+                if (d.TryGetValue (PieceKey, out val))
+                    piece = (int) ((BEncodedNumber) val).Number;
+                if (d.TryGetValue (TotalSizeKey, out val)) {
+                    totalSize = (int) ((BEncodedNumber) val).Number;
+                    metadata = new byte[Math.Min (totalSize - piece * BlockSize, BlockSize)];
+                    reader.Read (metadata, 0, metadata.Length);
                 }
             }
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
-                throw new MessageException("Libtorrent extension messages not supported");
+                throw new MessageException ("Libtorrent extension messages not supported");
 
             int written = offset;
-            
-            written += Write(buffer, written, ByteLength - 4);
-            written += Write(buffer, written, ExtensionMessage.MessageId);
-            written += Write(buffer, written, ExtensionId);
-            written += dict.Encode(buffer, written);
-            if (messageType == eMessageType.Data)
-                written += Write(buffer, written, metadata, piece * BlockSize, Math.Min(metadata.Length - piece * BlockSize, BlockSize));
 
-            return CheckWritten(written - offset);
+            written += Write (buffer, written, ByteLength - 4);
+            written += Write (buffer, written, ExtensionMessage.MessageId);
+            written += Write (buffer, written, ExtensionId);
+            written += dict.Encode (buffer, written);
+            if (messageType == eMessageType.Data)
+                written += Write (buffer, written, metadata, piece * BlockSize, Math.Min (metadata.Length - piece * BlockSize, BlockSize));
+
+            return CheckWritten (written - offset);
         }
     }
 }

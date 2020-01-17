@@ -28,7 +28,6 @@
 
 
 using System;
-using System.Net;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
@@ -37,32 +36,31 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public const long InitialiseConnectionId = 0x41727101980;
         public long ConnectionId { get; private set; }
 
-        public ConnectMessage()
-            : base(0, DateTime.Now.GetHashCode())
+        public ConnectMessage ()
+            : base (0, DateTime.Now.GetHashCode ())
         {
             ConnectionId = InitialiseConnectionId; // Init connectionId as per spec
         }
 
-        public override int ByteLength
-        {
+        public override int ByteLength {
             get { return 8 + 4 + 4; }
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            ConnectionId = ReadLong(buffer, ref offset);
-            if (Action != ReadInt(buffer, ref offset))
-                ThrowInvalidActionException();
-            TransactionId = ReadInt(buffer, ref offset);
+            ConnectionId = ReadLong (buffer, ref offset);
+            if (Action != ReadInt (buffer, ref offset))
+                ThrowInvalidActionException ();
+            TransactionId = ReadInt (buffer, ref offset);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, ConnectionId);
-            written += Write(buffer, written, Action);
-            written += Write(buffer, written, TransactionId);
+            written += Write (buffer, written, ConnectionId);
+            written += Write (buffer, written, Action);
+            written += Write (buffer, written, TransactionId);
 
             return written - offset;
         }

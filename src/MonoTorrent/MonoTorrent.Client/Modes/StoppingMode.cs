@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,8 +48,8 @@ namespace MonoTorrent.Client.Modes
         {
         }
 
-        public Task WaitForStoppingToComplete()
-            => WaitForStoppingToComplete(Timeout.InfiniteTimeSpan);
+        public Task WaitForStoppingToComplete ()
+            => WaitForStoppingToComplete (Timeout.InfiniteTimeSpan);
 
         public async Task WaitForStoppingToComplete (TimeSpan timeout)
         {
@@ -59,18 +58,18 @@ namespace MonoTorrent.Client.Modes
                 foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
-                Manager.Monitor.Reset();
-                Manager.Peers.ClearAll();
-                Manager.PieceManager.Reset();
+                Manager.Monitor.Reset ();
+                Manager.Peers.ClearAll ();
+                Manager.PieceManager.Reset ();
                 Manager.finishedPieces.Clear ();
 
-                var stoppingTasks = new List<Task>();
+                var stoppingTasks = new List<Task> ();
                 stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
                 if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok) {
-                    var announceTask = Manager.TrackerManager.Announce(TorrentEvent.Stopped);
+                    var announceTask = Manager.TrackerManager.Announce (TorrentEvent.Stopped);
                     if (timeout != Timeout.InfiniteTimeSpan)
-                        announceTask = Task.WhenAny(announceTask, Task.Delay(timeout));
-                    stoppingTasks.Add(announceTask);
+                        announceTask = Task.WhenAny (announceTask, Task.Delay (timeout));
+                    stoppingTasks.Add (announceTask);
                 }
 
                 var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);

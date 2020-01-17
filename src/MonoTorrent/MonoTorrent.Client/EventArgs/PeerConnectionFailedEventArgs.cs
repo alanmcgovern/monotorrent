@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
         public Peer Peer { get; }
 
         internal ConnectionAttemptFailedEventArgs (Peer peer, ConnectionFailureReason reason, TorrentManager manager)
-            : base(manager)
+            : base (manager)
         {
             Peer = peer;
             Reason = reason;

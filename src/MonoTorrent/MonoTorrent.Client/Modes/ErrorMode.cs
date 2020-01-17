@@ -41,9 +41,9 @@ namespace MonoTorrent.Client.Modes
         {
         }
 
-        public override void Tick(int counter)
+        public override void Tick (int counter)
         {
-            Manager.Monitor.Reset();
+            Manager.Monitor.Reset ();
             foreach (var id in Manager.Peers.ConnectedPeers.ToArray ())
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
         }

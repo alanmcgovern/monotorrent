@@ -36,85 +36,84 @@ namespace MonoTorrent.Client.PieceWriters
     {
         private FileStreamBuffer streamsBuffer;
 
-        public int OpenFiles
-        {
+        public int OpenFiles {
             get { return streamsBuffer.Count; }
         }
 
-        public DiskWriter()
-            : this(10)
+        public DiskWriter ()
+            : this (10)
         {
 
         }
 
-        public DiskWriter(int maxOpenFiles)
+        public DiskWriter (int maxOpenFiles)
         {
-            streamsBuffer = new FileStreamBuffer(maxOpenFiles);
+            streamsBuffer = new FileStreamBuffer (maxOpenFiles);
         }
 
-        public void Close(TorrentFile file)
+        public void Close (TorrentFile file)
         {
-            streamsBuffer.CloseStream(file.FullPath);
+            streamsBuffer.CloseStream (file.FullPath);
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
-            streamsBuffer.Dispose();
+            streamsBuffer.Dispose ();
         }
 
-        TorrentFileStream GetStream(TorrentFile file, FileAccess access)
+        TorrentFileStream GetStream (TorrentFile file, FileAccess access)
         {
-            return streamsBuffer.GetStream(file, access);
+            return streamsBuffer.GetStream (file, access);
         }
 
-        public void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move (TorrentFile file, string newPath, bool overwrite)
         {
-            streamsBuffer.CloseStream(file.FullPath);
+            streamsBuffer.CloseStream (file.FullPath);
             if (overwrite)
-                File.Delete(newPath);
-            File.Move(file.FullPath, newPath);
+                File.Delete (newPath);
+            File.Move (file.FullPath, newPath);
         }
 
-        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File(file);
-            Check.Buffer(buffer);
+            Check.File (file);
+            Check.Buffer (buffer);
 
             if (offset < 0 || offset + count > file.Length)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException ("offset");
 
-            Stream s = GetStream(file, FileAccess.Read);
+            Stream s = GetStream (file, FileAccess.Read);
             if (s.Length < offset + count)
                 return 0;
 
             if (s.Position != offset)
-                s.Seek(offset, SeekOrigin.Begin);
-            return s.Read(buffer, bufferOffset, count);
+                s.Seek (offset, SeekOrigin.Begin);
+            return s.Read (buffer, bufferOffset, count);
         }
 
-        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File(file);
-            Check.Buffer(buffer);
+            Check.File (file);
+            Check.Buffer (buffer);
 
             if (offset < 0 || offset + count > file.Length)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException ("offset");
 
-            TorrentFileStream stream = GetStream(file, FileAccess.ReadWrite);
-            stream.Seek(offset, SeekOrigin.Begin);
-            stream.Write(buffer, bufferOffset, count);
+            TorrentFileStream stream = GetStream (file, FileAccess.ReadWrite);
+            stream.Seek (offset, SeekOrigin.Begin);
+            stream.Write (buffer, bufferOffset, count);
         }
 
-        public bool Exists(TorrentFile file)
+        public bool Exists (TorrentFile file)
         {
-            return File.Exists(file.FullPath);
+            return File.Exists (file.FullPath);
         }
 
-        public void Flush(TorrentFile file)
+        public void Flush (TorrentFile file)
         {
-            Stream s = streamsBuffer.FindStream(file.FullPath);
+            Stream s = streamsBuffer.FindStream (file.FullPath);
             if (s != null)
-                s.Flush();
+                s.Flush ();
         }
     }
 }

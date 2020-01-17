@@ -31,20 +31,17 @@ namespace MonoTorrent.Client.Messages.Standard
 {
     class MutableRequestMessage : RequestMessage
     {
-        public new int PieceIndex
-        {
+        public new int PieceIndex {
             get => base.PieceIndex;
             set => base.PieceIndex = value;
         }
 
-        public new int RequestLength
-        {
+        public new int RequestLength {
             get => base.RequestLength;
             set => base.RequestLength = value;
         }
 
-        public new int StartOffset
-        {
+        public new int StartOffset {
             get => base.StartOffset;
             set => base.StartOffset = value;
         }

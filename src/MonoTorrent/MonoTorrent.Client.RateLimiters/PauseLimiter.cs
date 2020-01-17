@@ -33,17 +33,16 @@ namespace MonoTorrent.Client.RateLimiters
     {
         TorrentManager manager;
 
-        public bool Unlimited
-        {
+        public bool Unlimited {
             get { return manager.State != TorrentState.Paused; }
         }
 
-        public PauseLimiter(TorrentManager manager)
+        public PauseLimiter (TorrentManager manager)
         {
             this.manager = manager;
         }
 
-        public bool TryProcess(long amount)
+        public bool TryProcess (long amount)
         {
             return Unlimited;
         }

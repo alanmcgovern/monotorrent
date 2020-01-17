@@ -54,8 +54,7 @@ namespace MonoTorrent
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>
-        public int Count
-        {
+        public int Count {
             get { return this.count; }
         }
 
@@ -64,7 +63,7 @@ namespace MonoTorrent
 
         #region Constructors
 
-        internal Hashes(byte[] hashData, int count)
+        internal Hashes (byte[] hashData, int count)
         {
             this.hashData = hashData;
             this.count = count;
@@ -81,16 +80,16 @@ namespace MonoTorrent
         /// <param name="hash">Hash code to check</param>
         /// <param name="hashIndex">Index of hash/piece to verify against</param>
         /// <returns>true iff hash is equal to our stored hash, false otherwise</returns>
-        public bool IsValid(byte[] hash, int hashIndex)
+        public bool IsValid (byte[] hash, int hashIndex)
         {
             if (hash == null)
-                throw new ArgumentNullException("hash");
+                throw new ArgumentNullException ("hash");
 
             if (hash.Length != HashCodeLength)
-                throw new ArgumentException(string.Format("Hash must be {0} bytes in length", HashCodeLength), "hash");
+                throw new ArgumentException (string.Format ("Hash must be {0} bytes in length", HashCodeLength), "hash");
 
             if (hashIndex < 0 || hashIndex > count)
-                throw new ArgumentOutOfRangeException("hashIndex", string.Format("hashIndex must be between 0 and {0}", count)); 
+                throw new ArgumentOutOfRangeException ("hashIndex", string.Format ("hashIndex must be between 0 and {0}", count));
 
             int start = hashIndex * HashCodeLength;
             for (int i = 0; i < HashCodeLength; i++)
@@ -105,14 +104,14 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
-        public byte[] ReadHash(int hashIndex)
+        public byte[] ReadHash (int hashIndex)
         {
             if (hashIndex < 0 || hashIndex >= count)
-                throw new ArgumentOutOfRangeException("hashIndex");
+                throw new ArgumentOutOfRangeException ("hashIndex");
 
             // Read out our specified piece's hash data
             byte[] hash = new byte[HashCodeLength];
-            Buffer.BlockCopy(this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
+            Buffer.BlockCopy (this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;
         }

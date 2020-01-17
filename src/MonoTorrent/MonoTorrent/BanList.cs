@@ -38,77 +38,77 @@ namespace MonoTorrent.Client
         public readonly int Start;
         public readonly int End;
 
-        public AddressRange(int start, int end)
+        public AddressRange (int start, int end)
         {
             Start = start;
             End = end;
         }
 
-        public AddressRange(IPAddress start, IPAddress end)
+        public AddressRange (IPAddress start, IPAddress end)
         {
-            Start = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(start.GetAddressBytes(), 0)));
-            End = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(end.GetAddressBytes(), 0)));
+            Start = (IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (start.GetAddressBytes (), 0)));
+            End = (IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (end.GetAddressBytes (), 0)));
         }
 
-        public bool Contains(int value)
+        public bool Contains (int value)
         {
             return value >= Start && value <= End;
         }
 
-        public bool Contains(AddressRange range)
+        public bool Contains (AddressRange range)
         {
             return range.Start >= Start && range.End <= End;
         }
 
-        public override string ToString()
+        public override string ToString ()
         {
-            return string.Format("{0},{1}", Start, End);
+            return string.Format ("{0},{1}", Start, End);
         }
     }
 
     public class BanList
     {
-        RangeCollection addresses = new RangeCollection();
+        RangeCollection addresses = new RangeCollection ();
 
-        public void Add(IPAddress address)
+        public void Add (IPAddress address)
         {
-            Check.Address(address);
-            Add(new AddressRange(address, address));
+            Check.Address (address);
+            Add (new AddressRange (address, address));
         }
 
-        public void Add(AddressRange addressRange)
+        public void Add (AddressRange addressRange)
         {
-            addresses.Add(addressRange);
+            addresses.Add (addressRange);
         }
 
-        public void AddRange(IEnumerable<AddressRange> addressRanges)
+        public void AddRange (IEnumerable<AddressRange> addressRanges)
         {
-            Check.AddressRanges(addressRanges);
-            addresses.AddRange(addressRanges);
+            Check.AddressRanges (addressRanges);
+            addresses.AddRange (addressRanges);
         }
 
-        public bool IsBanned(IPAddress address)
+        public bool IsBanned (IPAddress address)
         {
-            Check.Address(address);
-            return addresses.Contains(new AddressRange(address, address));
+            Check.Address (address);
+            return addresses.Contains (new AddressRange (address, address));
         }
 
-        void Remove(AddressRange addressRange)
+        void Remove (AddressRange addressRange)
         {
-            addresses.Remove(addressRange);
+            addresses.Remove (addressRange);
         }
 
-        public void Remove(IPAddress address)
+        public void Remove (IPAddress address)
         {
-            Check.Address(address);
-            Remove(new AddressRange(address, address));
+            Check.Address (address);
+            Remove (new AddressRange (address, address));
         }
 
-        public void Remove(IEnumerable<AddressRange> addressRanges)
+        public void Remove (IEnumerable<AddressRange> addressRanges)
         {
-            Check.AddressRanges(addressRanges);
+            Check.AddressRanges (addressRanges);
             foreach (AddressRange address in addressRanges)
-                Remove(address);
+                Remove (address);
         }
     }
 }

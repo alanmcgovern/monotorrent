@@ -33,41 +33,39 @@ using NUnit.Framework;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-	public class MemoryWriterTests
-	{
+    public class MemoryWriterTests
+    {
         MemoryWriter level1;
         MemoryWriter level2;
 
         TorrentFile file;
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
             file = new TorrentFile ("Relative/Path.txt", Piece.BlockSize * 5);
 
-            level2 = new MemoryWriter(new NullWriter(), Piece.BlockSize * 3);
-            level1 = new MemoryWriter(level2, Piece.BlockSize * 3);
+            level2 = new MemoryWriter (new NullWriter (), Piece.BlockSize * 3);
+            level1 = new MemoryWriter (level2, Piece.BlockSize * 3);
         }
 
         [Test]
-        public void FillFirstBuffer()
+        public void FillFirstBuffer ()
         {
             // Write 4 blocks to the stream and then verify they can all be read
-            for (int i = 0; i < 4; i++)
-            {
-                var buffer = Enumerable.Repeat ((byte)(i + 1), Piece.BlockSize).ToArray ();
-                level1.Write(file, Piece.BlockSize * i, buffer, 0, buffer.Length);
+            for (int i = 0; i < 4; i++) {
+                var buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
+                level1.Write (file, Piece.BlockSize * i, buffer, 0, buffer.Length);
             }
 
             Assert.AreEqual (Piece.BlockSize * 3, level1.CacheUsed, "#1");
             Assert.AreEqual (Piece.BlockSize, level2.CacheUsed, "#2");
 
             // Read them all back out and verify them
-            for (int i = 0; i < 4; i++)
-            {
+            for (int i = 0; i < 4; i++) {
                 var buffer = new byte[Piece.BlockSize];
-                level1.Read(file, Piece.BlockSize * i, buffer, 0, Piece.BlockSize);
-                Assert.That (buffer, Is.All.EqualTo ((byte)(i + 1)));
+                level1.Read (file, Piece.BlockSize * i, buffer, 0, Piece.BlockSize);
+                Assert.That (buffer, Is.All.EqualTo ((byte) (i + 1)));
             }
             Assert.AreEqual (Piece.BlockSize * 3, level1.CacheHits, "#3");
             Assert.AreEqual (Piece.BlockSize, level1.CacheMisses, "#4");
@@ -75,25 +73,25 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
-        public void ReadWriteBlock()
+        public void ReadWriteBlock ()
         {
             var buffer = Enumerable.Repeat ((byte) 55, Piece.BlockSize).ToArray ();
-            level1.Write(file, 0, buffer, 0, buffer.Length);
+            level1.Write (file, 0, buffer, 0, buffer.Length);
 
             buffer = new byte[Piece.BlockSize];
-            level1.Read(file, 0, buffer, 0, buffer.Length);
+            level1.Read (file, 0, buffer, 0, buffer.Length);
             Assert.That (buffer, Is.All.EqualTo (55));
         }
 
         [Test]
-        public void ReadWriteBlockChangeOriginal()
+        public void ReadWriteBlockChangeOriginal ()
         {
             var buffer = Enumerable.Repeat ((byte) 5, Piece.BlockSize).ToArray ();
-            level1.Write(file, 0, buffer, 0, buffer.Length);
+            level1.Write (file, 0, buffer, 0, buffer.Length);
 
             buffer = new byte[Piece.BlockSize];
-            level1.Read(file, 0, buffer, 0, buffer.Length);
-            Assert.That(buffer, Is.All.EqualTo ((byte)5), "#2");
+            level1.Read (file, 0, buffer, 0, buffer.Length);
+            Assert.That (buffer, Is.All.EqualTo ((byte) 5), "#2");
         }
-	}
+    }
 }

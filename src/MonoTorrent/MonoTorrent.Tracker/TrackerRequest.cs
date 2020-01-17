@@ -57,11 +57,11 @@ namespace MonoTorrent.Tracker
         /// </summary>
         public IPAddress RemoteAddress { get; protected set; }
 
-        protected TrackerRequest(NameValueCollection parameters, IPAddress remoteAddress)
+        protected TrackerRequest (NameValueCollection parameters, IPAddress remoteAddress)
         {
             Parameters = parameters;
             RemoteAddress = remoteAddress;
-            Response = new BEncodedDictionary();
+            Response = new BEncodedDictionary ();
         }
     }
 }

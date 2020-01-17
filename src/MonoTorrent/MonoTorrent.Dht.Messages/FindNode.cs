@@ -36,38 +36,37 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString TargetKey = "target";
         static readonly BEncodedString QueryName = "find_node";
 
-        public NodeId Target
-        {
-            get { return new NodeId((BEncodedString)Parameters[TargetKey]); }
+        public NodeId Target {
+            get { return new NodeId ((BEncodedString) Parameters[TargetKey]); }
         }
-        
-        public FindNode(NodeId id, NodeId target)
-            : base(id, QueryName)
+
+        public FindNode (NodeId id, NodeId target)
+            : base (id, QueryName)
         {
-            Parameters.Add(TargetKey, target.BencodedString());
+            Parameters.Add (TargetKey, target.BencodedString ());
         }
-        
-        public FindNode(BEncodedDictionary d)
-            :base(d)
+
+        public FindNode (BEncodedDictionary d)
+            : base (d)
         {
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
             => new FindNodeResponse (parameters);
 
-        public override void Handle(DhtEngine engine, Node node)
+        public override void Handle (DhtEngine engine, Node node)
         {
-            base.Handle(engine, node);
+            base.Handle (engine, node);
 
-            FindNodeResponse response = new FindNodeResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
+            FindNodeResponse response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
 
-            Node targetNode = engine.RoutingTable.FindNode(Target);
+            Node targetNode = engine.RoutingTable.FindNode (Target);
             if (targetNode != null)
-                response.Nodes = targetNode.CompactNode();
+                response.Nodes = targetNode.CompactNode ();
             else
-                response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(Target));
-            
-            engine.MessageLoop.EnqueueSend(response, node, node.EndPoint);
+                response.Nodes = Node.CompactNode (engine.RoutingTable.GetClosest (Target));
+
+            engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
         }
     }
 }

@@ -31,6 +31,6 @@ namespace MonoTorrent
 {
     interface ICacheable
     {
-        void Initialise();
+        void Initialise ();
     }
 }

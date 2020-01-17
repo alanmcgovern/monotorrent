@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Tracker
@@ -53,8 +52,8 @@ namespace MonoTorrent.Client.Tracker
         protected Tracker (Uri uri)
         {
             LastAnnounced = new ValueStopwatch ();
-            MinUpdateInterval = TimeSpan.FromMinutes(3);
-            UpdateInterval = TimeSpan.FromMinutes(30);
+            MinUpdateInterval = TimeSpan.FromMinutes (3);
+            UpdateInterval = TimeSpan.FromMinutes (30);
             Uri = uri ?? throw new ArgumentNullException (nameof (uri));
             FailureMessage = "";
             WarningMessage = "";

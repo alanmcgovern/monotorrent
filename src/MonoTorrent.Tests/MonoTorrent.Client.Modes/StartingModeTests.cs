@@ -27,7 +27,6 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -48,9 +47,9 @@ namespace MonoTorrent.Client.Modes
         ManualTrackerManager TrackerManager { get; set; }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            conn = new ConnectionPair().WithTimeout ();
+            conn = new ConnectionPair ().WithTimeout ();
             Settings = new EngineSettings ();
             PieceWriter = new TestWriter ();
             DiskManager = new DiskManager (Settings, PieceWriter);
@@ -68,9 +67,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            conn.Dispose();
+            conn.Dispose ();
             DiskManager.Dispose ();
         }
 
@@ -140,7 +139,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public async Task FastResume_NoneExist()
+        public async Task FastResume_NoneExist ()
         {
             var bf = Manager.Bitfield.Clone ().SetAll (true);
             Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
@@ -153,20 +152,20 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = startingMode;
             await startingMode.WaitForStartingToComplete ();
 
-            Assert.IsTrue(Manager.Bitfield.AllFalse, "#3");
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#3");
             foreach (var file in Manager.Torrent.Files)
-                Assert.IsTrue(file.BitField.AllFalse, "#4." + file.Path);
+                Assert.IsTrue (file.BitField.AllFalse, "#4." + file.Path);
         }
 
         [Test]
-        public async Task FastResume_SomeExist()
+        public async Task FastResume_SomeExist ()
         {
-            PieceWriter.FilesThatExist.AddRange(new[]{
+            PieceWriter.FilesThatExist.AddRange (new[]{
                 Manager.Torrent.Files [0],
                 Manager.Torrent.Files [2],
             });
             var bf = Manager.Bitfield.Clone ().SetAll (true);
-            Manager.LoadFastResume(new FastResume(Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (TorrentFile file in Manager.Torrent.Files)
@@ -176,9 +175,9 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
 
-            Assert.IsTrue(Manager.Bitfield.AllFalse, "#3");
+            Assert.IsTrue (Manager.Bitfield.AllFalse, "#3");
             foreach (TorrentFile file in Manager.Torrent.Files)
-                Assert.IsTrue(file.BitField.AllFalse, "#4." + file.Path);
+                Assert.IsTrue (file.BitField.AllFalse, "#4." + file.Path);
         }
     }
 }

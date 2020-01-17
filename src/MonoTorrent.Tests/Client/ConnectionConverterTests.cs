@@ -31,9 +31,9 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
-using ReusableTasks;
-
 using NUnit.Framework;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
@@ -43,104 +43,104 @@ namespace MonoTorrent.Client.Connections
         [Test]
         public void ConvertNull ()
         {
-            Assert.IsNull(ConnectionConverter.Convert(null));
+            Assert.IsNull (ConnectionConverter.Convert (null));
         }
 
         [Test]
         public void ConvertV1 ()
         {
-            Assert.IsInstanceOf<V1ToV2Converter> (ConnectionConverter.Convert(new V1Connection ()));
+            Assert.IsInstanceOf<V1ToV2Converter> (ConnectionConverter.Convert (new V1Connection ()));
         }
 
         [Test]
         public void ConvertV2 ()
         {
-            var v2 = new V2Connection();
-            Assert.AreSame (v2, ConnectionConverter.Convert(v2));
+            var v2 = new V2Connection ();
+            Assert.AreSame (v2, ConnectionConverter.Convert (v2));
         }
 
         class V2Connection : IConnection2
         {
-            public byte[] AddressBytes => throw new NotImplementedException();
+            public byte[] AddressBytes => throw new NotImplementedException ();
 
-            public bool Connected => throw new NotImplementedException();
+            public bool Connected => throw new NotImplementedException ();
 
-            public bool CanReconnect => throw new NotImplementedException();
+            public bool CanReconnect => throw new NotImplementedException ();
 
-            public bool IsIncoming => throw new NotImplementedException();
+            public bool IsIncoming => throw new NotImplementedException ();
 
-            public EndPoint EndPoint => throw new NotImplementedException();
+            public EndPoint EndPoint => throw new NotImplementedException ();
 
-            public Uri Uri => throw new NotImplementedException();
+            public Uri Uri => throw new NotImplementedException ();
 
-            public ReusableTask ConnectAsync()
+            public ReusableTask ConnectAsync ()
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            public void Dispose()
+            public void Dispose ()
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            public ReusableTask<int> ReceiveAsync(byte[] buffer, int offset, int count)
+            public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            public ReusableTask<int> SendAsync(byte[] buffer, int offset, int count)
+            public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            Task IConnection.ConnectAsync()
+            Task IConnection.ConnectAsync ()
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            Task<int> IConnection.ReceiveAsync(byte[] buffer, int offset, int count)
+            Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            Task<int> IConnection.SendAsync(byte[] buffer, int offset, int count)
+            Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
         }
 
         class V1Connection : IConnection
         {
-            public byte[] AddressBytes => throw new NotImplementedException();
+            public byte[] AddressBytes => throw new NotImplementedException ();
 
-            public bool Connected => throw new NotImplementedException();
+            public bool Connected => throw new NotImplementedException ();
 
-            public bool CanReconnect => throw new NotImplementedException();
+            public bool CanReconnect => throw new NotImplementedException ();
 
-            public bool IsIncoming => throw new NotImplementedException();
+            public bool IsIncoming => throw new NotImplementedException ();
 
-            public EndPoint EndPoint => throw new NotImplementedException();
+            public EndPoint EndPoint => throw new NotImplementedException ();
 
-            public Uri Uri => throw new NotImplementedException();
+            public Uri Uri => throw new NotImplementedException ();
 
-            public Task ConnectAsync()
+            public Task ConnectAsync ()
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            public void Dispose()
+            public void Dispose ()
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+            public Task<int> ReceiveAsync (byte[] buffer, int offset, int count)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
 
-            public Task<int> SendAsync(byte[] buffer, int offset, int count)
+            public Task<int> SendAsync (byte[] buffer, int offset, int count)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException ();
             }
         }
     }

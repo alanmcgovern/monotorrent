@@ -57,5 +57,5 @@ namespace MonoTorrent.Dht.Listeners
         /// <returns></returns>
         public static IDhtListener CreateUdp (IPEndPoint endpoint)
             => new DhtListener (endpoint);
-        }
+    }
 }

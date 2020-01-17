@@ -33,42 +33,42 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class ScrapeMessage : UdpTrackerMessage
     {
-        public override int ByteLength  => 8 + 4 + 4 + InfoHashes.Count * 20;
+        public override int ByteLength => 8 + 4 + 4 + InfoHashes.Count * 20;
         long ConnectionId { get; set; }
         public List<byte[]> InfoHashes { get; }
 
-        public ScrapeMessage()
-            : this(0, 0, new List<byte[]>())
+        public ScrapeMessage ()
+            : this (0, 0, new List<byte[]> ())
         {
 
         }
 
-        public ScrapeMessage(int transactionId, long connectionId, List<byte[]> infohashes)
+        public ScrapeMessage (int transactionId, long connectionId, List<byte[]> infohashes)
             : base (2, transactionId)
         {
             ConnectionId = connectionId;
             InfoHashes = infohashes;
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            ConnectionId = ReadLong(buffer, ref offset);
-            if (Action != ReadInt(buffer, ref offset))
-                throw new MessageException("Udp message decoded incorrectly");
-            TransactionId = ReadInt(buffer, ref offset);
-            while(offset <= (length - 20))
-                InfoHashes.Add(ReadBytes(buffer, ref offset, 20));
+            ConnectionId = ReadLong (buffer, ref offset);
+            if (Action != ReadInt (buffer, ref offset))
+                throw new MessageException ("Udp message decoded incorrectly");
+            TransactionId = ReadInt (buffer, ref offset);
+            while (offset <= (length - 20))
+                InfoHashes.Add (ReadBytes (buffer, ref offset, 20));
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, ConnectionId);
-            written += Write(buffer, written, Action);
-            written += Write(buffer, written, TransactionId);
+            written += Write (buffer, written, ConnectionId);
+            written += Write (buffer, written, Action);
+            written += Write (buffer, written, TransactionId);
             for (int i = 0; i < InfoHashes.Count; i++)
-                written += Write(buffer, written, InfoHashes[i]);
+                written += Write (buffer, written, InfoHashes[i]);
 
             return written - offset;
         }

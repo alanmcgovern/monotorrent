@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Connections
                         args.SetBuffer (buffer, 0, buffer.Length);
                         args.Completed += Handler;
                     }
-                } else  {
+                } else {
                     if (otherCache.Count == 0) {
                         args = new SocketAsyncEventArgs ();
                         args.Completed += Handler;
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.Connections
 
         #region Member Variables
 
-        public byte[] AddressBytes => EndPoint.Address.GetAddressBytes();
+        public byte[] AddressBytes => EndPoint.Address.GetAddressBytes ();
 
         public bool CanReconnect => !IsIncoming;
 
@@ -108,21 +108,21 @@ namespace MonoTorrent.Client.Connections
 
         public Uri Uri { get; protected set; }
 
-		#endregion
+        #endregion
 
 
-		#region Constructors
+        #region Constructors
 
-		protected SocketConnection(Uri uri)
-            : this (new Socket((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp),
-                  new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port), false)
+        protected SocketConnection (Uri uri)
+            : this (new Socket ((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp),
+                  new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port), false)
 
         {
             Uri = uri;
         }
 
-        protected SocketConnection(Socket socket, bool isIncoming)
-            : this(socket, (IPEndPoint)socket.RemoteEndPoint, isIncoming)
+        protected SocketConnection (Socket socket, bool isIncoming)
+            : this (socket, (IPEndPoint) socket.RemoteEndPoint, isIncoming)
         {
 
         }
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.Connections
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (ReusableTaskCompletionSource<int>)e.UserToken;
+            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken;
             var error = e.SocketError;
             var transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
@@ -148,18 +148,18 @@ namespace MonoTorrent.Client.Connections
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferPool, then we should put it back in the 'other' cache.
-            if (e.Buffer == null || !ClientEngine.BufferPool.Owns(e.Buffer))  {
+            if (e.Buffer == null || !ClientEngine.BufferPool.Owns (e.Buffer)) {
                 lock (bufferCache) {
                     if (e.Buffer != null)
-                        e.SetBuffer(null, 0, 0);
-                    otherCache.Enqueue(e);
+                        e.SetBuffer (null, 0, 0);
+                    otherCache.Enqueue (e);
                 }
             }
 
             if (error != SocketError.Success)
-                tcs.SetException(new SocketException((int) error));
+                tcs.SetException (new SocketException ((int) error));
             else
-                tcs.SetResult(transferred);
+                tcs.SetResult (transferred);
         }
 
         #endregion
@@ -177,7 +177,7 @@ namespace MonoTorrent.Client.Connections
             args.RemoteEndPoint = EndPoint;
             args.UserToken = tcs;
 
-            if (!Socket.ConnectAsync(args))
+            if (!Socket.ConnectAsync (args))
                 tcs.SetResult (0);
 
             await tcs.Task;
@@ -203,7 +203,7 @@ namespace MonoTorrent.Client.Connections
                 control = ExecutionContext.SuppressFlow ();
 
             try {
-                if (!Socket.ReceiveAsync(args))
+                if (!Socket.ReceiveAsync (args))
                     ReceiveTcs.SetResult (args.BytesTransferred);
             } finally {
                 if (control.HasValue)
@@ -233,7 +233,7 @@ namespace MonoTorrent.Client.Connections
                 control = ExecutionContext.SuppressFlow ();
 
             try {
-                if (!Socket.SendAsync(args))
+                if (!Socket.SendAsync (args))
                     SendTcs.SetResult (count);
             } finally {
                 if (control.HasValue)
@@ -243,9 +243,9 @@ namespace MonoTorrent.Client.Connections
             return SendTcs.Task;
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
-            Socket?.SafeDispose();
+            Socket?.SafeDispose ();
             Socket = null;
         }
 

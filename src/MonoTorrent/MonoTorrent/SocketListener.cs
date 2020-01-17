@@ -37,7 +37,7 @@ namespace MonoTorrent
 
         protected IPEndPoint OriginalEndPoint { get; set; }
 
-		protected SocketListener(IPEndPoint endPoint)
+        protected SocketListener (IPEndPoint endPoint)
         {
             EndPoint = OriginalEndPoint = endPoint;
         }

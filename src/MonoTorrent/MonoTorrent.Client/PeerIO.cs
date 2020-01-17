@@ -35,6 +35,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.RateLimiters;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client
@@ -97,13 +98,12 @@ namespace MonoTorrent.Client
                 decryptor.Decrypt (messageBuffer, messageLength, messageBody);
                 // FIXME: manager should never be null, except some of the unit tests do that.
                 var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager?.Torrent);
-                if (data is PieceMessage msg)
-                {
-                    monitor?.ProtocolDown.AddDelta(-msg.RequestLength);
-                    manager?.Monitor.ProtocolDown.AddDelta(-msg.RequestLength);
+                if (data is PieceMessage msg) {
+                    monitor?.ProtocolDown.AddDelta (-msg.RequestLength);
+                    manager?.Monitor.ProtocolDown.AddDelta (-msg.RequestLength);
 
-                    monitor?.DataDown.AddDelta(msg.RequestLength);
-                    manager?.Monitor.DataDown.AddDelta(msg.RequestLength);
+                    monitor?.DataDown.AddDelta (msg.RequestLength);
+                    manager?.Monitor.DataDown.AddDelta (msg.RequestLength);
                 }
                 return data;
             } finally {
@@ -126,13 +126,12 @@ namespace MonoTorrent.Client
 
                 // Assume protocol first, then swap it to data once we successfully send the data bytes.
                 await NetworkIO.SendAsync (connection, buffer, 0, count, pieceMessage == null ? null : rateLimiter, peerMonitor?.DataUp, managerMonitor?.DataUp).ConfigureAwait (false);
-                if (pieceMessage != null)
-                {
-                    peerMonitor?.ProtocolUp.AddDelta(-pieceMessage.RequestLength);
-                    managerMonitor?.ProtocolUp.AddDelta(-pieceMessage.RequestLength);
+                if (pieceMessage != null) {
+                    peerMonitor?.ProtocolUp.AddDelta (-pieceMessage.RequestLength);
+                    managerMonitor?.ProtocolUp.AddDelta (-pieceMessage.RequestLength);
 
-                    peerMonitor?.DataUp.AddDelta(pieceMessage.RequestLength);
-                    managerMonitor?.DataUp.AddDelta(pieceMessage.RequestLength);
+                    peerMonitor?.DataUp.AddDelta (pieceMessage.RequestLength);
+                    managerMonitor?.DataUp.AddDelta (pieceMessage.RequestLength);
                 }
             } finally {
                 ClientEngine.BufferPool.Return (buffer);

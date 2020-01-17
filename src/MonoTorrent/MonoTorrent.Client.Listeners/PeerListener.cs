@@ -43,28 +43,28 @@ namespace MonoTorrent.Client.Listeners
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
 
-        public PeerListener(IPEndPoint endpoint)
-            : base(endpoint)
+        public PeerListener (IPEndPoint endpoint)
+            : base (endpoint)
         {
         }
 
-        protected override void Start(CancellationToken token)
+        protected override void Start (CancellationToken token)
         {
-            var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var connectArgs = new SocketAsyncEventArgs ();
             token.Register (() => {
                 listener.Close ();
                 connectArgs.Dispose ();
             });
 
-            listener.Bind(OriginalEndPoint);
+            listener.Bind (OriginalEndPoint);
             EndPoint = (IPEndPoint) listener.LocalEndPoint;
 
-            listener.Listen(6);
+            listener.Listen (6);
 
             connectArgs.Completed += OnSocketReceived;
 
-            if (!listener.AcceptAsync(connectArgs))
+            if (!listener.AcceptAsync (connectArgs))
                 OnSocketReceived (listener, connectArgs);
         }
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.Listeners
             Socket socket = null;
             try {
                 if (e.SocketError != SocketError.Success)
-                    throw new SocketException ((int)e.SocketError);
+                    throw new SocketException ((int) e.SocketError);
                 socket = e.AcceptSocket;
                 // This is a crazy quirk of the API. We need to null this
                 // out if we re-use the args.
@@ -81,18 +81,18 @@ namespace MonoTorrent.Client.Listeners
 
                 IConnection connection;
                 if (socket.AddressFamily == AddressFamily.InterNetwork)
-                    connection = new IPV4Connection(socket, true);
+                    connection = new IPV4Connection (socket, true);
                 else
-                    connection = new IPV6Connection(socket, true);
+                    connection = new IPV6Connection (socket, true);
 
-                var peer = new Peer("", connection.Uri, EncryptionTypes.All);
-                ConnectionReceived?.Invoke (this, new NewConnectionEventArgs(peer, connection, null));
+                var peer = new Peer ("", connection.Uri, EncryptionTypes.All);
+                ConnectionReceived?.Invoke (this, new NewConnectionEventArgs (peer, connection, null));
             } catch {
-                socket?.Close();
+                socket?.Close ();
             }
 
             try {
-                if (!((Socket)sender).AcceptAsync(e))
+                if (!((Socket) sender).AcceptAsync (e))
                     OnSocketReceived (sender, e);
             } catch {
                 return;

@@ -44,18 +44,18 @@ namespace MonoTorrent.Client
         {
             public bool exist, close, flush, move, read, write;
 
-            public List<TorrentFile> FlushedFiles = new List<TorrentFile>();
+            public List<TorrentFile> FlushedFiles = new List<TorrentFile> ();
 
-            public void Close(TorrentFile file)
+            public void Close (TorrentFile file)
             {
                 if (close)
-                    throw new Exception("close");
+                    throw new Exception ("close");
             }
 
-            public bool Exists(TorrentFile file)
+            public bool Exists (TorrentFile file)
             {
                 if (exist)
-                    throw new Exception("exists");
+                    throw new Exception ("exists");
                 return true;
             }
 
@@ -64,56 +64,56 @@ namespace MonoTorrent.Client
 
             }
 
-            public void Flush(TorrentFile file)
+            public void Flush (TorrentFile file)
             {
                 if (flush)
-                    throw new Exception("flush");
+                    throw new Exception ("flush");
                 FlushedFiles.Add (file);
             }
 
-            public void Move(TorrentFile file, string newPath, bool overwrite)
+            public void Move (TorrentFile file, string newPath, bool overwrite)
             {
                 if (move)
-                    throw new Exception("move");
+                    throw new Exception ("move");
             }
 
-            public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 if (read)
-                    throw new Exception("read");
+                    throw new Exception ("read");
                 return count;
             }
 
-            public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 if (write)
-                    throw new Exception("write");
+                    throw new Exception ("write");
             }
         }
 
         class TestTorrentData : ITorrentData
         {
-            public TorrentFile [] Files { get; set; }
+            public TorrentFile[] Files { get; set; }
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }
 
-        byte [] buffer; 
+        byte[] buffer;
         TestTorrentData data;
         DiskManager diskManager;
         ExceptionWriter writer;
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            var files = new [] {
+            var files = new[] {
                 new TorrentFile ("First",  Piece.BlockSize / 2),
                 new TorrentFile ("Second", Piece.BlockSize),
                 new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
                 new TorrentFile ("Fourth", Piece.BlockSize * 2 + Piece.BlockSize / 2),
             };
 
-            buffer = new byte [Piece.BlockSize];
+            buffer = new byte[Piece.BlockSize];
             data = new TestTorrentData {
                 Files = files,
                 Size = files.Sum (f => f.Length),
@@ -125,52 +125,52 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void CheckAnyFilesExistsFail()
+        public void CheckAnyFilesExistsFail ()
         {
             writer.exist = true;
             Assert.ThrowsAsync<Exception> (() => diskManager.CheckAnyFilesExistAsync (data));
         }
 
         [Test]
-        public void CheckFileExistsFail()
+        public void CheckFileExistsFail ()
         {
             writer.exist = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.CheckFileExistsAsync (data.Files [0]));
+            Assert.ThrowsAsync<Exception> (() => diskManager.CheckFileExistsAsync (data.Files[0]));
         }
 
         [Test]
-        public void CloseFail()
+        public void CloseFail ()
         {
             writer.close = true;
             Assert.ThrowsAsync<Exception> (() => diskManager.CloseFilesAsync (data));
         }
 
         [Test]
-        public void MoveFileFail()
+        public void MoveFileFail ()
         {
             writer.move = true;
             Assert.ThrowsAsync<Exception> (() => diskManager.MoveFileAsync (data.Files[0], "root"));
         }
 
         [Test]
-        public void MoveFilesFail()
+        public void MoveFilesFail ()
         {
             writer.move = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFilesAsync(data, "root", true));
+            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFilesAsync (data, "root", true));
         }
 
         [Test]
-        public void ReadFail()
+        public void ReadFail ()
         {
             writer.read = true;
             Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, 0, buffer, buffer.Length).AsTask ());
         }
 
         [Test]
-        public void WriteFail()
+        public void WriteFail ()
         {
             writer.write = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync(data, 0, buffer, buffer.Length).AsTask ());
+            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync (data, 0, buffer, buffer.Length).AsTask ());
         }
     }
 }

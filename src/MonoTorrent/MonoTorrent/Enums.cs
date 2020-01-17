@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         HashingPaused,
         Stopping,
         Error,
-		Metadata
+        Metadata
     }
 }
 
@@ -99,10 +99,10 @@ namespace MonoTorrent
         Completed
     }
 
-	enum PeerListType
-	{
-		NascentPeers,
-		CandidatePeers,
-		OptimisticUnchokeCandidatePeers
-	}
+    enum PeerListType
+    {
+        NascentPeers,
+        CandidatePeers,
+        OptimisticUnchokeCandidatePeers
+    }
 }

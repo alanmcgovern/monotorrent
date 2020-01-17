@@ -34,36 +34,35 @@ namespace MonoTorrent.Client.PiecePicking
 {
     class TestPicker : PiecePicker
     {
-        public List<BitField> IsInterestingBitfield = new List<BitField>();
-        public List<IPieceRequester> PickPieceId = new List<IPieceRequester>();
-        public List<BitField> PickPieceBitfield = new List<BitField>();
-        public List<IReadOnlyList<IPieceRequester>> PickPiecePeers = new List<IReadOnlyList<IPieceRequester>>();
-        public List<Tuple<int, int>> PickedIndex = new List<Tuple<int, int>>();
-        public List<int> PickPieceCount = new List<int>();
+        public List<BitField> IsInterestingBitfield = new List<BitField> ();
+        public List<IPieceRequester> PickPieceId = new List<IPieceRequester> ();
+        public List<BitField> PickPieceBitfield = new List<BitField> ();
+        public List<IReadOnlyList<IPieceRequester>> PickPiecePeers = new List<IReadOnlyList<IPieceRequester>> ();
+        public List<Tuple<int, int>> PickedIndex = new List<Tuple<int, int>> ();
+        public List<int> PickPieceCount = new List<int> ();
 
-        public List<int> PickedPieces = new List<int>();
+        public List<int> PickedPieces = new List<int> ();
 
         public bool ReturnNoPiece = true;
-        public TestPicker()
-            : base(null)
+        public TestPicker ()
+            : base (null)
         {
         }
 
-        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            PickPieceId.Add(peer);
-            BitField clone = new BitField(available.Length);
-            clone.Or(available);
-            PickPieceBitfield.Add(clone);
-            PickPiecePeers.Add(otherPeers);
+            PickPieceId.Add (peer);
+            BitField clone = new BitField (available.Length);
+            clone.Or (available);
+            PickPieceBitfield.Add (clone);
+            PickPiecePeers.Add (otherPeers);
             PickedIndex.Add (Tuple.Create (startIndex, endIndex));
-            PickPieceCount.Add(count);
+            PickPieceCount.Add (count);
 
-            for (int i = startIndex; i < endIndex; i++)
-            {
-                if (PickedPieces.Contains(i))
+            for (int i = startIndex; i < endIndex; i++) {
+                if (PickedPieces.Contains (i))
                     continue;
-                PickedPieces.Add(i);
+                PickedPieces.Add (i);
                 if (ReturnNoPiece)
                     return null;
                 else
@@ -72,14 +71,14 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            
+
         }
 
-        public override bool IsInteresting(BitField bitfield)
+        public override bool IsInteresting (BitField bitfield)
         {
-            IsInterestingBitfield.Add(bitfield);
+            IsInterestingBitfield.Add (bitfield);
             return !bitfield.AllFalse;
         }
     }

@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MonoTorrent.Client
 {
@@ -10,23 +8,21 @@ namespace MonoTorrent.Client
         private Exception ex;
 
 
-        public ClientEngine Engine
-        {
+        public ClientEngine Engine {
             get { return engine; }
         }
 
-        public Exception Exception
-        {
+        public Exception Exception {
             get { return ex; }
         }
 
 
-        public CriticalExceptionEventArgs(Exception ex, ClientEngine engine)
+        public CriticalExceptionEventArgs (Exception ex, ClientEngine engine)
         {
             if (ex == null)
-                throw new ArgumentNullException("ex");
+                throw new ArgumentNullException ("ex");
             if (engine == null)
-                throw new ArgumentNullException("engine");
+                throw new ArgumentNullException ("engine");
 
             this.engine = engine;
             this.ex = ex;

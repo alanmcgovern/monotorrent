@@ -37,19 +37,19 @@ namespace MonoTorrent.Client
 {
     public partial class PeerId : IPieceRequester
     {
-        int       IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
         List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool      IPieceRequester.IsChoking => IsChoking;
-        TimeSpan  IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
-        int       IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
+        bool IPieceRequester.IsChoking => IsChoking;
+        TimeSpan IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
+        int IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
         List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
-        bool      IPieceRequester.SupportsFastPeer => SupportsFastPeer;
-        int       IPieceRequester.TotalHashFails => Peer.TotalHashFails;
+        bool IPieceRequester.SupportsFastPeer => SupportsFastPeer;
+        int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
 
         void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
             => Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
 
-        void IPieceRequester.HashedPiece(bool succeeded)
+        void IPieceRequester.HashedPiece (bool succeeded)
             => Peer.HashedPiece (succeeded);
     }
 }

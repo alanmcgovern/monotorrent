@@ -34,7 +34,7 @@ namespace MonoTorrent
     interface ICache<T>
     {
         int Count { get; }
-        T Dequeue();
+        T Dequeue ();
         void Enqueue (T instance);
     }
 
@@ -44,27 +44,26 @@ namespace MonoTorrent
         bool autoCreate;
         Queue<T> cache;
 
-        public int Count
-        {
+        public int Count {
             get { return cache.Count; }
         }
 
-        public Cache()
+        public Cache ()
             : this (false)
         {
 
         }
 
-        public Cache(bool autoCreate)
+        public Cache (bool autoCreate)
         {
             this.autoCreate = autoCreate;
-            this.cache = new Queue<T>();
+            this.cache = new Queue<T> ();
         }
 
-        public T Dequeue()
+        public T Dequeue ()
         {
             if (cache.Count > 0)
-                return cache.Dequeue();
+                return cache.Dequeue ();
 
             if (autoCreate) {
                 var instance = new T ();
@@ -74,14 +73,14 @@ namespace MonoTorrent
             return null;
         }
 
-        public void Enqueue(T instance)
+        public void Enqueue (T instance)
         {
-            instance.Initialise();
-            cache.Enqueue(instance);
+            instance.Initialise ();
+            cache.Enqueue (instance);
         }
-        public ICache<T> Synchronize()
+        public ICache<T> Synchronize ()
         {
-            return new SynchronizedCache<T>(this);
+            return new SynchronizedCache<T> (this);
         }
     }
 
@@ -89,27 +88,26 @@ namespace MonoTorrent
     {
         ICache<T> cache;
 
-        public int Count
-        {
+        public int Count {
             get { return cache.Count; }
         }
 
-        public SynchronizedCache(ICache<T> cache)
+        public SynchronizedCache (ICache<T> cache)
         {
-            Check.Cache(cache);
+            Check.Cache (cache);
             this.cache = cache;
         }
 
-        public T Dequeue()
+        public T Dequeue ()
         {
             lock (cache)
-                return cache.Dequeue();
+                return cache.Dequeue ();
         }
 
-        public void Enqueue(T instance)
+        public void Enqueue (T instance)
         {
             lock (cache)
-                cache.Enqueue(instance);
+                cache.Enqueue (instance);
         }
     }
 }

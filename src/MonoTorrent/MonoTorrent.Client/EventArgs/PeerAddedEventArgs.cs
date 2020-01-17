@@ -38,8 +38,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The number of peers that were added in the last update
         /// </summary>
-        public Peer Peer
-        {
+        public Peer Peer {
             get { return this.peer; }
         }
         private Peer peer;
@@ -52,8 +51,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The <see cref="TorrentManager"/> which the peer was added to.</param>
         /// <param name="peerAdded">The peer which was added.</param>
-        public PeerAddedEventArgs(TorrentManager manager, Peer peerAdded)
-            : base(manager)
+        public PeerAddedEventArgs (TorrentManager manager, Peer peerAdded)
+            : base (manager)
         {
             this.peer = peerAdded;
         }

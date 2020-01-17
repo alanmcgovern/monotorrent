@@ -37,31 +37,31 @@ namespace MonoTorrent.Common
     public class PathValidatorTests
     {
         [Test]
-        public void UnixRelative()
+        public void UnixRelative ()
         {
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate("../foo/bar.txt"));
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate("foo/../bar"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate ("../foo/bar.txt"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate ("foo/../bar"));
         }
 
         [Test]
-        public void UnixRooted()
+        public void UnixRooted ()
         {
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate("/"));
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate("/foo"));
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate("/.."));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate ("/"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate ("/foo"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate ("/.."));
         }
 
         [Test]
-        public void WindowsRelative()
+        public void WindowsRelative ()
         {
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate(@"..\foo\bar.txt"));
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate(@"test\..\bar.txt"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate (@"..\foo\bar.txt"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate (@"test\..\bar.txt"));
         }
 
         [Test]
         public void WindowsRooted ()
         {
-            Assert.Throws<ArgumentException>(() => PathValidator.Validate(@"C:\test.txt"));
+            Assert.Throws<ArgumentException> (() => PathValidator.Validate (@"C:\test.txt"));
         }
     }
 }

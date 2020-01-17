@@ -36,53 +36,51 @@ namespace MonoTorrent.Client.RateLimiters
     {
         List<IRateLimiter> limiters;
 
-        public bool Unlimited
-        {
+        public bool Unlimited {
             get {
                 for (int i = 0; i < limiters.Count; i++)
-                    if (!limiters [i].Unlimited)
+                    if (!limiters[i].Unlimited)
                         return false;
                 return true;
             }
         }
 
-        public RateLimiterGroup()
+        public RateLimiterGroup ()
         {
-            limiters = new List<IRateLimiter>();
+            limiters = new List<IRateLimiter> ();
         }
 
-        public void Add(IRateLimiter limiter)
+        public void Add (IRateLimiter limiter)
         {
-            Check.Limiter(limiter);
-            limiters.Add(limiter);
+            Check.Limiter (limiter);
+            limiters.Add (limiter);
         }
 
-        public void Remove(IRateLimiter limiter)
+        public void Remove (IRateLimiter limiter)
         {
-            Check.Limiter(limiter);
-            limiters.Remove(limiter);
+            Check.Limiter (limiter);
+            limiters.Remove (limiter);
         }
 
-        public bool TryProcess(long amount)
+        public bool TryProcess (long amount)
         {
-            for (int i = 0; i < limiters.Count; i++)
-            {
+            for (int i = 0; i < limiters.Count; i++) {
                 if (limiters[i].Unlimited)
                     continue;
-                else if (!limiters[i].TryProcess(amount))
+                else if (!limiters[i].TryProcess (amount))
                     return false;
             }
             return true;
         }
 
-        public IEnumerator<IRateLimiter> GetEnumerator()
+        public IEnumerator<IRateLimiter> GetEnumerator ()
         {
-            return limiters.GetEnumerator();
+            return limiters.GetEnumerator ();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator ()
         {
-            return limiters.GetEnumerator();
+            return limiters.GetEnumerator ();
         }
     }
 }

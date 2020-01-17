@@ -39,10 +39,10 @@ namespace MonoTorrent.Client
     {
         public ITracker Tracker { get; }
 
-        internal TrackerPeersAdded(TorrentManager manager, int peersAdded, int total, ITracker tracker)
+        internal TrackerPeersAdded (TorrentManager manager, int peersAdded, int total, ITracker tracker)
             : base (manager, peersAdded, total)
         {
-            Tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
+            Tracker = tracker ?? throw new ArgumentNullException (nameof (tracker));
         }
     }
 }

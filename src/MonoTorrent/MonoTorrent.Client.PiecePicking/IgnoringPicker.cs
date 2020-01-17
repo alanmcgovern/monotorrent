@@ -36,31 +36,31 @@ namespace MonoTorrent.Client.PiecePicking
         BitField Bitfield;
         BitField Temp;
 
-        public IgnoringPicker(BitField bitfield, PiecePicker picker)
-            : base(picker)
+        public IgnoringPicker (BitField bitfield, PiecePicker picker)
+            : base (picker)
         {
             Bitfield = bitfield;
-            Temp = new BitField(bitfield.Length);
+            Temp = new BitField (bitfield.Length);
         }
 
-        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
             if (Bitfield.AllFalse)
-                return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
+                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
-            Temp.From(available).NAnd(Bitfield);
+            Temp.From (available).NAnd (Bitfield);
             if (Temp.AllFalse)
                 return null;
 
-            return base.PickPiece(peer, Temp, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
         }
 
-        public override bool IsInteresting(BitField bitfield)
+        public override bool IsInteresting (BitField bitfield)
         {
-            Temp.From(bitfield).NAnd(Bitfield);
-            return !Temp.AllFalse && base.IsInteresting(Temp);
+            Temp.From (bitfield).NAnd (Bitfield);
+            return !Temp.AllFalse && base.IsInteresting (Temp);
         }
     }
 }

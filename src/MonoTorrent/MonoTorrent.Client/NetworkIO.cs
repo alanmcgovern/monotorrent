@@ -32,6 +32,7 @@ using System.Collections.Generic;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.RateLimiters;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client
@@ -43,13 +44,13 @@ namespace MonoTorrent.Client
         public struct QueuedIO
         {
             public IConnection2 connection;
-            public byte [] buffer;
+            public byte[] buffer;
             public int offset;
             public int count;
             public IRateLimiter rateLimiter;
             public ReusableTaskCompletionSource<int> tcs;
 
-            public QueuedIO (IConnection2 connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
+            public QueuedIO (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
             {
                 this.connection = connection;
                 this.buffer = buffer;
@@ -69,18 +70,18 @@ namespace MonoTorrent.Client
 
         static NetworkIO ()
         {
-            IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
+            IOLoop.QueueTimeout (TimeSpan.FromMilliseconds (100), delegate {
                 while (receiveQueue.Count > 0) {
                     var io = receiveQueue.Peek ();
-                    if (io.rateLimiter.TryProcess(io.count))
-                        ReceiveQueuedAsync(receiveQueue.Dequeue());
+                    if (io.rateLimiter.TryProcess (io.count))
+                        ReceiveQueuedAsync (receiveQueue.Dequeue ());
                     else
                         break;
                 }
                 while (sendQueue.Count > 0) {
                     var io = sendQueue.Peek ();
-                    if (io.rateLimiter.TryProcess(io.count))
-                        SendQueuedAsync(sendQueue.Dequeue());
+                    if (io.rateLimiter.TryProcess (io.count))
+                        SendQueuedAsync (sendQueue.Dequeue ());
                     else
                         break;
                 }
@@ -102,7 +103,7 @@ namespace MonoTorrent.Client
         static async void SendQueuedAsync (QueuedIO io)
         {
             try {
-                var result = await io.connection.SendAsync (io.buffer, io.offset, io.count).ConfigureAwait(false);
+                var result = await io.connection.SendAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
                 io.tcs.SetResult (result);
             } catch (Exception ex) {
                 io.tcs.SetException (ex);
@@ -116,10 +117,10 @@ namespace MonoTorrent.Client
             await connection.ConnectAsync ();
         }
 
-        public static ReusableTask ReceiveAsync(IConnection2 connection, byte [] buffer, int offset, int count)
+        public static ReusableTask ReceiveAsync (IConnection2 connection, byte[] buffer, int offset, int count)
             => ReceiveAsync (connection, buffer, offset, count, null, null, null);
 
-        public static async ReusableTask ReceiveAsync(IConnection2 connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask ReceiveAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
@@ -132,31 +133,30 @@ namespace MonoTorrent.Client
                     var tcs = new ReusableTaskCompletionSource<int> ();
                     await IOLoop;
                     receiveQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
-                    transferred = await tcs.Task.ConfigureAwait(false);
+                    transferred = await tcs.Task.ConfigureAwait (false);
                 } else {
-                    transferred = await connection.ReceiveAsync(buffer, offset, shouldRead).ConfigureAwait(false);
+                    transferred = await connection.ReceiveAsync (buffer, offset, shouldRead).ConfigureAwait (false);
                 }
 
                 if (transferred == 0)
-                    throw new ConnectionClosedException("Socket receive returned 0, indicating the connection has been closed.");
+                    throw new ConnectionClosedException ("Socket receive returned 0, indicating the connection has been closed.");
 
-                peerMonitor?.AddDelta(transferred);
-                managerMonitor?.AddDelta(transferred);
+                peerMonitor?.AddDelta (transferred);
+                managerMonitor?.AddDelta (transferred);
 
                 offset += transferred;
                 count -= transferred;
-            } 
+            }
         }
 
-        public static ReusableTask SendAsync (IConnection2 connection, byte [] buffer, int offset, int count)
+        public static ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count)
             => SendAsync (connection, buffer, offset, count, null, null, null);
 
-        public static async ReusableTask SendAsync (IConnection2 connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
-            while (count > 0)
-            {
+            while (count > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
                 var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
@@ -165,16 +165,16 @@ namespace MonoTorrent.Client
                     var tcs = new ReusableTaskCompletionSource<int> ();
                     await IOLoop;
                     sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
-                    transferred = await tcs.Task.ConfigureAwait(false);
+                    transferred = await tcs.Task.ConfigureAwait (false);
                 } else {
-                    transferred = await connection.SendAsync(buffer, offset, shouldRead).ConfigureAwait(false);
+                    transferred = await connection.SendAsync (buffer, offset, shouldRead).ConfigureAwait (false);
                 }
 
                 if (transferred == 0)
-                    throw new ConnectionClosedException("Socket send returned 0, indicating the connection has been closed.");
+                    throw new ConnectionClosedException ("Socket send returned 0, indicating the connection has been closed.");
 
-                peerMonitor?.AddDelta(transferred);
-                managerMonitor?.AddDelta(transferred);
+                peerMonitor?.AddDelta (transferred);
+                managerMonitor?.AddDelta (transferred);
 
                 offset += transferred;
                 count -= transferred;

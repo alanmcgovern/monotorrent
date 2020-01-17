@@ -57,5 +57,5 @@ namespace MonoTorrent.Client.Listeners
         /// <returns></returns>
         public static IPeerListener CreateTcp (IPEndPoint endpoint)
             => new PeerListener (endpoint);
-        }
+    }
 }

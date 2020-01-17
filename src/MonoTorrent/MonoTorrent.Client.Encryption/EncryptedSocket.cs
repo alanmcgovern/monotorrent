@@ -30,30 +30,29 @@
 
 using System;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {
     sealed class EncryptionException : TorrentException
     {
-        public EncryptionException()
+        public EncryptionException ()
         {
 
         }
 
-        public EncryptionException(string message)
-            : base(message)
+        public EncryptionException (string message)
+            : base (message)
         {
 
         }
 
-        public EncryptionException(string message, Exception innerException)
-            : base(message, innerException)
+        public EncryptionException (string message, Exception innerException)
+            : base (message, innerException)
         {
 
         }
@@ -64,12 +63,12 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     abstract class EncryptedSocket : IEncryptor
     {
-        protected static readonly byte[] Req1Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'1' };
-        protected static readonly byte[] Req2Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'2' };
-        protected static readonly byte[] Req3Bytes = { (byte)'r', (byte)'e', (byte)'q', (byte)'3' };
+        protected static readonly byte[] Req1Bytes = { (byte) 'r', (byte) 'e', (byte) 'q', (byte) '1' };
+        protected static readonly byte[] Req2Bytes = { (byte) 'r', (byte) 'e', (byte) 'q', (byte) '2' };
+        protected static readonly byte[] Req3Bytes = { (byte) 'r', (byte) 'e', (byte) 'q', (byte) '3' };
 
-        protected static readonly byte[] KeyABytes = { (byte)'k', (byte)'e', (byte)'y', (byte)'A' };
-        protected static readonly byte[] KeyBBytes = { (byte)'k', (byte)'e', (byte)'y', (byte)'B' };
+        protected static readonly byte[] KeyABytes = { (byte) 'k', (byte) 'e', (byte) 'y', (byte) 'A' };
+        protected static readonly byte[] KeyBBytes = { (byte) 'k', (byte) 'e', (byte) 'y', (byte) 'B' };
 
         // Cryptors for the data transmission
         public IEncryption Decryptor { get; private set; }
@@ -88,7 +87,7 @@ namespace MonoTorrent.Client.Encryption
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
-        
+
         protected IConnection2 socket;
 
         // Data to be passed to initial ReceiveMessage requests
@@ -114,16 +113,16 @@ namespace MonoTorrent.Client.Encryption
 
         #endregion
 
-        protected EncryptedSocket(EncryptionTypes allowedEncryption)
+        protected EncryptedSocket (EncryptionTypes allowedEncryption)
         {
             random = RandomNumberGenerator.Create ();
-            hasher = HashAlgoFactory.Create<SHA1>();
+            hasher = HashAlgoFactory.Create<SHA1> ();
 
             X = new byte[20];
-            random.GetBytes(X);
-            Y = ModuloCalculator.Calculate(ModuloCalculator.TWO, X);
+            random.GetBytes (X);
+            Y = ModuloCalculator.Calculate (ModuloCalculator.TWO, X);
 
-            SetMinCryptoAllowed(allowedEncryption);
+            SetMinCryptoAllowed (allowedEncryption);
         }
 
         #region Interface implementation
@@ -132,20 +131,19 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual async ReusableTask HandshakeAsync(IConnection2 socket)
+        public virtual async ReusableTask HandshakeAsync (IConnection2 socket)
         {
-            this.socket = socket ?? throw new ArgumentNullException(nameof (socket));
+            this.socket = socket ?? throw new ArgumentNullException (nameof (socket));
 
             // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
             // These two steps will be done simultaneously to save time due to latency
-            var first = SendY();
-            var second = ReceiveY();
-            try
-            {
+            var first = SendY ();
+            var second = ReceiveY ();
+            try {
                 await first;
                 await second;
             } catch (Exception ex) {
-                socket.Dispose();
+                socket.Dispose ();
                 throw new EncryptionException ("Encrypted handshake failed", ex);
             }
         }
@@ -158,12 +156,12 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual async ReusableTask HandshakeAsync(IConnection2 socket, byte[] initialBuffer, int offset, int count)
+        public virtual async ReusableTask HandshakeAsync (IConnection2 socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
             this.initialBufferCount = count;
-            await HandshakeAsync(socket);
+            await HandshakeAsync (socket);
         }
 
 
@@ -173,9 +171,9 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="data">Buffer with the data to encrypt</param>
         /// <param name="offset">Offset to begin encryption</param>
         /// <param name="length">Number of bytes to encrypt</param>
-        public void Encrypt(byte[] data, int offset, int length)
+        public void Encrypt (byte[] data, int offset, int length)
         {
-            Encryptor.Encrypt(data, offset, data, offset, length);
+            Encryptor.Encrypt (data, offset, data, offset, length);
         }
 
         /// <summary>
@@ -184,17 +182,17 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="data">Buffer with the data to decrypt</param>
         /// <param name="offset">Offset to begin decryption</param>
         /// <param name="length">Number of bytes to decrypt</param>
-        public void Decrypt(byte[] data, int offset, int length)
+        public void Decrypt (byte[] data, int offset, int length)
         {
-            Decryptor.Decrypt(data, offset, data, offset, length);
+            Decryptor.Decrypt (data, offset, data, offset, length);
         }
 
-        private int RandomNumber(int max)
+        private int RandomNumber (int max)
         {
             byte[] b = new byte[4];
-            random.GetBytes(b);
-            uint val = BitConverter.ToUInt32(b, 0);
-            return (int)(val % max);
+            random.GetBytes (b);
+            uint val = BitConverter.ToUInt32 (b, 0);
+            return (int) (val % max);
         }
         #endregion
 
@@ -204,16 +202,16 @@ namespace MonoTorrent.Client.Encryption
         /// Send Y to the remote client, with a random padding that is 0 to 512 bytes long
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async ReusableTask SendY()
+        protected async ReusableTask SendY ()
         {
-            var length = 96 + RandomNumber(512);
+            var length = 96 + RandomNumber (512);
             var toSend = ClientEngine.BufferPool.Rent (length);
-            Buffer.BlockCopy(Y, 0, toSend, 0, 96);
-            random.GetBytes(toSend, 96, length - 96);
-            try  {
-                await NetworkIO.SendAsync(socket, toSend, 0, length, null, null, null).ConfigureAwait(false);
+            Buffer.BlockCopy (Y, 0, toSend, 0, 96);
+            random.GetBytes (toSend, 96, length - 96);
+            try {
+                await NetworkIO.SendAsync (socket, toSend, 0, length, null, null, null).ConfigureAwait (false);
             } finally {
-                ClientEngine.BufferPool.Return(toSend);
+                ClientEngine.BufferPool.Return (toSend);
             }
         }
 
@@ -221,10 +219,10 @@ namespace MonoTorrent.Client.Encryption
         /// Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async ReusableTask ReceiveY()
+        protected async ReusableTask ReceiveY ()
         {
             var otherY = new byte[96];
-            await ReceiveMessage(otherY, 96);
+            await ReceiveMessage (otherY, 96);
             S = ModuloCalculator.Calculate (otherY, X);
             await doneReceiveY ();
         }
@@ -241,16 +239,15 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="syncData">Buffer with the data to synchronize to</param>
         /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
-        protected async ReusableTask Synchronize(byte[] syncData, int syncStopPoint)
+        protected async ReusableTask Synchronize (byte[] syncData, int syncStopPoint)
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            var synchronizeWindow = ClientEngine.BufferPool.Rent(syncData.Length);
+            var synchronizeWindow = ClientEngine.BufferPool.Rent (syncData.Length);
 
-            while (bytesReceived < syncStopPoint)
-            {
+            while (bytesReceived < syncStopPoint) {
                 int received = syncData.Length - filled;
-                await NetworkIO.ReceiveAsync(socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
 
                 bytesReceived += received;
                 bool matched = true;
@@ -261,9 +258,7 @@ namespace MonoTorrent.Client.Encryption
                 {
                     await doneSynchronize ().ConfigureAwait (false);
                     return;
-                }
-                else
-                {
+                } else {
                     // See if the current window contains the first byte of the expected synchronize data
                     // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
                     int shift = -1;
@@ -272,57 +267,49 @@ namespace MonoTorrent.Client.Encryption
                             shift = i;
 
                     // The current data is all useless, so read an entire new window of data
-                    if (shift > 0)
-                    {
+                    if (shift > 0) {
                         filled = syncData.Length - shift;
                         // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
-                        Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
-                    } else
-                    {
+                        Buffer.BlockCopy (synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
+                    } else {
                         // The start point we thought we had is actually garbage, so throw away all the data we have
                         filled = 0;
                     }
                 }
             }
-            throw new EncryptionException("Couldn't synchronise 1");
+            throw new EncryptionException ("Couldn't synchronise 1");
         }
 
-        protected virtual ReusableTask doneSynchronize()
+        protected virtual ReusableTask doneSynchronize ()
         {
             return ReusableTask.CompletedTask;
         }
         #endregion
 
         #region I/O Functions
-        protected async ReusableTask ReceiveMessage(byte[] buffer, int length)
+        protected async ReusableTask ReceiveMessage (byte[] buffer, int length)
         {
-            if (length == 0)
-            {
+            if (length == 0) {
                 return;
             }
-            if (initialBuffer != null)
-            {
-                int toCopy = Math.Min(initialBufferCount, length);
-                Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
+            if (initialBuffer != null) {
+                int toCopy = Math.Min (initialBufferCount, length);
+                Array.Copy (initialBuffer, initialBufferOffset, buffer, 0, toCopy);
                 initialBufferOffset += toCopy;
                 initialBufferCount -= toCopy;
 
-                if (toCopy == initialBufferCount)
-                {
+                if (toCopy == initialBufferCount) {
                     initialBufferCount = 0;
                     initialBufferOffset = 0;
                     initialBuffer = Array.Empty<byte> ();
                 }
 
-                if (toCopy != length)
-                {
-                    await NetworkIO.ReceiveAsync(socket, buffer, toCopy, length - toCopy, null, null, null).ConfigureAwait (false);
+                if (toCopy != length) {
+                    await NetworkIO.ReceiveAsync (socket, buffer, toCopy, length - toCopy, null, null, null).ConfigureAwait (false);
                     bytesReceived += length - toCopy;
                 }
-            }
-            else
-            {
-                await NetworkIO.ReceiveAsync(socket, buffer, 0, length, null, null, null).ConfigureAwait (false);
+            } else {
+                await NetworkIO.ReceiveAsync (socket, buffer, 0, length, null, null, null).ConfigureAwait (false);
                 bytesReceived += length;
             }
         }
@@ -337,10 +324,10 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="encryptionSalt">The salt to calculate the encryption key with</param>
         /// <param name="decryptionSalt">The salt to calculate the decryption key with</param>
-        protected void CreateCryptors(byte[] encryptionSalt, byte[] decryptionSalt)
+        protected void CreateCryptors (byte[] encryptionSalt, byte[] decryptionSalt)
         {
-            encryptor = new RC4(Hash(encryptionSalt, S, SKEY.Hash));
-            decryptor = new RC4(Hash(decryptionSalt, S, SKEY.Hash));
+            encryptor = new RC4 (Hash (encryptionSalt, S, SKEY.Hash));
+            decryptor = new RC4 (Hash (decryptionSalt, S, SKEY.Hash));
         }
 
         /// <summary>
@@ -348,35 +335,31 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param>
         /// <param name="replace">True if the existing Encryptor/Decryptor object should be replaced with a new instance</param>
-        protected virtual int SelectCrypto(byte[] remoteCryptoBytes, bool replace)
+        protected virtual int SelectCrypto (byte[] remoteCryptoBytes, bool replace)
         {
             CryptoSelect = new byte[remoteCryptoBytes.Length];
 
             // '2' corresponds to RC4Full
-            if ((remoteCryptoBytes[3] & 2) == 2 && allowedEncryption.HasFlag (EncryptionTypes.RC4Full))
-            {
+            if ((remoteCryptoBytes[3] & 2) == 2 && allowedEncryption.HasFlag (EncryptionTypes.RC4Full)) {
                 CryptoSelect[3] |= 2;
-                if (replace)
-                {
+                if (replace) {
                     Encryptor = encryptor;
                     Decryptor = decryptor;
                 }
                 return 2;
             }
-            
+
             // '1' corresponds to RC4Header
-            if ((remoteCryptoBytes[3] & 1) == 1 && allowedEncryption.HasFlag (EncryptionTypes.RC4Header))
-            {
+            if ((remoteCryptoBytes[3] & 1) == 1 && allowedEncryption.HasFlag (EncryptionTypes.RC4Header)) {
                 CryptoSelect[3] |= 1;
-                if (replace)
-                {
-                    Encryptor = new RC4Header();
-                    Decryptor = new RC4Header();
+                if (replace) {
+                    Encryptor = new RC4Header ();
+                    Decryptor = new RC4Header ();
                 }
                 return 1;
             }
 
-            throw new EncryptionException("No valid encryption method detected");
+            throw new EncryptionException ("No valid encryption method detected");
         }
         #endregion
 
@@ -387,7 +370,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="data">Buffers to concatenate</param>
         /// <returns>Resulting concatenated buffer</returns>
-        protected byte[] Combine(params byte[][] data)
+        protected byte[] Combine (params byte[][] data)
         {
             int cursor = 0;
             int totalLength = 0;
@@ -399,7 +382,7 @@ namespace MonoTorrent.Client.Encryption
             combined = new byte[totalLength];
 
             for (int i = 0; i < data.Length; i++)
-                cursor += Message.Write(combined, cursor, data[i]);
+                cursor += Message.Write (combined, cursor, data[i]);
 
             return combined;
         }
@@ -411,7 +394,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="second"></param>
         /// <param name="third"></param>
         /// <returns>20-byte hash</returns>
-        protected byte[] Hash(byte[] first, byte[] second, byte[] third = null)
+        protected byte[] Hash (byte[] first, byte[] second, byte[] third = null)
         {
             hasher.Initialize ();
             hasher.TransformBlock (first, 0, first.Length, first, 0);
@@ -427,36 +410,36 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="data">2 byte buffer</param>
         /// <returns>int</returns>
-        protected int DeLen(byte[] data)
+        protected int DeLen (byte[] data)
         {
-            return (int)(data[0] << 8) + data[1];
+            return (int) (data[0] << 8) + data[1];
         }
 
         /// <summary>
         /// Returns a 2-byte buffer with the length of data
         /// </summary>
-        protected byte[] Len(byte[] data)
+        protected byte[] Len (byte[] data)
         {
             byte[] lenBuffer = new byte[2];
-            lenBuffer[0] = (byte)((data.Length >> 8) & 0xff);
-            lenBuffer[1] = (byte)((data.Length) & 0xff);
+            lenBuffer[0] = (byte) ((data.Length >> 8) & 0xff);
+            lenBuffer[1] = (byte) ((data.Length) & 0xff);
             return lenBuffer;
         }
 
         /// <summary>
         /// Returns a 0 to 512 byte 0-filled pad.
         /// </summary>
-        protected byte[] GeneratePad()
+        protected byte[] GeneratePad ()
         {
-            return new byte[RandomNumber(512)];
+            return new byte[RandomNumber (512)];
         }
         #endregion
 
         #region Miscellaneous
 
-        protected byte[] DoEncrypt(byte[] data)
+        protected byte[] DoEncrypt (byte[] data)
         {
-            encryptor.Encrypt(data);
+            encryptor.Encrypt (data);
             return data;
         }
 
@@ -466,9 +449,9 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="data">Buffer with the data to encrypt</param>
         /// <param name="offset">Offset to begin encryption</param>
         /// <param name="length">Number of bytes to encrypt</param>
-        protected void DoEncrypt(byte[] data, int offset, int length)
+        protected void DoEncrypt (byte[] data, int offset, int length)
         {
-            encryptor.Encrypt(data, offset, data, offset, length);
+            encryptor.Encrypt (data, offset, data, offset, length);
         }
 
         /// <summary>
@@ -477,12 +460,12 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="data">Buffer with the data to decrypt</param>
         /// <param name="offset">Offset to begin decryption</param>
         /// <param name="length">Number of bytes to decrypt</param>
-        protected void DoDecrypt(byte[] data, int offset, int length)
+        protected void DoDecrypt (byte[] data, int offset, int length)
         {
-            decryptor.Decrypt(data, offset, data, offset, length);
+            decryptor.Decrypt (data, offset, data, offset, length);
         }
 
-        protected void SetMinCryptoAllowed(EncryptionTypes allowedEncryption)
+        protected void SetMinCryptoAllowed (EncryptionTypes allowedEncryption)
         {
             this.allowedEncryption = allowedEncryption;
 

@@ -33,10 +33,10 @@ namespace MonoTorrent.Client.Connections
 {
     public interface IConnection2 : IConnection
     {
-        new ReusableTask ConnectAsync();
+        new ReusableTask ConnectAsync ();
 
         new ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count);
 
         new ReusableTask<int> SendAsync (byte[] buffer, int offset, int count);
-	}
+    }
 }

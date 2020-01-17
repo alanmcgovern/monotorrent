@@ -18,18 +18,18 @@ namespace MonoTorrent.Dht
         TestListener listener;
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            listener = new TestListener();
-            node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
-            engine = new DhtEngine(listener);
+            listener = new TestListener ();
+            node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
+            engine = new DhtEngine (listener);
             //engine.Add(node);
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            engine.Dispose();
+            engine.Dispose ();
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace MonoTorrent.Dht
             int failedCount = 0;
             var pingSuccessful = new TaskCompletionSource<bool> ();
 
-            var ping = new Ping(node.Id) {
+            var ping = new Ping (node.Id) {
                 TransactionId = transactionId
             };
 
@@ -72,11 +72,11 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void SendPing_Synchronous()
+        public void SendPing_Synchronous ()
             => SendPing (false);
 
         [Test]
-        public void SendPing_Asynchronous()
+        public void SendPing_Asynchronous ()
             => SendPing (true);
 
         void SendPing (bool asynchronous)
@@ -86,8 +86,8 @@ namespace MonoTorrent.Dht
             var tcs = new TaskCompletionSource<object> ();
             listener.MessageSent += (DhtMessage message, IPEndPoint endpoint) => {
                 if (message is Ping && endpoint == node.EndPoint) {
-                    var response = new PingResponse(node.Id, message.TransactionId);
-                    listener.RaiseMessageReceived(response, endpoint);
+                    var response = new PingResponse (node.Id, message.TransactionId);
+                    listener.RaiseMessageReceived (response, endpoint);
                 }
             };
             engine.MessageLoop.QuerySent += (o, e) => {
@@ -95,33 +95,33 @@ namespace MonoTorrent.Dht
                     tcs.TrySetResult (null);
             };
 
-            Assert.AreEqual(NodeState.Unknown, node.State, "#1");
+            Assert.AreEqual (NodeState.Unknown, node.State, "#1");
 
             // Should cause an implicit Ping to be sent to the node to verify it's alive.
-            engine.Add(node);
+            engine.Add (node);
 
-            Assert.IsTrue(tcs.Task.Wait(1000), "#1a");
+            Assert.IsTrue (tcs.Task.Wait (1000), "#1a");
             Assert.IsTrue (node.LastSeen < TimeSpan.FromSeconds (1), "#2");
-            Assert.AreEqual(NodeState.Good, node.State, "#3");
+            Assert.AreEqual (NodeState.Good, node.State, "#3");
         }
 
         [Test]
-        public void PingTimeout()
+        public void PingTimeout ()
         {
             bool pingSuccessful = false;
-            var ping = new Ping(node.Id) {
+            var ping = new Ping (node.Id) {
                 TransactionId = transactionId
             };
 
             bool timedOutPingSuccessful = false;
-            var timedOutPing = new Ping(node.Id) {
-                TransactionId = (BEncodedNumber)5
+            var timedOutPing = new Ping (node.Id) {
+                TransactionId = (BEncodedNumber) 5
             };
 
             listener.MessageSent += (message, endpoint) => {
                 if (message.TransactionId.Equals (ping.TransactionId)) {
-                    var response = new PingResponse(node.Id, transactionId);
-                    listener.RaiseMessageReceived(response, endpoint);
+                    var response = new PingResponse (node.Id, transactionId);
+                    listener.RaiseMessageReceived (response, endpoint);
                 }
             };
 
@@ -145,19 +145,19 @@ namespace MonoTorrent.Dht
             // Send a ping which will time out
             Assert.IsTrue (engine.SendQueryAsync (timedOutPing, node).Wait (1000), "#0c");
 
-            Assert.AreEqual(4, node.FailedCount, "#1");
-            Assert.AreEqual(NodeState.Bad, node.State, "#2");
-            Assert.IsTrue(node.LastSeen >= TimeSpan.FromHours (1), "#3");
+            Assert.AreEqual (4, node.FailedCount, "#1");
+            Assert.AreEqual (NodeState.Bad, node.State, "#2");
+            Assert.IsTrue (node.LastSeen >= TimeSpan.FromHours (1), "#3");
             Assert.IsTrue (pingSuccessful, "#4");
             Assert.IsTrue (pingSuccessful, "#5");
         }
 
         [Test]
-        public void TransactionIdCollision()
+        public void TransactionIdCollision ()
         {
             // See what happens if we receive a query with the same ID as a pending query we are sending.
             var pingSuccessful = new TaskCompletionSource<bool> ();
-            var ping = new Ping(node.Id) {
+            var ping = new Ping (node.Id) {
                 TransactionId = transactionId
             };
 

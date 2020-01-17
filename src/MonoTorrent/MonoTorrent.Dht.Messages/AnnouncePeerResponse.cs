@@ -33,14 +33,14 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class AnnouncePeerResponse : ResponseMessage
     {
-        public AnnouncePeerResponse(NodeId id, BEncodedValue transactionId)
-            : base(id, transactionId)
+        public AnnouncePeerResponse (NodeId id, BEncodedValue transactionId)
+            : base (id, transactionId)
         {
 
         }
 
-        public AnnouncePeerResponse(BEncodedDictionary d)
-            : base(d)
+        public AnnouncePeerResponse (BEncodedDictionary d)
+            : base (d)
         {
 
         }

@@ -39,20 +39,20 @@ namespace MonoTorrent.Client.Messages
     {
         public List<PeerMessage> Messages { get; }
 
-        public MessageBundle()
+        public MessageBundle ()
         {
-            Messages = new List<PeerMessage>();
+            Messages = new List<PeerMessage> ();
         }
 
-        public MessageBundle(int capacity)
+        public MessageBundle (int capacity)
         {
-            Messages = new List<PeerMessage>(capacity);
+            Messages = new List<PeerMessage> (capacity);
         }
 
-        public MessageBundle(PeerMessage message)
-            : this()
+        public MessageBundle (PeerMessage message)
+            : this ()
         {
-            Messages.Add(message);
+            Messages.Add (message);
         }
 
         internal MessageBundle (IList<PieceRequest> requests)
@@ -71,19 +71,19 @@ namespace MonoTorrent.Client.Messages
             }
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException ();
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
-            
-            for (int i = 0; i < Messages.Count; i++)
-                written += Messages[i].Encode(buffer, written);
 
-            return CheckWritten(written - offset);
+            for (int i = 0; i < Messages.Count; i++)
+                written += Messages[i].Encode (buffer, written);
+
+            return CheckWritten (written - offset);
         }
     }
 }

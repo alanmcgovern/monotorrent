@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
         public Exception Exception { get; }
         public Reason Reason { get; }
 
-        public Error(Reason reason, Exception exception)
+        public Error (Reason reason, Exception exception)
         {
             Reason = reason;
             Exception = exception;

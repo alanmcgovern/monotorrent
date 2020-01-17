@@ -46,12 +46,12 @@ namespace MonoTorrent.Client
 
         public void Add (BEncodedList nodes)
         {
-            
+
         }
 
         public void Announce (InfoHash infohash, int port)
         {
-            
+
         }
 
         public void Dispose ()
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
 
         public void GetPeers (InfoHash infohash)
         {
-            
+
         }
 
         public void RaisePeersFound (InfoHash infoHash, IList<Peer> peers)
@@ -71,13 +71,13 @@ namespace MonoTorrent.Client
             StateChanged?.Invoke (this, EventArgs.Empty);
         }
 
-        public Task<byte []> SaveNodesAsync ()
+        public Task<byte[]> SaveNodesAsync ()
             => Task.FromResult (new byte[0]);
 
         public Task StartAsync ()
             => StartAsync (null);
 
-        public Task StartAsync (byte [] initialNodes)
+        public Task StartAsync (byte[] initialNodes)
         {
             RaiseStateChanged (DhtState.Ready);
             return Task.CompletedTask;

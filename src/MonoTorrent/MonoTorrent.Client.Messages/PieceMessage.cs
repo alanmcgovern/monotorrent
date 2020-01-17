@@ -66,42 +66,42 @@ namespace MonoTorrent.Client.Messages.Standard
         /// </summary>
         public int RequestLength { get; private set; }
 
-        public PieceMessage()
+        public PieceMessage ()
         {
         }
 
-        public PieceMessage(int pieceIndex, int startOffset, int blockLength)
+        public PieceMessage (int pieceIndex, int startOffset, int blockLength)
         {
             PieceIndex = pieceIndex;
             StartOffset = startOffset;
             RequestLength = blockLength;
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            PieceIndex = ReadInt(buffer, ref offset);
-            StartOffset = ReadInt(buffer, ref offset);
+            PieceIndex = ReadInt (buffer, ref offset);
+            StartOffset = ReadInt (buffer, ref offset);
             RequestLength = length - 8;
 
             // This buffer will be freed after the PieceWriter has finished with it
-            Data = ClientEngine.BufferPool.Rent(RequestLength);
-            Buffer.BlockCopy(buffer, offset, Data, 0, RequestLength);
+            Data = ClientEngine.BufferPool.Rent (RequestLength);
+            Buffer.BlockCopy (buffer, offset, Data, 0, RequestLength);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, messageLength + RequestLength);
-            written += Write(buffer, written, MessageId);
-            written += Write(buffer, written, PieceIndex);
-            written += Write(buffer, written, StartOffset);
-            written += Write(buffer, written, Data, 0, RequestLength);
+            written += Write (buffer, written, messageLength + RequestLength);
+            written += Write (buffer, written, MessageId);
+            written += Write (buffer, written, PieceIndex);
+            written += Write (buffer, written, StartOffset);
+            written += Write (buffer, written, Data, 0, RequestLength);
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             return obj is PieceMessage message
                 && message.PieceIndex == PieceIndex
@@ -109,20 +109,20 @@ namespace MonoTorrent.Client.Messages.Standard
                 && message.RequestLength == RequestLength;
         }
 
-        public override int GetHashCode()
-            => RequestLength.GetHashCode() ^ PieceIndex.GetHashCode() ^ StartOffset.GetHashCode();
+        public override int GetHashCode ()
+            => RequestLength.GetHashCode () ^ PieceIndex.GetHashCode () ^ StartOffset.GetHashCode ();
 
-        public override string ToString()
+        public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append("PieceMessage ");
-            sb.Append(" Index ");
-            sb.Append(PieceIndex);
-            sb.Append(" Offset ");
-            sb.Append(StartOffset);
-            sb.Append(" Length ");
-            sb.Append(RequestLength);
-            return sb.ToString();
+            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            sb.Append ("PieceMessage ");
+            sb.Append (" Index ");
+            sb.Append (PieceIndex);
+            sb.Append (" Offset ");
+            sb.Append (StartOffset);
+            sb.Append (" Length ");
+            sb.Append (RequestLength);
+            return sb.ToString ();
         }
     }
 }

@@ -92,15 +92,15 @@ namespace MonoTorrent.Tracker
         /// </summary>
         TrackerServer Tracker { get; }
 
-        public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer, TrackerServer tracker)
+        public SimpleTorrentManager (ITrackable trackable, IPeerComparer comparer, TrackerServer tracker)
         {
             Comparer = comparer;
             Trackable = trackable;
             Tracker = tracker;
 
-            Peers = new Dictionary<object, Peer>();
-            PeersList = new List<Peer>();
-            Random = new Random();
+            Peers = new Dictionary<object, Peer> ();
+            PeersList = new List<Peer> ();
+            Random = new Random ();
         }
 
         #region Methods
@@ -109,22 +109,22 @@ namespace MonoTorrent.Tracker
         /// Adds the peer to the tracker
         /// </summary>
         /// <param name="peer"></param>
-        internal void Add(Peer peer)
+        internal void Add (Peer peer)
         {
             if (peer == null)
-                throw new ArgumentNullException(nameof (peer));
+                throw new ArgumentNullException (nameof (peer));
 
-            Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
-            Peers.Add(peer.DictionaryKey, peer);
+            Debug.WriteLine (string.Format ("Adding: {0}", peer.ClientAddress));
+            Peers.Add (peer.DictionaryKey, peer);
             lock (PeersList)
-                PeersList.Clear();
-            UpdateCounts();
+                PeersList.Clear ();
+            UpdateCounts ();
         }
 
-        public List<Peer> GetPeers()
+        public List<Peer> GetPeers ()
         {
             lock (PeersList)
-                return new List<Peer>(PeersList);
+                return new List<Peer> (PeersList);
         }
 
         /// <summary>
@@ -133,64 +133,57 @@ namespace MonoTorrent.Tracker
         /// <param name="response">The bencoded dictionary to add the peers to</param>
         /// <param name="count">The number of peers to add</param>
         /// <param name="compact">True if the peers should be in compact form</param>
-        internal void GetPeers(BEncodedDictionary response, int count, bool compact)
+        internal void GetPeers (BEncodedDictionary response, int count, bool compact)
         {
             byte[] compactResponse = null;
             BEncodedList nonCompactResponse = null;
 
-            int total = Math.Min(Peers.Count, count);
+            int total = Math.Min (Peers.Count, count);
             // If we have a compact response, we need to create a single BencodedString
             // Otherwise we need to create a bencoded list of dictionaries
             if (compact)
                 compactResponse = new byte[total * 6];
             else
-                nonCompactResponse = new BEncodedList(total);
+                nonCompactResponse = new BEncodedList (total);
 
-            int start = Random.Next(0, Peers.Count);
+            int start = Random.Next (0, Peers.Count);
 
-            lock (PeersList)
-            {
+            lock (PeersList) {
                 if (PeersList.Count != Peers.Values.Count)
-                    PeersList = new List<Peer>(Peers.Values);
+                    PeersList = new List<Peer> (Peers.Values);
             }
 
-            while (total > 0)
-            {
+            while (total > 0) {
                 Peer current = PeersList[(start++) % PeersList.Count];
-                if (compact)
-                {
-                    Buffer.BlockCopy(current.CompactEntry, 0, compactResponse, (total - 1) * 6, 6);
-                }
-                else
-                {
-                    nonCompactResponse.Add(current.NonCompactEntry);
+                if (compact) {
+                    Buffer.BlockCopy (current.CompactEntry, 0, compactResponse, (total - 1) * 6, 6);
+                } else {
+                    nonCompactResponse.Add (current.NonCompactEntry);
                 }
                 total--;
             }
 
             if (compact)
-                response.Add(TrackerServer.PeersKey, (BEncodedString)compactResponse);
+                response.Add (TrackerServer.PeersKey, (BEncodedString) compactResponse);
             else
-                response.Add(TrackerServer.PeersKey, nonCompactResponse);
+                response.Add (TrackerServer.PeersKey, nonCompactResponse);
         }
 
-        internal void ClearZombiePeers(DateTime cutoff)
+        internal void ClearZombiePeers (DateTime cutoff)
         {
             bool removed = false;
-            lock (PeersList)
-            {
-                foreach (Peer p in PeersList)
-                {
+            lock (PeersList) {
+                foreach (Peer p in PeersList) {
                     if (p.LastAnnounceTime > cutoff)
                         continue;
 
-                    Tracker.RaisePeerTimedOut(new TimedOutEventArgs(p, this));
-                    Peers.Remove(p.DictionaryKey);
+                    Tracker.RaisePeerTimedOut (new TimedOutEventArgs (p, this));
+                    Peers.Remove (p.DictionaryKey);
                     removed = true;
                 }
 
                 if (removed)
-                    PeersList.Clear();
+                    PeersList.Clear ();
             }
         }
 
@@ -199,24 +192,23 @@ namespace MonoTorrent.Tracker
         /// Removes the peer from the tracker
         /// </summary>
         /// <param name="peer">The peer to remove</param>
-        internal void Remove(Peer peer)
+        internal void Remove (Peer peer)
         {
             if (peer == null)
-                throw new ArgumentNullException(nameof (peer));
+                throw new ArgumentNullException (nameof (peer));
 
-            Debug.WriteLine(string.Format("Removing: {0}", peer.ClientAddress));
-            Peers.Remove(peer.DictionaryKey);
+            Debug.WriteLine (string.Format ("Removing: {0}", peer.ClientAddress));
+            Peers.Remove (peer.DictionaryKey);
             lock (PeersList)
-                PeersList.Clear();
-            UpdateCounts();
+                PeersList.Clear ();
+            UpdateCounts ();
         }
 
-        private void UpdateCounts()
+        private void UpdateCounts ()
         {
             int tempComplete = 0;
             int tempIncomplete = 0;
-            foreach (Peer p in Peers.Values)
-            {
+            foreach (Peer p in Peers.Values) {
                 if (p.HasCompleted)
                     tempComplete++;
                 else
@@ -231,28 +223,25 @@ namespace MonoTorrent.Tracker
         /// Updates the peer in the tracker database based on the announce parameters
         /// </summary>
         /// <param name="par"></param>
-        internal void Update(AnnounceRequest par)
+        internal void Update (AnnounceRequest par)
         {
             Peer peer;
-            object peerKey = Comparer.GetKey(par);
-            if (!Peers.TryGetValue(peerKey, out peer))
-            {
-                peer = new Peer(par, peerKey);
-                Add(peer);
-            }
-            else
-            {
-                Debug.WriteLine(string.Format("Updating: {0} with key {1}", peer.ClientAddress, peerKey));
-                peer.Update(par);
+            object peerKey = Comparer.GetKey (par);
+            if (!Peers.TryGetValue (peerKey, out peer)) {
+                peer = new Peer (par, peerKey);
+                Add (peer);
+            } else {
+                Debug.WriteLine (string.Format ("Updating: {0} with key {1}", peer.ClientAddress, peerKey));
+                peer.Update (par);
             }
             if (par.Event == TorrentEvent.Completed)
-                Downloaded ++;
+                Downloaded++;
 
             else if (par.Event == TorrentEvent.Stopped)
-                Remove(peer);
+                Remove (peer);
 
-            Tracker.RaisePeerAnnounced(new AnnounceEventArgs(peer, this));
-            UpdateCounts();
+            Tracker.RaisePeerAnnounced (new AnnounceEventArgs (peer, this));
+            UpdateCounts ();
         }
 
         #endregion Methods

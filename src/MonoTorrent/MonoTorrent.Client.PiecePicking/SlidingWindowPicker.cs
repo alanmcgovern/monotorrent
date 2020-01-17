@@ -56,11 +56,9 @@ namespace MonoTorrent.Client.PiecePicking
         /// Gets or sets first "high priority" piece. The n pieces after this will be requested in-order,
         /// the rest of the file will be treated rarest-first
         /// </summary>
-        public int HighPrioritySetStart
-        {
+        public int HighPrioritySetStart {
             get { return this.highPrioritySetStart; }
-            set
-            {
+            set {
                 if (this.highPrioritySetStart < value)
                     this.highPrioritySetStart = value;
             }
@@ -69,14 +67,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Gets or sets the size, in pieces, of the high priority set.
         /// </summary>
-        public int HighPrioritySetSize
-        {
+        public int HighPrioritySetSize {
             get { return this.highPrioritySetSize; }
             set { this.highPrioritySetSize = value; }
         }
 
-        public int MediumPrioritySetStart
-        {
+        public int MediumPrioritySetStart {
             get { return HighPrioritySetStart + HighPrioritySetSize + 1; }
         }
 
@@ -84,8 +80,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// This is the size ratio between the medium and high priority sets. Equivalent to mu in Tribler's Give-to-get paper.
         /// Default value is 4.
         /// </summary>
-        public int MediumToHighRatio
-        {
+        public int MediumToHighRatio {
             get { return ratio; }
             set { ratio = value; }
         }
@@ -93,8 +88,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Read-only value for size of the medium priority set. To set the medium priority size, use MediumToHighRatio.
         /// </summary>
-        public int MediumPrioritySetSize
-        {
+        public int MediumPrioritySetSize {
             get { return this.highPrioritySetSize * ratio; }
         }
 
@@ -105,8 +99,8 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
-        public SlidingWindowPicker(PiecePicker picker)
-            : base(picker)
+        public SlidingWindowPicker (PiecePicker picker)
+            : base (picker)
         {
         }
 
@@ -117,8 +111,8 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="picker">The picker which requests should be forwarded to</param>
         /// <param name="highPrioritySetSize">Size of high priority set</param>
-        internal SlidingWindowPicker(PiecePicker picker, int highPrioritySetSize)
-            : this(picker, highPrioritySetSize, 4)
+        internal SlidingWindowPicker (PiecePicker picker, int highPrioritySetSize)
+            : this (picker, highPrioritySetSize, 4)
         {
         }
 
@@ -130,8 +124,8 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="picker">The picker which requests should be forwarded to</param>
         /// <param name="highPrioritySetSize">Size of high priority set</param>
         /// <param name="mediumToHighRatio">Size of medium priority set as a multiple of the high priority set size</param>
-        internal SlidingWindowPicker(PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
-            : base(picker)
+        internal SlidingWindowPicker (PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
+            : base (picker)
         {
             this.highPrioritySetSize = highPrioritySetSize;
             this.ratio = mediumToHighRatio;
@@ -144,13 +138,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="bitfield"></param>
         /// <param name="torrentData"></param>
         /// <param name="requests"></param>
-        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, torrentData, requests);
-            
+            base.Initialise (bitfield, torrentData, requests);
+
             // set the high priority set start to the beginning of the first file that we have to download
-            foreach (TorrentFile file in torrentData.Files)
-            {
+            foreach (TorrentFile file in torrentData.Files) {
                 if (file.Priority == Priority.DoNotDownload)
                     this.highPrioritySetStart = file.EndPieceIndex;
                 else
@@ -163,28 +156,26 @@ namespace MonoTorrent.Client.PiecePicking
 
         #region Methods
 
-        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             IList<PieceRequest> bundle;
             int start, end;
 
-            if (HighPrioritySetStart >= startIndex && HighPrioritySetStart <= endIndex)
-            {
+            if (HighPrioritySetStart >= startIndex && HighPrioritySetStart <= endIndex) {
                 start = HighPrioritySetStart;
-                end = Math.Min(endIndex, HighPrioritySetStart + HighPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(peer, available, otherPeers, count, start, end)) != null)
+                end = Math.Min (endIndex, HighPrioritySetStart + HighPrioritySetSize - 1);
+                if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
-            if (MediumPrioritySetStart >= startIndex && MediumPrioritySetStart <= endIndex)
-            {
+            if (MediumPrioritySetStart >= startIndex && MediumPrioritySetStart <= endIndex) {
                 start = MediumPrioritySetStart;
-                end = Math.Min(endIndex, MediumPrioritySetStart + MediumPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(peer, available, otherPeers, count, start, end)) != null)
+                end = Math.Min (endIndex, MediumPrioritySetStart + MediumPrioritySetSize - 1);
+                if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
-            return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
 
         #endregion

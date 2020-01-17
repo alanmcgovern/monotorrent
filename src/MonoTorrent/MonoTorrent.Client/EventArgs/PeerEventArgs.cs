@@ -26,25 +26,18 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace MonoTorrent.Client
 {
     class PeerEventArgs : TorrentEventArgs
     {
         PeerId peer;
 
-        public PeerId Peer
-        {
+        public PeerId Peer {
             get { return peer; }
         }
 
-        public PeerEventArgs(TorrentManager manager, PeerId peer)
-            : base(manager)
+        public PeerEventArgs (TorrentManager manager, PeerId peer)
+            : base (manager)
         {
             this.peer = peer;
         }

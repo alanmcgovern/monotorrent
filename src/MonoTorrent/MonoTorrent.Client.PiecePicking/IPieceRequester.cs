@@ -45,6 +45,6 @@ namespace MonoTorrent.Client.PiecePicking
         int TotalHashFails { get; }
 
         void Cancel (int pieceIndex, int pieceOffset, int requestLength);
-        void HashedPiece(bool succeeded);
+        void HashedPiece (bool succeeded);
     }
 }

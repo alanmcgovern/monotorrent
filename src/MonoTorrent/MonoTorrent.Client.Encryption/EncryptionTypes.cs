@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
         /// and no further connections will be attempted. By setting <see cref="None"/> then
         /// encrypted and unencrypted connections are both disallowed.
         /// </summary>
-        None        = 0,
+        None = 0,
 
         /// <summary>
         /// Nothing is encrypted. This is the fastest but allows deep packet inspection to detect
@@ -49,19 +49,19 @@ namespace MonoTorrent.Client
         /// or very soon after it completes, then it's possible that the ISP is closing them, and so
         /// RC4 based methods may prevent that from happening.
         /// </summary>
-        PlainText   = 1 << 0,
+        PlainText = 1 << 0,
 
         /// <summary>
         /// Encryption is applied to the initial handshaking process only. Once the connection has
         /// been established all further data is sent in plain text. This is the second fastest
         /// and should prevent deep packet inspection from detecting the bittorrent handshake.
         /// </summary>
-        RC4Header   = 1 << 1,
+        RC4Header = 1 << 1,
 
         /// <summary>
         /// Encryption is applied to the initial handshake and to all subsequent data transfers.
         /// </summary>
-        RC4Full     = 1 << 2,
+        RC4Full = 1 << 2,
 
         /// <summary>
         /// Both encrypted and unencrypted connections are allowed.

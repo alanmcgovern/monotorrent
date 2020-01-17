@@ -170,7 +170,7 @@ namespace MonoTorrent
 
             if (InfoKey.Equals (key))
                 CheckCanEditSecure ();
-            Metadata [key] = value;
+            Metadata[key] = value;
         }
 
         public void SetCustomSecure (BEncodedString key, BEncodedValue value)
@@ -179,7 +179,7 @@ namespace MonoTorrent
 
             Check.Key (key);
             Check.Value (value);
-            InfoDict [key] = value;
+            InfoDict[key] = value;
         }
 
         public void RemoveCustom (BEncodedString key)
@@ -197,9 +197,9 @@ namespace MonoTorrent
 
         protected BEncodedDictionary GetDictionary (BEncodedDictionary dictionary, BEncodedString key)
         {
-//            // Required? Probably.
-//            if (dictionary == InfoDict)
-//                CheckCanEditSecure ();
+            //            // Required? Probably.
+            //            if (dictionary == InfoDict)
+            //                CheckCanEditSecure ();
 
             BEncodedValue value;
             if (dictionary.TryGetValue (key, out value))
@@ -218,7 +218,7 @@ namespace MonoTorrent
         protected string GetString (BEncodedDictionary dictionary, BEncodedString key)
         {
             if (dictionary.TryGetValue (key, out BEncodedValue value))
-                return ((BEncodedString)value).Text;
+                return ((BEncodedString) value).Text;
             return null;
         }
 
@@ -226,14 +226,14 @@ namespace MonoTorrent
         {
             if (dictionary == InfoDict)
                 CheckCanEditSecure ();
-            dictionary [key] = value;
+            dictionary[key] = value;
         }
 
         protected void SetLong (BEncodedDictionary dictionary, BEncodedString key, long value)
         {
             if (dictionary == InfoDict)
                 CheckCanEditSecure ();
-            dictionary [key] = new BEncodedNumber (value);
+            dictionary[key] = new BEncodedNumber (value);
         }
 
         protected void SetString (BEncodedDictionary dictionary, BEncodedString key, string value)
@@ -244,7 +244,7 @@ namespace MonoTorrent
             if (value == null)
                 dictionary.Remove (key);
             else
-                dictionary [key] = new BEncodedString (value);
+                dictionary[key] = new BEncodedString (value);
         }
     }
 }

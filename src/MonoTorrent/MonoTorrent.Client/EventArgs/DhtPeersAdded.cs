@@ -34,8 +34,8 @@ namespace MonoTorrent.Client
     /// </summary>
     public sealed class DhtPeersAdded : PeersAddedEventArgs
     {
-        public DhtPeersAdded(TorrentManager manager, int peersAdded, int total)
-            : base(manager, peersAdded, total)
+        public DhtPeersAdded (TorrentManager manager, int peersAdded, int total)
+            : base (manager, peersAdded, total)
         {
 
         }

@@ -46,35 +46,35 @@ namespace MonoTorrent.Dht
         [SetUp]
         public void Setup ()
         {
-            manager = new TokenManager();
-            node = new Node(NodeId.Create(),new IPEndPoint(IPAddress.Parse("127.0.0.1"), 25));
-            token = manager.GenerateToken(node);
+            manager = new TokenManager ();
+            node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 25));
+            token = manager.GenerateToken (node);
         }
 
         [Test]
         public void InvalidateOldTokens ()
         {
-            Assert.IsTrue(manager.VerifyToken(node, token),"#1");
+            Assert.IsTrue (manager.VerifyToken (node, token), "#1");
 
             manager.RefreshTokens ();
-            Assert.IsTrue(manager.VerifyToken(node, token),"#2");
+            Assert.IsTrue (manager.VerifyToken (node, token), "#2");
 
             manager.RefreshTokens ();
-            Assert.IsFalse(manager.VerifyToken(node, token),"#3");
+            Assert.IsFalse (manager.VerifyToken (node, token), "#3");
         }
 
         [Test]
-        public void InvalidTokenForNode()
+        public void InvalidTokenForNode ()
         {
-            var otherNode = new Node(node.Id,new IPEndPoint(IPAddress.Parse("127.0.0.2"), 25));
-            Assert.IsFalse(manager.VerifyToken(otherNode, token),"#1");
+            var otherNode = new Node (node.Id, new IPEndPoint (IPAddress.Parse ("127.0.0.2"), 25));
+            Assert.IsFalse (manager.VerifyToken (otherNode, token), "#1");
 
-            otherNode = new Node(node.Id,new IPEndPoint(IPAddress.Parse("127.0.0.1"), 26));
-            Assert.IsFalse(manager.VerifyToken(otherNode, token),"#2");
+            otherNode = new Node (node.Id, new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 26));
+            Assert.IsFalse (manager.VerifyToken (otherNode, token), "#2");
         }
 
         [Test]
-        public void TokenChangesAfterRefresh()
+        public void TokenChangesAfterRefresh ()
         {
             Assert.AreEqual (token, manager.GenerateToken (node), "#1");
 

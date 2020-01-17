@@ -33,17 +33,17 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     class ExtensionSupports : List<ExtensionSupport>
     {
-        public ExtensionSupports()
+        public ExtensionSupports ()
         {
         }
 
-        public ExtensionSupports(IEnumerable<ExtensionSupport> collection)
-            : base(collection)
+        public ExtensionSupports (IEnumerable<ExtensionSupport> collection)
+            : base (collection)
         {
 
         }
 
-        public bool Supports(string name)
+        public bool Supports (string name)
         {
             for (int i = 0; i < Count; i++)
                 if (this[i].Name == name)
@@ -51,13 +51,13 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             return false;
         }
 
-        internal byte MessageId(ExtensionSupport support)
+        internal byte MessageId (ExtensionSupport support)
         {
             for (int i = 0; i < Count; i++)
                 if (this[i].Name == support.Name)
                     return this[i].MessageId;
 
-            throw new MessageException(string.Format("{0} is not supported by this peer", support.Name));
+            throw new MessageException (string.Format ("{0} is not supported by this peer", support.Name));
         }
     }
 }

@@ -34,28 +34,28 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class RandomisedPicker : PiecePicker
     {
-        readonly Random random = new Random();
+        readonly Random random = new Random ();
 
-        public RandomisedPicker(PiecePicker picker)
-            :base(picker)
+        public RandomisedPicker (PiecePicker picker)
+            : base (picker)
         {
 
         }
 
-        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
                 return null;
 
             // If there's only one piece to choose then there isn't any midpoint.
             if (endIndex - startIndex < 2)
-                return base.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
+                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             // If there are two or more pieces to choose, ensure we always start *at least* one
             // piece beyond the start index.
-            var midpoint = random.Next(startIndex + 1, endIndex);
-            return base.PickPiece(peer, available, otherPeers, count, midpoint, endIndex) ??
-                   base.PickPiece(peer, available, otherPeers, count, startIndex, midpoint);
+            var midpoint = random.Next (startIndex + 1, endIndex);
+            return base.PickPiece (peer, available, otherPeers, count, midpoint, endIndex) ??
+                   base.PickPiece (peer, available, otherPeers, count, startIndex, midpoint);
         }
     }
 }

@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         /// <summary>
         /// Creates a new SuggestPiece message
         /// </summary>
-        public SuggestPieceMessage()
+        public SuggestPieceMessage ()
         {
         }
 
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         /// Creates a new SuggestPiece message
         /// </summary>
         /// <param name="pieceIndex">The suggested piece to download</param>
-        public SuggestPieceMessage(int pieceIndex)
+        public SuggestPieceMessage (int pieceIndex)
         {
             PieceIndex = pieceIndex;
         }
@@ -69,45 +69,45 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
 
         #region Methods
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
-                throw new ProtocolException("Message decoding not supported");
+                throw new ProtocolException ("Message decoding not supported");
 
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, PieceIndex);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
+            written += Write (buffer, written, PieceIndex);
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
             if (!ClientEngine.SupportsFastPeer)
-                throw new ProtocolException("Message decoding not supported");
+                throw new ProtocolException ("Message decoding not supported");
 
-            PieceIndex = ReadInt(buffer, ref offset);
+            PieceIndex = ReadInt (buffer, ref offset);
         }
 
         #endregion
 
 
         #region Overidden Methods
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
             => (obj as SuggestPieceMessage)?.PieceIndex == PieceIndex;
 
-        public override int GetHashCode()
-            => PieceIndex.GetHashCode();
+        public override int GetHashCode ()
+            => PieceIndex.GetHashCode ();
 
-        public override string ToString()
+        public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder(24);
-            sb.Append("Suggest Piece");
-            sb.Append(" Index: ");
-            sb.Append(PieceIndex);
-            return sb.ToString();
+            StringBuilder sb = new StringBuilder (24);
+            sb.Append ("Suggest Piece");
+            sb.Append (" Index: ");
+            sb.Append (PieceIndex);
+            return sb.ToString ();
         }
         #endregion
     }

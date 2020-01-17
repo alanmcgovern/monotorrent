@@ -36,11 +36,11 @@ namespace MonoTorrent.Dht
     {
         static int current;
 
-        public static BEncodedString NextId()
+        public static BEncodedString NextId ()
         {
             var value = Interlocked.Increment (ref current);
-            var data = new [] { (byte) (value >> 8), (byte) value };
-            return new BEncodedString(data);
+            var data = new[] { (byte) (value >> 8), (byte) value };
+            return new BEncodedString (data);
         }
     }
 }

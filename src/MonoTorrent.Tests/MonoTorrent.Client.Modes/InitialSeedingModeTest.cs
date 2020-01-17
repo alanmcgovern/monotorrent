@@ -46,34 +46,34 @@ namespace MonoTorrent.Client.Modes
         }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            Rig = TestRig.CreateSingleFile(Piece.BlockSize * 20, Piece.BlockSize * 2);
+            Rig = TestRig.CreateSingleFile (Piece.BlockSize * 20, Piece.BlockSize * 2);
             Rig.Manager.Bitfield.Not ();
             Rig.Manager.UnhashedPieces.SetAll (false);
-            Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
+            Rig.Manager.Mode = new InitialSeedingMode (Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            Rig.Dispose();
+            Rig.Dispose ();
         }
 
         [Test]
-        public void SwitchingModesSendsHaves()
+        public void SwitchingModesSendsHaves ()
         {
-            Rig.Manager.Peers.ConnectedPeers.Add(Rig.CreatePeer(true, true));
-            Rig.Manager.Peers.ConnectedPeers.Add(Rig.CreatePeer(true, false));
+            Rig.Manager.Peers.ConnectedPeers.Add (Rig.CreatePeer (true, true));
+            Rig.Manager.Peers.ConnectedPeers.Add (Rig.CreatePeer (true, false));
 
-            var peer = Rig.CreatePeer(true);
-            peer.BitField.SetAll(true);
-            Mode.HandlePeerConnected(peer);
-            Mode.Tick(0);
+            var peer = Rig.CreatePeer (true);
+            peer.BitField.SetAll (true);
+            Mode.HandlePeerConnected (peer);
+            Mode.Tick (0);
 
-            Assert.IsTrue(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage, "#1");
-            BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue();
-            Assert.IsTrue(m.BitField.AllTrue, "#2");
+            Assert.IsTrue (Rig.Manager.Peers.ConnectedPeers[0].Dequeue () is HaveAllMessage, "#1");
+            BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue ();
+            Assert.IsTrue (m.BitField.AllTrue, "#2");
         }
     }
 }

@@ -31,10 +31,9 @@ namespace MonoTorrent.Client.Modes
 {
     class PausedMode : Mode
     {
-		public override TorrentState State
-		{
-			get { return TorrentState.Paused; }
-		}
+        public override TorrentState State {
+            get { return TorrentState.Paused; }
+        }
 
         public PausedMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
@@ -44,7 +43,7 @@ namespace MonoTorrent.Client.Modes
             // does not need to do anything special.
         }
 
-        public override void Tick(int counter)
+        public override void Tick (int counter)
         {
             // TODO: In future maybe this can be made smarter by refactoring
             // so that in Pause mode we set the Interested status of all peers

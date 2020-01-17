@@ -64,8 +64,7 @@ namespace MonoTorrent.Client.Modes
 
             // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
             // before attempting to start again
-            if (!Manager.HashChecked)
-            {
+            if (!Manager.HashChecked) {
                 // Deliberately do not wait for the entire hash check to complete in this scenario.
                 // Here we want to Task returned by this method to be 'Complete' as soon as the
                 // TorrentManager moves to any state that is not Stopped. The idea is that 'StartAsync'
@@ -75,7 +74,7 @@ namespace MonoTorrent.Client.Modes
                     // NOTE: 'StartingMode' will be implicitly cancelled by virtue of running a hash check
                     // and the current mode will change from 'StartingMode' to 'HashingMode'. We should only
                     // run the remainder of the 'StartingMode' logic if the HashingMode is not cancelled.
-                    await Manager.HashCheckAsync(false, false);
+                    await Manager.HashCheckAsync (false, false);
                     Manager.Mode.Token.ThrowIfCancellationRequested ();
                 }
             }
@@ -89,14 +88,13 @@ namespace MonoTorrent.Client.Modes
             SendAnnounces ();
 
             if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
-                Manager.Mode = new InitialSeedingMode(Manager, DiskManager, ConnectionManager, Settings);
-            }
-            else {
-                Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
+                Manager.Mode = new InitialSeedingMode (Manager, DiskManager, ConnectionManager, Settings);
+            } else {
+                Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
 
-            Manager.DhtAnnounce();
-            Manager.PieceManager.Reset();
+            Manager.DhtAnnounce ();
+            Manager.PieceManager.Reset ();
             await Manager.LocalPeerAnnounceAsync ();
         }
 
@@ -107,7 +105,7 @@ namespace MonoTorrent.Client.Modes
                 // send a regular announce instead of a 'Started' announce.
                 await Task.WhenAll (
                     Manager.TrackerManager.Scrape (),
-                    Manager.TrackerManager.Announce(TorrentEvent.Started)
+                    Manager.TrackerManager.Announce (TorrentEvent.Started)
                 );
             } catch {
                 // Ignore

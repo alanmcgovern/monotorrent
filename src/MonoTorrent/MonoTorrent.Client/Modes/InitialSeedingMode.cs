@@ -37,70 +37,68 @@ namespace MonoTorrent.Client.Modes
     {
         BitField zero;
         InitialSeedUnchoker unchoker;
-        
-		public override TorrentState State
-		{
-			get { return TorrentState.Seeding; }
-		}
-            
+
+        public override TorrentState State {
+            get { return TorrentState.Seeding; }
+        }
+
         public InitialSeedingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
         {
-            unchoker = new InitialSeedUnchoker(manager);
+            unchoker = new InitialSeedUnchoker (manager);
             manager.chokeUnchoker = unchoker;
-            zero = new BitField(manager.Bitfield.Length);
+            zero = new BitField (manager.Bitfield.Length);
         }
 
-        protected override void AppendBitfieldMessage(PeerId id, MessageBundle bundle)
+        protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
             if (id.SupportsFastPeer)
-                bundle.Messages.Add(new HaveNoneMessage());
+                bundle.Messages.Add (new HaveNoneMessage ());
             else
-                bundle.Messages.Add(new BitfieldMessage(zero));
+                bundle.Messages.Add (new BitfieldMessage (zero));
         }
 
-        protected override void HandleHaveMessage(PeerId id, HaveMessage message)
+        protected override void HandleHaveMessage (PeerId id, HaveMessage message)
         {
-            base.HandleHaveMessage(id, message);
-            unchoker.ReceivedHave(id, message.PieceIndex);
+            base.HandleHaveMessage (id, message);
+            unchoker.ReceivedHave (id, message.PieceIndex);
         }
 
-        protected override void HandleRequestMessage(PeerId id, RequestMessage message)
+        protected override void HandleRequestMessage (PeerId id, RequestMessage message)
         {
-            base.HandleRequestMessage(id, message);
-            unchoker.SentBlock(id, message.PieceIndex);
+            base.HandleRequestMessage (id, message);
+            unchoker.SentBlock (id, message.PieceIndex);
         }
 
-        protected override void HandleNotInterested(PeerId id, NotInterestedMessage message)
+        protected override void HandleNotInterested (PeerId id, NotInterestedMessage message)
         {
-            base.HandleNotInterested(id, message);
-            unchoker.ReceivedNotInterested(id);
+            base.HandleNotInterested (id, message);
+            unchoker.ReceivedNotInterested (id);
         }
 
-        public override void HandlePeerConnected(PeerId id)
+        public override void HandlePeerConnected (PeerId id)
         {
-            unchoker.PeerConnected(id);
-            base.HandlePeerConnected(id);
+            unchoker.PeerConnected (id);
+            base.HandlePeerConnected (id);
         }
 
-        public override void HandlePeerDisconnected(PeerId id)
+        public override void HandlePeerDisconnected (PeerId id)
         {
-            base.HandlePeerDisconnected(id);
-            unchoker.PeerDisconnected(id);
+            base.HandlePeerDisconnected (id);
+            unchoker.PeerDisconnected (id);
         }
 
-        public override void Tick(int counter)
+        public override void Tick (int counter)
         {
-            base.Tick(counter);
+            base.Tick (counter);
             if (unchoker.Complete) {
                 PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
-                PeerMessage haveAllMessage = new HaveAllMessage();
-                foreach (var peer in Manager.Peers.ConnectedPeers)
-                {
+                PeerMessage haveAllMessage = new HaveAllMessage ();
+                foreach (var peer in Manager.Peers.ConnectedPeers) {
                     PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
-                    peer.Enqueue(message);
+                    peer.Enqueue (message);
                 }
-                Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
+                Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
         }
     }

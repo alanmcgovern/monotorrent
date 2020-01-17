@@ -31,7 +31,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace MonoTorrent.Dht
 {
@@ -55,58 +54,56 @@ namespace MonoTorrent.Dht
         public List<Node> Nodes { get; }
         internal Node Replacement { get; set; }
 
-        public Bucket()
-            : this(NodeId.Minimum, NodeId.Maximum)
+        public Bucket ()
+            : this (NodeId.Minimum, NodeId.Maximum)
         {
 
         }
 
-        public Bucket(NodeId min, NodeId max)
+        public Bucket (NodeId min, NodeId max)
         {
             Min = min ?? throw new ArgumentNullException (nameof (min));
             Max = max ?? throw new ArgumentNullException (nameof (max));
 
             CanSplit = (Max - Min) > MaxCapacity;
-            LastChangedDelta = TimeSpan.FromDays(1);
-            LastChangedTimer = new ValueStopwatch();
-            Nodes = new List<Node>(MaxCapacity);
+            LastChangedDelta = TimeSpan.FromDays (1);
+            LastChangedTimer = new ValueStopwatch ();
+            Nodes = new List<Node> (MaxCapacity);
         }
 
-        public bool Add(Node node)
+        public bool Add (Node node)
         {
             // if the current bucket is not full we directly add the Node
-            if (Nodes.Count < MaxCapacity)
-            {
-                Nodes.Add(node);
+            if (Nodes.Count < MaxCapacity) {
+                Nodes.Add (node);
                 Changed ();
                 return true;
             }
             //test replace
 
-            for (int i = Nodes.Count - 1; i >= 0; i--)
-            {
+            for (int i = Nodes.Count - 1; i >= 0; i--) {
                 if (Nodes[i].State != NodeState.Bad)
                     continue;
 
-                Nodes.RemoveAt(i);
-                Nodes.Add(node);
+                Nodes.RemoveAt (i);
+                Nodes.Add (node);
                 Changed ();
                 return true;
             }
             return false;
         }
 
-        public bool CanContain(Node node)
+        public bool CanContain (Node node)
         {
             if (node == null)
-                throw new ArgumentNullException(nameof (node));
-            return CanContain(node.Id);
+                throw new ArgumentNullException (nameof (node));
+            return CanContain (node.Id);
         }
 
-        public bool CanContain(NodeId id)
+        public bool CanContain (NodeId id)
         {
             if (id == null)
-                throw new ArgumentNullException(nameof (id));
+                throw new ArgumentNullException (nameof (id));
 
             return Min <= id && Max > id;
         }
@@ -120,14 +117,14 @@ namespace MonoTorrent.Dht
             LastChangedTimer.Restart ();
         }
 
-        public int CompareTo(Bucket other)
-            => Min.CompareTo(other?.Min);
+        public int CompareTo (Bucket other)
+            => Min.CompareTo (other?.Min);
 
-        public override bool Equals(object obj)
-            => Equals(obj as Bucket);
+        public override bool Equals (object obj)
+            => Equals (obj as Bucket);
 
-        public bool Equals(Bucket other)
-            => Min.Equals (other?.Min) && Max.Equals(other?.Max);
+        public bool Equals (Bucket other)
+            => Min.Equals (other?.Min) && Max.Equals (other?.Max);
 
         public IEnumerator<Node> GetEnumerator ()
             => Nodes.GetEnumerator ();
@@ -135,13 +132,13 @@ namespace MonoTorrent.Dht
         IEnumerator IEnumerable.GetEnumerator ()
             => GetEnumerator ();
 
-        public override int GetHashCode()
-            => Min.GetHashCode() ^ Max.GetHashCode();
+        public override int GetHashCode ()
+            => Min.GetHashCode () ^ Max.GetHashCode ();
 
-        internal void SortBySeen()
-            => Nodes.Sort(LastSeenComparer);
+        internal void SortBySeen ()
+            => Nodes.Sort (LastSeenComparer);
 
-        public override string ToString()
-            => string.Format("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
+        public override string ToString ()
+            => string.Format ("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
     }
 }

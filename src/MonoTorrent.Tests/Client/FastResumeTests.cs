@@ -28,12 +28,8 @@
 
 
 using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
@@ -47,32 +43,32 @@ namespace MonoTorrent.Client
         [Test]
         public void AllHashed_AllDownloaded ()
         {
-            var unhashedPieces = new  BitField (10).SetAll (false);
-            var downloaded = new  BitField (10).SetAll (true);
+            var unhashedPieces = new BitField (10).SetAll (false);
+            var downloaded = new BitField (10).SetAll (true);
             Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void AllHashed_NothingDownloaded ()
         {
-            var unhashedPieces = new  BitField (10).SetAll (false);
-            var downloaded = new  BitField (10).SetAll (false);
+            var unhashedPieces = new BitField (10).SetAll (false);
+            var downloaded = new BitField (10).SetAll (false);
             Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void NoneHashed_NothingDownloaded ()
         {
-            var unhashedPieces = new  BitField (10).SetAll (true);
-            var downloaded = new  BitField (10).SetAll (false);
+            var unhashedPieces = new BitField (10).SetAll (true);
+            var downloaded = new BitField (10).SetAll (false);
             Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void NoneHashed_AllDownloaded ()
         {
-            var unhashedPieces = new  BitField (10).SetAll (true);
-            var downloaded = new  BitField (10).SetAll (true);
+            var unhashedPieces = new BitField (10).SetAll (true);
+            var downloaded = new BitField (10).SetAll (true);
             Assert.Throws<ArgumentException> (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 

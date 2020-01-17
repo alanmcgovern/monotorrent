@@ -31,8 +31,8 @@ namespace MonoTorrent.Client.Tracker
 {
     public class ScrapeResponseEventArgs : TrackerResponseEventArgs
     {
-        public ScrapeResponseEventArgs(ITracker tracker, bool successful)
-            : base(tracker, successful)
+        public ScrapeResponseEventArgs (ITracker tracker, bool successful)
+            : base (tracker, successful)
         {
 
         }

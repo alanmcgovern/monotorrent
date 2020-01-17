@@ -43,14 +43,14 @@ namespace MonoTorrent.Client.Modes
         ConnectionManager ConnectionManager { get; set; }
         DiskManager DiskManager { get; set; }
         TorrentManager Manager { get; set; }
-        PeerId Peer { get; set ; }
+        PeerId Peer { get; set; }
         EngineSettings Settings { get; set; }
         ManualTrackerManager TrackerManager { get; set; }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            conn = new ConnectionPair().WithTimeout ();
+            conn = new ConnectionPair ().WithTimeout ();
             Settings = new EngineSettings ();
             DiskManager = new DiskManager (Settings, new NullWriter ());
             ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, DiskManager);
@@ -70,9 +70,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            conn.Dispose();
+            conn.Dispose ();
             DiskManager.Dispose ();
         }
 
@@ -102,27 +102,27 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public async Task Announce_StoppedEvent_Timeout()
+        public async Task Announce_StoppedEvent_Timeout ()
         {
-            TrackerManager.AddTracker("http://1.1.1.1");
-            TrackerManager.ResponseDelay = TimeSpan.FromMinutes(1);
+            TrackerManager.AddTracker ("http://1.1.1.1");
+            TrackerManager.ResponseDelay = TimeSpan.FromMinutes (1);
 
-            var mode = new StoppingMode(Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            await mode.WaitForStoppingToComplete(TimeSpan.FromMilliseconds(1)).WithTimeout ("Should've bailed");
+            await mode.WaitForStoppingToComplete (TimeSpan.FromMilliseconds (1)).WithTimeout ("Should've bailed");
 
-            Assert.AreEqual(0, TrackerManager.Announces.Count, "#1");
+            Assert.AreEqual (0, TrackerManager.Announces.Count, "#1");
         }
 
         [Test]
         public async Task DisposeActiveConnections ()
         {
-            Manager.Peers.ConnectedPeers.Add(Peer);
+            Manager.Peers.ConnectedPeers.Add (Peer);
             Assert.IsFalse (Peer.Disposed, "#1");
 
-            var mode = new StoppingMode(Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            await mode.WaitForStoppingToComplete();
+            await mode.WaitForStoppingToComplete ();
 
             Assert.IsTrue (Peer.Disposed, "#2");
             Assert.AreEqual (0, Manager.Peers.AvailablePeers.Count, "#3");

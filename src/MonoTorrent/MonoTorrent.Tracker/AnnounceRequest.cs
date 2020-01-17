@@ -34,7 +34,7 @@ using System.Net;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
-{       
+{
     public class AnnounceRequest : TrackerRequest
     {
         static readonly string[] MandatoryFields = {
@@ -55,23 +55,20 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The total number of bytes downloaded since the 'Started' event was sent.
         /// </summary>
-        public int Downloaded => ParseInt("downloaded");
+        public int Downloaded => ParseInt ("downloaded");
 
         /// <summary>
         /// The event, if any, associated with this announce
         /// </summary>
-        public TorrentEvent Event
-        {
-            get
-            {
+        public TorrentEvent Event {
+            get {
                 string e = Parameters["event"];
-                if (e != null)
-                {
-                    if (e.Equals("started"))
+                if (e != null) {
+                    if (e.Equals ("started"))
                         return TorrentEvent.Started;
-                    if (e.Equals("stopped"))
+                    if (e.Equals ("stopped"))
                         return TorrentEvent.Stopped;
-                    if (e.Equals("completed"))
+                    if (e.Equals ("completed"))
                         return TorrentEvent.Completed;
                 }
 
@@ -82,12 +79,12 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The number of bytes which still need to be downloaded to make the torrent 100% complete.
         /// </summary>
-        public int Left => ParseInt("left");
+        public int Left => ParseInt ("left");
 
         /// <summary>
         /// True if the peers should be returned in compact form.
         /// </summary>
-        public bool HasRequestedCompact => ParseInt("compact") == 1;
+        public bool HasRequestedCompact => ParseInt ("compact") == 1;
 
         /// <summary>
         /// The infohash of the torrent this request is associated with.
@@ -110,7 +107,7 @@ namespace MonoTorrent.Tracker
         /// The number of peers the client wants to receive. If unspecified then the tracker default amount
         /// be returned.
         /// </summary>
-        public int NumberWanted => ParseInt(Parameters["numwant"], DefaultWanted);
+        public int NumberWanted => ParseInt (Parameters["numwant"], DefaultWanted);
 
         /// <summary>
         /// The 20 byte identifier for the peer. This is shared with other peers when a non-compact response
@@ -121,7 +118,7 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The port the client is listening for incoming connections on.
         /// </summary>
-        public int Port => ParseInt("port");
+        public int Port => ParseInt ("port");
 
         /// <summary>
         /// The first time a peer announces to a tracker, we send it the <see cref="TrackerServer.TrackerId"/>
@@ -132,49 +129,47 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The total amount of bytes uploaded since the 'Started' event was sent.
         /// </summary>
-        public long Uploaded => ParseInt("uploaded");
+        public long Uploaded => ParseInt ("uploaded");
 
-        public AnnounceRequest(NameValueCollection collection, IPAddress address)
-            : base(collection, address)
+        public AnnounceRequest (NameValueCollection collection, IPAddress address)
+            : base (collection, address)
         {
-            InfoHash = CheckMandatoryFields();
+            InfoHash = CheckMandatoryFields ();
 
             /* If the user has supplied an IP address, we use that instead of
              * the IP address we read from the announce request connection. */
             IPAddress supplied;
-            if (IPAddress.TryParse(Parameters["ip"] ?? "", out supplied) && !supplied.Equals(IPAddress.Any))
-                ClientAddress = new IPEndPoint(supplied, Port);
+            if (IPAddress.TryParse (Parameters["ip"] ?? "", out supplied) && !supplied.Equals (IPAddress.Any))
+                ClientAddress = new IPEndPoint (supplied, Port);
             else
-                ClientAddress = new IPEndPoint(address, Port);
+                ClientAddress = new IPEndPoint (address, Port);
         }
 
-        InfoHash CheckMandatoryFields()
+        InfoHash CheckMandatoryFields ()
         {
-            List<string> keys = new List<string>(Parameters.AllKeys);
-            foreach (string field in MandatoryFields)
-            {
-                if (keys.Contains(field))
+            List<string> keys = new List<string> (Parameters.AllKeys);
+            foreach (string field in MandatoryFields) {
+                if (keys.Contains (field))
                     continue;
 
-                Response.Add(FailureKey, (BEncodedString)("mandatory announce parameter " + field + " in query missing"));
+                Response.Add (FailureKey, (BEncodedString) ("mandatory announce parameter " + field + " in query missing"));
                 return null;
             }
-            byte[] hash = UriHelper.UrlDecode(Parameters["info_hash"]);
-            if (hash.Length != 20)
-            {
-                Response.Add(FailureKey, (BEncodedString)(string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));
+            byte[] hash = UriHelper.UrlDecode (Parameters["info_hash"]);
+            if (hash.Length != 20) {
+                Response.Add (FailureKey, (BEncodedString) (string.Format ("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));
                 return null;
             }
-            return new InfoHash(hash);
+            return new InfoHash (hash);
         }
 
-        int ParseInt(string str, int? defaultValue = null)
+        int ParseInt (string str, int? defaultValue = null)
         {
             int p;
             str = Parameters[str];
-            if (!int.TryParse(str, out p))
+            if (!int.TryParse (str, out p))
                 p = defaultValue ?? 0;
             return p;
         }
-    }   
+    }
 }

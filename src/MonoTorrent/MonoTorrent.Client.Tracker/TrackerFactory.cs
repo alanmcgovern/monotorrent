@@ -40,25 +40,25 @@ namespace MonoTorrent.Client.Tracker
             { "https", uri => new HTTPTracker (uri) },
         };
 
-        public static void Register(string protocol, Type trackerType)
+        public static void Register (string protocol, Type trackerType)
         {
-            if (string.IsNullOrEmpty(protocol))
-                throw new ArgumentException("cannot be null or empty", protocol);
+            if (string.IsNullOrEmpty (protocol))
+                throw new ArgumentException ("cannot be null or empty", protocol);
             if (trackerType == null)
-                throw new ArgumentNullException(nameof(trackerType));
+                throw new ArgumentNullException (nameof (trackerType));
 
             Register (protocol, uri => (ITracker) Activator.CreateInstance (trackerType, uri));
         }
 
-        public static void Register(string protocol, Func<Uri, ITracker> creator)
+        public static void Register (string protocol, Func<Uri, ITracker> creator)
         {
             lock (trackerTypes)
                 trackerTypes[protocol] = creator;
         }
 
-        public static ITracker Create(Uri uri)
+        public static ITracker Create (Uri uri)
         {
-            Check.Uri(uri);
+            Check.Uri (uri);
 
             try {
                 lock (trackerTypes) {
@@ -66,9 +66,7 @@ namespace MonoTorrent.Client.Tracker
                         return creator (uri);
                     return null;
                 }
-            }
-            catch
-            {
+            } catch {
                 return null; // Invalid tracker
             }
         }

@@ -1,8 +1,8 @@
 using System;
 
-using NUnit.Framework;
 using MonoTorrent.BEncoding;
-using System.Collections.Generic;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Common
 {
@@ -62,7 +62,7 @@ namespace MonoTorrent.Common
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
-            Assert.AreEqual ("a", d ["comment"].ToString (), "#1");
+            Assert.AreEqual ("a", d["comment"].ToString (), "#1");
         }
 
         [Test]
@@ -72,11 +72,11 @@ namespace MonoTorrent.Common
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
             d = editor.ToDictionary ();
-            Assert.AreEqual ("b", d ["comment"].ToString (), "#1");
+            Assert.AreEqual ("b", d["comment"].ToString (), "#1");
         }
 
         [Test]
-        public void EditComment_null()
+        public void EditComment_null ()
         {
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d) {
@@ -90,21 +90,19 @@ namespace MonoTorrent.Common
         [Test]
         public void ReplaceInfoDict ()
         {
-            Assert.Throws<InvalidOperationException>(() =>
-           {
-               var editor = new TorrentEditor(new BEncodedDictionary()) { CanEditSecureMetadata = false };
-               editor.SetCustom("info", new BEncodedDictionary());
-           });
+            Assert.Throws<InvalidOperationException> (() => {
+                var editor = new TorrentEditor (new BEncodedDictionary ()) { CanEditSecureMetadata = false };
+                editor.SetCustom ("info", new BEncodedDictionary ());
+            });
         }
 
         [Test]
         public void EditProtectedProperty_NotAllowed ()
         {
-            Assert.Throws<InvalidOperationException>(() =>
-           {
-               var editor = new TorrentEditor(new BEncodedDictionary()) { CanEditSecureMetadata = false };
-               editor.PieceLength = 16;
-           });
+            Assert.Throws<InvalidOperationException> (() => {
+                var editor = new TorrentEditor (new BEncodedDictionary ()) { CanEditSecureMetadata = false };
+                editor.PieceLength = 16;
+            });
         }
 
         BEncodedDictionary Create (string key, string value)

@@ -30,9 +30,9 @@
 using System;
 using System.Threading.Tasks;
 
-using ReusableTasks;
-
 using NUnit.Framework;
+
+using ReusableTasks;
 
 namespace MonoTorrent
 {
@@ -61,7 +61,7 @@ namespace MonoTorrent
             if (result == task) {
                 await task;
             } else {
-                Assert.Fail (message ?? $"The task did not complete within {(int)timeout.TotalMilliseconds}ms.");
+                Assert.Fail (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
                 throw new TimeoutException ("This is just to keep the compiler happy :p");
             }
         }
@@ -84,7 +84,7 @@ namespace MonoTorrent
             if (result == task)
                 return await task;
 
-            Assert.Fail (message ?? $"The task did not complete within {(int)timeout.TotalMilliseconds}ms.");
+            Assert.Fail (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
             throw new TimeoutException ("This is just to keep the compiler happy :p");
         }
     }

@@ -36,7 +36,7 @@ namespace MonoTorrent.Tracker
     {
         public IList<ITrackerItem> Torrents { get; }
 
-        public ScrapeEventArgs(List<ITrackerItem> torrents)
+        public ScrapeEventArgs (List<ITrackerItem> torrents)
         {
             Torrents = new List<ITrackerItem> (torrents).AsReadOnly ();
         }

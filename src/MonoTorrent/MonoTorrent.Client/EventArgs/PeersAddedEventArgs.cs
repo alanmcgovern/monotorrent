@@ -47,8 +47,8 @@ namespace MonoTorrent.Client
         /// <param name="manager">The <see cref="TorrentManager"/> which peers were discovered for.</param>
         /// <param name="peersAdded">The number of peers just added. This will be less than <paramref name="total"/> if some peers are duplicates.</param>
         /// <param name="total">The total number of peers discovered, including duplicates.</param>
-        protected PeersAddedEventArgs(TorrentManager manager, int peersAdded, int total)
-            : base(manager)
+        protected PeersAddedEventArgs (TorrentManager manager, int peersAdded, int total)
+            : base (manager)
         {
             NewPeers = peersAdded;
             ExistingPeers = total - peersAdded;

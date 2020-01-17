@@ -27,7 +27,6 @@
 //
 
 
-using System;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
@@ -69,7 +68,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task NegativeMessageBodyLength()
+        public async Task NegativeMessageBodyLength ()
         {
             var buffer = new byte[4];
             Message.Write (buffer, 0, -6);
@@ -87,12 +86,12 @@ namespace MonoTorrent.Client
             var data = new byte[20];
             Message.Write (data, 0, 16);
             for (int i = 4; i < 16; i++)
-                data [i] = byte.MaxValue;
+                data[i] = byte.MaxValue;
 
             var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null);
-            await NetworkIO.SendAsync(pair.Outgoing, data, 0, 20, null, null, null);
+            await NetworkIO.SendAsync (pair.Outgoing, data, 0, 20, null, null, null);
 
-            Assert.ThrowsAsync <ProtocolException> (async () => await task, "#1");
+            Assert.ThrowsAsync<ProtocolException> (async () => await task, "#1");
         }
 
         [Test]

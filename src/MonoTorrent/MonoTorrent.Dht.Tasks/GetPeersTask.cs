@@ -40,23 +40,23 @@ namespace MonoTorrent.Dht.Tasks
         DhtEngine Engine { get; }
         NodeId InfoHash { get; }
 
-        public GetPeersTask(DhtEngine engine, InfoHash infohash)
-            : this(engine, new NodeId(infohash))
+        public GetPeersTask (DhtEngine engine, InfoHash infohash)
+            : this (engine, new NodeId (infohash))
         {
 
         }
 
-        public GetPeersTask(DhtEngine engine, NodeId infohash)
+        public GetPeersTask (DhtEngine engine, NodeId infohash)
         {
             Engine = engine;
             InfoHash = infohash;
         }
 
-        public async Task<IEnumerable<Node>> ExecuteAsync()
+        public async Task<IEnumerable<Node>> ExecuteAsync ()
         {
             var activeQueries = new List<Task<SendQueryEventArgs>> ();
-            var closestNodes = new ClosestNodesCollection(InfoHash);
-            var closestActiveNodes = new ClosestNodesCollection(InfoHash);
+            var closestNodes = new ClosestNodesCollection (InfoHash);
+            var closestActiveNodes = new ClosestNodesCollection (InfoHash);
 
             foreach (var node in Engine.RoutingTable.GetClosest (InfoHash)) {
                 if (closestNodes.Add (node))

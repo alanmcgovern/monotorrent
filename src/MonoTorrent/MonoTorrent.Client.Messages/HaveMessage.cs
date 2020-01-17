@@ -42,8 +42,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The index of the piece that you "have"
         /// </summary>
-        public int PieceIndex
-        {
+        public int PieceIndex {
             get { return this.pieceIndex; }
         }
         private int pieceIndex;
@@ -54,7 +53,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Creates a new HaveMessage
         /// </summary>
-        public HaveMessage()
+        public HaveMessage ()
         {
         }
 
@@ -63,7 +62,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Creates a new HaveMessage
         /// </summary>
         /// <param name="pieceIndex">The index of the piece that you "have"</param>
-        public HaveMessage(int pieceIndex)
+        public HaveMessage (int pieceIndex)
         {
             this.pieceIndex = pieceIndex;
         }
@@ -71,27 +70,26 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Methods
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
+            written += Write (buffer, written, pieceIndex);
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.pieceIndex = ReadInt(buffer, offset);
+            this.pieceIndex = ReadInt (buffer, offset);
         }
-     
+
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength
-        {
+        public override int ByteLength {
             get { return (messageLength + 4); }
         }
         #endregion
@@ -102,16 +100,16 @@ namespace MonoTorrent.Client.Messages.Standard
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append("HaveMessage ");
-            sb.Append(" Index ");
-            sb.Append(this.pieceIndex);
-            return sb.ToString();
+            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            sb.Append ("HaveMessage ");
+            sb.Append (" Index ");
+            sb.Append (this.pieceIndex);
+            return sb.ToString ();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             HaveMessage msg = obj as HaveMessage;
 
@@ -121,9 +119,9 @@ namespace MonoTorrent.Client.Messages.Standard
             return (this.pieceIndex == msg.pieceIndex);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return this.pieceIndex.GetHashCode();
+            return this.pieceIndex.GetHashCode ();
         }
         #endregion
     }

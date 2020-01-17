@@ -31,7 +31,7 @@ namespace MonoTorrent.Client.RateLimiters
 {
     interface IRateLimiter
     {
-        bool TryProcess(long amount);
+        bool TryProcess (long amount);
         bool Unlimited { get; }
     }
 }
