@@ -62,17 +62,17 @@ namespace MonoTorrent.Client
         /// </summary>
         internal int TotalPeers => ActivePeers.Count + AvailablePeers.Count;
 
-        internal PeerManager()
+        internal PeerManager ()
         {
-            ConnectedPeers = new List<PeerId>();
-            ConnectingToPeers = new List<Peer>();
+            ConnectedPeers = new List<PeerId> ();
+            ConnectingToPeers = new List<Peer> ();
 
-            ActivePeers = new List<Peer>();
-            AvailablePeers = new List<Peer>();
-            BannedPeers = new List<Peer>();
+            ActivePeers = new List<Peer> ();
+            AvailablePeers = new List<Peer> ();
+            BannedPeers = new List<Peer> ();
         }
 
-        internal void ClearAll()
+        internal void ClearAll ()
         {
             ConnectedPeers.Clear ();
             ConnectingToPeers.Clear ();
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
             BannedPeers.Clear ();
         }
 
-        internal bool Contains(Peer peer)
+        internal bool Contains (Peer peer)
         {
             return ActivePeers.Contains (peer)
                 || AvailablePeers.Contains (peer)

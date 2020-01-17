@@ -39,18 +39,18 @@ namespace MonoTorrent.Client.Tracker
         internal bool SendingStartedEvent { get; set; }
         internal bool SentStartedEvent { get; set; }
 
-        internal TrackerTier(IEnumerable<string> trackerUrls)
+        internal TrackerTier (IEnumerable<string> trackerUrls)
         {
-            var trackerList = new List<ITracker>();
+            var trackerList = new List<ITracker> ();
             foreach (string trackerUrl in trackerUrls) {
-                if (!Uri.TryCreate(trackerUrl, UriKind.Absolute, out Uri result)) {
+                if (!Uri.TryCreate (trackerUrl, UriKind.Absolute, out Uri result)) {
                     Logger.Log (null, "TrackerTier - Invalid tracker Url specified: {0}", trackerUrl);
                     continue;
                 }
 
-                var tracker = TrackerFactory.Create(result);
+                var tracker = TrackerFactory.Create (result);
                 if (tracker != null) {
-                    trackerList.Add(tracker);
+                    trackerList.Add (tracker);
                 } else {
                     Logger.Log (null, "Unsupported protocol {0}", result);
                 }

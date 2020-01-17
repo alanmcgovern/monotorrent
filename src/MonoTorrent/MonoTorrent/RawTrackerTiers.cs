@@ -54,7 +54,7 @@ namespace MonoTorrent
         {
             if (item != null) {
                 for (int i = 0; i < Tiers.Count; i++)
-                    if (item.Tier == Tiers [i])
+                    if (item.Tier == Tiers[i])
                         return i;
             }
             return -1;
@@ -71,8 +71,8 @@ namespace MonoTorrent
         }
 
         public RawTrackerTier this[int index] {
-            get { return new RawTrackerTier ((BEncodedList) Tiers [index]); }
-            set { Tiers [index] = value.Tier; }
+            get { return new RawTrackerTier ((BEncodedList) Tiers[index]); }
+            set { Tiers[index] = value.Tier; }
         }
 
         public void Add (RawTrackerTier item)
@@ -99,7 +99,7 @@ namespace MonoTorrent
         public void CopyTo (RawTrackerTier[] array, int arrayIndex)
         {
             foreach (var v in this)
-                array [arrayIndex ++] = v;
+                array[arrayIndex++] = v;
         }
 
         public bool Remove (RawTrackerTier item)

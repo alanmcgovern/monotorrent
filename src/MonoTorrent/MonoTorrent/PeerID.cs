@@ -29,6 +29,7 @@
 
 
 using System.Text.RegularExpressions;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
@@ -97,7 +98,7 @@ namespace MonoTorrent
         uTorrent,
         UPnPNatBitTorrent,
         Vuze,
-		WebSeed,
+        WebSeed,
         XanTorrent,
         XBTClient,
         ZipTorrent
@@ -108,17 +109,17 @@ namespace MonoTorrent
     /// </summary>
     public struct Software
     {
-        static readonly Regex bow = new Regex("-BOWA");
-        static readonly Regex brahms = new Regex("M/d-/d-/d--");
-        static readonly Regex bitlord = new Regex("exbc..LORD");
-        static readonly Regex bittornado = new Regex(@"(([A-Za-z]{1})\d{2}[A-Za-z]{1})----*");
-        static readonly Regex bitcomet = new Regex("exbc");
-        static readonly Regex mldonkey = new Regex("-ML/d\\./d\\./d");
-        static readonly Regex opera = new Regex("OP/d{4}");
-        static readonly Regex queenbee = new Regex("Q/d-/d-/d--");
-        static readonly Regex standard = new Regex(@"-(([A-Za-z\~]{2})\d{4})-*");
-        static readonly Regex shadows = new Regex(@"(([A-Za-z]{1})\d{3})----*");
-        static readonly Regex xbt = new Regex("XBT/d/{3}");
+        static readonly Regex bow = new Regex ("-BOWA");
+        static readonly Regex brahms = new Regex ("M/d-/d-/d--");
+        static readonly Regex bitlord = new Regex ("exbc..LORD");
+        static readonly Regex bittornado = new Regex (@"(([A-Za-z]{1})\d{2}[A-Za-z]{1})----*");
+        static readonly Regex bitcomet = new Regex ("exbc");
+        static readonly Regex mldonkey = new Regex ("-ML/d\\./d\\./d");
+        static readonly Regex opera = new Regex ("OP/d{4}");
+        static readonly Regex queenbee = new Regex ("Q/d-/d-/d--");
+        static readonly Regex standard = new Regex (@"-(([A-Za-z\~]{2})\d{4})-*");
+        static readonly Regex shadows = new Regex (@"(([A-Za-z]{1})\d{3})----*");
+        static readonly Regex xbt = new Regex ("XBT/d/{3}");
         private ClientApp client;
         private BEncodedString peerId;
         private string shortId;
@@ -127,8 +128,7 @@ namespace MonoTorrent
         /// The name of the torrent software being used
         /// </summary>
         /// <value>The client.</value>
-        public ClientApp Client
-        {
+        public ClientApp Client {
             get { return this.client; }
         }
 
@@ -136,8 +136,7 @@ namespace MonoTorrent
         /// The peer's ID
         /// </summary>
         /// <value>The peer id.</value>
-        internal BEncodedString PeerId
-        {
+        internal BEncodedString PeerId {
             get { return this.peerId; }
         }
 
@@ -145,8 +144,7 @@ namespace MonoTorrent
         /// A shortened version of the peers ID
         /// </summary>
         /// <value>The short id.</value>
-        public string ShortId
-        {
+        public string ShortId {
             get { return this.shortId; }
         }
 
@@ -155,25 +153,22 @@ namespace MonoTorrent
         /// Initializes a new instance of the <see cref="Software"/> class.
         /// </summary>
         /// <param name="peerId">The peer id.</param>
-        internal Software(BEncodedString peerId)
+        internal Software (BEncodedString peerId)
         {
             Match m;
 
             this.peerId = peerId;
             var idAsText = peerId.Text;
-            if (idAsText.StartsWith("-WebSeed-", System.StringComparison.Ordinal))
-            {
+            if (idAsText.StartsWith ("-WebSeed-", System.StringComparison.Ordinal)) {
                 this.shortId = "WebSeed";
                 this.client = ClientApp.WebSeed;
                 return;
             }
 
             #region Standard style peers
-            if ((m = standard.Match(idAsText)).Success)
-            {
+            if ((m = standard.Match (idAsText)).Success) {
                 this.shortId = m.Groups[1].Value;
-                switch (m.Groups[2].Value)
-                {
+                switch (m.Groups[2].Value) {
                     case ("AG"):
                     case ("A~"):
                         this.client = ClientApp.Ares;
@@ -311,7 +306,7 @@ namespace MonoTorrent
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine("Unsupported standard style: " + m.Groups[2].Value);
+                        System.Diagnostics.Trace.WriteLine ("Unsupported standard style: " + m.Groups[2].Value);
                         client = ClientApp.Unknown;
                         break;
                 }
@@ -320,11 +315,9 @@ namespace MonoTorrent
             #endregion
 
             #region Shadows Style
-            if ((m = shadows.Match(idAsText)).Success)
-            {
+            if ((m = shadows.Match (idAsText)).Success) {
                 this.shortId = m.Groups[1].Value;
-                switch (m.Groups[2].Value)
-                {
+                switch (m.Groups[2].Value) {
                     case ("A"):
                         this.client = ClientApp.ABC;
                         break;
@@ -358,8 +351,7 @@ namespace MonoTorrent
             #endregion
 
             #region Brams Client
-            if ((m = brahms.Match(idAsText)).Success)
-            {
+            if ((m = brahms.Match (idAsText)).Success) {
                 this.shortId = "M";
                 this.client = ClientApp.BitTorrent;
                 return;
@@ -367,8 +359,7 @@ namespace MonoTorrent
             #endregion
 
             #region BitLord
-            if ((m = bitlord.Match(idAsText)).Success)
-            {
+            if ((m = bitlord.Match (idAsText)).Success) {
                 this.client = ClientApp.BitLord;
                 this.shortId = "lord";
                 return;
@@ -376,8 +367,7 @@ namespace MonoTorrent
             #endregion
 
             #region BitComet
-            if ((m = bitcomet.Match(idAsText)).Success)
-            {
+            if ((m = bitcomet.Match (idAsText)).Success) {
                 this.client = ClientApp.BitComet;
                 this.shortId = "BC";
                 return;
@@ -385,8 +375,7 @@ namespace MonoTorrent
             #endregion
 
             #region XBT
-            if ((m = xbt.Match(idAsText)).Success)
-            {
+            if ((m = xbt.Match (idAsText)).Success) {
                 this.client = ClientApp.XBTClient;
                 this.shortId = "XBT";
                 return;
@@ -394,16 +383,14 @@ namespace MonoTorrent
             #endregion
 
             #region Opera
-            if ((m = opera.Match(idAsText)).Success)
-            {
+            if ((m = opera.Match (idAsText)).Success) {
                 this.client = ClientApp.Opera;
                 this.shortId = "OP";
             }
             #endregion
 
             #region MLDonkey
-            if ((m = mldonkey .Match(idAsText)).Success)
-            {
+            if ((m = mldonkey.Match (idAsText)).Success) {
                 this.client = ClientApp.MLDonkey;
                 this.shortId = "ML";
                 return;
@@ -411,8 +398,7 @@ namespace MonoTorrent
             #endregion
 
             #region Bits on wheels
-            if ((m = bow.Match(idAsText)).Success)
-            {
+            if ((m = bow.Match (idAsText)).Success) {
                 this.client = ClientApp.BitsOnWheels;
                 this.shortId = "BOW";
                 return;
@@ -420,8 +406,7 @@ namespace MonoTorrent
             #endregion
 
             #region Queen Bee
-            if ((m = queenbee.Match(idAsText)).Success)
-            {
+            if ((m = queenbee.Match (idAsText)).Success) {
                 this.client = ClientApp.QueenBee;
                 this.shortId = "Q";
                 return;
@@ -429,8 +414,7 @@ namespace MonoTorrent
             #endregion
 
             #region BitTornado special style
-            if((m = bittornado.Match(idAsText)).Success)
-            {
+            if ((m = bittornado.Match (idAsText)).Success) {
                 this.shortId = m.Groups[1].Value;
                 this.client = ClientApp.BitTornado;
                 return;
@@ -442,7 +426,7 @@ namespace MonoTorrent
         }
 
 
-        public override string ToString()
+        public override string ToString ()
         {
             return this.shortId;
         }

@@ -37,7 +37,7 @@ namespace MonoTorrent
 
         ListenerStatus Status { get; }
 
-        void Start();
-        void Stop();
+        void Start ();
+        void Stop ();
     }
 }

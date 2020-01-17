@@ -40,7 +40,7 @@ namespace MonoTorrent.Dht
         public IList<Peer> Peers { get; }
         public InfoHash InfoHash { get; }
 
-        internal PeersFoundEventArgs(InfoHash infoHash, IList<Peer> peers)
+        internal PeersFoundEventArgs (InfoHash infoHash, IList<Peer> peers)
         {
             InfoHash = infoHash;
             Peers = new ReadOnlyCollection<Peer> (peers);

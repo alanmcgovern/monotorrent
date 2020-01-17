@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
     {
         public TorrentManager TorrentManager { get; }
 
-        protected TorrentEventArgs(TorrentManager manager)
+        protected TorrentEventArgs (TorrentManager manager)
         {
             TorrentManager = manager;
         }

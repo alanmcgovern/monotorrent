@@ -28,15 +28,16 @@
 
 
 using MonoTorrent.Client.Connections;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
 {
     interface IEncryptor
     {
-        ReusableTask HandshakeAsync(IConnection2 socket);
+        ReusableTask HandshakeAsync (IConnection2 socket);
 
-        ReusableTask HandshakeAsync(IConnection2 socket, byte[] initialBuffer, int offset, int count);
+        ReusableTask HandshakeAsync (IConnection2 socket, byte[] initialBuffer, int offset, int count);
 
         IEncryption Encryptor { get; }
         IEncryption Decryptor { get; }

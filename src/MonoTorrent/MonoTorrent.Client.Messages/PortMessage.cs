@@ -44,13 +44,11 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Public Properties
 
-        public override int ByteLength
-        {
+        public override int ByteLength {
             get { return (messageLength + 4); }
         }
 
-        public int Port
-        {
+        public int Port {
             get { return this.port; }
         }
 
@@ -58,54 +56,54 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Constructors
-        public PortMessage()
+        public PortMessage ()
         {
         }
 
-        public PortMessage(ushort port)
+        public PortMessage (ushort port)
         {
             this.port = port;
         }
-        
+
         #endregion
 
 
         #region Methods
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.port = (ushort)ReadShort(buffer, ref offset);
+            this.port = (ushort) ReadShort (buffer, ref offset);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, port);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
+            written += Write (buffer, written, port);
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             PortMessage msg = obj as PortMessage;
             return (msg == null) ? false : (this.port == msg.port);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return this.port.GetHashCode();
+            return this.port.GetHashCode ();
         }
 
-        public override string ToString()
+        public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append("PortMessage ");
-            sb.Append(" Port ");
-            sb.Append(this.port);
-            return sb.ToString();
+            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            sb.Append ("PortMessage ");
+            sb.Append (" Port ");
+            sb.Append (this.port);
+            return sb.ToString ();
         }
 
         #endregion

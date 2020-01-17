@@ -49,7 +49,7 @@ namespace MonoTorrent
         /// The percentage of the current file which has been hashed (range 0-1)
         /// </summary>
         public double FileCompletion
-            => FileBytesHashed / (double)FileSize;
+            => FileBytesHashed / (double) FileSize;
 
         /// <summary>
         /// The number of bytes hashed so far
@@ -65,7 +65,7 @@ namespace MonoTorrent
         /// The percentage of the data which has been hashed (range 0-1)
         /// </summary>
         public double OverallCompletion
-            => OverallBytesHashed / (double)OverallSize;
+            => OverallBytesHashed / (double) OverallSize;
 
         /// <summary>
         /// The path of the current file
@@ -76,7 +76,7 @@ namespace MonoTorrent
 
         #region Constructors
 
-        internal TorrentCreatorEventArgs(string file, long fileHashed, long fileTotal, long overallHashed, long overallTotal)
+        internal TorrentCreatorEventArgs (string file, long fileHashed, long fileTotal, long overallHashed, long overallTotal)
         {
             CurrentFile = file;
             FileBytesHashed = fileHashed;

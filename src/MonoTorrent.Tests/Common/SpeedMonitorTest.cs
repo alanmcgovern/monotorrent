@@ -1,4 +1,5 @@
 using System;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Common
@@ -9,7 +10,7 @@ namespace MonoTorrent.Common
         [Test]
         public void InvalidConstructor ()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new SpeedMonitor(-1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new SpeedMonitor (-1));
         }
 
         [Test]
@@ -22,7 +23,7 @@ namespace MonoTorrent.Common
             var estimatedActualSpeed = speed * 4 / 3;
 
             var monitor = new SpeedMonitor ();
-            for (int i = 0; i < 37; i ++) {
+            for (int i = 0; i < 37; i++) {
                 monitor.AddDelta (speed);
                 monitor.Tick (750);
 
@@ -31,7 +32,7 @@ namespace MonoTorrent.Common
             }
 
             // Should be somewhere between 499 and 501 MB/sec
-            Assert.IsTrue((monitor.Rate - estimatedActualSpeed) < (1 * 1024 * 1024), "#3");
+            Assert.IsTrue ((monitor.Rate - estimatedActualSpeed) < (1 * 1024 * 1024), "#3");
         }
 
         [Test]

@@ -34,6 +34,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
@@ -47,8 +48,8 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class WebSeedTests
     {
-        Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
-       
+        Regex rangeMatcher = new Regex (@"(\d{1,10})-(\d{1,10})");
+
         bool partialData;
         public readonly int Count = 5;
         TestRig rig;
@@ -64,36 +65,36 @@ namespace MonoTorrent.Client
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            listener = new HttpListener();
-            listener.Prefixes.Add(ListenerURL);
-            listener.Start();
+            listener = new HttpListener ();
+            listener.Prefixes.Add (ListenerURL);
+            listener.Start ();
 
-            listener.BeginGetContext(GotContext, listener);
+            listener.BeginGetContext (GotContext, listener);
         }
 
         [OneTimeTearDown]
         public void FixtureTeardown ()
         {
-            listener.Close();
+            listener.Close ();
         }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            requestedUrl.Clear();
+            requestedUrl.Clear ();
             partialData = false;
 
-            rig = TestRig.CreateMultiFile();
+            rig = TestRig.CreateMultiFile ();
             rig.Manager.ChangePicker (new StandardPicker ());
 
-            connection = new HttpConnection(new Uri(ListenerURL));
+            connection = new HttpConnection (new Uri (ListenerURL));
             connection.Manager = rig.Manager;
             rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId(new Peer("this is my id", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            id = new PeerId (new Peer ("this is my id", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
             id.IsChoking = false;
             id.AmInterested = true;
-            id.BitField.SetAll(true);
+            id.BitField.SetAll (true);
             id.MaxPendingRequests = numberOfPieces;
 
             rig.Manager.PieceManager.AddPieceRequests (id);
@@ -101,9 +102,9 @@ namespace MonoTorrent.Client
         }
 
         [TearDown]
-        public void TearDown()
+        public void TearDown ()
         {
-            rig.Dispose();
+            rig.Dispose ();
         }
 
         [Test]
@@ -139,7 +140,7 @@ namespace MonoTorrent.Client
         public void CreatePeerIds ()
         {
             var ids = new HashSet<BEncodedString> ();
-            for (int i = 0; i < 20; i ++) {
+            for (int i = 0; i < 20; i++) {
                 var id = HttpConnection.CreatePeerId ();
                 Assert.AreEqual (20, id.TextBytes.Length, "#1");
                 Assert.IsTrue (ids.Add (id), "#2");
@@ -147,64 +148,64 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void TestPartialData()
+        public void TestPartialData ()
         {
             partialData = true;
-            Assert.ThrowsAsync<WebException> (() => RecieveFirst());
+            Assert.ThrowsAsync<WebException> (() => RecieveFirst ());
         }
 
         [Test]
-        public void TestInactiveServer()
+        public void TestInactiveServer ()
         {
-            connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
-            listener.Stop();
+            connection.ConnectionTimeout = TimeSpan.FromMilliseconds (100);
+            listener.Stop ();
 
-            Assert.ThrowsAsync<WebException> (() => RecieveFirst());
+            Assert.ThrowsAsync<WebException> (() => RecieveFirst ());
         }
 
         [Test]
-        public async Task RecieveFirst()
+        public async Task RecieveFirst ()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
-            var receiveTask = NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
+            var receiveTask = NetworkIO.ReceiveAsync (connection, buffer, 0, 4, null, null, null);
             var task = Send (requests.Encode (), 0, requests.ByteLength);
 
             await receiveTask;
-            await CompleteSendOrReceiveFirst(buffer);
+            await CompleteSendOrReceiveFirst (buffer);
             await task;
         }
 
         [Test]
-        public async Task SendFirst()
+        public async Task SendFirst ()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
             var task = Send (requests.Encode (), 0, requests.ByteLength);
-            var receiveTask  = connection.ReceiveAsync (buffer, 0, 4);
+            var receiveTask = connection.ReceiveAsync (buffer, 0, 4);
 
             await receiveTask;
-            await CompleteSendOrReceiveFirst(buffer);
+            await CompleteSendOrReceiveFirst (buffer);
             await task;
         }
 
         [Test]
-        public void ChunkedRequest()
+        public void ChunkedRequest ()
         {
-            rig.Manager.PieceManager.Picker.CancelRequests(id);
+            rig.Manager.PieceManager.Picker.CancelRequests (id);
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.Dequeue ();
 
-            byte[] sendBuffer = requests.Encode();
+            byte[] sendBuffer = requests.Encode ();
             var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
 
-            Assert.ThrowsAsync<ArgumentException>(() => sendTask);
+            Assert.ThrowsAsync<ArgumentException> (() => sendTask);
         }
 
         [Test]
         public void CompleteChunkBeforeRequestNext ()
         {
             var messages = requests.ToRequestMessages ().ToList ();
-            for (int i = 0; i < messages.Count - 1; i ++) {
+            for (int i = 0; i < messages.Count - 1; i++) {
                 rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength));
                 int orig = id.AmRequestingPiecesCount;
                 rig.Manager.PieceManager.AddPieceRequests (id);
@@ -219,102 +220,90 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void MultipleChunkedRequests()
+        public void MultipleChunkedRequests ()
         {
-            ChunkedRequest();
-            ChunkedRequest();
-            ChunkedRequest();
+            ChunkedRequest ();
+            ChunkedRequest ();
+            ChunkedRequest ();
         }
 
-        async Task Send(byte[] buffer, int offset, int count, int maxBytesPerChunk = -1)
+        async Task Send (byte[] buffer, int offset, int count, int maxBytesPerChunk = -1)
         {
-            if (maxBytesPerChunk == -1)
-            {
-                await NetworkIO.SendAsync(connection, buffer, offset, count, null, null, null);
-            }
-            else
-            {
-                while (count > 0)
-                {
-                    var toSend = Math.Min(maxBytesPerChunk, count);
+            if (maxBytesPerChunk == -1) {
+                await NetworkIO.SendAsync (connection, buffer, offset, count, null, null, null);
+            } else {
+                while (count > 0) {
+                    var toSend = Math.Min (maxBytesPerChunk, count);
                     await NetworkIO.SendAsync (connection, buffer, offset, toSend, null, null, null);
                     count -= toSend;
                 }
             }
         }
 
-        private async Task CompleteSendOrReceiveFirst(byte[] buffer)
+        private async Task CompleteSendOrReceiveFirst (byte[] buffer)
         {
             var allRequests = requests.ToRequestMessages ().ToList ();
-            while (allRequests.Count > 0)
-            {
-                int size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, 0));
+            while (allRequests.Count > 0) {
+                int size = IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (buffer, 0));
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
 
-                PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager.Torrent);
-                var request = allRequests [0];
-                Assert.AreEqual(request.PieceIndex, m.PieceIndex, "#1");
-                Assert.AreEqual(request.RequestLength, m.RequestLength, "#1");
-                Assert.AreEqual(request.StartOffset, m.StartOffset, "#1");
+                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer, 0, size + 4, rig.Manager.Torrent);
+                var request = allRequests[0];
+                Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
+                Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");
+                Assert.AreEqual (request.StartOffset, m.StartOffset, "#1");
 
                 for (int i = 0; i < request.RequestLength; i++)
-                    if (buffer[i + 13] != (byte)(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
-                        throw new Exception("Corrupted data received");
-                
-                allRequests.RemoveAt(0);
+                    if (buffer[i + 13] != (byte) (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
+                        throw new Exception ("Corrupted data received");
 
-                if (allRequests.Count == 0)
-                {
+                allRequests.RemoveAt (0);
+
+                if (allRequests.Count == 0) {
                     break;
-                }
-                else
-                {
-                    await NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
+                } else {
+                    await NetworkIO.ReceiveAsync (connection, buffer, 0, 4, null, null, null);
                 }
             }
 
-            Uri baseUri = new Uri(ListenerURL);
-            baseUri = new Uri(baseUri, rig.Manager.Torrent.Name + "/");
-            if (rig.Manager.Torrent.Files.Length > 1)
-            {
-                Assert.AreEqual(new Uri(baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
-                Assert.AreEqual(new Uri(baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
+            Uri baseUri = new Uri (ListenerURL);
+            baseUri = new Uri (baseUri, rig.Manager.Torrent.Name + "/");
+            if (rig.Manager.Torrent.Files.Length > 1) {
+                Assert.AreEqual (new Uri (baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
+                Assert.AreEqual (new Uri (baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
             }
         }
 
-        private List<string> requestedUrl = new List<string>();
-        private void GotContext(IAsyncResult result)
+        private List<string> requestedUrl = new List<string> ();
+        private void GotContext (IAsyncResult result)
         {
-            try
-            {
+            try {
                 if (result.AsyncState != listener)
                     throw new Exception ("give up");
 
-                HttpListenerContext c = ((HttpListener) result.AsyncState).EndGetContext(result);
-                Console.WriteLine("Got Context");
-                requestedUrl.Add(c.Request.Url.OriginalString);
+                HttpListenerContext c = ((HttpListener) result.AsyncState).EndGetContext (result);
+                Console.WriteLine ("Got Context");
+                requestedUrl.Add (c.Request.Url.OriginalString);
                 Match match = null;
                 string range = c.Request.Headers["range"];
 
-                if (!(range != null && (match = rangeMatcher.Match(range)).Success))
-                    Assert.Fail("No valid range specified");
+                if (!(range != null && (match = rangeMatcher.Match (range)).Success))
+                    Assert.Fail ("No valid range specified");
 
-                int start = int.Parse(match.Groups[1].Captures[0].Value);
-                int end = int.Parse(match.Groups[2].Captures[0].Value);
+                int start = int.Parse (match.Groups[1].Captures[0].Value);
+                int end = int.Parse (match.Groups[2].Captures[0].Value);
 
 
                 long globalStart = 0;
                 bool exists = false;
                 string p;
-                if(rig.Manager.Torrent.Files.Length > 1)
-                    p = c.Request.RawUrl.Substring(10 + rig.Torrent.Name.Length + 1);
+                if (rig.Manager.Torrent.Files.Length > 1)
+                    p = c.Request.RawUrl.Substring (10 + rig.Torrent.Name.Length + 1);
                 else
-                    p = c.Request.RawUrl.Substring(10);
-                foreach (TorrentFile file in rig.Manager.Torrent.Files)
-                {
-                    if (file.Path.Replace('\\', '/') != p)
-                    {
+                    p = c.Request.RawUrl.Substring (10);
+                foreach (TorrentFile file in rig.Manager.Torrent.Files) {
+                    if (file.Path.Replace ('\\', '/') != p) {
                         globalStart += file.Length;
                         continue;
                     }
@@ -324,35 +313,27 @@ namespace MonoTorrent.Client
                 }
 
                 TorrentFile[] files = rig.Manager.Torrent.Files;
-                if (files.Length == 1 && rig.Torrent.GetRightHttpSeeds[0] == c.Request.Url.OriginalString)
-                {
+                if (files.Length == 1 && rig.Torrent.GetRightHttpSeeds[0] == c.Request.Url.OriginalString) {
                     globalStart = 0;
                     exists = start < files[0].Length && end < files[0].Length;
                 }
 
-                if (!exists)
-                {
+                if (!exists) {
                     c.Response.StatusCode = (int) HttpStatusCode.RequestedRangeNotSatisfiable;
-                    c.Response.Close();
-                }
-                else
-                {
+                    c.Response.Close ();
+                } else {
                     byte[] data = partialData ? new byte[(end - start) / 2] : new byte[end - start + 1];
                     for (int i = 0; i < data.Length; i++)
-                        data[i] = (byte)(globalStart + i);
+                        data[i] = (byte) (globalStart + i);
 
-                    c.Response.Close(data, false);
+                    c.Response.Close (data, false);
                 }
 
-            }
-            catch
-            {
-            }
-            finally
-            {
+            } catch {
+            } finally {
                 try {
                     if (result.AsyncState == listener)
-                        ((HttpListener)result.AsyncState).BeginGetContext(GotContext, result.AsyncState);
+                        ((HttpListener) result.AsyncState).BeginGetContext (GotContext, result.AsyncState);
                 } catch {
 
                 }
@@ -360,32 +341,32 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task SingleFileTorrent()
+        public async Task SingleFileTorrent ()
         {
-            rig.Dispose();
-            rig = TestRig.CreateSingleFile();
+            rig.Dispose ();
+            rig = TestRig.CreateSingleFile ();
             rig.Torrent.GetRightHttpSeeds.Add (ListenerURL + "File1.exe");
 
             string url = rig.Torrent.GetRightHttpSeeds[0];
-            connection = new HttpConnection(new Uri (url));
+            connection = new HttpConnection (new Uri (url));
             connection.Manager = rig.Manager;
             rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId(new Peer("this is my id", connection.Uri), id.Connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
             id.IsChoking = false;
             id.AmInterested = true;
-            id.BitField.SetAll(true);
+            id.BitField.SetAll (true);
             id.MaxPendingRequests = numberOfPieces;
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.Dequeue ();
-            await RecieveFirst();
-            Assert.AreEqual(url, requestedUrl[0]);
+            await RecieveFirst ();
+            Assert.AreEqual (url, requestedUrl[0]);
         }
 
-        void Wait(WaitHandle handle)
+        void Wait (WaitHandle handle)
         {
-            Assert.IsTrue(handle.WaitOne(5000, true), "WaitHandle did not trigger");
+            Assert.IsTrue (handle.WaitOne (5000, true), "WaitHandle did not trigger");
         }
     }
 }

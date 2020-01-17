@@ -48,11 +48,11 @@ namespace MonoTorrent
 
                 return Stopwatch.Frequency == TimeSpan.TicksPerSecond
                      ? TimeSpan.FromTicks (totalElapsed)
-                     : TimeSpan.FromTicks ((long)(totalElapsed / ((double)Stopwatch.Frequency / TimeSpan.TicksPerSecond)));
+                     : TimeSpan.FromTicks ((long) (totalElapsed / ((double) Stopwatch.Frequency / TimeSpan.TicksPerSecond)));
             }
         }
 
-        public long ElapsedMilliseconds => (long)Elapsed.TotalMilliseconds;
+        public long ElapsedMilliseconds => (long) Elapsed.TotalMilliseconds;
 
         public long ElapsedTicks => Elapsed.Ticks;
 

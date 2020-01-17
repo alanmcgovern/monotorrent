@@ -28,6 +28,7 @@
 
 
 using System;
+
 using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
@@ -68,7 +69,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
         /// </summary>
-        public int MaximumConnections  {
+        public int MaximumConnections {
             get => maximumConnections;
             set => maximumConnections = CheckZeroOrPositive (value);
         }
@@ -127,7 +128,7 @@ namespace MonoTorrent.Client
         /// The time, in seconds, the inactivity manager should wait until it can consider a peer eligible for disconnection.  Peers are disconnected only if they have not provided
         /// any data.  Default is 600.  A value of 0 disables the inactivity manager.
         /// </summary>
-        internal TimeSpan TimeToWaitUntilIdle { get; set; } = TimeSpan.FromMinutes(10);
+        internal TimeSpan TimeToWaitUntilIdle { get; set; } = TimeSpan.FromMinutes (10);
 
         /// <summary>
         /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
@@ -135,13 +136,13 @@ namespace MonoTorrent.Client
         /// </summary>
         internal long ConnectionRetentionFactor { get; set; } = 1024;
 
-        object ICloneable.Clone()
-            => Clone();
+        object ICloneable.Clone ()
+            => Clone ();
 
-        public TorrentSettings Clone()
-            => (TorrentSettings) MemberwiseClone();
+        public TorrentSettings Clone ()
+            => (TorrentSettings) MemberwiseClone ();
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             return obj is TorrentSettings settings
                 && AllowInitialSeeding == settings.AllowInitialSeeding
@@ -151,9 +152,9 @@ namespace MonoTorrent.Client
                 && UploadSlots == settings.uploadSlots;
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return AllowInitialSeeding.GetHashCode()
+            return AllowInitialSeeding.GetHashCode ()
                 ^ MaximumConnections
                 ^ MaximumDownloadSpeed
                 ^ MaximumUploadSpeed

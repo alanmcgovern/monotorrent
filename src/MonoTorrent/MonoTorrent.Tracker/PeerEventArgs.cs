@@ -36,7 +36,7 @@ namespace MonoTorrent.Tracker
         public Peer Peer { get; }
         public ITrackerItem Torrent { get; }
 
-        protected PeerEventArgs(Peer peer, ITrackerItem torrent)
+        protected PeerEventArgs (Peer peer, ITrackerItem torrent)
         {
             Peer = peer;
             Torrent = torrent;

@@ -28,7 +28,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,14 +52,13 @@ namespace MonoTorrent.Client.Tracker
 
         protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
         {
-            try
-            {
-                if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes(1))
-                    ConnectionIdTask = ConnectAsync();
+            try {
+                if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
+                    ConnectionIdTask = ConnectAsync ();
                 var connectionId = await ConnectionIdTask;
 
-                var message = new AnnounceMessage(DateTime.Now.GetHashCode(), connectionId, parameters);
-                var announce = (AnnounceResponseMessage)await SendAndReceiveAsync(message);
+                var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters);
+                var announce = (AnnounceResponseMessage) await SendAndReceiveAsync (message);
                 MinUpdateInterval = announce.Interval;
 
                 Status = TrackerState.Ok;
@@ -68,9 +66,8 @@ namespace MonoTorrent.Client.Tracker
             } catch (OperationCanceledException e) {
                 Status = TrackerState.Offline;
                 ConnectionIdTask = null;
-                throw new TrackerException("Announce could not be completed", e);
-            }
-            catch (Exception e) {
+                throw new TrackerException ("Announce could not be completed", e);
+            } catch (Exception e) {
                 Status = TrackerState.InvalidResponse;
                 ConnectionIdTask = null;
                 throw new TrackerException ("Announce could not be completed", e);
@@ -79,33 +76,29 @@ namespace MonoTorrent.Client.Tracker
 
         protected override async Task DoScrapeAsync (ScrapeParameters parameters)
         {
-            try
-            {
-                if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes(1))
-                    ConnectionIdTask = ConnectAsync();
+            try {
+                if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
+                    ConnectionIdTask = ConnectAsync ();
                 var connectionId = await ConnectionIdTask;
 
                 var infohashes = new List<byte[]> { parameters.InfoHash.Hash };
-                var message = new ScrapeMessage(DateTime.Now.GetHashCode(), connectionId, infohashes);
-                var response = (ScrapeResponseMessage)await SendAndReceiveAsync(message);
+                var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
+                var response = (ScrapeResponseMessage) await SendAndReceiveAsync (message);
 
-                if (response.Scrapes.Count == 1)
-                {
+                if (response.Scrapes.Count == 1) {
                     Complete = response.Scrapes[0].Seeds;
                     Downloaded = response.Scrapes[0].Complete;
                     Incomplete = response.Scrapes[0].Leeches;
                 }
                 Status = TrackerState.Ok;
-            }
-            catch (OperationCanceledException e) {
+            } catch (OperationCanceledException e) {
                 Status = TrackerState.Offline;
                 ConnectionIdTask = null;
-                throw new TrackerException("Scrape could not be completed", e);
-            }
-            catch (Exception e) {
+                throw new TrackerException ("Scrape could not be completed", e);
+            } catch (Exception e) {
                 Status = TrackerState.InvalidResponse;
                 ConnectionIdTask = null;
-                throw new TrackerException("Scrape could not be completed", e);
+                throw new TrackerException ("Scrape could not be completed", e);
             }
         }
 
@@ -130,13 +123,13 @@ namespace MonoTorrent.Client.Tracker
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (RetryDelay.TotalSeconds * MaxRetries));
 
             try {
-                using (var udpClient = new UdpClient(Uri.Host, Uri.Port))
-                using (cts.Token.Register(() => udpClient.Dispose())) {
-                    SendAsync(udpClient, msg, cts.Token);
-                    return await ReceiveAsync(udpClient, msg.TransactionId, cts.Token);
+                using (var udpClient = new UdpClient (Uri.Host, Uri.Port))
+                using (cts.Token.Register (() => udpClient.Dispose ())) {
+                    SendAsync (udpClient, msg, cts.Token);
+                    return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token);
                 }
             } catch {
-                cts.Token.ThrowIfCancellationRequested();
+                cts.Token.ThrowIfCancellationRequested ();
                 throw;
             }
         }
@@ -146,7 +139,7 @@ namespace MonoTorrent.Client.Tracker
             while (!token.IsCancellationRequested) {
                 var received = await client.ReceiveAsync ();
                 UdpTrackerMessage rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
-                
+
                 if (transactionId == rsp.TransactionId) {
                     if (rsp is ErrorMessage error) {
                         FailureMessage = error.Error;
@@ -158,7 +151,7 @@ namespace MonoTorrent.Client.Tracker
             }
             // If we get here then the token will have been cancelled. We need the additional
             // 'throw' statement to keep the compiler happy.
-            token.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested ();
             throw new OperationCanceledException ("The tracker did not respond.");
         }
 

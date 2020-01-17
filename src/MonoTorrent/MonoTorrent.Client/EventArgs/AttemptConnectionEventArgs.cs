@@ -36,18 +36,16 @@ namespace MonoTorrent.Client
         private bool banPeer;
         private Peer peer;
 
-        public bool BanPeer
-        {
+        public bool BanPeer {
             get { return banPeer; }
             set { banPeer = value; }
         }
 
-        public Peer Peer
-        {
+        public Peer Peer {
             get { return peer; }
         }
 
-        public AttemptConnectionEventArgs(Peer peer)
+        public AttemptConnectionEventArgs (Peer peer)
         {
             this.peer = peer;
         }

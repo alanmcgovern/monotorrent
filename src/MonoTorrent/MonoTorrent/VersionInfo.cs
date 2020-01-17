@@ -28,8 +28,6 @@
 
 
 using System;
-using System.Reflection;
-using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
@@ -56,7 +54,7 @@ namespace MonoTorrent
 
         static VersionInfo ()
         {
-            Version  = new Version (
+            Version = new Version (
                 int.Parse (ThisAssembly.Git.SemVer.Major),
                 int.Parse (ThisAssembly.Git.SemVer.Minor),
                 int.Parse (ThisAssembly.Git.SemVer.Patch)
@@ -68,7 +66,7 @@ namespace MonoTorrent
                 throw new ArgumentException ("The major version should be between 0 and 9 (inclusive)");
             if (Version.Minor > 9)
                 throw new ArgumentException ("The minor version should be between 0 and 9 (inclusive)");
-             if (Version.Build > 99)
+            if (Version.Build > 99)
                 throw new ArgumentException ("The build version should be between 0 and 99 (inclusive)");
 
             // 'MO' for MonoTorrent then four digit version number

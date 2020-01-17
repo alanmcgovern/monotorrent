@@ -53,25 +53,25 @@ namespace MonoTorrent.TorrentWatcher
 
         #region Constructors
 
-        public TorrentFolderWatcher(string torrentDirectory, string watchFilter)
+        public TorrentFolderWatcher (string torrentDirectory, string watchFilter)
         {
             if (torrentDirectory == null)
-                throw new ArgumentNullException("torrentDirectory");
+                throw new ArgumentNullException ("torrentDirectory");
 
             if (watchFilter == null)
-                throw new ArgumentNullException("watchFilter");
+                throw new ArgumentNullException ("watchFilter");
 
-            if (!Directory.Exists(torrentDirectory))
-                Directory.CreateDirectory(torrentDirectory);
+            if (!Directory.Exists (torrentDirectory))
+                Directory.CreateDirectory (torrentDirectory);
 
             this.torrentDirectory = torrentDirectory;
             this.watchFilter = watchFilter;
         }
 
-        public TorrentFolderWatcher(DirectoryInfo torrentDirectory)
-            : this(torrentDirectory.FullName, "*.torrent")
+        public TorrentFolderWatcher (DirectoryInfo torrentDirectory)
+            : this (torrentDirectory.FullName, "*.torrent")
         {
-            
+
         }
 
         #endregion
@@ -79,26 +79,25 @@ namespace MonoTorrent.TorrentWatcher
 
         #region ITorrentWatcher implementations
 
-        public void ForceScan()
+        public void ForceScan ()
         {
-            foreach (string path in Directory.GetFiles(torrentDirectory, this.watchFilter))
-                RaiseTorrentFound(path);
+            foreach (string path in Directory.GetFiles (torrentDirectory, this.watchFilter))
+                RaiseTorrentFound (path);
         }
 
-        public void Start()
+        public void Start ()
         {
-            if (this.watcher == null)
-            {
-                this.watcher = new FileSystemWatcher(torrentDirectory);
+            if (this.watcher == null) {
+                this.watcher = new FileSystemWatcher (torrentDirectory);
                 this.watcher.Filter = this.watchFilter;
                 //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
-                this.watcher.Created += new FileSystemEventHandler(OnCreated);
-                this.watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+                this.watcher.Created += new FileSystemEventHandler (OnCreated);
+                this.watcher.Deleted += new FileSystemEventHandler (OnDeleted);
             }
             this.watcher.EnableRaisingEvents = true;
         }
 
-        public void Stop()
+        public void Stop ()
         {
             this.watcher.EnableRaisingEvents = false;
         }
@@ -109,27 +108,27 @@ namespace MonoTorrent.TorrentWatcher
         #region Event Handlers
 
         ///<summary>Gets called when a File with .torrent extension was added to the torrentDirectory</summary>
-        private void OnCreated(object sender, FileSystemEventArgs e)
+        private void OnCreated (object sender, FileSystemEventArgs e)
         {
-            RaiseTorrentFound(e.FullPath);
+            RaiseTorrentFound (e.FullPath);
         }
 
         ///<summary>Gets called when a File with .torrent extension was deleted from the torrentDirectory</summary>
-        private void OnDeleted(object sender, FileSystemEventArgs e)
+        private void OnDeleted (object sender, FileSystemEventArgs e)
         {
-            RaiseTorrentLost(e.FullPath);
+            RaiseTorrentLost (e.FullPath);
         }
 
-        protected virtual void RaiseTorrentFound(string path)
+        protected virtual void RaiseTorrentFound (string path)
         {
             if (TorrentFound != null)
-                TorrentFound(this, new TorrentWatcherEventArgs(path));
+                TorrentFound (this, new TorrentWatcherEventArgs (path));
         }
 
-        protected virtual void RaiseTorrentLost(string path)
+        protected virtual void RaiseTorrentLost (string path)
         {
             if (TorrentLost != null)
-                TorrentLost(this, new TorrentWatcherEventArgs(path));
+                TorrentLost (this, new TorrentWatcherEventArgs (path));
         }
 
         #endregion

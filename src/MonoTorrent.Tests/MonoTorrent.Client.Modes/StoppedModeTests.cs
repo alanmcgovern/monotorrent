@@ -42,14 +42,14 @@ namespace MonoTorrent.Client.Modes
         ConnectionManager ConnectionManager { get; set; }
         DiskManager DiskManager { get; set; }
         TorrentManager Manager { get; set; }
-        PeerId Peer { get; set ; }
+        PeerId Peer { get; set; }
         EngineSettings Settings { get; set; }
         ManualTrackerManager TrackerManager { get; set; }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            conn = new ConnectionPair().WithTimeout ();
+            conn = new ConnectionPair ().WithTimeout ();
             Settings = new EngineSettings ();
             DiskManager = new DiskManager (Settings, new NullWriter ());
             ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, DiskManager);
@@ -69,9 +69,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            conn.Dispose();
+            conn.Dispose ();
             DiskManager.Dispose ();
         }
 

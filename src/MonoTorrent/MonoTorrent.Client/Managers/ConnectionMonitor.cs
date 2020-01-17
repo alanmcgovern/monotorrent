@@ -46,33 +46,27 @@ namespace MonoTorrent.Client
 
         #region Public Properties
 
-        public long DataBytesDownloaded
-        {
+        public long DataBytesDownloaded {
             get { return DataDown.Total; }
         }
 
-        public long DataBytesUploaded
-        {
+        public long DataBytesUploaded {
             get { return DataUp.Total; }
         }
 
-        public long DownloadSpeed
-        {
+        public long DownloadSpeed {
             get { return DataDown.Rate + ProtocolDown.Rate; }
         }
 
-        public long ProtocolBytesDownloaded
-        {
+        public long ProtocolBytesDownloaded {
             get { return ProtocolDown.Total; }
         }
 
-        public long ProtocolBytesUploaded
-        {
+        public long ProtocolBytesUploaded {
             get { return ProtocolUp.Total; }
         }
 
-        public long UploadSpeed
-        {
+        public long UploadSpeed {
             get { return DataUp.Rate + ProtocolUp.Rate; }
         }
 
@@ -81,18 +75,18 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal ConnectionMonitor()
-            : this(12)
+        internal ConnectionMonitor ()
+            : this (12)
         {
 
         }
 
-        internal ConnectionMonitor(int averagingPeriod)
+        internal ConnectionMonitor (int averagingPeriod)
         {
-            DataDown = new SpeedMonitor(averagingPeriod);
-            DataUp = new SpeedMonitor(averagingPeriod);
-            ProtocolDown = new SpeedMonitor(averagingPeriod);
-            ProtocolUp = new SpeedMonitor(averagingPeriod);
+            DataDown = new SpeedMonitor (averagingPeriod);
+            DataUp = new SpeedMonitor (averagingPeriod);
+            ProtocolDown = new SpeedMonitor (averagingPeriod);
+            ProtocolUp = new SpeedMonitor (averagingPeriod);
         }
 
         #endregion
@@ -100,20 +94,20 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal void Reset()
+        internal void Reset ()
         {
-            DataDown.Reset();
-            DataUp.Reset();
-            ProtocolDown.Reset();
-            ProtocolUp.Reset();
+            DataDown.Reset ();
+            DataUp.Reset ();
+            ProtocolDown.Reset ();
+            ProtocolUp.Reset ();
         }
 
-        internal void Tick()
+        internal void Tick ()
         {
-            DataDown.Tick();
-            DataUp.Tick();
-            ProtocolDown.Tick();
-            ProtocolUp.Tick();
+            DataDown.Tick ();
+            DataUp.Tick ();
+            ProtocolDown.Tick ();
+            ProtocolUp.Tick ();
         }
 
         #endregion

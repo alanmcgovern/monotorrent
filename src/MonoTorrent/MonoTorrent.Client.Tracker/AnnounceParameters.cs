@@ -44,12 +44,12 @@ namespace MonoTorrent.Client.Tracker
         public bool RequireEncryption { get; }
         public bool SupportsEncryption { get; }
 
-        public AnnounceParameters()
+        public AnnounceParameters ()
         {
 
         }
 
-        public AnnounceParameters(long bytesDownloaded, long bytesUploaded, long bytesLeft,
+        public AnnounceParameters (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
                            BEncodedString peerId, string ipAddress, int port, bool supportsEncryption)
         {

@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -108,19 +107,19 @@ namespace MonoTorrent.Client.Tracker
 
         #region Methods
 
-        public async Task Announce()
+        public async Task Announce ()
             => await Announce (TorrentEvent.None);
 
-        public async Task Announce(TorrentEvent clientEvent)
+        public async Task Announce (TorrentEvent clientEvent)
             => await Announce (clientEvent, null);
 
-        public async Task Announce(ITracker tracker)
+        public async Task Announce (ITracker tracker)
         {
-            Check.Tracker(tracker);
-            await Announce(TorrentEvent.None, tracker);
+            Check.Tracker (tracker);
+            await Announce (TorrentEvent.None, tracker);
         }
 
-        async Task Announce(TorrentEvent clientEvent, ITracker referenceTracker)
+        async Task Announce (TorrentEvent clientEvent, ITracker referenceTracker)
         {
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
@@ -139,7 +138,7 @@ namespace MonoTorrent.Client.Tracker
                     if (!tuple.Item1.SentStartedEvent)
                         actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
 
-                    var peers = await tuple.Item2.AnnounceAsync(actualArgs);
+                    var peers = await tuple.Item2.AnnounceAsync (actualArgs);
                     LastAnnounceSucceeded = true;
                     AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
                     return;
@@ -151,19 +150,19 @@ namespace MonoTorrent.Client.Tracker
             AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (null, false));
         }
 
-        public async Task Scrape()
+        public async Task Scrape ()
         {
             await Scrape (null);
         }
 
-        public async Task Scrape(ITracker tracker)
+        public async Task Scrape (ITracker tracker)
         {
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
             var tuple = GetNextTracker (tracker).FirstOrDefault ();
             if (tuple != null && !tuple.Item2.CanScrape)
-                throw new TorrentException("This tracker does not support scraping");
+                throw new TorrentException ("This tracker does not support scraping");
             try {
                 var parameters = RequestFactory.CreateScrape ();
                 await tuple.Item2.ScrapeAsync (parameters);

@@ -30,13 +30,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Text;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
@@ -50,8 +48,7 @@ namespace MonoTorrent.Dht
         public TimeSpan LastSeen => LastSeenTimer.Elapsed + LastSeenDelta;
         TimeSpan LastSeenDelta { get; set; }
         ValueStopwatch LastSeenTimer;
-        public NodeState State
-        {
+        public NodeState State {
             get {
                 if (FailedCount >= MaxFailures)
                     return NodeState.Bad;
@@ -64,138 +61,135 @@ namespace MonoTorrent.Dht
         }
         public BEncodedValue Token { get; set; }
 
-        public Node(NodeId id, IPEndPoint endpoint)
+        public Node (NodeId id, IPEndPoint endpoint)
         {
             EndPoint = endpoint;
             Id = id;
 
-            LastSeenDelta = TimeSpan.FromDays(1);
-            LastSeenTimer = new ValueStopwatch();
+            LastSeenDelta = TimeSpan.FromDays (1);
+            LastSeenTimer = new ValueStopwatch ();
         }
 
-        internal void Seen()
+        internal void Seen ()
             => Seen (TimeSpan.Zero);
 
-        internal void Seen(TimeSpan delta)
+        internal void Seen (TimeSpan delta)
         {
             FailedCount = 0;
             LastSeenDelta = delta;
             LastSeenTimer.Restart ();
         }
 
-        internal BEncodedString CompactPort()
+        internal BEncodedString CompactPort ()
         {
             byte[] buffer = new byte[6];
-            CompactPort(buffer, 0);
+            CompactPort (buffer, 0);
             return buffer;
         }
 
-        internal void CompactPort(byte[] buffer, int offset)
+        internal void CompactPort (byte[] buffer, int offset)
         {
-            Message.Write(buffer, offset, EndPoint.Address.GetAddressBytes());
-            Message.Write(buffer, offset + 4, (ushort)EndPoint.Port);
+            Message.Write (buffer, offset, EndPoint.Address.GetAddressBytes ());
+            Message.Write (buffer, offset + 4, (ushort) EndPoint.Port);
         }
 
-        internal static BEncodedString CompactPort(IList<Node> peers)
+        internal static BEncodedString CompactPort (IList<Node> peers)
         {
             byte[] buffer = new byte[peers.Count * 6];
             for (int i = 0; i < peers.Count; i++)
-                peers[i].CompactPort(buffer, i * 6);
+                peers[i].CompactPort (buffer, i * 6);
 
-            return new BEncodedString(buffer);
+            return new BEncodedString (buffer);
         }
 
-        internal BEncodedString CompactNode()
+        internal BEncodedString CompactNode ()
         {
             byte[] buffer = new byte[26];
-            CompactNode(buffer, 0);
+            CompactNode (buffer, 0);
             return buffer;
         }
 
-        private void CompactNode(byte[] buffer, int offset)
+        private void CompactNode (byte[] buffer, int offset)
         {
-            Message.Write(buffer, offset, Id.Bytes);
-            CompactPort(buffer, offset + 20);
+            Message.Write (buffer, offset, Id.Bytes);
+            CompactPort (buffer, offset + 20);
         }
 
-        internal static BEncodedString CompactNode(ICollection<Node> nodes)
+        internal static BEncodedString CompactNode (ICollection<Node> nodes)
         {
             var count = 0;
             var buffer = new byte[nodes.Count * 26];
             foreach (var node in nodes) {
-                node.CompactNode(buffer, count * 26);
+                node.CompactNode (buffer, count * 26);
                 count++;
             }
 
-            return new BEncodedString(buffer);
+            return new BEncodedString (buffer);
         }
 
-        internal static Node FromCompactNode(byte[] buffer, int offset)
+        internal static Node FromCompactNode (byte[] buffer, int offset)
         {
             byte[] id = new byte[20];
-            Buffer.BlockCopy(buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress((uint)BitConverter.ToInt32(buffer, offset + 20));
-            int port = (int)(ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, offset + 24));
-            return new Node(new NodeId(id), new IPEndPoint(address, port));
+            Buffer.BlockCopy (buffer, offset, id, 0, 20);
+            IPAddress address = new IPAddress ((uint) BitConverter.ToInt32 (buffer, offset + 20));
+            int port = (int) (ushort) IPAddress.NetworkToHostOrder ((short) BitConverter.ToUInt16 (buffer, offset + 24));
+            return new Node (new NodeId (id), new IPEndPoint (address, port));
         }
 
-        internal static IEnumerable<Node> FromCompactNode(byte[] buffer)
+        internal static IEnumerable<Node> FromCompactNode (byte[] buffer)
         {
             for (int i = 0; (i + 26) <= buffer.Length; i += 26)
-                yield return FromCompactNode(buffer, i);
+                yield return FromCompactNode (buffer, i);
         }
 
-        internal static IEnumerable<Node> FromCompactNode(BEncodedString nodes)
+        internal static IEnumerable<Node> FromCompactNode (BEncodedString nodes)
         {
-            return FromCompactNode(nodes.TextBytes);
+            return FromCompactNode (nodes.TextBytes);
         }
 
-        internal static IEnumerable<Node> FromCompactNode(BEncodedList nodes)
+        internal static IEnumerable<Node> FromCompactNode (BEncodedList nodes)
         {
-			foreach(BEncodedValue node in nodes)
-	        {
+            foreach (BEncodedValue node in nodes) {
                 //bad format!
                 if (!(node is BEncodedList))
                     continue;
-                
-	            string host = string.Empty;
-	            long port = 0;
-	            foreach (BEncodedValue val in (BEncodedList)node)
-	            {
-	                if(val is BEncodedString)
-	                	host = ((BEncodedString)val).Text;
-	                else if (val is BEncodedNumber)
-	                    port = ((BEncodedNumber)val).Number;
-	            }
-	            IPAddress address;
-	            IPAddress.TryParse(host, out address);
-                
+
+                string host = string.Empty;
+                long port = 0;
+                foreach (BEncodedValue val in (BEncodedList) node) {
+                    if (val is BEncodedString)
+                        host = ((BEncodedString) val).Text;
+                    else if (val is BEncodedNumber)
+                        port = ((BEncodedNumber) val).Number;
+                }
+                IPAddress address;
+                IPAddress.TryParse (host, out address);
+
                 //REM: bad design from bitcomet we do not have node id so create it...
                 //or use torrent infohash?
                 // Will messages from this node be discarded later on if the NodeId doesn't match?
                 if (address != null)
-	            	yield return new Node(NodeId.Create(), new IPEndPoint(address, (int)port));
-	        }
+                    yield return new Node (NodeId.Create (), new IPEndPoint (address, (int) port));
+            }
         }
 
-        public override bool Equals(object obj)
-            => Equals(obj as Node);
+        public override bool Equals (object obj)
+            => Equals (obj as Node);
 
-        public bool Equals(Node other)
+        public bool Equals (Node other)
             => Id.Equals (other?.Id);
 
-        public override int GetHashCode()
-            => Id.GetHashCode();
+        public override int GetHashCode ()
+            => Id.GetHashCode ();
 
-        public override string ToString()
+        public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder(48);
-            for (int i = 0; i < Id.Bytes.Length; i++)
-            {
-                sb.Append(Id.Bytes[i]);
-                sb.Append("-");
+            StringBuilder sb = new StringBuilder (48);
+            for (int i = 0; i < Id.Bytes.Length; i++) {
+                sb.Append (Id.Bytes[i]);
+                sb.Append ("-");
             }
-           return sb.ToString(0, sb.Length - 1);
+            return sb.ToString (0, sb.Length - 1);
         }
     }
 }

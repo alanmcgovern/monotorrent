@@ -35,14 +35,14 @@ namespace MonoTorrent.Client.Tracker
     {
         public IList<Peer> Peers { get; }
 
-        public AnnounceResponseEventArgs(ITracker tracker, bool successful)
-            : this(tracker, successful, Array.Empty<Peer> ())
+        public AnnounceResponseEventArgs (ITracker tracker, bool successful)
+            : this (tracker, successful, Array.Empty<Peer> ())
         {
 
         }
 
-        public AnnounceResponseEventArgs(ITracker tracker, bool successful, IList<Peer> peers)
-            : base(tracker, successful)
+        public AnnounceResponseEventArgs (ITracker tracker, bool successful, IList<Peer> peers)
+            : base (tracker, successful)
         {
             Peers = peers;
         }

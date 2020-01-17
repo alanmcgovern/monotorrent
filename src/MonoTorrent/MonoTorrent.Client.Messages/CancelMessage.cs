@@ -42,8 +42,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The index of the piece
         /// </summary>
-        public int PieceIndex
-        {
+        public int PieceIndex {
             get { return this.pieceIndex; }
         }
         private int pieceIndex;
@@ -52,8 +51,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The offset in bytes of the block of data
         /// </summary>
-        public int StartOffset
-        {
+        public int StartOffset {
             get { return this.startOffset; }
         }
         private int startOffset;
@@ -62,8 +60,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The length in bytes of the block of data
         /// </summary>
-        public int RequestLength
-        {
+        public int RequestLength {
             get { return this.requestLength; }
         }
         private int requestLength;
@@ -74,7 +71,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Creates a new CancelMessage
         /// </summary>
-        public CancelMessage()
+        public CancelMessage ()
         {
         }
 
@@ -85,7 +82,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="pieceIndex">The index of the piece to cancel</param>
         /// <param name="startOffset">The offset in bytes of the block of data to cancel</param>
         /// <param name="requestLength">The length in bytes of the block of data to cancel</param>
-        public CancelMessage(int pieceIndex, int startOffset, int requestLength)
+        public CancelMessage (int pieceIndex, int startOffset, int requestLength)
         {
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
@@ -95,31 +92,30 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Methods
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-            written += Write(buffer, written, messageLength);
-            written += Write(buffer, written, MessageId);
-            written += Write(buffer, written, pieceIndex);
-            written += Write(buffer, written, startOffset);
-            written += Write(buffer, written, requestLength);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
+            written += Write (buffer, written, pieceIndex);
+            written += Write (buffer, written, startOffset);
+            written += Write (buffer, written, requestLength);
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            pieceIndex = ReadInt(buffer, ref offset);
-            startOffset = ReadInt(buffer, ref offset);
-            requestLength = ReadInt(buffer, ref offset);
+            pieceIndex = ReadInt (buffer, ref offset);
+            startOffset = ReadInt (buffer, ref offset);
+            requestLength = ReadInt (buffer, ref offset);
         }
 
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength
-        {
+        public override int ByteLength {
             get { return (messageLength + 4); }
         }
         #endregion
@@ -130,20 +126,20 @@ namespace MonoTorrent.Client.Messages.Standard
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append("CancelMessage ");
-            sb.Append(" Index ");
-            sb.Append(this.pieceIndex);
-            sb.Append(" Offset ");
-            sb.Append(this.startOffset);
-            sb.Append(" Length ");
-            sb.Append(this.requestLength);
-            return sb.ToString();
+            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            sb.Append ("CancelMessage ");
+            sb.Append (" Index ");
+            sb.Append (this.pieceIndex);
+            sb.Append (" Offset ");
+            sb.Append (this.startOffset);
+            sb.Append (" Length ");
+            sb.Append (this.requestLength);
+            return sb.ToString ();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             CancelMessage msg = obj as CancelMessage;
 
@@ -155,11 +151,11 @@ namespace MonoTorrent.Client.Messages.Standard
                     && this.requestLength == msg.requestLength);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return (this.pieceIndex.GetHashCode()
-                ^ this.requestLength.GetHashCode()
-                ^ this.startOffset.GetHashCode());
+            return (this.pieceIndex.GetHashCode ()
+                ^ this.requestLength.GetHashCode ()
+                ^ this.startOffset.GetHashCode ());
         }
         #endregion
     }

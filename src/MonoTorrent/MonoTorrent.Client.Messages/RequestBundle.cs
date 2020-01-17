@@ -40,32 +40,31 @@ namespace MonoTorrent.Client.Messages
         MutableRequestMessage Message { get; }
         IList<PieceRequest> Requests { get; }
 
-        internal RequestBundle(IList<PieceRequest> requests)
+        internal RequestBundle (IList<PieceRequest> requests)
         {
-            Message = new MutableRequestMessage();
+            Message = new MutableRequestMessage ();
             Requests = requests;
         }
 
         public override int ByteLength => Message.ByteLength * Requests.Count;
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException ();
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            for (int i = 0; i < Requests.Count; i++)
-            {
+            for (int i = 0; i < Requests.Count; i++) {
                 Message.PieceIndex = Requests[i].PieceIndex;
                 Message.RequestLength = Requests[i].RequestLength;
                 Message.StartOffset = Requests[i].StartOffset;
-                written += Message.Encode(buffer, written);
+                written += Message.Encode (buffer, written);
             }
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
         public IEnumerable<RequestMessage> ToRequestMessages ()

@@ -104,51 +104,48 @@ namespace MonoTorrent
                 throw new FormatException ("Magnet links must start with 'magnet:'.");
 
             string[] parameters = uri.Query.Substring (1).Split ('&');
-            for (int i = 0; i < parameters.Length ; i++)
-            {
+            for (int i = 0; i < parameters.Length; i++) {
                 string[] keyval = parameters[i].Split ('=');
                 if (keyval.Length != 2)
                     throw new FormatException ("A field-value pair of the magnet link contain more than one equal'.");
-                switch (keyval[0].Substring(0, 2))
-                {
+                switch (keyval[0].Substring (0, 2)) {
                     case "xt"://exact topic
                         if (infoHash != null)
                             throw new FormatException ("More than one infohash in magnet link is not allowed.");
 
-                        string val = keyval[1].Substring(9);
-                        switch (keyval[1].Substring(0, 9))
-                        {
+                        string val = keyval[1].Substring (9);
+                        switch (keyval[1].Substring (0, 9)) {
                             case "urn:sha1:"://base32 hash
                             case "urn:btih:":
-                            if (val.Length == 32)
-                                infoHash = InfoHash.FromBase32 (val);
-                            else if (val.Length == 40)
-                                infoHash = InfoHash.FromHex (val);
-                            else
-                                throw new FormatException("Infohash must be base32 or hex encoded.");
-                            break;
+                                if (val.Length == 32)
+                                    infoHash = InfoHash.FromBase32 (val);
+                                else if (val.Length == 40)
+                                    infoHash = InfoHash.FromHex (val);
+                                else
+                                    throw new FormatException ("Infohash must be base32 or hex encoded.");
+                                break;
                         }
-                    break;
-                    case "tr" ://address tracker
-                        announceUrls.Add(keyval[1].UrlDecodeUTF8 ());
-                    break;
+                        break;
+                    case "tr"://address tracker
+                        announceUrls.Add (keyval[1].UrlDecodeUTF8 ());
+                        break;
                     case "as"://Acceptable Source
-                        webSeeds.Add(keyval[1].UrlDecodeUTF8 ());
-                    break;
+                        webSeeds.Add (keyval[1].UrlDecodeUTF8 ());
+                        break;
                     case "dn"://display name
                         name = keyval[1].UrlDecodeUTF8 ();
-                    break;
+                        break;
                     case "xl"://exact length
-                        size = long.Parse (keyval [1]);
-                    break;
+                        size = long.Parse (keyval[1]);
+                        break;
                     //case "xs":// eXact Source - P2P link.
                     //case "kt"://keyword topic
                     //case "mt"://manifest topic
-                        // Unused
+                    // Unused
                     //break;
                     default:
                         // Unknown/unsupported
-                    break;
+                        break;
                 }
             }
 
@@ -156,7 +153,7 @@ namespace MonoTorrent
         }
 
         public string ToV1String ()
-            => ConvertToString();
+            => ConvertToString ();
 
         public Uri ToV1Uri ()
             => new Uri (ToV1String ());

@@ -45,13 +45,13 @@ namespace MonoTorrent.Client
         public bool IsCompleted => false;
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public void GetResult()
+        public void GetResult ()
         {
 
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public void OnCompleted(Action continuation)
+        public void OnCompleted (Action continuation)
         {
             ThreadPool.UnsafeQueueUserWorkItem (Callback, continuation);
         }

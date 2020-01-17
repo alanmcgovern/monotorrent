@@ -62,7 +62,7 @@ namespace MonoTorrent.Dht
 
         #region Fields
 
-        internal static MainLoop MainLoop { get; } = new MainLoop("DhtLoop");
+        internal static MainLoop MainLoop { get; } = new MainLoop ("DhtLoop");
 
         #endregion Fields
 
@@ -91,17 +91,17 @@ namespace MonoTorrent.Dht
         {
         }
 
-        public DhtEngine(IDhtListener listener)
+        public DhtEngine (IDhtListener listener)
         {
             if (listener == null)
-                throw new ArgumentNullException(nameof (listener));
+                throw new ArgumentNullException (nameof (listener));
 
-            BucketRefreshTimeout = TimeSpan.FromMinutes(15);
-            MessageLoop = new MessageLoop(this, listener);
+            BucketRefreshTimeout = TimeSpan.FromMinutes (15);
+            MessageLoop = new MessageLoop (this, listener);
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
-            TokenManager = new TokenManager();
-            Torrents = new Dictionary<NodeId, List<Node>>();
+            TokenManager = new TokenManager ();
+            Torrents = new Dictionary<NodeId, List<Node>> ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {
                 if (!Disposed)
@@ -114,78 +114,78 @@ namespace MonoTorrent.Dht
 
         #region Methods
 
-        public void Add(BEncodedList nodes)
+        public void Add (BEncodedList nodes)
         {
             // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode(nodes));
-            _ = task.ExecuteAsync();
+            InitialiseTask task = new InitialiseTask (this, Node.FromCompactNode (nodes));
+            _ = task.ExecuteAsync ();
         }
 
-        internal void Add(IEnumerable<Node> nodes)
+        internal void Add (IEnumerable<Node> nodes)
         {
             if (nodes == null)
-                throw new ArgumentNullException(nameof (nodes));
+                throw new ArgumentNullException (nameof (nodes));
 
             foreach (Node n in nodes)
-                Add(n);
+                Add (n);
         }
 
-        internal async void Add(Node node)
+        internal async void Add (Node node)
         {
             if (node == null)
-                throw new ArgumentNullException(nameof (node));
+                throw new ArgumentNullException (nameof (node));
 
             try {
                 await MainLoop;
-                await SendQueryAsync(new Ping(RoutingTable.LocalNode.Id), node);
+                await SendQueryAsync (new Ping (RoutingTable.LocalNode.Id), node);
             } catch {
                 // Ignore?
             }
         }
 
-        public async void Announce(InfoHash infoHash, int port)
+        public async void Announce (InfoHash infoHash, int port)
         {
-            CheckDisposed();
-            Check.InfoHash(infoHash);
+            CheckDisposed ();
+            Check.InfoHash (infoHash);
 
             try {
                 await MainLoop;
-                var task = new AnnounceTask(this, infoHash, port);
+                var task = new AnnounceTask (this, infoHash, port);
                 await task.ExecuteAsync ();
             } catch {
                 // Ignore?
             }
         }
 
-        void CheckDisposed()
+        void CheckDisposed ()
         {
             if (Disposed)
-                throw new ObjectDisposedException(GetType().Name);
+                throw new ObjectDisposedException (GetType ().Name);
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
             if (Disposed)
                 return;
 
             // Ensure we don't break any threads actively running right now
-            MainLoop.QueueWait(() => {
+            MainLoop.QueueWait (() => {
                 Disposed = true;
             });
         }
 
-        public async void GetPeers(InfoHash infoHash)
+        public async void GetPeers (InfoHash infoHash)
         {
-            CheckDisposed();
-            Check.InfoHash(infoHash);
+            CheckDisposed ();
+            Check.InfoHash (infoHash);
 
             try {
                 await MainLoop;
-                var task = new GetPeersTask(this, infoHash);
-                await task.ExecuteAsync();
+                var task = new GetPeersTask (this, infoHash);
+                await task.ExecuteAsync ();
             } catch {
                 // Ignore?
             }
@@ -193,22 +193,21 @@ namespace MonoTorrent.Dht
 
         async void InitializeAsync (byte[] initialNodes)
         {
-            if (initialNodes == null)
-            {
-                initialNodes = Array.Empty<byte>();
+            if (initialNodes == null) {
+                initialNodes = Array.Empty<byte> ();
             }
 
-            var initTask = new InitialiseTask(this, Node.FromCompactNode (initialNodes));
+            var initTask = new InitialiseTask (this, Node.FromCompactNode (initialNodes));
             await initTask.ExecuteAsync ();
-            RaiseStateChanged(DhtState.Ready);
+            RaiseStateChanged (DhtState.Ready);
         }
 
-        internal void RaisePeersFound(NodeId infoHash, IList<Peer> peers)
+        internal void RaisePeersFound (NodeId infoHash, IList<Peer> peers)
         {
-            PeersFound?.Invoke(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
+            PeersFound?.Invoke (this, new PeersFoundEventArgs (new InfoHash (infoHash.Bytes), peers));
         }
 
-        void RaiseStateChanged(DhtState newState)
+        void RaiseStateChanged (DhtState newState)
         {
             State = newState;
             StateChanged?.Invoke (this, EventArgs.Empty);
@@ -220,7 +219,7 @@ namespace MonoTorrent.Dht
             foreach (Bucket b in RoutingTable.Buckets) {
                 if (b.LastChanged > BucketRefreshTimeout) {
                     b.Changed ();
-                    RefreshBucketTask task = new RefreshBucketTask(this, b);
+                    RefreshBucketTask task = new RefreshBucketTask (this, b);
                     refreshTasks.Add (task.Execute ());
                 }
             }
@@ -229,23 +228,23 @@ namespace MonoTorrent.Dht
                 await Task.WhenAll (refreshTasks).ConfigureAwait (false);
         }
 
-        public async Task<byte[]> SaveNodesAsync()
+        public async Task<byte[]> SaveNodesAsync ()
         {
             await MainLoop;
 
-            var details = new BEncodedList();
+            var details = new BEncodedList ();
 
             foreach (Bucket b in RoutingTable.Buckets) {
                 foreach (Node n in b.Nodes)
                     if (n.State != NodeState.Bad)
-                        details.Add(n.CompactNode());
+                        details.Add (n.CompactNode ());
 
                 if (b.Replacement != null)
                     if (b.Replacement.State != NodeState.Bad)
-                        details.Add(b.Replacement.CompactNode());
+                        details.Add (b.Replacement.CompactNode ());
             }
 
-            return details.Encode();
+            return details.Encode ();
         }
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
@@ -268,26 +267,23 @@ namespace MonoTorrent.Dht
             return e;
         }
 
-        public async Task StartAsync()
-            => await StartAsync(Array.Empty<byte>());
+        public async Task StartAsync ()
+            => await StartAsync (Array.Empty<byte> ());
 
-        public async Task StartAsync(byte[] initialNodes)
+        public async Task StartAsync (byte[] initialNodes)
         {
-            CheckDisposed();
+            CheckDisposed ();
 
             await MainLoop;
-            MessageLoop.Start();
-            if (RoutingTable.NeedsBootstrap)
-            {
-                RaiseStateChanged(DhtState.Initialising);
+            MessageLoop.Start ();
+            if (RoutingTable.NeedsBootstrap) {
+                RaiseStateChanged (DhtState.Initialising);
                 InitializeAsync (initialNodes);
-            }
-            else
-            {
-                RaiseStateChanged(DhtState.Ready);
+            } else {
+                RaiseStateChanged (DhtState.Ready);
             }
 
-            MainLoop.QueueTimeout(TimeSpan.FromSeconds(30), delegate {
+            MainLoop.QueueTimeout (TimeSpan.FromSeconds (30), delegate {
                 if (!Disposed) {
                     _ = RefreshBuckets ();
                 }
@@ -295,11 +291,11 @@ namespace MonoTorrent.Dht
             });
         }
 
-        public async Task StopAsync()
+        public async Task StopAsync ()
         {
             await MainLoop;
 
-            MessageLoop.Stop();
+            MessageLoop.Stop ();
             RaiseStateChanged (DhtState.NotReady);
         }
 
@@ -311,7 +307,8 @@ namespace MonoTorrent.Dht
 
             var tcs = new TaskCompletionSource<object> ();
 
-            void handler (object o, EventArgs e) {
+            void handler (object o, EventArgs e)
+            {
                 if (State == state) {
                     StateChanged -= handler;
                     tcs.SetResult (true);

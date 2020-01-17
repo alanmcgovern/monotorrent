@@ -41,95 +41,95 @@ namespace MonoTorrent.Dht
 
         public bool NeedsBootstrap => CountNodes () < 10;
 
-        public RoutingTable()
-            : this(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0)))
+        public RoutingTable ()
+            : this (new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0)))
         {
 
         }
 
-        public RoutingTable(Node localNode)
+        public RoutingTable (Node localNode)
         {
             Buckets = new List<Bucket> ();
-            LocalNode = localNode ?? throw new ArgumentNullException(nameof (localNode));
-            LocalNode.Seen();
-            Add(new Bucket());
+            LocalNode = localNode ?? throw new ArgumentNullException (nameof (localNode));
+            LocalNode.Seen ();
+            Add (new Bucket ());
         }
 
-        public bool Add(Node node)
+        public bool Add (Node node)
         {
-            return Add(node, true);
+            return Add (node, true);
         }
 
-        private bool Add(Node node, bool raiseNodeAdded)
+        private bool Add (Node node, bool raiseNodeAdded)
         {
             if (node == null)
-                throw new ArgumentNullException(nameof (node));
+                throw new ArgumentNullException (nameof (node));
 
-            Bucket bucket = Buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
-            if (bucket.Nodes.Contains(node))
+            Bucket bucket = Buckets.Find (delegate (Bucket b) { return b.CanContain (node); });
+            if (bucket.Nodes.Contains (node))
                 return false;
 
-            bool added = bucket.Add(node);
-            if (!added && bucket.CanContain(LocalNode))
-                if (Split(bucket))
-                    return Add(node, raiseNodeAdded);
+            bool added = bucket.Add (node);
+            if (!added && bucket.CanContain (LocalNode))
+                if (Split (bucket))
+                    return Add (node, raiseNodeAdded);
 
             return added;
         }
 
-        private void Add(Bucket bucket)
+        private void Add (Bucket bucket)
         {
-            Buckets.Add(bucket);
-            Buckets.Sort();
+            Buckets.Add (bucket);
+            Buckets.Sort ();
         }
 
-        internal Node FindNode(NodeId id)
+        internal Node FindNode (NodeId id)
         {
             foreach (Bucket b in Buckets)
                 foreach (Node n in b.Nodes)
-                    if (n.Id.Equals(id))
+                    if (n.Id.Equals (id))
                         return n;
 
             return null;
         }
 
-        private void Remove(Bucket bucket)
+        private void Remove (Bucket bucket)
         {
-            Buckets.Remove(bucket);
+            Buckets.Remove (bucket);
         }
 
-        private bool Split(Bucket bucket)
+        private bool Split (Bucket bucket)
         {
             if (!bucket.CanSplit)
                 return false;//to avoid infinite loop when add same node
-            
-            NodeId median = NodeId.Median (bucket.Min, bucket.Max);
-            Bucket left = new Bucket(bucket.Min, median);
-            Bucket right = new Bucket(median, bucket.Max);
 
-            Remove(bucket);
-            Add(left);
-            Add(right);
+            NodeId median = NodeId.Median (bucket.Min, bucket.Max);
+            Bucket left = new Bucket (bucket.Min, median);
+            Bucket right = new Bucket (median, bucket.Max);
+
+            Remove (bucket);
+            Add (left);
+            Add (right);
 
             foreach (Node n in bucket.Nodes)
-                Add(n, false);
+                Add (n, false);
 
             if (bucket.Replacement != null)
-                Add(bucket.Replacement, false);
+                Add (bucket.Replacement, false);
 
             return true;
         }
 
-        public int CountNodes()
+        public int CountNodes ()
         {
             int r = 0;
             foreach (Bucket b in Buckets)
                 r += b.Nodes.Count;
-            return r;            
+            return r;
         }
 
-        
-        public ICollection<Node> GetClosest(NodeId target)
+
+        public ICollection<Node> GetClosest (NodeId target)
         {
             var closestNodes = new ClosestNodesCollection (target);
 
@@ -143,21 +143,21 @@ namespace MonoTorrent.Dht
 
             // Try the bucket before this one
             if (firstBucketIndex > 0)
-                foreach (var node in Buckets [firstBucketIndex - 1].Nodes)
+                foreach (var node in Buckets[firstBucketIndex - 1].Nodes)
                     closestNodes.Add (node);
 
             // Try the bucket after this one
             if (firstBucketIndex < (Buckets.Count - 1))
-                foreach (var node in Buckets [firstBucketIndex + 1].Nodes)
+                foreach (var node in Buckets[firstBucketIndex + 1].Nodes)
                     closestNodes.Add (node);
 
             return closestNodes;
         }
 
-        internal void Clear()
+        internal void Clear ()
         {
-            Buckets.Clear();
-            Add(new Bucket());
+            Buckets.Clear ();
+            Add (new Bucket ());
         }
     }
 }

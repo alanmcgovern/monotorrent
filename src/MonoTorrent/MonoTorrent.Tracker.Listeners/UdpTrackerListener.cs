@@ -47,24 +47,24 @@ namespace MonoTorrent.Tracker.Listeners
 
         IPEndPoint OriginalEndPoint { get; }
 
-        Dictionary<IPAddress, long> ConnectionIDs { get ; }
+        Dictionary<IPAddress, long> ConnectionIDs { get; }
         long curConnectionID;
 
-        public UdpTrackerListener(int port)
-            : this(new IPEndPoint(IPAddress.Any, port))
+        public UdpTrackerListener (int port)
+            : this (new IPEndPoint (IPAddress.Any, port))
         {
         }
 
-        public UdpTrackerListener(IPEndPoint endPoint)
+        public UdpTrackerListener (IPEndPoint endPoint)
         {
-            ConnectionIDs = new Dictionary<IPAddress, long>();
+            ConnectionIDs = new Dictionary<IPAddress, long> ();
             EndPoint = OriginalEndPoint = endPoint;
         }
 
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
-        protected override void Start(CancellationToken token)
+        protected override void Start (CancellationToken token)
         {
             var listener = new UdpClient (OriginalEndPoint);
             token.Register (() => listener.Dispose ());
@@ -78,14 +78,13 @@ namespace MonoTorrent.Tracker.Listeners
         {
             Task sendTask = null;
             while (!token.IsCancellationRequested) {
-                try
-                {
+                try {
                     var result = await client.ReceiveAsync ();
                     byte[] data = result.Buffer;
-                    if (data.Length <16)
+                    if (data.Length < 16)
                         return;//bad request
 
-                    UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Request);
+                    UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
 
                     if (sendTask != null) {
                         try {
@@ -96,42 +95,39 @@ namespace MonoTorrent.Tracker.Listeners
                     }
 
 
-                    switch (request.Action)
-                    {
+                    switch (request.Action) {
                         case 0:
-                            sendTask = ReceiveConnect(client, (ConnectMessage)request, result.RemoteEndPoint);
+                            sendTask = ReceiveConnect (client, (ConnectMessage) request, result.RemoteEndPoint);
                             break;
                         case 1:
-                            sendTask = ReceiveAnnounce(client, (AnnounceMessage)request, result.RemoteEndPoint);
+                            sendTask = ReceiveAnnounce (client, (AnnounceMessage) request, result.RemoteEndPoint);
                             break;
                         case 2:
-                            sendTask = ReceiveScrape(client, (ScrapeMessage)request, result.RemoteEndPoint);
+                            sendTask = ReceiveScrape (client, (ScrapeMessage) request, result.RemoteEndPoint);
                             break;
                         case 3:
-                            sendTask = ReceiveError(client, (ErrorMessage)request, result.RemoteEndPoint);
+                            sendTask = ReceiveError (client, (ErrorMessage) request, result.RemoteEndPoint);
                             break;
                         default:
-                            throw new ProtocolException(string.Format("Invalid udp message received: {0}", request.Action));
+                            throw new ProtocolException (string.Format ("Invalid udp message received: {0}", request.Action));
                     }
-                }
-                catch (Exception e)
-                {
-                    Logger.Log(null, e.ToString());
+                } catch (Exception e) {
+                    Logger.Log (null, e.ToString ());
                 }
             }
         }
-        
-        protected virtual async Task ReceiveConnect(UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
+
+        protected virtual async Task ReceiveConnect (UdpClient client, ConnectMessage connectMessage, IPEndPoint remotePeer)
         {
             UdpTrackerMessage m;
             if (connectMessage.ConnectionId == ConnectMessage.InitialiseConnectionId)
-                m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID (remotePeer));
+                m = new ConnectResponseMessage (connectMessage.TransactionId, CreateConnectionID (remotePeer));
             else
                 m = new ErrorMessage (connectMessage.TransactionId, $"The connection_id was {connectMessage.ConnectionId} but expected {ConnectMessage.InitialiseConnectionId}");
 
-            byte[] data = m.Encode();
+            byte[] data = m.Encode ();
             try {
-                await client.SendAsync(data, data.Length, remotePeer);
+                await client.SendAsync (data, data.Length, remotePeer);
             } catch {
             }
         }
@@ -141,141 +137,130 @@ namespace MonoTorrent.Tracker.Listeners
         private long CreateConnectionID (IPEndPoint remotePeer)
         {
             curConnectionID++;
-            if (!ConnectionIDs.ContainsKey(remotePeer.Address))
-                ConnectionIDs.Add(remotePeer.Address, curConnectionID);
+            if (!ConnectionIDs.ContainsKey (remotePeer.Address))
+                ConnectionIDs.Add (remotePeer.Address, curConnectionID);
             return curConnectionID;
         }
 
         //QUICKHACK: format bencoded val and get it back wereas must refactor tracker system to have more generic object...
-        protected virtual async Task ReceiveAnnounce(UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
+        protected virtual async Task ReceiveAnnounce (UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
         {
             UdpTrackerMessage m;
-            BEncodedDictionary dict = Handle(getCollection(announceMessage), remotePeer.Address, false);
-            if (dict.ContainsKey(TrackerRequest.FailureKey))
-            {
-                m = new ErrorMessage(announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString());
-            }
-            else
-            {
+            BEncodedDictionary dict = Handle (getCollection (announceMessage), remotePeer.Address, false);
+            if (dict.ContainsKey (TrackerRequest.FailureKey)) {
+                m = new ErrorMessage (announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString ());
+            } else {
                 TimeSpan interval = TimeSpan.Zero;
                 int leechers = 0;
                 int seeders = 0;
-                List<MonoTorrent.Client.Peer> peers = new List<MonoTorrent.Client.Peer>();
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict)
-                {
-                    switch (keypair.Key.Text)
-                    {
+                List<MonoTorrent.Client.Peer> peers = new List<MonoTorrent.Client.Peer> ();
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
+                    switch (keypair.Key.Text) {
                         case ("complete"):
-                            seeders = Convert.ToInt32(keypair.Value.ToString());//same as seeder?
+                            seeders = Convert.ToInt32 (keypair.Value.ToString ());//same as seeder?
                             break;
 
                         case ("incomplete"):
-                            leechers = Convert.ToInt32(keypair.Value.ToString());//same as leecher?
+                            leechers = Convert.ToInt32 (keypair.Value.ToString ());//same as leecher?
                             break;
 
                         case ("interval"):
-                            interval = TimeSpan.FromSeconds(int.Parse(keypair.Value.ToString()));
+                            interval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()));
                             break;
 
                         case ("peers"):
                             if (keypair.Value is BEncodedList)          // Non-compact response
-                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedList)keypair.Value));
+                                peers.AddRange (MonoTorrent.Client.Peer.Decode ((BEncodedList) keypair.Value));
                             else if (keypair.Value is BEncodedString)   // Compact response
-                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedString)keypair.Value));
+                                peers.AddRange (MonoTorrent.Client.Peer.Decode ((BEncodedString) keypair.Value));
                             break;
 
                         default:
                             break;
                     }
                 }
-                m = new AnnounceResponseMessage(announceMessage.TransactionId, interval, leechers, seeders, peers);
+                m = new AnnounceResponseMessage (announceMessage.TransactionId, interval, leechers, seeders, peers);
             }
-            byte[] data = m.Encode();
+            byte[] data = m.Encode ();
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
-        private NameValueCollection getCollection(AnnounceMessage announceMessage)
+        private NameValueCollection getCollection (AnnounceMessage announceMessage)
         {
-            NameValueCollection res = new NameValueCollection();
-            res.Add("info_hash", announceMessage.InfoHash.UrlEncode());
-            res.Add("peer_id", announceMessage.PeerId.UrlEncode ());
-            res.Add("port", announceMessage.Port.ToString());
-            res.Add("uploaded", announceMessage.Uploaded.ToString());
-            res.Add("downloaded", announceMessage.Downloaded.ToString());
-            res.Add("left", announceMessage.Left.ToString());
-            res.Add("compact", "1");//hardcode
-            res.Add("numwant", announceMessage.NumWanted.ToString());
-            res.Add("ip", announceMessage.IP.ToString());
-            res.Add("key", announceMessage.Key.ToString());
-            res.Add("event", announceMessage.TorrentEvent.ToString().ToLower());
+            NameValueCollection res = new NameValueCollection ();
+            res.Add ("info_hash", announceMessage.InfoHash.UrlEncode ());
+            res.Add ("peer_id", announceMessage.PeerId.UrlEncode ());
+            res.Add ("port", announceMessage.Port.ToString ());
+            res.Add ("uploaded", announceMessage.Uploaded.ToString ());
+            res.Add ("downloaded", announceMessage.Downloaded.ToString ());
+            res.Add ("left", announceMessage.Left.ToString ());
+            res.Add ("compact", "1");//hardcode
+            res.Add ("numwant", announceMessage.NumWanted.ToString ());
+            res.Add ("ip", announceMessage.IP.ToString ());
+            res.Add ("key", announceMessage.Key.ToString ());
+            res.Add ("event", announceMessage.TorrentEvent.ToString ().ToLower ());
             return res;
         }
 
-        protected virtual async Task ReceiveScrape(UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
+        protected virtual async Task ReceiveScrape (UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
         {
-            BEncodedDictionary val = Handle(getCollection(scrapeMessage), remotePeer.Address, true);
+            BEncodedDictionary val = Handle (getCollection (scrapeMessage), remotePeer.Address, true);
 
             UdpTrackerMessage m;
             byte[] data;
-            if (val.ContainsKey(TrackerRequest.FailureKey))
-            {
-                m = new ErrorMessage(scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString());
-            }
-            else
-            {
-                List<ScrapeDetails> scrapes = new List<ScrapeDetails>();
+            if (val.ContainsKey (TrackerRequest.FailureKey)) {
+                m = new ErrorMessage (scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString ());
+            } else {
+                List<ScrapeDetails> scrapes = new List<ScrapeDetails> ();
 
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val)
-                {
-                    BEncodedDictionary dict = (BEncodedDictionary)keypair.Value;
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val) {
+                    BEncodedDictionary dict = (BEncodedDictionary) keypair.Value;
                     int seeds = 0;
                     int leeches = 0;
                     int complete = 0;
-                    foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair2 in dict)
-                    {
-                        switch (keypair2.Key.Text)
-                        {
+                    foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair2 in dict) {
+                        switch (keypair2.Key.Text) {
                             case "complete"://The current number of connected seeds
-                                seeds = Convert.ToInt32(keypair2.Value.ToString());
+                                seeds = Convert.ToInt32 (keypair2.Value.ToString ());
                                 break;
                             case "downloaded"://The total number of completed downloads
-                                complete = Convert.ToInt32(keypair2.Value.ToString());
+                                complete = Convert.ToInt32 (keypair2.Value.ToString ());
                                 break;
                             case "incomplete":
-                                leeches = Convert.ToInt32(keypair2.Value.ToString());
+                                leeches = Convert.ToInt32 (keypair2.Value.ToString ());
                                 break;
                         }
                     }
-                    ScrapeDetails sd = new ScrapeDetails(seeds, leeches, complete);
-                    scrapes.Add(sd);
+                    ScrapeDetails sd = new ScrapeDetails (seeds, leeches, complete);
+                    scrapes.Add (sd);
                     if (scrapes.Count == 74)//protocole do not support to send more than 74 scrape at once...
                     {
-                        m = new ScrapeResponseMessage(scrapeMessage.TransactionId, scrapes);
-                        data = m.Encode();
-                        await client.SendAsync(data, data.Length, remotePeer);
-                        scrapes.Clear();
+                        m = new ScrapeResponseMessage (scrapeMessage.TransactionId, scrapes);
+                        data = m.Encode ();
+                        await client.SendAsync (data, data.Length, remotePeer);
+                        scrapes.Clear ();
                     }
                 }
-                m = new ScrapeResponseMessage(scrapeMessage.TransactionId, scrapes);
+                m = new ScrapeResponseMessage (scrapeMessage.TransactionId, scrapes);
             }
-            data = m.Encode();
-            await client.SendAsync(data, data.Length, remotePeer);
+            data = m.Encode ();
+            await client.SendAsync (data, data.Length, remotePeer);
         }
 
-        private NameValueCollection getCollection(ScrapeMessage scrapeMessage)
+        private NameValueCollection getCollection (ScrapeMessage scrapeMessage)
         {
-            NameValueCollection res = new NameValueCollection();
+            NameValueCollection res = new NameValueCollection ();
             if (scrapeMessage.InfoHashes.Count == 0)
                 return res;//no infohash????
             //TODO more than one infohash : paid attention to order in response!!!
-            InfoHash hash = new InfoHash(scrapeMessage.InfoHashes[0]);
-            res.Add("info_hash", hash.UrlEncode());
+            InfoHash hash = new InfoHash (scrapeMessage.InfoHashes[0]);
+            res.Add ("info_hash", hash.UrlEncode ());
             return res;
         }
 
-        protected virtual Task ReceiveError(UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
+        protected virtual Task ReceiveError (UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
         {
-            throw new ProtocolException(String.Format("ErrorMessage from :{0}", remotePeer.Address));
+            throw new ProtocolException (String.Format ("ErrorMessage from :{0}", remotePeer.Address));
         }
     }
 }

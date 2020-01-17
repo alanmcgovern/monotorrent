@@ -39,7 +39,7 @@ namespace MonoTorrent.Dht.Tasks
         private DhtEngine engine;
         private Node newNode;
 
-        public ReplaceNodeTask(DhtEngine engine, Bucket bucket, Node newNode)
+        public ReplaceNodeTask (DhtEngine engine, Bucket bucket, Node newNode)
         {
             this.engine = engine;
             this.bucket = bucket;
@@ -52,16 +52,13 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             bucket.Changed ();
-            bucket.SortBySeen();
+            bucket.SortBySeen ();
 
-            if (bucket.Nodes[0].LastSeen < TimeSpan.FromMinutes(3))
-            {
+            if (bucket.Nodes[0].LastSeen < TimeSpan.FromMinutes (3)) {
                 return;
-            }
-            else
-            {
+            } else {
                 Node oldest = bucket.Nodes[0];
-                var args = await engine.SendQueryAsync (new Ping(engine.LocalId), oldest);
+                var args = await engine.SendQueryAsync (new Ping (engine.LocalId), oldest);
 
                 if (args.TimedOut) {
                     // If the node didn't respond and it's no longer in our bucket,
@@ -71,7 +68,7 @@ namespace MonoTorrent.Dht.Tasks
                     if (index < 0) {
                         await Execute ();
                     } else {
-                        bucket.Nodes [index] = newNode;
+                        bucket.Nodes[index] = newNode;
                         return;
                     }
                 } else {
@@ -79,6 +76,6 @@ namespace MonoTorrent.Dht.Tasks
                 }
             }
         }
-        
+
     }
 }

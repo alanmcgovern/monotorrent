@@ -35,17 +35,17 @@ namespace MonoTorrent.Client.Connections
 {
     sealed class IPV6Connection : SocketConnection
     {
-        public IPV6Connection(Uri uri)
-            : base(uri)
+        public IPV6Connection (Uri uri)
+            : base (uri)
         {
-            
+
         }
 
-        public IPV6Connection(Socket socket, bool incoming)
-            : base(socket, incoming)
+        public IPV6Connection (Socket socket, bool incoming)
+            : base (socket, incoming)
         {
-            var endpoint = (IPEndPoint)socket.RemoteEndPoint;
-            Uri = new Uri("ipv6://" + endpoint.Address + ':' + endpoint.Port);
+            var endpoint = (IPEndPoint) socket.RemoteEndPoint;
+            Uri = new Uri ("ipv6://" + endpoint.Address + ':' + endpoint.Port);
         }
     }
 }

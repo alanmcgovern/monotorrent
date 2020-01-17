@@ -35,7 +35,7 @@ namespace MonoTorrent.Dht
     {
         public ErrorCode ErrorCode { get; }
 
-        public MessageException(ErrorCode errorCode, string message) : base(message)
+        public MessageException (ErrorCode errorCode, string message) : base (message)
         {
             ErrorCode = errorCode;
         }

@@ -41,41 +41,38 @@ namespace MonoTorrent.Dht.Tasks
         readonly List<Node> initialNodes;
         readonly DhtEngine engine;
 
-        public InitialiseTask(DhtEngine engine)
+        public InitialiseTask (DhtEngine engine)
             : this (engine, Enumerable.Empty<Node> ())
         {
 
         }
 
-        public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
+        public InitialiseTask (DhtEngine engine, IEnumerable<Node> nodes)
         {
             this.engine = engine;
-            initialNodes = new List<Node>(nodes);
+            initialNodes = new List<Node> (nodes);
         }
 
-        public async Task ExecuteAsync()
+        public async Task ExecuteAsync ()
         {
             // If we were given a list of nodes to load at the start, use them
-            if (initialNodes.Count > 0)
-            {
+            if (initialNodes.Count > 0) {
                 foreach (Node node in initialNodes)
-                    engine.Add(node);
-                await SendFindNode(initialNodes);
-            }
-            else
-            {
-                Node utorrent = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                await SendFindNode(new Node[] { utorrent });
+                    engine.Add (node);
+                await SendFindNode (initialNodes);
+            } else {
+                Node utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
+                await SendFindNode (new Node[] { utorrent });
             }
         }
 
-        async Task SendFindNode(IEnumerable<Node> newNodes)
+        async Task SendFindNode (IEnumerable<Node> newNodes)
         {
             var activeRequests = new List<Task<SendQueryEventArgs>> ();
             var nodes = new ClosestNodesCollection (engine.LocalId);
 
             foreach (var node in newNodes) {
-                var request = new FindNode(engine.LocalId, engine.LocalId);
+                var request = new FindNode (engine.LocalId, engine.LocalId);
                 activeRequests.Add (engine.SendQueryAsync (request, node));
                 nodes.Add (node);
             }
@@ -86,10 +83,10 @@ namespace MonoTorrent.Dht.Tasks
 
                 var args = await completed;
                 if (args.Response != null) {
-                    var response = (FindNodeResponse)args.Response;
+                    var response = (FindNodeResponse) args.Response;
                     foreach (var node in Node.FromCompactNode (response.Nodes)) {
                         if (nodes.Add (node)) {
-                            var request = new FindNode(engine.LocalId, engine.LocalId);
+                            var request = new FindNode (engine.LocalId, engine.LocalId);
                             activeRequests.Add (engine.SendQueryAsync (request, node));
                         }
                     }

@@ -54,7 +54,7 @@ namespace MonoTorrent.Dht
         public bool IsReadOnly => false;
         public NodeId Target { get; }
 
-        List<ValueTuple<NodeId, Node>> Nodes { get ; }
+        List<ValueTuple<NodeId, Node>> Nodes { get; }
 
         public ClosestNodesCollection (NodeId target)
             : this (target, Bucket.MaxCapacity)
@@ -99,10 +99,10 @@ namespace MonoTorrent.Dht
         public bool Contains (Node item)
             => IndexOf (item) >= 0;
 
-        void ICollection<Node>.CopyTo (Node [] array, int arrayIndex)
+        void ICollection<Node>.CopyTo (Node[] array, int arrayIndex)
         {
-            for (int i = 0; i < Count; i ++)
-                array [arrayIndex++] = Nodes [i].Item2;
+            for (int i = 0; i < Count; i++)
+                array[arrayIndex++] = Nodes[i].Item2;
         }
 
         IEnumerator IEnumerable.GetEnumerator ()

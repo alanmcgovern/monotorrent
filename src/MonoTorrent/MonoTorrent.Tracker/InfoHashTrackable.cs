@@ -36,19 +36,19 @@ namespace MonoTorrent.Tracker
         public InfoHash InfoHash { get; }
         public string Name { get; }
 
-        public InfoHashTrackable(Torrent torrent)
+        public InfoHashTrackable (Torrent torrent)
         {
-            Check.Torrent(torrent);
+            Check.Torrent (torrent);
 
             Name = torrent.Name;
             InfoHash = torrent.InfoHash;
         }
 
-        public InfoHashTrackable(string name, InfoHash infoHash)
+        public InfoHashTrackable (string name, InfoHash infoHash)
         {
-            Check.InfoHash(infoHash);
+            Check.InfoHash (infoHash);
 
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty (name))
                 throw new ArgumentNullException (nameof (name), $"{nameof (name)} cannot be null or empty");
 
             InfoHash = infoHash;

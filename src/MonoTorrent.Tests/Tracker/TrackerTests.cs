@@ -40,46 +40,45 @@ namespace MonoTorrent.Tracker
     [TestFixture]
     public class TrackerTests
     {
-        Uri uri = new Uri("http://127.0.0.1:23456/");
+        Uri uri = new Uri ("http://127.0.0.1:23456/");
         HttpTrackerListener listener;
         TrackerServer server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
         [OneTimeSetUp]
-        public void FixtureSetup()
+        public void FixtureSetup ()
         {
-            listener = new HttpTrackerListener(uri.OriginalString);
-            listener.Start();
-            server = new TrackerServer();
-            server.RegisterListener(listener);
-            listener.Start();
+            listener = new HttpTrackerListener (uri.OriginalString);
+            listener.Start ();
+            server = new TrackerServer ();
+            server.RegisterListener (listener);
+            listener.Start ();
         }
 
         [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void FixtureTeardown ()
         {
-            listener.Stop();
-            server.Dispose();
+            listener.Stop ();
+            server.Dispose ();
         }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
             //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
         }
 
         [Test]
-        public async Task MultipleAnnounce()
+        public async Task MultipleAnnounce ()
         {
-            Random r = new Random();
+            Random r = new Random ();
 
-            for (int i=0; i < 20; i++)
-            {
-                InfoHash infoHash = new InfoHash(new byte[20]);
-                r.NextBytes(infoHash.Hash);
-                TrackerTier tier = new TrackerTier(new string[] { uri.ToString() });
-                var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new string('1', 20), "", 1411, false);
-                await tier.Trackers[0].AnnounceAsync(parameters);
+            for (int i = 0; i < 20; i++) {
+                InfoHash infoHash = new InfoHash (new byte[20]);
+                r.NextBytes (infoHash.Hash);
+                TrackerTier tier = new TrackerTier (new string[] { uri.ToString () });
+                var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters (0, 0, 0, TorrentEvent.Started,
+                                                                       infoHash, false, new string ('1', 20), "", 1411, false);
+                await tier.Trackers[0].AnnounceAsync (parameters);
             }
         }
     }

@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using MonoTorrent.Client;
-using MonoTorrent.Client.Messages.Standard;
-
-using NUnit.Framework;
-
-namespace MonoTorrent.Client
+﻿namespace MonoTorrent.Client
 {
     //[TestFixture]
     //public class SlidingWindowPickerTests : PiecePickerTests
@@ -18,7 +9,7 @@ namespace MonoTorrent.Client
     //    public override void Setup()
     //    {
     //        base.Setup();
-            
+
     //        picker = new SlidingWindowPicker(10);
     //        swp = picker as SlidingWindowPicker;
     //        picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>(), new MonoTorrent.Common.BitField(rig.Manager.Bitfield.Length));

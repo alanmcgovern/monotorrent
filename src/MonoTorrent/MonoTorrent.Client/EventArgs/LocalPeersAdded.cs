@@ -34,8 +34,8 @@ namespace MonoTorrent.Client
     /// </summary>
     public sealed class LocalPeersAdded : PeersAddedEventArgs
     {
-        public LocalPeersAdded(TorrentManager manager, int peersAdded, int total)
-            : base(manager, peersAdded, total)
+        public LocalPeersAdded (TorrentManager manager, int peersAdded, int total)
+            : base (manager, peersAdded, total)
         {
 
         }

@@ -35,27 +35,26 @@ namespace MonoTorrent.Dht.Messages
     {
         static readonly BEncodedString NodesKey = "nodes";
 
-        public BEncodedString Nodes
-        {
+        public BEncodedString Nodes {
             get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey) ?? BEncodedString.Empty;
             set { Parameters[NodesKey] = value; }
         }
 
-        public FindNodeResponse(NodeId id, BEncodedValue transactionId)
-            : base(id, transactionId)
+        public FindNodeResponse (NodeId id, BEncodedValue transactionId)
+            : base (id, transactionId)
         {
-            Parameters.Add(NodesKey, BEncodedString.Empty);
+            Parameters.Add (NodesKey, BEncodedString.Empty);
         }
 
-        public FindNodeResponse(BEncodedDictionary d)
-            : base(d)
+        public FindNodeResponse (BEncodedDictionary d)
+            : base (d)
         {
         }
 
-        public override void Handle(DhtEngine engine, Node node)
+        public override void Handle (DhtEngine engine, Node node)
         {
-            base.Handle(engine, node);
-            engine.Add(Node.FromCompactNode(Nodes.TextBytes));
+            base.Handle (engine, node);
+            engine.Add (Node.FromCompactNode (Nodes.TextBytes));
         }
     }
 }

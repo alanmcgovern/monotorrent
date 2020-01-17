@@ -27,11 +27,7 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-
-using MonoTorrent.BEncoding;
 
 
 namespace MonoTorrent.Tracker
@@ -70,6 +66,6 @@ namespace MonoTorrent.Tracker
         /// Return a copy of the list of peers
         /// </summary>
         /// <returns></returns>
-        List<Peer> GetPeers();
+        List<Peer> GetPeers ();
     }
 }

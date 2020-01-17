@@ -43,22 +43,22 @@ namespace MonoTorrent.Tracker.Listeners
 
         string Prefix { get; }
 
-        public HttpTrackerListener(IPAddress address, int port)
-            : this(string.Format("http://{0}:{1}/announce/", address, port))
+        public HttpTrackerListener (IPAddress address, int port)
+            : this (string.Format ("http://{0}:{1}/announce/", address, port))
         {
 
         }
 
-        public HttpTrackerListener(IPEndPoint endpoint)
-            : this(endpoint.Address, endpoint.Port)
+        public HttpTrackerListener (IPEndPoint endpoint)
+            : this (endpoint.Address, endpoint.Port)
         {
 
         }
 
-        public HttpTrackerListener(string httpPrefix)
+        public HttpTrackerListener (string httpPrefix)
         {
-            if (string.IsNullOrEmpty(httpPrefix))
-                throw new ArgumentNullException("httpPrefix");
+            if (string.IsNullOrEmpty (httpPrefix))
+                throw new ArgumentNullException ("httpPrefix");
 
             Prefix = httpPrefix;
         }
@@ -66,13 +66,13 @@ namespace MonoTorrent.Tracker.Listeners
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
-        protected override void Start(CancellationToken token)
+        protected override void Start (CancellationToken token)
         {
-			var listener = new HttpListener();
+            var listener = new HttpListener ();
             token.Register (() => listener.Close ());
 
-            listener.Prefixes.Add(Prefix);
-            listener.Start();
+            listener.Prefixes.Add (Prefix);
+            listener.Start ();
             GetContextAsync (listener, token);
         }
 
@@ -90,17 +90,16 @@ namespace MonoTorrent.Tracker.Listeners
         async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
         {
             using (context.Response) {
-                bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
+                bool isScrape = context.Request.RawUrl.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
 
-                if (IncompleteAnnounce || IncompleteScrape)
-                {
-                    await context.Response.OutputStream.WriteAsync(new byte[1024], 0, 1024);
+                if (IncompleteAnnounce || IncompleteScrape) {
+                    await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024);
                     return;
                 }
 
-                BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
+                BEncodedValue responseData = Handle (context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
 
-                byte[] response = responseData.Encode();
+                byte[] response = responseData.Encode ();
                 context.Response.ContentType = "text/plain";
                 context.Response.StatusCode = 200;
                 context.Response.ContentLength64 = response.LongLength;

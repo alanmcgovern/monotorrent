@@ -41,15 +41,14 @@ namespace MonoTorrent
 
         public UriQueryBuilder (string uri)
             : this (new Uri (uri))
-            
+
         {
 
         }
 
-        public string this [string key]
-        {
-            get { return queryParams [key]; }
-            set { queryParams [key] = value; }
+        public string this[string key] {
+            get { return queryParams[key]; }
+            set { queryParams[key] = value; }
         }
 
         public UriQueryBuilder (Uri uri)
@@ -64,7 +63,7 @@ namespace MonoTorrent
             Check.Key (key);
             Check.Value (value);
 
-            queryParams [key] = value.ToString ();
+            queryParams[key] = value.ToString ();
             return this;
         }
 
@@ -78,11 +77,11 @@ namespace MonoTorrent
             if (builder.Query.Length == 0 || !builder.Query.StartsWith ("?"))
                 return;
 
-            string [] strs = builder.Query.Remove (0, 1).Split ('&');
+            string[] strs = builder.Query.Remove (0, 1).Split ('&');
             for (int i = 0; i < strs.Length; i++) {
-                string [] kv = strs [i].Split ('=');
+                string[] kv = strs[i].Split ('=');
                 if (kv.Length == 2)
-                    queryParams.Add (kv [0].Trim (), kv [1].Trim ());
+                    queryParams.Add (kv[0].Trim (), kv[1].Trim ());
             }
         }
 

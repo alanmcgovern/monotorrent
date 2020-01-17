@@ -28,6 +28,7 @@
 
 
 using System.Collections.Generic;
+
 using ReusableTasks;
 
 namespace MonoTorrent
@@ -40,11 +41,11 @@ namespace MonoTorrent
             for (int i = 0; i < count; i++)
                 all.Add (new Synchronizer ());
 
-            all [0].Self.SetResult (true);
+            all[0].Self.SetResult (true);
 
             for (int i = 0; i < count; i++) {
-                all [i].PreviousNode = all [(i - 1 + count) % count];
-                all [i].NextNode = all [(i + 1 + count) % count];
+                all[i].PreviousNode = all[(i - 1 + count) % count];
+                all[i].NextNode = all[(i + 1 + count) % count];
             }
             return new Queue<Synchronizer> (all);
         }

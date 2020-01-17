@@ -33,7 +33,6 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
-using ReusableTasks;
 
 using NUnit.Framework;
 
@@ -47,17 +46,17 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            var socketListener = new TcpListener(IPAddress.Loopback, 0);
-            socketListener.Start();
+            var socketListener = new TcpListener (IPAddress.Loopback, 0);
+            socketListener.Start ();
 
-            var s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            s1a.Connect(socketListener.LocalEndpoint);
+            var s1a = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            s1a.Connect (socketListener.LocalEndpoint);
 
-            var s1b = socketListener.AcceptSocket();
+            var s1b = socketListener.AcceptSocket ();
 
             Incoming = new IPV4Connection (s1a, true);
             Outgoing = new IPV4Connection (s1b, false);
-            socketListener.Stop();
+            socketListener.Stop ();
         }
 
         [Test]

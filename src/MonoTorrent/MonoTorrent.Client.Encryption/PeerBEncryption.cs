@@ -29,10 +29,9 @@
 
 
 using System;
-using System.Text;
-using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Encryption
@@ -46,89 +45,89 @@ namespace MonoTorrent.Client.Encryption
 
         InfoHash[] PossibleSKEYs { get; }
 
-        public PeerBEncryption(InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
-            : base(allowedEncryption)
+        public PeerBEncryption (InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
+            : base (allowedEncryption)
         {
             InitialData = Array.Empty<byte> ();
             PossibleSKEYs = possibleSKEYs;
         }
 
-        protected override async ReusableTask doneReceiveY()
+        protected override async ReusableTask doneReceiveY ()
         {
-            byte[] req1 = Hash(Req1Bytes, S);
-            await Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
+            byte[] req1 = Hash (Req1Bytes, S);
+            await Synchronize (req1, 628); // 3 A->B: HASH('req1', S)
         }
 
-        protected override async ReusableTask doneSynchronize()
+        protected override async ReusableTask doneSynchronize ()
         {
-            await base.doneSynchronize();
+            await base.doneSynchronize ();
 
             var verifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
-            await ReceiveMessage(verifyBytes, verifyBytes.Length);
-            await gotVerification(verifyBytes);
+            await ReceiveMessage (verifyBytes, verifyBytes.Length);
+            await gotVerification (verifyBytes);
         }
 
-        private async ReusableTask gotVerification(byte[] verifyBytes)
+        private async ReusableTask gotVerification (byte[] verifyBytes)
         {
             byte[] torrentHash = new byte[20];
 
             byte[] myCP = new byte[4];
 
-            Array.Copy(verifyBytes, 0, torrentHash, 0, torrentHash.Length); // HASH('req2', SKEY) xor HASH('req3', S)
+            Array.Copy (verifyBytes, 0, torrentHash, 0, torrentHash.Length); // HASH('req2', SKEY) xor HASH('req3', S)
 
-            if (!MatchSKEY(torrentHash))
-                throw new EncryptionException("No valid SKey found");
+            if (!MatchSKEY (torrentHash))
+                throw new EncryptionException ("No valid SKey found");
 
-            CreateCryptors(KeyBBytes, KeyABytes);
+            CreateCryptors (KeyBBytes, KeyABytes);
 
-            DoDecrypt(verifyBytes, 20, 14); // ENCRYPT(VC, ...
+            DoDecrypt (verifyBytes, 20, 14); // ENCRYPT(VC, ...
 
-            if (!Toolbox.ByteMatch(verifyBytes, 20, VerificationConstant, 0, VerificationConstant.Length))
-                throw new EncryptionException("Verification constant was invalid");
+            if (!Toolbox.ByteMatch (verifyBytes, 20, VerificationConstant, 0, VerificationConstant.Length))
+                throw new EncryptionException ("Verification constant was invalid");
 
-            Array.Copy(verifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
-                
+            Array.Copy (verifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
+
             // We need to select the crypto *after* we send our response, otherwise the wrong
             // encryption will be used on the response
             int lenInitialPayload;
             var lenPadC = Message.ReadShort (verifyBytes, 32) + 2;
             var padC = ClientEngine.BufferPool.Rent (lenPadC);
             try {
-                await ReceiveMessage(padC, lenPadC); // padC
+                await ReceiveMessage (padC, lenPadC); // padC
 
-                DoDecrypt(padC, 0, lenPadC);
+                DoDecrypt (padC, 0, lenPadC);
                 lenInitialPayload = Message.ReadShort (padC, lenPadC - 2);
             } finally {
                 ClientEngine.BufferPool.Return (padC);
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
-            await ReceiveMessage(InitialData, InitialData.Length);
-            DoDecrypt(InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
+            await ReceiveMessage (InitialData, InitialData.Length);
+            DoDecrypt (InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
 
             // Step Four
-            byte[] padD = GeneratePad();
-            SelectCrypto(myCP, false);
+            byte[] padD = GeneratePad ();
+            SelectCrypto (myCP, false);
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             var finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
             byte[] buffer = ClientEngine.BufferPool.Rent (finalBufferLength);
-                
-            int offset = 0;
-            offset += Message.Write(buffer, offset, VerificationConstant);
-            offset += Message.Write(buffer, offset, CryptoSelect);
-            offset += Message.Write(buffer, offset, Len(padD));
-            offset += Message.Write(buffer, offset, padD);
 
-            DoEncrypt(buffer, 0, finalBufferLength);
+            int offset = 0;
+            offset += Message.Write (buffer, offset, VerificationConstant);
+            offset += Message.Write (buffer, offset, CryptoSelect);
+            offset += Message.Write (buffer, offset, Len (padD));
+            offset += Message.Write (buffer, offset, padD);
+
+            DoEncrypt (buffer, 0, finalBufferLength);
             try {
-                await NetworkIO.SendAsync(socket, buffer, 0, finalBufferLength).ConfigureAwait (false);
+                await NetworkIO.SendAsync (socket, buffer, 0, finalBufferLength).ConfigureAwait (false);
             } finally {
                 ClientEngine.BufferPool.Return (buffer);
             }
 
-            SelectCrypto(myCP, true);
+            SelectCrypto (myCP, true);
         }
 
         /// <summary>
@@ -136,19 +135,17 @@ namespace MonoTorrent.Client.Encryption
         /// and sets the SKEY to the InfoHash of the matched torrent.
         /// </summary>
         /// <returns>true if a match has been found</returns>
-        private bool MatchSKEY(byte[] torrentHash)
+        private bool MatchSKEY (byte[] torrentHash)
         {
-            for (int i = 0; i < PossibleSKEYs.Length; i++)
-            {
-                byte[] req2 = Hash(Req2Bytes, PossibleSKEYs[i].Hash);
-                byte[] req3 = Hash(Req3Bytes, S);
-                    
+            for (int i = 0; i < PossibleSKEYs.Length; i++) {
+                byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].Hash);
+                byte[] req3 = Hash (Req3Bytes, S);
+
                 bool match = true;
                 for (int j = 0; j < req2.Length && match; j++)
                     match = torrentHash[j] == (req2[j] ^ req3[j]);
 
-                if (match)
-                {
+                if (match) {
                     SKEY = PossibleSKEYs[i];
                     return true;
                 }

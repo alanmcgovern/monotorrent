@@ -31,8 +31,8 @@ namespace MonoTorrent.Tracker
 {
     public sealed class AnnounceEventArgs : PeerEventArgs
     {
-        public AnnounceEventArgs(Peer peer, ITrackerItem torrent)
-            : base(peer, torrent)
+        public AnnounceEventArgs (Peer peer, ITrackerItem torrent)
+            : base (peer, torrent)
         {
 
         }

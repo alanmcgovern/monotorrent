@@ -34,8 +34,8 @@ namespace MonoTorrent.TorrentWatcher
         event EventHandler<TorrentWatcherEventArgs> TorrentFound;
         event EventHandler<TorrentWatcherEventArgs> TorrentLost;
 
-        void Start();
-        void Stop();
-        void ForceScan();
+        void Start ();
+        void Stop ();
+        void ForceScan ();
     }
 }

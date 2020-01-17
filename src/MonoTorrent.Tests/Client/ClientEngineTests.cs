@@ -44,17 +44,17 @@ namespace MonoTorrent.Client
         ConnectionPair conn;
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            rig = TestRig.CreateMultiFile (new TestWriter());
-            conn = new ConnectionPair().WithTimeout ();
+            rig = TestRig.CreateMultiFile (new TestWriter ());
+            conn = new ConnectionPair ().WithTimeout ();
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            rig.Dispose();
-            conn.Dispose();
+            rig.Dispose ();
+            conn.Dispose ();
         }
 
         [Test]
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (args);
             };
 
-            dht.RaisePeersFound (manager.InfoHash, new [] { rig.CreatePeer (false).Peer });
+            dht.RaisePeersFound (manager.InfoHash, new[] { rig.CreatePeer (false).Peer });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
                 Private = true
             };
 
-            var manager = new TorrentManager(editor.ToTorrent (), "path", new TorrentSettings());
+            var manager = new TorrentManager (editor.ToTorrent (), "path", new TorrentSettings ());
             await rig.Engine.Register (manager);
 
             var dht = new ManualDhtEngine ();
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (args);
             };
 
-            dht.RaisePeersFound (manager.InfoHash, new [] { rig.CreatePeer (false).Peer });
+            dht.RaisePeersFound (manager.InfoHash, new[] { rig.CreatePeer (false).Peer });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client
                 Private = true
             };
 
-            var manager = new TorrentManager(editor.ToTorrent (), "path", new TorrentSettings());
+            var manager = new TorrentManager (editor.ToTorrent (), "path", new TorrentSettings ());
             await rig.Engine.Register (manager);
 
             var localPeer = new ManualLocalPeerListener ();
@@ -154,12 +154,12 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task ReregisterManager()
+        public async Task ReregisterManager ()
         {
             var downloadLimiters = rig.Manager.DownloadLimiters.ToArray ();
             var uploadLimiters = rig.Manager.UploadLimiters.ToArray ();
 
-            await rig.Engine.Unregister(rig.Manager);
+            await rig.Engine.Unregister (rig.Manager);
             Assert.IsNull (rig.Manager.Engine, "#1");
             CollectionAssert.AreNotEquivalent (downloadLimiters, rig.Manager.DownloadLimiters, "#2");
             CollectionAssert.AreNotEquivalent (uploadLimiters, rig.Manager.UploadLimiters, "#3");
@@ -173,15 +173,15 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task StopTest()
+        public async Task StopTest ()
         {
-            var hashingState = rig.Manager.WaitForState(TorrentState.Hashing);
-            var stoppedState = rig.Manager.WaitForState(TorrentState.Stopped);
+            var hashingState = rig.Manager.WaitForState (TorrentState.Hashing);
+            var stoppedState = rig.Manager.WaitForState (TorrentState.Stopped);
 
-            await rig.Manager.StartAsync();
-            Assert.IsTrue(hashingState.Wait(5000), "Started");
-            await rig.Manager.StopAsync();
-            Assert.IsTrue(stoppedState.Wait(5000), "Stopped");
+            await rig.Manager.StartAsync ();
+            Assert.IsTrue (hashingState.Wait (5000), "Started");
+            await rig.Manager.StopAsync ();
+            Assert.IsTrue (stoppedState.Wait (5000), "Stopped");
         }
     }
 }

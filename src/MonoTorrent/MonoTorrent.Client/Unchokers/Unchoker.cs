@@ -40,20 +40,20 @@ namespace MonoTorrent.Client
             Manager = manager;
         }
 
-        public virtual void Choke(PeerId id)
+        public virtual void Choke (PeerId id)
         {
             Manager.UploadingTo--;
             id.AmChoking = true;
-            id.Enqueue(new ChokeMessage());
+            id.Enqueue (new ChokeMessage ());
         }
 
-        public abstract void UnchokeReview();
+        public abstract void UnchokeReview ();
 
-        public virtual void Unchoke(PeerId id)
+        public virtual void Unchoke (PeerId id)
         {
             Manager.UploadingTo++;
             id.AmChoking = false;
-            id.Enqueue(new UnchokeMessage());
+            id.Enqueue (new UnchokeMessage ());
             id.LastUnchoked.Restart ();
         }
     }

@@ -36,8 +36,8 @@ namespace MonoTorrent.Client.Modes
         public override bool CanHashCheck => true;
         public override TorrentState State => TorrentState.Stopped;
 
-        public StoppedMode(TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base(manager, diskManager, connectionManager, settings)
+        public StoppedMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+            : base (manager, diskManager, connectionManager, settings)
         {
         }
 

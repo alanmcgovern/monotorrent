@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Tracker
@@ -68,7 +67,7 @@ namespace MonoTorrent.Client.Tracker
         /// Send an Announce request to the <see cref="CurrentTracker"/>.
         /// </summary>
         /// <returns></returns>
-        Task Announce();
+        Task Announce ();
 
         /// <summary>
         /// Send an Announce request to the <see cref="CurrentTracker"/>, with the
@@ -79,26 +78,26 @@ namespace MonoTorrent.Client.Tracker
         /// If it just reached 100% completion then <see cref="TorrentEvent.Completed"/> is sent, otherwise
         /// <see cref="TorrentEvent.None"/> should be sent.</param>
         /// <returns></returns>
-        Task Announce(TorrentEvent clientEvent);
+        Task Announce (TorrentEvent clientEvent);
 
         /// <summary>
         /// Send an Announce request to the specified tracker.
         /// </summary>
         /// <param name="tracker">The tracker to query</param>
         /// <returns></returns>
-        Task Announce(ITracker tracker);
+        Task Announce (ITracker tracker);
 
         /// <summary>
         /// Send a Scrape request to the <see cref="CurrentTracker"/>
         /// </summary>
         /// <returns></returns>
-        Task Scrape();
+        Task Scrape ();
 
         /// <summary>
         /// Send a Scrape request to the specified tracker.
         /// </summary>
         /// <param name="tracker">The tracker to query</param>
         /// <returns></returns>
-        Task Scrape(ITracker tracker);
+        Task Scrape (ITracker tracker);
     }
 }

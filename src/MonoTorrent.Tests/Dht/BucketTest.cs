@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void SortBySeen()
+        public void SortBySeen ()
         {
             var oldNode = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
             var newNode = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 1));
@@ -89,11 +89,11 @@ namespace MonoTorrent.Dht
 
             oldNode.Seen (TimeSpan.FromDays (1));
             bucket.SortBySeen ();
-            Assert.AreEqual (oldNode, bucket.Nodes [0], "#1");
+            Assert.AreEqual (oldNode, bucket.Nodes[0], "#1");
 
             newNode.Seen (TimeSpan.FromDays (2));
             bucket.SortBySeen ();
-            Assert.AreEqual (newNode, bucket.Nodes [0], "#2");
+            Assert.AreEqual (newNode, bucket.Nodes[0], "#2");
         }
     }
 }

@@ -28,6 +28,7 @@
 
 
 using System.Threading.Tasks;
+
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
@@ -37,7 +38,7 @@ namespace MonoTorrent.Dht.Tasks
         private Bucket bucket;
         private DhtEngine engine;
 
-        public RefreshBucketTask(DhtEngine engine, Bucket bucket)
+        public RefreshBucketTask (DhtEngine engine, Bucket bucket)
         {
             this.engine = engine;
             this.bucket = bucket;
@@ -48,7 +49,7 @@ namespace MonoTorrent.Dht.Tasks
             if (bucket.Nodes.Count == 0)
                 return;
 
-            bucket.SortBySeen();
+            bucket.SortBySeen ();
 
             foreach (var node in bucket.Nodes.ToArray ()) {
                 var message = new FindNode (engine.LocalId, node.Id);

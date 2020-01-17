@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Tracker
         /// </summary>
         public ITracker Tracker { get; }
 
-        protected TrackerResponseEventArgs(ITracker tracker, bool successful)
+        protected TrackerResponseEventArgs (ITracker tracker, bool successful)
         {
             Successful = successful;
             Tracker = tracker;

@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Connections
     {
         IConnection Connection { get; }
 
-        public byte [] AddressBytes => Connection.AddressBytes;
+        public byte[] AddressBytes => Connection.AddressBytes;
 
         public bool Connected => Connection.Connected;
 
@@ -70,20 +70,20 @@ namespace MonoTorrent.Client.Connections
         public async ReusableTask ConnectAsync ()
             => await Connection.ConnectAsync ();
 
-        public async ReusableTask<int> ReceiveAsync (byte [] buffer, int offset, int count)
+        public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
             => await Connection.ReceiveAsync (buffer, offset, count);
 
-        public async ReusableTask<int> SendAsync (byte [] buffer, int offset, int count)
+        public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
             => await Connection.SendAsync (buffer, offset, count);
 
         Task IConnection.ConnectAsync ()
             => Connection.ConnectAsync ();
 
-        Task<int> IConnection.ReceiveAsync (byte [] buffer, int offset, int count)
+        Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
             => Connection.ReceiveAsync (buffer, offset, count);
 
-        Task<int> IConnection.SendAsync (byte [] buffer, int offset, int count)
-            =>  Connection.SendAsync (buffer, offset, count);
+        Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
+            => Connection.SendAsync (buffer, offset, count);
 
         public void Dispose ()
             => Connection.Dispose ();

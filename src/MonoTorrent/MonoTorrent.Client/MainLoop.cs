@@ -51,88 +51,78 @@ namespace MonoTorrent.Client
 
         class CacheableManualResetEventSlim : ManualResetEventSlim, ICacheable
         {
-            public void Initialise() => Reset();
+            public void Initialise () => Reset ();
         }
 
         readonly Queue<QueuedTask> actions = new Queue<QueuedTask> ();
         readonly ManualResetEventSlim actionsWaiter = new ManualResetEventSlim ();
         readonly Thread thread;
 
-        public MainLoop(string name)
+        public MainLoop (string name)
         {
-            thread = new Thread(Loop) {
+            thread = new Thread (Loop) {
                 Name = name,
                 IsBackground = true
             };
-            thread.Start();
+            thread.Start ();
         }
 
-        void Loop()
+        void Loop ()
         {
             SetSynchronizationContext (this);
-            using (ExecutionContext.SuppressFlow())
-                while (true)
-                {
+            using (ExecutionContext.SuppressFlow ())
+                while (true) {
                     QueuedTask? task = null;
 
-                    lock (actions)
-                    {
+                    lock (actions) {
                         if (actions.Count > 0)
-                            task = actions.Dequeue();
+                            task = actions.Dequeue ();
                         else
-                            actionsWaiter.Reset();
+                            actionsWaiter.Reset ();
                     }
 
-                    if (!task.HasValue)
-                    {
-                        actionsWaiter.Wait();
-                    }
-                    else
-                    {
-                        try
-                        {
-                            task.Value.Action?.Invoke();
-                            task.Value.SendOrPostCallback?.Invoke(task.Value.State);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Unexpected main loop exception: {0}", ex);
-                        }
-                        finally
-                        {
-                            task.Value.WaitHandle?.Set();
+                    if (!task.HasValue) {
+                        actionsWaiter.Wait ();
+                    } else {
+                        try {
+                            task.Value.Action?.Invoke ();
+                            task.Value.SendOrPostCallback?.Invoke (task.Value.State);
+                        } catch (Exception ex) {
+                            Console.WriteLine ("Unexpected main loop exception: {0}", ex);
+                        } finally {
+                            task.Value.WaitHandle?.Set ();
                         }
                     }
                 }
         }
 
-        public void QueueWait(Action action)
+        public void QueueWait (Action action)
         {
-            Send(t => action (), null);
+            Send (t => action (), null);
         }
 
-        public object QueueWait(Func<object> func)
+        public object QueueWait (Func<object> func)
         {
             object result = null;
-            Send(t => result = func(), null);
+            Send (t => result = func (), null);
             return result;
         }
 
-        public void QueueTimeout(TimeSpan span, Func<bool> task)
+        public void QueueTimeout (TimeSpan span, Func<bool> task)
         {
             if (span.TotalMilliseconds < 1)
-                span = TimeSpan.FromMilliseconds(1);
+                span = TimeSpan.FromMilliseconds (1);
             bool disposed = false;
             Timer timer = null;
             SendOrPostCallback callback = state => {
-                if (!disposed && !task()) {
+                if (!disposed && !task ()) {
                     disposed = true;
-                    timer.Dispose();
+                    timer.Dispose ();
                 }
             };
 
-            timer = new Timer(state => {
-                Post(callback, null);
+            timer = new Timer (state => {
+                Post (callback, null);
             }, null, span, span);
         }
 
@@ -146,28 +136,25 @@ namespace MonoTorrent.Client
             }
 
             if (shouldSet)
-                actionsWaiter.Set();
+                actionsWaiter.Set ();
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public override void Post(SendOrPostCallback d, object state)
+        public override void Post (SendOrPostCallback d, object state)
         {
             Queue (new QueuedTask { SendOrPostCallback = d, State = state });
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public override void Send(SendOrPostCallback d, object state)
+        public override void Send (SendOrPostCallback d, object state)
         {
-            if (thread == Thread.CurrentThread)
-            {
-                d(state);
-            }
-            else
-            {
-                var waiter = cache.Dequeue();
+            if (thread == Thread.CurrentThread) {
+                d (state);
+            } else {
+                var waiter = cache.Dequeue ();
                 Queue (new QueuedTask { SendOrPostCallback = d, State = state, WaitHandle = waiter });
-                waiter.Wait();
-                cache.Enqueue(waiter);
+                waiter.Wait ();
+                cache.Enqueue (waiter);
             }
         }
 
@@ -179,13 +166,13 @@ namespace MonoTorrent.Client
         public bool IsCompleted => thread == Thread.CurrentThread;
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public void GetResult()
+        public void GetResult ()
         {
 
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public void OnCompleted(Action continuation)
+        public void OnCompleted (Action continuation)
         {
             Queue (new QueuedTask { Action = continuation });
         }

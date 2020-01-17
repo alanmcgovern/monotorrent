@@ -74,115 +74,111 @@ namespace MonoTorrent.Client.PieceWriters
 
         IPieceWriter Writer { get; }
 
-        public MemoryWriter(IPieceWriter writer)
-            : this(writer, 2 * 1024 * 1024)
+        public MemoryWriter (IPieceWriter writer)
+            : this (writer, 2 * 1024 * 1024)
         {
 
         }
 
-        public MemoryWriter(IPieceWriter writer, int capacity)
+        public MemoryWriter (IPieceWriter writer, int capacity)
         {
             if (capacity < 0)
-                throw new ArgumentOutOfRangeException(nameof (capacity));
+                throw new ArgumentOutOfRangeException (nameof (capacity));
 
-            CachedBlocks = new List<CachedBlock>();
+            CachedBlocks = new List<CachedBlock> ();
             Capacity = capacity;
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));
         }
 
-        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File(file);
-            Check.Buffer(buffer);
+            Check.File (file);
+            Check.Buffer (buffer);
 
-            for (int i = 0; i < CachedBlocks.Count; i++)
-            {
+            for (int i = 0; i < CachedBlocks.Count; i++) {
                 if (CachedBlocks[i].File != file)
                     continue;
                 if (CachedBlocks[i].Offset != offset || CachedBlocks[i].File != file || CachedBlocks[i].Count != count)
                     continue;
-                Buffer.BlockCopy(CachedBlocks[i].Buffer, 0, buffer, bufferOffset, count);
+                Buffer.BlockCopy (CachedBlocks[i].Buffer, 0, buffer, bufferOffset, count);
                 Interlocked.Add (ref cacheHits, count);
                 return count;
             }
 
             Interlocked.Add (ref cacheMisses, count);
-            return Writer.Read(file, offset, buffer, bufferOffset, count);
+            return Writer.Read (file, offset, buffer, bufferOffset, count);
         }
 
-        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Write(file, offset, buffer, bufferOffset, count, false);
+            Write (file, offset, buffer, bufferOffset, count, false);
         }
 
-        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
+        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
         {
-            if (forceWrite)
-            {
-                Writer.Write(file, offset, buffer, bufferOffset, count);
-            }
-            else
-            {
+            if (forceWrite) {
+                Writer.Write (file, offset, buffer, bufferOffset, count);
+            } else {
                 if (CacheUsed > (Capacity - count))
-                    Flush(0);
+                    Flush (0);
 
-                byte[] cacheBuffer = ClientEngine.BufferPool.Rent(count);
-                Buffer.BlockCopy(buffer, bufferOffset, cacheBuffer, 0, count);
+                byte[] cacheBuffer = ClientEngine.BufferPool.Rent (count);
+                Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
 
-                CachedBlock block = new CachedBlock();
+                CachedBlock block = new CachedBlock ();
                 block.Buffer = cacheBuffer;
                 block.Count = count;
                 block.Offset = offset;
                 block.File = file;
-                CachedBlocks.Add(block);
-                Interlocked.Add(ref cacheUsed, block.Count);
+                CachedBlocks.Add (block);
+                Interlocked.Add (ref cacheUsed, block.Count);
             }
         }
-        
-        public void Close(TorrentFile file)
+
+        public void Close (TorrentFile file)
         {
-            Flush(file);
-            Writer.Close(file);
+            Flush (file);
+            Writer.Close (file);
         }
 
-        public bool Exists(TorrentFile file)
-            => Writer.Exists(file);
+        public bool Exists (TorrentFile file)
+            => Writer.Exists (file);
 
-        public void Flush(TorrentFile file)
+        public void Flush (TorrentFile file)
         {
-            CachedBlocks.RemoveAll(delegate(CachedBlock b) {
+            CachedBlocks.RemoveAll (delegate (CachedBlock b) {
                 if (b.File != file)
                     return false;
 
                 Interlocked.Add (ref cacheUsed, -b.Count);
-                Writer.Write(b.File, b.Offset, b.Buffer, 0, b.Count);
-                ClientEngine.BufferPool.Return(b.Buffer);
+                Writer.Write (b.File, b.Offset, b.Buffer, 0, b.Count);
+                ClientEngine.BufferPool.Return (b.Buffer);
                 return true;
             });
         }
 
-        void Flush(int index)
+        void Flush (int index)
         {
             CachedBlock b = CachedBlocks[index];
             CachedBlocks.RemoveAt (index);
             Interlocked.Add (ref cacheUsed, -b.Count);
             Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);
-            ClientEngine.BufferPool.Return(b.Buffer);
+            ClientEngine.BufferPool.Return (b.Buffer);
         }
 
-        public void Move(TorrentFile file, string newPath, bool overwrite)
+        public void Move (TorrentFile file, string newPath, bool overwrite)
         {
-            Writer.Move(file, newPath, overwrite);
+            Writer.Move (file, newPath, overwrite);
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
             // Flush everything currently held in memory
             while (CachedBlocks.Count > 0)
-                Flush(CachedBlocks.Count - 1);
+                Flush (CachedBlocks.Count - 1);
 
             // Dispose the held writer
-            Writer.Dispose();
+            Writer.Dispose ();
         }
     }
 }

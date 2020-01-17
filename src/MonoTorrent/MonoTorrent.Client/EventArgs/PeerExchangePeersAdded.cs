@@ -42,9 +42,9 @@ namespace MonoTorrent.Client
         public PeerId Id { get; }
 
         public PeerExchangePeersAdded (TorrentManager manager, int count, int total, PeerId id)
-            : base(manager, count, total)
+            : base (manager, count, total)
         {
-            Id = id ?? throw new ArgumentNullException(nameof (id));
+            Id = id ?? throw new ArgumentNullException (nameof (id));
         }
     }
 }

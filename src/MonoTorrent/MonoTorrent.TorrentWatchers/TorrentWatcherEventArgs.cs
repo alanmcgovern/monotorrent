@@ -45,7 +45,7 @@ namespace MonoTorrent.TorrentWatcher
         /// Creates a new TorrentWatcherEventArgs
         /// </summary>
         /// <param name="torrentPath">The full path to the torrent file</param>
-        public TorrentWatcherEventArgs(string torrentPath)
+        public TorrentWatcherEventArgs (string torrentPath)
         {
             TorrentPath = torrentPath;
         }

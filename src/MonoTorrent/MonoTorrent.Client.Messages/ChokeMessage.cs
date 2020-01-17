@@ -41,24 +41,24 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Creates a new ChokeMessage
         /// </summary>
-        public ChokeMessage()
+        public ChokeMessage ()
         {
         }
         #endregion
 
 
         #region Methods
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
 
-            return CheckWritten(written - offset);
+            return CheckWritten (written - offset);
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
             // No decoding needed
         }
@@ -66,8 +66,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength
-        {
+        public override int ByteLength {
             get { return (messageLength + 4); }
         }
         #endregion
@@ -78,19 +77,19 @@ namespace MonoTorrent.Client.Messages.Standard
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public override string ToString ()
         {
             return "ChokeMessage";
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             return (obj is ChokeMessage);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return this.ToString().GetHashCode();
+            return this.ToString ().GetHashCode ();
         }
         #endregion
     }

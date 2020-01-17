@@ -33,29 +33,29 @@ namespace MonoTorrent
 {
     static class PathValidator
     {
-        public static void Validate(string path)
+        public static void Validate (string path)
         {
             // Make sure the user doesn't try to overwrite system files. Ensure
             // that the path is relative and doesn't try to access its parent folder
 
             // Unix rooted
-            if (path.StartsWith("/"))
-                throw new ArgumentException(string.Format("The path '{0}' cannot be an absolute path starting with '/'.", path));
+            if (path.StartsWith ("/"))
+                throw new ArgumentException (string.Format ("The path '{0}' cannot be an absolute path starting with '/'.", path));
             // Windows rooted
             if (path.Length > 1 && path[1] == ':')
-                throw new ArgumentException(string.Format("The path '{0}' cannot be an absolute path.", path));
+                throw new ArgumentException (string.Format ("The path '{0}' cannot be an absolute path.", path));
 
             // Embedded traversals
-            if (path.Contains("/../"))
-                throw new ArgumentException(string.Format("The path '{1}' cannot contain '{0}'.", "/../", path));
-            if (path.Contains("\\..\\"))
-                throw new ArgumentException(string.Format("The path '{1}' cannot contain '{0}'.", "\\..\\", path));
+            if (path.Contains ("/../"))
+                throw new ArgumentException (string.Format ("The path '{1}' cannot contain '{0}'.", "/../", path));
+            if (path.Contains ("\\..\\"))
+                throw new ArgumentException (string.Format ("The path '{1}' cannot contain '{0}'.", "\\..\\", path));
 
             // Starting traversals
-            if (path.StartsWith("..\\"))
-                throw new ArgumentException(string.Format("The path '{1}' cannot contain '{0}'.", "..\\", path));
-            if (path.StartsWith("../"))
-                throw new ArgumentException(string.Format("The path '{1}' cannot contain '{0}'.", "../", path));
+            if (path.StartsWith ("..\\"))
+                throw new ArgumentException (string.Format ("The path '{1}' cannot contain '{0}'.", "..\\", path));
+            if (path.StartsWith ("../"))
+                throw new ArgumentException (string.Format ("The path '{1}' cannot contain '{0}'.", "../", path));
         }
     }
 }

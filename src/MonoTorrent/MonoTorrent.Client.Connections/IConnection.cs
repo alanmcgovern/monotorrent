@@ -45,12 +45,12 @@ namespace MonoTorrent.Client.Connections
 
         EndPoint EndPoint { get; }
 
-        Task ConnectAsync();
+        Task ConnectAsync ();
 
         Task<int> ReceiveAsync (byte[] buffer, int offset, int count);
 
         Task<int> SendAsync (byte[] buffer, int offset, int count);
 
         Uri Uri { get; }
-	}
+    }
 }

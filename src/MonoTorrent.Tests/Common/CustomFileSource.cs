@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Common
@@ -17,7 +16,7 @@ namespace MonoTorrent.Common
             get { return "Name"; }
         }
 
-        public CustomFileSource (List <FileMapping> files)
+        public CustomFileSource (List<FileMapping> files)
         {
             Files = files;
         }

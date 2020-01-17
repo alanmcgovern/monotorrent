@@ -47,19 +47,19 @@ namespace MonoTorrent
 
         public long Total => Interlocked.Read (ref total);
 
-        public SpeedMonitor()
-            : this(DefaultAveragePeriod)
+        public SpeedMonitor ()
+            : this (DefaultAveragePeriod)
         {
 
         }
 
-        public SpeedMonitor(int averagingPeriod)
+        public SpeedMonitor (int averagingPeriod)
         {
             if (averagingPeriod < 0)
                 throw new ArgumentOutOfRangeException (nameof (averagingPeriod));
 
             lastUpdated = ValueStopwatch.StartNew ();
-            speeds = new long [Math.Max (1, averagingPeriod)];
+            speeds = new long[Math.Max (1, averagingPeriod)];
             speedsIndex = -speeds.Length;
         }
 
@@ -67,13 +67,13 @@ namespace MonoTorrent
         /// This method is threadsafe and can be called at any point.
         /// </summary>
         /// <param name="speed"></param>
-        public void AddDelta(int speed)
+        public void AddDelta (int speed)
         {
             Interlocked.Add (ref total, speed);
             Interlocked.Add (ref tempRecvCount, speed);
         }
 
-        public void Reset()
+        public void Reset ()
         {
             Interlocked.Exchange (ref total, 0);
             Interlocked.Exchange (ref tempRecvCount, 0);
@@ -83,7 +83,7 @@ namespace MonoTorrent
             speedsIndex = -speeds.Length;
         }
 
-        public void Tick()
+        public void Tick ()
         {
             int difference = (int) lastUpdated.Elapsed.TotalMilliseconds;
             if (difference > 800)
@@ -93,17 +93,16 @@ namespace MonoTorrent
         internal void Tick (int difference)
         {
             lastUpdated.Restart ();
-            TimePeriodPassed(difference);
+            TimePeriodPassed (difference);
         }
 
-        void TimePeriodPassed(int difference)
+        void TimePeriodPassed (int difference)
         {
             long currSpeed = Interlocked.Exchange (ref tempRecvCount, 0);
             currSpeed = (currSpeed * 1000) / difference;
 
             int speedsCount;
-            if( speedsIndex < 0 )
-            {
+            if (speedsIndex < 0) {
                 //speeds array hasn't been filled yet
 
                 int idx = speeds.Length + speedsIndex;
@@ -112,18 +111,16 @@ namespace MonoTorrent
                 speedsCount = idx + 1;
 
                 speedsIndex++;
-            }
-            else
-            {
+            } else {
                 //speeds array is full, keep wrapping around overwriting the oldest value
                 speeds[speedsIndex] = currSpeed;
                 speedsCount = speeds.Length;
-        
+
                 speedsIndex = (speedsIndex + 1) % speeds.Length;
             }
 
             var sumTotal = speeds[0];
-            for( int i = 1; i < speedsCount; i++ )
+            for (int i = 1; i < speedsCount; i++)
                 sumTotal += speeds[i];
 
             Interlocked.Exchange (ref rate, sumTotal / speedsCount);

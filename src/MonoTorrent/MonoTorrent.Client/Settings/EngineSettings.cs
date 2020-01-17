@@ -167,40 +167,40 @@ namespace MonoTorrent.Client
         /// </summary>
         public string SavePath { get; set; } = null;
 
-        object ICloneable.Clone()
-            => Clone();
+        object ICloneable.Clone ()
+            => Clone ();
 
-        public EngineSettings Clone()
-            => (EngineSettings)MemberwiseClone();
+        public EngineSettings Clone ()
+            => (EngineSettings) MemberwiseClone ();
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             EngineSettings settings = obj as EngineSettings;
             return settings != null
-                && AllowedEncryption          == settings.AllowedEncryption
-                && AllowHaveSuppression       == settings.AllowHaveSuppression
-                && ListenPort                 == settings.ListenPort
-                && MaximumConnections         == settings.MaximumConnections
-                && MaximumDiskReadRate        == settings.MaximumDiskReadRate
-                && MaximumDiskWriteRate       == settings.MaximumDiskWriteRate
-                && MaximumDownloadSpeed       == settings.MaximumDownloadSpeed
+                && AllowedEncryption == settings.AllowedEncryption
+                && AllowHaveSuppression == settings.AllowHaveSuppression
+                && ListenPort == settings.ListenPort
+                && MaximumConnections == settings.MaximumConnections
+                && MaximumDiskReadRate == settings.MaximumDiskReadRate
+                && MaximumDiskWriteRate == settings.MaximumDiskWriteRate
+                && MaximumDownloadSpeed == settings.MaximumDownloadSpeed
                 && MaximumHalfOpenConnections == settings.MaximumHalfOpenConnections
-                && MaximumOpenFiles           == settings.MaximumOpenFiles
-                && MaximumUploadSpeed         == settings.MaximumUploadSpeed
-                && PreferEncryption           == settings.PreferEncryption
-                && ReportedAddress            == settings.ReportedAddress
-                && SavePath                   == settings.SavePath;
+                && MaximumOpenFiles == settings.MaximumOpenFiles
+                && MaximumUploadSpeed == settings.MaximumUploadSpeed
+                && PreferEncryption == settings.PreferEncryption
+                && ReportedAddress == settings.ReportedAddress
+                && SavePath == settings.SavePath;
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
             return MaximumConnections +
                    MaximumDownloadSpeed +
                    MaximumUploadSpeed +
                    MaximumHalfOpenConnections +
-                   ListenPort.GetHashCode() +
-                   AllowedEncryption.GetHashCode() +
-                   SavePath.GetHashCode();
+                   ListenPort.GetHashCode () +
+                   AllowedEncryption.GetHashCode () +
+                   SavePath.GetHashCode ();
         }
 
         static int CheckPort (int value)

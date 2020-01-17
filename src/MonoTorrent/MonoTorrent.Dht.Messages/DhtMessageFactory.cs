@@ -44,49 +44,48 @@ namespace MonoTorrent.Dht.Messages
         readonly static Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
 
 
-        public static int RegisteredMessages
-        {
+        public static int RegisteredMessages {
             get { return messages.Count; }
         }
 
-        static DhtMessageFactory()
+        static DhtMessageFactory ()
         {
-            queryDecoders.Add("announce_peer", d => new AnnouncePeer(d));
-            queryDecoders.Add("find_node",     d => new FindNode(d));
-            queryDecoders.Add("get_peers",     d => new GetPeers(d));
-            queryDecoders.Add("ping",          d => new Ping(d));
+            queryDecoders.Add ("announce_peer", d => new AnnouncePeer (d));
+            queryDecoders.Add ("find_node", d => new FindNode (d));
+            queryDecoders.Add ("get_peers", d => new GetPeers (d));
+            queryDecoders.Add ("ping", d => new Ping (d));
         }
 
-        internal static bool IsRegistered(BEncodedValue transactionId)
+        internal static bool IsRegistered (BEncodedValue transactionId)
         {
-            return messages.ContainsKey(transactionId);
+            return messages.ContainsKey (transactionId);
         }
 
-        public static void RegisterSend(QueryMessage message)
+        public static void RegisterSend (QueryMessage message)
         {
-            messages.Add(message.TransactionId, message);
+            messages.Add (message.TransactionId, message);
         }
 
-        public static bool UnregisterSend(QueryMessage message)
+        public static bool UnregisterSend (QueryMessage message)
         {
-            return messages.Remove(message.TransactionId);
+            return messages.Remove (message.TransactionId);
         }
 
-        public static DhtMessage DecodeMessage(BEncodedDictionary dictionary)
+        public static DhtMessage DecodeMessage (BEncodedDictionary dictionary)
         {
-            if (!TryDecodeMessage(dictionary, out DhtMessage message, out string error))
-                throw new MessageException(ErrorCode.GenericError, error);
+            if (!TryDecodeMessage (dictionary, out DhtMessage message, out string error))
+                throw new MessageException (ErrorCode.GenericError, error);
 
             return message;
         }
 
-        public static bool TryDecodeMessage(BEncodedDictionary dictionary, out DhtMessage message)
+        public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message)
         {
             string error;
-            return TryDecodeMessage(dictionary, out message, out error);
+            return TryDecodeMessage (dictionary, out message, out error);
         }
 
-        public static bool TryDecodeMessage(BEncodedDictionary dictionary, out DhtMessage message, out string error)
+        public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message, out string error)
         {
             message = null;
             error = null;
@@ -97,33 +96,22 @@ namespace MonoTorrent.Dht.Messages
                 return false;
             }
 
-            if (messageType.Equals(QueryMessage.QueryType))
-            {
-                message = queryDecoders[(BEncodedString)dictionary[QueryNameKey]](dictionary);
-            }
-            else if (messageType.Equals(ErrorMessage.ErrorType))
-            {
-                message = new ErrorMessage(dictionary);
-                messages.Remove(message.TransactionId);
-            }
-            else
-            {
+            if (messageType.Equals (QueryMessage.QueryType)) {
+                message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]] (dictionary);
+            } else if (messageType.Equals (ErrorMessage.ErrorType)) {
+                message = new ErrorMessage (dictionary);
+                messages.Remove (message.TransactionId);
+            } else {
                 QueryMessage query;
-                BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
-                if (messages.TryGetValue(key, out query))
-                {
-                    messages.Remove(key);
-                    try
-                    {
-                        message = query.CreateResponse(dictionary);
-                    }
-                    catch
-                    {
+                BEncodedString key = (BEncodedString) dictionary[TransactionIdKey];
+                if (messages.TryGetValue (key, out query)) {
+                    messages.Remove (key);
+                    try {
+                        message = query.CreateResponse (dictionary);
+                    } catch {
                         error = "Response dictionary was invalid";
                     }
-                }
-                else
-                {
+                } else {
                     error = "Response had bad transaction ID";
                 }
             }

@@ -45,16 +45,16 @@ namespace MonoTorrent.Dht
 
         public bool SendAsynchronously { get; set; }
 
-        public IPEndPoint EndPoint { get; private set; } = new IPEndPoint(IPAddress.Loopback, 0);
+        public IPEndPoint EndPoint { get; private set; } = new IPEndPoint (IPAddress.Loopback, 0);
         public ListenerStatus Status { get; private set; }
 
-        public void RaiseMessageReceived(DhtMessage message, IPEndPoint endpoint)
+        public void RaiseMessageReceived (DhtMessage message, IPEndPoint endpoint)
             => MessageReceived?.Invoke (message.Encode (), endpoint);
 
-        public async Task SendAsync(byte[] buffer, IPEndPoint endpoint)
+        public async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
             if (SendAsynchronously)
-                 await Task.Yield ();
+                await Task.Yield ();
 
             if (DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out DhtMessage message))
                 MessageSent?.Invoke (message, endpoint);

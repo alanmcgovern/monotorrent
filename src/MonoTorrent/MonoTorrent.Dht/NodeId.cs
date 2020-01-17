@@ -30,22 +30,23 @@
 
 using System;
 using System.Linq;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
     class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
-        internal static readonly NodeId Minimum = new NodeId(new byte[20]);
-        internal static readonly NodeId Maximum = new NodeId(Enumerable.Repeat ((byte)255, 20).ToArray ());
+        internal static readonly NodeId Minimum = new NodeId (new byte[20]);
+        internal static readonly NodeId Maximum = new NodeId (Enumerable.Repeat ((byte) 255, 20).ToArray ());
 
-        static readonly Random random = new Random();
+        static readonly Random random = new Random ();
 
         public BigEndianBigInteger value;
 
         public byte[] Bytes { get; }
 
-        internal NodeId(BigEndianBigInteger value)
+        internal NodeId (BigEndianBigInteger value)
         {
             Bytes = value.ToByteArray ();
             if (Bytes.Length < 20) {
@@ -58,7 +59,7 @@ namespace MonoTorrent.Dht
                 throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
         }
 
-        internal NodeId(byte[] value)
+        internal NodeId (byte[] value)
         {
             if (value.Length != 20)
                 throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
@@ -66,95 +67,95 @@ namespace MonoTorrent.Dht
             Bytes = value;
         }
 
-        internal NodeId(InfoHash infoHash)
-            : this(infoHash.ToArray ())
+        internal NodeId (InfoHash infoHash)
+            : this (infoHash.ToArray ())
         {
 
         }
 
-        internal NodeId(BEncodedString value)
-            : this(value.TextBytes)
+        internal NodeId (BEncodedString value)
+            : this (value.TextBytes)
         {
 
         }
 
-        internal BEncodedString BencodedString()
-            => new BEncodedString((byte[])Bytes.Clone ());
+        internal BEncodedString BencodedString ()
+            => new BEncodedString ((byte[]) Bytes.Clone ());
 
-        public int CompareTo(object obj)
-            => CompareTo(obj as NodeId);
+        public int CompareTo (object obj)
+            => CompareTo (obj as NodeId);
 
-        public int CompareTo(NodeId other)
+        public int CompareTo (NodeId other)
         {
             if (other is null)
                 return 1;
 
-            for (int i = 0; i < Bytes.Length; i ++) {
-                if (Bytes[i] != other.Bytes [i])
+            for (int i = 0; i < Bytes.Length; i++) {
+                if (Bytes[i] != other.Bytes[i])
                     return Bytes[i] - other.Bytes[i];
             }
             return 0;
         }
 
-        public override bool Equals(object obj)
-            => Equals(obj as NodeId);
+        public override bool Equals (object obj)
+            => Equals (obj as NodeId);
 
-        public bool Equals(NodeId other)
+        public bool Equals (NodeId other)
             => other != null && Toolbox.ByteMatch (Bytes, other.Bytes);
 
-        public override int GetHashCode()
-            => Bytes [0] << 24
-             | Bytes [1] << 16
-             | Bytes [2] << 8
-             | Bytes [3];
+        public override int GetHashCode ()
+            => Bytes[0] << 24
+             | Bytes[1] << 16
+             | Bytes[2] << 8
+             | Bytes[3];
 
-        public override string ToString()
+        public override string ToString ()
             => BitConverter.ToString (Bytes);
 
         internal static NodeId Median (NodeId min, NodeId max)
-            => new NodeId ((new BigEndianBigInteger (min.Bytes) + new BigEndianBigInteger(max.Bytes)) / 2);
+            => new NodeId ((new BigEndianBigInteger (min.Bytes) + new BigEndianBigInteger (max.Bytes)) / 2);
 
-        public static NodeId operator ^(NodeId left, NodeId right)
+        public static NodeId operator ^ (NodeId left, NodeId right)
         {
-            var clone = (byte[])left.Bytes.Clone ();
-            for (int i = 0; i < right.Bytes.Length; i ++)
-                clone [i] ^= right.Bytes [i];
+            var clone = (byte[]) left.Bytes.Clone ();
+            for (int i = 0; i < right.Bytes.Length; i++)
+                clone[i] ^= right.Bytes[i];
             return new NodeId (clone);
         }
 
         public static NodeId operator - (NodeId first, NodeId second)
             => new NodeId (new BigEndianBigInteger (first.Bytes) - new BigEndianBigInteger (second.Bytes));
 
-        public static bool operator >(NodeId first, NodeId second)
+        public static bool operator > (NodeId first, NodeId second)
             => first.CompareTo (second) > 0;
 
-        public static bool operator >(NodeId first, int second)
+        public static bool operator > (NodeId first, int second)
             => new BigEndianBigInteger (first.Bytes) > second;
 
-        public static bool operator <(NodeId first, NodeId second)
+        public static bool operator < (NodeId first, NodeId second)
             => first.CompareTo (second) < 0;
 
-        public static bool operator <(NodeId first, int second)
+        public static bool operator < (NodeId first, int second)
             => new BigEndianBigInteger (first.Bytes) < second;
 
-        public static bool operator <=(NodeId first, NodeId second)
+        public static bool operator <= (NodeId first, NodeId second)
             => first.CompareTo (second) <= 0;
 
-        public static bool operator >=(NodeId first, NodeId second)
+        public static bool operator >= (NodeId first, NodeId second)
             => first.CompareTo (second) >= 0;
 
-        public static bool operator ==(NodeId first, NodeId second)
+        public static bool operator == (NodeId first, NodeId second)
             => first is null ? second is null : first.CompareTo (second) == 0;
 
-        public static bool operator !=(NodeId first, NodeId second)
+        public static bool operator != (NodeId first, NodeId second)
             => !(first == second);
 
-        public static NodeId Create()
+        public static NodeId Create ()
         {
             byte[] b = new byte[20];
             lock (random)
-                random.NextBytes(b);
-            return new NodeId(b);
+                random.NextBytes (b);
+            return new NodeId (b);
         }
     }
 }

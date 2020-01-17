@@ -33,33 +33,33 @@ using System.Threading;
 
 namespace MonoTorrent
 {
-	internal delegate long Operation<T>(T target);
+    internal delegate long Operation<T> (T target);
 
     static class Toolbox
     {
-        private static Random r = new Random();
-		public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)
-		{
-			int count = 0;
+        private static Random r = new Random ();
+        public static int Count<T> (IEnumerable<T> enumerable, Predicate<T> predicate)
+        {
+            int count = 0;
 
-			foreach (T t in enumerable)
-				if (predicate(t))
-					count++;
+            foreach (T t in enumerable)
+                if (predicate (t))
+                    count++;
 
-			return count;
-		}
+            return count;
+        }
 
-		public static long Accumulate<T>(IEnumerable<T> enumerable, Operation<T> action)
-		{
+        public static long Accumulate<T> (IEnumerable<T> enumerable, Operation<T> action)
+        {
             long count = 0;
 
-			foreach (T t in enumerable)
-				count += action(t);
-		
-			return count;
-		}
+            foreach (T t in enumerable)
+                count += action (t);
 
-        public static void InvokeAsync<T>(this EventHandler<T> handler, object o, T args)
+            return count;
+        }
+
+        public static void InvokeAsync<T> (this EventHandler<T> handler, object o, T args)
             => ThreadPool.QueueUserWorkItem (state => handler?.Invoke (o, args));
 
         /// <summary>
@@ -67,16 +67,15 @@ namespace MonoTorrent
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="array"></param>
-        public static void Randomize<T>(List<T> array)
+        public static void Randomize<T> (List<T> array)
         {
-            List<T> clone = new List<T>(array);
-            array.Clear();
+            List<T> clone = new List<T> (array);
+            array.Clear ();
 
-            while (clone.Count > 0)
-            {
-                int index = r.Next(0, clone.Count);
-                array.Add(clone[index]);
-                clone.RemoveAt(index);
+            while (clone.Count > 0) {
+                int index = r.Next (0, clone.Count);
+                array.Add (clone[index]);
+                clone.RemoveAt (index);
             }
         }
 
@@ -87,7 +86,7 @@ namespace MonoTorrent
         /// <param name="array"></param>
         /// <param name="first"></param>
         /// <param name="second"></param>
-        public static void Switch<T>(IList<T> array, int first, int second)
+        public static void Switch<T> (IList<T> array, int first, int second)
         {
             T obj = array[first];
             array[first] = array[second];
@@ -100,17 +99,17 @@ namespace MonoTorrent
         /// <param name="array1">The first array</param>
         /// <param name="array2">The second array</param>
         /// <returns>True if the arrays are equal, false if they aren't</returns>
-        public static bool ByteMatch(byte[] array1, byte[] array2)
+        public static bool ByteMatch (byte[] array1, byte[] array2)
         {
             if (array1 == null)
-                throw new ArgumentNullException("array1");
+                throw new ArgumentNullException ("array1");
             if (array2 == null)
-                throw new ArgumentNullException("array2");
+                throw new ArgumentNullException ("array2");
 
             if (array1.Length != array2.Length)
                 return false;
 
-            return ByteMatch(array1, 0, array2, 0, array1.Length);
+            return ByteMatch (array1, 0, array2, 0, array1.Length);
         }
 
         /// <summary>
@@ -122,12 +121,12 @@ namespace MonoTorrent
         /// <param name="offset2">The starting index for the second array</param>
         /// <param name="count">The number of bytes to check</param>
         /// <returns></returns>
-        public static bool ByteMatch(byte[] array1, long offset1, byte[] array2, long offset2, long count)
+        public static bool ByteMatch (byte[] array1, long offset1, byte[] array2, long offset2, long count)
         {
             if (array1 == null)
-                throw new ArgumentNullException("array1");
+                throw new ArgumentNullException ("array1");
             if (array2 == null)
-                throw new ArgumentNullException("array2");
+                throw new ArgumentNullException ("array2");
 
             // If either of the arrays is too small, they're not equal
             if ((array1.Length - offset1) < count || (array2.Length - offset2) < count)

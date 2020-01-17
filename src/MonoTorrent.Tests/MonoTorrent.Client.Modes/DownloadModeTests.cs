@@ -45,15 +45,15 @@ namespace MonoTorrent.Client.Modes
         ConnectionManager ConnectionManager { get; set; }
         DiskManager DiskManager { get; set; }
         TorrentManager Manager { get; set; }
-        PeerId Peer { get; set ; }
+        PeerId Peer { get; set; }
         TestWriter PieceWriter { get; set; }
         EngineSettings Settings { get; set; }
         ManualTrackerManager TrackerManager { get; set; }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            conn = new ConnectionPair().WithTimeout ();
+            conn = new ConnectionPair ().WithTimeout ();
             Settings = new EngineSettings ();
             PieceWriter = new TestWriter ();
             DiskManager = new DiskManager (Settings, PieceWriter);
@@ -74,9 +74,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         [TearDown]
-        public void Teardown()
+        public void Teardown ()
         {
-            conn.Dispose();
+            conn.Dispose ();
             DiskManager.Dispose ();
         }
 
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Settings.MaximumConnections = 100;
             var peers = new List<Peer> ();
-            for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i ++)
+            for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i++)
                 peers.Add (new Peer ("", new Uri ($"ipv4://192.168.0.1:{i + 1000}")));
             var added = await Manager.AddPeersAsync (peers);
             Assert.AreEqual (added, Manager.Settings.MaximumPeerDetails, "#1");
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Modes
         public async Task AddPeers_PeerExchangeMessage ()
         {
             var peer = new byte[] { 192, 168, 0, 1, 100, 0, 192, 168, 0, 2, 101, 0 };
-            var dotF = new byte[] { 0, 1 << 1}; // 0x2 means is a seeder
+            var dotF = new byte[] { 0, 1 << 1 }; // 0x2 means is a seeder
             var id = PeerId.CreateNull (40);
             id.SupportsFastPeer = true;
             id.SupportsLTMessages = true;
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             foreach (var mode in modes) {
-               var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
+                var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
                 Manager.PeersFound += (o, e) => {
                     if (e is PeerExchangePeersAdded args)
                         peersTask.TrySetResult (args);
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             TrackerManager.AddTracker ("http://test.tracker");
-            TrackerManager.RaiseAnnounceComplete (TrackerManager.CurrentTracker, true, new [] { new Peer ("One", new Uri ("ipv4://1.1.1.1:1111")), new Peer ("Two", new Uri ("ipv4://2.2.2.2:2222")) });
+            TrackerManager.RaiseAnnounceComplete (TrackerManager.CurrentTracker, true, new[] { new Peer ("One", new Uri ("ipv4://1.1.1.1:1111")), new Peer ("Two", new Uri ("ipv4://2.2.2.2:2222")) });
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (2, addedArgs.NewPeers, "#1");
@@ -189,7 +189,7 @@ namespace MonoTorrent.Client.Modes
             TrackerManager.AddTracker ("http://1.1.1.1");
             Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
 
-            Manager.Bitfield [0] = false;
+            Manager.Bitfield[0] = false;
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
 
@@ -208,22 +208,22 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PauseDownloading ()
         {
-            Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
 
-            Assert.AreEqual(TorrentState.Downloading, Manager.State);
-            await Manager.PauseAsync();
-            Assert.AreEqual(TorrentState.Paused, Manager.State);
+            Assert.AreEqual (TorrentState.Downloading, Manager.State);
+            await Manager.PauseAsync ();
+            Assert.AreEqual (TorrentState.Paused, Manager.State);
         }
 
         [Test]
-        public async Task PauseSeeding()
+        public async Task PauseSeeding ()
         {
-            Manager.LoadFastResume(new FastResume(Manager.InfoHash, Manager.Bitfield.Clone().SetAll(true), Manager.Bitfield.Clone().SetAll(false)));
-            Manager.Mode = new DownloadMode(Manager, DiskManager, ConnectionManager, Settings);
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
 
-            Assert.AreEqual(TorrentState.Seeding, Manager.State);
-            await Manager.PauseAsync();
-            Assert.AreEqual(TorrentState.Paused, Manager.State);
+            Assert.AreEqual (TorrentState.Seeding, Manager.State);
+            await Manager.PauseAsync ();
+            Assert.AreEqual (TorrentState.Paused, Manager.State);
         }
 
         [Test]
@@ -260,7 +260,7 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#5");
         }
 
-       [Test]
+        [Test]
         public void PartialProgress_NoneDownloaded ()
         {
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -327,7 +327,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_UnrelatedDownloaded_AllDoNotDownload()
+        public void PartialProgress_UnrelatedDownloaded_AllDoNotDownload ()
         {
             Manager.OnPieceHashed (0, true);
 

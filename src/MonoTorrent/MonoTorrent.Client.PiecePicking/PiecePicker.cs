@@ -35,91 +35,91 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public abstract class PiecePicker
     {
-        protected static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(45);
+        protected static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds (45);
 
         readonly PiecePicker picker;
 
         public PiecePicker BasePicker => picker;
 
-        protected PiecePicker(PiecePicker picker)
+        protected PiecePicker (PiecePicker picker)
         {
             this.picker = picker;
         }
 
-        void CheckOverriden()
+        void CheckOverriden ()
         {
             if (picker == null)
-                throw new InvalidOperationException("This method must be overridden");
+                throw new InvalidOperationException ("This method must be overridden");
         }
 
-        public virtual void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
+        public virtual void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
-            CheckOverriden();
-            picker.CancelRequest(peer, piece, startOffset, length);
+            CheckOverriden ();
+            picker.CancelRequest (peer, piece, startOffset, length);
         }
-        public virtual void CancelRequests(IPieceRequester peer)
+        public virtual void CancelRequests (IPieceRequester peer)
         {
-            CheckOverriden();
-            picker.CancelRequests(peer);
+            CheckOverriden ();
+            picker.CancelRequests (peer);
         }
-        public virtual void CancelTimedOutRequests()
+        public virtual void CancelTimedOutRequests ()
         {
-            CheckOverriden();
-            picker.CancelTimedOutRequests();
+            CheckOverriden ();
+            picker.CancelTimedOutRequests ();
         }
-        public virtual PieceRequest ContinueExistingRequest(IPieceRequester peer)
+        public virtual PieceRequest ContinueExistingRequest (IPieceRequester peer)
         {
-            CheckOverriden();
-            return picker.ContinueExistingRequest(peer);
+            CheckOverriden ();
+            return picker.ContinueExistingRequest (peer);
         }
-        public virtual int CurrentReceivedCount()
+        public virtual int CurrentReceivedCount ()
         {
-            CheckOverriden();
-            return picker.CurrentReceivedCount();
+            CheckOverriden ();
+            return picker.CurrentReceivedCount ();
         }
-        public virtual int CurrentRequestCount()
+        public virtual int CurrentRequestCount ()
         {
-            CheckOverriden();
-            return picker.CurrentRequestCount();
+            CheckOverriden ();
+            return picker.CurrentRequestCount ();
         }
-        public virtual List<Piece> ExportActiveRequests()
+        public virtual List<Piece> ExportActiveRequests ()
         {
-            CheckOverriden();
-            return picker.ExportActiveRequests();
+            CheckOverriden ();
+            return picker.ExportActiveRequests ();
         }
-        public virtual void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public virtual void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            CheckOverriden();
-            picker.Initialise(bitfield, torrentData, requests);
+            CheckOverriden ();
+            picker.Initialise (bitfield, torrentData, requests);
         }
-        public virtual bool IsInteresting(BitField bitfield)
+        public virtual bool IsInteresting (BitField bitfield)
         {
-            CheckOverriden();
-            return picker.IsInteresting(bitfield);
+            CheckOverriden ();
+            return picker.IsInteresting (bitfield);
         }
-        public PieceRequest PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
+        public PieceRequest PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
         {
-            var bundle = PickPiece(peer, available, otherPeers, 1);
+            var bundle = PickPiece (peer, available, otherPeers, 1);
             return bundle?.Single ();
         }
-        public IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)
         {
-            return PickPiece(peer, available, otherPeers, count, 0, available.Length);
+            return PickPiece (peer, available, otherPeers, count, 0, available.Length);
         }
-        public virtual IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public virtual IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            CheckOverriden();
-            return picker.PickPiece(peer, available, otherPeers, count, startIndex, endIndex);
+            CheckOverriden ();
+            return picker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
-        public virtual void Reset()
+        public virtual void Reset ()
         {
-            CheckOverriden();
-            picker.Reset();
+            CheckOverriden ();
+            picker.Reset ();
         }
-        public virtual bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public virtual bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            CheckOverriden();
-            return picker.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
+            CheckOverriden ();
+            return picker.ValidatePiece (peer, pieceIndex, startOffset, length, out piece);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         public static NullConnection Incoming = new NullConnection (true);
         public static NullConnection Outgoing = new NullConnection (false);
 
-        public byte [] AddressBytes => new byte[] { 1, 2, 3, 4 };
+        public byte[] AddressBytes => new byte[] { 1, 2, 3, 4 };
 
         public bool Connected => true;
 
@@ -66,12 +66,12 @@ namespace MonoTorrent.Client
         {
         }
 
-        public Task<int> ReceiveAsync (byte [] buffer, int offset, int count)
+        public Task<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
             return Task.FromResult (0);
         }
 
-        public Task<int> SendAsync (byte [] buffer, int offset, int count)
+        public Task<int> SendAsync (byte[] buffer, int offset, int count)
         {
             return Task.FromResult (0);
         }
