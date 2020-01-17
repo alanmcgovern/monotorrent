@@ -71,6 +71,17 @@ namespace MonoTorrent.Client
             }
         }
 
+        [Test]
+        public void PortNotFree ()
+        {
+            var tcs = new TaskCompletionSource<object> ();
+            var otherListener = new PeerListener (endpoint);
+            otherListener.StatusChanged += (o, e) => tcs.SetResult (null);
+            otherListener.Start ();
+            Assert.AreEqual (ListenerStatus.PortNotFree, otherListener.Status);
+            Assert.IsTrue (tcs.Task.Wait (1000));
+        }
+
         Task<NewConnectionEventArgs> AcceptSocket ()
         {
             var tcs = new TaskCompletionSource<NewConnectionEventArgs> ();
