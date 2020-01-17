@@ -31,9 +31,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MonoTorrent
 {
+    [DebuggerDisplay ("{ToUri ()}")]
     class UriQueryBuilder
     {
         UriBuilder builder;
@@ -41,7 +43,6 @@ namespace MonoTorrent
 
         public UriQueryBuilder (string uri)
             : this (new Uri (uri))
-
         {
 
         }
@@ -83,11 +84,6 @@ namespace MonoTorrent
                 if (kv.Length == 2)
                     queryParams.Add (kv[0].Trim (), kv[1].Trim ());
             }
-        }
-
-        public override string ToString ()
-        {
-            return ToUri ().OriginalString;
         }
 
         public Uri ToUri ()
