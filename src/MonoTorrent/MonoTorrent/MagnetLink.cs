@@ -156,12 +156,12 @@ namespace MonoTorrent
         }
 
         public string ToV1String ()
-            => ToString ();
+            => ConvertToString();
 
         public Uri ToV1Uri ()
             => new Uri (ToV1String ());
 
-        string ToString ()
+        string ConvertToString ()
         {
             var sb = new StringBuilder ();
             sb.Append ("magnet:?");
