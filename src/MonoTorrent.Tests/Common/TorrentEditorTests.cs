@@ -90,19 +90,17 @@ namespace MonoTorrent.Common
         [Test]
         public void ReplaceInfoDict ()
         {
-            Assert.Throws<InvalidOperationException> (() => {
-                var editor = new TorrentEditor (new BEncodedDictionary ()) { CanEditSecureMetadata = false };
-                editor.SetCustom ("info", new BEncodedDictionary ());
-            });
+            var editor = new TorrentEditor (new BEncodedDictionary ());
+            Assert.IsFalse (editor.CanEditSecureMetadata);
+            Assert.Throws<InvalidOperationException> (() => editor.SetCustom ("info", new BEncodedDictionary ()));
         }
 
         [Test]
         public void EditProtectedProperty_NotAllowed ()
         {
-            Assert.Throws<InvalidOperationException> (() => {
-                var editor = new TorrentEditor (new BEncodedDictionary ()) { CanEditSecureMetadata = false };
-                editor.PieceLength = 16;
-            });
+            var editor = new TorrentEditor (new BEncodedDictionary ());
+            Assert.IsFalse (editor.CanEditSecureMetadata);
+            Assert.Throws<InvalidOperationException> (() => editor.PieceLength = 16);
         }
 
         BEncodedDictionary Create (string key, string value)
