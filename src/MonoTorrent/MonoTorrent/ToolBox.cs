@@ -33,8 +33,6 @@ using System.Threading;
 
 namespace MonoTorrent
 {
-    internal delegate long Operation<T> (T target);
-
     static class Toolbox
     {
         private static Random r = new Random ();
@@ -49,7 +47,7 @@ namespace MonoTorrent
             return count;
         }
 
-        public static long Accumulate<T> (IEnumerable<T> enumerable, Operation<T> action)
+        public static long Accumulate<T> (IEnumerable<T> enumerable, Func<T, long> action)
         {
             long count = 0;
 
