@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
         public async Task AddPeers_Dht_Private ()
         {
             // You can't manually add peers to private torrents
-            var editor = new TorrentEditor (rig.TorrentDict) {
+            var editor = new TorrentEditor (rig.Torrent) {
                 CanEditSecureMetadata = true,
                 Private = true
             };
