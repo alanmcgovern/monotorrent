@@ -80,20 +80,6 @@ namespace MonoTorrent
         }
 
         /// <summary>
-        /// Switches the positions of two elements in an array
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="array"></param>
-        /// <param name="first"></param>
-        /// <param name="second"></param>
-        public static void Switch<T> (IList<T> array, int first, int second)
-        {
-            T obj = array[first];
-            array[first] = array[second];
-            array[second] = obj;
-        }
-
-        /// <summary>
         /// Checks to see if the contents of two byte arrays are equal
         /// </summary>
         /// <param name="array1">The first array</param>
