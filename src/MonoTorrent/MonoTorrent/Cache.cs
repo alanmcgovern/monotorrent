@@ -86,28 +86,25 @@ namespace MonoTorrent
 
     class SynchronizedCache<T> : ICache<T>
     {
-        ICache<T> cache;
+        ICache<T> Cache { get; }
 
-        public int Count {
-            get { return cache.Count; }
-        }
+        public int Count => Cache.Count;
 
         public SynchronizedCache (ICache<T> cache)
         {
-            Check.Cache (cache);
-            this.cache = cache;
+            Cache = cache ?? throw new System.ArgumentNullException (nameof (cache));
         }
 
         public T Dequeue ()
         {
-            lock (cache)
-                return cache.Dequeue ();
+            lock (Cache)
+                return Cache.Dequeue ();
         }
 
         public void Enqueue (T instance)
         {
-            lock (cache)
-                cache.Enqueue (instance);
+            lock (Cache)
+                Cache.Enqueue (instance);
         }
     }
 }
