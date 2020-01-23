@@ -599,7 +599,7 @@ namespace MonoTorrent.Client.Modes
 
         void DownloadLogic (int counter)
         {
-            if ((DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.DownloadSpeed < Manager.Settings.WebSeedSpeedTrigger) {
+            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.DownloadSpeed < Manager.Settings.WebSeedSpeedTrigger) {
                 foreach (string seedUri in Manager.Torrent.GetRightHttpSeeds) {
                     BEncodedString peerId = HttpConnection.CreatePeerId ();
 
