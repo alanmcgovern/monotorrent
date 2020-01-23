@@ -31,7 +31,7 @@ namespace MonoTorrent.Streaming
 
         SlidingWindowPicker Picker { get; }
 
-        FileStream Stream { get; }
+        FileStream Stream { get; set; }
 
         public DirectStream (TorrentManager manager, TorrentFile file)
         {
@@ -45,7 +45,7 @@ namespace MonoTorrent.Streaming
         {
             base.Dispose (disposing);
             if (disposing) {
-                Stream.Dispose ();
+                Stream?.Dispose ();
             }
         }
 
@@ -83,6 +83,9 @@ namespace MonoTorrent.Streaming
 
                 await Task.Delay (500, cancellationToken);
             }
+
+            if (Stream == null)
+                Stream = new FileStream (File.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             return await Stream.ReadAsync (buffer, offset, count, cancellationToken);
         }
