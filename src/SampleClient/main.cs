@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -23,6 +24,14 @@ namespace SampleClient
         static ClientEngine engine;				// The engine used for downloading
         static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
         static Top10Listener listener;			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
+
+        static async void RunVlc (string streamUrl)
+        {
+            // Play the video in VLC
+            var vlcPath = @"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe";
+            await Task.Run (() => Process.Start (vlcPath, streamUrl).WaitForExit ());
+            ;
+        }
 
         static void Main (string[] args)
         {
@@ -67,6 +76,7 @@ namespace SampleClient
 
             // Create the default settings which a torrent will have.
             TorrentSettings torrentDefaults = new TorrentSettings ();
+            torrentDefaults.MaximumDownloadSpeed = 1500 * 1024;
 
             // Create an instance of the engine.
             engine = new ClientEngine (engineSettings);
@@ -164,8 +174,12 @@ namespace SampleClient
                     listener.WriteLine (string.Format ("{0}: {1}", e.Successful, e.Tracker));
                 };
 
+                var streamProvider = new MonoTorrent.Streaming.StreamProvider (manager);
+                var httpStream = await streamProvider.CreateHttpStreamAsync (manager.Torrent.Files[0]);
+                RunVlc (httpStream.Uri.ToString ());
+
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                await manager.StartAsync ();
+                //await manager.StartAsync ();
             }
 
             // While the torrents are still running, print out some stats to the screen.

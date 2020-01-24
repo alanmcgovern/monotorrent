@@ -1,4 +1,4 @@
-//
+﻿//
 // SlidingWindowPicker.cs
 //
 // Authors:
@@ -33,36 +33,18 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    /// <summary>
-    /// Generates a sliding window with high, medium, and low priority sets. The high priority set is downloaded first and in order.
-    /// The medium and low priority sets are downloaded rarest first.
-    /// 
-    /// This is intended to be used with a BitTorrent streaming application.
-    /// 
-    /// The high priority set represents pieces that are needed SOON. This set is updated by calling code, to adapt for events
-    /// (e.g. user fast-forwards or seeks, etc.)
-    /// </summary>
-    public class SlidingWindowPicker : PiecePicker
+    class StreamingPiecePicker : PiecePicker
     {
-        #region Member Variables
-
         private int ratio = 4;                      // ratio from medium priority to high priority set size
         private int highPrioritySetSize;            // size of high priority set, in pieces
         // this represents the last byte played in a video player, as the high priority
         // set designates pieces that are needed VERY SOON
-        private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
 
         /// <summary>
         /// Gets or sets first "high priority" piece. The n pieces after this will be requested in-order,
         /// the rest of the file will be treated rarest-first
         /// </summary>
-        public int HighPrioritySetStart {
-            get { return this.highPrioritySetStart; }
-            set {
-                if (this.highPrioritySetStart < value)
-                    this.highPrioritySetStart = value;
-            }
-        }
+        public int HighPrioritySetStart { get; set; }
 
         /// <summary>
         /// Gets or sets the size, in pieces, of the high priority set.
@@ -92,77 +74,29 @@ namespace MonoTorrent.Client.PiecePicking
             get { return this.highPrioritySetSize * ratio; }
         }
 
-        #endregion Member Variables
+        int PieceLength { get; }
 
-        #region Constructors
+        bool CancelPendingRequests { get; set; }
 
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
-        public SlidingWindowPicker (PiecePicker picker)
+        public StreamingPiecePicker (PiecePicker picker, int pieceLength)
             : base (picker)
         {
+            PieceLength = pieceLength;
+            HighPrioritySetSize = 10;
         }
-
-        internal void UpdatePriority (TorrentFile file, long position)
-        {
-            throw new NotImplementedException ();
-        }
-
-
-        /// <summary>
-        /// Creates a new piece picker with support for prioritization of files. The sliding window will be positioned to the start
-        /// of the first file to be downloaded
-        /// </summary>
-        /// <param name="picker">The picker which requests should be forwarded to</param>
-        /// <param name="highPrioritySetSize">Size of high priority set</param>
-        internal SlidingWindowPicker (PiecePicker picker, int highPrioritySetSize)
-            : this (picker, highPrioritySetSize, 4)
-        {
-        }
-
-
-        /// <summary>
-        /// Create a new SlidingWindowPicker with the given set sizes. The sliding window will be positioned to the start
-        /// of the first file to be downloaded
-        /// </summary>
-        /// <param name="picker">The picker which requests should be forwarded to</param>
-        /// <param name="highPrioritySetSize">Size of high priority set</param>
-        /// <param name="mediumToHighRatio">Size of medium priority set as a multiple of the high priority set size</param>
-        internal SlidingWindowPicker (PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
-            : base (picker)
-        {
-            this.highPrioritySetSize = highPrioritySetSize;
-            this.ratio = mediumToHighRatio;
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="bitfield"></param>
-        /// <param name="torrentData"></param>
-        /// <param name="requests"></param>
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
-        {
-            base.Initialise (bitfield, torrentData, requests);
-
-            // set the high priority set start to the beginning of the first file that we have to download
-            foreach (TorrentFile file in torrentData.Files) {
-                if (file.Priority == Priority.DoNotDownload)
-                    this.highPrioritySetStart = file.EndPieceIndex;
-                else
-                    break;
-            }
-        }
-
-        #endregion
-
-
-        #region Methods
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
+            if (CancelPendingRequests) {
+                foreach (var p in otherPeers)
+                    CancelRequests (p);
+                CancelRequests (peer);
+                CancelPendingRequests = false;
+            }
+
             IList<PieceRequest> bundle;
             int start, end;
 
@@ -183,6 +117,10 @@ namespace MonoTorrent.Client.PiecePicking
             return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
 
-        #endregion
+        internal void UpdatePriority (TorrentFile file, long position)
+        {
+            HighPrioritySetStart = file.StartPieceIndex + (int) ((file.StartPieceOffset + position) / PieceLength);
+            CancelPendingRequests = true;
+        }
     }
 }

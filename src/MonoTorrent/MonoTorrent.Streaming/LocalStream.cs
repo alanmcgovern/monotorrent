@@ -1,4 +1,33 @@
-﻿using System;
+﻿//
+// LocalStream.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2020 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +37,13 @@ using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Streaming
 {
-    public class DirectStream : Stream
+    /// <summary>
+    /// A seekable Stream which can be used to access a <see cref="TorrentFile"/> while it is downloading.
+    /// If the stream seeks to a location which hasn't been downloaded yet, <see cref="Read(byte[], int, int)"/>
+    /// will block until the data is available. <see cref="ReadAsync(byte[], int, int, CancellationToken)"/>
+    /// will perform a non-blocking wait for the data.
+    /// </summary>
+    class LocalStream : Stream
     {
         long position;
 
@@ -29,16 +64,15 @@ namespace MonoTorrent.Streaming
 
         TorrentManager Manager { get; }
 
-        SlidingWindowPicker Picker { get; }
+        StreamingPiecePicker Picker { get; }
 
         FileStream Stream { get; set; }
 
-        public DirectStream (TorrentManager manager, TorrentFile file)
+        public LocalStream (TorrentManager manager, TorrentFile file, StreamingPiecePicker picker)
         {
             Manager = manager;
             File = file;
-            Picker = new SlidingWindowPicker (new StandardPicker ());
-            Picker.HighPrioritySetStart = file.StartPieceIndex;
+            Picker = picker;
         }
 
         protected override void Dispose (bool disposing)
@@ -47,12 +81,6 @@ namespace MonoTorrent.Streaming
             if (disposing) {
                 Stream?.Dispose ();
             }
-        }
-
-        public async Task Initialise ()
-        {
-            await Manager.ChangePickerAsync (Picker);
-            await Manager.StartAsync ();
         }
 
         public override void Flush ()
@@ -71,8 +99,8 @@ namespace MonoTorrent.Streaming
                 torrentOffset += file.Length;
             }
 
-            var startPiece = (int) (torrentOffset + offset) / Manager.Torrent.PieceLength;
-            var endPiece = (int) (torrentOffset + offset + count) / Manager.Torrent.PieceLength;
+            var startPiece = (int) (torrentOffset + offset + Position) / Manager.Torrent.PieceLength;
+            var endPiece = (int) (torrentOffset + offset + Position + count) / Manager.Torrent.PieceLength;
             while (Manager.State != TorrentState.Stopped && Manager.State != TorrentState.Error) {
                 bool allAvailable = true;
                 for (int i = startPiece; i <= endPiece && allAvailable; i++)
@@ -84,10 +112,15 @@ namespace MonoTorrent.Streaming
                 await Task.Delay (500, cancellationToken);
             }
 
-            if (Stream == null)
+            if (Stream == null) {
                 Stream = new FileStream (File.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                Stream.Seek (Position, SeekOrigin.Begin);
+            }
 
-            return await Stream.ReadAsync (buffer, offset, count, cancellationToken);
+            var read = await Stream.ReadAsync (buffer, offset, count, cancellationToken);
+            position += read;
+            Picker.UpdatePriority (File, position);
+            return read;
         }
 
         public override long Seek (long offset, SeekOrigin origin)
@@ -107,7 +140,7 @@ namespace MonoTorrent.Streaming
             }
 
             Picker.HighPrioritySetStart = (int) (position / Manager.Torrent.PieceLength);
-            Stream.Seek (offset, origin);
+            Stream?.Seek (offset, origin);
             return position;
         }
 
