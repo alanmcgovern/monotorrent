@@ -12,6 +12,8 @@ namespace MonoTorrent.Streaming
     {
         CancellationTokenSource Cancellation { get; }
 
+        CancellationTokenSource CurrentContextCts { get; set; }
+
         HttpListener Listener { get; }
 
         SemaphoreSlim ReadLocker { get; }
@@ -49,24 +51,26 @@ namespace MonoTorrent.Streaming
             while (!Cancellation.IsCancellationRequested) {
                 try {
                     var context = await listener.GetContextAsync ();
-                    HandleMediaPlayerContext (context);
+                    CurrentContextCts?.Cancel ();
+                    CurrentContextCts = new CancellationTokenSource ();
+                    HandleMediaPlayerContext (context, CurrentContextCts.Token);
                 } catch {
                     // FIXME: Be more discerning
                 }
             }
         }
 
-        async void HandleMediaPlayerContext (HttpListenerContext context)
+        async void HandleMediaPlayerContext (HttpListenerContext context, CancellationToken token)
         {
             try {
                 using (context.Response)
-                    await HandleMediaPlayerContextAsync (context);
+                    await HandleMediaPlayerContextAsync (context, token);
             } catch (Exception ex) {
-                Console.WriteLine ("Connection closed - {0}", ex);
+                Console.WriteLine ("Connection closed ungracefully - {0}", ex.Message);
             }
         }
 
-        async Task HandleMediaPlayerContextAsync (HttpListenerContext context)
+        async Task HandleMediaPlayerContextAsync (HttpListenerContext context, CancellationToken token)
         {
             var path = context.Request.Url.PathAndQuery;
 
@@ -99,13 +103,12 @@ namespace MonoTorrent.Streaming
                 // Read the data and stream it back to the media player.
                 try {
                     await ReadLocker.WaitAsync ();
-
+                    token.ThrowIfCancellationRequested ();
                     if (Stream.Position != firstByte)
                         Stream.Seek (firstByte, SeekOrigin.Begin);
-                    var read = await Stream.ReadAsync (buffer, 0, (int) Math.Min (lastByte - firstByte + 1, buffer.Length));
-                    await context.Response.OutputStream.WriteAsync (buffer, 0, read);
-                    await context.Response.OutputStream.FlushAsync ();
-                    Console.WriteLine ("Written: {0} -> {1}", firstByte, firstByte + read);
+                    var read = await Stream.ReadAsync (buffer, 0, (int) Math.Min (lastByte - firstByte + 1, buffer.Length), token);
+                    await context.Response.OutputStream.WriteAsync (buffer, 0, read, token);
+                    await context.Response.OutputStream.FlushAsync (token);
                     firstByte += read;
                 } finally {
                     ReadLocker.Release ();
