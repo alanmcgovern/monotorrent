@@ -61,7 +61,6 @@ namespace MonoTorrent.Client.Modes
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
                 Manager.Monitor.Reset ();
-                Manager.Peers.ClearAll ();
                 Manager.PieceManager.Reset ();
                 Manager.finishedPieces.Clear ();
 

@@ -689,9 +689,6 @@ namespace MonoTorrent.Client
             if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
-            if (Peers.TotalPeers >= Settings.MaximumPeerDetails)
-                return false;
-
             if (Peers.Contains (peer))
                 return false;
 
@@ -699,10 +696,23 @@ namespace MonoTorrent.Client
             if (InactivePeerManager.InactivePeerList.Contains (peer.ConnectionUri))
                 return false;
 
-            if (prioritise)
-                Peers.AvailablePeers.Insert (0, peer);
-            else
-                Peers.AvailablePeers.Add (peer);
+            if (Peers.TotalPeers < Settings.MaximumPeerDetails) {
+                if (prioritise)
+                    Peers.AvailablePeers.Insert (0, peer);
+                else
+                    Peers.AvailablePeers.Add (peer);
+            } else {
+                bool successful = false;
+                for (int i = 0; i < Peers.AvailablePeers.Count; i++) {
+                    if (Peers.AvailablePeers[i].MaybeStale) {
+                        Peers.AvailablePeers[i] = peer;
+                        successful = true;
+                        break;
+                    }
+                }
+                if (!successful)
+                    return false;
+            }
             OnPeerFound?.Invoke (this, new PeerAddedEventArgs (this, peer));
             // When we successfully add a peer we try to connect to the next available peer
             return true;

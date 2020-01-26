@@ -85,6 +85,9 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
+            foreach (var peer in Manager.Peers.AvailablePeers)
+                peer.MaybeStale = true;
+
             SendAnnounces ();
 
             if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
