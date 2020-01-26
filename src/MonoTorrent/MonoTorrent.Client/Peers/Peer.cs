@@ -75,6 +75,14 @@ namespace MonoTorrent.Client
         internal int LocalPort { get; set; }
 
         /// <summary>
+        /// A stale peer is one which came from an old announce/DHT/peer exchange request. These
+        /// peers may still be contactable, but if a new peer is provided via one of the normal
+        /// mechanisms then the new peer should replace any stale peers in the event the torrent
+        /// is already holding the maximum number of peers.
+        /// </summary>
+        internal bool MaybeStale { get; set; }
+
+        /// <summary>
         /// The 20 byte identifier for the peer.
         /// </summary>
         internal BEncodedString PeerId { get; set; }
