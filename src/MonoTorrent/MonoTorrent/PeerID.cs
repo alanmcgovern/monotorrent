@@ -96,6 +96,7 @@ namespace MonoTorrent
         uLeecher,
         Unknown,
         uTorrent,
+        uTorrentWeb,
         UPnPNatBitTorrent,
         Vuze,
         WebSeed,
@@ -295,6 +296,10 @@ namespace MonoTorrent
 
                     case ("UT"):
                         this.client = ClientApp.uTorrent;
+                        break;
+
+                    case "UW":
+                        this.client = ClientApp.uTorrentWeb;
                         break;
 
                     case ("XT"):
