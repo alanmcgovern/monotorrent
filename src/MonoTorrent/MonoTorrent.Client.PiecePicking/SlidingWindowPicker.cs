@@ -46,8 +46,6 @@ namespace MonoTorrent.Client.PiecePicking
     {
         #region Member Variables
 
-        private int ratio = 4;                      // ratio from medium priority to high priority set size
-        private int highPrioritySetSize;            // size of high priority set, in pieces
         // this represents the last byte played in a video player, as the high priority
         // set designates pieces that are needed VERY SOON
         private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
@@ -67,10 +65,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Gets or sets the size, in pieces, of the high priority set.
         /// </summary>
-        public int HighPrioritySetSize {
-            get { return this.highPrioritySetSize; }
-            set { this.highPrioritySetSize = value; }
-        }
+        public int HighPrioritySetSize { get; set; }
 
         public int MediumPrioritySetStart {
             get { return HighPrioritySetStart + HighPrioritySetSize + 1; }
@@ -80,16 +75,13 @@ namespace MonoTorrent.Client.PiecePicking
         /// This is the size ratio between the medium and high priority sets. Equivalent to mu in Tribler's Give-to-get paper.
         /// Default value is 4.
         /// </summary>
-        public int MediumToHighRatio {
-            get { return ratio; }
-            set { ratio = value; }
-        }
+        public int MediumToHighRatio { get; set; } = 4;
 
         /// <summary>
         /// Read-only value for size of the medium priority set. To set the medium priority size, use MediumToHighRatio.
         /// </summary>
         public int MediumPrioritySetSize {
-            get { return this.highPrioritySetSize * ratio; }
+            get { return this.HighPrioritySetSize * MediumToHighRatio; }
         }
 
         #endregion Member Variables
@@ -127,8 +119,8 @@ namespace MonoTorrent.Client.PiecePicking
         internal SlidingWindowPicker (PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
             : base (picker)
         {
-            this.highPrioritySetSize = highPrioritySetSize;
-            this.ratio = mediumToHighRatio;
+            this.HighPrioritySetSize = highPrioritySetSize;
+            this.MediumToHighRatio = mediumToHighRatio;
         }
 
 

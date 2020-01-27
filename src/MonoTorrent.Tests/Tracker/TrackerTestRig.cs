@@ -78,23 +78,15 @@ namespace MonoTorrent.Tracker
     }
     public class Trackable : ITrackable
     {
-        private readonly InfoHash infoHash;
-        private readonly string name;
-
-
         public Trackable (InfoHash infoHash, string name)
         {
-            this.infoHash = infoHash;
-            this.name = name;
+            this.InfoHash = infoHash;
+            this.Name = name;
         }
 
-        public InfoHash InfoHash {
-            get { return infoHash; }
-        }
+        public InfoHash InfoHash { get; }
 
-        public string Name {
-            get { return name; }
-        }
+        public string Name { get; }
     }
 
     public class PeerDetails

@@ -37,63 +37,44 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private Block[] blocks;
-        private readonly int index;
-        private int totalReceived;
-        private int totalRequested;
-        private int totalWritten;
-
         #endregion MemberVariables
 
 
         #region Fields
 
         public Block this[int index] {
-            get { return this.blocks[index]; }
+            get { return this.Blocks[index]; }
         }
 
-        internal Block[] Blocks {
-            get { return this.blocks; }
-        }
+        internal Block[] Blocks { get; set; }
 
         public bool AllBlocksRequested {
-            get { return this.totalRequested == BlockCount; }
+            get { return this.TotalRequested == BlockCount; }
         }
 
         public bool AllBlocksReceived {
-            get { return this.totalReceived == BlockCount; }
+            get { return this.TotalReceived == BlockCount; }
         }
 
         public bool AllBlocksWritten {
-            get { return this.totalWritten == BlockCount; }
+            get { return this.TotalWritten == BlockCount; }
         }
 
         public int BlockCount {
-            get { return this.blocks.Length; }
+            get { return this.Blocks.Length; }
         }
 
-        public int Index {
-            get { return this.index; }
-        }
+        public int Index { get; }
 
         public bool NoBlocksRequested {
-            get { return this.totalRequested == 0; }
+            get { return this.TotalRequested == 0; }
         }
 
-        public int TotalReceived {
-            get { return this.totalReceived; }
-            internal set { this.totalReceived = value; }
-        }
+        public int TotalReceived { get; internal set; }
 
-        public int TotalRequested {
-            get { return this.totalRequested; }
-            internal set { this.totalRequested = value; }
-        }
+        public int TotalRequested { get; internal set; }
 
-        public int TotalWritten {
-            get { return totalWritten; }
-            internal set { this.totalWritten = value; }
-        }
+        public int TotalWritten { get; internal set; }
 
         #endregion Fields
 
@@ -102,7 +83,7 @@ namespace MonoTorrent.Client
 
         internal Piece (int pieceIndex, int pieceLength, long torrentSize)
         {
-            this.index = pieceIndex;
+            this.Index = pieceIndex;
 
             // Request last piece. Special logic needed
             if ((torrentSize - (long) pieceIndex * pieceLength) < pieceLength)
@@ -111,13 +92,13 @@ namespace MonoTorrent.Client
             else {
                 int numberOfPieces = (int) Math.Ceiling (((double) pieceLength / BlockSize));
 
-                blocks = new Block[numberOfPieces];
+                Blocks = new Block[numberOfPieces];
 
                 for (int i = 0; i < numberOfPieces; i++)
-                    blocks[i] = new Block (this, i * BlockSize, BlockSize);
+                    Blocks[i] = new Block (this, i * BlockSize, BlockSize);
 
                 if ((pieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
-                    blocks[blocks.Length - 1] = new Block (this, blocks[blocks.Length - 1].StartOffset, pieceLength - blocks[blocks.Length - 1].StartOffset);
+                    Blocks[Blocks.Length - 1] = new Block (this, Blocks[Blocks.Length - 1].StartOffset, pieceLength - Blocks[Blocks.Length - 1].StartOffset);
             }
         }
 
@@ -128,16 +109,16 @@ namespace MonoTorrent.Client
             if (bytesRemaining % BlockSize != 0)
                 numberOfBlocks++;
 
-            blocks = new Block[numberOfBlocks];
+            Blocks = new Block[numberOfBlocks];
 
             int i = 0;
             while (bytesRemaining - BlockSize > 0) {
-                blocks[i] = new Block (this, i * BlockSize, BlockSize);
+                Blocks[i] = new Block (this, i * BlockSize, BlockSize);
                 bytesRemaining -= BlockSize;
                 i++;
             }
 
-            blocks[i] = new Block (this, i * BlockSize, bytesRemaining);
+            Blocks[i] = new Block (this, i * BlockSize, bytesRemaining);
         }
 
         #endregion
@@ -152,17 +133,17 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            return (!(obj is Piece p)) ? false : this.index.Equals (p.index);
+            return (!(obj is Piece p)) ? false : this.Index.Equals (p.Index);
         }
 
         public System.Collections.IEnumerator GetEnumerator ()
         {
-            return this.blocks.GetEnumerator ();
+            return this.Blocks.GetEnumerator ();
         }
 
         public override int GetHashCode ()
         {
-            return this.index;
+            return this.Index;
         }
 
         #endregion

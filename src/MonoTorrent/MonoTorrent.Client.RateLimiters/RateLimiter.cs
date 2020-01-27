@@ -33,13 +33,10 @@ namespace MonoTorrent.Client.RateLimiters
 {
     sealed class RateLimiter : IRateLimiter
     {
-        bool unlimited;
         long savedError;
         long chunks;
 
-        public bool Unlimited {
-            get { return unlimited; }
-        }
+        public bool Unlimited { get; set; }
 
         public RateLimiter ()
         {
@@ -48,8 +45,8 @@ namespace MonoTorrent.Client.RateLimiters
 
         public void UpdateChunks (long maxRate, long actualRate)
         {
-            unlimited = maxRate == 0;
-            if (unlimited)
+            Unlimited = maxRate == 0;
+            if (Unlimited)
                 return;
 
             // From experimentation, i found that increasing by 5% gives more accuate rate limiting

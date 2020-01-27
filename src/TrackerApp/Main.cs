@@ -47,41 +47,32 @@ namespace SampleTracker
         // I just want to keep the TorrentFiles in memory when i'm tracking the torrent, so i store
         // a reference to them in the ITrackable. This allows me to display information about the
         // files in a GUI without having to keep the entire (really really large) Torrent instance in memory.
-        private readonly TorrentFile[] files;
 
         // We require the infohash and the name of the torrent so the tracker can work correctly
-        private readonly InfoHash infoHash;
-        private readonly string name;
 
         public CustomITrackable (Torrent t)
         {
             // Note: I'm just storing the files, infohash and name. A typical Torrent instance
             // is ~100kB in memory. A typical CustomITrackable will be ~100 bytes.
-            files = t.Files;
-            infoHash = t.InfoHash;
-            name = t.Name;
+            Files = t.Files;
+            InfoHash = t.InfoHash;
+            Name = t.Name;
         }
 
         /// <summary>
         /// The files in the torrent
         /// </summary>
-        public TorrentFile[] Files {
-            get { return files; }
-        }
+        public TorrentFile[] Files { get; }
 
         /// <summary>
         /// The infohash of the torrent
         /// </summary>
-        public InfoHash InfoHash {
-            get { return infoHash; }
-        }
+        public InfoHash InfoHash { get; }
 
         /// <summary>
         /// The name of the torrent
         /// </summary>
-        public string Name {
-            get { return name; }
-        }
+        public string Name { get; }
     }
 
     class MySimpleTracker

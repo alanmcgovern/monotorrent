@@ -57,29 +57,28 @@ namespace MonoTorrent.Client.PiecePicking
         List<Piece> pieces;
 
         // These are all the requests for the individual blocks
-        readonly List<Request> requests;
-        internal List<Request> Requests => requests;
+        internal List<Request> Requests { get; }
 
         ITorrentData TorrentData { get; set; }
 
         public EndGamePicker ()
             : base (null)
         {
-            requests = new List<Request> ();
+            Requests = new List<Request> ();
         }
 
         // Cancels a pending request when the predicate returns 'true'
         void CancelWhere (Predicate<Request> predicate, bool sendCancel)
         {
-            for (int i = 0; i < requests.Count; i++) {
-                Request r = requests[i];
+            for (int i = 0; i < Requests.Count; i++) {
+                Request r = Requests[i];
                 if (predicate (r)) {
                     r.Peer.AmRequestingPiecesCount--;
                     if (sendCancel)
                         r.Peer.Cancel (r.Block.PieceIndex, r.Block.StartOffset, r.Block.RequestLength);
                 }
             }
-            requests.RemoveAll (predicate);
+            Requests.RemoveAll (predicate);
         }
 
         public override void CancelTimedOutRequests ()
@@ -99,7 +98,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override int CurrentRequestCount ()
         {
-            return requests.Count;
+            return Requests.Count;
         }
 
         public override List<Piece> ExportActiveRequests ()
@@ -115,7 +114,7 @@ namespace MonoTorrent.Client.PiecePicking
             foreach (Piece piece in pieces) {
                 for (int i = 0; i < piece.BlockCount; i++)
                     if (piece.Blocks[i].RequestedOff != null && !piece.Blocks[i].Received)
-                        this.requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
+                        this.Requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
             }
         }
 
@@ -142,7 +141,7 @@ namespace MonoTorrent.Client.PiecePicking
                     if (p.Blocks[i].Requested)
                         continue;
                     var requestMessage = p.Blocks[i].CreateRequest (peer);
-                    requests.Add (new Request (peer, p.Blocks[i]));
+                    Requests.Add (new Request (peer, p.Blocks[i]));
                     return new[] { requestMessage };
                 }
             }
@@ -157,17 +156,17 @@ namespace MonoTorrent.Client.PiecePicking
                     if (p.Blocks[i].Received || AlreadyRequested (p.Blocks[i], peer))
                         continue;
 
-                    int c = requests.Count;
-                    for (int j = 0; j < requests.Count - 1 && (c-- > 0); j++) {
-                        if (requests[j].Block.PieceIndex == p.Index && requests[j].Block.StartOffset == p.Blocks[i].StartOffset) {
-                            Request r = requests[j];
-                            requests.RemoveAt (j);
-                            requests.Add (r);
+                    int c = Requests.Count;
+                    for (int j = 0; j < Requests.Count - 1 && (c-- > 0); j++) {
+                        if (Requests[j].Block.PieceIndex == p.Index && Requests[j].Block.StartOffset == p.Blocks[i].StartOffset) {
+                            Request r = Requests[j];
+                            Requests.RemoveAt (j);
+                            Requests.Add (r);
                             j--;
                         }
                     }
                     var requestMessage = p.Blocks[i].CreateRequest (peer);
-                    requests.Add (new Request (peer, p.Blocks[i]));
+                    Requests.Add (new Request (peer, p.Blocks[i]));
                     return new[] { requestMessage };
                 }
             }
@@ -185,7 +184,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         private bool AlreadyRequested (Block block, IPieceRequester peer)
         {
-            bool b = requests.Exists (delegate (Request r) {
+            bool b = Requests.Exists (delegate (Request r) {
                 return r.Block.PieceIndex == block.PieceIndex &&
                        r.Block.StartOffset == block.StartOffset &&
                        r.Peer == peer;
@@ -196,7 +195,7 @@ namespace MonoTorrent.Client.PiecePicking
         public override void Reset ()
         {
             // Though if you reset an EndGamePicker it really means that you should be using a regular picker now
-            requests.Clear ();
+            Requests.Clear ();
         }
 
         public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
@@ -216,7 +215,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            var r = requests.SingleOrDefault (t => t.Block.PieceIndex == pieceIndex && t.Block.StartOffset == startOffset && t.Block.RequestLength == length && t.Peer == peer);
+            var r = Requests.SingleOrDefault (t => t.Block.PieceIndex == pieceIndex && t.Block.StartOffset == startOffset && t.Block.RequestLength == length && t.Peer == peer);
             if (r == null) {
                 piece = null;
                 return false;
@@ -237,7 +236,7 @@ namespace MonoTorrent.Client.PiecePicking
             // Mark the block as received
             piece.Blocks[startOffset / Piece.BlockSize].Received = true;
 
-            requests.Remove (r);
+            Requests.Remove (r);
             peer.AmRequestingPiecesCount--;
 
             // Once a piece is completely received, remove it from our list.

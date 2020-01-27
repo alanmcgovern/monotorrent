@@ -4,17 +4,9 @@ namespace MonoTorrent.Client
 {
     public class CriticalExceptionEventArgs : EventArgs
     {
-        private readonly ClientEngine engine;
-        private readonly Exception ex;
+        public ClientEngine Engine { get; }
 
-
-        public ClientEngine Engine {
-            get { return engine; }
-        }
-
-        public Exception Exception {
-            get { return ex; }
-        }
+        public Exception Exception { get; }
 
 
         public CriticalExceptionEventArgs (Exception ex, ClientEngine engine)
@@ -24,8 +16,8 @@ namespace MonoTorrent.Client
             if (engine == null)
                 throw new ArgumentNullException (nameof(engine));
 
-            this.engine = engine;
-            this.ex = ex;
+            this.Engine = engine;
+            this.Exception = ex;
         }
     }
 }

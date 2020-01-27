@@ -43,7 +43,6 @@ namespace MonoTorrent
 
         #region Private Fields
 
-        private readonly int count;
         private readonly byte[] hashData;
 
         #endregion Private Fields
@@ -54,9 +53,7 @@ namespace MonoTorrent
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>
-        public int Count {
-            get { return this.count; }
-        }
+        public int Count { get; }
 
         #endregion Properties
 
@@ -66,7 +63,7 @@ namespace MonoTorrent
         internal Hashes (byte[] hashData, int count)
         {
             this.hashData = hashData;
-            this.count = count;
+            this.Count = count;
         }
 
         #endregion Constructors
@@ -88,8 +85,8 @@ namespace MonoTorrent
             if (hash.Length != HashCodeLength)
                 throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof(hash));
 
-            if (hashIndex < 0 || hashIndex >= count)
-                throw new ArgumentOutOfRangeException (nameof(hashIndex), $"hashIndex must be between 0 and {count}");
+            if (hashIndex < 0 || hashIndex >= Count)
+                throw new ArgumentOutOfRangeException (nameof(hashIndex), $"hashIndex must be between 0 and {Count}");
 
             int start = hashIndex * HashCodeLength;
             for (int i = 0; i < HashCodeLength; i++)
@@ -106,7 +103,7 @@ namespace MonoTorrent
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
         public byte[] ReadHash (int hashIndex)
         {
-            if (hashIndex < 0 || hashIndex >= count)
+            if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException (nameof(hashIndex));
 
             // Read out our specified piece's hash data

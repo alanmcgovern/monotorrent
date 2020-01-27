@@ -49,24 +49,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         }
 
         readonly BEncodedDictionary dict;
-        private eMessageType messageType;
-        private int piece;
 
         //this buffer contain all metadata when we send message 
         //and only a piece of metadata we receive message
-        private byte[] metadata;
 
-        public int Piece {
-            get { return piece; }
-        }
+        public int Piece { get; set; }
 
-        public byte[] MetadataPiece {
-            get { return metadata; }
-        }
+        public byte[] MetadataPiece { get; set; }
 
-        internal eMessageType MetadataMessageType {
-            get { return messageType; }
-        }
+        internal eMessageType MetadataMessageType { get; set; }
 
         //only for register
         public LTMetadata ()
@@ -91,15 +82,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             : this ()
         {
             ExtensionId = extensionId;
-            this.messageType = type;
-            this.metadata = metadata;
-            this.piece = piece;
+            this.MetadataMessageType = type;
+            this.MetadataPiece = metadata;
+            this.Piece = piece;
 
             dict = new BEncodedDictionary ();
-            dict.Add (MessageTypeKey, (BEncodedNumber) (int) messageType);
+            dict.Add (MessageTypeKey, (BEncodedNumber) (int) MetadataMessageType);
             dict.Add (PieceKey, (BEncodedNumber) piece);
 
-            if (messageType == eMessageType.Data) {
+            if (MetadataMessageType == eMessageType.Data) {
                 Check.Metadata (metadata);
                 dict.Add (TotalSizeKey, (BEncodedNumber) metadata.Length);
             }
@@ -109,8 +100,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             // 4 byte length, 1 byte BT id, 1 byte LT id, 1 byte payload
             get {
                 int length = 4 + 1 + 1 + dict.LengthInBytes ();
-                if (messageType == eMessageType.Data)
-                    length += Math.Min (metadata.Length - piece * BlockSize, BlockSize);
+                if (MetadataMessageType == eMessageType.Data)
+                    length += Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize);
                 return length;
             }
         }
@@ -122,13 +113,13 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             int totalSize = 0;
 
             if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))
-                messageType = (eMessageType) ((BEncodedNumber) val).Number;
+                MetadataMessageType = (eMessageType) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (PieceKey, out val))
-                piece = (int) ((BEncodedNumber) val).Number;
+                Piece = (int) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (TotalSizeKey, out val)) {
                 totalSize = (int) ((BEncodedNumber) val).Number;
-                metadata = new byte[Math.Min (totalSize - piece * BlockSize, BlockSize)];
-                reader.Read (metadata, 0, metadata.Length);
+                MetadataPiece = new byte[Math.Min (totalSize - Piece * BlockSize, BlockSize)];
+                reader.Read (MetadataPiece, 0, MetadataPiece.Length);
             }
         }
 
@@ -143,8 +134,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write (buffer, written, ExtensionMessage.MessageId);
             written += Write (buffer, written, ExtensionId);
             written += dict.Encode (buffer, written);
-            if (messageType == eMessageType.Data)
-                written += Write (buffer, written, metadata, piece * BlockSize, Math.Min (metadata.Length - piece * BlockSize, BlockSize));
+            if (MetadataMessageType == eMessageType.Data)
+                written += Write (buffer, written, MetadataPiece, Piece * BlockSize, Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize));
 
             return CheckWritten (written - offset);
         }

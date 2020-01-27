@@ -25,14 +25,10 @@ namespace MonoTorrent.Client
         private readonly PeerList candidatePeers = new PeerList (PeerListType.CandidatePeers); //Peers that are candidates for unchoking based on past performance
         private readonly PeerList optimisticUnchokeCandidates = new PeerList (PeerListType.OptimisticUnchokeCandidatePeers); //Peers that are candidates for unchoking in case they perform well
 
-        private int reviewsExecuted;
-
         /// <summary>
         /// Number of peer reviews that have been conducted
         /// </summary>
-        internal int ReviewsExecuted {
-            get { return this.reviewsExecuted; }
-        }
+        internal int ReviewsExecuted { get; set; }
 
         #endregion Private Fields
 
@@ -371,7 +367,7 @@ namespace MonoTorrent.Client
             }
 
             timeOfLastReview = DateTime.Now;
-            reviewsExecuted++;
+            ReviewsExecuted++;
         }
 
 
@@ -420,7 +416,7 @@ namespace MonoTorrent.Client
             }
 
             this.timeOfLastReview = DateTime.Now;
-            this.reviewsExecuted++;
+            this.ReviewsExecuted++;
 
         }
 
