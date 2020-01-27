@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
     public class AttemptConnectionEventArgs : EventArgs
     {
         private bool banPeer;
-        private Peer peer;
+        private readonly Peer peer;
 
         public bool BanPeer {
             get { return banPeer; }

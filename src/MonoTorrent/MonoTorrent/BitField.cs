@@ -40,13 +40,13 @@ namespace MonoTorrent
     /// <summary>
     /// This class is for represting the Peer's bitfield
     /// </summary>
-    [DebuggerDisplay("{ToDebuggerString ()}")]
+    [DebuggerDisplay("{" + nameof(ToDebuggerString) + " ()}")]
     public class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
 
-        private int[] array;
-        private int length;
+        private readonly int[] array;
+        private readonly int length;
         private int trueCount;
 
         internal bool AllFalse {
@@ -83,7 +83,7 @@ namespace MonoTorrent
         public BitField (int length)
         {
             if (length < 1)
-                throw new ArgumentOutOfRangeException ("length", "Length must be greater than zero");
+                throw new ArgumentOutOfRangeException (nameof(length), "Length must be greater than zero");
 
             this.length = length;
             this.array = new int[(length + 31) / 32];
@@ -286,7 +286,7 @@ namespace MonoTorrent
         bool Get (int index)
         {
             if (index < 0 || index >= length)
-                throw new ArgumentOutOfRangeException ("index");
+                throw new ArgumentOutOfRangeException (nameof(index));
 
             return (this.array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
         }
@@ -332,7 +332,7 @@ namespace MonoTorrent
         public BitField Set (int index, bool value)
         {
             if (index < 0 || index >= length)
-                throw new ArgumentOutOfRangeException ("index");
+                throw new ArgumentOutOfRangeException (nameof(index));
 
             if (value) {
                 if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) == 0)// If it's not already true
@@ -450,7 +450,7 @@ namespace MonoTorrent
         {
             MonoTorrent.Check.Value (value);
             if (length != value.length)
-                throw new ArgumentException ("BitFields are of different lengths", "value");
+                throw new ArgumentException ("BitFields are of different lengths", nameof(value));
         }
 
         #endregion

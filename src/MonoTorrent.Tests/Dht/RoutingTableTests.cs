@@ -62,8 +62,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void GetClosestTest ()
         {
-            List<NodeId> nodes;
-            TestHelper.ManyNodes (out table, out nodes);
+            TestHelper.ManyNodes (out table, out List<NodeId> nodes);
 
 
             var closest = table.GetClosest (table.LocalNode.Id).ToList ();

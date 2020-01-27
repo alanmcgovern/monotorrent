@@ -40,8 +40,8 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString MessageTypeKey = "y";
         static readonly BEncodedString TransactionIdKey = "t";
 
-        readonly static Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
-        readonly static Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
+        static readonly Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
+        static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
 
 
         public static int RegisteredMessages {
@@ -81,8 +81,7 @@ namespace MonoTorrent.Dht.Messages
 
         public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message)
         {
-            string error;
-            return TryDecodeMessage (dictionary, out message, out error);
+            return TryDecodeMessage (dictionary, out message, out string error);
         }
 
         public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message, out string error)
@@ -102,9 +101,8 @@ namespace MonoTorrent.Dht.Messages
                 message = new ErrorMessage (dictionary);
                 messages.Remove (message.TransactionId);
             } else {
-                QueryMessage query;
                 BEncodedString key = (BEncodedString) dictionary[TransactionIdKey];
-                if (messages.TryGetValue (key, out query)) {
+                if (messages.TryGetValue (key, out QueryMessage query)) {
                     messages.Remove (key);
                     try {
                         message = query.CreateResponse (dictionary);

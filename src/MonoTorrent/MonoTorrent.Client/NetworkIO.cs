@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 {
     class NetworkIO
     {
-        static MainLoop IOLoop = new MainLoop ("NetworkIO Loop");
+        static readonly MainLoop IOLoop = new MainLoop ("NetworkIO Loop");
 
         public struct QueuedIO
         {

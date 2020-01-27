@@ -74,10 +74,10 @@ namespace MonoTorrent.Client
 
     class InitialSeedUnchoker : Unchoker
     {
-        List<SeededPiece> advertisedPieces;
-        BitField bitfield;
-        List<ChokeData> peers;
-        BitField temp;
+        readonly List<SeededPiece> advertisedPieces;
+        readonly BitField bitfield;
+        readonly List<ChokeData> peers;
+        readonly BitField temp;
 
         bool PendingUnchoke {
             get { return peers.Exists (delegate (ChokeData d) { return d.Peer.AmChoking && d.Peer.IsInterested; }); }

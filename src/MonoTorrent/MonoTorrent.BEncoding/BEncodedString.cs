@@ -165,7 +165,6 @@ namespace MonoTorrent.BEncoding
             if (reader == null)
                 throw new ArgumentNullException (nameof (reader));
 
-            int letterCount;
             string length = string.Empty;
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != ':'))         // read in how many characters
@@ -174,8 +173,8 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte () != ':')                                           // remove the ':'
                 throw new BEncodingException ("Invalid data found. Aborting");
 
-            if (!int.TryParse (length, out letterCount))
-                throw new BEncodingException (string.Format ("Invalid BEncodedString. Length was '{0}' instead of a number", length));
+            if (!int.TryParse (length, out int letterCount))
+                throw new BEncodingException ($"Invalid BEncodedString. Length was '{length}' instead of a number");
 
             TextBytes = new byte[letterCount];
             if (reader.Read (TextBytes, 0, letterCount) != letterCount)

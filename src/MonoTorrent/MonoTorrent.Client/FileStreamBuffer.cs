@@ -37,8 +37,8 @@ namespace MonoTorrent.Client
     {
         // A list of currently open filestreams. Note: The least recently used is at position 0
         // The most recently used is at the last position in the array
-        private List<TorrentFileStream> list;
-        private int maxStreams;
+        private readonly List<TorrentFileStream> list;
+        private readonly int maxStreams;
 
         public int Count {
             get { return list.Count; }

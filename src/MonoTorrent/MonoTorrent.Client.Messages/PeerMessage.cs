@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Messages
 {
     abstract class PeerMessage : Message
     {
-        readonly static Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
 
         static PeerMessage ()
         {
@@ -80,7 +80,6 @@ namespace MonoTorrent.Client.Messages
         public static PeerMessage DecodeMessage (byte[] buffer, int offset, int count, ITorrentData manager)
         {
             PeerMessage message;
-            Func<ITorrentData, PeerMessage> creator;
 
             if (count < 4)
                 throw new ArgumentException ("A message must contain a 4 byte length prefix");
@@ -93,7 +92,7 @@ namespace MonoTorrent.Client.Messages
             if (buffer[offset + 4] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer, offset + 4 + 1, count - 4 - 1, manager);
 
-            if (!messageDict.TryGetValue (buffer[offset + 4], out creator))
+            if (!messageDict.TryGetValue (buffer[offset + 4], out Func<ITorrentData, PeerMessage> creator))
                 throw new ProtocolException ("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that

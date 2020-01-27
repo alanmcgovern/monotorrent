@@ -77,12 +77,11 @@ namespace MonoTorrent.Common
         public void benStringDecoding ()
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes ("21:this is a test string");
-            using (MemoryStream stream = new MemoryStream (data)) {
-                BEncodedValue result = BEncodedValue.Decode (stream);
-                Assert.AreEqual ("this is a test string", result.ToString ());
-                Assert.AreEqual (result is BEncodedString, true);
-                Assert.AreEqual (((BEncodedString) result).Text, "this is a test string");
-            }
+            using MemoryStream stream = new MemoryStream (data);
+            BEncodedValue result = BEncodedValue.Decode (stream);
+            Assert.AreEqual ("this is a test string", result.ToString ());
+            Assert.AreEqual (result is BEncodedString, true);
+            Assert.AreEqual (((BEncodedString) result).Text, "this is a test string");
         }
 
         [Test]
@@ -154,12 +153,11 @@ namespace MonoTorrent.Common
         public void benNumberDecoding ()
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes ("i12412e");
-            using (Stream stream = new MemoryStream (data)) {
-                BEncodedValue result = BEncodedValue.Decode (stream);
-                Assert.AreEqual (result is BEncodedNumber, true);
-                Assert.AreEqual (result.ToString (), "12412");
-                Assert.AreEqual (((BEncodedNumber) result).Number, 12412);
-            }
+            using Stream stream = new MemoryStream (data);
+            BEncodedValue result = BEncodedValue.Decode (stream);
+            Assert.AreEqual (result is BEncodedNumber, true);
+            Assert.AreEqual (result.ToString (), "12412");
+            Assert.AreEqual (((BEncodedNumber) result).Number, 12412);
         }
 
         [Test]
@@ -248,18 +246,17 @@ namespace MonoTorrent.Common
         public void benListDecoding ()
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes ("l4:test5:tests6:testede");
-            using (Stream stream = new MemoryStream (data)) {
-                BEncodedValue result = BEncodedValue.Decode (stream);
-                Assert.AreEqual (result.ToString (), "l4:test5:tests6:testede");
-                Assert.AreEqual (result is BEncodedList, true);
-                BEncodedList list = (BEncodedList) result;
+            using Stream stream = new MemoryStream (data);
+            BEncodedValue result = BEncodedValue.Decode (stream);
+            Assert.AreEqual (result.ToString (), "l4:test5:tests6:testede");
+            Assert.AreEqual (result is BEncodedList, true);
+            BEncodedList list = (BEncodedList) result;
 
-                Assert.AreEqual (list.Count, 3);
-                Assert.AreEqual (list[0] is BEncodedString, true);
-                Assert.AreEqual (((BEncodedString) list[0]).Text, "test");
-                Assert.AreEqual (((BEncodedString) list[1]).Text, "tests");
-                Assert.AreEqual (((BEncodedString) list[2]).Text, "tested");
-            }
+            Assert.AreEqual (list.Count, 3);
+            Assert.AreEqual (list[0] is BEncodedString, true);
+            Assert.AreEqual (((BEncodedString) list[0]).Text, "test");
+            Assert.AreEqual (((BEncodedString) list[1]).Text, "tests");
+            Assert.AreEqual (((BEncodedString) list[2]).Text, "tested");
         }
 
         [Test]
@@ -322,19 +319,18 @@ namespace MonoTorrent.Common
         public void benDictionaryDecoding ()
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes ("d4:spaml1:a1:bee");
-            using (Stream stream = new MemoryStream (data)) {
-                BEncodedValue result = BEncodedValue.Decode (stream);
-                Assert.AreEqual (result.ToString (), "d4:spaml1:a1:bee");
-                Assert.AreEqual (result is BEncodedDictionary, true);
+            using Stream stream = new MemoryStream (data);
+            BEncodedValue result = BEncodedValue.Decode (stream);
+            Assert.AreEqual (result.ToString (), "d4:spaml1:a1:bee");
+            Assert.AreEqual (result is BEncodedDictionary, true);
 
-                BEncodedDictionary dict = (BEncodedDictionary) result;
-                Assert.AreEqual (dict.Count, 1);
-                Assert.IsTrue (dict["spam"] is BEncodedList);
+            BEncodedDictionary dict = (BEncodedDictionary) result;
+            Assert.AreEqual (dict.Count, 1);
+            Assert.IsTrue (dict["spam"] is BEncodedList);
 
-                BEncodedList list = (BEncodedList) dict["spam"];
-                Assert.AreEqual (((BEncodedString) list[0]).Text, "a");
-                Assert.AreEqual (((BEncodedString) list[1]).Text, "b");
-            }
+            BEncodedList list = (BEncodedList) dict["spam"];
+            Assert.AreEqual (((BEncodedString) list[0]).Text, "a");
+            Assert.AreEqual (((BEncodedString) list[1]).Text, "b");
         }
 
         [Test]

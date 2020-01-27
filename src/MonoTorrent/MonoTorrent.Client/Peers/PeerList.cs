@@ -35,8 +35,8 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private List<PeerId> peers; //Peers held
-        private PeerListType listType; //The type of list this represents
+        private readonly List<PeerId> peers; //Peers held
+        private readonly PeerListType listType; //The type of list this represents
         private int scanIndex = 0; //Position in the list when scanning peers
 
         #endregion Private Fields

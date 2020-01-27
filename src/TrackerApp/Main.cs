@@ -47,11 +47,11 @@ namespace SampleTracker
         // I just want to keep the TorrentFiles in memory when i'm tracking the torrent, so i store
         // a reference to them in the ITrackable. This allows me to display information about the
         // files in a GUI without having to keep the entire (really really large) Torrent instance in memory.
-        private TorrentFile[] files;
+        private readonly TorrentFile[] files;
 
         // We require the infohash and the name of the torrent so the tracker can work correctly
-        private InfoHash infoHash;
-        private string name;
+        private readonly InfoHash infoHash;
+        private readonly string name;
 
         public CustomITrackable (Torrent t)
         {
@@ -86,7 +86,7 @@ namespace SampleTracker
 
     class MySimpleTracker
     {
-        TrackerServer tracker;
+        readonly TrackerServer tracker;
         TorrentFolderWatcher watcher;
         const string TORRENT_DIR = "Torrents";
 

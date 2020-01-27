@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
 {
     class TorrentFileStream : FileStream
     {
-        TorrentFile file;
+        readonly TorrentFile file;
 
         public TorrentFile File {
             get { return file; }

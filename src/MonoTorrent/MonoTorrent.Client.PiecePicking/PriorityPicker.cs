@@ -39,8 +39,8 @@ namespace MonoTorrent.Client.PiecePicking
         class Files : IComparable<Files>
         {
             public Priority Priority { get; private set; }
-            TorrentFile File;
-            public BitField Selector;
+            readonly TorrentFile File;
+            public readonly BitField Selector;
 
             public Files (TorrentFile file, BitField selector)
             {

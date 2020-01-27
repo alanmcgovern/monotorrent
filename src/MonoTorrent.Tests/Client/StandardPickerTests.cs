@@ -308,16 +308,14 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void CompletePartialTest ()
         {
-            Piece piece;
             peer.IsChoking = false;
             peer.BitField.SetAll (true);
             var message = picker.PickPiece (peer, peer.BitField, peers);
-            Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece), "#1");
+            Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece), "#1");
             picker.CancelRequests (peer);
             for (int i = 0; i < piece.BlockCount; i++) {
                 message = picker.PickPiece (peer, peer.BitField, peers);
-                Piece p;
-                Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out p), "#2." + i);
+                Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece p), "#2." + i);
             }
             Assert.IsTrue (piece.AllBlocksRequested, "#3");
             Assert.IsTrue (piece.AllBlocksReceived, "#4");

@@ -94,7 +94,7 @@ namespace MonoTorrent
         {
             GetrightHttpSeeds = new List<string> ();
             CanEditSecureMetadata = true;
-            CreatedBy = string.Format ("MonoTorrent {0}", VersionInfo.Version);
+            CreatedBy = $"MonoTorrent {VersionInfo.Version}";
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
@@ -143,7 +143,7 @@ namespace MonoTorrent
 
             List<FileMapping> mappings = new List<FileMapping> (fileSource.Files);
             if (mappings.Count == 0)
-                throw new ArgumentException ("The file source must contain one or more files", "fileSource");
+                throw new ArgumentException ("The file source must contain one or more files", nameof(fileSource));
 
             mappings.Sort ((left, right) => left.Destination.CompareTo (right.Destination));
             Validate (mappings);
@@ -451,10 +451,8 @@ namespace MonoTorrent
             // Ensure all the destination files are unique too. The files should already be sorted.
             for (int i = 1; i < maps.Count; i++)
                 if (maps[i - 1].Destination == maps[i].Destination)
-                    throw new ArgumentException (string.Format ("Files '{0}' and '{1}' both map to the same destination '{2}'",
-                                                 maps[i - 1].Source,
-                                                 maps[i].Source,
-                                                 maps[i].Destination));
+                    throw new ArgumentException (
+                        $"Files '{maps[i - 1].Source}' and '{maps[i].Source}' both map to the same destination '{maps[i].Destination}'");
         }
     }
 }

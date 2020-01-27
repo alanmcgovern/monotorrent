@@ -52,9 +52,9 @@ namespace MonoTorrent.Client
                 Timer = timer;
             }
 
-            public IConnection Connection;
-            public TorrentManager Manager;
-            public ValueStopwatch Timer;
+            public readonly IConnection Connection;
+            public readonly TorrentManager Manager;
+            public readonly ValueStopwatch Timer;
         }
 
         public event EventHandler<AttemptConnectionEventArgs> BanPeer;

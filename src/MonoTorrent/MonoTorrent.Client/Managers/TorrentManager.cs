@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         internal bool isInEndGame;       // Set true when the torrent enters end game processing
         private Mode mode;
-        private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
+        private readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         #endregion Member Variables
@@ -493,7 +493,8 @@ namespace MonoTorrent.Client
 
             await ClientEngine.MainLoop;
             if (!Mode.CanHashCheck)
-                throw new TorrentException (string.Format ("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
+                throw new TorrentException (
+                    $"A hashcheck can only be performed when the manager is stopped. State is: {State}");
 
             CheckRegisteredAndDisposed ();
             StartTime = DateTime.Now;

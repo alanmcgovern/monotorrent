@@ -41,9 +41,9 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private PeerId id;
-        private List<Peer> addedPeers;
-        private List<Peer> droppedPeers;
+        private readonly PeerId id;
+        private readonly List<Peer> addedPeers;
+        private readonly List<Peer> droppedPeers;
         private bool disposed = false;
         private const int MAX_PEERS = 50;
 

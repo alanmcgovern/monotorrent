@@ -142,12 +142,11 @@ namespace MonoTorrent.Client.Modes
                         if (!Manager.InfoHash.Equals (hash)) {
                             bitField.SetAll (false);
                         } else {
-                            Torrent t;
                             Stream.Position = 0;
                             BEncodedDictionary dict = new BEncodedDictionary ();
                             dict.Add ("info", BEncodedValue.Decode (Stream));
                             // FIXME: Add the trackers too
-                            if (Torrent.TryLoad (dict.Encode (), out t)) {
+                            if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
                                 try {
                                     if (Directory.Exists (savePath))
                                         savePath = Path.Combine (savePath, Manager.InfoHash.ToHex () + ".torrent");
@@ -180,7 +179,7 @@ namespace MonoTorrent.Client.Modes
                 case LTMetadata.eMessageType.Request://ever done in base class but needed to avoid default
                     break;
                 default:
-                    throw new MessageException (string.Format ("Invalid messagetype in LTMetadata: {0}", message.MetadataMessageType));
+                    throw new MessageException ($"Invalid messagetype in LTMetadata: {message.MetadataMessageType}");
             }
 
         }

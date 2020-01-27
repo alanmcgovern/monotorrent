@@ -101,10 +101,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            BEncodedValue val;
             BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary> (buffer, offset, length, false);
 
-            if (d.TryGetValue (MaxRequestKey, out val))
+            if (d.TryGetValue (MaxRequestKey, out BEncodedValue val))
                 maxRequests = (int) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (VersionKey, out val))
                 version = ((BEncodedString) val).Text;

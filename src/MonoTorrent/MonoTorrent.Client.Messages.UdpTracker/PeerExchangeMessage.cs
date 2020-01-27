@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             BEncodedString added = (BEncodedString) peerDict[AddedKey];
             int numPeers = added.TextBytes.Length / 6;
 
-            return String.Format ("PeerExchangeMessage: {0} peers", numPeers);
+            return $"PeerExchangeMessage: {numPeers} peers";
         }
     }
 }

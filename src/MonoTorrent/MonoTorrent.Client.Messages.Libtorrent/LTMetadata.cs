@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             Reject = 2
         }
 
-        BEncodedDictionary dict;
+        readonly BEncodedDictionary dict;
         private eMessageType messageType;
         private int piece;
 
@@ -117,20 +117,18 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            BEncodedValue val;
-            using (RawReader reader = new RawReader (new MemoryStream (buffer, offset, length, false), false)) {
-                BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary> (reader);
-                int totalSize = 0;
+            using RawReader reader = new RawReader (new MemoryStream (buffer, offset, length, false), false);
+            BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary> (reader);
+            int totalSize = 0;
 
-                if (d.TryGetValue (MessageTypeKey, out val))
-                    messageType = (eMessageType) ((BEncodedNumber) val).Number;
-                if (d.TryGetValue (PieceKey, out val))
-                    piece = (int) ((BEncodedNumber) val).Number;
-                if (d.TryGetValue (TotalSizeKey, out val)) {
-                    totalSize = (int) ((BEncodedNumber) val).Number;
-                    metadata = new byte[Math.Min (totalSize - piece * BlockSize, BlockSize)];
-                    reader.Read (metadata, 0, metadata.Length);
-                }
+            if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))
+                messageType = (eMessageType) ((BEncodedNumber) val).Number;
+            if (d.TryGetValue (PieceKey, out val))
+                piece = (int) ((BEncodedNumber) val).Number;
+            if (d.TryGetValue (TotalSizeKey, out val)) {
+                totalSize = (int) ((BEncodedNumber) val).Number;
+                metadata = new byte[Math.Min (totalSize - piece * BlockSize, BlockSize)];
+                reader.Read (metadata, 0, metadata.Length);
             }
         }
 

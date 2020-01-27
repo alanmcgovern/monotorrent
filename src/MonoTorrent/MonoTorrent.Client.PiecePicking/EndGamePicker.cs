@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.PiecePicking
         List<Piece> pieces;
 
         // These are all the requests for the individual blocks
-        List<Request> requests;
+        readonly List<Request> requests;
         internal List<Request> Requests => requests;
 
         ITorrentData TorrentData { get; set; }

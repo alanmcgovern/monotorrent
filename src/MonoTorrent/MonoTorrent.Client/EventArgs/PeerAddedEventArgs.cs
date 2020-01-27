@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
         public Peer Peer {
             get { return this.peer; }
         }
-        private Peer peer;
+        private readonly Peer peer;
         #endregion
 
 

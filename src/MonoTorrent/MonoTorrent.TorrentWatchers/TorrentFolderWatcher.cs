@@ -45,8 +45,8 @@ namespace MonoTorrent.TorrentWatcher
         #region Member Variables
 
         private FileSystemWatcher watcher;
-        private string torrentDirectory;
-        private string watchFilter;
+        private readonly string torrentDirectory;
+        private readonly string watchFilter;
 
         #endregion
 
@@ -56,10 +56,10 @@ namespace MonoTorrent.TorrentWatcher
         public TorrentFolderWatcher (string torrentDirectory, string watchFilter)
         {
             if (torrentDirectory == null)
-                throw new ArgumentNullException ("torrentDirectory");
+                throw new ArgumentNullException (nameof(torrentDirectory));
 
             if (watchFilter == null)
-                throw new ArgumentNullException ("watchFilter");
+                throw new ArgumentNullException (nameof(watchFilter));
 
             if (!Directory.Exists (torrentDirectory))
                 Directory.CreateDirectory (torrentDirectory);

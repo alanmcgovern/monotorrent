@@ -38,7 +38,7 @@ namespace MonoTorrent
 {
     static class Logger
     {
-        private static List<TraceListener> listeners;
+        private static readonly List<TraceListener> listeners;
 
         static Logger ()
         {
@@ -48,7 +48,7 @@ namespace MonoTorrent
         public static void AddListener (TraceListener listener)
         {
             if (listener == null)
-                throw new ArgumentNullException ("listener");
+                throw new ArgumentNullException (nameof(listener));
 
             lock (listeners)
                 listeners.Add (listener);
@@ -85,7 +85,7 @@ namespace MonoTorrent
             Log (connection, message, null);
         }
 
-        private static StringBuilder sb = new StringBuilder ();
+        private static readonly StringBuilder sb = new StringBuilder ();
         [Conditional ("DO_NOT_ENABLE")]
         internal static void Log (IConnection connection, string message, params object[] formatting)
         {

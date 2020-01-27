@@ -40,7 +40,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private SortedDictionary<BEncodedString, BEncodedValue> dictionary;
+        private readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
 
         #endregion
 
@@ -109,9 +109,8 @@ namespace MonoTorrent.BEncoding
 
                 if (oldkey != null && oldkey.CompareTo (key) > 0)
                     if (strictDecoding)
-                        throw new BEncodingException (String.Format (
-                            "Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {0}, New key: {1}",
-                            oldkey, key));
+                        throw new BEncodingException (
+                            $"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 oldkey = key;
                 value = BEncodedValue.Decode (reader);                     // the value is a BEncoded value
@@ -195,7 +194,6 @@ namespace MonoTorrent.BEncoding
         #region Overridden Methods
         public override bool Equals (object obj)
         {
-            BEncodedValue val;
             BEncodedDictionary other = obj as BEncodedDictionary;
             if (other == null)
                 return false;
@@ -204,7 +202,7 @@ namespace MonoTorrent.BEncoding
                 return false;
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary) {
-                if (!other.TryGetValue (keypair.Key, out val))
+                if (!other.TryGetValue (keypair.Key, out BEncodedValue val))
                     return false;
 
                 if (!keypair.Value.Equals (val))

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -34,16 +34,16 @@ using MonoTorrent.Client.PiecePicking;
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public struct Block
     {
         #region Private Fields
 
-        private Piece piece;
-        private int startOffset;
+        private readonly Piece piece;
+        private readonly int startOffset;
         private IPieceRequester requestedOff;
-        private int requestLength;
+        private readonly int requestLength;
         private bool requested;
         private bool received;
 
@@ -138,10 +138,9 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            if (!(obj is Block))
+            if (!(obj is Block other))
                 return false;
 
-            Block other = (Block) obj;
             return this.PieceIndex == other.PieceIndex && this.startOffset == other.startOffset && this.requestLength == other.requestLength;
         }
 

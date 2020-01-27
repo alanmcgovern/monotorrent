@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -138,8 +138,7 @@ namespace MonoTorrent.Tracker
 
             /* If the user has supplied an IP address, we use that instead of
              * the IP address we read from the announce request connection. */
-            IPAddress supplied;
-            if (IPAddress.TryParse (Parameters["ip"] ?? "", out supplied) && !supplied.Equals (IPAddress.Any))
+            if (IPAddress.TryParse (Parameters["ip"] ?? "", out IPAddress supplied) && !supplied.Equals (IPAddress.Any))
                 ClientAddress = new IPEndPoint (supplied, Port);
             else
                 ClientAddress = new IPEndPoint (address, Port);
@@ -157,7 +156,8 @@ namespace MonoTorrent.Tracker
             }
             byte[] hash = UriHelper.UrlDecode (Parameters["info_hash"]);
             if (hash.Length != 20) {
-                Response.Add (FailureKey, (BEncodedString) (string.Format ("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));
+                Response.Add (FailureKey, (BEncodedString) (
+                    $"infohash was {hash.Length} bytes long, it must be 20 bytes long."));
                 return null;
             }
             return new InfoHash (hash);
@@ -165,9 +165,8 @@ namespace MonoTorrent.Tracker
 
         int ParseInt (string str, int? defaultValue = null)
         {
-            int p;
             str = Parameters[str];
-            if (!int.TryParse (str, out p))
+            if (!int.TryParse (str, out int p))
                 p = defaultValue ?? 0;
             return p;
         }

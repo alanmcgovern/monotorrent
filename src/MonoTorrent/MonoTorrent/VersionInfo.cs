@@ -70,9 +70,8 @@ namespace MonoTorrent
                 throw new ArgumentException ("The build version should be between 0 and 99 (inclusive)");
 
             // 'MO' for MonoTorrent then four digit version number
-            string version = string.Format ("{0}{1}{2:00}", Math.Max (Version.Major, 0),
-                                                            Math.Max (Version.Minor, 0),
-                                                            Math.Max (Version.Build, 0));
+            string version =
+                $"{Math.Max (Version.Major, 0)}{Math.Max (Version.Minor, 0)}{Math.Max (Version.Build, 0):00}";
             if (version.Length > 4)
                 version = version.Substring (0, 4);
             else

@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private Block[] blocks;
-        private int index;
+        private readonly int index;
         private int totalReceived;
         private int totalRequested;
         private int totalWritten;

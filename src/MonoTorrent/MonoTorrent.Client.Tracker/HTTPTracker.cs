@@ -187,25 +187,24 @@ namespace MonoTorrent.Client.Tracker
             int totalRead = 0;
             byte[] buffer = new byte[2048];
 
-            using (MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256)) {
-                using (var reader = response.GetResponseStream ()) {
-                    // If there is a ContentLength, use that to decide how much we read.
-                    if (response.ContentLength > 0) {
-                        while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
-                            dataStream.Write (buffer, 0, bytesRead);
-                            totalRead += bytesRead;
-                            if (totalRead == response.ContentLength)
-                                break;
-                        }
-                    } else    // A compact response doesn't always have a content length, so we
-                      {       // just have to keep reading until we think we have everything.
-                        while ((bytesRead = await reader.ReadAsync (buffer, 0, buffer.Length).ConfigureAwait (false)) > 0)
-                            dataStream.Write (buffer, 0, bytesRead);
+            using MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
+            using (var reader = response.GetResponseStream ()) {
+                // If there is a ContentLength, use that to decide how much we read.
+                if (response.ContentLength > 0) {
+                    while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
+                        dataStream.Write (buffer, 0, bytesRead);
+                        totalRead += bytesRead;
+                        if (totalRead == response.ContentLength)
+                            break;
                     }
+                } else    // A compact response doesn't always have a content length, so we
+                {       // just have to keep reading until we think we have everything.
+                    while ((bytesRead = await reader.ReadAsync (buffer, 0, buffer.Length).ConfigureAwait (false)) > 0)
+                        dataStream.Write (buffer, 0, bytesRead);
                 }
-                dataStream.Seek (0, SeekOrigin.Begin);
-                return (BEncodedDictionary) BEncodedValue.Decode (dataStream);
             }
+            dataStream.Seek (0, SeekOrigin.Begin);
+            return (BEncodedDictionary) BEncodedValue.Decode (dataStream);
         }
 
         public override bool Equals (object obj)

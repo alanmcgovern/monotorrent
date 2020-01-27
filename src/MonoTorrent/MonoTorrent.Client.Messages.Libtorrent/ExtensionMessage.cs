@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     abstract class ExtensionMessage : PeerMessage
     {
         internal static readonly byte MessageId = 20;
-        readonly static Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport> ();
 

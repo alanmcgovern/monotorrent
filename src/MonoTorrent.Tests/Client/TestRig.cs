@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         public bool FailAnnounce;
         public bool FailScrape;
 
-        List<Peer> peers = new List<Peer> ();
+        readonly List<Peer> peers = new List<Peer> ();
 
         public CustomTracker (Uri uri)
             : base (uri)
@@ -279,11 +279,11 @@ namespace MonoTorrent.Client
 
     class TestRig : IDisposable
     {
-        static Random Random = new Random (1000);
+        static readonly Random Random = new Random (1000);
         static int port = 10000;
         private BEncodedDictionary torrentDict;
-        private ClientEngine engine;
-        private CustomListener listener;
+        private readonly ClientEngine engine;
+        private readonly CustomListener listener;
         private TorrentManager manager;
         private Torrent torrent;
 
@@ -344,7 +344,9 @@ namespace MonoTorrent.Client
         }
 
 
-        string savePath; int piecelength; string[][] tier;
+        readonly string savePath;
+        readonly int piecelength;
+        readonly string[][] tier;
 
         public void AddConnection (IConnection connection)
         {
@@ -393,7 +395,7 @@ namespace MonoTorrent.Client
 
         #region Rig Creation
 
-        TorrentFile[] files;
+        readonly TorrentFile[] files;
         TestRig (string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
@@ -452,8 +454,8 @@ namespace MonoTorrent.Client
 
         internal static Torrent CreateMultiFileTorrent (TorrentFile[] files, int pieceLength)
         {
-            using (var rig = CreateMultiFile (files, pieceLength))
-                return rig.Torrent;
+            using var rig = CreateMultiFile (files, pieceLength);
+            return rig.Torrent;
         }
 
         static void AddFiles (BEncodedDictionary dict, TorrentFile[] files, int pieceLength)

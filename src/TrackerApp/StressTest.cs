@@ -10,11 +10,11 @@ namespace TrackerApp
 {
     public class StressTest
     {
-        List<string> hashes = new List<string> ();
-        Random random = new Random (1);
-        SpeedMonitor requests = new SpeedMonitor ();
-        Thread[] threads;
-        private int threadSleepTime = 0;
+        readonly List<string> hashes = new List<string> ();
+        readonly Random random = new Random (1);
+        readonly SpeedMonitor requests = new SpeedMonitor ();
+        readonly Thread[] threads;
+        private readonly int threadSleepTime = 0;
 
         public int RequestRate {
             get { return (int) requests.Rate; }

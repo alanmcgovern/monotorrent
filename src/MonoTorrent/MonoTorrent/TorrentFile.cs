@@ -36,17 +36,17 @@ namespace MonoTorrent
     {
         #region Private Fields
 
-        private BitField bitfield;
+        private readonly BitField bitfield;
         private BitField selector;
-        private byte[] ed2k;
-        private int endPiece;
+        private readonly byte[] ed2k;
+        private readonly int endPiece;
         private string fullPath;
-        private long length;
+        private readonly long length;
         private byte[] md5;
-        private string path;
+        private readonly string path;
         private Priority priority;
-        private byte[] sha1;
-        private int startPiece;
+        private readonly byte[] sha1;
+        private readonly int startPiece;
 
         #endregion Private Fields
 

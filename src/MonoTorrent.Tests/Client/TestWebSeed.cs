@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class WebSeedTests
     {
-        Regex rangeMatcher = new Regex (@"(\d{1,10})-(\d{1,10})");
+        readonly Regex rangeMatcher = new Regex (@"(\d{1,10})-(\d{1,10})");
 
         bool partialData;
         public readonly int Count = 5;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
 
         PeerId id;
         RequestBundle requests;
-        int numberOfPieces = 50;
+        readonly int numberOfPieces = 50;
 
         [OneTimeSetUp]
         public void FixtureSetup ()
@@ -275,7 +275,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private List<string> requestedUrl = new List<string> ();
+        private readonly List<string> requestedUrl = new List<string> ();
         private void GotContext (IAsyncResult result)
         {
             try {

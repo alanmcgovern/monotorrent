@@ -38,7 +38,7 @@ namespace MonoTorrent
     [EditorBrowsable (EditorBrowsableState.Never)]
     public static class HashAlgoFactory
     {
-        static Dictionary<Type, Type> algos = new Dictionary<Type, Type> ();
+        static readonly Dictionary<Type, Type> algos = new Dictionary<Type, Type> ();
 
         static HashAlgoFactory ()
         {

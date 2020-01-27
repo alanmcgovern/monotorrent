@@ -44,7 +44,7 @@ namespace MonoTorrent
 
         private BEncodedDictionary originalDictionary;
         private BEncodedValue azureusProperties;
-        private IList<RawTrackerTier> announceUrls;
+        private readonly IList<RawTrackerTier> announceUrls;
         private string comment;
         private string createdBy;
         private DateTime creationDate;
@@ -63,7 +63,7 @@ namespace MonoTorrent
         private string source;
         protected TorrentFile[] torrentFiles;
         protected string torrentPath;
-        private List<string> getRightHttpSeeds;
+        private readonly List<string> getRightHttpSeeds;
         private byte[] metadata;
 
         #endregion Private Fields
@@ -531,8 +531,8 @@ namespace MonoTorrent
         {
             Check.Path (path);
 
-            using (Stream s = new FileStream (path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return Torrent.Load (s, path);
+            using Stream s = new FileStream (path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return Torrent.Load (s, path);
         }
 
         /// <summary>
@@ -544,8 +544,8 @@ namespace MonoTorrent
         {
             Check.Data (data);
 
-            using (MemoryStream s = new MemoryStream (data))
-                return Load (s, "");
+            using MemoryStream s = new MemoryStream (data);
+            return Load (s, "");
         }
 
         /// <summary>
@@ -558,7 +558,7 @@ namespace MonoTorrent
             Check.Stream (stream);
 
             if (stream == null)
-                throw new ArgumentNullException ("stream");
+                throw new ArgumentNullException (nameof(stream));
 
             return Torrent.Load (stream, "");
         }
@@ -575,8 +575,8 @@ namespace MonoTorrent
             Check.Location (location);
 
             try {
-                using (WebClient client = new WebClient ())
-                    client.DownloadFile (url, location);
+                using WebClient client = new WebClient ();
+                client.DownloadFile (url, location);
             } catch (Exception ex) {
                 throw new TorrentException ("Could not download .torrent file from the specified url", ex);
             }
@@ -731,7 +731,7 @@ namespace MonoTorrent
                             if (e is ArgumentOutOfRangeException)
                                 throw new BEncodingException ("Argument out of range exception when adding seconds to creation date.", e);
                             else if (e is FormatException)
-                                throw new BEncodingException (String.Format ("Could not parse {0} into a number", keypair.Value), e);
+                                throw new BEncodingException ($"Could not parse {keypair.Value} into a number", e);
                             else
                                 throw;
                         }
@@ -804,8 +804,8 @@ namespace MonoTorrent
                                 if (collection.Count != 0)
                                     announceUrls.Add (collection);
                             } else {
-                                throw new BEncodingException (String.Format ("Non-BEncodedList found in announce-list (found {0})",
-                                    announces[j].GetType ()));
+                                throw new BEncodingException (
+                                    $"Non-BEncodedList found in announce-list (found {announces[j].GetType ()})");
                             }
                         }
                         break;

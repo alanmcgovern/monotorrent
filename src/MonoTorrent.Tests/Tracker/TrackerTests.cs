@@ -40,7 +40,7 @@ namespace MonoTorrent.Tracker
     [TestFixture]
     public class TrackerTests
     {
-        Uri uri = new Uri ("http://127.0.0.1:23456/");
+        readonly Uri uri = new Uri ("http://127.0.0.1:23456/");
         HttpTrackerListener listener;
         TrackerServer server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;

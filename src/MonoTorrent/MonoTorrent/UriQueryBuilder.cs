@@ -35,11 +35,11 @@ using System.Diagnostics;
 
 namespace MonoTorrent
 {
-    [DebuggerDisplay ("{ToUri ()}")]
+    [DebuggerDisplay ("{" + nameof(ToUri) + " ()}")]
     class UriQueryBuilder
     {
-        UriBuilder builder;
-        Dictionary<string, string> queryParams;
+        readonly UriBuilder builder;
+        readonly Dictionary<string, string> queryParams;
 
         public UriQueryBuilder (string uri)
             : this (new Uri (uri))

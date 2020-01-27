@@ -55,10 +55,10 @@ namespace MonoTorrent.Client.Connections
 
         class HttpRequestData
         {
-            public RequestMessage Request;
+            public readonly RequestMessage Request;
             public bool SentLength;
             public bool SentHeader;
-            public int TotalToReceive;
+            public readonly int TotalToReceive;
             public int TotalReceived;
 
             public bool Complete {
@@ -117,7 +117,7 @@ namespace MonoTorrent.Client.Connections
         public HttpConnection (Uri uri)
         {
             if (uri == null)
-                throw new ArgumentNullException ("uri");
+                throw new ArgumentNullException (nameof(uri));
             if (!string.Equals (uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) && !string.Equals (uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException ("Scheme is not http or https");
 
@@ -230,7 +230,7 @@ namespace MonoTorrent.Client.Connections
             // and then begin reading data from that stream.
             while (WebRequests.Count > 0) {
                 var r = WebRequests.Dequeue ();
-                using (var cts = new CancellationTokenSource (ConnectionTimeout))
+                using var cts = new CancellationTokenSource (ConnectionTimeout);
                 using (cts.Token.Register (() => r.Key.Abort ())) {
                     DataStreamResponse = await r.Key.GetResponseAsync ();
                     DataStream = DataStreamResponse.GetResponseStream ();

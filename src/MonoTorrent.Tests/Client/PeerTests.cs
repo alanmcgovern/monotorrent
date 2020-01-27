@@ -18,7 +18,7 @@ namespace MonoTorrent.Client
         {
             peers = new List<Peer> ();
             for (int i = 0; i < 10; i++) {
-                Uri uri = new Uri (string.Format ("ipv4://192.168.0.{0}:1", i));
+                Uri uri = new Uri ($"ipv4://192.168.0.{i}:1");
                 peers.Add (new Peer (new string (i.ToString ()[0], 20), uri));
             }
             peers.Add (new Peer (new string ('a', 20), new Uri ("ipv4://255.255.255.255:6530")));
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
             IList<Peer> p = Peer.Decode ((BEncodedString) "1234");
             Assert.AreEqual (0, p.Count, "#1");
 
-            byte[] b = new byte[] { 255, 255, 255, 255, 255, 255 };
+            byte[] b = { 255, 255, 255, 255, 255, 255 };
             p = Peer.Decode ((BEncodedString) b);
             Assert.AreEqual (1, p.Count, "#2");
 

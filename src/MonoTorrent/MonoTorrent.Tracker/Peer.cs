@@ -38,7 +38,7 @@ namespace MonoTorrent.Tracker
     public class Peer : IEquatable<Peer>
     {
         private IPEndPoint clientAddress;
-        private object dictionaryKey;
+        private readonly object dictionaryKey;
         private long downloaded;
         private long uploaded;
         private long left;

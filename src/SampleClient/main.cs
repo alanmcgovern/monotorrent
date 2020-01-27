@@ -141,16 +141,17 @@ namespace SampleClient
             foreach (TorrentManager manager in torrents) {
                 manager.PeerConnected += (o, e) => {
                     lock (listener)
-                        listener.WriteLine (string.Format ("Connection succeeded: {0}", e.Peer.Uri));
+                        listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
                 };
                 manager.ConnectionAttemptFailed += (o, e) => {
                     lock (listener)
-                        listener.WriteLine (string.Format ("Connection failed: {0} - {1} - {2}", e.Peer.ConnectionUri, e.Reason, e.Peer.AllowedEncryption));
+                        listener.WriteLine (
+                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason} - {e.Peer.AllowedEncryption}");
                 };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
                     lock (listener)
-                        listener.WriteLine (string.Format ("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
+                        listener.WriteLine ($"Piece Hashed: {e.PieceIndex} - {(e.HashPassed ? "Pass" : "Fail")}");
                 };
 
                 // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
@@ -161,7 +162,7 @@ namespace SampleClient
 
                 // Every time the tracker's state changes, this is fired
                 manager.TrackerManager.AnnounceComplete += (sender, e) => {
-                    listener.WriteLine (string.Format ("{0}: {1}", e.Successful, e.Tracker));
+                    listener.WriteLine ($"{e.Successful}: {e.Tracker}");
                 };
 
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
@@ -225,7 +226,7 @@ namespace SampleClient
         static void manager_PeersFound (object sender, PeersAddedEventArgs e)
         {
             lock (listener)
-                listener.WriteLine (string.Format ("Found {0} new peers and {1} existing peers", e.NewPeers, e.ExistingPeers));//throw new Exception("The method or operation is not implemented.");
+                listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
         }
 
         private static void AppendSeperator (StringBuilder sb)

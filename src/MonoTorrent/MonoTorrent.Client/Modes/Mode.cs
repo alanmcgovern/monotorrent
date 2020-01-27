@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.Modes
             else if (message is ExtensionMessage)
                 HandleGenericExtensionMessage (id, (ExtensionMessage) message);
             else
-                throw new MessageException (string.Format ("Unsupported message found: {0}", message.GetType ().Name));
+                throw new MessageException ($"Unsupported message found: {message.GetType ().Name}");
 
             if (id.QueueLength > 0 && !id.ProcessingQueue) {
                 id.ProcessingQueue = true;
@@ -330,7 +330,7 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceManager.AddPieceRequests (id);
         }
 
-        HashSet<PeerId> peers = new HashSet<PeerId> ();
+        readonly HashSet<PeerId> peers = new HashSet<PeerId> ();
         async void WritePieceAsync (PieceMessage message, Piece piece)
         {
             long offset = (long) message.PieceIndex * Manager.Torrent.PieceLength + message.StartOffset;

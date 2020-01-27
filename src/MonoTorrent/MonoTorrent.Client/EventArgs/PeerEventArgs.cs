@@ -30,7 +30,7 @@ namespace MonoTorrent.Client
 {
     class PeerEventArgs : TorrentEventArgs
     {
-        PeerId peer;
+        readonly PeerId peer;
 
         public PeerId Peer {
             get { return peer; }

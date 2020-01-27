@@ -41,8 +41,8 @@ namespace MonoTorrent
     class Cache<T> : ICache<T>
         where T : class, ICacheable, new()
     {
-        bool autoCreate;
-        Queue<T> cache;
+        readonly bool autoCreate;
+        readonly Queue<T> cache;
 
         public int Count {
             get { return cache.Count; }

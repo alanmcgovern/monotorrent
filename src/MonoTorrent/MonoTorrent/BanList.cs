@@ -62,13 +62,13 @@ namespace MonoTorrent.Client
 
         public override string ToString ()
         {
-            return string.Format ("{0},{1}", Start, End);
+            return $"{Start},{End}";
         }
     }
 
     public class BanList
     {
-        RangeCollection addresses = new RangeCollection ();
+        readonly RangeCollection addresses = new RangeCollection ();
 
         public void Add (IPAddress address)
         {

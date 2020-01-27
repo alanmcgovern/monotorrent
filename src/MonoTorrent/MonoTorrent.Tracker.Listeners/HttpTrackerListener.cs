@@ -44,7 +44,7 @@ namespace MonoTorrent.Tracker.Listeners
         string Prefix { get; }
 
         public HttpTrackerListener (IPAddress address, int port)
-            : this (string.Format ("http://{0}:{1}/announce/", address, port))
+            : this ($"http://{address}:{port}/announce/")
         {
 
         }
@@ -58,7 +58,7 @@ namespace MonoTorrent.Tracker.Listeners
         public HttpTrackerListener (string httpPrefix)
         {
             if (string.IsNullOrEmpty (httpPrefix))
-                throw new ArgumentNullException ("httpPrefix");
+                throw new ArgumentNullException (nameof(httpPrefix));
 
             Prefix = httpPrefix;
         }

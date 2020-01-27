@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private List<BEncodedValue> list;
+        private readonly List<BEncodedValue> list;
 
         #endregion
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.BEncoding
         public BEncodedList (IEnumerable<BEncodedValue> list)
         {
             if (list == null)
-                throw new ArgumentNullException ("list");
+                throw new ArgumentNullException (nameof(list));
 
             this.list = new List<BEncodedValue> (list);
         }

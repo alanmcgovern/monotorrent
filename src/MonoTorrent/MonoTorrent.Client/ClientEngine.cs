@@ -83,14 +83,14 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         internal static readonly BufferPool BufferPool = new BufferPool ();
-        private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        private readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private int tickCount;
-        private List<TorrentManager> torrents;
+        private readonly List<TorrentManager> torrents;
 
-        private RateLimiter uploadLimiter;
-        private RateLimiterGroup uploadLimiters;
-        private RateLimiter downloadLimiter;
-        private RateLimiterGroup downloadLimiters;
+        private readonly RateLimiter uploadLimiter;
+        private readonly RateLimiterGroup uploadLimiters;
+        private readonly RateLimiter downloadLimiter;
+        private readonly RateLimiterGroup downloadLimiters;
 
         #endregion
 

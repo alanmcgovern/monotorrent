@@ -78,8 +78,8 @@ namespace MonoTorrent.Tracker
     }
     public class Trackable : ITrackable
     {
-        private InfoHash infoHash;
-        private string name;
+        private readonly InfoHash infoHash;
+        private readonly string name;
 
 
         public Trackable (InfoHash infoHash, string name)
@@ -110,7 +110,7 @@ namespace MonoTorrent.Tracker
 
     class TrackerTestRig : IDisposable
     {
-        private Random r = new Random (1000);
+        private readonly Random r = new Random (1000);
 
         public CustomListener Listener;
         public TrackerServer Tracker;
@@ -143,9 +143,9 @@ namespace MonoTorrent.Tracker
             Peers = new List<PeerDetails> ();
             for (int i = 0; i < 100; i++) {
                 PeerDetails d = new PeerDetails ();
-                d.ClientAddress = IPAddress.Parse (string.Format ("127.0.{0}.2", i));
+                d.ClientAddress = IPAddress.Parse ($"127.0.{i}.2");
                 d.Downloaded = (int) (10000 * r.NextDouble ());
-                d.peerId = string.Format ("-----------------{0:0.000}", i);
+                d.peerId = $"-----------------{i:0.000}";
                 d.Port = r.Next (65000);
                 d.Remaining = r.Next (10000, 100000);
                 d.Uploaded = r.Next (10000, 100000);

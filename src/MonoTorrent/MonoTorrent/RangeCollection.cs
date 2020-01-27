@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
 
     class RangeCollection
     {
-        List<AddressRange> ranges = new List<AddressRange> ();
+        readonly List<AddressRange> ranges = new List<AddressRange> ();
 
         public int Count {
             get { return ranges.Count; }
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
             if (index == -1)
                 return false;
 
-            // An element in the collection has the same 'Start' as 'range' 
+            // An element in the collection has the same 'Start' as 'range'
             if (index >= 0)
                 return range.End <= ranges[index].End;
 

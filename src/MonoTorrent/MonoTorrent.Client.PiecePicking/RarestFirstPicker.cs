@@ -33,8 +33,8 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class RarestFirstPicker : PiecePicker
     {
-        Stack<BitField> rarest;
-        Stack<BitField> spares;
+        readonly Stack<BitField> rarest;
+        readonly Stack<BitField> spares;
         int length;
 
         BitField DequeueSpare ()

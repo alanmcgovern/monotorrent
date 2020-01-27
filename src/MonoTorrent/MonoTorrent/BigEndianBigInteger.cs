@@ -41,8 +41,8 @@ namespace MonoTorrent
         // at runtime even though they do not exist at compiletime. Let's do a quick reflection
         // check for the .ctor and ToByteArray overloads which allow us to ensure the byte[] is
         // always treated as big endian and unsigned.
-        readonly static Func<byte[], BigInteger> OptimisedCtor;
-        readonly static Func<BigInteger, byte[]> OptimisedToByteArray;
+        static readonly Func<byte[], BigInteger> OptimisedCtor;
+        static readonly Func<BigInteger, byte[]> OptimisedToByteArray;
 
         static BigEndianBigInteger ()
         {
