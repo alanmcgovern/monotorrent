@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -44,9 +44,9 @@ namespace MonoTorrent.Client.Messages
             byte[] encoded = m.Encode ();
 
             Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (PeerExchangeMessage.Support.Name); }), "#2");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTChat.Support.Name); }), "#3");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTMetadata.Support.Name); }), "#4");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
         }
 
         [Test]
@@ -56,9 +56,9 @@ namespace MonoTorrent.Client.Messages
             byte[] encoded = m.Encode ();
 
             Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
-            Assert.IsFalse (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (PeerExchangeMessage.Support.Name); }), "#2");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTChat.Support.Name); }), "#3");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTMetadata.Support.Name); }), "#4");
+            Assert.IsFalse (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
         }
 
         [Test]

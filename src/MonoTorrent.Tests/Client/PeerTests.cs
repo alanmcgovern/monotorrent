@@ -189,7 +189,7 @@ namespace MonoTorrent.Client
         {
             Assert.AreEqual (peers.Count, decoded.Count, "#1");
             foreach (Peer dec in decoded)
-                Assert.IsTrue (peers.Exists (delegate (Peer p) { return p.ConnectionUri.Equals (dec.ConnectionUri); }));
+                Assert.IsTrue (peers.Exists (p => p.ConnectionUri.Equals (dec.ConnectionUri)));
         }
     }
 }

@@ -177,7 +177,7 @@ namespace SampleClient
             while (running) {
                 if ((i++) % 10 == 0) {
                     sb.Remove (0, sb.Length);
-                    running = torrents.Exists (delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
+                    running = torrents.Exists (m => m.State != TorrentState.Stopped);
 
                     AppendFormat (sb, "Total Download Rate: {0:0.00}kB/sec", engine.TotalDownloadSpeed / 1024.0);
                     AppendFormat (sb, "Total Upload Rate:   {0:0.00}kB/sec", engine.TotalUploadSpeed / 1024.0);

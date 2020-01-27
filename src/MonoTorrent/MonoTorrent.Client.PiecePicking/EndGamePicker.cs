@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.PiecePicking
     // From this list we will make requests for all the blocks until the piece is complete.
     public class EndGamePicker : PiecePicker
     {
-        static readonly Predicate<Request> TimedOut = delegate (Request r) { return r.Block.RequestTimedOut; };
+        static readonly Predicate<Request> TimedOut = r => r.Block.RequestTimedOut;
 
         // Struct to link a request for a block to a peer
         // This way we can have multiple requests for the same block
@@ -178,17 +178,15 @@ namespace MonoTorrent.Client.PiecePicking
         {
             int length = b.Length;
             for (int i = b.FirstTrue (0, length); i != -1; i = b.FirstTrue (i + 1, length))
-                if (!pieces.Exists (delegate (Piece p) { return p.Index == i; }))
+                if (!pieces.Exists (p => p.Index == i))
                     pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
         }
 
         private bool AlreadyRequested (Block block, IPieceRequester peer)
         {
-            bool b = Requests.Exists (delegate (Request r) {
-                return r.Block.PieceIndex == block.PieceIndex &&
-                       r.Block.StartOffset == block.StartOffset &&
-                       r.Peer == peer;
-            });
+            bool b = Requests.Exists (r => r.Block.PieceIndex == block.PieceIndex &&
+                                           r.Block.StartOffset == block.StartOffset &&
+                                           r.Peer == peer);
             return b;
         }
 
@@ -200,17 +198,15 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
-            CancelWhere (delegate (Request r) {
-                return r.Block.PieceIndex == piece &&
-                       r.Block.StartOffset == startOffset &&
-                       r.Block.RequestLength == length &&
-                       peer == r.Peer;
-            }, false);
+            CancelWhere (r => r.Block.PieceIndex == piece &&
+                              r.Block.StartOffset == startOffset &&
+                              r.Block.RequestLength == length &&
+                              peer == r.Peer, false);
         }
 
         public override void CancelRequests (IPieceRequester peer)
         {
-            CancelWhere (delegate (Request r) { return r.Peer == peer; }, false);
+            CancelWhere (r => r.Peer == peer, false);
         }
 
         public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
@@ -226,12 +222,10 @@ namespace MonoTorrent.Client.PiecePicking
                 return false;
 
             // All the other requests for this block need to be cancelled.
-            CancelWhere (delegate (Request req) {
-                return req.Block.PieceIndex == pieceIndex &&
-                        req.Block.StartOffset == startOffset &&
-                        req.Block.RequestLength == length &&
-                        req.Peer != peer;
-            }, true);
+            CancelWhere (req => req.Block.PieceIndex == pieceIndex &&
+                                req.Block.StartOffset == startOffset &&
+                                req.Block.RequestLength == length &&
+                                req.Peer != peer, true);
 
             // Mark the block as received
             piece.Blocks[startOffset / Piece.BlockSize].Received = true;

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -99,9 +99,8 @@ namespace MonoTorrent.Tracker
             }
 
             foreach (Peer p in manager.GetPeers ()) {
-                PeerDetails d = rig.Peers.Find (delegate (PeerDetails details) {
-                    return details.ClientAddress == p.ClientAddress.Address && details.Port == p.ClientAddress.Port;
-                });
+                PeerDetails d = rig.Peers.Find (details =>
+                    details.ClientAddress == p.ClientAddress.Address && details.Port == p.ClientAddress.Port);
                 Assert.AreEqual (d.Downloaded, p.Downloaded, "#3");
                 Assert.AreEqual (d.peerId, p.PeerId, "#4");
                 Assert.AreEqual (d.Remaining, p.Remaining, "#5");
@@ -135,10 +134,8 @@ namespace MonoTorrent.Tracker
                 Assert.AreEqual (25, peers.Count, "#1");
 
                 foreach (Peer p in peers) {
-                    Assert.IsTrue (lists[i].Exists (delegate (PeerDetails d) {
-                        return d.Port == p.ClientAddress.Port &&
-                            d.ClientAddress == p.ClientAddress.Address;
-                    }));
+                    Assert.IsTrue (lists[i].Exists (d => d.Port == p.ClientAddress.Port &&
+                                                         d.ClientAddress == p.ClientAddress.Address));
                 }
             }
         }
@@ -208,9 +205,8 @@ namespace MonoTorrent.Tracker
                 int port = (int) ((BEncodedNumber) d["port"]).Number;
                 BEncodedString peerId = (BEncodedString) d["peer id"];
 
-                Assert.IsTrue (peers.Exists (delegate (PeerDetails pd) {
-                    return pd.ClientAddress.Equals (up) && pd.Port == port && pd.peerId.Equals (peerId);
-                }), "#2");
+                Assert.IsTrue (peers.Exists (pd =>
+                    pd.ClientAddress.Equals (up) && pd.Port == port && pd.peerId.Equals (peerId)), "#2");
             }
         }
 

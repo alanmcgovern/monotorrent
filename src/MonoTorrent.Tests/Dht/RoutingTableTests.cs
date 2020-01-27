@@ -68,7 +68,7 @@ namespace MonoTorrent.Dht
             var closest = table.GetClosest (table.LocalNode.Id).ToList ();
             Assert.AreEqual (8, closest.Count, "#1");
             for (int i = 0; i < 8; i++)
-                Assert.IsTrue (closest.Exists (delegate (Node node) { return nodes[i].Equals (closest[i].Id); }));
+                Assert.IsTrue (closest.Exists (node => nodes[i].Equals (closest[i].Id)));
         }
 
         private void CheckBuckets ()

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -65,7 +65,8 @@ namespace MonoTorrent.Client.Messages
 
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection
-            Register (ExtensionMessage.MessageId, delegate (ITorrentData manager) { throw new MessageException ("Shouldn't decode extension message this way"); });
+            Register (ExtensionMessage.MessageId,
+                arg => throw new MessageException ("Shouldn't decode extension message this way"));
         }
 
         private static void Register (byte identifier, Func<ITorrentData, PeerMessage> creator)

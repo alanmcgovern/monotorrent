@@ -392,9 +392,7 @@ namespace MonoTorrent.Client
             }
 
             // sort the list by BitTyrant ratio
-            sortedPeers.Sort (delegate (PeerId p1, PeerId p2) {
-                return p2.Ratio.CompareTo (p1.Ratio);
-            });
+            sortedPeers.Sort ((p1, p2) => p2.Ratio.CompareTo (p1.Ratio));
 
             //TODO: Make sure that lan-local peers always get unchoked. Perhaps an implementation like AZInstanceManager
             //(in com.aelitis.azureus.core.instancemanager)

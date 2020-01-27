@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -97,16 +97,13 @@ namespace MonoTorrent
 
             // If we're ignoring hidden files, remove all the files with the hidden attribute
             if (IgnoreHidden) {
-                files.RemoveAll (delegate (string file) {
-                    return (new FileInfo (file).Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
-                });
+                files.RemoveAll (file =>
+                    (new FileInfo (file).Attributes & FileAttributes.Hidden) == FileAttributes.Hidden);
             }
 
             // Turn the full path of each file into a full path + relative path. The relative path is the 'path'
             // which the file will have within the .torrent metadata.
-            Files = files.ConvertAll (delegate (string file) {
-                return new FileMapping (file, file.Substring (fullPath.Length));
-            });
+            Files = files.ConvertAll (file => new FileMapping (file, file.Substring (fullPath.Length)));
 
             // Set the torrent name (user can change it later)
             TorrentName = new DirectoryInfo (fullPath).Name;

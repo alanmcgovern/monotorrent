@@ -101,7 +101,7 @@ namespace MonoTorrent.Common
 
             VerifyCommonParts (torrent);
             for (int i = 0; i < torrent.Files.Length; i++)
-                Assert.IsTrue (files.Exists (delegate (TorrentFile f) { return f.Equals (torrent.Files[i]); }));
+                Assert.IsTrue (files.Exists (f => f.Equals (torrent.Files[i])));
         }
         [Test]
         public async Task NoTrackersTest ()

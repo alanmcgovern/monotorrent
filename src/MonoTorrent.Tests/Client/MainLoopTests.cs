@@ -32,7 +32,7 @@ namespace MonoTorrent.Client
         [Test]
         public void TaskTest ()
         {
-            Assert.AreEqual (5, loop.QueueWait (delegate { return 5; }), "#1");
+            Assert.AreEqual (5, loop.QueueWait (() => 5), "#1");
 
             ManualResetEvent handle = new ManualResetEvent (false);
             loop.QueueWait ((Action) delegate { handle.Set (); });
