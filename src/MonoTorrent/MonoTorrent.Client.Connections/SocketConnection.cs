@@ -206,8 +206,7 @@ namespace MonoTorrent.Client.Connections
                 if (!Socket.ReceiveAsync (args))
                     ReceiveTcs.SetResult (args.BytesTransferred);
             } finally {
-                if (control.HasValue)
-                    control.Value.Undo ();
+                control?.Undo ();
             }
 
             return ReceiveTcs.Task;
@@ -236,8 +235,7 @@ namespace MonoTorrent.Client.Connections
                 if (!Socket.SendAsync (args))
                     SendTcs.SetResult (count);
             } finally {
-                if (control.HasValue)
-                    control.Value.Undo ();
+                control?.Undo ();
             }
 
             return SendTcs.Task;

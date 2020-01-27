@@ -275,8 +275,7 @@ namespace MonoTorrent.Client
                 manager.PieceManager.Picker.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
 
-                if (id.PeerExchangeManager != null)
-                    id.PeerExchangeManager.Dispose ();
+                id.PeerExchangeManager?.Dispose ();
 
                 if (!id.AmChoking)
                     manager.UploadingTo--;

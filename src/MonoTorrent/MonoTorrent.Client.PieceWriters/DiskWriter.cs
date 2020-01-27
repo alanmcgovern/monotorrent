@@ -112,8 +112,7 @@ namespace MonoTorrent.Client.PieceWriters
         public void Flush (TorrentFile file)
         {
             Stream s = streamsBuffer.FindStream (file.FullPath);
-            if (s != null)
-                s.Flush ();
+            s?.Flush ();
         }
     }
 }
