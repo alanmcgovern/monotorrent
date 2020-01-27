@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -260,8 +260,7 @@ namespace MonoTorrent.Client
 
                 while (startOffset != endOffset) {
                     int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
-                    if (!await ReadAsync (manager, startOffset, hashBuffer, count).ConfigureAwait (false))
-                        return null;
+                    await ReadAsync (manager, startOffset, hashBuffer, count).ConfigureAwait (false);
                     startOffset += count;
                     hasher.TransformBlock (hashBuffer, 0, count, hashBuffer, 0);
                 }
@@ -343,18 +342,18 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async ReusableTask<bool> ReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        internal async ReusableTask ReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             Interlocked.Add (ref pendingReads, count);
             await IOLoop;
 
             if (ReadLimiter.TryProcess (count)) {
                 Interlocked.Add (ref pendingReads, -count);
-                return Read (manager, offset, buffer, count);
+                Read (manager, offset, buffer, count);
             } else {
                 var tcs = new ReusableTaskCompletionSource<bool> ();
                 ReadQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
-                return await tcs.Task;
+                await tcs.Task;
             }
         }
 
@@ -438,48 +437,120 @@ namespace MonoTorrent.Client
 
                 try {
                     Interlocked.Add (ref pendingReads, -io.count);
-                    var result = Read (io.manager, io.offset, io.buffer, io.count);
-                    io.tcs.SetResult (result);
+                    Read (io.manager, io.offset, io.buffer, io.count);
+                    io.tcs.SetResult (true);
                 } catch (Exception ex) {
                     io.tcs.SetException (ex);
                 }
             }
         }
 
-        bool Read (ITorrentData manager, long offset, byte[] buffer, int count)
+        // TODO: move it somewhere
+        static int BinarySearch<T, TKey> (IReadOnlyList<T> list, Func<T, TKey> keyProvider, TKey key)
+            where TKey : IComparable<TKey>
+        {
+            var left = -1;
+            var right = list.Count;
+            while (right - left > 1) {
+                var middle = left + (right - left) / 2;
+                var middleKey = keyProvider (list[middle]);
+                if (middleKey.CompareTo (key) <= 0) {
+                    left = middle;
+                } else {
+                    right = middle;
+                }
+            }
+
+            return left;
+        }
+
+
+        // TODO: looks like code like this is used more then one time. can be moved to method-extension.
+        static Func<TorrentFile, long> GetFileGlobalOffsetProvider (int pieceLength) =>
+            file => file.StartPieceIndex * pieceLength + file.StartPieceOffset;
+
+        // assumes that torrentData.Files are ordered by FileGlobalOffset
+        static int FindFileIndexByGlobalOffset (ITorrentData torrentData, long offset)
+        {
+            var files = torrentData.Files;
+            var pieceLength = torrentData.PieceLength;
+            var getFileGlobalOffset = GetFileGlobalOffsetProvider (pieceLength);
+            return BinarySearch (files, getFileGlobalOffset, offset);
+        }
+
+        // TODO: Enhance this cache
+        private (ITorrentData, int) fileIndexByGlobalOffsetSearchCache = (null, 0);
+
+        int FindFileIndexByGlobalOffsetCached (ITorrentData torrentData, long offset)
+        {
+            var files = torrentData.Files;
+            var pieceLength = torrentData.PieceLength;
+            var getFileGlobalOffset = GetFileGlobalOffsetProvider (pieceLength);
+
+            bool IsFileIndexValid (int testFileIndex)
+            {
+                if (0 > testFileIndex || testFileIndex >= files.Length) return false;
+                var file = files[testFileIndex];
+
+                var currentFileCheckRes = getFileGlobalOffset (file) <= offset;
+                if (!currentFileCheckRes) return false;
+
+                var nextFile = testFileIndex + 1 < files.Length ? files[testFileIndex + 1] : null;
+                var nextFileCheckRes = nextFile == null || offset < getFileGlobalOffset(nextFile);
+                if (!nextFileCheckRes) return false;
+
+                return true;
+            }
+
+            var (cacheTorrentData, cachedFileIndex) = fileIndexByGlobalOffsetSearchCache;
+            if (ReferenceEquals (cacheTorrentData, torrentData)) {
+                var deltaArr = new[] { 0, 1, -1 };
+                foreach (var delta in deltaArr) {
+                    var testFileIndex = cachedFileIndex + delta;
+                    if (!IsFileIndexValid (testFileIndex)) continue;
+
+                    fileIndexByGlobalOffsetSearchCache = (cacheTorrentData, testFileIndex);
+                    return testFileIndex;
+                }
+            }
+
+            var fileIndex = FindFileIndexByGlobalOffset (torrentData, offset);
+            fileIndexByGlobalOffsetSearchCache = (torrentData, fileIndex);
+            return fileIndex;
+        }
+
+        void Read (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             ReadMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            int i;
-            int totalRead = 0;
             var files = manager.Files;
 
-            for (i = 0; i < files.Length; i++) {
-                if (offset < files[i].Length)
-                    break;
+            var startFileIndex = FindFileIndexByGlobalOffsetCached (manager, offset);
+            var currentFileIndex = startFileIndex;
+            var fileGlobalOffsetProvider = GetFileGlobalOffsetProvider (manager.PieceLength);
+            var currentFileOffset = offset - fileGlobalOffsetProvider (files[currentFileIndex]);
+            var totalReadCount = 0;
+            while (true) {
+                var totalRemained = count - totalReadCount;
+                if (totalRemained == 0) break;
 
-                offset -= files[i].Length;
-            }
+                var currentFile = files[currentFileIndex];
+                var maxReadCount = (int) Math.Min(currentFile.Length - currentFileOffset, totalRemained);
 
-            while (totalRead < count) {
-                int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
-                fileToRead = Math.Min (fileToRead, Piece.BlockSize);
-
-                if (fileToRead != Writer.Read (files[i], offset, buffer, totalRead, fileToRead))
-                    return false;
-
-                offset += fileToRead;
-                totalRead += fileToRead;
-                if (offset >= files[i].Length) {
-                    offset = 0;
-                    i++;
+                var readCount = Writer.Read (currentFile, currentFileOffset, buffer, totalReadCount, maxReadCount);
+                if (readCount == 0) {
+                    currentFileOffset = 0;
+                    if (++currentFileIndex == files.Length) break;
                 }
+
+                currentFileOffset += readCount;
+                totalReadCount += readCount;
             }
 
-            return true;
+            fileIndexByGlobalOffsetSearchCache = (manager, currentFileIndex);
         }
 
         /// <summary>
@@ -529,30 +600,28 @@ namespace MonoTorrent.Client
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            int i;
-            int totalWritten = 0;
             var files = manager.Files;
 
-            for (i = 0; i < files.Length; i++) {
-                if (offset < files[i].Length)
-                    break;
+            var startFileIndex = FindFileIndexByGlobalOffsetCached (manager, offset);
+            var currentFileIndex = startFileIndex;
+            var fileGlobalOffsetProvider = GetFileGlobalOffsetProvider (manager.PieceLength);
+            var currentFileOffset = offset - fileGlobalOffsetProvider (files[currentFileIndex]);
+            var totalWrittenCount = 0;
+            while (true) {
+                var totalRemained = count - totalWrittenCount;
+                if (totalRemained == 0) break;
 
-                offset -= files[i].Length;
+                var currentFile = files[currentFileIndex];
+                var writeCount = (int) Math.Min (currentFile.Length - currentFileOffset, totalRemained);
+
+                Writer.Write (currentFile, currentFileOffset, buffer, totalWrittenCount, writeCount);
+                ++currentFileIndex;
+
+                currentFileOffset = 0;
+                totalWrittenCount += writeCount;
             }
 
-            while (totalWritten < count) {
-                int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
-                fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
-
-                Writer.Write (files[i], offset, buffer, totalWritten, fileToWrite);
-
-                offset += fileToWrite;
-                totalWritten += fileToWrite;
-                if (offset >= files[i].Length) {
-                    offset = 0;
-                    i++;
-                }
-            }
+            fileIndexByGlobalOffsetSearchCache = (manager, currentFileIndex);
         }
     }
 }

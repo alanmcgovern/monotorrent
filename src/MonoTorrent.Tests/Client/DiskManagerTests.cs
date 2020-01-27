@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -115,23 +115,39 @@ namespace MonoTorrent.Client
         EngineSettings settings;
         PieceWriter writer;
 
+        static TorrentFile[] CreateTorrentFiles (int blockSize, params (string, int)[] data)
+        {
+            var currentOffset = 0;
+            int GetPieceIndex (int offset) => offset / blockSize;
+            return data.Select (t => {
+                var (name, size) = t;
+                var startPieceIndex = GetPieceIndex (currentOffset);
+                var endPieceIndex = GetPieceIndex (currentOffset + size);
+                var startPieceOffset = currentOffset - startPieceIndex * blockSize;
+                currentOffset += size;
+                return new TorrentFile (name, size, name, startPieceIndex, endPieceIndex, startPieceOffset, null, null, null);
+            }).ToArray ();
+        }
+
         [SetUp]
         public void Setup ()
         {
             var random = new Random ();
-            var files = new[] {
-                new TorrentFile ("First",  Piece.BlockSize / 2),
-                new TorrentFile ("Second", Piece.BlockSize),
-                new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
-                new TorrentFile ("Fourth", Piece.BlockSize * 6 + Piece.BlockSize / 2),
-            };
+
+            const int blockSize = Piece.BlockSize;
+            const int pieceLength = blockSize * 3;
+            var files = CreateTorrentFiles (pieceLength,
+                ("First",  blockSize / 2),
+                ("Second", blockSize),
+                ("Third",  blockSize + blockSize / 2),
+                ("Fourth", blockSize * 6 + blockSize / 2)
+            );
 
             var fileBytes = files
                 .Select (f => { var b = new byte[f.Length]; random.NextBytes (b); return b; })
                 .ToArray ();
 
 
-            int pieceLength = Piece.BlockSize * 3;
             // Turn all the files into one byte array. Group the byte array into bittorrent pieces. Hash that piece.
             var hashes = fileBytes
                 .SelectMany (t => t)
@@ -249,11 +265,11 @@ namespace MonoTorrent.Client
         public async Task ReadAllData ()
         {
             var buffer = new byte[fileData.Size];
-            Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
+            await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length);
 
             int offset = 0;
             foreach (var data in fileData.Data) {
-                Assert.IsTrue (Toolbox.ByteMatch (buffer, offset, data, 0, data.Length), "#2");
+                Assert.IsTrue (Toolbox.ByteMatch (buffer, offset, data, 0, data.Length), "#1");
                 offset += data.Length;
             }
         }
@@ -269,26 +285,26 @@ namespace MonoTorrent.Client
         public async Task ReadPieceOne ()
         {
             var buffer = new byte[Piece.BlockSize];
-            Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
+            await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length);
 
             var data1 = fileData.Data[0];
             var data2 = fileData.Data[1];
 
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, 0, data1.Length), "#2");
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length, data2, 0, Piece.BlockSize - data1.Length), "#3");
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, 0, data1.Length), "#1");
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length, data2, 0, Piece.BlockSize - data1.Length), "#2");
         }
 
         [Test]
         public async Task ReadPieceTwo ()
         {
             var buffer = new byte[Piece.BlockSize];
-            Assert.IsTrue (await diskManager.ReadAsync (fileData, Piece.BlockSize, buffer, buffer.Length), "#1");
+            await diskManager.ReadAsync (fileData, Piece.BlockSize, buffer, buffer.Length);
 
             var data0 = fileData.Data[0];
             var data1 = fileData.Data[1];
             var data2 = fileData.Data[2];
 
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, data0.Length, data1.Length - data0.Length), "#2");
+            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, data0.Length, data1.Length - data0.Length), "#1");
             Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length - data0.Length, data2, 0, Piece.BlockSize - (data1.Length - data0.Length)), "#3");
         }
 
