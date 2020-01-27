@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -33,7 +33,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Tracker
 {
-    abstract class Tracker : ITracker
+    abstract class TrackerBase : ITracker
     {
         public bool CanAnnounce { get; protected set; }
         public bool CanScrape { get; protected set; }
@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.Tracker
         public Uri Uri { get; }
         public string WarningMessage { get; protected set; }
 
-        protected Tracker (Uri uri)
+        protected TrackerBase (Uri uri)
         {
             LastAnnounced = new ValueStopwatch ();
             MinUpdateInterval = TimeSpan.FromMinutes (3);

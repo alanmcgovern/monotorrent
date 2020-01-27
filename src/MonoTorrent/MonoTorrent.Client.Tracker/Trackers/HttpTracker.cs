@@ -14,10 +14,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,7 +39,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Tracker
 {
-    class HTTPTracker : Tracker
+    class HttpTracker : TrackerBase
     {
         static readonly Random random = new Random ();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds (10);
@@ -52,14 +52,19 @@ namespace MonoTorrent.Client.Tracker
 
         internal Uri ScrapeUri { get; }
 
-        public HTTPTracker (Uri announceUrl)
+        static string TryRemoveSuffix (string suffix, string s) =>
+            s.EndsWith (suffix, StringComparison.Ordinal) ? s.Substring (0, s.Length - suffix.Length) : null;
+
+        public HttpTracker (Uri announceUrl)
             : base (announceUrl)
         {
-            var uri = announceUrl.OriginalString;
-            if (uri.EndsWith ("/announce", StringComparison.OrdinalIgnoreCase))
-                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce".Length) + "/scrape");
-            else if (uri.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
-                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce/".Length) + "/scrape/");
+            var uriStr = announceUrl.OriginalString;
+            var uriStrWithoutEndSlash = TryRemoveSuffix ("/", uriStr);
+            var shouldAddEndSlash = uriStrWithoutEndSlash != null;
+            var announceUriBaseStr = TryRemoveSuffix ("/announce", uriStrWithoutEndSlash ?? uriStr);
+            ScrapeUri = announceUriBaseStr == null
+                ? null
+                : new Uri (announceUriBaseStr + "/scrape" + (shouldAddEndSlash ? "/" : ""));
 
             CanAnnounce = true;
             CanScrape = ScrapeUri != null;
@@ -74,7 +79,6 @@ namespace MonoTorrent.Client.Tracker
             // Clear out previous failure state
             FailureMessage = "";
             WarningMessage = "";
-            var peers = new List<Peer> ();
 
             var announceString = CreateAnnounceString (parameters);
             var request = (HttpWebRequest) WebRequest.Create (announceString);
@@ -96,7 +100,7 @@ namespace MonoTorrent.Client.Tracker
             try {
                 using var responseRegistration = cts.Token.Register (() => response.Close ());
                 using (response) {
-                    peers = await AnnounceReceivedAsync (request, response).ConfigureAwait (false);
+                    var peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
                     Status = TrackerState.Ok;
                     return peers;
                 }
@@ -183,47 +187,22 @@ namespace MonoTorrent.Client.Tracker
 
         static async Task<BEncodedDictionary> DecodeResponseAsync (WebResponse response)
         {
-            int bytesRead = 0;
-            int totalRead = 0;
-            byte[] buffer = new byte[2048];
-
-            using (MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256)) {
-                using (var reader = response.GetResponseStream ()) {
-                    // If there is a ContentLength, use that to decide how much we read.
-                    if (response.ContentLength > 0) {
-                        while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
-                            dataStream.Write (buffer, 0, bytesRead);
-                            totalRead += bytesRead;
-                            if (totalRead == response.ContentLength)
-                                break;
-                        }
-                    } else    // A compact response doesn't always have a content length, so we
-                      {       // just have to keep reading until we think we have everything.
-                        while ((bytesRead = await reader.ReadAsync (buffer, 0, buffer.Length).ConfigureAwait (false)) > 0)
-                            dataStream.Write (buffer, 0, bytesRead);
-                    }
-                }
-                dataStream.Seek (0, SeekOrigin.Begin);
-                return (BEncodedDictionary) BEncodedValue.Decode (dataStream);
+            var ms = new MemoryStream ();
+            using (var reader = response.GetResponseStream ()) {
+                await reader.CopyToAsync (ms);
             }
+
+            ms.Seek (0, SeekOrigin.Begin);
+            return (BEncodedDictionary) BEncodedValue.Decode (ms);
         }
 
-        public override bool Equals (object obj)
-        {
-            HTTPTracker tracker = obj as HTTPTracker;
-            if (tracker == null)
-                return false;
+        // If the announce URL matches, then CanScrape and the scrape URL must match too
+        public override bool Equals (object obj) =>
+            obj is HttpTracker trackerBase && Uri.Equals (trackerBase.Uri);
 
-            // If the announce URL matches, then CanScrape and the scrape URL must match too
-            return (Uri.Equals (tracker.Uri));
-        }
+        public override int GetHashCode () => Uri.GetHashCode ();
 
-        public override int GetHashCode ()
-        {
-            return Uri.GetHashCode ();
-        }
-
-        async Task<List<Peer>> AnnounceReceivedAsync (WebRequest request, WebResponse response)
+        async Task<List<Peer>> AnnounceReceivedAsync (WebResponse response)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -263,10 +242,10 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     case ("peers"):
-                        if (keypair.Value is BEncodedList)          // Non-compact response
-                            peers.AddRange (Peer.Decode ((BEncodedList) keypair.Value));
-                        else if (keypair.Value is BEncodedString)   // Compact response
-                            peers.AddRange (Peer.Decode ((BEncodedString) keypair.Value));
+                        if (keypair.Value is BEncodedList list)          // Non-compact response
+                            peers.AddRange (Peer.Decode (list));
+                        else if (keypair.Value is BEncodedString @string)   // Compact response
+                            peers.AddRange (Peer.Decode (@string));
                         break;
 
                     case ("failure reason"):
@@ -320,9 +299,6 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        public override string ToString ()
-        {
-            return Uri.ToString ();
-        }
+        public override string ToString () => Uri.ToString ();
     }
 }

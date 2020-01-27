@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -36,14 +36,14 @@ namespace MonoTorrent.Client.Tracker
     {
         static readonly Dictionary<string, Func<Uri, ITracker>> trackerTypes = new Dictionary<string, Func<Uri, ITracker>> {
             { "udp", uri => new UdpTracker (uri) },
-            { "http", uri => new HTTPTracker (uri) },
-            { "https", uri => new HTTPTracker (uri) },
+            { "http", uri => new HttpTracker (uri) },
+            { "https", uri => new HttpTracker (uri) },
         };
 
         public static void Register (string protocol, Type trackerType)
         {
             if (string.IsNullOrEmpty (protocol))
-                throw new ArgumentException ("cannot be null or empty", protocol);
+                throw new ArgumentException ("cannot be null or empty", nameof(protocol));
             if (trackerType == null)
                 throw new ArgumentNullException (nameof (trackerType));
 
@@ -60,14 +60,8 @@ namespace MonoTorrent.Client.Tracker
         {
             Check.Uri (uri);
 
-            try {
-                lock (trackerTypes) {
-                    if (trackerTypes.TryGetValue (uri.Scheme, out Func<Uri, ITracker> creator))
-                        return creator (uri);
-                    return null;
-                }
-            } catch {
-                return null; // Invalid tracker
+            lock (trackerTypes) {
+                return trackerTypes.TryGetValue (uri.Scheme, out Func<Uri, ITracker> creator) ? creator (uri) : null;
             }
         }
     }

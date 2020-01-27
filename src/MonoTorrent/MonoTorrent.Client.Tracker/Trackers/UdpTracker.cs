@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Client.Tracker
 {
-    class UdpTracker : Tracker
+    class UdpTracker : TrackerBase
     {
         Task<long> ConnectionIdTask { get; set; }
         ValueStopwatch LastConnected;
@@ -81,14 +82,15 @@ namespace MonoTorrent.Client.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 var connectionId = await ConnectionIdTask;
 
-                var infohashes = new List<byte[]> { parameters.InfoHash.Hash };
-                var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
+                var infoHashes = new List<byte[]> { parameters.InfoHash.Hash };
+                var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infoHashes);
                 var response = (ScrapeResponseMessage) await SendAndReceiveAsync (message);
 
                 if (response.Scrapes.Count == 1) {
-                    Complete = response.Scrapes[0].Seeds;
-                    Downloaded = response.Scrapes[0].Complete;
-                    Incomplete = response.Scrapes[0].Leeches;
+                    var scrape = response.Scrapes.Single ();
+                    Complete = scrape.Seeds;
+                    Downloaded = scrape.Complete;
+                    Incomplete = scrape.Leeches;
                 }
                 Status = TrackerState.Ok;
             } catch (OperationCanceledException e) {
@@ -113,7 +115,7 @@ namespace MonoTorrent.Client.Tracker
             var response = (ConnectResponseMessage) await SendAndReceiveAsync (message);
 
             // Reset the timer after we receive the response so we get maximum benefit from our
-            // 2 minute allowance to use the connection id. 
+            // 2 minute allowance to use the connection id.
             LastConnected.Restart ();
             return response.ConnectionId;
         }
@@ -123,8 +125,8 @@ namespace MonoTorrent.Client.Tracker
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (RetryDelay.TotalSeconds * MaxRetries));
 
             try {
-                using (var udpClient = new UdpClient (Uri.Host, Uri.Port))
-                using (cts.Token.Register (() => udpClient.Dispose ())) {
+                using var udpClient = new UdpClient (Uri.Host, Uri.Port);
+                using (cts.Token.Register (udpClient.Dispose)) {
                     SendAsync (udpClient, msg, cts.Token);
                     return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token);
                 }
@@ -171,9 +173,6 @@ namespace MonoTorrent.Client.Tracker
             });
         }
 
-        public override string ToString ()
-        {
-            return Uri.ToString ();
-        }
+        public override string ToString () => Uri.ToString ();
     }
 }

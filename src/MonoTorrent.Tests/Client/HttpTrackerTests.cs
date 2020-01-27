@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.Tracker
         HttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
         Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
-        HTTPTracker tracker;
+        HttpTracker tracker;
 
         InfoHash infoHash;
         BEncodedString peerId;
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.Tracker
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener (listener);
 
-            tracker = (HTTPTracker) TrackerFactory.Create (AnnounceUrl);
+            tracker = (HttpTracker) TrackerFactory.Create (AnnounceUrl);
 
             var infoHashBytes = new[] { ' ', '%', '&', '?', '&', '&', '?', '5', '1', '=' }
                         .Select (t => (byte) t);
@@ -111,25 +111,25 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public void CanAnnouceOrScrapeTest ()
         {
-            HTTPTracker t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/myurl"));
+            HttpTracker t = (HttpTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/myurl"));
             Assert.IsFalse (t.CanScrape, "#1");
             Assert.IsTrue (t.CanAnnounce, "#1b");
 
-            t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce/yeah"));
+            t = (HttpTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce/yeah"));
             Assert.IsFalse (t.CanScrape, "#2");
             Assert.IsTrue (t.CanAnnounce, "#2b");
 
-            t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce"));
+            t = (HttpTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce"));
             Assert.IsTrue (t.CanScrape, "#3");
             Assert.IsTrue (t.CanAnnounce, "#3b");
             Assert.AreEqual (t.ScrapeUri, new Uri ("http://mytracker.com/scrape"));
 
-            t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce/yeah/announce"));
+            t = (HttpTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce/yeah/announce"));
             Assert.IsTrue (t.CanScrape, "#4");
             Assert.IsTrue (t.CanAnnounce, "#4b");
             Assert.AreEqual ("http://mytracker.com/announce/yeah/scrape", t.ScrapeUri.ToString (), "#4c");
 
-            t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce/"));
+            t = (HttpTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/announce/"));
             Assert.IsTrue (t.CanScrape, "#5");
             Assert.IsTrue (t.CanAnnounce, "#5b");
             Assert.AreEqual (t.ScrapeUri, new Uri ("http://mytracker.com/scrape/"));
@@ -189,7 +189,7 @@ namespace MonoTorrent.Client.Tracker
         public async Task KeyTest ()
         {
             // Set a key which uses characters which need escaping.
-            tracker = (HTTPTracker) TrackerFactory.Create (AnnounceUrl);
+            tracker = (HttpTracker) TrackerFactory.Create (AnnounceUrl);
             tracker.Key = peerId;
 
             await tracker.AnnounceAsync (announceParams);
@@ -200,7 +200,7 @@ namespace MonoTorrent.Client.Tracker
         public async Task NullKeyTest ()
         {
             // Set a key which uses characters which need escaping.
-            tracker = (HTTPTracker) TrackerFactory.Create (AnnounceUrl);
+            tracker = (HttpTracker) TrackerFactory.Create (AnnounceUrl);
             tracker.Key = null;
 
             await tracker.AnnounceAsync (announceParams);
