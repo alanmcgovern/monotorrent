@@ -18,7 +18,7 @@ namespace MonoTorrent.Client
         private bool firstCall = true; //Indicates the first call to the TimePassed method
         private bool isDownloading = true; //Allows us to identify change in state from downloading to seeding
         private readonly TorrentManager owningTorrent; //The torrent to which this manager belongs
-        private PeerId optimisticUnchokePeer = null; //This is the peer we have optimistically unchoked, or null
+        private PeerId optimisticUnchokePeer; //This is the peer we have optimistically unchoked, or null
 
         //Lists of peers held by the choke/unchoke manager
         private readonly PeerList nascentPeers = new PeerList (PeerListType.NascentPeers); //Peers that have yet to be unchoked and downloading for a full review period

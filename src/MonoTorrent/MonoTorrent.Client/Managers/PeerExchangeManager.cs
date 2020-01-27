@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         private readonly PeerId id;
         private readonly List<Peer> addedPeers;
         private readonly List<Peer> droppedPeers;
-        private bool disposed = false;
+        private bool disposed;
         private const int MAX_PEERS = 50;
 
         TorrentManager Manager { get; }
