@@ -48,8 +48,8 @@ namespace MonoTorrent.Common
         public void SetUp ()
         {
             // The bool[] must be kept in sync with the byte[] constructor. They represent exactly the same thing.
-            initalValues = new bool[] { true, false, true, false, true, false, true, true, true, false, false, true };
-            secondValues = new bool[] { true, true, false, false, true, false, true, false, true, false, false, true };
+            initalValues = new[] { true, false, true, false, true, false, true, true, true, false, false, true };
+            secondValues = new[] { true, true, false, false, true, false, true, false, true, false, false, true };
             initialByteValues = new byte[] { 171, 144 };
             bf = new BitField (initalValues);
         }
@@ -139,7 +139,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray ()
         {
-            BitField first = new BitField (new bool[] { true, false, true, false, true, false, true, true, true, false, false });
+            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false });
             BitField second = new BitField (first.ToByteArray (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
@@ -149,7 +149,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray2 ()
         {
-            BitField first = new BitField (new bool[] { true, false, true, false, true, false, true, true, true, false, false, true });
+            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true });
             BitField second = new BitField (first.ToByteArray (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
@@ -159,7 +159,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray3 ()
         {
-            BitField first = new BitField (new bool[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
+            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
             BitField second = new BitField (first.ToByteArray (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
@@ -169,7 +169,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray4 ()
         {
-            BitField first = new BitField (new bool[] {  true, false, true, false, true, false, true, false,
+            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false,
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true, false});
@@ -182,7 +182,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray5 ()
         {
-            BitField first = new BitField (new bool[] {  true, false, true, false, true, false, true, false,
+            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false,
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true});
@@ -195,7 +195,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray6 ()
         {
-            BitField first = new BitField (new bool[] {  true, false, true, false, true, false, true, false, true,
+            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false, true,
                                                         false, false, true, false, true, false, true, false,
                                                         true, false, false, false, true, true, true, false, true,
                                                         true, false, false, true, false, false, true});

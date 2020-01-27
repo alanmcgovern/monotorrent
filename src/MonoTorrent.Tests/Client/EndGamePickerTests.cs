@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PiecePicking
                 .Set (36, false);
 
             picker = new EndGamePicker ();
-            pieces = new List<Piece> (new Piece[] {
+            pieces = new List<Piece> (new[] {
                 new Piece(4, torrentData.PieceLength, torrentData.Size),
                 new Piece(6, torrentData.PieceLength, torrentData.Size),
                 new Piece(24, torrentData.PieceLength, torrentData.Size),

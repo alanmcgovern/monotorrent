@@ -62,7 +62,7 @@ namespace MonoTorrent.Dht.Tasks
                 await SendFindNode (initialNodes);
             } else {
                 Node utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
-                await SendFindNode (new Node[] { utorrent });
+                await SendFindNode (new[] { utorrent });
             }
         }
 

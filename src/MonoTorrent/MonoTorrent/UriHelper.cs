@@ -168,7 +168,7 @@ namespace MonoTorrent
         static void WriteCharBytes (List<byte> buf, char ch, Encoding e)
         {
             if (ch > 255) {
-                foreach (byte b in e.GetBytes (new char[] { ch }))
+                foreach (byte b in e.GetBytes (new[] { ch }))
                     buf.Add (b);
             } else
                 buf.Add ((byte) ch);

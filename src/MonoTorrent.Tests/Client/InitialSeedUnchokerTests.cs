@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Advertise5 ()
         {
-            List<PeerId> peers = new List<PeerId> (new PeerId[] { rig.CreatePeer (true), rig.CreatePeer (true), rig.CreatePeer (true) });
+            List<PeerId> peers = new List<PeerId> (new[] { rig.CreatePeer (true), rig.CreatePeer (true), rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
             peers.Add (this.peer);
 
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
             // Check that peers which don't share only get a small number of pieces to share
             rig.Manager.Settings.UploadSlots = 1;
             unchoker.PeerDisconnected (peer);
-            List<PeerId> peers = new List<PeerId> (new PeerId[] { peer, rig.CreatePeer (true) });
+            List<PeerId> peers = new List<PeerId> (new[] { peer, rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
             unchoker.UnchokeReview ();
 
@@ -210,7 +210,7 @@ namespace MonoTorrent.Client
             unchoker.PeerDisconnected (this.peer);
             rig.Manager.Settings.UploadSlots = 1;
 
-            List<PeerId> peers = new List<PeerId> (new PeerId[] { this.peer, rig.CreatePeer (true), rig.CreatePeer (true) });
+            List<PeerId> peers = new List<PeerId> (new[] { this.peer, rig.CreatePeer (true), rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
 
             unchoker.UnchokeReview ();

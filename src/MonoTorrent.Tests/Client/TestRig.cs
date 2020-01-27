@@ -499,7 +499,7 @@ namespace MonoTorrent.Client
 
         static TorrentFile[] StandardMultiFile ()
         {
-            return new TorrentFile[] {
+            return new[] {
                 new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
                 new TorrentFile ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
                 new TorrentFile ("File3", (int)(StandardPieceSize () * 23.68)),
@@ -509,16 +509,16 @@ namespace MonoTorrent.Client
 
         static TorrentFile[] StandardSingleFile ()
         {
-            return new TorrentFile[] {
+            return new[] {
                  new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44))
             };
         }
 
         static string[][] StandardTrackers ()
         {
-            return new string[][] {
-                new string[] { "custom://tier1/announce1", "custom://tier1/announce2" },
-                new string[] { "custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3" },
+            return new[] {
+                new[] { "custom://tier1/announce1", "custom://tier1/announce2" },
+                new[] { "custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3" },
             };
         }
 

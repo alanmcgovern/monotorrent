@@ -431,7 +431,7 @@ namespace MonoTorrent
             BEncodedDictionary fileDict = new BEncodedDictionary ();
 
             BEncodedList filePath = new BEncodedList ();
-            string[] splittetPath = file.Path.Split (new char[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            string[] splittetPath = file.Path.Split (new[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string s in splittetPath)
                 filePath.Add (new BEncodedString (s));
 

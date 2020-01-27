@@ -123,7 +123,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestFastNotSeeder ()
         {
             peers[0].SupportsFastPeer = true;
-            peers[0].IsAllowedFastPieces.AddRange (new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peers[0].IsAllowedFastPieces.AddRange (new[] { 1, 2, 3, 5, 8, 13, 21 });
 
             peers[0].BitField.SetAll (true);
             peers[0].BitField[1] = false;
@@ -293,7 +293,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange (new int[] { 1, 2, 5, 55, 62, 235, 42624 });
+            peer.IsAllowedFastPieces.AddRange (new[] { 1, 2, 5, 55, 62, 235, 42624 });
             peer.BitField.SetAll (true);
             for (int i = 0; i < torrentData.BlocksPerPiece * 3; i++) {
                 var m = picker.PickPiece (peer, peer.BitField, peers);
@@ -326,7 +326,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange (new int[] { 1, 2, 3, 4 });
+            peer.IsAllowedFastPieces.AddRange (new[] { 1, 2, 3, 4 });
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (bitfield, torrentData, new List<Piece> ());
@@ -340,7 +340,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = false;
             peer.SupportsFastPeer = true;
-            peer.SuggestedPieces.AddRange (new int[] { 1, 2, 3, 4 });
+            peer.SuggestedPieces.AddRange (new[] { 1, 2, 3, 4 });
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (bitfield, torrentData, new List<Piece> ());
@@ -353,7 +353,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.SuggestedPieces.AddRange (new int[] { 1, 2, 5, 55, 62, 235, 42624 });
+            peer.SuggestedPieces.AddRange (new[] { 1, 2, 5, 55, 62, 235, 42624 });
             peer.BitField.SetAll (true);
             picker.PickPiece (peer, peer.BitField, peers);
         }

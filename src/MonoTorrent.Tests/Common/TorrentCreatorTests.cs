@@ -55,8 +55,8 @@ namespace MonoTorrent.Common
         {
             creator = new TestTorrentCreator ();
             announces = new RawTrackerTiers ();
-            announces.Add (new RawTrackerTier (new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
-            announces.Add (new RawTrackerTier (new string[] { "http://tier2.com/announce1", "http://tier2.com/announce2" }));
+            announces.Add (new RawTrackerTier (new[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
+            announces.Add (new RawTrackerTier (new[] { "http://tier2.com/announce1", "http://tier2.com/announce2" }));
 
             creator.Comment = Comment;
             creator.CreatedBy = CreatedBy;
@@ -64,7 +64,7 @@ namespace MonoTorrent.Common
             creator.Publisher = Publisher;
             creator.PublisherUrl = PublisherUrl;
             creator.SetCustom (CustomKey, CustomValue);
-            files = new List<TorrentFile> (new TorrentFile[] {
+            files = new List<TorrentFile> (new[] {
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File1"), (int)(PieceLength * 2.30), 0, 1),
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File2"), (int)(PieceLength * 36.5), 1, 3),
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir2"), "File3"), (int)(PieceLength * 3.17), 3, 12),
@@ -122,7 +122,7 @@ namespace MonoTorrent.Common
                                             files[0].StartPieceIndex,
                                             files[0].EndPieceIndex);
 
-            BEncodedDictionary dict = await creator.CreateAsync (f.Path, new List<TorrentFile> (new TorrentFile[] { f }));
+            BEncodedDictionary dict = await creator.CreateAsync (f.Path, new List<TorrentFile> (new[] { f }));
             Torrent torrent = Torrent.Load (dict);
 
             VerifyCommonParts (torrent);
@@ -153,7 +153,7 @@ namespace MonoTorrent.Common
             string name3 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File3");
             string name4 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File4");
             string name5 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File5");
-            files = new List<TorrentFile> (new TorrentFile[] {
+            files = new List<TorrentFile> (new[] {
                 new TorrentFile(name1, (long)(PieceLength * 200.30), 0, 1),
                 new TorrentFile(name2, (long)(PieceLength * 42000.5), 1, 3),
                 new TorrentFile(name3, (long)(PieceLength * 300.17), 3, 12),
