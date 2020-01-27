@@ -381,7 +381,6 @@ namespace MonoTorrent.Client
                 ExecuteReview ();
 
             List<PeerId> sortedPeers = new List<PeerId> ();
-            int uploadBandwidthUsed;
 
             foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers) {
                 if (connectedPeer.Connection != null) {
@@ -401,7 +400,7 @@ namespace MonoTorrent.Client
             // After this is complete, sort them and and unchoke until upload capcity is met
             // TODO: Should we consider some extra measures, like nascent peers, candidatePeers, optimisticUnchokeCandidates ETC.
 
-            uploadBandwidthUsed = 0;
+            int uploadBandwidthUsed = 0;
             foreach (PeerId pid in sortedPeers) {
                 // unchoke the top interested peers till we reach the max bandwidth allotted.
                 if (uploadBandwidthUsed < this.owningTorrent.Settings.MaximumUploadSpeed && pid.IsInterested) {

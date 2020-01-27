@@ -80,8 +80,6 @@ namespace MonoTorrent.Client.Messages
 
         public static PeerMessage DecodeMessage (byte[] buffer, int offset, int count, ITorrentData manager)
         {
-            PeerMessage message;
-
             if (count < 4)
                 throw new ArgumentException ("A message must contain a 4 byte length prefix");
 
@@ -98,7 +96,7 @@ namespace MonoTorrent.Client.Messages
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
-            message = creator (manager);
+            PeerMessage message = creator (manager);
             message.Decode (buffer, offset + 4 + 1, count - 4 - 1);
             return message;
         }

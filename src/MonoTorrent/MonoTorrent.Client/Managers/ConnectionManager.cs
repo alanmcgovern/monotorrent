@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -356,7 +356,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="manager">The torrent which the peer is associated with.</param>
         /// <param name="id">The peer whose message queue you want to start processing</param>
@@ -432,7 +432,6 @@ namespace MonoTorrent.Client
         bool TryConnect (TorrentManager manager)
         {
             int i;
-            Peer peer;
             if (!manager.Mode.CanAcceptConnections)
                 return false;
 
@@ -455,7 +454,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // Remove the peer from the lists so we can start connecting to him
-            peer = manager.Peers.AvailablePeers[i];
+            Peer peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt (i);
 
             if (ShouldBanPeer (peer))
