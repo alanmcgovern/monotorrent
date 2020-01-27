@@ -90,10 +90,7 @@ namespace MonoTorrent
                     continue;
                 }
 
-                if (ch == '+')
-                    WriteCharBytes (bytes, ' ', e);
-                else
-                    WriteCharBytes (bytes, ch, e);
+                WriteCharBytes (bytes, ch == '+' ? ' ' : ch, e);
             }
 
             return bytes.ToArray ();

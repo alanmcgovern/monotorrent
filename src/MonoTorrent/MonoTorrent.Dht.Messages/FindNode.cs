@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -61,10 +61,9 @@ namespace MonoTorrent.Dht.Messages
             FindNodeResponse response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
 
             Node targetNode = engine.RoutingTable.FindNode (Target);
-            if (targetNode != null)
-                response.Nodes = targetNode.CompactNode ();
-            else
-                response.Nodes = Node.CompactNode (engine.RoutingTable.GetClosest (Target));
+            response.Nodes = targetNode != null
+                ? targetNode.CompactNode ()
+                : Node.CompactNode (engine.RoutingTable.GetClosest (Target));
 
             engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
         }

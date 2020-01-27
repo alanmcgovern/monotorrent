@@ -335,10 +335,7 @@ namespace MonoTorrent.Client
 
         public void AddConnection (IConnection connection)
         {
-            if (connection.IsIncoming)
-                Listener.Add (null, connection);
-            else
-                Listener.Add (Manager, connection);
+            Listener.Add (connection.IsIncoming ? null : Manager, connection);
         }
         public PeerId CreatePeer (bool processingQueue)
         {
@@ -371,10 +368,9 @@ namespace MonoTorrent.Client
             }
             TorrentDict = CreateTorrent (piecelength, files, tier);
             Torrent = Torrent.Load (TorrentDict);
-            if (MetadataMode)
-                Manager = new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, new RawTrackerTiers ());
-            else
-                Manager = new TorrentManager (Torrent, savePath, new TorrentSettings ());
+            Manager = MetadataMode
+                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, new RawTrackerTiers ())
+                : new TorrentManager (Torrent, savePath, new TorrentSettings ());
             await Engine.Register (Manager);
         }
 

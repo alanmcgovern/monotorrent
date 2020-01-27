@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -72,10 +72,7 @@ namespace MonoTorrent
             // 'MO' for MonoTorrent then four digit version number
             string version =
                 $"{Math.Max (Version.Major, 0)}{Math.Max (Version.Minor, 0)}{Math.Max (Version.Build, 0):00}";
-            if (version.Length > 4)
-                version = version.Substring (0, 4);
-            else
-                version = version.PadRight (4, '0');
+            version = version.Length > 4 ? version.Substring (0, 4) : version.PadRight (4, '0');
             ClientVersion = $"{ClientIdentifier}{version}";
 
             // The DHT spec calls for a 2 char version identifier... urgh. I'm just going to

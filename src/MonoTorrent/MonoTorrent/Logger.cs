@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -97,10 +97,7 @@ namespace MonoTorrent
                 if (connection != null)
                     sb.Append (connection.EndPoint);
 
-                if (formatting != null)
-                    sb.Append (string.Format (message, formatting));
-                else
-                    sb.Append (message);
+                sb.Append (formatting != null ? string.Format (message, formatting) : message);
                 string s = sb.ToString ();
                 listeners.ForEach (delegate (TraceListener l) { l.WriteLine (s); });
             }

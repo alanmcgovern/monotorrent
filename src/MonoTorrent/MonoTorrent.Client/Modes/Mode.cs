@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -156,7 +156,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
-            // we just copy the one that is in the handshake. 
+            // we just copy the one that is in the handshake.
             if (BEncodedString.IsNullOrEmpty (id.Peer.PeerId))
                 id.Peer.PeerId = message.PeerId;
 
@@ -209,10 +209,9 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandleLtMetadataMessage (PeerId id, LTMetadata message)
         {
             if (message.MetadataMessageType == LTMetadata.eMessageType.Request) {
-                if (Manager.HasMetadata)
-                    id.Enqueue (new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.Metadata));
-                else
-                    id.Enqueue (new LTMetadata (id, LTMetadata.eMessageType.Reject, message.Piece));
+                id.Enqueue (Manager.HasMetadata
+                    ? new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.Metadata)
+                    : new LTMetadata (id, LTMetadata.eMessageType.Reject, message.Piece));
             }
         }
 
