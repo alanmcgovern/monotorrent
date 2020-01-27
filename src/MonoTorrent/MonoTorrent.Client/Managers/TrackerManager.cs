@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -129,18 +129,18 @@ namespace MonoTorrent.Client.Tracker
 
             var p = RequestFactory.CreateAnnounce (clientEvent);
 
-            foreach (var tuple in GetNextTracker (referenceTracker)) {
+            foreach ((TrackerTier trackerTier, ITracker tracker) in GetNextTracker (referenceTracker)) {
                 try {
                     // If we have not announced to this Tracker tier yet then we should replace the ClientEvent.
                     // But if we end up announcing to a different Tracker tier we may want to send the
                     // original/unmodified args.
                     var actualArgs = p;
-                    if (!tuple.Item1.SentStartedEvent)
+                    if (!trackerTier.SentStartedEvent)
                         actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
 
-                    var peers = await tuple.Item2.AnnounceAsync (actualArgs);
+                    var peers = await tracker.AnnounceAsync (actualArgs);
                     LastAnnounceSucceeded = true;
-                    AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tuple.Item2, true, peers.AsReadOnly ()));
+                    AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, true, peers.AsReadOnly ()));
                     return;
                 } catch {
                 }
