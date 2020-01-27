@@ -150,7 +150,7 @@ namespace MonoTorrent.Tracker
             TrackerId = trackerId;
 
             Listeners = new List<ITrackerListener> ();
-            MonoTorrent.Client.ClientEngine.MainLoop.QueueTimeout (TimeSpan.FromSeconds (1), delegate {
+            Client.ClientEngine.MainLoop.QueueTimeout (TimeSpan.FromSeconds (1), delegate {
                 Requests.Tick ();
                 return !Disposed;
             });

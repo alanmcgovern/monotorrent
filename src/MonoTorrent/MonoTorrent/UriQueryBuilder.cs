@@ -54,7 +54,7 @@ namespace MonoTorrent
 
         public UriQueryBuilder (Uri uri)
         {
-            builder = new System.UriBuilder (uri);
+            builder = new UriBuilder (uri);
             queryParams = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
             ParseParameters ();
         }

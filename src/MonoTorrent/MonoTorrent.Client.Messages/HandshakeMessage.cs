@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Member Variables
 
         public override int ByteLength {
-            get { return HandshakeMessage.HandshakeLength; }
+            get { return HandshakeLength; }
         }
 
         /// <summary>

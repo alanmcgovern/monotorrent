@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
             Peer p = new Peer (peerId, uri);
 
             byte[] compact = p.CompactPeer ();
-            Peer peer = Peer.Decode ((BEncoding.BEncodedString) compact)[0];
+            Peer peer = Peer.Decode ((BEncodedString) compact)[0];
             Assert.AreEqual (p.ConnectionUri, peer.ConnectionUri, "#1");
         }
 

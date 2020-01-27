@@ -204,27 +204,27 @@ namespace MonoTorrent.Client.Modes
             _ = Manager.StartAsync ();
         }
 
-        protected override void HandleAllowedFastMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.AllowedFastMessage message)
+        protected override void HandleAllowedFastMessage (PeerId id, Messages.FastPeer.AllowedFastMessage message)
         {
             // Disregard these when in metadata mode as we can't request regular pieces anyway
         }
 
-        protected override void HandleHaveAllMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveAllMessage message)
+        protected override void HandleHaveAllMessage (PeerId id, Messages.FastPeer.HaveAllMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveMessage (PeerId id, MonoTorrent.Client.Messages.Standard.HaveMessage message)
+        protected override void HandleHaveMessage (PeerId id, Messages.Standard.HaveMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveNoneMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveNoneMessage message)
+        protected override void HandleHaveNoneMessage (PeerId id, Messages.FastPeer.HaveNoneMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleInterestedMessage (PeerId id, MonoTorrent.Client.Messages.Standard.InterestedMessage message)
+        protected override void HandleInterestedMessage (PeerId id, Messages.Standard.InterestedMessage message)
         {
             // Nothing
         }

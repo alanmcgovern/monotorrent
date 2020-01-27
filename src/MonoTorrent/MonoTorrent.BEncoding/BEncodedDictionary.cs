@@ -104,7 +104,7 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e')) {
-                key = (BEncodedString) BEncodedValue.Decode (reader);         // keys have to be BEncoded strings
+                key = (BEncodedString) Decode (reader);         // keys have to be BEncoded strings
 
                 if (oldkey != null && oldkey.CompareTo (key) > 0)
                     if (strictDecoding)
@@ -112,7 +112,7 @@ namespace MonoTorrent.BEncoding
                             $"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 oldkey = key;
-                value = BEncodedValue.Decode (reader);                     // the value is a BEncoded value
+                value = Decode (reader);                     // the value is a BEncoded value
                 dictionary.Add (key, value);
             }
 
@@ -145,13 +145,13 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e')) {
-                key = (BEncodedString) BEncodedValue.Decode (reader);         // keys have to be BEncoded strings
+                key = (BEncodedString) Decode (reader);         // keys have to be BEncoded strings
 
                 if (reader.PeekByte () == 'd') {
                     value = new BEncodedDictionary ();
                     ((BEncodedDictionary) value).DecodeInternal (reader, key.Text.ToLower ().Equals ("info"));
                 } else
-                    value = BEncodedValue.Decode (reader);                     // the value is a BEncoded value
+                    value = Decode (reader);                     // the value is a BEncoded value
 
                 torrent.dictionary.Add (key, value);
             }

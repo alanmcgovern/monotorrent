@@ -77,12 +77,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        public void AddRange (IEnumerable<MonoTorrent.Client.AddressRange> ranges)
+        public void AddRange (IEnumerable<AddressRange> ranges)
         {
             List<AddressRange> list = new List<AddressRange> (ranges);
             list.Sort ((x, y) => x.Start.CompareTo (y.Start));
 
-            foreach (MonoTorrent.Client.AddressRange r in list)
+            foreach (AddressRange r in list)
                 Add (new AddressRange (r.Start, r.End));
         }
 

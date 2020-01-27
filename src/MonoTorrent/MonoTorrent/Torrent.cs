@@ -487,7 +487,7 @@ namespace MonoTorrent
             Check.Path (path);
 
             using Stream s = new FileStream (path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return Torrent.Load (s, path);
+            return Load (s, path);
         }
 
         /// <summary>
@@ -515,7 +515,7 @@ namespace MonoTorrent
             if (stream == null)
                 throw new ArgumentNullException (nameof(stream));
 
-            return Torrent.Load (stream, "");
+            return Load (stream, "");
         }
 
         /// <summary>
@@ -536,7 +536,7 @@ namespace MonoTorrent
                 throw new TorrentException ("Could not download .torrent file from the specified url", ex);
             }
 
-            return Torrent.Load (location);
+            return Load (location);
         }
 
         /// <summary>
@@ -551,7 +551,7 @@ namespace MonoTorrent
             Check.Path (path);
 
             try {
-                torrent = Torrent.Load (path);
+                torrent = Load (path);
             } catch {
                 torrent = null;
             }
@@ -571,7 +571,7 @@ namespace MonoTorrent
             Check.Data (data);
 
             try {
-                torrent = Torrent.Load (data);
+                torrent = Load (data);
             } catch {
                 torrent = null;
             }
@@ -591,7 +591,7 @@ namespace MonoTorrent
             Check.Stream (stream);
 
             try {
-                torrent = Torrent.Load (stream);
+                torrent = Load (stream);
             } catch {
                 torrent = null;
             }
@@ -613,7 +613,7 @@ namespace MonoTorrent
             Check.Location (location);
 
             try {
-                torrent = Torrent.Load (url, location);
+                torrent = Load (url, location);
             } catch {
                 torrent = null;
             }
@@ -633,7 +633,7 @@ namespace MonoTorrent
             Check.Path (path);
 
             try {
-                Torrent t = Torrent.LoadCore ((BEncodedDictionary) BEncodedDictionary.Decode (stream));
+                Torrent t = LoadCore ((BEncodedDictionary) BEncodedValue.Decode (stream));
                 t.torrentPath = path;
                 return t;
             } catch (BEncodingException ex) {

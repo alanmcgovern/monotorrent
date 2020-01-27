@@ -63,7 +63,7 @@ namespace TrackerApp
                         sb.Append ("&compact=");
                         sb.Append ("1");
 
-                        WebRequest req = HttpWebRequest.Create (sb.ToString ());
+                        WebRequest req = WebRequest.Create (sb.ToString ());
                         req.BeginGetResponse (delegate (IAsyncResult r) {
                             try {
                                 req.EndGetResponse (r).Close ();
@@ -74,7 +74,7 @@ namespace TrackerApp
                             }
                         }, null);
 
-                        System.Threading.Thread.Sleep (threadSleepTime);
+                        Thread.Sleep (threadSleepTime);
                     }
                 });
                 threads[i].Start ();

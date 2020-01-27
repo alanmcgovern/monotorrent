@@ -110,7 +110,7 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting");
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e'))
-                list.Add (BEncodedValue.Decode (reader));
+                list.Add (Decode (reader));
 
             if (reader.ReadByte () != 'e')                            // Remove the trailing 'e'
                 throw new BEncodingException ("Invalid data found. Aborting");

@@ -76,7 +76,7 @@ namespace MonoTorrent.Tracker
                 InfoHash infoHash = new InfoHash (new byte[20]);
                 r.NextBytes (infoHash.Hash);
                 TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
-                var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters (0, 0, 0, TorrentEvent.Started,
+                var parameters = new AnnounceParameters (0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new string ('1', 20), "", 1411, false);
                 await tier.Trackers[0].AnnounceAsync (parameters);
             }

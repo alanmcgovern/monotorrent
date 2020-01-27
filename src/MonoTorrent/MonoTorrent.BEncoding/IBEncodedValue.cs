@@ -65,7 +65,7 @@ namespace MonoTorrent.BEncoding
             where T : BEncodedValue
         {
             Check.Value (value);
-            return (T) BEncodedValue.Decode (value.Encode ());
+            return (T) Decode (value.Encode ());
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace MonoTorrent.BEncoding
                 throw new ArgumentOutOfRangeException (nameof(length));
 
             using RawReader reader = new RawReader (new MemoryStream (buffer, offset, length), strictDecoding);
-            return (BEncodedValue.Decode (reader));
+            return (Decode (reader));
         }
 
 
@@ -182,7 +182,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public static T Decode<T> (byte[] data) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode (data);
+            return (T) Decode (data);
         }
 
 
@@ -195,12 +195,12 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the byte[]</returns>
         public static T Decode<T> (byte[] buffer, int offset, int length) where T : BEncodedValue
         {
-            return BEncodedValue.Decode<T> (buffer, offset, length, true);
+            return Decode<T> (buffer, offset, length, true);
         }
 
         public static T Decode<T> (byte[] buffer, int offset, int length, bool strictDecoding) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode (buffer, offset, length, strictDecoding);
+            return (T) Decode (buffer, offset, length, strictDecoding);
         }
 
 
@@ -211,13 +211,13 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static T Decode<T> (Stream stream) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode (stream);
+            return (T) Decode (stream);
         }
 
 
         public static T Decode<T> (RawReader reader) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode (reader);
+            return (T) Decode (reader);
         }
 
 

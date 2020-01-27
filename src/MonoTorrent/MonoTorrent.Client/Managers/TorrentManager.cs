@@ -629,7 +629,7 @@ namespace MonoTorrent.Client
 
         internal void DhtAnnounce ()
         {
-            if (CanUseDht && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > MonoTorrent.Dht.DhtEngine.MinimumAnnounceInterval)) {
+            if (CanUseDht && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Dht.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
                 Engine?.DhtEngine.GetPeers (InfoHash);
