@@ -15,10 +15,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -57,7 +57,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx"), bld.ToUri (), "#3");
 
             bld = new UriQueryBuilder ("http://mytest.com/announce.aspx");
-            byte[] infoHash = new byte[6] { 0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc };
+            byte[] infoHash = new byte[] { 0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc };
             bld.Add ("key", UriHelper.UrlEncode (infoHash));
             Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (), "#4");
 
