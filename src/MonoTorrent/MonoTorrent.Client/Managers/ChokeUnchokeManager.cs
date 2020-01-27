@@ -291,7 +291,7 @@ namespace MonoTorrent.Client
                           //A peer is optimistically unchoking us.  Take the maximum of their current download rate and their download rate over the
                           //	review period since they might have only just unchoked us and we don't want to miss out on a good opportunity.  Upload
                           // rate is less important, so just take an average over the period.
-                          {
+                        {
                             //Add to peers that are candidates for unchoking based on their performance
                             candidatePeers.Add (connectedPeer);
                             //Calculate the latest up/downloadrate
