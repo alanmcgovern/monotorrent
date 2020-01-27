@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
         public void TestPartialData ()
         {
             partialData = true;
-            Assert.ThrowsAsync<WebException> (() => RecieveFirst ());
+            Assert.ThrowsAsync<WebException> (ReceiveFirst);
         }
 
         [Test]
@@ -160,11 +160,11 @@ namespace MonoTorrent.Client
             connection.ConnectionTimeout = TimeSpan.FromMilliseconds (100);
             listener.Stop ();
 
-            Assert.ThrowsAsync<WebException> (() => RecieveFirst ());
+            Assert.ThrowsAsync<WebException> (ReceiveFirst);
         }
 
         [Test]
-        public async Task RecieveFirst ()
+        public async Task ReceiveFirst ()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
             var receiveTask = NetworkIO.ReceiveAsync (connection, buffer, 0, 4, null, null, null);
@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.Dequeue ();
-            await RecieveFirst ();
+            await ReceiveFirst ();
             Assert.AreEqual (url, requestedUrl[0]);
         }
 
