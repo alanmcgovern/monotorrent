@@ -188,7 +188,7 @@ namespace SampleClient
                     AppendFormat (sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
 
                     foreach (TorrentManager manager in torrents) {
-                        AppendSeperator (sb);
+                        AppendSeparator (sb);
                         AppendFormat (sb, "State:           {0}", manager.State);
                         AppendFormat (sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
                         AppendFormat (sb, "Progress:           {0:0.00}", manager.Progress);
@@ -229,7 +229,7 @@ namespace SampleClient
                 listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
         }
 
-        private static void AppendSeperator (StringBuilder sb)
+        private static void AppendSeparator (StringBuilder sb)
         {
             AppendFormat (sb, "", null);
             AppendFormat (sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
