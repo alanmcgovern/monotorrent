@@ -307,7 +307,7 @@ namespace MonoTorrent.Client
             manager.Engine = this;
             manager.DownloadLimiters.Add (downloadLimiters);
             manager.UploadLimiters.Add (uploadLimiters);
-            if (DhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && DhtEngine.State != DhtState.Ready) {
+            if (DhtEngine != null && manager.Torrent?.Nodes != null && DhtEngine.State != DhtState.Ready) {
                 try {
                     DhtEngine.Add (manager.Torrent.Nodes);
                 } catch {
