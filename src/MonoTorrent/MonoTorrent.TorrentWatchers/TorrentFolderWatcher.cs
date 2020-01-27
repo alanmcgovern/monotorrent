@@ -91,8 +91,8 @@ namespace MonoTorrent.TorrentWatcher
                 this.watcher = new FileSystemWatcher (torrentDirectory);
                 this.watcher.Filter = this.watchFilter;
                 //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
-                this.watcher.Created += new FileSystemEventHandler (OnCreated);
-                this.watcher.Deleted += new FileSystemEventHandler (OnDeleted);
+                this.watcher.Created += OnCreated;
+                this.watcher.Deleted += OnDeleted;
             }
             this.watcher.EnableRaisingEvents = true;
         }

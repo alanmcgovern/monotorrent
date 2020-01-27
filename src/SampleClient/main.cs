@@ -123,7 +123,7 @@ namespace SampleClient
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add (manager);
-                    manager.PeersFound += new EventHandler<PeersAddedEventArgs> (manager_PeersFound);
+                    manager.PeersFound += manager_PeersFound;
                 }
             }
 
