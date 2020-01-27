@@ -14,10 +14,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -238,7 +238,7 @@ namespace MonoTorrent
             // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
             // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
             for (int i = 0; i < emptyBuffers.Capacity; i++)
-                await emptyBuffers.EnqueueAsync (new byte[256 * 1024]);
+                await emptyBuffers.EnqueueAsync (new byte[256 * 1024], token);
             token.ThrowIfCancellationRequested ();
 
             using var cancellation = token.Register (() => {
@@ -326,7 +326,7 @@ namespace MonoTorrent
             var next = synchronizer.Next;
             synchronizer.Disconnect ();
             next.SetResult (true);
-            await filledBuffers.EnqueueAsync ((null, 0, null));
+            await filledBuffers.EnqueueAsync ((null, 0, null), token);
         }
 
         async Task<byte[]> HashAllDataAsync (int startPiece, long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
