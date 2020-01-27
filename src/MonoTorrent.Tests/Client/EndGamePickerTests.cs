@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PiecePicking
                 .Set (36, false);
 
             picker = new EndGamePicker ();
-            pieces = new List<Piece> (new Piece[] {
+            pieces = new List<Piece> (new[] {
                 new Piece(4, torrentData.PieceLength, torrentData.Size),
                 new Piece(6, torrentData.PieceLength, torrentData.Size),
                 new Piece(24, torrentData.PieceLength, torrentData.Size),
@@ -116,10 +116,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             foreach (Piece p in pieces) {
                 for (int i = 0; i < p.BlockCount; i++) {
-                    if (i % 2 == 0)
-                        p.Blocks[i].CreateRequest (id);
-                    else
-                        p.Blocks[i].CreateRequest (other);
+                    p.Blocks[i].CreateRequest (i % 2 == 0 ? id : other);
                 }
             }
 
@@ -151,8 +148,7 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.AreEqual (2, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual (2, other.AmRequestingPiecesCount, "#1");
 
-            Piece piece;
-            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
+            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out Piece piece))
                 Assert.Fail ("I should've validated!");
 
             if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))

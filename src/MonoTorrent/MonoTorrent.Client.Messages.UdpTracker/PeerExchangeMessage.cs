@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             int written = offset;
 
             written += Write (buffer, offset, ByteLength - 4);
-            written += Write (buffer, written, ExtensionMessage.MessageId);
+            written += Write (buffer, written, MessageId);
             written += Write (buffer, written, ExtensionId);
             written += peerDict.Encode (buffer, written);
 
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             BEncodedString added = (BEncodedString) peerDict[AddedKey];
             int numPeers = added.TextBytes.Length / 6;
 
-            return String.Format ("PeerExchangeMessage: {0} peers", numPeers);
+            return $"PeerExchangeMessage: {numPeers} peers";
         }
     }
 }

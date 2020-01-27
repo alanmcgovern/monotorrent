@@ -42,11 +42,11 @@ namespace MonoTorrent.Client.PiecePicking
 
         BitField bitfield;
         bool inEndgame;
-        PiecePicker endgame;
+        readonly PiecePicker endgame;
         BitField endgameSelector;
         ITorrentData torrentData;
-        PiecePicker standard;
-        TorrentManager torrentManager;
+        readonly PiecePicker standard;
+        readonly TorrentManager torrentManager;
 
         public PiecePicker ActivePicker => inEndgame ? endgame : standard;
 

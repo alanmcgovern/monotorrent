@@ -47,8 +47,8 @@ namespace MonoTorrent.Client
                 BeyondFinalZero = offset + count;
             }
 
-            public long FileOffset;
-            public long BeyondFinalZero;
+            public readonly long FileOffset;
+            public readonly long BeyondFinalZero;
         }
 
         private const int MAX_PATH = 260;
@@ -72,32 +72,31 @@ namespace MonoTorrent.Client
                 // Create a file with the sparse flag enabled
 
                 uint bytesReturned = 0;
-                uint access = (uint) 0x40000000;         // GenericWrite
+                uint access = 0x40000000;         // GenericWrite
                 uint sharing = 0;                       // none
-                uint attributes = (uint) 0x00000080;     // Normal
-                uint creation = (uint) 1;                // Only create if new
+                uint attributes = 0x00000080;     // Normal
+                uint creation = 1;                // Only create if new
 
-                using (SafeFileHandle handle = CreateFileW (filename, access, sharing, IntPtr.Zero, creation, attributes, IntPtr.Zero)) {
-                    // If we couldn't create the file, bail out
-                    if (handle.IsInvalid)
-                        return;
+                using SafeFileHandle handle = CreateFileW (filename, access, sharing, IntPtr.Zero, creation, attributes, IntPtr.Zero);
+                // If we couldn't create the file, bail out
+                if (handle.IsInvalid)
+                    return;
 
-                    // If we can't set the sparse bit, bail out
-                    if (!DeviceIoControl (handle, FSCTL_SET_SPARSE, IntPtr.Zero, 0, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero))
-                        return;
+                // If we can't set the sparse bit, bail out
+                if (!DeviceIoControl (handle, FSCTL_SET_SPARSE, IntPtr.Zero, 0, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero))
+                    return;
 
-                    // Tell the filesystem to mark bytes 0 -> length as sparse zeros
-                    FILE_ZERO_DATA_INFORMATION data = new FILE_ZERO_DATA_INFORMATION (0, length);
-                    uint structSize = (uint) Marshal.SizeOf (data);
-                    IntPtr ptr = Marshal.AllocHGlobal ((int) structSize);
+                // Tell the filesystem to mark bytes 0 -> length as sparse zeros
+                FILE_ZERO_DATA_INFORMATION data = new FILE_ZERO_DATA_INFORMATION (0, length);
+                uint structSize = (uint) Marshal.SizeOf (data);
+                IntPtr ptr = Marshal.AllocHGlobal ((int) structSize);
 
-                    try {
-                        Marshal.StructureToPtr (data, ptr, false);
-                        DeviceIoControl (handle, FSCTL_SET_ZERO_DATA, ptr,
-                                        structSize, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero);
-                    } finally {
-                        Marshal.FreeHGlobal (ptr);
-                    }
+                try {
+                    Marshal.StructureToPtr (data, ptr, false);
+                    DeviceIoControl (handle, FSCTL_SET_ZERO_DATA, ptr,
+                        structSize, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero);
+                } finally {
+                    Marshal.FreeHGlobal (ptr);
                 }
             } catch (DllNotFoundException) {
                 SupportsSparse = false;
@@ -115,9 +114,7 @@ namespace MonoTorrent.Client
             StringBuilder volumeName = new StringBuilder (MAX_PATH);
             StringBuilder systemName = new StringBuilder (MAX_PATH);
 
-            uint fsFlags, serialNumber, maxComponent;
-
-            bool result = GetVolumeInformationW (volume, volumeName, MAX_PATH, out serialNumber, out maxComponent, out fsFlags, systemName, MAX_PATH);
+            bool result = GetVolumeInformationW (volume, volumeName, MAX_PATH, out uint serialNumber, out uint maxComponent, out uint fsFlags, systemName, MAX_PATH);
             return result && (fsFlags & FILE_SUPPORTS_SPARSE_FILES) == FILE_SUPPORTS_SPARSE_FILES;
         }
 

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -52,9 +52,9 @@ namespace MonoTorrent.Client
                 Timer = timer;
             }
 
-            public IConnection Connection;
-            public TorrentManager Manager;
-            public ValueStopwatch Timer;
+            public readonly IConnection Connection;
+            public readonly TorrentManager Manager;
+            public readonly ValueStopwatch Timer;
         }
 
         public event EventHandler<AttemptConnectionEventArgs> BanPeer;
@@ -275,8 +275,7 @@ namespace MonoTorrent.Client
                 manager.PieceManager.Picker.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
 
-                if (id.PeerExchangeManager != null)
-                    id.PeerExchangeManager.Dispose ();
+                id.PeerExchangeManager?.Dispose ();
 
                 if (!id.AmChoking)
                     manager.UploadingTo--;
@@ -292,7 +291,7 @@ namespace MonoTorrent.Client
                         manager.Peers.BannedPeers.Add (id.Peer);
                 }
             } catch (Exception ex) {
-                Logger.Log (null, "CleanupSocket Error " + ex.Message);
+                Logger.Log (null, $"CleanupSocket Error {ex.Message}");
             } finally {
                 manager.RaisePeerDisconnected (new PeerDisconnectedEventArgs (manager, id));
             }
@@ -357,7 +356,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="manager">The torrent which the peer is associated with.</param>
         /// <param name="id">The peer whose message queue you want to start processing</param>
@@ -433,7 +432,6 @@ namespace MonoTorrent.Client
         bool TryConnect (TorrentManager manager)
         {
             int i;
-            Peer peer;
             if (!manager.Mode.CanAcceptConnections)
                 return false;
 
@@ -456,7 +454,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // Remove the peer from the lists so we can start connecting to him
-            peer = manager.Peers.AvailablePeers[i];
+            Peer peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt (i);
 
             if (ShouldBanPeer (peer))

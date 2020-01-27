@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestFastSeeder ()
         {
             int[] allowedFast = { 1, 2, 3, 5, 8, 13, 21 };
-            ((PeerId) peers[0]).SupportsFastPeer = true;
+            peers[0].SupportsFastPeer = true;
             peers[0].IsAllowedFastPieces.AddRange ((int[]) allowedFast.Clone ());
 
             peers[0].BitField.SetAll (true); // Lets pretend he has everything
@@ -123,7 +123,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestFastNotSeeder ()
         {
             peers[0].SupportsFastPeer = true;
-            peers[0].IsAllowedFastPieces.AddRange (new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peers[0].IsAllowedFastPieces.AddRange (new[] { 1, 2, 3, 5, 8, 13, 21 });
 
             peers[0].BitField.SetAll (true);
             peers[0].BitField[1] = false;
@@ -293,11 +293,11 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange (new int[] { 1, 2, 5, 55, 62, 235, 42624 });
+            peer.IsAllowedFastPieces.AddRange (new[] { 1, 2, 5, 55, 62, 235, 42624 });
             peer.BitField.SetAll (true);
             for (int i = 0; i < torrentData.BlocksPerPiece * 3; i++) {
                 var m = picker.PickPiece (peer, peer.BitField, peers);
-                Assert.IsNotNull (m, "#1." + i.ToString ());
+                Assert.IsNotNull (m, "#1." + i);
                 Assert.IsTrue (m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5, "#2");
             }
 
@@ -308,16 +308,14 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void CompletePartialTest ()
         {
-            Piece piece;
             peer.IsChoking = false;
             peer.BitField.SetAll (true);
             var message = picker.PickPiece (peer, peer.BitField, peers);
-            Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece), "#1");
+            Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece), "#1");
             picker.CancelRequests (peer);
             for (int i = 0; i < piece.BlockCount; i++) {
                 message = picker.PickPiece (peer, peer.BitField, peers);
-                Piece p;
-                Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out p), "#2." + i);
+                Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece p), "#2." + i);
             }
             Assert.IsTrue (piece.AllBlocksRequested, "#3");
             Assert.IsTrue (piece.AllBlocksReceived, "#4");
@@ -328,7 +326,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange (new int[] { 1, 2, 3, 4 });
+            peer.IsAllowedFastPieces.AddRange (new[] { 1, 2, 3, 4 });
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (bitfield, torrentData, new List<Piece> ());
@@ -342,7 +340,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = false;
             peer.SupportsFastPeer = true;
-            peer.SuggestedPieces.AddRange (new int[] { 1, 2, 3, 4 });
+            peer.SuggestedPieces.AddRange (new[] { 1, 2, 3, 4 });
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (bitfield, torrentData, new List<Piece> ());
@@ -355,7 +353,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.SuggestedPieces.AddRange (new int[] { 1, 2, 5, 55, 62, 235, 42624 });
+            peer.SuggestedPieces.AddRange (new[] { 1, 2, 5, 55, 62, 235, 42624 });
             peer.BitField.SetAll (true);
             picker.PickPiece (peer, peer.BitField, peers);
         }

@@ -33,21 +33,17 @@ namespace MonoTorrent.Client
 {
     class TorrentFileStream : FileStream
     {
-        TorrentFile file;
-
-        public TorrentFile File {
-            get { return file; }
-        }
+        public TorrentFile File { get; }
 
         public string Path {
-            get { return file.FullPath; }
+            get { return File.FullPath; }
         }
 
 
         public TorrentFileStream (TorrentFile file, FileMode mode, FileAccess access, FileShare share)
             : base (file.FullPath, mode, access, share, 1)
         {
-            this.file = file;
+            this.File = file;
         }
     }
 }

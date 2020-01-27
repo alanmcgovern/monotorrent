@@ -35,13 +35,10 @@ namespace MonoTorrent.BEncoding
     public class RawReader : Stream
     {
         bool hasPeek;
-        Stream input;
-        byte[] peeked;
-        bool strictDecoding;
+        readonly Stream input;
+        readonly byte[] peeked;
 
-        public bool StrictDecoding {
-            get { return strictDecoding; }
-        }
+        public bool StrictDecoding { get; }
 
         public RawReader (Stream input)
             : this (input, true)
@@ -53,7 +50,7 @@ namespace MonoTorrent.BEncoding
         {
             this.input = input;
             this.peeked = new byte[1];
-            this.strictDecoding = strictDecoding;
+            this.StrictDecoding = strictDecoding;
         }
 
         public override bool CanRead {

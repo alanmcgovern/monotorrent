@@ -259,7 +259,7 @@ namespace MonoTorrent.Client
         internal int EstimatedDownloadRate {
             get {
                 int timeElapsed = (int) TyrantStartTime.Elapsed.TotalSeconds;
-                return (int) (timeElapsed == 0 ? 0 : ((long) HaveMessageEstimatedDownloadedBytes) / timeElapsed);
+                return (int) (timeElapsed == 0 ? 0 : HaveMessageEstimatedDownloadedBytes / timeElapsed);
             }
         }
 
@@ -268,8 +268,8 @@ namespace MonoTorrent.Client
         /// </summary>
         internal float Ratio {
             get {
-                float downloadRate = (float) GetDownloadRate ();
-                return downloadRate / (float) UploadRateForRecip;
+                float downloadRate = GetDownloadRate ();
+                return downloadRate / UploadRateForRecip;
             }
         }
 

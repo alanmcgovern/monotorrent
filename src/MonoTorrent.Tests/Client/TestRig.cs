@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         public bool FailAnnounce;
         public bool FailScrape;
 
-        List<Peer> peers = new List<Peer> ();
+        readonly List<Peer> peers = new List<Peer> ();
 
         public CustomTracker (Uri uri)
             : base (uri)
@@ -279,26 +279,21 @@ namespace MonoTorrent.Client
 
     class TestRig : IDisposable
     {
-        static Random Random = new Random (1000);
+        static readonly Random Random = new Random (1000);
         static int port = 10000;
-        private BEncodedDictionary torrentDict;
-        private ClientEngine engine;
-        private CustomListener listener;
-        private TorrentManager manager;
-        private Torrent torrent;
 
         public int BlocksPerPiece {
-            get { return torrent.PieceLength / (16 * 1024); }
+            get { return Torrent.PieceLength / (16 * 1024); }
         }
 
         public int Pieces {
-            get { return torrent.Pieces.Count; }
+            get { return Torrent.Pieces.Count; }
         }
 
         public int TotalBlocks {
             get {
                 int count = 0;
-                long size = torrent.Size;
+                long size = Torrent.Size;
                 while (size > 0) {
                     count++;
                     size -= Piece.BlockSize;
@@ -311,17 +306,11 @@ namespace MonoTorrent.Client
             get; set;
         }
 
-        public ClientEngine Engine {
-            get { return engine; }
-        }
+        public ClientEngine Engine { get; }
 
-        public CustomListener Listener {
-            get { return listener; }
-        }
+        public CustomListener Listener { get; }
 
-        public TorrentManager Manager {
-            get { return manager; }
-        }
+        public TorrentManager Manager { get; set; }
 
         public bool MetadataMode {
             get; private set;
@@ -331,27 +320,22 @@ namespace MonoTorrent.Client
             get; set;
         }
 
-        public Torrent Torrent {
-            get { return torrent; }
-        }
+        public Torrent Torrent { get; set; }
 
-        public BEncodedDictionary TorrentDict {
-            get { return torrentDict; }
-        }
+        public BEncodedDictionary TorrentDict { get; set; }
 
         internal CustomTracker Tracker {
-            get { return (CustomTracker) this.manager.TrackerManager.CurrentTracker; }
+            get { return (CustomTracker) this.Manager.TrackerManager.CurrentTracker; }
         }
 
 
-        string savePath; int piecelength; string[][] tier;
+        readonly string savePath;
+        readonly int piecelength;
+        readonly string[][] tier;
 
         public void AddConnection (IConnection connection)
         {
-            if (connection.IsIncoming)
-                listener.Add (null, connection);
-            else
-                listener.Add (manager, connection);
+            Listener.Add (connection.IsIncoming ? null : Manager, connection);
         }
         public PeerId CreatePeer (bool processingQueue)
         {
@@ -362,8 +346,8 @@ namespace MonoTorrent.Client
         {
             StringBuilder sb = new StringBuilder ();
             for (int i = 0; i < 20; i++)
-                sb.Append ((char) Random.Next ((int) 'a', (int) 'z'));
-            Peer peer = new Peer (sb.ToString (), new Uri ("ipv4://127.0.0.1:" + (port++)));
+                sb.Append ((char) Random.Next ('a', 'z'));
+            Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
             PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.ProcessingQueue = processingQueue;
@@ -372,28 +356,27 @@ namespace MonoTorrent.Client
 
         public void Dispose ()
         {
-            engine.Dispose ();
+            Engine.Dispose ();
         }
 
         public async Task RecreateManager ()
         {
-            if (manager != null) {
-                manager.Dispose ();
-                if (engine.Contains (manager))
-                    await engine.Unregister (manager);
+            if (Manager != null) {
+                Manager.Dispose ();
+                if (Engine.Contains (Manager))
+                    await Engine.Unregister (Manager);
             }
-            torrentDict = CreateTorrent (piecelength, files, tier);
-            torrent = Torrent.Load (torrentDict);
-            if (MetadataMode)
-                manager = new TorrentManager (torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, new RawTrackerTiers ());
-            else
-                manager = new TorrentManager (torrent, savePath, new TorrentSettings ());
-            await engine.Register (manager);
+            TorrentDict = CreateTorrent (piecelength, files, tier);
+            Torrent = Torrent.Load (TorrentDict);
+            Manager = MetadataMode
+                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, new RawTrackerTiers ())
+                : new TorrentManager (Torrent, savePath, new TorrentSettings ());
+            await Engine.Register (Manager);
         }
 
         #region Rig Creation
 
-        TorrentFile[] files;
+        readonly TorrentFile[] files;
         TestRig (string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
@@ -408,9 +391,9 @@ namespace MonoTorrent.Client
             this.tier = trackers;
             MetadataMode = metadataMode;
             MetadataPath = "metadataSave.torrent";
-            listener = new CustomListener ();
-            engine = new ClientEngine (new EngineSettings (), listener, writer);
-            engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
+            Listener = new CustomListener ();
+            Engine = new ClientEngine (new EngineSettings (), Listener, writer);
+            Engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
             Writer = writer;
 
             RecreateManager ().Wait ();
@@ -452,8 +435,8 @@ namespace MonoTorrent.Client
 
         internal static Torrent CreateMultiFileTorrent (TorrentFile[] files, int pieceLength)
         {
-            using (var rig = CreateMultiFile (files, pieceLength))
-                return rig.Torrent;
+            using var rig = CreateMultiFile (files, pieceLength);
+            return rig.Torrent;
         }
 
         static void AddFiles (BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
@@ -516,7 +499,7 @@ namespace MonoTorrent.Client
 
         static TorrentFile[] StandardMultiFile ()
         {
-            return new TorrentFile[] {
+            return new[] {
                 new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
                 new TorrentFile ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
                 new TorrentFile ("File3", (int)(StandardPieceSize () * 23.68)),
@@ -526,16 +509,16 @@ namespace MonoTorrent.Client
 
         static TorrentFile[] StandardSingleFile ()
         {
-            return new TorrentFile[] {
+            return new[] {
                  new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44))
             };
         }
 
         static string[][] StandardTrackers ()
         {
-            return new string[][] {
-                new string[] { "custom://tier1/announce1", "custom://tier1/announce2" },
-                new string[] { "custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3" },
+            return new[] {
+                new[] { "custom://tier1/announce1", "custom://tier1/announce2" },
+                new[] { "custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3" },
             };
         }
 
@@ -582,7 +565,7 @@ namespace MonoTorrent.Client
 
         internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength)
         {
-            var files = fileSizes.Select ((size, index) => new TorrentFile ("File " + index, size)).ToArray ();
+            var files = fileSizes.Select ((size, index) => new TorrentFile ($"File {index}", size)).ToArray ();
             return CreateMultiFileManager (files, pieceLength);
         }
 

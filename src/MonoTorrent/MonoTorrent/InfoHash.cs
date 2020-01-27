@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -35,7 +35,7 @@ namespace MonoTorrent
 {
     public class InfoHash : IEquatable<InfoHash>
     {
-        static Dictionary<char, byte> base32DecodeTable;
+        static readonly Dictionary<char, byte> base32DecodeTable;
 
         static InfoHash ()
         {
@@ -45,18 +45,14 @@ namespace MonoTorrent
                 base32DecodeTable[table[i]] = (byte) i;
         }
 
-        byte[] hash;
-
-        internal byte[] Hash {
-            get { return hash; }
-        }
+        internal byte[] Hash { get; }
 
         public InfoHash (byte[] infoHash)
         {
             Check.InfoHash (infoHash);
             if (infoHash.Length != 20)
                 throw new ArgumentException ("Infohash must be exactly 20 bytes long");
-            hash = (byte[]) infoHash.Clone ();
+            Hash = (byte[]) infoHash.Clone ();
         }
 
         public override bool Equals (object obj)
@@ -66,7 +62,7 @@ namespace MonoTorrent
 
         public bool Equals (byte[] other)
         {
-            return other == null || other.Length != 20 ? false : Toolbox.ByteMatch (Hash, other);
+            return other != null && other.Length == 20 && Toolbox.ByteMatch (Hash, other);
         }
 
         public bool Equals (InfoHash other)
@@ -83,14 +79,14 @@ namespace MonoTorrent
 
         public byte[] ToArray ()
         {
-            return (byte[]) hash.Clone ();
+            return (byte[]) Hash.Clone ();
         }
 
         public string ToHex ()
         {
             StringBuilder sb = new StringBuilder (40);
-            for (int i = 0; i < hash.Length; i++) {
-                string hex = hash[i].ToString ("X");
+            for (int i = 0; i < Hash.Length; i++) {
+                string hex = Hash[i].ToString ("X");
                 if (hex.Length != 2)
                     sb.Append ("0");
                 sb.Append (hex);
@@ -100,7 +96,7 @@ namespace MonoTorrent
 
         public override string ToString ()
         {
-            return BitConverter.ToString (hash);
+            return BitConverter.ToString (Hash);
         }
 
         public string UrlEncode ()

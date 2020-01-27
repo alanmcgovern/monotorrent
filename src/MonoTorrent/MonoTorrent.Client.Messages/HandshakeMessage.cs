@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class HandshakeMessage : PeerMessage
     {
         internal const int HandshakeLength = 68;
-        private readonly static byte[] ZeroedBits = new byte[8];
+        private static readonly byte[] ZeroedBits = new byte[8];
         private const byte ExtendedMessagingFlag = 0x10;
         private const byte FastPeersFlag = 0x04;
 
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Member Variables
 
         public override int ByteLength {
-            get { return HandshakeMessage.HandshakeLength; }
+            get { return HandshakeLength; }
         }
 
         /// <summary>
@@ -191,9 +191,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            HandshakeMessage msg = obj as HandshakeMessage;
-
-            if (msg == null)
+            if (!(obj is HandshakeMessage msg))
                 return false;
 
             if (InfoHash != msg.InfoHash)

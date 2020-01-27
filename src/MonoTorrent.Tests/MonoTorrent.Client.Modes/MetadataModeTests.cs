@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Modes
             var connection = pair.Incoming;
             PeerId id = new PeerId (new Peer ("", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
 
-            var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new InfoHash[] { rig.Manager.InfoHash });
+            var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new[] { rig.Manager.InfoHash });
             decryptor = id.Decryptor = result.Decryptor;
             encryptor = id.Encryptor = result.Encryptor;
         }
@@ -99,8 +99,7 @@ namespace MonoTorrent.Client.Modes
             PeerMessage m;
             var stream = new MemoryStream ();
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
-                LTMetadata metadata = m as LTMetadata;
-                if (metadata != null) {
+                if (m is LTMetadata metadata) {
                     if (metadata.MetadataMessageType == LTMetadata.eMessageType.Data) {
                         stream.Write (metadata.MetadataPiece, 0, metadata.MetadataPiece.Length);
                         length--;
@@ -144,7 +143,8 @@ namespace MonoTorrent.Client.Modes
         public async Task SendMetadata_ToFolder ()
         {
             await Setup (true, AppDomain.CurrentDomain.BaseDirectory);
-            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
+            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory,
+                $"{rig.Torrent.InfoHash.ToHex ()}.torrent"));
         }
 
         [Test]
@@ -203,8 +203,7 @@ namespace MonoTorrent.Client.Modes
             int length = (buffer.Length + 16383) / 16384;
             PeerMessage m;
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
-                LTMetadata metadata = m as LTMetadata;
-                if (metadata != null) {
+                if (m is LTMetadata metadata) {
                     if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request) {
                         metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, metadata.Piece, buffer);
                         await PeerIO.SendMessageAsync (connection, encryptor, metadata);

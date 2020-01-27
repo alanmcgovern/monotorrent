@@ -51,10 +51,10 @@ namespace MonoTorrent.Dht
                 Message = message;
                 SentAt = new ValueStopwatch ();
             }
-            public TaskCompletionSource<SendQueryEventArgs> CompletionSource;
-            public IPEndPoint Destination;
-            public DhtMessage Message;
-            public Node Node;
+            public readonly TaskCompletionSource<SendQueryEventArgs> CompletionSource;
+            public readonly IPEndPoint Destination;
+            public readonly DhtMessage Message;
+            public readonly Node Node;
             public ValueStopwatch SentAt;
         }
 
@@ -142,8 +142,7 @@ namespace MonoTorrent.Dht
             // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
             // and return an error message (if that's what the spec allows)
             try {
-                DhtMessage message;
-                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, 0, buffer.Length, false), out message))
+                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, 0, buffer.Length, false), out DhtMessage message))
                     ReceiveQueue.Enqueue (new KeyValuePair<IPEndPoint, DhtMessage> (endpoint, message));
             } catch (MessageException) {
                 // Caused by bad transaction id usually - ignore
@@ -198,8 +197,7 @@ namespace MonoTorrent.Dht
                 DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
                 WaitingResponse.Remove (v.Message.TransactionId);
 
-                if (v.CompletionSource != null)
-                    v.CompletionSource.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage) v.Message));
+                v.CompletionSource?.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage) v.Message));
                 RaiseMessageSent (v.Node, v.Destination, (QueryMessage) v.Message);
             }
 
@@ -233,22 +231,18 @@ namespace MonoTorrent.Dht
                 if (message is ResponseMessage response) {
                     response.Handle (Engine, node);
 
-                    if (query.CompletionSource != null)
-                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, response));
+                    query.CompletionSource?.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, response));
                     RaiseMessageSent (node, node.EndPoint, (QueryMessage) query.Message, response);
                 } else if (message is ErrorMessage error) {
-                    if (query.CompletionSource != null)
-                        query.CompletionSource.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, error));
+                    query.CompletionSource?.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, (QueryMessage) query.Message, error));
                     RaiseMessageSent (node, node.EndPoint, (QueryMessage) query.Message, error);
                 }
             } catch (MessageException) {
                 var error = new ErrorMessage (message.TransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
-                if (query.CompletionSource != null)
-                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage) query.Message, error));
+                query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage) query.Message, error));
             } catch (Exception) {
                 var error = new ErrorMessage (message.TransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
-                if (query.CompletionSource != null)
-                    query.CompletionSource.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage) query.Message, error));
+                query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage) query.Message, error));
                 EnqueueSend (error, null, source);
             }
         }

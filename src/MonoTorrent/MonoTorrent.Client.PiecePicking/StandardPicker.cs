@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
-        static readonly Predicate<Block> TimedOut = delegate (Block b) { return b.RequestTimedOut; };
+        static readonly Predicate<Block> TimedOut = b => b.RequestTimedOut;
 
         readonly SortList<Piece> requests;
 
@@ -62,17 +62,15 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
-            CancelWhere (delegate (Block b) {
-                return b.StartOffset == startOffset &&
-                       b.RequestLength == length &&
-                       b.PieceIndex == piece &&
-                       peer == b.RequestedOff;
-            });
+            CancelWhere (b => b.StartOffset == startOffset &&
+                              b.RequestLength == length &&
+                              b.PieceIndex == piece &&
+                              peer == b.RequestedOff);
         }
 
         public override void CancelRequests (IPieceRequester peer)
         {
-            CancelWhere (delegate (Block b) { return peer == b.RequestedOff; });
+            CancelWhere (b => peer == b.RequestedOff);
         }
 
         public override void CancelTimedOutRequests ()
@@ -94,7 +92,7 @@ namespace MonoTorrent.Client.PiecePicking
             }
 
             if (cancelled)
-                requests.RemoveAll (delegate (Piece p) { return p.NoBlocksRequested; });
+                requests.RemoveAll (p => p.NoBlocksRequested);
         }
 
         public override int CurrentReceivedCount ()

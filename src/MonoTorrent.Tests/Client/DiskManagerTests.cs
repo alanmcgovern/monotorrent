@@ -56,8 +56,8 @@ namespace MonoTorrent.Client
         class PieceWriter : IPieceWriter
         {
             public Dictionary<TorrentFile, byte[]> Data = new Dictionary<TorrentFile, byte[]> ();
-            public List<Tuple<TorrentFile, long, int>> ReadData = new List<Tuple<TorrentFile, long, int>> ();
-            public List<Tuple<TorrentFile, long, byte[]>> WrittenData = new List<Tuple<TorrentFile, long, byte[]>> ();
+            public readonly List<Tuple<TorrentFile, long, int>> ReadData = new List<Tuple<TorrentFile, long, int>> ();
+            public readonly List<Tuple<TorrentFile, long, byte[]>> WrittenData = new List<Tuple<TorrentFile, long, byte[]>> ();
 
             public List<TorrentFile> ClosedFiles = new List<TorrentFile> ();
             public List<TorrentFile> ExistsFiles = new List<TorrentFile> ();

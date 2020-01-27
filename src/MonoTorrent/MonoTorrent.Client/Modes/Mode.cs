@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.Modes
             else if (message is ExtensionMessage)
                 HandleGenericExtensionMessage (id, (ExtensionMessage) message);
             else
-                throw new MessageException (string.Format ("Unsupported message found: {0}", message.GetType ().Name));
+                throw new MessageException ($"Unsupported message found: {message.GetType ().Name}");
 
             if (id.QueueLength > 0 && !id.ProcessingQueue) {
                 id.ProcessingQueue = true;
@@ -156,7 +156,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
-            // we just copy the one that is in the handshake. 
+            // we just copy the one that is in the handshake.
             if (BEncodedString.IsNullOrEmpty (id.Peer.PeerId))
                 id.Peer.PeerId = message.PeerId;
 
@@ -192,7 +192,7 @@ namespace MonoTorrent.Client.Modes
                 if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaximumConnections)
                     return;
 
-                var newPeers = Peer.Decode ((BEncodedString) message.Added);
+                var newPeers = Peer.Decode (message.Added);
                 for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++) {
                     newPeers[i].IsSeeder = (message.AddedDotF[i] & 0x2) == 0x2;
                 }
@@ -209,10 +209,9 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandleLtMetadataMessage (PeerId id, LTMetadata message)
         {
             if (message.MetadataMessageType == LTMetadata.eMessageType.Request) {
-                if (Manager.HasMetadata)
-                    id.Enqueue (new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.Metadata));
-                else
-                    id.Enqueue (new LTMetadata (id, LTMetadata.eMessageType.Reject, message.Piece));
+                id.Enqueue (Manager.HasMetadata
+                    ? new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.Metadata)
+                    : new LTMetadata (id, LTMetadata.eMessageType.Reject, message.Piece));
             }
         }
 
@@ -330,7 +329,7 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceManager.AddPieceRequests (id);
         }
 
-        HashSet<PeerId> peers = new HashSet<PeerId> ();
+        readonly HashSet<PeerId> peers = new HashSet<PeerId> ();
         async void WritePieceAsync (PieceMessage message, Piece piece)
         {
             long offset = (long) message.PieceIndex * Manager.Torrent.PieceLength + message.StartOffset;
@@ -396,7 +395,8 @@ namespace MonoTorrent.Client.Modes
             // we will close the connection
             if (Manager.Torrent.Pieces.Count != (message.PieceIndex + 1))
                 if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
-                    throw new MessageException ("Illegal piece request received. Peer requested " + message.RequestLength.ToString () + " byte");
+                    throw new MessageException (
+                        $"Illegal piece request received. Peer requested {message.RequestLength} byte");
 
             PieceMessage m = new PieceMessage (message.PieceIndex, message.StartOffset, message.RequestLength);
 

@@ -123,7 +123,7 @@ namespace MonoTorrent.Client.Tracker
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (RetryDelay.TotalSeconds * MaxRetries));
 
             try {
-                using (var udpClient = new UdpClient (Uri.Host, Uri.Port))
+                using var udpClient = new UdpClient (Uri.Host, Uri.Port);
                 using (cts.Token.Register (() => udpClient.Dispose ())) {
                     SendAsync (udpClient, msg, cts.Token);
                     return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token);

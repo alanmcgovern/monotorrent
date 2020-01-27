@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class WebSeedTests
     {
-        Regex rangeMatcher = new Regex (@"(\d{1,10})-(\d{1,10})");
+        readonly Regex rangeMatcher = new Regex (@"(\d{1,10})-(\d{1,10})");
 
         bool partialData;
         public readonly int Count = 5;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
 
         PeerId id;
         RequestBundle requests;
-        int numberOfPieces = 50;
+        readonly int numberOfPieces = 50;
 
         [OneTimeSetUp]
         public void FixtureSetup ()
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
         public void TestPartialData ()
         {
             partialData = true;
-            Assert.ThrowsAsync<WebException> (() => RecieveFirst ());
+            Assert.ThrowsAsync<WebException> (ReceiveFirst);
         }
 
         [Test]
@@ -160,11 +160,11 @@ namespace MonoTorrent.Client
             connection.ConnectionTimeout = TimeSpan.FromMilliseconds (100);
             listener.Stop ();
 
-            Assert.ThrowsAsync<WebException> (() => RecieveFirst ());
+            Assert.ThrowsAsync<WebException> (ReceiveFirst);
         }
 
         [Test]
-        public async Task RecieveFirst ()
+        public async Task ReceiveFirst ()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
             var receiveTask = NetworkIO.ReceiveAsync (connection, buffer, 0, 4, null, null, null);
@@ -268,14 +268,14 @@ namespace MonoTorrent.Client
             }
 
             Uri baseUri = new Uri (ListenerURL);
-            baseUri = new Uri (baseUri, rig.Manager.Torrent.Name + "/");
+            baseUri = new Uri (baseUri, $"{rig.Manager.Torrent.Name}/");
             if (rig.Manager.Torrent.Files.Length > 1) {
                 Assert.AreEqual (new Uri (baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
                 Assert.AreEqual (new Uri (baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
             }
         }
 
-        private List<string> requestedUrl = new List<string> ();
+        private readonly List<string> requestedUrl = new List<string> ();
         private void GotContext (IAsyncResult result)
         {
             try {
@@ -297,11 +297,9 @@ namespace MonoTorrent.Client
 
                 long globalStart = 0;
                 bool exists = false;
-                string p;
-                if (rig.Manager.Torrent.Files.Length > 1)
-                    p = c.Request.RawUrl.Substring (10 + rig.Torrent.Name.Length + 1);
-                else
-                    p = c.Request.RawUrl.Substring (10);
+                string p = rig.Manager.Torrent.Files.Length > 1
+                    ? c.Request.RawUrl.Substring (10 + rig.Torrent.Name.Length + 1)
+                    : c.Request.RawUrl.Substring (10);
                 foreach (TorrentFile file in rig.Manager.Torrent.Files) {
                     if (file.Path.Replace ('\\', '/') != p) {
                         globalStart += file.Length;
@@ -345,7 +343,7 @@ namespace MonoTorrent.Client
         {
             rig.Dispose ();
             rig = TestRig.CreateSingleFile ();
-            rig.Torrent.GetRightHttpSeeds.Add (ListenerURL + "File1.exe");
+            rig.Torrent.GetRightHttpSeeds.Add ($"{ListenerURL}File1.exe");
 
             string url = rig.Torrent.GetRightHttpSeeds[0];
             connection = new HttpConnection (new Uri (url));
@@ -360,7 +358,7 @@ namespace MonoTorrent.Client
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.Dequeue ();
-            await RecieveFirst ();
+            await ReceiveFirst ();
             Assert.AreEqual (url, requestedUrl[0]);
         }
 

@@ -33,8 +33,8 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class IgnoringPicker : PiecePicker
     {
-        BitField Bitfield;
-        BitField Temp;
+        readonly BitField Bitfield;
+        readonly BitField Temp;
 
         public IgnoringPicker (BitField bitfield, PiecePicker picker)
             : base (picker)

@@ -34,8 +34,6 @@ namespace MonoTorrent.Client
         #region Private Fields
 
         private Block block;
-        private PeerId id;
-        private Piece piece;
 
         #endregion
 
@@ -53,17 +51,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The piece that the block belongs too
         /// </summary>
-        public Piece Piece {
-            get { return this.piece; }
-        }
+        public Piece Piece { get; set; }
 
 
         /// <summary>
         /// The peer who the block has been requested off
         /// </summary>
-        public PeerId ID {
-            get { return this.id; }
-        }
+        public PeerId ID { get; set; }
 
         #endregion
 
@@ -82,8 +76,8 @@ namespace MonoTorrent.Client
         private void Init (Block block, Piece piece, PeerId id)
         {
             this.block = block;
-            this.id = id;
-            this.piece = piece;
+            this.ID = id;
+            this.Piece = piece;
         }
 
         #endregion
@@ -93,10 +87,9 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            BlockEventArgs args = obj as BlockEventArgs;
-            return (args == null) ? false : this.piece.Equals (args.piece)
-                                         && this.id.Equals (args.id)
-                                         && this.block.Equals (args.block);
+            return (!(obj is BlockEventArgs args)) ? false : this.Piece.Equals (args.Piece)
+                                                             && this.ID.Equals (args.ID)
+                                                             && this.block.Equals (args.block);
         }
 
         public override int GetHashCode ()

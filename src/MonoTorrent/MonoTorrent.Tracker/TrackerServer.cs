@@ -150,7 +150,7 @@ namespace MonoTorrent.Tracker
             TrackerId = trackerId;
 
             Listeners = new List<ITrackerListener> ();
-            MonoTorrent.Client.ClientEngine.MainLoop.QueueTimeout (TimeSpan.FromSeconds (1), delegate {
+            Client.ClientEngine.MainLoop.QueueTimeout (TimeSpan.FromSeconds (1), delegate {
                 Requests.Tick ();
                 return !Disposed;
             });
@@ -219,9 +219,8 @@ namespace MonoTorrent.Tracker
             if (trackable == null)
                 throw new ArgumentNullException (nameof (trackable));
 
-            SimpleTorrentManager value;
             lock (Torrents)
-                if (Torrents.TryGetValue (trackable.InfoHash, out value))
+                if (Torrents.TryGetValue (trackable.InfoHash, out SimpleTorrentManager value))
                     return value;
 
             return null;
@@ -320,8 +319,7 @@ namespace MonoTorrent.Tracker
             var managers = new List<ITrackerItem> ();
             BEncodedDictionary files = new BEncodedDictionary ();
             for (int i = 0; i < e.InfoHashes.Count; i++) {
-                SimpleTorrentManager manager;
-                if (!Torrents.TryGetValue (e.InfoHashes[i], out manager))
+                if (!Torrents.TryGetValue (e.InfoHashes[i], out SimpleTorrentManager manager))
                     continue;
 
                 managers.Add (manager);
@@ -351,7 +349,7 @@ namespace MonoTorrent.Tracker
         {
             CheckDisposed ();
             if (listener == null)
-                throw new ArgumentNullException ("listener");
+                throw new ArgumentNullException (nameof(listener));
 
             listener.AnnounceReceived += ListenerReceivedAnnounce;
             listener.ScrapeReceived += ListenerReceivedScrape;
@@ -366,7 +364,7 @@ namespace MonoTorrent.Tracker
         {
             CheckDisposed ();
             if (trackable == null)
-                throw new ArgumentNullException ("trackable");
+                throw new ArgumentNullException (nameof(trackable));
 
             lock (Torrents)
                 Torrents.Remove (trackable.InfoHash);
@@ -376,7 +374,7 @@ namespace MonoTorrent.Tracker
         {
             CheckDisposed ();
             if (listener == null)
-                throw new ArgumentNullException ("listener");
+                throw new ArgumentNullException (nameof(listener));
 
             listener.AnnounceReceived -= ListenerReceivedAnnounce;
             listener.ScrapeReceived -= ListenerReceivedScrape;

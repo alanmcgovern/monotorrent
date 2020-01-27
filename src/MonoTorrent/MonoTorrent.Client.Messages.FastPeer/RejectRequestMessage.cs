@@ -116,8 +116,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         #region Overidden Methods
         public override bool Equals (object obj)
         {
-            RejectRequestMessage msg = obj as RejectRequestMessage;
-            if (msg == null)
+            if (!(obj is RejectRequestMessage msg))
                 return false;
 
             return (PieceIndex == msg.PieceIndex

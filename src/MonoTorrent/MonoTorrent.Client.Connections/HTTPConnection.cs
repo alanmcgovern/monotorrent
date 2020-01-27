@@ -55,10 +55,10 @@ namespace MonoTorrent.Client.Connections
 
         class HttpRequestData
         {
-            public RequestMessage Request;
+            public readonly RequestMessage Request;
             public bool SentLength;
             public bool SentHeader;
-            public int TotalToReceive;
+            public readonly int TotalToReceive;
             public int TotalReceived;
 
             public bool Complete {
@@ -117,7 +117,7 @@ namespace MonoTorrent.Client.Connections
         public HttpConnection (Uri uri)
         {
             if (uri == null)
-                throw new ArgumentNullException ("uri");
+                throw new ArgumentNullException (nameof(uri));
             if (!string.Equals (uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) && !string.Equals (uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException ("Scheme is not http or https");
 
@@ -230,7 +230,7 @@ namespace MonoTorrent.Client.Connections
             // and then begin reading data from that stream.
             while (WebRequests.Count > 0) {
                 var r = WebRequests.Dequeue ();
-                using (var cts = new CancellationTokenSource (ConnectionTimeout))
+                using var cts = new CancellationTokenSource (ConnectionTimeout);
                 using (cts.Token.Register (() => r.Key.Abort ())) {
                     DataStreamResponse = await r.Key.GetResponseAsync ();
                     DataStream = DataStreamResponse.GetResponseStream ();
@@ -255,8 +255,8 @@ namespace MonoTorrent.Client.Connections
             if (bundle.Count > 0) {
                 RequestMessages.AddRange (bundle);
                 // The RequestMessages are always sequential
-                RequestMessage start = (RequestMessage) bundle[0];
-                RequestMessage end = (RequestMessage) bundle[bundle.Count - 1];
+                RequestMessage start = bundle[0];
+                RequestMessage end = bundle[bundle.Count - 1];
                 CreateWebRequests (start, end);
             } else {
                 return count;
@@ -287,7 +287,7 @@ namespace MonoTorrent.Client.Connections
             Uri uri = Uri;
 
             if (Uri.OriginalString.EndsWith ("/"))
-                uri = new Uri (uri, Manager.Torrent.Name + "/");
+                uri = new Uri (uri, $"{Manager.Torrent.Name}/");
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server

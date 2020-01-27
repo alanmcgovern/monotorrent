@@ -109,7 +109,7 @@ namespace MonoTorrent.Tracker.Listeners
                             sendTask = ReceiveError (client, (ErrorMessage) request, result.RemoteEndPoint);
                             break;
                         default:
-                            throw new ProtocolException (string.Format ("Invalid udp message received: {0}", request.Action));
+                            throw new ProtocolException ($"Invalid udp message received: {request.Action}");
                     }
                 } catch (Exception e) {
                     Logger.Log (null, e.ToString ());
@@ -260,7 +260,7 @@ namespace MonoTorrent.Tracker.Listeners
 
         protected virtual Task ReceiveError (UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
         {
-            throw new ProtocolException (String.Format ("ErrorMessage from :{0}", remotePeer.Address));
+            throw new ProtocolException ($"ErrorMessage from :{remotePeer.Address}");
         }
     }
 }

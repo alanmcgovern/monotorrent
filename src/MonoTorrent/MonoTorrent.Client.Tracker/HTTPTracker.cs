@@ -57,9 +57,9 @@ namespace MonoTorrent.Client.Tracker
         {
             var uri = announceUrl.OriginalString;
             if (uri.EndsWith ("/announce", StringComparison.OrdinalIgnoreCase))
-                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce".Length) + "/scrape");
+                ScrapeUri = new Uri ($"{uri.Substring (0, uri.Length - "/announce".Length)}/scrape");
             else if (uri.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
-                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce/".Length) + "/scrape/");
+                ScrapeUri = new Uri ($"{uri.Substring (0, uri.Length - "/announce/".Length)}/scrape/");
 
             CanAnnounce = true;
             CanScrape = ScrapeUri != null;
@@ -112,9 +112,9 @@ namespace MonoTorrent.Client.Tracker
             string url = ScrapeUri.OriginalString;
             // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
             if (url.IndexOf ('?') == -1)
-                url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
+                url += $"?info_hash={parameters.InfoHash.UrlEncode ()}";
             else
-                url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
+                url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
 
             var request = (HttpWebRequest) WebRequest.Create (url);
             request.UserAgent = VersionInfo.ClientVersion;
@@ -187,31 +187,29 @@ namespace MonoTorrent.Client.Tracker
             int totalRead = 0;
             byte[] buffer = new byte[2048];
 
-            using (MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256)) {
-                using (var reader = response.GetResponseStream ()) {
-                    // If there is a ContentLength, use that to decide how much we read.
-                    if (response.ContentLength > 0) {
-                        while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
-                            dataStream.Write (buffer, 0, bytesRead);
-                            totalRead += bytesRead;
-                            if (totalRead == response.ContentLength)
-                                break;
-                        }
-                    } else    // A compact response doesn't always have a content length, so we
-                      {       // just have to keep reading until we think we have everything.
-                        while ((bytesRead = await reader.ReadAsync (buffer, 0, buffer.Length).ConfigureAwait (false)) > 0)
-                            dataStream.Write (buffer, 0, bytesRead);
+            using MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
+            using (var reader = response.GetResponseStream ()) {
+                // If there is a ContentLength, use that to decide how much we read.
+                if (response.ContentLength > 0) {
+                    while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
+                        dataStream.Write (buffer, 0, bytesRead);
+                        totalRead += bytesRead;
+                        if (totalRead == response.ContentLength)
+                            break;
                     }
+                } else    // A compact response doesn't always have a content length, so we
+                {       // just have to keep reading until we think we have everything.
+                    while ((bytesRead = await reader.ReadAsync (buffer, 0, buffer.Length).ConfigureAwait (false)) > 0)
+                        dataStream.Write (buffer, 0, bytesRead);
                 }
-                dataStream.Seek (0, SeekOrigin.Begin);
-                return (BEncodedDictionary) BEncodedValue.Decode (dataStream);
             }
+            dataStream.Seek (0, SeekOrigin.Begin);
+            return (BEncodedDictionary) BEncodedValue.Decode (dataStream);
         }
 
         public override bool Equals (object obj)
         {
-            HTTPTracker tracker = obj as HTTPTracker;
-            if (tracker == null)
+            if (!(obj is HTTPTracker tracker))
                 return false;
 
             // If the announce URL matches, then CanScrape and the scrape URL must match too

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
         {
             StreamReader reader = new StreamReader (stream);
 
-            string result = null;
+            string result;
             Regex r = new Regex (@"([0-9]{1,3}\.){3,3}[0-9]{1,3}");
 
             while ((result = reader.ReadLine ()) != null) {

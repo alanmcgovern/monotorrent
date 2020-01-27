@@ -83,8 +83,7 @@ namespace MonoTorrent.Client
 
         internal Piece PieceDataReceived (PeerId id, PieceMessage message)
         {
-            Piece piece;
-            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece)) {
+            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece)) {
                 id.LastBlockReceived.Restart ();
                 var block = piece.Blocks[message.StartOffset / Piece.BlockSize];
 

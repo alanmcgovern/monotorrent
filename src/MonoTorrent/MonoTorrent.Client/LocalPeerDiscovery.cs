@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
             Settings = settings;
 
             lock (Random)
-                Cookie = VersionInfo.ClientVersion + "-" + Random.Next (1, int.MaxValue);
+                Cookie = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
             BroadcastEndPoint = new IPEndPoint (IPAddress.Broadcast, MulticastPort);
             BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastIpAddress}:{MulticastPort}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
         }
@@ -112,16 +112,16 @@ namespace MonoTorrent.Client
 
             // If there's another application on the system which joined the bittorrent LPD broadcast group, we'll be unable to
             // join it and will have a PortInUse error. However, we can still *send* broadcast messages using any UDP client.
-            using (var sendingClient = new UdpClient ())
-                foreach (var nic in NetworkInterface.GetAllNetworkInterfaces ()) {
-                    try {
-                        //if (!nic.SupportsMulticast) continue;
-                        sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
-                        await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint);
-                    } catch {
-                        // If data can't be sent, just ignore the error
-                    }
+            using var sendingClient = new UdpClient ();
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces ()) {
+                try {
+                    //if (!nic.SupportsMulticast) continue;
+                    sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
+                    await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint);
+                } catch {
+                    // If data can't be sent, just ignore the error
                 }
+            }
         }
 
         async void ReceiveAsync (UdpClient client, CancellationToken token)
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
                         continue;
 
                     var infoHash = InfoHash.FromHex (hashString.Split (' ').Last ());
-                    var uri = new Uri ("ipv4://" + result.RemoteEndPoint.Address + ':' + portcheck);
+                    var uri = new Uri ($"ipv4://{result.RemoteEndPoint.Address}{':'}{portcheck}");
 
                     PeerFound?.InvokeAsync (this, new LocalPeerFoundEventArgs (infoHash, uri));
                 } catch (FileNotFoundException) {

@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Tracker
         TrackerServer server;
         HttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
-        Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
+        Uri AnnounceUrl => new Uri ($"{ListeningPrefix}announce");
         HTTPTracker tracker;
 
         InfoHash infoHash;

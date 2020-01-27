@@ -114,15 +114,17 @@ namespace MonoTorrent.Client
                 span = TimeSpan.FromMilliseconds (1);
             bool disposed = false;
             Timer timer = null;
-            SendOrPostCallback callback = state => {
+
+            void Callback (object state)
+            {
                 if (!disposed && !task ()) {
                     disposed = true;
                     timer.Dispose ();
                 }
-            };
+            }
 
             timer = new Timer (state => {
-                Post (callback, null);
+                Post (Callback, null);
             }, null, span, span);
         }
 

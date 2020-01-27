@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -44,9 +44,9 @@ namespace MonoTorrent.Client.Messages
             byte[] encoded = m.Encode ();
 
             Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (PeerExchangeMessage.Support.Name); }), "#2");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTChat.Support.Name); }), "#3");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTMetadata.Support.Name); }), "#4");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
         }
 
         [Test]
@@ -56,9 +56,9 @@ namespace MonoTorrent.Client.Messages
             byte[] encoded = m.Encode ();
 
             Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
-            Assert.IsFalse (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (PeerExchangeMessage.Support.Name); }), "#2");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTChat.Support.Name); }), "#3");
-            Assert.IsTrue (m.Supports.Exists (delegate (ExtensionSupport s) { return s.Name.Equals (LTMetadata.Support.Name); }), "#4");
+            Assert.IsFalse (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
+            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
         }
 
         [Test]
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Messages
             Assert.AreEqual (m.MaxRequests, decoded.MaxRequests, "#3");
             Assert.AreEqual (m.Version, decoded.Version, "#4");
             Assert.AreEqual (m.Supports.Count, decoded.Supports.Count, "#5");
-            m.Supports.ForEach (delegate (ExtensionSupport s) { Assert.IsTrue (decoded.Supports.Contains (s), "#6:" + s.ToString ()); });
+            m.Supports.ForEach (delegate (ExtensionSupport s) { Assert.IsTrue (decoded.Supports.Contains (s), "#6:" + s); });
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.Messages
         {
             // Decodes as: 192.168.0.1:100
             byte[] peer = { 192, 168, 0, 1, 100, 0 };
-            byte[] supports = { (byte) (1 | 2) }; // 1 == encryption, 2 == seeder
+            byte[] supports = { 1 | 2 }; // 1 == encryption, 2 == seeder
 
             byte id = PeerExchangeMessage.Support.MessageId;
             PeerExchangeMessage message = new PeerExchangeMessage (id, peer, supports, null);

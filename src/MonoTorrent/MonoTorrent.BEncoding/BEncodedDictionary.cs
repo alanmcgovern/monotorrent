@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -27,7 +27,6 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -40,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private SortedDictionary<BEncodedString, BEncodedValue> dictionary;
+        private readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
 
         #endregion
 
@@ -87,7 +86,7 @@ namespace MonoTorrent.BEncoding
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="reader"></param>
         internal override void DecodeInternal (RawReader reader)
@@ -105,16 +104,15 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e')) {
-                key = (BEncodedString) BEncodedValue.Decode (reader);         // keys have to be BEncoded strings
+                key = (BEncodedString) Decode (reader);         // keys have to be BEncoded strings
 
                 if (oldkey != null && oldkey.CompareTo (key) > 0)
                     if (strictDecoding)
-                        throw new BEncodingException (String.Format (
-                            "Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {0}, New key: {1}",
-                            oldkey, key));
+                        throw new BEncodingException (
+                            $"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 oldkey = key;
-                value = BEncodedValue.Decode (reader);                     // the value is a BEncoded value
+                value = Decode (reader);                     // the value is a BEncoded value
                 dictionary.Add (key, value);
             }
 
@@ -147,16 +145,13 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e')) {
-                key = (BEncodedString) BEncodedValue.Decode (reader);         // keys have to be BEncoded strings
+                key = (BEncodedString) Decode (reader);         // keys have to be BEncoded strings
 
                 if (reader.PeekByte () == 'd') {
                     value = new BEncodedDictionary ();
-                    if (key.Text.ToLower ().Equals ("info"))
-                        ((BEncodedDictionary) value).DecodeInternal (reader, true);
-                    else
-                        ((BEncodedDictionary) value).DecodeInternal (reader, false);
+                    ((BEncodedDictionary) value).DecodeInternal (reader, key.Text.ToLower ().Equals ("info"));
                 } else
-                    value = BEncodedValue.Decode (reader);                     // the value is a BEncoded value
+                    value = Decode (reader);                     // the value is a BEncoded value
 
                 torrent.dictionary.Add (key, value);
             }
@@ -195,16 +190,14 @@ namespace MonoTorrent.BEncoding
         #region Overridden Methods
         public override bool Equals (object obj)
         {
-            BEncodedValue val;
-            BEncodedDictionary other = obj as BEncodedDictionary;
-            if (other == null)
+            if (!(obj is BEncodedDictionary other))
                 return false;
 
             if (this.dictionary.Count != other.dictionary.Count)
                 return false;
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary) {
-                if (!other.TryGetValue (keypair.Key, out val))
+                if (!other.TryGetValue (keypair.Key, out BEncodedValue val))
                     return false;
 
                 if (!keypair.Value.Equals (val))

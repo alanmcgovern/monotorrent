@@ -121,33 +121,24 @@ namespace MonoTorrent
         static readonly Regex standard = new Regex (@"-(([A-Za-z\~]{2})\d{4})-*");
         static readonly Regex shadows = new Regex (@"(([A-Za-z]{1})\d{3})----*");
         static readonly Regex xbt = new Regex ("XBT/d/{3}");
-        private ClientApp client;
-        private BEncodedString peerId;
-        private string shortId;
 
         /// <summary>
         /// The name of the torrent software being used
         /// </summary>
         /// <value>The client.</value>
-        public ClientApp Client {
-            get { return this.client; }
-        }
+        public ClientApp Client { get; }
 
         /// <summary>
         /// The peer's ID
         /// </summary>
         /// <value>The peer id.</value>
-        internal BEncodedString PeerId {
-            get { return this.peerId; }
-        }
+        internal BEncodedString PeerId { get; }
 
         /// <summary>
         /// A shortened version of the peers ID
         /// </summary>
         /// <value>The short id.</value>
-        public string ShortId {
-            get { return this.shortId; }
-        }
+        public string ShortId { get; }
 
 
         /// <summary>
@@ -158,161 +149,161 @@ namespace MonoTorrent
         {
             Match m;
 
-            this.peerId = peerId;
+            this.PeerId = peerId;
             var idAsText = peerId.Text;
             if (idAsText.StartsWith ("-WebSeed-", System.StringComparison.Ordinal)) {
-                this.shortId = "WebSeed";
-                this.client = ClientApp.WebSeed;
+                this.ShortId = "WebSeed";
+                this.Client = ClientApp.WebSeed;
                 return;
             }
 
             #region Standard style peers
             if ((m = standard.Match (idAsText)).Success) {
-                this.shortId = m.Groups[1].Value;
+                this.ShortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value) {
                     case ("AG"):
                     case ("A~"):
-                        this.client = ClientApp.Ares;
+                        this.Client = ClientApp.Ares;
                         break;
                     case ("AR"):
-                        this.client = ClientApp.Artic;
+                        this.Client = ClientApp.Artic;
                         break;
                     case ("AT"):
-                        this.client = ClientApp.Artemis;
+                        this.Client = ClientApp.Artemis;
                         break;
                     case ("AX"):
-                        this.client = ClientApp.BitPump;
+                        this.Client = ClientApp.BitPump;
                         break;
                     case ("AV"):
-                        this.client = ClientApp.Avicora;
+                        this.Client = ClientApp.Avicora;
                         break;
                     case ("AZ"):
-                        this.client = ClientApp.Azureus;
+                        this.Client = ClientApp.Azureus;
                         break;
                     case ("BB"):
-                        this.client = ClientApp.BitBuddy;
+                        this.Client = ClientApp.BitBuddy;
                         break;
 
                     case ("BC"):
-                        this.client = ClientApp.BitComet;
+                        this.Client = ClientApp.BitComet;
                         break;
 
                     case ("BF"):
-                        this.client = ClientApp.Bitflu;
+                        this.Client = ClientApp.Bitflu;
                         break;
 
                     case ("BS"):
-                        this.client = ClientApp.BTSlave;
+                        this.Client = ClientApp.BTSlave;
                         break;
 
                     case ("BX"):
-                        this.client = ClientApp.BitTorrentX;
+                        this.Client = ClientApp.BitTorrentX;
                         break;
 
                     case ("CD"):
-                        this.client = ClientApp.EnhancedCTorrent;
+                        this.Client = ClientApp.EnhancedCTorrent;
                         break;
 
                     case ("CT"):
-                        this.client = ClientApp.CTorrent;
+                        this.Client = ClientApp.CTorrent;
                         break;
 
                     case ("DE"):
-                        this.client = ClientApp.DelugeTorrent;
+                        this.Client = ClientApp.DelugeTorrent;
                         break;
 
                     case ("EB"):
-                        this.client = ClientApp.EBit;
+                        this.Client = ClientApp.EBit;
                         break;
 
                     case ("ES"):
-                        this.client = ClientApp.ElectricSheep;
+                        this.Client = ClientApp.ElectricSheep;
                         break;
 
                     case ("KT"):
-                        this.client = ClientApp.KTorrent;
+                        this.Client = ClientApp.KTorrent;
                         break;
 
                     case ("LP"):
-                        this.client = ClientApp.Lphant;
+                        this.Client = ClientApp.Lphant;
                         break;
 
                     case ("lt"):
                     case ("LT"):
-                        this.client = ClientApp.LibTorrent;
+                        this.Client = ClientApp.LibTorrent;
                         break;
 
                     case ("MP"):
-                        this.client = ClientApp.MooPolice;
+                        this.Client = ClientApp.MooPolice;
                         break;
 
                     case ("MO"):
-                        this.client = ClientApp.MonoTorrent;
+                        this.Client = ClientApp.MonoTorrent;
                         break;
 
                     case ("MT"):
-                        this.client = ClientApp.MoonlightTorrent;
+                        this.Client = ClientApp.MoonlightTorrent;
                         break;
 
                     case ("qB"):
-                        this.client = ClientApp.qBittorrent;
+                        this.Client = ClientApp.qBittorrent;
                         break;
 
                     case ("QT"):
-                        this.client = ClientApp.Qt4Torrent;
+                        this.Client = ClientApp.Qt4Torrent;
                         break;
 
                     case ("RT"):
-                        this.client = ClientApp.Retriever;
+                        this.Client = ClientApp.Retriever;
                         break;
 
                     case ("SB"):
-                        this.client = ClientApp.Swiftbit;
+                        this.Client = ClientApp.Swiftbit;
                         break;
 
                     case ("SS"):
-                        this.client = ClientApp.SwarmScope;
+                        this.Client = ClientApp.SwarmScope;
                         break;
 
                     case ("SZ"):
-                        this.client = ClientApp.Shareaza;
+                        this.Client = ClientApp.Shareaza;
                         break;
 
                     case ("TN"):
-                        this.client = ClientApp.TorrentDotNET;
+                        this.Client = ClientApp.TorrentDotNET;
                         break;
 
                     case ("TR"):
-                        this.client = ClientApp.Transmission;
+                        this.Client = ClientApp.Transmission;
                         break;
 
                     case ("TS"):
-                        this.client = ClientApp.Torrentstorm;
+                        this.Client = ClientApp.Torrentstorm;
                         break;
 
                     case ("UL"):
-                        this.client = ClientApp.uLeecher;
+                        this.Client = ClientApp.uLeecher;
                         break;
 
                     case ("UT"):
-                        this.client = ClientApp.uTorrent;
+                        this.Client = ClientApp.uTorrent;
                         break;
 
                     case "UW":
-                        this.client = ClientApp.uTorrentWeb;
+                        this.Client = ClientApp.uTorrentWeb;
                         break;
 
                     case ("XT"):
-                        this.client = ClientApp.XanTorrent;
+                        this.Client = ClientApp.XanTorrent;
                         break;
 
                     case ("ZT"):
-                        this.client = ClientApp.ZipTorrent;
+                        this.Client = ClientApp.ZipTorrent;
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine ("Unsupported standard style: " + m.Groups[2].Value);
-                        client = ClientApp.Unknown;
+                        System.Diagnostics.Trace.WriteLine ($"Unsupported standard style: {m.Groups[2].Value}");
+                        Client = ClientApp.Unknown;
                         break;
                 }
                 return;
@@ -321,34 +312,34 @@ namespace MonoTorrent
 
             #region Shadows Style
             if ((m = shadows.Match (idAsText)).Success) {
-                this.shortId = m.Groups[1].Value;
+                this.ShortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value) {
                     case ("A"):
-                        this.client = ClientApp.ABC;
+                        this.Client = ClientApp.ABC;
                         break;
 
                     case ("O"):
-                        this.client = ClientApp.OspreyPermaseed;
+                        this.Client = ClientApp.OspreyPermaseed;
                         break;
 
                     case ("R"):
-                        this.client = ClientApp.Tribler;
+                        this.Client = ClientApp.Tribler;
                         break;
 
                     case ("S"):
-                        this.client = ClientApp.ShadowsClient;
+                        this.Client = ClientApp.ShadowsClient;
                         break;
 
                     case ("T"):
-                        this.client = ClientApp.BitTornado;
+                        this.Client = ClientApp.BitTornado;
                         break;
 
                     case ("U"):
-                        this.client = ClientApp.UPnPNatBitTorrent;
+                        this.Client = ClientApp.UPnPNatBitTorrent;
                         break;
 
                     default:
-                        this.client = ClientApp.Unknown;
+                        this.Client = ClientApp.Unknown;
                         break;
                 }
                 return;
@@ -357,83 +348,83 @@ namespace MonoTorrent
 
             #region Brams Client
             if ((m = brahms.Match (idAsText)).Success) {
-                this.shortId = "M";
-                this.client = ClientApp.BitTorrent;
+                this.ShortId = "M";
+                this.Client = ClientApp.BitTorrent;
                 return;
             }
             #endregion
 
             #region BitLord
             if ((m = bitlord.Match (idAsText)).Success) {
-                this.client = ClientApp.BitLord;
-                this.shortId = "lord";
+                this.Client = ClientApp.BitLord;
+                this.ShortId = "lord";
                 return;
             }
             #endregion
 
             #region BitComet
             if ((m = bitcomet.Match (idAsText)).Success) {
-                this.client = ClientApp.BitComet;
-                this.shortId = "BC";
+                this.Client = ClientApp.BitComet;
+                this.ShortId = "BC";
                 return;
             }
             #endregion
 
             #region XBT
             if ((m = xbt.Match (idAsText)).Success) {
-                this.client = ClientApp.XBTClient;
-                this.shortId = "XBT";
+                this.Client = ClientApp.XBTClient;
+                this.ShortId = "XBT";
                 return;
             }
             #endregion
 
             #region Opera
             if ((m = opera.Match (idAsText)).Success) {
-                this.client = ClientApp.Opera;
-                this.shortId = "OP";
+                this.Client = ClientApp.Opera;
+                this.ShortId = "OP";
             }
             #endregion
 
             #region MLDonkey
             if ((m = mldonkey.Match (idAsText)).Success) {
-                this.client = ClientApp.MLDonkey;
-                this.shortId = "ML";
+                this.Client = ClientApp.MLDonkey;
+                this.ShortId = "ML";
                 return;
             }
             #endregion
 
             #region Bits on wheels
             if ((m = bow.Match (idAsText)).Success) {
-                this.client = ClientApp.BitsOnWheels;
-                this.shortId = "BOW";
+                this.Client = ClientApp.BitsOnWheels;
+                this.ShortId = "BOW";
                 return;
             }
             #endregion
 
             #region Queen Bee
             if ((m = queenbee.Match (idAsText)).Success) {
-                this.client = ClientApp.QueenBee;
-                this.shortId = "Q";
+                this.Client = ClientApp.QueenBee;
+                this.ShortId = "Q";
                 return;
             }
             #endregion
 
             #region BitTornado special style
             if ((m = bittornado.Match (idAsText)).Success) {
-                this.shortId = m.Groups[1].Value;
-                this.client = ClientApp.BitTornado;
+                this.ShortId = m.Groups[1].Value;
+                this.Client = ClientApp.BitTornado;
                 return;
             }
             #endregion
 
-            this.client = ClientApp.Unknown;
-            this.shortId = idAsText;
+            this.Client = ClientApp.Unknown;
+            this.ShortId = idAsText;
         }
 
 
         public override string ToString ()
         {
-            return this.shortId;
+            return this.ShortId;
         }
     }
 }

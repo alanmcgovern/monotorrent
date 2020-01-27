@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private List<BEncodedValue> list;
+        private readonly List<BEncodedValue> list;
 
         #endregion
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.BEncoding
         public BEncodedList (IEnumerable<BEncodedValue> list)
         {
             if (list == null)
-                throw new ArgumentNullException ("list");
+                throw new ArgumentNullException (nameof(list));
 
             this.list = new List<BEncodedValue> (list);
         }
@@ -110,7 +110,7 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting");
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e'))
-                list.Add (BEncodedValue.Decode (reader));
+                list.Add (Decode (reader));
 
             if (reader.ReadByte () != 'e')                            // Remove the trailing 'e'
                 throw new BEncodingException ("Invalid data found. Aborting");
@@ -140,9 +140,7 @@ namespace MonoTorrent.BEncoding
         #region Overridden Methods
         public override bool Equals (object obj)
         {
-            BEncodedList other = obj as BEncodedList;
-
-            if (other == null)
+            if (!(obj is BEncodedList other))
                 return false;
 
             for (int i = 0; i < this.list.Count; i++)

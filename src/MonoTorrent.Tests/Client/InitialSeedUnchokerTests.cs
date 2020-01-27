@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Advertise5 ()
         {
-            List<PeerId> peers = new List<PeerId> (new PeerId[] { rig.CreatePeer (true), rig.CreatePeer (true), rig.CreatePeer (true) });
+            List<PeerId> peers = new List<PeerId> (new[] { rig.CreatePeer (true), rig.CreatePeer (true), rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
             peers.Add (this.peer);
 
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
             foreach (PeerId peer in peers) {
                 while (peer.QueueLength > 0) {
                     int index = ((HaveMessage) peer.Dequeue ()).PieceIndex;
-                    Assert.IsFalse (peers.Exists (delegate (PeerId p) { return p.BitField[index]; }));
+                    Assert.IsFalse (peers.Exists (p => p.BitField[index]));
                 }
             }
         }
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
             // Check that peers which don't share only get a small number of pieces to share
             rig.Manager.Settings.UploadSlots = 1;
             unchoker.PeerDisconnected (peer);
-            List<PeerId> peers = new List<PeerId> (new PeerId[] { peer, rig.CreatePeer (true) });
+            List<PeerId> peers = new List<PeerId> (new[] { peer, rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
             unchoker.UnchokeReview ();
 
@@ -210,7 +210,7 @@ namespace MonoTorrent.Client
             unchoker.PeerDisconnected (this.peer);
             rig.Manager.Settings.UploadSlots = 1;
 
-            List<PeerId> peers = new List<PeerId> (new PeerId[] { this.peer, rig.CreatePeer (true), rig.CreatePeer (true) });
+            List<PeerId> peers = new List<PeerId> (new[] { this.peer, rig.CreatePeer (true), rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
 
             unchoker.UnchokeReview ();

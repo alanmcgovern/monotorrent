@@ -12,7 +12,7 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class MessageHandlingTests
     {
-        BEncodedString transactionId = "cc";
+        readonly BEncodedString transactionId = "cc";
         DhtEngine engine;
         Node node;
         TestListener listener;
@@ -84,7 +84,7 @@ namespace MonoTorrent.Dht
             listener.SendAsynchronously = asynchronous;
 
             var tcs = new TaskCompletionSource<object> ();
-            listener.MessageSent += (DhtMessage message, IPEndPoint endpoint) => {
+            listener.MessageSent += (message, endpoint) => {
                 if (message is Ping && endpoint == node.EndPoint) {
                     var response = new PingResponse (node.Id, message.TransactionId);
                     listener.RaiseMessageReceived (response, endpoint);

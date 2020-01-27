@@ -14,10 +14,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -94,7 +94,7 @@ namespace MonoTorrent
         {
             GetrightHttpSeeds = new List<string> ();
             CanEditSecureMetadata = true;
-            CreatedBy = string.Format ("MonoTorrent {0}", VersionInfo.Version);
+            CreatedBy = $"MonoTorrent {VersionInfo.Version}";
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
@@ -143,7 +143,7 @@ namespace MonoTorrent
 
             List<FileMapping> mappings = new List<FileMapping> (fileSource.Files);
             if (mappings.Count == 0)
-                throw new ArgumentException ("The file source must contain one or more files", "fileSource");
+                throw new ArgumentException ("The file source must contain one or more files", nameof(fileSource));
 
             mappings.Sort ((left, right) => left.Destination.CompareTo (right.Destination));
             Validate (mappings);
@@ -238,7 +238,7 @@ namespace MonoTorrent
             // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
             // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
             for (int i = 0; i < emptyBuffers.Capacity; i++)
-                await emptyBuffers.EnqueueAsync (new byte[256 * 1024]);
+                await emptyBuffers.EnqueueAsync (new byte[256 * 1024], token);
             token.ThrowIfCancellationRequested ();
 
             using var cancellation = token.Register (() => {
@@ -326,7 +326,7 @@ namespace MonoTorrent
             var next = synchronizer.Next;
             synchronizer.Disconnect ();
             next.SetResult (true);
-            await filledBuffers.EnqueueAsync ((null, 0, null));
+            await filledBuffers.EnqueueAsync ((null, 0, null), token);
         }
 
         async Task<byte[]> HashAllDataAsync (int startPiece, long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
@@ -380,7 +380,7 @@ namespace MonoTorrent
 
                     timer.Restart ();
                     while (bufferRead < count) {
-                        var bytesNeededForPiece = (int) (pieceLength - pieceHashedBytes);
+                        var bytesNeededForPiece = pieceLength - pieceHashedBytes;
                         var bytesToHash = Math.Min (bytesNeededForPiece, count - bufferRead);
                         shaHasher.TransformBlock (buffer, bufferRead, bytesToHash, buffer, bufferRead);
 
@@ -431,7 +431,7 @@ namespace MonoTorrent
             BEncodedDictionary fileDict = new BEncodedDictionary ();
 
             BEncodedList filePath = new BEncodedList ();
-            string[] splittetPath = file.Path.Split (new char[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            string[] splittetPath = file.Path.Split (new[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string s in splittetPath)
                 filePath.Add (new BEncodedString (s));
 
@@ -451,10 +451,8 @@ namespace MonoTorrent
             // Ensure all the destination files are unique too. The files should already be sorted.
             for (int i = 1; i < maps.Count; i++)
                 if (maps[i - 1].Destination == maps[i].Destination)
-                    throw new ArgumentException (string.Format ("Files '{0}' and '{1}' both map to the same destination '{2}'",
-                                                 maps[i - 1].Source,
-                                                 maps[i].Source,
-                                                 maps[i].Destination));
+                    throw new ArgumentException (
+                        $"Files '{maps[i - 1].Source}' and '{maps[i].Source}' both map to the same destination '{maps[i].Destination}'");
         }
     }
 }

@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
                     m = new ErrorMessage ();
                     break;
                 default:
-                    throw new ProtocolException (string.Format ("Invalid udp message received: {0}", buffer[offset]));
+                    throw new ProtocolException ($"Invalid udp message received: {buffer[offset]}");
             }
 
             try {

@@ -47,7 +47,7 @@ namespace MonoTorrent
         public static string UrlEncode (byte[] bytes)
         {
             if (bytes == null)
-                throw new ArgumentNullException ("bytes");
+                throw new ArgumentNullException (nameof(bytes));
 
             var result = new MemoryStream (bytes.Length);
             for (int i = 0; i < bytes.Length; i++)
@@ -90,10 +90,7 @@ namespace MonoTorrent
                     continue;
                 }
 
-                if (ch == '+')
-                    WriteCharBytes (bytes, ' ', e);
-                else
-                    WriteCharBytes (bytes, ch, e);
+                WriteCharBytes (bytes, ch == '+' ? ' ' : ch, e);
             }
 
             return bytes.ToArray ();
@@ -121,9 +118,9 @@ namespace MonoTorrent
                 } else
                     result.WriteByte ((byte) '%');
 
-                int idx = ((int) c) >> 4;
+                int idx = c >> 4;
                 result.WriteByte ((byte) hexChars[idx]);
-                idx = ((int) c) & 0x0F;
+                idx = c & 0x0F;
                 result.WriteByte ((byte) hexChars[idx]);
             } else {
                 result.WriteByte ((byte) c);
@@ -171,7 +168,7 @@ namespace MonoTorrent
         static void WriteCharBytes (List<byte> buf, char ch, Encoding e)
         {
             if (ch > 255) {
-                foreach (byte b in e.GetBytes (new char[] { ch }))
+                foreach (byte b in e.GetBytes (new[] { ch }))
                     buf.Add (b);
             } else
                 buf.Add ((byte) ch);

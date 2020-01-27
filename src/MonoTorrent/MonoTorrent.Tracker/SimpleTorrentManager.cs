@@ -114,7 +114,7 @@ namespace MonoTorrent.Tracker
             if (peer == null)
                 throw new ArgumentNullException (nameof (peer));
 
-            Debug.WriteLine (string.Format ("Adding: {0}", peer.ClientAddress));
+            Debug.WriteLine ($"Adding: {peer.ClientAddress}");
             Peers.Add (peer.DictionaryKey, peer);
             lock (PeersList)
                 PeersList.Clear ();
@@ -197,7 +197,7 @@ namespace MonoTorrent.Tracker
             if (peer == null)
                 throw new ArgumentNullException (nameof (peer));
 
-            Debug.WriteLine (string.Format ("Removing: {0}", peer.ClientAddress));
+            Debug.WriteLine ($"Removing: {peer.ClientAddress}");
             Peers.Remove (peer.DictionaryKey);
             lock (PeersList)
                 PeersList.Clear ();
@@ -225,13 +225,12 @@ namespace MonoTorrent.Tracker
         /// <param name="par"></param>
         internal void Update (AnnounceRequest par)
         {
-            Peer peer;
             object peerKey = Comparer.GetKey (par);
-            if (!Peers.TryGetValue (peerKey, out peer)) {
+            if (!Peers.TryGetValue (peerKey, out Peer peer)) {
                 peer = new Peer (par, peerKey);
                 Add (peer);
             } else {
-                Debug.WriteLine (string.Format ("Updating: {0} with key {1}", peer.ClientAddress, peerKey));
+                Debug.WriteLine ($"Updating: {peer.ClientAddress} with key {peerKey}");
                 peer.Update (par);
             }
             if (par.Event == TorrentEvent.Completed)

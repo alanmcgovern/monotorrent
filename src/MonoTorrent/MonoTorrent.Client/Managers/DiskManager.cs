@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
 
         class IncrementalHashData : ICacheable
         {
-            public SHA1 Hasher;
+            public readonly SHA1 Hasher;
             public long NextOffsetToHash;
 
             public IncrementalHashData ()
@@ -67,11 +67,11 @@ namespace MonoTorrent.Client
 
         struct BufferedIO
         {
-            public ITorrentData manager;
-            public long offset;
-            public byte[] buffer;
-            public int count;
-            public ReusableTaskCompletionSource<bool> tcs;
+            public readonly ITorrentData manager;
+            public readonly long offset;
+            public readonly byte[] buffer;
+            public readonly int count;
+            public readonly ReusableTaskCompletionSource<bool> tcs;
 
             public BufferedIO (ITorrentData manager, long offset, byte[] buffer, int count, ReusableTaskCompletionSource<bool> tcs)
             {

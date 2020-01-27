@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.PiecePicking
                 var startIndex = (int) Math.Ceiling (((double) start) / pieceLength);
                 var endIndex = (int) Math.Ceiling (((double) start + size) / pieceLength);
                 start += size;
-                return new TorrentFile ("File " + index, size, startIndex, endIndex);
+                return new TorrentFile ($"File {index}", size, startIndex, endIndex);
             }).ToArray ();
 
             return new TestTorrentData {
