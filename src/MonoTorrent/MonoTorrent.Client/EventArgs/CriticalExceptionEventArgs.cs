@@ -11,13 +11,8 @@ namespace MonoTorrent.Client
 
         public CriticalExceptionEventArgs (Exception ex, ClientEngine engine)
         {
-            if (ex == null)
-                throw new ArgumentNullException (nameof(ex));
-            if (engine == null)
-                throw new ArgumentNullException (nameof(engine));
-
-            this.Engine = engine;
-            this.Exception = ex;
+            this.Engine = engine ?? throw new ArgumentNullException (nameof(engine));
+            this.Exception = ex ?? throw new ArgumentNullException (nameof(ex));
         }
     }
 }
