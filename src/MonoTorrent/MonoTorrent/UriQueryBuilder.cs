@@ -90,7 +90,7 @@ namespace MonoTorrent
         {
             string result = "";
             foreach (KeyValuePair<string, string> keypair in queryParams)
-                result += keypair.Key + "=" + keypair.Value + "&";
+                result += $"{keypair.Key}={keypair.Value}&";
             builder.Query = result.Length == 0 ? result : result.Remove (result.Length - 1);
             return builder.Uri;
         }

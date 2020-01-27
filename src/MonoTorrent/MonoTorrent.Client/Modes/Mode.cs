@@ -396,7 +396,8 @@ namespace MonoTorrent.Client.Modes
             // we will close the connection
             if (Manager.Torrent.Pieces.Count != (message.PieceIndex + 1))
                 if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
-                    throw new MessageException ("Illegal piece request received. Peer requested " + message.RequestLength + " byte");
+                    throw new MessageException (
+                        $"Illegal piece request received. Peer requested {message.RequestLength} byte");
 
             PieceMessage m = new PieceMessage (message.PieceIndex, message.StartOffset, message.RequestLength);
 

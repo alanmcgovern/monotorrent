@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
             Settings = settings;
 
             lock (Random)
-                Cookie = VersionInfo.ClientVersion + "-" + Random.Next (1, int.MaxValue);
+                Cookie = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
             BroadcastEndPoint = new IPEndPoint (IPAddress.Broadcast, MulticastPort);
             BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastIpAddress}:{MulticastPort}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
         }
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
                         continue;
 
                     var infoHash = InfoHash.FromHex (hashString.Split (' ').Last ());
-                    var uri = new Uri ("ipv4://" + result.RemoteEndPoint.Address + ':' + portcheck);
+                    var uri = new Uri ($"ipv4://{result.RemoteEndPoint.Address}{':'}{portcheck}");
 
                     PeerFound?.InvokeAsync (this, new LocalPeerFoundEventArgs (infoHash, uri));
                 } catch (FileNotFoundException) {

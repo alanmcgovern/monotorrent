@@ -292,7 +292,7 @@ namespace MonoTorrent.Client
                         manager.Peers.BannedPeers.Add (id.Peer);
                 }
             } catch (Exception ex) {
-                Logger.Log (null, "CleanupSocket Error " + ex.Message);
+                Logger.Log (null, $"CleanupSocket Error {ex.Message}");
             } finally {
                 manager.RaisePeerDisconnected (new PeerDisconnectedEventArgs (manager, id));
             }

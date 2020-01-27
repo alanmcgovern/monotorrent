@@ -57,9 +57,9 @@ namespace MonoTorrent.Client.Tracker
         {
             var uri = announceUrl.OriginalString;
             if (uri.EndsWith ("/announce", StringComparison.OrdinalIgnoreCase))
-                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce".Length) + "/scrape");
+                ScrapeUri = new Uri ($"{uri.Substring (0, uri.Length - "/announce".Length)}/scrape");
             else if (uri.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
-                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce/".Length) + "/scrape/");
+                ScrapeUri = new Uri ($"{uri.Substring (0, uri.Length - "/announce/".Length)}/scrape/");
 
             CanAnnounce = true;
             CanScrape = ScrapeUri != null;
@@ -112,9 +112,9 @@ namespace MonoTorrent.Client.Tracker
             string url = ScrapeUri.OriginalString;
             // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
             if (url.IndexOf ('?') == -1)
-                url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
+                url += $"?info_hash={parameters.InfoHash.UrlEncode ()}";
             else
-                url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
+                url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
 
             var request = (HttpWebRequest) WebRequest.Create (url);
             request.UserAgent = VersionInfo.ClientVersion;

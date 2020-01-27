@@ -52,8 +52,8 @@ namespace MonoTorrent.Client
         {
             this.path = GetType ().Assembly.Location;
             for (int i = 0; i >= 0; i++)
-                if (!Directory.Exists ("temp" + i)) {
-                    this.directoryName = "temp" + i;
+                if (!Directory.Exists ($"temp{i}")) {
+                    this.directoryName = $"temp{i}";
                     this.fullPath = Path.Combine (this.path, this.directoryName);
                     Directory.CreateDirectory (fullPath);
                     break;

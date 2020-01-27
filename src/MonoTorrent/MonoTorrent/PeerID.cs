@@ -311,7 +311,7 @@ namespace MonoTorrent
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine ("Unsupported standard style: " + m.Groups[2].Value);
+                        System.Diagnostics.Trace.WriteLine ($"Unsupported standard style: {m.Groups[2].Value}");
                         client = ClientApp.Unknown;
                         break;
                 }

@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
             else
                 peerId = BEncodedString.Empty;
 
-            Uri connectionUri = new Uri ("ipv4://" + dict["ip"] + ":" + dict["port"]);
+            Uri connectionUri = new Uri ($"ipv4://{dict["ip"]}:{dict["port"]}");
             return new Peer (peerId, connectionUri, EncryptionTypes.All);
         }
 

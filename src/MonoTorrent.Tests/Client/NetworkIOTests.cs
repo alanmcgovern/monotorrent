@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
             Assert.DoesNotThrowAsync (() => task.WithTimeout (TimeSpan.FromSeconds (10)), "Data should be all received");
             for (int i = 0; i < buffer.Length; i++) {
                 if (data[i] != buffer[i])
-                    Assert.Fail ("Buffers differ at position " + i);
+                    Assert.Fail ($"Buffers differ at position {i}");
             }
         }
 

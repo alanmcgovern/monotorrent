@@ -50,7 +50,7 @@ namespace SampleClient
             int port;
             Torrent torrent = null;
             // Ask the user what port they want to use for incoming connections
-            Console.Write (Environment.NewLine + "Choose a listen port: ");
+            Console.Write ($"{Environment.NewLine}Choose a listen port: ");
             while (!Int32.TryParse (Console.ReadLine (), out port)) { }
 
             // Create the settings which the engine will use
@@ -157,7 +157,7 @@ namespace SampleClient
                 // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
                 manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
                     lock (listener)
-                        listener.WriteLine ("OldState: " + e.OldState + " NewState: " + e.NewState);
+                        listener.WriteLine ($"OldState: {e.OldState} NewState: {e.NewState}");
                 };
 
                 // Every time the tracker's state changes, this is fired

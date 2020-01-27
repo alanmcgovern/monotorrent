@@ -67,7 +67,7 @@ namespace MonoTorrent.Common
             //base40 = hex
             InfoHash hash = Create ();
             string hex = hash.ToHex ();
-            link = MagnetLink.Parse ("magnet:?xt=urn:btih:" + hex);
+            link = MagnetLink.Parse ($"magnet:?xt=urn:btih:{hex}");
             Assert.AreEqual (hash, link.InfoHash, "#3");
         }
 

@@ -143,7 +143,8 @@ namespace MonoTorrent.Client.Modes
         public async Task SendMetadata_ToFolder ()
         {
             await Setup (true, AppDomain.CurrentDomain.BaseDirectory);
-            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
+            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory,
+                $"{rig.Torrent.InfoHash.ToHex ()}.torrent"));
         }
 
         [Test]

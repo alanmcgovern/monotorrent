@@ -149,7 +149,7 @@ namespace MonoTorrent.Client.Modes
                             if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
                                 try {
                                     if (Directory.Exists (savePath))
-                                        savePath = Path.Combine (savePath, Manager.InfoHash.ToHex () + ".torrent");
+                                        savePath = Path.Combine (savePath, $"{Manager.InfoHash.ToHex ()}.torrent");
                                     File.Delete (savePath);
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {

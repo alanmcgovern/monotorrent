@@ -365,7 +365,7 @@ namespace MonoTorrent.Client
             StringBuilder sb = new StringBuilder ();
             for (int i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ((int) 'a', (int) 'z'));
-            Peer peer = new Peer (sb.ToString (), new Uri ("ipv4://127.0.0.1:" + (port++)));
+            Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
             PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.ProcessingQueue = processingQueue;
@@ -584,7 +584,7 @@ namespace MonoTorrent.Client
 
         internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength)
         {
-            var files = fileSizes.Select ((size, index) => new TorrentFile ("File " + index, size)).ToArray ();
+            var files = fileSizes.Select ((size, index) => new TorrentFile ($"File {index}", size)).ToArray ();
             return CreateMultiFileManager (files, pieceLength);
         }
 

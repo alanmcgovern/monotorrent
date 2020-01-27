@@ -287,7 +287,7 @@ namespace MonoTorrent.Client.Connections
             Uri uri = Uri;
 
             if (Uri.OriginalString.EndsWith ("/"))
-                uri = new Uri (uri, Manager.Torrent.Name + "/");
+                uri = new Uri (uri, $"{Manager.Torrent.Name}/");
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
