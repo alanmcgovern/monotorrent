@@ -194,8 +194,7 @@ namespace MonoTorrent.BEncoding
         #region Overridden Methods
         public override bool Equals (object obj)
         {
-            BEncodedDictionary other = obj as BEncodedDictionary;
-            if (other == null)
+            if (!(obj is BEncodedDictionary other))
                 return false;
 
             if (this.dictionary.Count != other.dictionary.Count)

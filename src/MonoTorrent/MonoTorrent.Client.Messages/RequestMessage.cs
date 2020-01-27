@@ -88,10 +88,9 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            RequestMessage msg = obj as RequestMessage;
-            return (msg == null) ? false : (PieceIndex == msg.PieceIndex
-                                            && StartOffset == msg.StartOffset
-                                            && RequestLength == msg.RequestLength);
+            return (!(obj is RequestMessage msg)) ? false : (PieceIndex == msg.PieceIndex
+                                                             && StartOffset == msg.StartOffset
+                                                             && RequestLength == msg.RequestLength);
         }
 
         public override int GetHashCode ()

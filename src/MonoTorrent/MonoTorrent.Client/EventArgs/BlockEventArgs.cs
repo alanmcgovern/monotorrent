@@ -93,10 +93,9 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            BlockEventArgs args = obj as BlockEventArgs;
-            return (args == null) ? false : this.piece.Equals (args.piece)
-                                         && this.id.Equals (args.id)
-                                         && this.block.Equals (args.block);
+            return (!(obj is BlockEventArgs args)) ? false : this.piece.Equals (args.piece)
+                                                             && this.id.Equals (args.id)
+                                                             && this.block.Equals (args.block);
         }
 
         public override int GetHashCode ()

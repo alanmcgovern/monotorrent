@@ -449,8 +449,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override bool Equals (object obj)
         {
-            TorrentManager m = obj as TorrentManager;
-            return (m == null) ? false : this.Equals (m);
+            return (!(obj is TorrentManager m)) ? false : this.Equals (m);
         }
 
 

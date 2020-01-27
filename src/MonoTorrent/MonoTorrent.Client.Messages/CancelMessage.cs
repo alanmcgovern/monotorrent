@@ -141,9 +141,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            CancelMessage msg = obj as CancelMessage;
-
-            if (msg == null)
+            if (!(obj is CancelMessage msg))
                 return false;
 
             return (this.pieceIndex == msg.pieceIndex

@@ -109,8 +109,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            BitfieldMessage bf = obj as BitfieldMessage;
-            if (bf == null)
+            if (!(obj is BitfieldMessage bf))
                 return false;
 
             return this.bitField.Equals (bf.bitField);

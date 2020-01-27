@@ -111,9 +111,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            HaveMessage msg = obj as HaveMessage;
-
-            if (msg == null)
+            if (!(obj is HaveMessage msg))
                 return false;
 
             return (this.pieceIndex == msg.pieceIndex);

@@ -191,9 +191,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            HandshakeMessage msg = obj as HandshakeMessage;
-
-            if (msg == null)
+            if (!(obj is HandshakeMessage msg))
                 return false;
 
             if (InfoHash != msg.InfoHash)

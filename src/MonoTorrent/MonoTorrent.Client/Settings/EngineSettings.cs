@@ -175,21 +175,20 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            EngineSettings settings = obj as EngineSettings;
-            return settings != null
-                && AllowedEncryption == settings.AllowedEncryption
-                && AllowHaveSuppression == settings.AllowHaveSuppression
-                && ListenPort == settings.ListenPort
-                && MaximumConnections == settings.MaximumConnections
-                && MaximumDiskReadRate == settings.MaximumDiskReadRate
-                && MaximumDiskWriteRate == settings.MaximumDiskWriteRate
-                && MaximumDownloadSpeed == settings.MaximumDownloadSpeed
-                && MaximumHalfOpenConnections == settings.MaximumHalfOpenConnections
-                && MaximumOpenFiles == settings.MaximumOpenFiles
-                && MaximumUploadSpeed == settings.MaximumUploadSpeed
-                && PreferEncryption == settings.PreferEncryption
-                && ReportedAddress == settings.ReportedAddress
-                && SavePath == settings.SavePath;
+            return obj is EngineSettings settings
+                   && AllowedEncryption == settings.AllowedEncryption
+                   && AllowHaveSuppression == settings.AllowHaveSuppression
+                   && ListenPort == settings.ListenPort
+                   && MaximumConnections == settings.MaximumConnections
+                   && MaximumDiskReadRate == settings.MaximumDiskReadRate
+                   && MaximumDiskWriteRate == settings.MaximumDiskWriteRate
+                   && MaximumDownloadSpeed == settings.MaximumDownloadSpeed
+                   && MaximumHalfOpenConnections == settings.MaximumHalfOpenConnections
+                   && MaximumOpenFiles == settings.MaximumOpenFiles
+                   && MaximumUploadSpeed == settings.MaximumUploadSpeed
+                   && PreferEncryption == settings.PreferEncryption
+                   && ReportedAddress == settings.ReportedAddress
+                   && SavePath == settings.SavePath;
         }
 
         public override int GetHashCode ()

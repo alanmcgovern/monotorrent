@@ -152,8 +152,7 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            Piece p = obj as Piece;
-            return (p == null) ? false : this.index.Equals (p.index);
+            return (!(obj is Piece p)) ? false : this.index.Equals (p.index);
         }
 
         public System.Collections.IEnumerator GetEnumerator ()

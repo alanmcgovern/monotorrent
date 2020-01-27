@@ -140,9 +140,7 @@ namespace MonoTorrent.BEncoding
         #region Overridden Methods
         public override bool Equals (object obj)
         {
-            BEncodedList other = obj as BEncodedList;
-
-            if (other == null)
+            if (!(obj is BEncodedList other))
                 return false;
 
             for (int i = 0; i < this.list.Count; i++)

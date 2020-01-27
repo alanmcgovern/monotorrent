@@ -209,8 +209,7 @@ namespace MonoTorrent.Client.Tracker
 
         public override bool Equals (object obj)
         {
-            HTTPTracker tracker = obj as HTTPTracker;
-            if (tracker == null)
+            if (!(obj is HTTPTracker tracker))
                 return false;
 
             // If the announce URL matches, then CanScrape and the scrape URL must match too

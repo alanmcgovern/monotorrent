@@ -201,8 +201,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override bool Equals (object obj)
         {
-            BEncodedNumber obj2 = obj as BEncodedNumber;
-            if (obj2 == null)
+            if (!(obj is BEncodedNumber obj2))
                 return false;
 
             return (this.number == obj2.number);

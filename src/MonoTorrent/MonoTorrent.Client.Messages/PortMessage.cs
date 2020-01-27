@@ -88,8 +88,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            PortMessage msg = obj as PortMessage;
-            return (msg == null) ? false : (this.port == msg.port);
+            return (!(obj is PortMessage msg)) ? false : (this.port == msg.port);
         }
 
         public override int GetHashCode ()
