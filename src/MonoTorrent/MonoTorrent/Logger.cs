@@ -95,7 +95,7 @@ namespace MonoTorrent
                 sb.Append (": ");
 
                 if (connection != null)
-                    sb.Append (connection.EndPoint.ToString ());
+                    sb.Append (connection.EndPoint);
 
                 if (formatting != null)
                     sb.Append (string.Format (message, formatting));

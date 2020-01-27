@@ -297,7 +297,7 @@ namespace MonoTorrent.Client.PiecePicking
             peer.BitField.SetAll (true);
             for (int i = 0; i < torrentData.BlocksPerPiece * 3; i++) {
                 var m = picker.PickPiece (peer, peer.BitField, peers);
-                Assert.IsNotNull (m, "#1." + i.ToString ());
+                Assert.IsNotNull (m, "#1." + i);
                 Assert.IsTrue (m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5, "#2");
             }
 

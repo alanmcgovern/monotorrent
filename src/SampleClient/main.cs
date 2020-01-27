@@ -157,7 +157,7 @@ namespace SampleClient
                 // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
                 manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
                     lock (listener)
-                        listener.WriteLine ("OldState: " + e.OldState.ToString () + " NewState: " + e.NewState.ToString ());
+                        listener.WriteLine ("OldState: " + e.OldState + " NewState: " + e.NewState);
                 };
 
                 // Every time the tracker's state changes, this is fired

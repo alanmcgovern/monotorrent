@@ -54,7 +54,7 @@ namespace MonoTorrent.Common
             DateTime epochStart = new DateTime (1970, 1, 1, 0, 0, 0);
             TimeSpan span = current - epochStart;
             creationTime = (long) span.TotalSeconds;
-            Console.WriteLine (creationTime.ToString () + "Creation seconds");
+            Console.WriteLine (creationTime + "Creation seconds");
 
             BEncodedDictionary torrentInfo = new BEncodedDictionary {
                 { "announce", new BEncodedString ("http://myannouceurl/announce") },

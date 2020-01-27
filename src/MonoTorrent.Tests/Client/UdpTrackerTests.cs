@@ -246,7 +246,7 @@ namespace MonoTorrent.Client.Tracker
             var peers = await tracker.AnnounceAsync (announceparams);
             var endpoints = peers.Select (t => new IPEndPoint (IPAddress.Parse (t.ConnectionUri.Host), t.ConnectionUri.Port)).ToArray ();
             foreach (var p in peerEndpoints) {
-                Assert.IsTrue (endpoints.Contains (p), "#1." + p.ToString ());
+                Assert.IsTrue (endpoints.Contains (p), "#1." + p);
             }
         }
 

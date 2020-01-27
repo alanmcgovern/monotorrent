@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Messages
             Assert.AreEqual (m.MaxRequests, decoded.MaxRequests, "#3");
             Assert.AreEqual (m.Version, decoded.Version, "#4");
             Assert.AreEqual (m.Supports.Count, decoded.Supports.Count, "#5");
-            m.Supports.ForEach (delegate (ExtensionSupport s) { Assert.IsTrue (decoded.Supports.Contains (s), "#6:" + s.ToString ()); });
+            m.Supports.ForEach (delegate (ExtensionSupport s) { Assert.IsTrue (decoded.Supports.Contains (s), "#6:" + s); });
         }
 
         [Test]
