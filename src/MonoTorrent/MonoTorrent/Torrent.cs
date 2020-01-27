@@ -750,7 +750,7 @@ namespace MonoTorrent
                                 for (int k = 0; k < bencodedTier.Count; k++)
                                     tier.Add (bencodedTier[k].ToString ());
 
-                                Toolbox.Randomize<string> (tier);
+                                Toolbox.Randomize (tier);
 
                                 RawTrackerTier collection = new RawTrackerTier ();
                                 for (int k = 0; k < tier.Count; k++)
