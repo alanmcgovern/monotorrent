@@ -412,7 +412,7 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>int</returns>
         protected int DeLen (byte[] data)
         {
-            return (int) (data[0] << 8) + data[1];
+            return (data[0] << 8) + data[1];
         }
 
         /// <summary>

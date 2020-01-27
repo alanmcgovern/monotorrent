@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
             Peer p = new Peer (peerId, uri);
 
             byte[] compact = p.CompactPeer ();
-            Peer peer = Peer.Decode ((BEncodedString) compact)[0];
+            Peer peer = Peer.Decode (compact)[0];
             Assert.AreEqual (p.ConnectionUri, peer.ConnectionUri, "#1");
         }
 
@@ -68,15 +68,15 @@ namespace MonoTorrent.Client
         [Test]
         public void CorruptString ()
         {
-            IList<Peer> p = Peer.Decode ((BEncodedString) "1234");
+            IList<Peer> p = Peer.Decode ("1234");
             Assert.AreEqual (0, p.Count, "#1");
 
             byte[] b = { 255, 255, 255, 255, 255, 255 };
-            p = Peer.Decode ((BEncodedString) b);
+            p = Peer.Decode (b);
             Assert.AreEqual (1, p.Count, "#2");
 
             b = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            p = Peer.Decode ((BEncodedString) b);
+            p = Peer.Decode (b);
             Assert.AreEqual (1, p.Count, "#3");
         }
 
@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
                 BEncodedDictionary dict = new BEncodedDictionary ();
                 dict.Add ("ip", (BEncodedString) p.ConnectionUri.Host);
                 dict.Add ("port", (BEncodedNumber) p.ConnectionUri.Port);
-                dict.Add ("peer id", (BEncodedString) p.PeerId);
+                dict.Add ("peer id", p.PeerId);
                 list.Add (dict);
             }
 
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
             byte[] bytes = new byte[peers.Count * 6];
             for (int i = 0; i < peers.Count; i++)
                 peers[i].CompactPeer (bytes, i * 6);
-            VerifyDecodedPeers (Peer.Decode ((BEncodedString) bytes));
+            VerifyDecodedPeers (Peer.Decode (bytes));
         }
 
         [Test]

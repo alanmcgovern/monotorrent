@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.Messages
         {
             // Decodes as: 192.168.0.1:100
             byte[] peer = { 192, 168, 0, 1, 100, 0 };
-            byte[] supports = { (byte) (1 | 2) }; // 1 == encryption, 2 == seeder
+            byte[] supports = { 1 | 2 }; // 1 == encryption, 2 == seeder
 
             byte id = PeerExchangeMessage.Support.MessageId;
             PeerExchangeMessage message = new PeerExchangeMessage (id, peer, supports, null);

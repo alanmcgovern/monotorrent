@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestFastSeeder ()
         {
             int[] allowedFast = { 1, 2, 3, 5, 8, 13, 21 };
-            ((PeerId) peers[0]).SupportsFastPeer = true;
+            peers[0].SupportsFastPeer = true;
             peers[0].IsAllowedFastPieces.AddRange ((int[]) allowedFast.Clone ());
 
             peers[0].BitField.SetAll (true); // Lets pretend he has everything

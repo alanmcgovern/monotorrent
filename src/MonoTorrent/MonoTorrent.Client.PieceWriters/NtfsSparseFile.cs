@@ -72,10 +72,10 @@ namespace MonoTorrent.Client
                 // Create a file with the sparse flag enabled
 
                 uint bytesReturned = 0;
-                uint access = (uint) 0x40000000;         // GenericWrite
+                uint access = 0x40000000;         // GenericWrite
                 uint sharing = 0;                       // none
-                uint attributes = (uint) 0x00000080;     // Normal
-                uint creation = (uint) 1;                // Only create if new
+                uint attributes = 0x00000080;     // Normal
+                uint creation = 1;                // Only create if new
 
                 using SafeFileHandle handle = CreateFileW (filename, access, sharing, IntPtr.Zero, creation, attributes, IntPtr.Zero);
                 // If we couldn't create the file, bail out

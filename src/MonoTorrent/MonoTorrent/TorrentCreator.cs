@@ -380,7 +380,7 @@ namespace MonoTorrent
 
                     timer.Restart ();
                     while (bufferRead < count) {
-                        var bytesNeededForPiece = (int) (pieceLength - pieceHashedBytes);
+                        var bytesNeededForPiece = pieceLength - pieceHashedBytes;
                         var bytesToHash = Math.Min (bytesNeededForPiece, count - bufferRead);
                         shaHasher.TransformBlock (buffer, bufferRead, bytesToHash, buffer, bufferRead);
 

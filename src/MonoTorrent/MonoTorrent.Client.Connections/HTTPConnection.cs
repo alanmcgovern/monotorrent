@@ -255,8 +255,8 @@ namespace MonoTorrent.Client.Connections
             if (bundle.Count > 0) {
                 RequestMessages.AddRange (bundle);
                 // The RequestMessages are always sequential
-                RequestMessage start = (RequestMessage) bundle[0];
-                RequestMessage end = (RequestMessage) bundle[bundle.Count - 1];
+                RequestMessage start = bundle[0];
+                RequestMessage end = bundle[bundle.Count - 1];
                 CreateWebRequests (start, end);
             } else {
                 return count;

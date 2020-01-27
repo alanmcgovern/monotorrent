@@ -57,8 +57,8 @@ namespace MonoTorrent.Common
         [Test]
         public void Constructor_Null ()
         {
-            Assert.Throws<ArgumentNullException> (() => new BitField ((bool[]) null));
-            Assert.Throws<ArgumentNullException> (() => new BitField ((byte[]) null, 2));
+            Assert.Throws<ArgumentNullException> (() => new BitField (null));
+            Assert.Throws<ArgumentNullException> (() => new BitField (null, 2));
 
         }
         [Test]

@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
         public BEncodedDictionary Encode ()
         {
             return new BEncodedDictionary {
-                { VersionKey, (BEncodedNumber)FastResumeVersion },
+                { VersionKey, FastResumeVersion },
                 { InfoHashKey, new BEncodedString(Infohash.Hash) },
                 { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
                 { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },

@@ -247,7 +247,7 @@ namespace MonoTorrent.Client
                 return;
 
             Disposed = true;
-            MainLoop.QueueWait ((Action) delegate {
+            MainLoop.QueueWait (() => {
                 this.DhtEngine.Dispose ();
                 this.DiskManager.Dispose ();
                 this.listenManager.Dispose ();
