@@ -47,8 +47,8 @@ namespace MonoTorrent.Client.Modes
         IEncryption decryptor = PlainTextEncryption.Instance;
         IEncryption encryptor = PlainTextEncryption.Instance;
 
-        private ConnectionPair pair;
-        private TestRig rig;
+        ConnectionPair pair;
+        TestRig rig;
 
         public async Task Setup (bool metadataMode, string metadataPath, bool multiFile = false)
         {

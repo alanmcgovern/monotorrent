@@ -34,11 +34,12 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     class PortMessage : PeerMessage
     {
-        private const int messageLength = 3;
+        const int messageLength = 3;
         internal static readonly byte MessageId = 9;
 
         #region Private Fields
-        private ushort port;
+
+        ushort port;
         #endregion
 
 

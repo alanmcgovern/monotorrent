@@ -40,7 +40,7 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    internal enum ErrorCode
+    enum ErrorCode
     {
         GenericError = 201,
         ServerError = 202,

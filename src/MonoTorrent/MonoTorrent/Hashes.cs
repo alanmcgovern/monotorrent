@@ -43,7 +43,7 @@ namespace MonoTorrent
 
         #region Private Fields
 
-        private readonly byte[] hashData;
+        readonly byte[] hashData;
 
         #endregion Private Fields
 

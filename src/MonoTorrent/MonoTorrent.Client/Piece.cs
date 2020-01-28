@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void LastPiece (int pieceIndex, int pieceLength, long torrentSize)
+        void LastPiece (int pieceIndex, int pieceLength, long torrentSize)
         {
             var bytesRemaining = (int) (torrentSize - ((long) pieceIndex * pieceLength));
             var numberOfBlocks = bytesRemaining / BlockSize;

@@ -240,7 +240,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private async Task CompleteSendOrReceiveFirst (byte[] buffer)
+        async Task CompleteSendOrReceiveFirst (byte[] buffer)
         {
             var allRequests = requests.ToRequestMessages ().ToList ();
             while (allRequests.Count > 0) {
@@ -275,8 +275,9 @@ namespace MonoTorrent.Client
             }
         }
 
-        private readonly List<string> requestedUrl = new List<string> ();
-        private void GotContext (IAsyncResult result)
+        readonly List<string> requestedUrl = new List<string> ();
+
+        void GotContext (IAsyncResult result)
         {
             try {
                 if (result.AsyncState != listener)

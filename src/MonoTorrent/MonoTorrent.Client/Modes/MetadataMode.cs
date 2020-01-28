@@ -41,11 +41,11 @@ namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {
-        private BitField bitField;
+        BitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
-        private PeerId currentId;
+        PeerId currentId;
         string savePath;
-        private DateTime requestTimeout;
+        DateTime requestTimeout;
 
         bool HasAnnounced { get; set; }
         internal MemoryStream Stream { get; set; }
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        private void SendRequestToNextPeer ()
+        void SendRequestToNextPeer ()
         {
             NextPeer ();
 
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        private void NextPeer ()
+        void NextPeer ()
         {
             var flag = false;
 
@@ -184,7 +184,7 @@ namespace MonoTorrent.Client.Modes
 
         }
 
-        private void SwitchToRegular ()
+        void SwitchToRegular ()
         {
             foreach (var id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
@@ -229,7 +229,7 @@ namespace MonoTorrent.Client.Modes
             // Nothing
         }
 
-        private void RequestNextNeededPiece (PeerId id)
+        void RequestNextNeededPiece (PeerId id)
         {
             var index = bitField.FirstFalse ();
             if (index == -1)

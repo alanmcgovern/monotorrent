@@ -80,10 +80,10 @@ namespace MonoTorrent.Client.Encryption
         readonly SHA1 hasher;
 
         // Cryptors for the handshaking
-        private RC4 encryptor;
-        private RC4 decryptor;
+        RC4 encryptor;
+        RC4 decryptor;
 
-        private EncryptionTypes allowedEncryption;
+        EncryptionTypes allowedEncryption;
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
@@ -91,12 +91,12 @@ namespace MonoTorrent.Client.Encryption
         protected IConnection2 socket;
 
         // Data to be passed to initial ReceiveMessage requests
-        private byte[] initialBuffer;
-        private int initialBufferOffset;
-        private int initialBufferCount;
+        byte[] initialBuffer;
+        int initialBufferOffset;
+        int initialBufferCount;
 
         // State information to be checked against abort conditions
-        private int bytesReceived;
+        int bytesReceived;
 
         #endregion
 
@@ -187,7 +187,7 @@ namespace MonoTorrent.Client.Encryption
             Decryptor.Decrypt (data, offset, data, offset, length);
         }
 
-        private int RandomNumber (int max)
+        int RandomNumber (int max)
         {
             var b = new byte[4];
             random.GetBytes (b);

@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private readonly List<BEncodedValue> list;
+        readonly List<BEncodedValue> list;
 
         #endregion
 
@@ -71,7 +71,7 @@ namespace MonoTorrent.BEncoding
             this.list = new List<BEncodedValue> (list);
         }
 
-        private BEncodedList (List<BEncodedValue> value)
+        BEncodedList (List<BEncodedValue> value)
         {
             list = value;
         }

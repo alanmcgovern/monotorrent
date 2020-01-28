@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private Block block;
+        Block block;
 
         #endregion
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
             Init (block, piece, id);
         }
 
-        private void Init (Block block, Piece piece, PeerId id)
+        void Init (Block block, Piece piece, PeerId id)
         {
             this.block = block;
             ID = id;

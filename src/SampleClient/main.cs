@@ -45,7 +45,7 @@ namespace SampleClient
             StartEngine ().Wait ();
         }
 
-        private static async Task StartEngine ()
+        static async Task StartEngine ()
         {
             int port;
             Torrent torrent = null;
@@ -229,14 +229,14 @@ namespace SampleClient
                 listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
         }
 
-        private static void AppendSeparator (StringBuilder sb)
+        static void AppendSeparator (StringBuilder sb)
         {
             AppendFormat (sb, "", null);
             AppendFormat (sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
             AppendFormat (sb, "", null);
         }
 
-        private static void AppendFormat (StringBuilder sb, string str, params object[] formatting)
+        static void AppendFormat (StringBuilder sb, string str, params object[] formatting)
         {
             if (formatting != null)
                 sb.AppendFormat (str, formatting);
@@ -245,7 +245,7 @@ namespace SampleClient
             sb.AppendLine ();
         }
 
-        private static async Task Shutdown ()
+        static async Task Shutdown ()
         {
             var fastResume = new BEncodedDictionary ();
             for (var i = 0; i < torrents.Count; i++) {

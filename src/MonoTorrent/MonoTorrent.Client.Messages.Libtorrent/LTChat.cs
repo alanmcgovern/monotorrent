@@ -35,8 +35,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     {
         public static readonly ExtensionSupport Support = CreateSupport ("LT_chat");
 
-        private static readonly BEncodedString MessageKey = "msg";
-        private BEncodedDictionary messageDict = new BEncodedDictionary ();
+        static readonly BEncodedString MessageKey = "msg";
+        BEncodedDictionary messageDict = new BEncodedDictionary ();
         public string Message {
             set { messageDict[MessageKey] = (BEncodedString) (value ?? ""); }
             get { return ((BEncodedString) messageDict[MessageKey]).Text; }

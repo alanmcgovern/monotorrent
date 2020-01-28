@@ -63,7 +63,7 @@ namespace MonoTorrent
             LoadFiles ();
         }
 
-        private void LoadFiles ()
+        void LoadFiles ()
         {
             var sep = System.IO.Path.DirectorySeparatorChar;
             var fullPath = System.IO.Path.GetFullPath (Path);

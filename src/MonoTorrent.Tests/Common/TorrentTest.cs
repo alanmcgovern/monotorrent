@@ -40,8 +40,8 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentTest
     {
-        private Torrent torrent;
-        private long creationTime;
+        Torrent torrent;
+        long creationTime;
         readonly System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create ();
 
         /// <summary>
@@ -70,7 +70,8 @@ namespace MonoTorrent.Common
             };
             torrent = Torrent.Load (torrentInfo);
         }
-        private BEncodedDictionary CreateInfoDict ()
+
+        BEncodedDictionary CreateInfoDict ()
         {
             var dict = new BEncodedDictionary {
                 { "source", new BEncodedString ("http://www.thisiswhohostedit.com") },
@@ -89,7 +90,8 @@ namespace MonoTorrent.Common
             };
             return dict;
         }
-        private BEncodedList CreateFiles ()
+
+        BEncodedList CreateFiles ()
         {
             var files = new BEncodedList ();
 

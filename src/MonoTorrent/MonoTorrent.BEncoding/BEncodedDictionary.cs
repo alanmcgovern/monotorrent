@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
+        readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
 
         #endregion
 
@@ -94,7 +94,7 @@ namespace MonoTorrent.BEncoding
             DecodeInternal (reader, reader.StrictDecoding);
         }
 
-        private void DecodeInternal (RawReader reader, bool strictDecoding)
+        void DecodeInternal (RawReader reader, bool strictDecoding)
         {
             BEncodedString key = null;
             BEncodedValue value = null;

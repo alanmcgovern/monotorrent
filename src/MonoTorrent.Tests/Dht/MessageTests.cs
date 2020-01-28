@@ -39,12 +39,12 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class MessageTests
     {
-        private readonly NodeId id = new NodeId (Encoding.UTF8.GetBytes ("abcdefghij0123456789"));
-        private readonly NodeId infohash = new NodeId (Encoding.UTF8.GetBytes ("mnopqrstuvwxyz123456"));
-        private readonly BEncodedString token = "aoeusnth";
-        private readonly BEncodedString transactionId = "aa";
+        readonly NodeId id = new NodeId (Encoding.UTF8.GetBytes ("abcdefghij0123456789"));
+        readonly NodeId infohash = new NodeId (Encoding.UTF8.GetBytes ("mnopqrstuvwxyz123456"));
+        readonly BEncodedString token = "aoeusnth";
+        readonly BEncodedString transactionId = "aa";
 
-        private QueryMessage message;
+        QueryMessage message;
 
         [SetUp]
         public void Setup ()
@@ -259,13 +259,13 @@ namespace MonoTorrent.Dht
         #endregion
 
 
-        private void Compare (DhtMessage m, string expected)
+        void Compare (DhtMessage m, string expected)
         {
             var b = m.Encode ();
             Assert.AreEqual (Encoding.UTF8.GetString (b), expected);
         }
 
-        private DhtMessage Decode (string p)
+        DhtMessage Decode (string p)
         {
             var buffer = Encoding.UTF8.GetBytes (p);
             return DhtMessageFactory.DecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer));

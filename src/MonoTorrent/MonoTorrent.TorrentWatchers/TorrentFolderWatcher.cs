@@ -44,9 +44,9 @@ namespace MonoTorrent.TorrentWatcher
 
         #region Member Variables
 
-        private FileSystemWatcher watcher;
-        private readonly string torrentDirectory;
-        private readonly string watchFilter;
+        FileSystemWatcher watcher;
+        readonly string torrentDirectory;
+        readonly string watchFilter;
 
         #endregion
 
@@ -108,13 +108,13 @@ namespace MonoTorrent.TorrentWatcher
         #region Event Handlers
 
         ///<summary>Gets called when a File with .torrent extension was added to the torrentDirectory</summary>
-        private void OnCreated (object sender, FileSystemEventArgs e)
+        void OnCreated (object sender, FileSystemEventArgs e)
         {
             RaiseTorrentFound (e.FullPath);
         }
 
         ///<summary>Gets called when a File with .torrent extension was deleted from the torrentDirectory</summary>
-        private void OnDeleted (object sender, FileSystemEventArgs e)
+        void OnDeleted (object sender, FileSystemEventArgs e)
         {
             RaiseTorrentLost (e.FullPath);
         }

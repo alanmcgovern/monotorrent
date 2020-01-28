@@ -43,7 +43,8 @@ namespace MonoTorrent.Tracker
         public TrackerTest ()
         {
         }
-        private TrackerTestRig rig;
+
+        TrackerTestRig rig;
 
         [SetUp]
         public void Setup ()
@@ -210,12 +211,12 @@ namespace MonoTorrent.Tracker
             }
         }
 
-        private void AddAllTrackables ()
+        void AddAllTrackables ()
         {
             rig.Trackables.ForEach (delegate (Trackable t) { Assert.IsTrue (rig.Tracker.Add (t), "#1"); });
         }
 
-        private InfoHash Clone (InfoHash p)
+        InfoHash Clone (InfoHash p)
         {
             return new InfoHash ((byte[]) p.Hash.Clone ());
         }

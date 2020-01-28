@@ -45,7 +45,7 @@ namespace MonoTorrent
     {
         #region Member Variables
 
-        private readonly int[] array;
+        readonly int[] array;
 
         internal bool AllFalse {
             get { return TrueCount == 0; }

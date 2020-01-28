@@ -36,7 +36,7 @@ namespace MonoTorrent
     {
         #region Private Fields
 
-        private BitField selector;
+        BitField selector;
 
         #endregion Private Fields
 

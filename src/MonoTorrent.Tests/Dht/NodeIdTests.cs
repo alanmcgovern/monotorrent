@@ -7,7 +7,7 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class NodeIdTests
     {
-        private NodeId[] nodes;
+        NodeId[] nodes;
 
         [SetUp]
         public void Setup ()

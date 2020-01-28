@@ -146,7 +146,7 @@ namespace MonoTorrent.Tracker
         }
 
 
-        private BEncodedDictionary GeneratePeersEntry ()
+        BEncodedDictionary GeneratePeersEntry ()
         {
             var encPeerId = PeerId;
             var encAddress = new BEncodedString (ClientAddress.Address.ToString ());
@@ -158,7 +158,8 @@ namespace MonoTorrent.Tracker
             dictionary.Add (TrackerServer.Port, encPort);
             return dictionary;
         }
-        private byte[] GenerateCompactPeersEntry ()
+
+        byte[] GenerateCompactPeersEntry ()
         {
             var port = BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short) ClientAddress.Port));
             var addr = ClientAddress.Address.GetAddressBytes ();

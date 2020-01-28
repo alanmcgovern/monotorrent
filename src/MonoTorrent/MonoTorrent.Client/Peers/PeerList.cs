@@ -35,9 +35,9 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private readonly List<PeerId> peers; //Peers held
-        private readonly PeerListType listType; //The type of list this represents
-        private int scanIndex; //Position in the list when scanning peers
+        readonly List<PeerId> peers; //Peers held
+        readonly PeerListType listType; //The type of list this represents
+        int scanIndex; //Position in the list when scanning peers
 
         #endregion Private Fields
 
@@ -185,7 +185,7 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        private static int CompareCandidatePeersWhileDownloading (PeerId P1, PeerId P2)
+        static int CompareCandidatePeersWhileDownloading (PeerId P1, PeerId P2)
         {
             //Comparer for candidate peers for use when the torrent is downloading
             //First sort Am interested before !AmInterested
@@ -198,14 +198,14 @@ namespace MonoTorrent.Client
             return P2.LastReviewDownloadRate.CompareTo (P1.LastReviewDownloadRate);
         }
 
-        private static int CompareCandidatePeersWhileSeeding (PeerId P1, PeerId P2)
+        static int CompareCandidatePeersWhileSeeding (PeerId P1, PeerId P2)
         {
             //Comparer for candidate peers for use when the torrent is seeding
             //Sort by upload rate, largest first
             return P2.LastReviewUploadRate.CompareTo (P1.LastReviewUploadRate);
         }
 
-        private static int CompareNascentPeers (PeerId P1, PeerId P2)
+        static int CompareNascentPeers (PeerId P1, PeerId P2)
         {
             //Comparer for nascent peers
             //Sort most recent first
@@ -217,7 +217,7 @@ namespace MonoTorrent.Client
                 return 0;
         }
 
-        private static int CompareOptimisticUnchokeCandidatesWhileDownloading (PeerId P1, PeerId P2)
+        static int CompareOptimisticUnchokeCandidatesWhileDownloading (PeerId P1, PeerId P2)
         {
             //Comparer for optimistic unchoke candidates
 
@@ -246,7 +246,7 @@ namespace MonoTorrent.Client
                 return 0;
         }
 
-        private static int CompareOptimisticUnchokeCandidatesWhileSeeding (PeerId P1, PeerId P2)
+        static int CompareOptimisticUnchokeCandidatesWhileSeeding (PeerId P1, PeerId P2)
         {
             //Comparer for optimistic unchoke candidates
 

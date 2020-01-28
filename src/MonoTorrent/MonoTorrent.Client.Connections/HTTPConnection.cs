@@ -91,7 +91,7 @@ namespace MonoTorrent.Client.Connections
 
         WebResponse DataStreamResponse { get; set; }
 
-        private bool Disposed { get; set; }
+        bool Disposed { get; set; }
 
         EndPoint IConnection.EndPoint => null;
 
@@ -280,7 +280,7 @@ namespace MonoTorrent.Client.Connections
         }
 
 
-        private void CreateWebRequests (RequestMessage start, RequestMessage end)
+        void CreateWebRequests (RequestMessage start, RequestMessage end)
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents

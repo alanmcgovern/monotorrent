@@ -36,9 +36,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     class LTMetadata : ExtensionMessage
     {
         public static readonly ExtensionSupport Support = CreateSupport ("ut_metadata");
-        private static readonly BEncodedString MessageTypeKey = "msg_type";
-        private static readonly BEncodedString PieceKey = "piece";
-        private static readonly BEncodedString TotalSizeKey = "total_size";
+        static readonly BEncodedString MessageTypeKey = "msg_type";
+        static readonly BEncodedString PieceKey = "piece";
+        static readonly BEncodedString TotalSizeKey = "total_size";
         internal static readonly int BlockSize = 16384;//16Kb
 
         internal enum eMessageType

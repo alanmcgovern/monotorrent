@@ -37,10 +37,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     {
         public static readonly ExtensionSupport Support = CreateSupport ("ut_pex");
 
-        private BEncodedDictionary peerDict;
-        private static readonly BEncodedString AddedKey = "added";
-        private static readonly BEncodedString AddedDotFKey = "added.f";
-        private static readonly BEncodedString DroppedKey = "dropped";
+        BEncodedDictionary peerDict;
+        static readonly BEncodedString AddedKey = "added";
+        static readonly BEncodedString AddedDotFKey = "added.f";
+        static readonly BEncodedString DroppedKey = "dropped";
 
         public PeerExchangeMessage ()
             : base (Support.MessageId)

@@ -14,7 +14,7 @@ namespace TrackerApp
         readonly Random random = new Random (1);
         readonly SpeedMonitor requests = new SpeedMonitor ();
         readonly Thread[] threads;
-        private readonly int threadSleepTime;
+        readonly int threadSleepTime;
 
         public int RequestRate {
             get { return (int) requests.Rate; }

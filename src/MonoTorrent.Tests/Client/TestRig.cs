@@ -404,7 +404,7 @@ namespace MonoTorrent.Client
             TrackerFactory.Register ("custom", uri => new CustomTracker (uri));
         }
 
-        private static void AddAnnounces (BEncodedDictionary dict, string[][] tiers)
+        static void AddAnnounces (BEncodedDictionary dict, string[][] tiers)
         {
             var announces = new BEncodedList ();
             foreach (var tier in tiers) {

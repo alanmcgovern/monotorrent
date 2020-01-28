@@ -60,7 +60,7 @@ namespace MonoTorrent.Dht
             return Add (node, true);
         }
 
-        private bool Add (Node node, bool raiseNodeAdded)
+        bool Add (Node node, bool raiseNodeAdded)
         {
             if (node == null)
                 throw new ArgumentNullException (nameof (node));
@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht
             return added;
         }
 
-        private void Add (Bucket bucket)
+        void Add (Bucket bucket)
         {
             Buckets.Add (bucket);
             Buckets.Sort ();
@@ -93,12 +93,12 @@ namespace MonoTorrent.Dht
             return null;
         }
 
-        private void Remove (Bucket bucket)
+        void Remove (Bucket bucket)
         {
             Buckets.Remove (bucket);
         }
 
-        private bool Split (Bucket bucket)
+        bool Split (Bucket bucket)
         {
             if (!bucket.CanSplit)
                 return false;//to avoid infinite loop when add same node

@@ -134,7 +134,7 @@ namespace MonoTorrent.Tracker.Listeners
 
         //TODO is endpoint.Address.Address enough and do we really need this complex system for connection ID
         //advantage: this system know if we have ever connect before announce scrape request...
-        private long CreateConnectionID (IPEndPoint remotePeer)
+        long CreateConnectionID (IPEndPoint remotePeer)
         {
             curConnectionID++;
             if (!ConnectionIDs.ContainsKey (remotePeer.Address))
@@ -185,7 +185,7 @@ namespace MonoTorrent.Tracker.Listeners
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
-        private NameValueCollection getCollection (AnnounceMessage announceMessage)
+        NameValueCollection getCollection (AnnounceMessage announceMessage)
         {
             var res = new NameValueCollection ();
             res.Add ("info_hash", announceMessage.InfoHash.UrlEncode ());
@@ -247,7 +247,7 @@ namespace MonoTorrent.Tracker.Listeners
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
-        private NameValueCollection getCollection (ScrapeMessage scrapeMessage)
+        NameValueCollection getCollection (ScrapeMessage scrapeMessage)
         {
             var res = new NameValueCollection ();
             if (scrapeMessage.InfoHashes.Count == 0)

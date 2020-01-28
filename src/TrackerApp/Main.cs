@@ -109,7 +109,7 @@ namespace SampleTracker
             }
         }
 
-        private void SetupTorrentWatcher ()
+        void SetupTorrentWatcher ()
         {
             watcher = new TorrentFolderWatcher (Path.GetFullPath (TORRENT_DIR), "*.torrent");
             watcher.TorrentFound += delegate (object sender, TorrentWatcherEventArgs e) {
@@ -170,7 +170,7 @@ namespace SampleTracker
                 Benchmark ();
         }
 
-        private static void Benchmark ()
+        static void Benchmark ()
         {
             Console.Clear ();
             Console.Write ("How many active torrents will be simulated: ");
@@ -194,12 +194,12 @@ namespace SampleTracker
             }
         }
 
-        private static void StartTracker ()
+        static void StartTracker ()
         {
             new MySimpleTracker ();
         }
 
-        private static int GetInt ()
+        static int GetInt ()
         {
             var ret = 0;
             while (!int.TryParse (Console.ReadLine (), out ret)) {

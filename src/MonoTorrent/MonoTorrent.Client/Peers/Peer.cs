@@ -168,7 +168,7 @@ namespace MonoTorrent.Client
             return list;
         }
 
-        private static Peer DecodeFromDict (BEncodedDictionary dict)
+        static Peer DecodeFromDict (BEncodedDictionary dict)
         {
             BEncodedString peerId;
 

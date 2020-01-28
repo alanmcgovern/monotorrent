@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.PiecePicking
 {
     class SortList<T> : IList<T>
     {
-        private readonly List<T> list;
+        readonly List<T> list;
 
         public SortList ()
         {

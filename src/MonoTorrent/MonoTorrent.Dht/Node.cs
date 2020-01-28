@@ -109,7 +109,7 @@ namespace MonoTorrent.Dht
             return buffer;
         }
 
-        private void CompactNode (byte[] buffer, int offset)
+        void CompactNode (byte[] buffer, int offset)
         {
             Message.Write (buffer, offset, Id.Bytes);
             CompactPort (buffer, offset + 20);

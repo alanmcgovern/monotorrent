@@ -80,7 +80,7 @@ namespace MonoTorrent.Tracker.Listeners
             return request.Response;
         }
 
-        private NameValueCollection ParseQuery (string url)
+        NameValueCollection ParseQuery (string url)
         {
             // The '?' symbol will be there if we received the entire URL as opposed to
             // just the query string - we accept both therfore trim out the excess if we have the entire URL

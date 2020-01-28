@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : IPieceWriter
     {
-        private readonly FileStreamBuffer streamsBuffer;
+        readonly FileStreamBuffer streamsBuffer;
 
         public int OpenFiles {
             get { return streamsBuffer.Count; }

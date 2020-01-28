@@ -292,7 +292,7 @@ namespace MonoTorrent.Client.Messages
             EncodeDecode (new UnchokeMessage ());
         }
 
-        private void EncodeDecode (Message orig)
+        void EncodeDecode (Message orig)
         {
             orig.Encode (buffer, offset);
             Message dec = PeerMessage.DecodeMessage (buffer, offset, orig.ByteLength, torrentData);

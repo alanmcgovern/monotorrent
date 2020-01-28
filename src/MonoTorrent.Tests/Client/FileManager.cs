@@ -40,9 +40,9 @@ namespace MonoTorrent.Client
     //[TestFixture]
     public class FileManagerTest
     {
-        private string path = string.Empty;
-        private string directoryName = string.Empty;
-        private string fullPath;
+        string path = string.Empty;
+        string directoryName = string.Empty;
+        string fullPath;
 
         /// <summary>
         /// 
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        private void GenerateTestFiles ()
+        void GenerateTestFiles ()
         {
             var file1 = File.OpenWrite (Path.Combine (fullPath, "file1.txt"));
             var file2 = File.OpenWrite (Path.Combine (fullPath, "file2.txt"));

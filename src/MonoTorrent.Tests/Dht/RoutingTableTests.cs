@@ -71,7 +71,7 @@ namespace MonoTorrent.Dht
                 Assert.IsTrue (closest.Exists (node => nodes[i].Equals (closest[i].Id)));
         }
 
-        private void CheckBuckets ()
+        void CheckBuckets ()
         {
             foreach (var b in table.Buckets)
                 foreach (var n in b.Nodes)

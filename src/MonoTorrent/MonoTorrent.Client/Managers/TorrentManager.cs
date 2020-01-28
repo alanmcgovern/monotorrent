@@ -93,11 +93,11 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private bool disposed;
+        bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         internal bool isInEndGame;       // Set true when the torrent enters end game processing
-        private Mode mode;
-        private readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
+        Mode mode;
+        readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         #endregion Member Variables
@@ -785,7 +785,7 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("This action cannot be performed until metadata has been retrieved");
         }
 
-        private void CheckRegisteredAndDisposed ()
+        void CheckRegisteredAndDisposed ()
         {
             if (Engine == null)
                 throw new TorrentException ("This manager has not been registed with an Engine");

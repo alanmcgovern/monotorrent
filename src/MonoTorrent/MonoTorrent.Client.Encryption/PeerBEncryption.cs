@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Encryption
             await gotVerification (verifyBytes);
         }
 
-        private async ReusableTask gotVerification (byte[] verifyBytes)
+        async ReusableTask gotVerification (byte[] verifyBytes)
         {
             var torrentHash = new byte[20];
 
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client.Encryption
         /// and sets the SKEY to the InfoHash of the matched torrent.
         /// </summary>
         /// <returns>true if a match has been found</returns>
-        private bool MatchSKEY (byte[] torrentHash)
+        bool MatchSKEY (byte[] torrentHash)
         {
             for (var i = 0; i < PossibleSKEYs.Length; i++) {
                 var req2 = Hash (Req2Bytes, PossibleSKEYs[i].Hash);

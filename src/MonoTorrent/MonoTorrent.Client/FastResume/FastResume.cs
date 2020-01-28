@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void CheckContent (BEncodedDictionary dict, BEncodedString key, BEncodedNumber value)
+        void CheckContent (BEncodedDictionary dict, BEncodedString key, BEncodedNumber value)
         {
             CheckContent (dict, key);
             if (!dict[key].Equals (value))
@@ -108,13 +108,13 @@ namespace MonoTorrent.Client
                     $"Invalid FastResume data. The value of '{key}' was '{dict[key]}' instead of '{value}'");
         }
 
-        private void CheckContent (BEncodedDictionary dict, BEncodedString key)
+        void CheckContent (BEncodedDictionary dict, BEncodedString key)
         {
             if (!dict.ContainsKey (key))
                 throw new TorrentException ($"Invalid FastResume data. Key '{key}' was not present");
         }
 
-        private void CheckVersion (BEncodedDictionary dict)
+        void CheckVersion (BEncodedDictionary dict)
         {
             var version = (dict[VersionKey] as BEncodedNumber)?.Number;
             if (version.GetValueOrDefault () == 1 || version.GetValueOrDefault () == 2)

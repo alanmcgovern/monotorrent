@@ -160,7 +160,7 @@ namespace MonoTorrent.Dht
         void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
             => QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, error));
 
-        private async Task SendMessages ()
+        async Task SendMessages ()
         {
             for (var i = 0; i < 5 && SendQueue.Count > 0; i++) {
                 var details = SendQueue.Dequeue ();
@@ -186,7 +186,7 @@ namespace MonoTorrent.Dht
                 Listener.Stop ();
         }
 
-        private void TimeoutMessage ()
+        void TimeoutMessage ()
         {
             foreach (var v in WaitingResponse) {
                 if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
@@ -204,7 +204,7 @@ namespace MonoTorrent.Dht
             WaitingResponseTimedOut.Clear ();
         }
 
-        private void ReceiveMessage ()
+        void ReceiveMessage ()
         {
             var receive = ReceiveQueue.Dequeue ();
             var message = receive.Value;

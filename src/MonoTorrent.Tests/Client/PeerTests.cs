@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class PeerTests
     {
-        private List<Peer> peers;
+        List<Peer> peers;
 
         [SetUp]
         public void Setup ()
@@ -185,7 +185,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (one.GetHashCode (), otherOne.GetHashCode (), "#2");
         }
 
-        private void VerifyDecodedPeers (IList<Peer> decoded)
+        void VerifyDecodedPeers (IList<Peer> decoded)
         {
             Assert.AreEqual (peers.Count, decoded.Count, "#1");
             foreach (var dec in decoded)

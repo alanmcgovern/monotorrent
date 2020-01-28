@@ -35,15 +35,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     sealed class ExtendedHandshakeMessage : ExtensionMessage
     {
-        private static readonly BEncodedString MaxRequestKey = "reqq";
-        private static readonly BEncodedString PortKey = "p";
-        private static readonly BEncodedString SupportsKey = "m";
-        private static readonly BEncodedString VersionKey = "v";
-        private static readonly BEncodedString MetadataSizeKey = "metadata_size";
+        static readonly BEncodedString MaxRequestKey = "reqq";
+        static readonly BEncodedString PortKey = "p";
+        static readonly BEncodedString SupportsKey = "m";
+        static readonly BEncodedString VersionKey = "v";
+        static readonly BEncodedString MetadataSizeKey = "metadata_size";
 
         internal static readonly ExtensionSupport Support = new ExtensionSupport ("LT_handshake", 0);
 
-        private string version;
+        string version;
 
         public override int ByteLength {
             get {
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 MetadataSize = (int) ((BEncodedNumber) val).Number;
         }
 
-        private void LoadSupports (BEncodedDictionary supports)
+        void LoadSupports (BEncodedDictionary supports)
         {
             var list = new ExtensionSupports ();
             foreach (var k in supports)
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             return written - offset;
         }
 
-        private BEncodedDictionary Create ()
+        BEncodedDictionary Create ()
         {
             if (!ClientEngine.SupportsExtended)
                 throw new MessageException ("Libtorrent extension messages not supported");

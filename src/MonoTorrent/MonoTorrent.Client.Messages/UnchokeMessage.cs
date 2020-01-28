@@ -32,7 +32,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class UnchokeMessage : PeerMessage
     {
         internal static readonly byte MessageId = 1;
-        private const int messageLength = 1;
+        const int messageLength = 1;
 
         public override int Encode (byte[] buffer, int offset)
         {

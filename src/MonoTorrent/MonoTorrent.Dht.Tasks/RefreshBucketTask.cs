@@ -35,8 +35,8 @@ namespace MonoTorrent.Dht.Tasks
 {
     class RefreshBucketTask
     {
-        private readonly Bucket bucket;
-        private readonly DhtEngine engine;
+        readonly Bucket bucket;
+        readonly DhtEngine engine;
 
         public RefreshBucketTask (DhtEngine engine, Bucket bucket)
         {

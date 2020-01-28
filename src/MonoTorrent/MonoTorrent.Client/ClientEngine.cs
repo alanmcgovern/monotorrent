@@ -83,14 +83,14 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         internal static readonly BufferPool BufferPool = new BufferPool ();
-        private readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
-        private int tickCount;
-        private readonly List<TorrentManager> torrents;
+        readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        int tickCount;
+        readonly List<TorrentManager> torrents;
 
-        private readonly RateLimiter uploadLimiter;
-        private readonly RateLimiterGroup uploadLimiters;
-        private readonly RateLimiter downloadLimiter;
-        private readonly RateLimiterGroup downloadLimiters;
+        readonly RateLimiter uploadLimiter;
+        readonly RateLimiterGroup uploadLimiters;
+        readonly RateLimiter downloadLimiter;
+        readonly RateLimiterGroup downloadLimiters;
 
         #endregion
 
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        private void CheckDisposed ()
+        void CheckDisposed ()
         {
             if (Disposed)
                 throw new ObjectDisposedException (GetType ().Name);
@@ -459,7 +459,7 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-        private void LogicTick ()
+        void LogicTick ()
         {
             tickCount++;
 

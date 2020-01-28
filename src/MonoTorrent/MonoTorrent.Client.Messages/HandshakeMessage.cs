@@ -37,9 +37,9 @@ namespace MonoTorrent.Client.Messages.Standard
     class HandshakeMessage : PeerMessage
     {
         internal const int HandshakeLength = 68;
-        private static readonly byte[] ZeroedBits = new byte[8];
-        private const byte ExtendedMessagingFlag = 0x10;
-        private const byte FastPeersFlag = 0x04;
+        static readonly byte[] ZeroedBits = new byte[8];
+        const byte ExtendedMessagingFlag = 0x10;
+        const byte FastPeersFlag = 0x04;
 
 
         #region Member Variables
@@ -161,7 +161,7 @@ namespace MonoTorrent.Client.Messages.Standard
             PeerId = ReadBytes (buffer, ref offset, 20);
         }
 
-        private void CheckForSupports (byte[] buffer, ref int offset)
+        void CheckForSupports (byte[] buffer, ref int offset)
         {
             // Increment offset first so that the indices are consistent between Encoding and Decoding
             offset += 8;

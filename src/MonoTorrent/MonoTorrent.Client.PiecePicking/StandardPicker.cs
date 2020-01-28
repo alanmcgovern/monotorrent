@@ -312,7 +312,7 @@ namespace MonoTorrent.Client.PiecePicking
             return _requests.BinarySearch (null, Comparer) >= 0;
         }
 
-        private int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
+        int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
             var largestStart = 0;
             var largestEnd = 0;

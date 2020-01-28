@@ -42,8 +42,8 @@ namespace MonoTorrent
     {
         #region Private Fields
 
-        private BEncodedDictionary originalDictionary;
-        private DateTime creationDate;
+        BEncodedDictionary originalDictionary;
+        DateTime creationDate;
         protected string name;
         protected int pieceLength;
         protected Hashes pieces;
@@ -283,7 +283,7 @@ namespace MonoTorrent
         /// .torrent file.
         /// </summary>
         /// <param name="data">The byte[]containing the hashes from the .torrent file</param>
-        private void LoadHashPieces (byte[] data)
+        void LoadHashPieces (byte[] data)
         {
             if (data.Length % 20 != 0)
                 throw new TorrentException ("Invalid infohash detected");
@@ -297,7 +297,7 @@ namespace MonoTorrent
         /// of the .torrents infohash
         /// </summary>
         /// <param name="list">The list containing the files available to download</param>
-        private void LoadTorrentFiles (BEncodedList list)
+        void LoadTorrentFiles (BEncodedList list)
         {
             var files = new List<TorrentFile> ();
             int endIndex;
@@ -389,7 +389,7 @@ namespace MonoTorrent
         /// of the .torrent file
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
-        private void ProcessInfo (BEncodedDictionary dictionary)
+        void ProcessInfo (BEncodedDictionary dictionary)
         {
             Metadata = dictionary.Encode ();
             pieceLength = int.Parse (dictionary["piece length"].ToString ());
@@ -627,7 +627,7 @@ namespace MonoTorrent
         /// <param name="stream"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        private static Torrent Load (Stream stream, string path)
+        static Torrent Load (Stream stream, string path)
         {
             Check.Stream (stream);
             Check.Path (path);

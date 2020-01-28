@@ -40,9 +40,9 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private readonly Piece piece;
-        private bool requested;
-        private bool received;
+        readonly Piece piece;
+        bool requested;
+        bool received;
 
         #endregion Private Fields
 

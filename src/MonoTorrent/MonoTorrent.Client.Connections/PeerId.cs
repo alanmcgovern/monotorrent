@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
 
         #region BitTyrantasaurus implementation
 
-        private const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
+        const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
         ValueStopwatch LastRateReductionTime;                   // last time we reduced rate of this peer
         long lastMeasuredDownloadRate;                                   // last download rate measured
         ValueStopwatch TyrantStartTime;
@@ -229,7 +229,7 @@ namespace MonoTorrent.Client
         // stats
         long maxObservedDownloadSpeed;
 
-        private void InitializeTyrant ()
+        void InitializeTyrant ()
         {
             HaveMessageEstimatedDownloadedBytes = 0;
             TyrantStartTime.Restart ();

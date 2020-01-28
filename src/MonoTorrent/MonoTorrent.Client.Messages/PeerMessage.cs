@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Messages
                 arg => throw new MessageException ("Shouldn't decode extension message this way"));
         }
 
-        private static void Register (byte identifier, Func<ITorrentData, PeerMessage> creator)
+        static void Register (byte identifier, Func<ITorrentData, PeerMessage> creator)
         {
             if (creator == null)
                 throw new ArgumentNullException (nameof (creator));

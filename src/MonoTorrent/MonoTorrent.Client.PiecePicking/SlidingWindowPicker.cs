@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         // this represents the last byte played in a video player, as the high priority
         // set designates pieces that are needed VERY SOON
-        private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
+        int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
 
         /// <summary>
         /// Gets or sets first "high priority" piece. The n pieces after this will be requested in-order,

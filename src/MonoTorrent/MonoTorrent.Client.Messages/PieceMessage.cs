@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class PieceMessage : PeerMessage
     {
         internal static readonly byte MessageId = 7;
-        private const int messageLength = 9;
+        const int messageLength = 9;
 
         /// <summary>
         /// The data associated with this block

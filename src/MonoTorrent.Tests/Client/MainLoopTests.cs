@@ -8,7 +8,7 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class MainLoopTests
     {
-        private int count;
+        int count;
         MainLoop loop;
 
         [OneTimeSetUp]

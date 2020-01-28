@@ -102,7 +102,7 @@ namespace MonoTorrent.Tracker
 
     class TrackerTestRig : IDisposable
     {
-        private readonly Random r = new Random (1000);
+        readonly Random r = new Random (1000);
 
         public CustomListener Listener;
         public TrackerServer Tracker;
@@ -120,7 +120,7 @@ namespace MonoTorrent.Tracker
             GeneratePeers ();
         }
 
-        private void GenerateTrackables ()
+        void GenerateTrackables ()
         {
             Trackables = new List<Trackable> ();
             for (var i = 0; i < 10; i++) {
@@ -130,7 +130,7 @@ namespace MonoTorrent.Tracker
             }
         }
 
-        private void GeneratePeers ()
+        void GeneratePeers ()
         {
             Peers = new List<PeerDetails> ();
             for (var i = 0; i < 100; i++) {

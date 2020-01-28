@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.PiecePicking
                     pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
         }
 
-        private bool AlreadyRequested (Block block, IPieceRequester peer)
+        bool AlreadyRequested (Block block, IPieceRequester peer)
         {
             var b = Requests.Exists (r => r.Block.PieceIndex == block.PieceIndex &&
                                           r.Block.StartOffset == block.StartOffset &&

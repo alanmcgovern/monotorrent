@@ -9,8 +9,8 @@ namespace SampleClient
     /// </summary>
     public class Top10Listener : TraceListener
     {
-        private readonly int capacity;
-        private readonly LinkedList<string> traces;
+        readonly int capacity;
+        readonly LinkedList<string> traces;
 
         public Top10Listener (int capacity)
         {

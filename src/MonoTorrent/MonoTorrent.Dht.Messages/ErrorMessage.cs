@@ -39,15 +39,16 @@ namespace MonoTorrent.Dht.Messages
         internal override NodeId Id {
             get { return new NodeId (new byte[20]); }
         }
-        private BEncodedList ErrorList {
+
+        BEncodedList ErrorList {
             get { return (BEncodedList) properties[ErrorListKey]; }
         }
 
-        private ErrorCode ErrorCode {
+        ErrorCode ErrorCode {
             get { return ((ErrorCode) ((BEncodedNumber) ErrorList[0]).Number); }
         }
 
-        private string Message {
+        string Message {
             get { return ((BEncodedString) ErrorList[1]).Text; }
         }
 

@@ -126,7 +126,7 @@ namespace MonoTorrent.Client.PiecePicking
             return bundle;
         }
 
-        private bool TryEnableEndgame ()
+        bool TryEnableEndgame ()
         {
             if (inEndgame)
                 return false;

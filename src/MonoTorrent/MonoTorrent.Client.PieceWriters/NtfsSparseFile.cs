@@ -51,12 +51,12 @@ namespace MonoTorrent.Client
             public readonly long BeyondFinalZero;
         }
 
-        private const int MAX_PATH = 260;
-        private const uint FILE_SUPPORTS_SPARSE_FILES = 64;
-        private const uint FSCTL_SET_SPARSE = ((uint) 0x00000009 << 16) | ((uint) 49 << 2);
-        private const uint FSCTL_SET_ZERO_DATA = ((uint) 0x00000009 << 16) | ((uint) 50 << 2) | ((uint) 2 << 14);
+        const int MAX_PATH = 260;
+        const uint FILE_SUPPORTS_SPARSE_FILES = 64;
+        const uint FSCTL_SET_SPARSE = ((uint) 0x00000009 << 16) | ((uint) 49 << 2);
+        const uint FSCTL_SET_ZERO_DATA = ((uint) 0x00000009 << 16) | ((uint) 50 << 2) | ((uint) 2 << 14);
 
-        private static bool SupportsSparse = true;
+        static bool SupportsSparse = true;
 
         public static void CreateSparse (string filename, long length)
         {
@@ -106,7 +106,8 @@ namespace MonoTorrent.Client
                 // Ignore for now. Maybe if i keep hitting this i should abort future attemts
             }
         }
-        private static bool CanCreateSparse (string volume)
+
+        static bool CanCreateSparse (string volume)
         {
             // Ensure full path is supplied
             volume = Path.GetPathRoot (volume);
@@ -120,7 +121,7 @@ namespace MonoTorrent.Client
 
 
         [DllImport ("Kernel32.dll")]
-        private static extern bool DeviceIoControl (
+        static extern bool DeviceIoControl (
             SafeFileHandle hDevice,
             uint dwIoControlCode,
             IntPtr InBuffer,
@@ -132,7 +133,7 @@ namespace MonoTorrent.Client
         );
 
         [DllImportAttribute ("kernel32.dll")]
-        private static extern SafeFileHandle CreateFileW (
+        static extern SafeFileHandle CreateFileW (
                 [In][MarshalAsAttribute (UnmanagedType.LPWStr)] string lpFileName,
                 uint dwDesiredAccess,
                 uint dwShareMode,
@@ -143,7 +144,7 @@ namespace MonoTorrent.Client
         );
 
         [DllImportAttribute ("kernel32.dll")]
-        private static extern bool GetVolumeInformationW (
+        static extern bool GetVolumeInformationW (
             [In] [MarshalAsAttribute (UnmanagedType.LPWStr)] string lpRootPathName,
             [Out] [MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder lpVolumeNameBuffer,
             uint nVolumeNameSize,

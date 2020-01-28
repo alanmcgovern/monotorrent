@@ -35,7 +35,7 @@ namespace MonoTorrent
 {
     static class Toolbox
     {
-        private static readonly Random r = new Random ();
+        static readonly Random r = new Random ();
         public static int Count<T> (IEnumerable<T> enumerable, Predicate<T> predicate)
         {
             var count = 0;
