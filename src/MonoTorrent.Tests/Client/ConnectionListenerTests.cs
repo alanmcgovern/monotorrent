@@ -60,8 +60,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AcceptTen ()
         {
-            for (int i = 0; i < 10; i++) {
-                using TcpClient c = new TcpClient (AddressFamily.InterNetwork);
+            for (var i = 0; i < 10; i++) {
+                using var c = new TcpClient (AddressFamily.InterNetwork);
                 var task = AcceptSocket ();
                 c.Connect (endpoint);
                 if (await Task.WhenAny (Task.Delay (1000), task) != task)

@@ -220,7 +220,7 @@ namespace MonoTorrent.Tracker
                 throw new ArgumentNullException (nameof (trackable));
 
             lock (Torrents)
-                if (Torrents.TryGetValue (trackable.InfoHash, out SimpleTorrentManager value))
+                if (Torrents.TryGetValue (trackable.InfoHash, out var value))
                     return value;
 
             return null;
@@ -317,14 +317,14 @@ namespace MonoTorrent.Tracker
             }
 
             var managers = new List<ITrackerItem> ();
-            BEncodedDictionary files = new BEncodedDictionary ();
-            for (int i = 0; i < e.InfoHashes.Count; i++) {
-                if (!Torrents.TryGetValue (e.InfoHashes[i], out SimpleTorrentManager manager))
+            var files = new BEncodedDictionary ();
+            for (var i = 0; i < e.InfoHashes.Count; i++) {
+                if (!Torrents.TryGetValue (e.InfoHashes[i], out var manager))
                     continue;
 
                 managers.Add (manager);
 
-                BEncodedDictionary dict = new BEncodedDictionary ();
+                var dict = new BEncodedDictionary ();
                 dict.Add ("complete", new BEncodedNumber (manager.Complete));
                 dict.Add ("downloaded", new BEncodedNumber (manager.Downloaded));
                 dict.Add ("incomplete", new BEncodedNumber (manager.Incomplete));

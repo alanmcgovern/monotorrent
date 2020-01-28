@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.Encryption
 
         protected override async ReusableTask doneReceiveY ()
         {
-            byte[] req1 = Hash (Req1Bytes, S);
+            var req1 = Hash (Req1Bytes, S);
             await Synchronize (req1, 628); // 3 A->B: HASH('req1', S)
         }
 
@@ -70,9 +70,9 @@ namespace MonoTorrent.Client.Encryption
 
         private async ReusableTask gotVerification (byte[] verifyBytes)
         {
-            byte[] torrentHash = new byte[20];
+            var torrentHash = new byte[20];
 
-            byte[] myCP = new byte[4];
+            var myCP = new byte[4];
 
             Array.Copy (verifyBytes, 0, torrentHash, 0, torrentHash.Length); // HASH('req2', SKEY) xor HASH('req3', S)
 
@@ -107,14 +107,14 @@ namespace MonoTorrent.Client.Encryption
             DoDecrypt (InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
 
             // Step Four
-            byte[] padD = GeneratePad ();
+            var padD = GeneratePad ();
             SelectCrypto (myCP, false);
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             var finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
-            byte[] buffer = ClientEngine.BufferPool.Rent (finalBufferLength);
+            var buffer = ClientEngine.BufferPool.Rent (finalBufferLength);
 
-            int offset = 0;
+            var offset = 0;
             offset += Message.Write (buffer, offset, VerificationConstant);
             offset += Message.Write (buffer, offset, CryptoSelect);
             offset += Message.Write (buffer, offset, Len (padD));
@@ -137,12 +137,12 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>true if a match has been found</returns>
         private bool MatchSKEY (byte[] torrentHash)
         {
-            for (int i = 0; i < PossibleSKEYs.Length; i++) {
-                byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].Hash);
-                byte[] req3 = Hash (Req3Bytes, S);
+            for (var i = 0; i < PossibleSKEYs.Length; i++) {
+                var req2 = Hash (Req2Bytes, PossibleSKEYs[i].Hash);
+                var req3 = Hash (Req3Bytes, S);
 
-                bool match = true;
-                for (int j = 0; j < req2.Length && match; j++)
+                var match = true;
+                for (var j = 0; j < req2.Length && match; j++)
                     match = torrentHash[j] == (req2[j] ^ req3[j]);
 
                 if (match) {

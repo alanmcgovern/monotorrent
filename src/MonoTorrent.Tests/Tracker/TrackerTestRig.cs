@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -59,7 +59,7 @@ namespace MonoTorrent.Tracker
     {
         public BEncodedValue Handle (PeerDetails d, TorrentEvent e, ITrackable trackable)
         {
-            NameValueCollection c = new NameValueCollection ();
+            var c = new NameValueCollection ();
             c.Add ("info_hash", trackable.InfoHash.UrlEncode ());
             c.Add ("peer_id", d.peerId.UrlEncode ());
             c.Add ("port", d.Port.ToString ());
@@ -123,8 +123,8 @@ namespace MonoTorrent.Tracker
         private void GenerateTrackables ()
         {
             Trackables = new List<Trackable> ();
-            for (int i = 0; i < 10; i++) {
-                byte[] infoHash = new byte[20];
+            for (var i = 0; i < 10; i++) {
+                var infoHash = new byte[20];
                 r.NextBytes (infoHash);
                 Trackables.Add (new Trackable (new InfoHash (infoHash), i.ToString ()));
             }
@@ -133,8 +133,8 @@ namespace MonoTorrent.Tracker
         private void GeneratePeers ()
         {
             Peers = new List<PeerDetails> ();
-            for (int i = 0; i < 100; i++) {
-                PeerDetails d = new PeerDetails ();
+            for (var i = 0; i < 100; i++) {
+                var d = new PeerDetails ();
                 d.ClientAddress = IPAddress.Parse ($"127.0.{i}.2");
                 d.Downloaded = (int) (10000 * r.NextDouble ());
                 d.peerId = $"-----------------{i:0.000}";

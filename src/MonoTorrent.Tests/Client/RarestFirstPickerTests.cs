@@ -56,9 +56,9 @@ namespace MonoTorrent.Client.PiecePicking
         [SetUp]
         public void Setup ()
         {
-            int pieceLength = 16 * Piece.BlockSize;
-            int pieces = 40;
-            int size = pieces * pieceLength;
+            var pieceLength = 16 * Piece.BlockSize;
+            var pieces = 40;
+            var size = pieces * pieceLength;
 
             bitfield = new BitField (pieces);
             torrentData = new TestTorrentData {
@@ -75,15 +75,15 @@ namespace MonoTorrent.Client.PiecePicking
             peer.BitField.SetAll (true);
 
             peers = new List<PeerId> ();
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
                 peers.Add (PeerId.CreateNull (pieces));
         }
 
         [Test]
         public void RarestPieceTest ()
         {
-            for (int i = 0; i < 5; i++)
-                for (int j = 0; j < (i * 5) + 5; j++)
+            for (var i = 0; i < 5; i++)
+                for (var j = 0; j < (i * 5) + 5; j++)
                     peers[i].BitField[j] = true;
 
             // No pieces should be selected, but we can check what was requested.
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client.PiecePicking
                 .Set (8, true);
 
             // Every other peer has all pieces except for piece '2'.
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
                 peers[i].BitField.SetAll (true).Set (i, false);
 
             // Ensure that pieces which were not in the 'available' bitfield were not offered

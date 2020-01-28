@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Modes
             Manager.HashFails = 0;
             if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
                 Cancellation.Token.ThrowIfCancellationRequested ();
-                for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+                for (var index = 0; index < Manager.Torrent.Pieces.Count; index++) {
                     if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
                         // so they also report that the piece is not available/downloaded.
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.Modes
             } else {
                 await PausedCompletionSource.Task;
 
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                for (var i = 0; i < Manager.Torrent.Pieces.Count; i++)
                     Manager.OnPieceHashed (i, false);
             }
         }

@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, BitField.LengthInBytes + 1);
             written += Write (buffer, written, MessageId);

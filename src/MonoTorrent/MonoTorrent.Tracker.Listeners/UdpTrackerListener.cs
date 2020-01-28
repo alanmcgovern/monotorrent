@@ -80,11 +80,11 @@ namespace MonoTorrent.Tracker.Listeners
             while (!token.IsCancellationRequested) {
                 try {
                     var result = await client.ReceiveAsync ();
-                    byte[] data = result.Buffer;
+                    var data = result.Buffer;
                     if (data.Length < 16)
                         return;//bad request
 
-                    UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
+                    var request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
 
                     if (sendTask != null) {
                         try {
@@ -125,7 +125,7 @@ namespace MonoTorrent.Tracker.Listeners
             else
                 m = new ErrorMessage (connectMessage.TransactionId, $"The connection_id was {connectMessage.ConnectionId} but expected {ConnectMessage.InitialiseConnectionId}");
 
-            byte[] data = m.Encode ();
+            var data = m.Encode ();
             try {
                 await client.SendAsync (data, data.Length, remotePeer);
             } catch {
@@ -146,15 +146,15 @@ namespace MonoTorrent.Tracker.Listeners
         protected virtual async Task ReceiveAnnounce (UdpClient client, AnnounceMessage announceMessage, IPEndPoint remotePeer)
         {
             UdpTrackerMessage m;
-            BEncodedDictionary dict = Handle (getCollection (announceMessage), remotePeer.Address, false);
+            var dict = Handle (getCollection (announceMessage), remotePeer.Address, false);
             if (dict.ContainsKey (TrackerRequest.FailureKey)) {
                 m = new ErrorMessage (announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString ());
             } else {
-                TimeSpan interval = TimeSpan.Zero;
-                int leechers = 0;
-                int seeders = 0;
-                List<MonoTorrent.Client.Peer> peers = new List<MonoTorrent.Client.Peer> ();
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
+                var interval = TimeSpan.Zero;
+                var leechers = 0;
+                var seeders = 0;
+                var peers = new List<MonoTorrent.Client.Peer> ();
+                foreach (var keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("complete"):
                             seeders = Convert.ToInt32 (keypair.Value.ToString ());//same as seeder?
@@ -181,13 +181,13 @@ namespace MonoTorrent.Tracker.Listeners
                 }
                 m = new AnnounceResponseMessage (announceMessage.TransactionId, interval, leechers, seeders, peers);
             }
-            byte[] data = m.Encode ();
+            var data = m.Encode ();
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
         private NameValueCollection getCollection (AnnounceMessage announceMessage)
         {
-            NameValueCollection res = new NameValueCollection ();
+            var res = new NameValueCollection ();
             res.Add ("info_hash", announceMessage.InfoHash.UrlEncode ());
             res.Add ("peer_id", announceMessage.PeerId.UrlEncode ());
             res.Add ("port", announceMessage.Port.ToString ());
@@ -204,21 +204,21 @@ namespace MonoTorrent.Tracker.Listeners
 
         protected virtual async Task ReceiveScrape (UdpClient client, ScrapeMessage scrapeMessage, IPEndPoint remotePeer)
         {
-            BEncodedDictionary val = Handle (getCollection (scrapeMessage), remotePeer.Address, true);
+            var val = Handle (getCollection (scrapeMessage), remotePeer.Address, true);
 
             UdpTrackerMessage m;
             byte[] data;
             if (val.ContainsKey (TrackerRequest.FailureKey)) {
                 m = new ErrorMessage (scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString ());
             } else {
-                List<ScrapeDetails> scrapes = new List<ScrapeDetails> ();
+                var scrapes = new List<ScrapeDetails> ();
 
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val) {
-                    BEncodedDictionary dict = (BEncodedDictionary) keypair.Value;
-                    int seeds = 0;
-                    int leeches = 0;
-                    int complete = 0;
-                    foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair2 in dict) {
+                foreach (var keypair in val) {
+                    var dict = (BEncodedDictionary) keypair.Value;
+                    var seeds = 0;
+                    var leeches = 0;
+                    var complete = 0;
+                    foreach (var keypair2 in dict) {
                         switch (keypair2.Key.Text) {
                             case "complete"://The current number of connected seeds
                                 seeds = Convert.ToInt32 (keypair2.Value.ToString ());
@@ -231,7 +231,7 @@ namespace MonoTorrent.Tracker.Listeners
                                 break;
                         }
                     }
-                    ScrapeDetails sd = new ScrapeDetails (seeds, leeches, complete);
+                    var sd = new ScrapeDetails (seeds, leeches, complete);
                     scrapes.Add (sd);
                     if (scrapes.Count == 74)//protocole do not support to send more than 74 scrape at once...
                     {
@@ -249,11 +249,11 @@ namespace MonoTorrent.Tracker.Listeners
 
         private NameValueCollection getCollection (ScrapeMessage scrapeMessage)
         {
-            NameValueCollection res = new NameValueCollection ();
+            var res = new NameValueCollection ();
             if (scrapeMessage.InfoHashes.Count == 0)
                 return res;//no infohash????
             //TODO more than one infohash : paid attention to order in response!!!
-            InfoHash hash = new InfoHash (scrapeMessage.InfoHashes[0]);
+            var hash = new InfoHash (scrapeMessage.InfoHashes[0]);
             res.Add ("info_hash", hash.UrlEncode ());
             return res;
         }

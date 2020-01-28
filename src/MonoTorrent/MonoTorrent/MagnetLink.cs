@@ -103,9 +103,9 @@ namespace MonoTorrent
             if (uri.Scheme != "magnet")
                 throw new FormatException ("Magnet links must start with 'magnet:'.");
 
-            string[] parameters = uri.Query.Substring (1).Split ('&');
-            for (int i = 0; i < parameters.Length; i++) {
-                string[] keyval = parameters[i].Split ('=');
+            var parameters = uri.Query.Substring (1).Split ('&');
+            for (var i = 0; i < parameters.Length; i++) {
+                var keyval = parameters[i].Split ('=');
                 if (keyval.Length != 2)
                     throw new FormatException ("A field-value pair of the magnet link contain more than one equal'.");
                 switch (keyval[0].Substring (0, 2)) {
@@ -113,7 +113,7 @@ namespace MonoTorrent
                         if (infoHash != null)
                             throw new FormatException ("More than one infohash in magnet link is not allowed.");
 
-                        string val = keyval[1].Substring (9);
+                        var val = keyval[1].Substring (9);
                         switch (keyval[1].Substring (0, 9)) {
                             case "urn:sha1:"://base32 hash
                             case "urn:btih:":

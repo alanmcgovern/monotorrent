@@ -101,7 +101,7 @@ namespace MonoTorrent.Dht
 
         void ICollection<Node>.CopyTo (Node[] array, int arrayIndex)
         {
-            for (int i = 0; i < Count; i++)
+            for (var i = 0; i < Count; i++)
                 array[arrayIndex++] = Nodes[i].Item2;
         }
 

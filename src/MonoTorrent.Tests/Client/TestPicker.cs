@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -52,14 +52,14 @@ namespace MonoTorrent.Client.PiecePicking
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             PickPieceId.Add (peer);
-            BitField clone = new BitField (available.Length);
+            var clone = new BitField (available.Length);
             clone.Or (available);
             PickPieceBitfield.Add (clone);
             PickPiecePeers.Add (otherPeers);
             PickedIndex.Add (Tuple.Create (startIndex, endIndex));
             PickPieceCount.Add (count);
 
-            for (int i = startIndex; i < endIndex; i++) {
+            for (var i = startIndex; i < endIndex; i++) {
                 if (PickedPieces.Contains (i))
                     continue;
                 PickedPieces.Add (i);

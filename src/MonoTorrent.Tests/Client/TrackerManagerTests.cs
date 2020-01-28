@@ -110,7 +110,7 @@ namespace MonoTorrent.Client
             await trackerManager.Announce ();
             Assert.AreEqual (1, trackers[0][0].AnnouncedAt.Count, "#2");
             Assert.That ((DateTime.Now - trackers[0][0].AnnouncedAt[0]) < TimeSpan.FromSeconds (1), "#3");
-            for (int i = 1; i < trackers.Count; i++)
+            for (var i = 1; i < trackers.Count; i++)
                 Assert.AreEqual (0, trackers[0][i].AnnouncedAt.Count, "#4." + i);
 
             await trackerManager.Announce (trackers[0][1]);
@@ -167,13 +167,13 @@ namespace MonoTorrent.Client
             var argsTask = new TaskCompletionSource<AnnounceResponseEventArgs> ();
             trackerManager.AnnounceComplete += (o, e) => argsTask.SetResult (e);
 
-            for (int i = 0; i < trackers[0].Count; i++)
+            for (var i = 0; i < trackers[0].Count; i++)
                 trackers[0][i].FailAnnounce = true;
 
             await trackerManager.Announce ();
 
             var args = await argsTask.Task.WithTimeout ("The announce never completed");
-            for (int i = 0; i < trackers[0].Count; i++)
+            for (var i = 0; i < trackers[0].Count; i++)
                 Assert.AreEqual (1, trackers[0][i].AnnouncedAt.Count, "#1." + i);
 
             Assert.AreEqual (trackers[1][0], trackerManager.CurrentTracker, "#2");
@@ -194,7 +194,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Defaults ()
         {
-            DefaultTracker tracker = new DefaultTracker ();
+            var tracker = new DefaultTracker ();
             Assert.AreEqual (TimeSpan.FromMinutes (3), tracker.MinUpdateInterval, "#1");
             Assert.AreEqual (TimeSpan.FromMinutes (30), tracker.UpdateInterval, "#2");
             Assert.IsNotNull (tracker.WarningMessage, "#3");
@@ -214,7 +214,7 @@ namespace MonoTorrent.Client
             Assert.AreSame (trackers[0][0], args.Tracker);
 
             Assert.AreEqual (1, trackers[0][0].ScrapedAt.Count, "#2");
-            for (int i = 1; i < trackers.Count; i++)
+            for (var i = 1; i < trackers.Count; i++)
                 Assert.AreEqual (0, trackers[i][0].ScrapedAt.Count, "#4." + i);
         }
 
@@ -246,7 +246,7 @@ namespace MonoTorrent.Client
             Assert.AreSame (trackers[0][1], args.Tracker);
 
             Assert.AreEqual (1, trackers[0][1].ScrapedAt.Count, "#2");
-            for (int i = 1; i < trackers.Count; i++)
+            for (var i = 1; i < trackers.Count; i++)
                 Assert.AreEqual (0, trackers[i][0].ScrapedAt.Count, "#4." + i);
         }
 

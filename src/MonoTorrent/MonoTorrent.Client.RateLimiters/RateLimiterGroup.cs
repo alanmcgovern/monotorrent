@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.RateLimiters
 
         public bool Unlimited {
             get {
-                for (int i = 0; i < limiters.Count; i++)
+                for (var i = 0; i < limiters.Count; i++)
                     if (!limiters[i].Unlimited)
                         return false;
                 return true;
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.RateLimiters
 
         public bool TryProcess (long amount)
         {
-            for (int i = 0; i < limiters.Count; i++) {
+            for (var i = 0; i < limiters.Count; i++) {
                 if (limiters[i].Unlimited)
                     continue;
                 else if (!limiters[i].TryProcess (amount))

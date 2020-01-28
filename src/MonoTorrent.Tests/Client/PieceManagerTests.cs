@@ -62,8 +62,8 @@ namespace MonoTorrent.Client.PiecePicking
         [SetUp]
         public void Setup ()
         {
-            int pieceCount = 40;
-            int pieceLength = 256 * 1024;
+            var pieceCount = 40;
+            var pieceLength = 256 * 1024;
             bitfield = new BitField (pieceCount);
             torrentData = new TestTorrentData {
                 Files = new[] { new TorrentFile ("File", pieceLength * pieceCount) },
@@ -78,8 +78,8 @@ namespace MonoTorrent.Client.PiecePicking
             manager.ChangePicker (new StandardPicker (), bitfield, torrentData);
 
             peer = PeerId.CreateNull (pieceCount);
-            for (int i = 0; i < 20; i++) {
-                PeerId p = PeerId.CreateNull (pieceCount);
+            for (var i = 0; i < 20; i++) {
+                var p = PeerId.CreateNull (pieceCount);
                 p.SupportsFastPeer = true;
                 peers.Add (p);
             }

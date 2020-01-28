@@ -55,9 +55,9 @@ namespace MonoTorrent.Client.Messages
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
-            for (int i = 0; i < Requests.Count; i++) {
+            for (var i = 0; i < Requests.Count; i++) {
                 Message.PieceIndex = Requests[i].PieceIndex;
                 Message.RequestLength = Requests[i].RequestLength;
                 Message.StartOffset = Requests[i].StartOffset;

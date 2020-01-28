@@ -82,7 +82,7 @@ namespace MonoTorrent.Dht
 
         internal BEncodedString CompactPort ()
         {
-            byte[] buffer = new byte[6];
+            var buffer = new byte[6];
             CompactPort (buffer, 0);
             return buffer;
         }
@@ -95,8 +95,8 @@ namespace MonoTorrent.Dht
 
         internal static BEncodedString CompactPort (IList<Node> peers)
         {
-            byte[] buffer = new byte[peers.Count * 6];
-            for (int i = 0; i < peers.Count; i++)
+            var buffer = new byte[peers.Count * 6];
+            for (var i = 0; i < peers.Count; i++)
                 peers[i].CompactPort (buffer, i * 6);
 
             return new BEncodedString (buffer);
@@ -104,7 +104,7 @@ namespace MonoTorrent.Dht
 
         internal BEncodedString CompactNode ()
         {
-            byte[] buffer = new byte[26];
+            var buffer = new byte[26];
             CompactNode (buffer, 0);
             return buffer;
         }
@@ -129,16 +129,16 @@ namespace MonoTorrent.Dht
 
         internal static Node FromCompactNode (byte[] buffer, int offset)
         {
-            byte[] id = new byte[20];
+            var id = new byte[20];
             Buffer.BlockCopy (buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress ((uint) BitConverter.ToInt32 (buffer, offset + 20));
+            var address = new IPAddress ((uint) BitConverter.ToInt32 (buffer, offset + 20));
             int port = (ushort) IPAddress.NetworkToHostOrder ((short) BitConverter.ToUInt16 (buffer, offset + 24));
             return new Node (new NodeId (id), new IPEndPoint (address, port));
         }
 
         internal static IEnumerable<Node> FromCompactNode (byte[] buffer)
         {
-            for (int i = 0; (i + 26) <= buffer.Length; i += 26)
+            for (var i = 0; (i + 26) <= buffer.Length; i += 26)
                 yield return FromCompactNode (buffer, i);
         }
 
@@ -149,21 +149,21 @@ namespace MonoTorrent.Dht
 
         internal static IEnumerable<Node> FromCompactNode (BEncodedList nodes)
         {
-            foreach (BEncodedValue node in nodes) {
+            foreach (var node in nodes) {
                 //bad format!
                 if (!(node is BEncodedList))
                     continue;
 
-                string host = string.Empty;
+                var host = string.Empty;
                 long port = 0;
-                foreach (BEncodedValue val in (BEncodedList) node) {
+                foreach (var val in (BEncodedList) node) {
                     if (val is BEncodedString)
                         host = ((BEncodedString) val).Text;
                     else if (val is BEncodedNumber)
                         port = ((BEncodedNumber) val).Number;
                 }
 
-                IPAddress.TryParse (host, out IPAddress address);
+                IPAddress.TryParse (host, out var address);
 
                 //REM: bad design from bitcomet we do not have node id so create it...
                 //or use torrent infohash?
@@ -184,8 +184,8 @@ namespace MonoTorrent.Dht
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (48);
-            for (int i = 0; i < Id.Bytes.Length; i++) {
+            var sb = new StringBuilder (48);
+            for (var i = 0; i < Id.Bytes.Length; i++) {
                 sb.Append (Id.Bytes[i]);
                 sb.Append ("-");
             }

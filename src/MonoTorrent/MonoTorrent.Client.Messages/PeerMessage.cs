@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.Messages
             if (count < 4)
                 throw new ArgumentException ("A message must contain a 4 byte length prefix");
 
-            int messageLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (buffer, offset));
+            var messageLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (buffer, offset));
 
             if (messageLength > (count - 4))
                 throw new ArgumentException ("Incomplete message detected");
@@ -91,12 +91,12 @@ namespace MonoTorrent.Client.Messages
             if (buffer[offset + 4] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer, offset + 4 + 1, count - 4 - 1, manager);
 
-            if (!messageDict.TryGetValue (buffer[offset + 4], out Func<ITorrentData, PeerMessage> creator))
+            if (!messageDict.TryGetValue (buffer[offset + 4], out var creator))
                 throw new ProtocolException ("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
-            PeerMessage message = creator (manager);
+            var message = creator (manager);
             message.Decode (buffer, offset + 4 + 1, count - 4 - 1);
             return message;
         }

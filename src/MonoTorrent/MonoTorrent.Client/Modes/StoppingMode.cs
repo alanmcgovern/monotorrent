@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Modes
         {
             try {
                 Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
-                foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
+                foreach (var id in Manager.Peers.ConnectedPeers.ToArray ())
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
                 Manager.Monitor.Reset ();

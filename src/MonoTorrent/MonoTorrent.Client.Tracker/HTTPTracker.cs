@@ -109,7 +109,7 @@ namespace MonoTorrent.Client.Tracker
 
         protected override async Task DoScrapeAsync (ScrapeParameters parameters)
         {
-            string url = ScrapeUri.OriginalString;
+            var url = ScrapeUri.OriginalString;
             // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
             if (url.IndexOf ('?') == -1)
                 url += $"?info_hash={parameters.InfoHash.UrlEncode ()}";
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.Tracker
 
         Uri CreateAnnounceString (AnnounceParameters parameters)
         {
-            UriQueryBuilder b = new UriQueryBuilder (Uri);
+            var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
              .Add ("peer_id", parameters.PeerId.UrlEncode ())
              .Add ("port", parameters.Port)
@@ -183,11 +183,11 @@ namespace MonoTorrent.Client.Tracker
 
         static async Task<BEncodedDictionary> DecodeResponseAsync (WebResponse response)
         {
-            int bytesRead = 0;
-            int totalRead = 0;
-            byte[] buffer = new byte[2048];
+            var bytesRead = 0;
+            var totalRead = 0;
+            var buffer = new byte[2048];
 
-            using MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
+            using var dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
             using (var reader = response.GetResponseStream ()) {
                 // If there is a ContentLength, use that to decide how much we read.
                 if (response.ContentLength > 0) {
@@ -225,7 +225,7 @@ namespace MonoTorrent.Client.Tracker
         {
             await MainLoop.SwitchToThreadpool ();
 
-            BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
+            var dict = await DecodeResponseAsync (response).ConfigureAwait (false);
             var peers = new List<Peer> ();
             HandleAnnounce (dict, peers);
             Status = TrackerState.Ok;
@@ -234,7 +234,7 @@ namespace MonoTorrent.Client.Tracker
 
         void HandleAnnounce (BEncodedDictionary dict, List<Peer> peers)
         {
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
+            foreach (var keypair in dict) {
                 switch (keypair.Key.Text) {
                     case ("complete"):
                         Complete = Convert.ToInt32 (keypair.Value.ToString ());
@@ -286,18 +286,18 @@ namespace MonoTorrent.Client.Tracker
         {
             await MainLoop.SwitchToThreadpool ();
 
-            BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
+            var dict = await DecodeResponseAsync (response).ConfigureAwait (false);
 
             // FIXME: Log the failure?
             if (!dict.ContainsKey ("files")) {
                 return;
             }
-            BEncodedDictionary files = (BEncodedDictionary) dict["files"];
+            var files = (BEncodedDictionary) dict["files"];
             if (files.Count != 1)
                 throw new TrackerException ("The scrape response contained unexpected data");
 
             var d = (BEncodedDictionary) files[new BEncodedString (infoHash.Hash)];
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d) {
+            foreach (var kp in d) {
                 switch (kp.Key.ToString ()) {
                     case ("complete"):
                         Complete = (int) ((BEncodedNumber) kp.Value).Number;

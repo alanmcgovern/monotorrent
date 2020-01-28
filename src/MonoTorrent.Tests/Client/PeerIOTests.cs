@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
         {
             var data = new byte[20];
             Message.Write (data, 0, 16);
-            for (int i = 4; i < 16; i++)
+            for (var i = 4; i < 16; i++)
                 data[i] = byte.MaxValue;
 
             var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null);

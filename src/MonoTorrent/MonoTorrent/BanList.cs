@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
         public void Remove (IEnumerable<AddressRange> addressRanges)
         {
             Check.AddressRanges (addressRanges);
-            foreach (AddressRange address in addressRanges)
+            foreach (var address in addressRanges)
                 Remove (address);
         }
     }

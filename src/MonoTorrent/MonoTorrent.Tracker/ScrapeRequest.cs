@@ -62,7 +62,7 @@ namespace MonoTorrent.Tracker
 
             var split = infoHash.Split (HashSeparators, StringSplitOptions.RemoveEmptyEntries);
             var result = new InfoHash[split.Length];
-            for (int i = 0; i < split.Length; i++)
+            for (var i = 0; i < split.Length; i++)
                 result[i] = InfoHash.UrlDecode (split[i]);
             return result;
         }

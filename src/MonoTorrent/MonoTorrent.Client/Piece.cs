@@ -90,11 +90,11 @@ namespace MonoTorrent.Client
                 LastPiece (pieceIndex, pieceLength, torrentSize);
 
             else {
-                int numberOfPieces = (int) Math.Ceiling (((double) pieceLength / BlockSize));
+                var numberOfPieces = (int) Math.Ceiling (((double) pieceLength / BlockSize));
 
                 Blocks = new Block[numberOfPieces];
 
-                for (int i = 0; i < numberOfPieces; i++)
+                for (var i = 0; i < numberOfPieces; i++)
                     Blocks[i] = new Block (this, i * BlockSize, BlockSize);
 
                 if ((pieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
@@ -104,14 +104,14 @@ namespace MonoTorrent.Client
 
         private void LastPiece (int pieceIndex, int pieceLength, long torrentSize)
         {
-            int bytesRemaining = (int) (torrentSize - ((long) pieceIndex * pieceLength));
-            int numberOfBlocks = bytesRemaining / BlockSize;
+            var bytesRemaining = (int) (torrentSize - ((long) pieceIndex * pieceLength));
+            var numberOfBlocks = bytesRemaining / BlockSize;
             if (bytesRemaining % BlockSize != 0)
                 numberOfBlocks++;
 
             Blocks = new Block[numberOfBlocks];
 
-            int i = 0;
+            var i = 0;
             while (bytesRemaining - BlockSize > 0) {
                 Blocks[i] = new Block (this, i * BlockSize, BlockSize);
                 bytesRemaining -= BlockSize;

@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Modes
             rig.AddConnection (pair.Outgoing);
 
             var connection = pair.Incoming;
-            PeerId id = new PeerId (new Peer ("", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            var id = new PeerId (new Peer ("", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
 
             var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new[] { rig.Manager.InfoHash });
             decryptor = id.Decryptor = result.Decryptor;
@@ -81,19 +81,19 @@ namespace MonoTorrent.Client.Modes
         public async Task RequestMetadata ()
         {
             await Setup (false, "path.torrent");
-            CustomConnection connection = pair.Incoming;
+            var connection = pair.Incoming;
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
             var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.TorrentDict.LengthInBytes (), 5555);
+            var exHand = new ExtendedHandshakeMessage (false, rig.TorrentDict.LengthInBytes (), 5555);
             exHand.Supports.Add (LTMetadata.Support);
             await PeerIO.SendMessageAsync (connection, encryptor, exHand);
 
             // 2) Send all our metadata requests
-            int length = (rig.TorrentDict.LengthInBytes () + 16383) / 16384;
-            for (int i = 0; i < length; i++)
+            var length = (rig.TorrentDict.LengthInBytes () + 16383) / 16384;
+            for (var i = 0; i < length; i++)
                 await PeerIO.SendMessageAsync (connection, encryptor, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Request, i, null));
             // 3) Receive all the metadata chunks
             PeerMessage m;
@@ -188,19 +188,19 @@ namespace MonoTorrent.Client.Modes
 
         public async Task SendMetadataCore (string expectedPath)
         {
-            CustomConnection connection = pair.Incoming;
+            var connection = pair.Incoming;
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
             var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.Metadata.Length, 5555);
+            var exHand = new ExtendedHandshakeMessage (false, rig.Torrent.Metadata.Length, 5555);
             exHand.Supports.Add (LTMetadata.Support);
             await PeerIO.SendMessageAsync (connection, encryptor, exHand);
 
             // 2) Receive the metadata requests from the other peer and fulfill them
-            byte[] buffer = rig.Torrent.Metadata;
-            int length = (buffer.Length + 16383) / 16384;
+            var buffer = rig.Torrent.Metadata;
+            var length = (buffer.Length + 16383) / 16384;
             PeerMessage m;
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is LTMetadata metadata) {
@@ -217,7 +217,7 @@ namespace MonoTorrent.Client.Modes
                 System.Threading.Thread.Sleep (10);
 
             Assert.IsTrue (File.Exists (expectedPath), "#1");
-            Torrent torrent = Torrent.Load (expectedPath);
+            var torrent = Torrent.Load (expectedPath);
             Assert.AreEqual (rig.Manager.InfoHash, torrent.InfoHash, "#2");
         }
     }

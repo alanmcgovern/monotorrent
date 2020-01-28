@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, Action);
             written += Write (buffer, written, TransactionId);
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write (buffer, written, Leechers);
             written += Write (buffer, written, Seeders);
 
-            for (int i = 0; i < Peers.Count; i++)
+            for (var i = 0; i < Peers.Count; i++)
                 Peers[i].CompactPeer (buffer, written + (i * 6));
 
             return written - offset;

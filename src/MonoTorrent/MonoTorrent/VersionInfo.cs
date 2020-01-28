@@ -70,7 +70,7 @@ namespace MonoTorrent
                 throw new ArgumentException ("The build version should be between 0 and 99 (inclusive)");
 
             // 'MO' for MonoTorrent then four digit version number
-            string version =
+            var version =
                 $"{Math.Max (Version.Major, 0)}{Math.Max (Version.Minor, 0)}{Math.Max (Version.Build, 0):00}";
             version = version.Length > 4 ? version.Substring (0, 4) : version.PadRight (4, '0');
             ClientVersion = $"{ClientIdentifier}{version}";

@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Create the bitfield of pieces which are downloadable
             endgameSelector.SetAll (false);
-            for (int i = 0; i < torrentData.Files.Length; i++)
+            for (var i = 0; i < torrentData.Files.Length; i++)
                 if (torrentData.Files[i].Priority != Priority.DoNotDownload)
                     endgameSelector.Or (torrentData.Files[i].GetSelector (bitfield.Length));
 
@@ -148,8 +148,8 @@ namespace MonoTorrent.Client.PiecePicking
             endgameSelector.NAnd (bitfield);
 
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
-            int count = standard.CurrentReceivedCount ();
-            int blocksPerPiece = torrentData.PieceLength / Piece.BlockSize;
+            var count = standard.CurrentReceivedCount ();
+            var blocksPerPiece = torrentData.PieceLength / Piece.BlockSize;
             inEndgame = Math.Max (blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count <= Threshold;
             if (inEndgame) {
                 endgame.Initialise (bitfield, torrentData, standard.ExportActiveRequests ());

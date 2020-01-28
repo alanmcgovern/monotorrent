@@ -130,8 +130,8 @@ namespace MonoTorrent.Tracker
 
         internal void Update (AnnounceRequest parameters)
         {
-            DateTime now = DateTime.Now;
-            double elapsedTime = (now - LastAnnounceTime).TotalSeconds;
+            var now = DateTime.Now;
+            var elapsedTime = (now - LastAnnounceTime).TotalSeconds;
             if (elapsedTime < 1)
                 elapsedTime = 1;
 
@@ -148,11 +148,11 @@ namespace MonoTorrent.Tracker
 
         private BEncodedDictionary GeneratePeersEntry ()
         {
-            BEncodedString encPeerId = PeerId;
-            BEncodedString encAddress = new BEncodedString (ClientAddress.Address.ToString ());
-            BEncodedNumber encPort = new BEncodedNumber (ClientAddress.Port);
+            var encPeerId = PeerId;
+            var encAddress = new BEncodedString (ClientAddress.Address.ToString ());
+            var encPort = new BEncodedNumber (ClientAddress.Port);
 
-            BEncodedDictionary dictionary = new BEncodedDictionary ();
+            var dictionary = new BEncodedDictionary ();
             dictionary.Add (TrackerServer.PeerIdKey, encPeerId);
             dictionary.Add (TrackerServer.Ip, encAddress);
             dictionary.Add (TrackerServer.Port, encPort);
@@ -160,9 +160,9 @@ namespace MonoTorrent.Tracker
         }
         private byte[] GenerateCompactPeersEntry ()
         {
-            byte[] port = BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short) ClientAddress.Port));
-            byte[] addr = ClientAddress.Address.GetAddressBytes ();
-            byte[] entry = new byte[addr.Length + port.Length];
+            var port = BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short) ClientAddress.Port));
+            var addr = ClientAddress.Address.GetAddressBytes ();
+            var entry = new byte[addr.Length + port.Length];
 
             Array.Copy (addr, entry, addr.Length);
             Array.Copy (port, 0, entry, addr.Length, port.Length);

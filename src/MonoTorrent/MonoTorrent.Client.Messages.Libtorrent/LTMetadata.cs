@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public override int ByteLength {
             // 4 byte length, 1 byte BT id, 1 byte LT id, 1 byte payload
             get {
-                int length = 4 + 1 + 1 + dict.LengthInBytes ();
+                var length = 4 + 1 + 1 + dict.LengthInBytes ();
                 if (MetadataMessageType == eMessageType.Data)
                     length += Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize);
                 return length;
@@ -108,11 +108,11 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            using RawReader reader = new RawReader (new MemoryStream (buffer, offset, length, false), false);
-            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (reader);
-            int totalSize = 0;
+            using var reader = new RawReader (new MemoryStream (buffer, offset, length, false), false);
+            var d = BEncodedValue.Decode<BEncodedDictionary> (reader);
+            var totalSize = 0;
 
-            if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))
+            if (d.TryGetValue (MessageTypeKey, out var val))
                 MetadataMessageType = (eMessageType) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (PieceKey, out val))
                 Piece = (int) ((BEncodedNumber) val).Number;
@@ -128,7 +128,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (!ClientEngine.SupportsFastPeer)
                 throw new MessageException ("Libtorrent extension messages not supported");
 
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, ByteLength - 4);
             written += Write (buffer, written, MessageId);

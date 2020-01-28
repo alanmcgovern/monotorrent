@@ -114,8 +114,8 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void CancelTest ()
         {
-            foreach (Piece p in pieces) {
-                for (int i = 0; i < p.BlockCount; i++) {
+            foreach (var p in pieces) {
+                for (var i = 0; i < p.BlockCount; i++) {
                     p.Blocks[i].CreateRequest (i % 2 == 0 ? id : other);
                 }
             }
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client.PiecePicking
             id.BitField.Set (pieces[0].Index, true);
             other.BitField.Set (pieces[0].Index, true);
 
-            for (int i = 2; i < pieces[0].BlockCount; i++) {
+            for (var i = 2; i < pieces[0].BlockCount; i++) {
                 pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount));
                 pieces[0].Blocks[i].Received = true;
             }
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.AreEqual (2, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual (2, other.AmRequestingPiecesCount, "#1");
 
-            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out Piece piece))
+            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out var piece))
                 Assert.Fail ("I should've validated!");
 
             if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
@@ -165,7 +165,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void HashFail ()
         {
             PieceRequest m;
-            List<PieceRequest> requests = new List<PieceRequest> ();
+            var requests = new List<PieceRequest> ();
 
             id.BitField[0] = true;
             picker.Initialise (bitfield, torrentData, new List<Piece> ());
@@ -174,7 +174,7 @@ namespace MonoTorrent.Client.PiecePicking
                 requests.Add (m);
 
             foreach (var message in requests)
-                Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece));
+                Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out var piece));
 
             Assert.IsNotNull (picker.PickPiece (id, id.BitField, new List<PeerId> ()));
         }
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void ReceivedPiecesAreNotRequested ()
         {
-            for (int i = 2; i < pieces[0].BlockCount; i++) {
+            for (var i = 2; i < pieces[0].BlockCount; i++) {
                 pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount));
                 pieces[0].Blocks[i].Received = true;
             }

@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
 
         internal Piece PieceDataReceived (PeerId id, PieceMessage message)
         {
-            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece)) {
+            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out var piece)) {
                 id.LastBlockReceived.Restart ();
                 var block = piece.Blocks[message.StartOffset / Piece.BlockSize];
 
@@ -99,12 +99,12 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests (PeerId id)
         {
-            int maxRequests = id.MaxPendingRequests;
+            var maxRequests = id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return;
 
-            int count = 1;
+            var count = 1;
             if (id.Connection is HttpConnection) {
                 if (id.AmRequestingPiecesCount > 0)
                     return;

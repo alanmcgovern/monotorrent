@@ -126,7 +126,7 @@ namespace MonoTorrent
         {
             Metadata = metadata;
 
-            if (!Metadata.TryGetValue (AnnounceListKey, out BEncodedValue value)) {
+            if (!Metadata.TryGetValue (AnnounceListKey, out var value)) {
                 value = new BEncodedList ();
                 Metadata.Add (AnnounceListKey, value);
             }
@@ -147,7 +147,7 @@ namespace MonoTorrent
 
         public BEncodedValue GetCustom (BEncodedString key)
         {
-            if (Metadata.TryGetValue (key, out BEncodedValue value))
+            if (Metadata.TryGetValue (key, out var value))
                 return value;
             return null;
         }
@@ -155,7 +155,7 @@ namespace MonoTorrent
         public BEncodedValue GetCustomSecure (BEncodedString key)
         {
             CheckCanEditSecure ();
-            if (InfoDict.TryGetValue (key, out BEncodedValue value))
+            if (InfoDict.TryGetValue (key, out var value))
                 return value;
             return null;
         }
@@ -198,21 +198,21 @@ namespace MonoTorrent
             //            if (dictionary == InfoDict)
             //                CheckCanEditSecure ();
 
-            if (dictionary.TryGetValue (key, out BEncodedValue value))
+            if (dictionary.TryGetValue (key, out var value))
                 return (BEncodedDictionary) value;
             return null;
         }
 
         protected long GetLong (BEncodedDictionary dictionary, BEncodedString key)
         {
-            if (dictionary.TryGetValue (key, out BEncodedValue value))
+            if (dictionary.TryGetValue (key, out var value))
                 return ((BEncodedNumber) value).Number;
             throw new ArgumentException ($"The value for key {key} was not a BEncodedNumber");
         }
 
         protected string GetString (BEncodedDictionary dictionary, BEncodedString key)
         {
-            if (dictionary.TryGetValue (key, out BEncodedValue value))
+            if (dictionary.TryGetValue (key, out var value))
                 return ((BEncodedString) value).Text;
             return null;
         }

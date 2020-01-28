@@ -258,7 +258,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal int EstimatedDownloadRate {
             get {
-                int timeElapsed = (int) TyrantStartTime.Elapsed.TotalSeconds;
+                var timeElapsed = (int) TyrantStartTime.Elapsed.TotalSeconds;
                 return (int) (timeElapsed == 0 ? 0 : HaveMessageEstimatedDownloadedBytes / timeElapsed);
             }
         }
@@ -299,8 +299,8 @@ namespace MonoTorrent.Client
             } else {
                 // assume that his upload rate will match his estimated download rate, and 
                 // get the estimated active set size
-                int estimatedDownloadRate = this.EstimatedDownloadRate;
-                int activeSetSize = GetActiveSetSize (estimatedDownloadRate);
+                var estimatedDownloadRate = this.EstimatedDownloadRate;
+                var activeSetSize = GetActiveSetSize (estimatedDownloadRate);
 
                 return estimatedDownloadRate / activeSetSize;
             }

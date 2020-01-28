@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Modes
             Mode.Tick (0);
 
             Assert.IsTrue (Rig.Manager.Peers.ConnectedPeers[0].Dequeue () is HaveAllMessage, "#1");
-            BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue ();
+            var m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue ();
             Assert.IsTrue (m.BitField.AllTrue, "#2");
         }
     }

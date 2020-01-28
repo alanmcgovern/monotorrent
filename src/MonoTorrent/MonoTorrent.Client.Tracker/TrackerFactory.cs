@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Tracker
 
             try {
                 lock (trackerTypes) {
-                    if (trackerTypes.TryGetValue (uri.Scheme, out Func<Uri, ITracker> creator))
+                    if (trackerTypes.TryGetValue (uri.Scheme, out var creator))
                         return creator (uri);
                     return null;
                 }

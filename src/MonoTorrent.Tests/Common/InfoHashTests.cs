@@ -46,10 +46,10 @@ namespace MonoTorrent.Common
         [Test]
         public void HexTest ()
         {
-            InfoHash hash = Create ();
-            string hex = hash.ToHex ();
+            var hash = Create ();
+            var hex = hash.ToHex ();
             Assert.AreEqual (40, hex.Length, "#1");
-            InfoHash other = InfoHash.FromHex (hex);
+            var other = InfoHash.FromHex (hex);
             Assert.AreEqual (hash, other, "#2");
         }
 

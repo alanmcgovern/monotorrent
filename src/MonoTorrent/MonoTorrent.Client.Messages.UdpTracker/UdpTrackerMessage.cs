@@ -43,7 +43,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public static UdpTrackerMessage DecodeMessage (byte[] buffer, int offset, int count, MessageType type)
         {
             UdpTrackerMessage m = null;
-            int action = type == MessageType.Request ? ReadInt (buffer, offset + 8) : ReadInt (buffer, offset);
+            var action = type == MessageType.Request ? ReadInt (buffer, offset + 8) : ReadInt (buffer, offset);
             switch (action) {
                 case 0:
                     if (type == MessageType.Request)

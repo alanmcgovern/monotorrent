@@ -85,7 +85,7 @@ namespace MonoTorrent
 
         public void Tick ()
         {
-            int difference = (int) lastUpdated.Elapsed.TotalMilliseconds;
+            var difference = (int) lastUpdated.Elapsed.TotalMilliseconds;
             if (difference > 800)
                 Tick (difference);
         }
@@ -98,14 +98,14 @@ namespace MonoTorrent
 
         void TimePeriodPassed (int difference)
         {
-            long currSpeed = Interlocked.Exchange (ref tempRecvCount, 0);
+            var currSpeed = Interlocked.Exchange (ref tempRecvCount, 0);
             currSpeed = (currSpeed * 1000) / difference;
 
             int speedsCount;
             if (speedsIndex < 0) {
                 //speeds array hasn't been filled yet
 
-                int idx = speeds.Length + speedsIndex;
+                var idx = speeds.Length + speedsIndex;
 
                 speeds[idx] = currSpeed;
                 speedsCount = idx + 1;
@@ -120,7 +120,7 @@ namespace MonoTorrent
             }
 
             var sumTotal = speeds[0];
-            for (int i = 1; i < speedsCount; i++)
+            for (var i = 1; i < speedsCount; i++)
                 sumTotal += speeds[i];
 
             Interlocked.Exchange (ref rate, sumTotal / speedsCount);

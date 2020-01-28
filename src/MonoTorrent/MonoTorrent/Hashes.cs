@@ -88,8 +88,8 @@ namespace MonoTorrent
             if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException (nameof(hashIndex), $"hashIndex must be between 0 and {Count}");
 
-            int start = hashIndex * HashCodeLength;
-            for (int i = 0; i < HashCodeLength; i++)
+            var start = hashIndex * HashCodeLength;
+            for (var i = 0; i < HashCodeLength; i++)
                 if (hash[i] != this.hashData[i + start])
                     return false;
 
@@ -107,7 +107,7 @@ namespace MonoTorrent
                 throw new ArgumentOutOfRangeException (nameof(hashIndex));
 
             // Read out our specified piece's hash data
-            byte[] hash = new byte[HashCodeLength];
+            var hash = new byte[HashCodeLength];
             Buffer.BlockCopy (this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;

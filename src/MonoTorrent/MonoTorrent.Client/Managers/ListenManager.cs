@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
                 Logger.Log (e.Connection, "ListenManager - ConnectionReceived");
 
                 var skeys = new List<InfoHash> ();
-                for (int i = 0; i < Engine.Torrents.Count; i++)
+                for (var i = 0; i < Engine.Torrents.Count; i++)
                     skeys.Add (Engine.Torrents[i].InfoHash);
 
                 var connection = ConnectionConverter.Convert (e.Connection);
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
             if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.HasFlag (EncryptionTypes.PlainText))
                 return false;
 
-            for (int i = 0; i < Engine.Torrents.Count; i++)
+            for (var i = 0; i < Engine.Torrents.Count; i++)
                 if (message.InfoHash == Engine.Torrents[i].InfoHash)
                     man = Engine.Torrents[i];
 

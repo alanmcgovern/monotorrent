@@ -217,7 +217,7 @@ namespace MonoTorrent.Client.Modes
             foreach (var file in Manager.Torrent.Files) {
                 file.Priority = Priority.Normal;
                 await Manager.Mode.TryHashPendingFilesAsync ();
-                for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                for (var i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
                     Assert.IsFalse (Manager.UnhashedPieces[i], "#2." + i);
             }
 
@@ -261,7 +261,7 @@ namespace MonoTorrent.Client.Modes
         {
             PieceWriter.FilesThatExist.AddRange (Manager.Torrent.Files);
 
-            int getHashCount = 0;
+            var getHashCount = 0;
             DiskManager.GetHashAsyncOverride = (manager, index) => {
                 getHashCount++;
                 if (getHashCount == 2)
@@ -324,7 +324,7 @@ namespace MonoTorrent.Client.Modes
             Manager.LoadFastResume (new FastResume (Manager.InfoHash, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
-            foreach (TorrentFile file in Manager.Torrent.Files)
+            foreach (var file in Manager.Torrent.Files)
                 Assert.IsTrue (file.BitField.AllTrue, "#2." + file.Path);
 
             var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -332,7 +332,7 @@ namespace MonoTorrent.Client.Modes
             await mode.WaitForHashingToComplete ();
 
             Assert.IsTrue (Manager.Bitfield.AllFalse, "#3");
-            foreach (TorrentFile file in Manager.Torrent.Files)
+            foreach (var file in Manager.Torrent.Files)
                 Assert.IsTrue (file.BitField.AllFalse, "#4." + file.Path);
         }
 

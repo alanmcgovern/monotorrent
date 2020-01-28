@@ -37,7 +37,7 @@ namespace SampleClient
         public void ExportTo (TextWriter output)
         {
             lock (traces)
-                foreach (string s in this.traces)
+                foreach (var s in this.traces)
                     output.WriteLine (s);
         }
     }

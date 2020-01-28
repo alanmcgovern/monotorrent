@@ -56,17 +56,17 @@ namespace MonoTorrent.Common
         [Test]
         public void InfoHashTest ()
         {
-            MagnetLink link = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
+            var link = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
             Assert.AreEqual (InfoHash.FromBase32 ("YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C"), link.InfoHash, "#1");
 
             //base32
-            InfoHash initial = new InfoHash (System.Text.Encoding.ASCII.GetBytes ("foobafoobafoobafooba"));
+            var initial = new InfoHash (System.Text.Encoding.ASCII.GetBytes ("foobafoobafoobafooba"));
             link = MagnetLink.Parse ("magnet:?xt=urn:sha1:MZXW6YTBMZXW6YTBMZXW6YTBMZXW6YTB");
             Assert.AreEqual (initial, link.InfoHash, "#2");
 
             //base40 = hex
-            InfoHash hash = Create ();
-            string hex = hash.ToHex ();
+            var hash = Create ();
+            var hex = hash.ToHex ();
             link = MagnetLink.Parse ($"magnet:?xt=urn:btih:{hex}");
             Assert.AreEqual (hash, link.InfoHash, "#3");
         }
@@ -74,9 +74,9 @@ namespace MonoTorrent.Common
         [Test]
         public void ParseMagnetLink ()
         {
-            InfoHash hash = Create ();
-            string magnet = $"magnet:?xt=urn:btih:{hash.ToHex ()}";
-            MagnetLink other = MagnetLink.Parse (magnet);
+            var hash = Create ();
+            var magnet = $"magnet:?xt=urn:btih:{hash.ToHex ()}";
+            var other = MagnetLink.Parse (magnet);
             Assert.AreEqual (hash, other.InfoHash, "#1");
         }
 
@@ -84,9 +84,9 @@ namespace MonoTorrent.Common
         public void InvalidMagnetLink ()
         {
             Assert.Throws<UriFormatException> (() => {
-                InfoHash hash = Create ();
-                string magnet = $"magnet?xt=urn:btih:{hash.ToHex ()}";
-                MagnetLink other = MagnetLink.Parse (magnet);
+                var hash = Create ();
+                var magnet = $"magnet?xt=urn:btih:{hash.ToHex ()}";
+                var other = MagnetLink.Parse (magnet);
                 Assert.AreEqual (hash, other.InfoHash, "#1");
             });
         }
@@ -95,9 +95,9 @@ namespace MonoTorrent.Common
         public void InvalidMagnetLink3 ()
         {
             Assert.Throws<FormatException> (() => {
-                InfoHash hash = Create ();
-                string magnet = string.Format ("magnet:?xt=urn:btih:", hash.ToHex ());
-                MagnetLink other = MagnetLink.Parse (magnet);
+                var hash = Create ();
+                var magnet = string.Format ("magnet:?xt=urn:btih:", hash.ToHex ());
+                var other = MagnetLink.Parse (magnet);
                 Assert.AreEqual (hash, other.InfoHash, "#1");
             });
         }
@@ -106,9 +106,9 @@ namespace MonoTorrent.Common
         public void InvalidMagnetLink4 ()
         {
             Assert.Throws<FormatException> (() => {
-                InfoHash hash = Create ();
-                string magnet = string.Format ("magnet:?xt=urn:btih:23526246235623564234365879634581726345981", hash.ToHex ());
-                MagnetLink other = MagnetLink.Parse (magnet);
+                var hash = Create ();
+                var magnet = string.Format ("magnet:?xt=urn:btih:23526246235623564234365879634581726345981", hash.ToHex ());
+                var other = MagnetLink.Parse (magnet);
                 Assert.AreEqual (hash, other.InfoHash, "#1");
             });
         }
@@ -128,7 +128,7 @@ namespace MonoTorrent.Common
         [Test]
         public void TrackersTest ()
         {
-            MagnetLink other = MagnetLink.Parse ($"magnet:?tr=http://example.com/announce&tr.2=http://example.com/announce2&xt=urn:btih:{Create ().ToHex ()}");
+            var other = MagnetLink.Parse ($"magnet:?tr=http://example.com/announce&tr.2=http://example.com/announce2&xt=urn:btih:{Create ().ToHex ()}");
             Assert.IsNotNull (other.AnnounceUrls, "#1");
             Assert.IsTrue (other.AnnounceUrls.Contains ("http://example.com/announce"), "#2");
             Assert.IsTrue (other.AnnounceUrls.Contains ("http://example.com/announce2"), "#3");
@@ -137,7 +137,7 @@ namespace MonoTorrent.Common
         [Test]
         public void NameTest ()
         {
-            MagnetLink other = MagnetLink.Parse ($"magnet:?dn=foo&xt=urn:btih:{Create ().ToHex ()}");
+            var other = MagnetLink.Parse ($"magnet:?dn=foo&xt=urn:btih:{Create ().ToHex ()}");
             Assert.IsNotNull (other.Name, "#1");
             Assert.AreEqual ("foo", other.Name, "#2");
         }

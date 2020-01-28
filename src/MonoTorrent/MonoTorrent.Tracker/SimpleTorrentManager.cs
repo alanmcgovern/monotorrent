@@ -138,7 +138,7 @@ namespace MonoTorrent.Tracker
             byte[] compactResponse = null;
             BEncodedList nonCompactResponse = null;
 
-            int total = Math.Min (Peers.Count, count);
+            var total = Math.Min (Peers.Count, count);
             // If we have a compact response, we need to create a single BencodedString
             // Otherwise we need to create a bencoded list of dictionaries
             if (compact)
@@ -146,7 +146,7 @@ namespace MonoTorrent.Tracker
             else
                 nonCompactResponse = new BEncodedList (total);
 
-            int start = Random.Next (0, Peers.Count);
+            var start = Random.Next (0, Peers.Count);
 
             lock (PeersList) {
                 if (PeersList.Count != Peers.Values.Count)
@@ -154,7 +154,7 @@ namespace MonoTorrent.Tracker
             }
 
             while (total > 0) {
-                Peer current = PeersList[(start++) % PeersList.Count];
+                var current = PeersList[(start++) % PeersList.Count];
                 if (compact) {
                     Buffer.BlockCopy (current.CompactEntry, 0, compactResponse, (total - 1) * 6, 6);
                 } else {
@@ -171,9 +171,9 @@ namespace MonoTorrent.Tracker
 
         internal void ClearZombiePeers (DateTime cutoff)
         {
-            bool removed = false;
+            var removed = false;
             lock (PeersList) {
-                foreach (Peer p in PeersList) {
+                foreach (var p in PeersList) {
                     if (p.LastAnnounceTime > cutoff)
                         continue;
 
@@ -206,9 +206,9 @@ namespace MonoTorrent.Tracker
 
         private void UpdateCounts ()
         {
-            int tempComplete = 0;
-            int tempIncomplete = 0;
-            foreach (Peer p in Peers.Values) {
+            var tempComplete = 0;
+            var tempIncomplete = 0;
+            foreach (var p in Peers.Values) {
                 if (p.HasCompleted)
                     tempComplete++;
                 else
@@ -225,8 +225,8 @@ namespace MonoTorrent.Tracker
         /// <param name="par"></param>
         internal void Update (AnnounceRequest par)
         {
-            object peerKey = Comparer.GetKey (par);
-            if (!Peers.TryGetValue (peerKey, out Peer peer)) {
+            var peerKey = Comparer.GetKey (par);
+            if (!Peers.TryGetValue (peerKey, out var peer)) {
                 peer = new Peer (par, peerKey);
                 Add (peer);
             } else {

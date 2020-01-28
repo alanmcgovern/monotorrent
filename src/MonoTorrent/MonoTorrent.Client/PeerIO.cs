@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
             byte[] messageLengthBuffer = null;
             byte[] messageBuffer = null;
 
-            int messageLength = 4;
+            var messageLength = 4;
             int messageBody;
             try {
                 messageLengthBuffer = ClientEngine.BufferPool.Rent (messageLength);
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask SendMessageAsync (IConnection2 connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
-            int count = message.ByteLength;
+            var count = message.ByteLength;
             var buffer = ClientEngine.BufferPool.Rent (count);
 
             try {

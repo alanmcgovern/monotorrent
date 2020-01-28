@@ -63,7 +63,7 @@ namespace MonoTorrent.Dht
         {
             engine.MessageLoop.Timeout = TimeSpan.Zero;
 
-            Ping ping = new Ping (engine.LocalId);
+            var ping = new Ping (engine.LocalId);
             ping.TransactionId = transactionId;
             engine.MessageLoop.QuerySent += delegate (object o, SendQueryEventArgs e) {
                 if (e.TimedOut)
@@ -83,7 +83,7 @@ namespace MonoTorrent.Dht
             listener.MessageSent += (message, endpoint) => {
                 if (message is Ping && message.TransactionId.Equals (ping.TransactionId)) {
                     counter++;
-                    PingResponse response = new PingResponse (node.Id, transactionId);
+                    var response = new PingResponse (node.Id, transactionId);
                     listener.RaiseMessageReceived (response, node.EndPoint);
                 }
             };
@@ -91,7 +91,7 @@ namespace MonoTorrent.Dht
             Assert.IsFalse (node.LastSeen < TimeSpan.FromSeconds (2));
             Assert.IsTrue (engine.SendQueryAsync (ping, node).Wait (3000), "#1");
             Assert.AreEqual (1, counter, "#2");
-            Node n = engine.RoutingTable.FindNode (node.Id);
+            var n = engine.RoutingTable.FindNode (node.Id);
             Assert.IsNotNull (n, "#3");
             Assert.IsTrue (n.LastSeen < TimeSpan.FromSeconds (2));
         }
@@ -99,10 +99,10 @@ namespace MonoTorrent.Dht
         [Test]
         public void NodeReplaceTest ()
         {
-            int nodeCount = 0;
-            Bucket b = new Bucket ();
-            for (int i = 0; i < Bucket.MaxCapacity; i++) {
-                Node n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i));
+            var nodeCount = 0;
+            var b = new Bucket ();
+            for (var i = 0; i < Bucket.MaxCapacity; i++) {
+                var n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i));
                 n.Seen ();
                 b.Add (n);
             }
@@ -117,36 +117,36 @@ namespace MonoTorrent.Dht
                 if ((endpoint.Port == 3 && nodeCount == 0) ||
                      (endpoint.Port == 1 && nodeCount == 1) ||
                      (endpoint.Port == 5 && nodeCount == 2)) {
-                    Node n = b.Nodes.Find (no => no.EndPoint.Port == endpoint.Port);
+                    var n = b.Nodes.Find (no => no.EndPoint.Port == endpoint.Port);
                     n.Seen ();
-                    PingResponse response = new PingResponse (n.Id, message.TransactionId);
+                    var response = new PingResponse (n.Id, message.TransactionId);
                     listener.RaiseMessageReceived (response, node.EndPoint);
                     nodeCount++;
                 }
 
             };
 
-            ReplaceNodeTask task = new ReplaceNodeTask (engine, b, null);
+            var task = new ReplaceNodeTask (engine, b, null);
             Assert.IsTrue (task.Execute ().Wait (4000), "#10");
         }
 
         [Test]
         public async Task BucketRefreshTest ()
         {
-            List<Node> nodes = new List<Node> ();
-            for (int i = 0; i < 5; i++)
+            var nodes = new List<Node> ();
+            for (var i = 0; i < 5; i++)
                 nodes.Add (new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i)));
 
             listener.MessageSent += (message, endpoint) => {
-                Node current = nodes.Find (n => n.EndPoint.Port.Equals (endpoint.Port));
+                var current = nodes.Find (n => n.EndPoint.Port.Equals (endpoint.Port));
                 if (current == null)
                     return;
 
                 if (message is Ping) {
-                    PingResponse r = new PingResponse (current.Id, message.TransactionId);
+                    var r = new PingResponse (current.Id, message.TransactionId);
                     listener.RaiseMessageReceived (r, current.EndPoint);
                 } else if (message is FindNode) {
-                    FindNodeResponse response = new FindNodeResponse (current.Id, message.TransactionId);
+                    var response = new FindNodeResponse (current.Id, message.TransactionId);
                     response.Nodes = "";
                     listener.RaiseMessageReceived (response, current.EndPoint);
                 }
@@ -155,7 +155,7 @@ namespace MonoTorrent.Dht
             foreach (var n in nodes)
                 engine.RoutingTable.Add (n);
 
-            foreach (Bucket b in engine.RoutingTable.Buckets) {
+            foreach (var b in engine.RoutingTable.Buckets) {
                 b.Changed (TimeSpan.FromDays (1));
                 foreach (var n in b.Nodes)
                     n.Seen (TimeSpan.FromDays (1));
@@ -163,7 +163,7 @@ namespace MonoTorrent.Dht
 
             await engine.RefreshBuckets ();
 
-            foreach (Bucket b in engine.RoutingTable.Buckets) {
+            foreach (var b in engine.RoutingTable.Buckets) {
                 Assert.IsTrue (b.LastChanged < TimeSpan.FromHours (1));
                 Assert.IsTrue (b.Nodes.Exists (n => n.LastSeen < TimeSpan.FromHours (1)));
             }
@@ -173,15 +173,15 @@ namespace MonoTorrent.Dht
         public void ReplaceNodeTest ()
         {
             engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds (0);
-            Node replacement = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Loopback, 1337));
-            for (int i = 0; i < 4; i++) {
+            var replacement = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Loopback, 1337));
+            for (var i = 0; i < 4; i++) {
                 var n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i));
                 n.Seen (TimeSpan.FromDays (i));
                 engine.RoutingTable.Add (n);
             }
-            Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
+            var nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
 
-            ReplaceNodeTask task = new ReplaceNodeTask (engine, engine.RoutingTable.Buckets[0], replacement);
+            var task = new ReplaceNodeTask (engine, engine.RoutingTable.Buckets[0], replacement);
             Assert.IsTrue (task.Execute ().Wait (1000), "#a");
             Assert.IsFalse (engine.RoutingTable.Buckets[0].Nodes.Contains (nodeToReplace), "#1");
             Assert.IsTrue (engine.RoutingTable.Buckets[0].Nodes.Contains (replacement), "#2");

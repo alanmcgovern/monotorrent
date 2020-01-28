@@ -40,17 +40,17 @@ namespace MonoTorrent.Client.Tracker
 
         public AnnounceParameters CreateAnnounce (TorrentEvent clientEvent)
         {
-            ClientEngine engine = Manager.Engine;
+            var engine = Manager.Engine;
 
-            EncryptionTypes e = engine.Settings.AllowedEncryption;
-            bool requireEncryption = !e.HasFlag (EncryptionTypes.PlainText);
-            bool supportsEncryption = e.HasFlag (EncryptionTypes.RC4Full) || e.HasFlag (EncryptionTypes.RC4Header);
+            var e = engine.Settings.AllowedEncryption;
+            var requireEncryption = !e.HasFlag (EncryptionTypes.PlainText);
+            var supportsEncryption = e.HasFlag (EncryptionTypes.RC4Full) || e.HasFlag (EncryptionTypes.RC4Header);
 
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
             string ip = null;
-            int port = -1;
+            var port = -1;
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
                 port = engine.Settings.ReportedAddress.Port;

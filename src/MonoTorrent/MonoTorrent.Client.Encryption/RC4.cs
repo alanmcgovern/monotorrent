@@ -46,12 +46,12 @@ namespace MonoTorrent.Client.Encryption
         public RC4 (byte[] key)
         {
             S = new byte[256];
-            for (int i = 0; i < S.Length; i++)
+            for (var i = 0; i < S.Length; i++)
                 S[i] = (byte) i;
 
             byte c;
 
-            for (int i = 0; i <= 255; i++) {
+            for (var i = 0; i <= 255; i++) {
                 x = (x + S[i] + key[i % key.Length]) % 256;
                 c = S[x];
                 S[x] = S[i];
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.Encryption
 
             x = 0;
 
-            byte[] wasteBuffer = new byte[1024];
+            var wasteBuffer = new byte[1024];
             random.GetBytes (wasteBuffer);
             Encrypt (wasteBuffer);
         }
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Encryption
         public void Encrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
             byte c;
-            for (int i = 0; i < count; i++) {
+            for (var i = 0; i < count; i++) {
                 x = (x + 1) & 0xFF;
                 y = (y + S[x]) & 0xFF;
 

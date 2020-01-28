@@ -142,7 +142,7 @@ namespace MonoTorrent.Dht
             // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
             // and return an error message (if that's what the spec allows)
             try {
-                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, 0, buffer.Length, false), out DhtMessage message))
+                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, 0, buffer.Length, false), out var message))
                     ReceiveQueue.Enqueue (new KeyValuePair<IPEndPoint, DhtMessage> (endpoint, message));
             } catch (MessageException) {
                 // Caused by bad transaction id usually - ignore
@@ -162,14 +162,14 @@ namespace MonoTorrent.Dht
 
         private async Task SendMessages ()
         {
-            for (int i = 0; i < 5 && SendQueue.Count > 0; i++) {
+            for (var i = 0; i < 5 && SendQueue.Count > 0; i++) {
                 var details = SendQueue.Dequeue ();
 
                 details.SentAt = ValueStopwatch.StartNew ();
                 if (details.Message is QueryMessage)
                     WaitingResponse.Add (details.Message.TransactionId, details);
 
-                byte[] buffer = details.Message.Encode ();
+                var buffer = details.Message.Encode ();
                 await Listener.SendAsync (buffer, details.Destination);
             }
         }
@@ -206,13 +206,13 @@ namespace MonoTorrent.Dht
 
         private void ReceiveMessage ()
         {
-            KeyValuePair<IPEndPoint, DhtMessage> receive = ReceiveQueue.Dequeue ();
-            DhtMessage message = receive.Value;
-            IPEndPoint source = receive.Key;
-            SendDetails query = default (SendDetails);
+            var receive = ReceiveQueue.Dequeue ();
+            var message = receive.Value;
+            var source = receive.Key;
+            var query = default (SendDetails);
 
             try {
-                Node node = Engine.RoutingTable.FindNode (message.Id);
+                var node = Engine.RoutingTable.FindNode (message.Id);
                 if (node == null) {
                     node = new Node (message.Id, source);
                     Engine.RoutingTable.Add (node);

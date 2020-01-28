@@ -56,7 +56,7 @@ namespace MonoTorrent.Dht
             if (SendAsynchronously)
                 await Task.Yield ();
 
-            if (DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out DhtMessage message))
+            if (DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out var message))
                 MessageSent?.Invoke (message, endpoint);
             else
                 throw new Exception ("Could not decode the message");

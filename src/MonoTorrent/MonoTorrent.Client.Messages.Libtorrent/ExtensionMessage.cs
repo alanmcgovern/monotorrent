@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (!ClientEngine.SupportsExtended)
                 throw new MessageException ("Extension messages are not supported");
 
-            if (!messageDict.TryGetValue (buffer[offset], out Func<ITorrentData, PeerMessage> creator))
+            if (!messageDict.TryGetValue (buffer[offset], out var creator))
                 throw new ProtocolException ("Unknown extension message received");
 
             var message = creator (manager);

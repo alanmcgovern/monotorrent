@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Only 2 blocks should be left to be requested, so add 1 request per person.
             var seeders = new List<PeerId> ();
-            for (int i = 0; i < LargeTorrent.PieceLength / Piece.BlockSize; i++)
+            for (var i = 0; i < LargeTorrent.PieceLength / Piece.BlockSize; i++)
                 seeders.Add (PeerId.CreateNull (LargeTorrent.Bitfield.Length, seeder: true, isChoking: false, amInterested: true));
 
             // 256 blocks per piece, request 1 block per peer.

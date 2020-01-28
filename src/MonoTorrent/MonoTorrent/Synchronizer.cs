@@ -38,12 +38,12 @@ namespace MonoTorrent
         public static Queue<Synchronizer> CreateLinked (int count)
         {
             var all = new List<Synchronizer> ();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 all.Add (new Synchronizer ());
 
             all[0].Self.SetResult (true);
 
-            for (int i = 0; i < count; i++) {
+            for (var i = 0; i < count; i++) {
                 all[i].PreviousNode = all[(i - 1 + count) % count];
                 all[i].NextNode = all[(i + 1 + count) % count];
             }

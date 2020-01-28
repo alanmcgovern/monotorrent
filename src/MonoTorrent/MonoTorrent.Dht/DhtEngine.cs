@@ -120,7 +120,7 @@ namespace MonoTorrent.Dht
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            InitialiseTask task = new InitialiseTask (this, Node.FromCompactNode (nodes));
+            var task = new InitialiseTask (this, Node.FromCompactNode (nodes));
             _ = task.ExecuteAsync ();
         }
 
@@ -129,7 +129,7 @@ namespace MonoTorrent.Dht
             if (nodes == null)
                 throw new ArgumentNullException (nameof (nodes));
 
-            foreach (Node n in nodes)
+            foreach (var n in nodes)
                 Add (n);
         }
 
@@ -216,10 +216,10 @@ namespace MonoTorrent.Dht
         internal async Task RefreshBuckets ()
         {
             var refreshTasks = new List<Task> ();
-            foreach (Bucket b in RoutingTable.Buckets) {
+            foreach (var b in RoutingTable.Buckets) {
                 if (b.LastChanged > BucketRefreshTimeout) {
                     b.Changed ();
-                    RefreshBucketTask task = new RefreshBucketTask (this, b);
+                    var task = new RefreshBucketTask (this, b);
                     refreshTasks.Add (task.Execute ());
                 }
             }
@@ -234,8 +234,8 @@ namespace MonoTorrent.Dht
 
             var details = new BEncodedList ();
 
-            foreach (Bucket b in RoutingTable.Buckets) {
-                foreach (Node n in b.Nodes)
+            foreach (var b in RoutingTable.Buckets) {
+                foreach (var n in b.Nodes)
                     if (n.State != NodeState.Bad)
                         details.Add (n.CompactNode ());
 
@@ -249,8 +249,8 @@ namespace MonoTorrent.Dht
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
-            SendQueryEventArgs e = default (SendQueryEventArgs);
-            for (int i = 0; i < 4; i++) {
+            var e = default (SendQueryEventArgs);
+            for (var i = 0; i < 4; i++) {
                 e = await MessageLoop.SendAsync (query, node);
 
                 // If the message timed out and we we haven't already hit the maximum retries

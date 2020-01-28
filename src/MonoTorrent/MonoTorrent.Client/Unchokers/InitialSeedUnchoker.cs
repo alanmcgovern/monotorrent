@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
 
             // Place the peer at the end of the list so the rest of the peers
             // will get an opportunity to unchoke before this peer gets tried again
-            ChokeData data = peers.Find (d => d.Peer == id);
+            var data = peers.Find (d => d.Peer == id);
             peers.Remove (data);
             peers.Add (data);
         }
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
 
             // If a peer reports they have a piece that *isn't* the peer
             // we uploaded it to, then the peer we uploaded to has shared it
-            foreach (ChokeData data in peers) {
+            foreach (var data in peers) {
                 if (data.CurrentPieces[pieceIndex] && data.Peer != peer) {
                     data.CurrentPieces[pieceIndex] = false;
                     data.SharedPieces++;
@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            foreach (SeededPiece piece in advertisedPieces) {
+            foreach (var piece in advertisedPieces) {
                 if (piece.Index == pieceIndex) {
                     advertisedPieces.Remove (piece);
                     return;
@@ -160,7 +160,7 @@ namespace MonoTorrent.Client
 
         public void SentBlock (PeerId peer, int pieceIndex)
         {
-            SeededPiece piece = advertisedPieces.Find (p => p.Peer == peer && p.Index == pieceIndex);
+            var piece = advertisedPieces.Find (p => p.Peer == peer && p.Index == pieceIndex);
             if (piece == null)
                 return;
 
@@ -177,8 +177,8 @@ namespace MonoTorrent.Client
             if (!data.Peer.AmChoking && PendingUnchoke)
                 return;
 
-            int advertised = advertisedPieces.FindAll (p => p.Peer == data.Peer).Count;
-            int max = MaxAdvertised;
+            var advertised = advertisedPieces.FindAll (p => p.Peer == data.Peer).Count;
+            var max = MaxAdvertised;
             if (Manager.UploadingTo < Manager.Settings.UploadSlots)
                 max = MaxAdvertised;
             else if (data.ShareRatio < 0.25)
@@ -200,10 +200,10 @@ namespace MonoTorrent.Client
             temp.NAnd (data.Peer.BitField);
 
             // Ignore all the pieces we've already started sharing
-            foreach (SeededPiece p in advertisedPieces)
+            foreach (var p in advertisedPieces)
                 temp[p.Index] = false;
 
-            int index = 0;
+            var index = 0;
             while (advertised < max) {
                 // Get the index of the first piece we can send him
                 index = temp.FirstTrue (index, temp.Length);
@@ -259,24 +259,24 @@ namespace MonoTorrent.Client
         public override void UnchokeReview ()
         {
             if (PendingUnchoke) {
-                List<ChokeData> dupePeers = new List<ChokeData> (peers);
-                foreach (ChokeData data in dupePeers)
+                var dupePeers = new List<ChokeData> (peers);
+                foreach (var data in dupePeers)
                     TryChoke (data);
 
                 dupePeers = new List<ChokeData> (peers);
                 // See if there's anyone interesting to unchoke
-                foreach (ChokeData data in dupePeers)
+                foreach (var data in dupePeers)
                     TryUnchoke (data);
             }
 
             // Make sure our list of pieces available in the swarm is up to date
-            foreach (ChokeData data in peers)
+            foreach (var data in peers)
                 bitfield.Or (data.Peer.BitField);
 
             advertisedPieces.RemoveAll (p => bitfield[p.Index]);
 
             // Send have messages to anyone that needs them
-            foreach (ChokeData data in peers)
+            foreach (var data in peers)
                 TryAdvertisePiece (data);
         }
     }

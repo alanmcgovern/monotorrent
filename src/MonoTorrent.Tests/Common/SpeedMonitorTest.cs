@@ -23,7 +23,7 @@ namespace MonoTorrent.Common
             var estimatedActualSpeed = speed * 4 / 3;
 
             var monitor = new SpeedMonitor ();
-            for (int i = 0; i < 37; i++) {
+            for (var i = 0; i < 37; i++) {
                 monitor.AddDelta (speed);
                 monitor.Tick (750);
 

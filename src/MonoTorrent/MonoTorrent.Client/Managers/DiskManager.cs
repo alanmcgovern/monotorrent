@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
         {
             await IOLoop;
 
-            for (int i = 0; i < manager.Files.Length; i++)
+            for (var i = 0; i < manager.Files.Length; i++)
                 if (Writer.Exists (manager.Files[i]))
                     return true;
             return false;
@@ -223,7 +223,7 @@ namespace MonoTorrent.Client
 
             await IOLoop;
 
-            if (IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash)) {
+            if (IncrementalHashes.TryGetValue (pieceIndex, out var incrementalHash)) {
                 // We request the blocks for most pieces sequentially, and most (all?) torrent clients
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
@@ -251,15 +251,15 @@ namespace MonoTorrent.Client
                 await WaitForPendingWrites ();
 
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
-            long startOffset = incrementalHash.NextOffsetToHash;
-            long endOffset = Math.Min ((long) manager.PieceLength * (pieceIndex + 1), manager.Size);
+            var startOffset = incrementalHash.NextOffsetToHash;
+            var endOffset = Math.Min ((long) manager.PieceLength * (pieceIndex + 1), manager.Size);
 
-            byte[] hashBuffer = ClientEngine.BufferPool.Rent (Piece.BlockSize);
+            var hashBuffer = ClientEngine.BufferPool.Rent (Piece.BlockSize);
             try {
                 var hasher = incrementalHash.Hasher;
 
                 while (startOffset != endOffset) {
-                    int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
+                    var count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
                     if (!await ReadAsync (manager, startOffset, hashBuffer, count).ConfigureAwait (false))
                         return null;
                     startOffset += count;
@@ -336,8 +336,8 @@ namespace MonoTorrent.Client
         {
             await IOLoop;
 
-            foreach (TorrentFile file in manager.Files) {
-                string newPath = Path.Combine (newRoot, file.Path);
+            foreach (var file in manager.Files) {
+                var newPath = Path.Combine (newRoot, file.Path);
                 Writer.Move (file, newPath, overwrite);
                 file.FullPath = newPath;
             }
@@ -363,11 +363,11 @@ namespace MonoTorrent.Client
             Interlocked.Add (ref pendingWrites, count);
             await IOLoop;
 
-            int pieceIndex = (int) (offset / manager.PieceLength);
-            long pieceStart = (long) pieceIndex * manager.PieceLength;
-            long pieceEnd = pieceStart + manager.PieceLength;
+            var pieceIndex = (int) (offset / manager.PieceLength);
+            var pieceStart = (long) pieceIndex * manager.PieceLength;
+            var pieceEnd = pieceStart + manager.PieceLength;
 
-            if (!IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash) && offset == pieceStart) {
+            if (!IncrementalHashes.TryGetValue (pieceIndex, out var incrementalHash) && offset == pieceStart) {
                 incrementalHash = IncrementalHashes[pieceIndex] = IncrementalHashCache.Dequeue ();
                 incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
             }
@@ -454,7 +454,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             int i;
-            int totalRead = 0;
+            var totalRead = 0;
             var files = manager.Files;
 
             for (i = 0; i < files.Length; i++) {
@@ -465,7 +465,7 @@ namespace MonoTorrent.Client
             }
 
             while (totalRead < count) {
-                int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
+                var fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
                 fileToRead = Math.Min (fileToRead, Piece.BlockSize);
 
                 if (fileToRead != Writer.Read (files[i], offset, buffer, totalRead, fileToRead))
@@ -530,7 +530,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             int i;
-            int totalWritten = 0;
+            var totalWritten = 0;
             var files = manager.Files;
 
             for (i = 0; i < files.Length; i++) {
@@ -541,7 +541,7 @@ namespace MonoTorrent.Client
             }
 
             while (totalWritten < count) {
-                int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
+                var fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
 
                 Writer.Write (files[i], offset, buffer, totalWritten, fileToWrite);

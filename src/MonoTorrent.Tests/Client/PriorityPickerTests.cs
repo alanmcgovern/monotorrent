@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         static TestTorrentData CreateSingleFile ()
         {
-            int pieceLength = Piece.BlockSize * 16;
+            var pieceLength = Piece.BlockSize * 16;
             var file = new TorrentFile ("Single", pieceLength * 32 + 123, 0, 33);
             return new TestTorrentData {
                 Files = new[] { file },
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         static TestTorrentData CreateMultiFile ()
         {
-            int pieceLength = Piece.BlockSize * 16;
+            var pieceLength = Piece.BlockSize * 16;
 
             int[] sizes = {
                 pieceLength * 10,
@@ -106,7 +106,7 @@ namespace MonoTorrent.Client.PiecePicking
                 pieceLength * 7,
             };
 
-            int start = 0;
+            var start = 0;
             var files = sizes.Select ((size, index) => {
                 var startIndex = (int) Math.Ceiling (((double) start) / pieceLength);
                 var endIndex = (int) Math.Ceiling (((double) start + size) / pieceLength);
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Every time the priority is not 'DoNotDownload' and we try to pick a piece,
             // we should get a new bitfield.
-            for (int i = 0; i < 10; i++) {
+            for (var i = 0; i < 10; i++) {
                 multiFile.Files[2].Priority = i % 2 == 0 ? Priority.DoNotDownload : Priority.Normal;
                 picker.PickPiece (multiPeer, multiBitfield, peers);
                 Assert.AreEqual ((i / 2) + (i % 2), tester.PickPieceBitfield.Count, "#1." + i);
@@ -281,7 +281,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Every time the priority is not 'DoNotDownload' and we try to pick a piece,
             // we should get a new bitfield.
-            for (int i = 0; i < 10; i++) {
+            for (var i = 0; i < 10; i++) {
                 singleFile.Files[0].Priority = i % 2 == 0 ? Priority.DoNotDownload : Priority.Normal;
                 picker.PickPiece (singlePeer, singleBitfield, peers);
                 Assert.AreEqual ((i / 2) + (i % 2), tester.PickPieceBitfield.Count, "#1." + i);

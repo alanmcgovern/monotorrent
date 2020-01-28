@@ -35,7 +35,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void ErrorReceived ()
         {
-            int failedCount = 0;
+            var failedCount = 0;
             var pingSuccessful = new TaskCompletionSource<bool> ();
 
             var ping = new Ping (node.Id) {
@@ -108,12 +108,12 @@ namespace MonoTorrent.Dht
         [Test]
         public void PingTimeout ()
         {
-            bool pingSuccessful = false;
+            var pingSuccessful = false;
             var ping = new Ping (node.Id) {
                 TransactionId = transactionId
             };
 
-            bool timedOutPingSuccessful = false;
+            var timedOutPingSuccessful = false;
             var timedOutPing = new Ping (node.Id) {
                 TransactionId = (BEncodedNumber) 5
             };

@@ -13,9 +13,9 @@ namespace MonoTorrent.Dht
         public void Setup ()
         {
             nodes = new NodeId[20];
-            for (int i = 0; i < nodes.Length; i++) {
-                byte[] id = new byte[20];
-                for (int j = 0; j < id.Length; j++)
+            for (var i = 0; i < nodes.Length; i++) {
+                var id = new byte[20];
+                for (var j = 0; j < id.Length; j++)
                     id[j] = (byte) (i * 20 + j);
                 nodes[i] = new NodeId (id);
             }
@@ -35,30 +35,30 @@ namespace MonoTorrent.Dht
         [Test]
         public void XorTest ()
         {
-            NodeId zero = new NodeId (new byte[20]);
+            var zero = new NodeId (new byte[20]);
 
-            byte[] b = new byte[20];
+            var b = new byte[20];
             b[0] = 1;
-            NodeId one = new NodeId (b);
+            var one = new NodeId (b);
 
-            NodeId r = one ^ zero;
+            var r = one ^ zero;
             Assert.AreEqual (one, r, "#1");
             Assert.IsTrue (one > zero, "#2");
             Assert.IsTrue (one.CompareTo (zero) > 0, "#3");
 
-            NodeId z = one ^ r;
+            var z = one ^ r;
             Assert.AreEqual (zero, z, "#4");
         }
 
         [Test]
         public void CompareTest ()
         {
-            byte[] i = new byte[20];
-            byte[] j = new byte[20];
+            var i = new byte[20];
+            var j = new byte[20];
             i[19] = 1;
             j[19] = 2;
-            NodeId one = new NodeId (i);
-            NodeId two = new NodeId (j);
+            var one = new NodeId (i);
+            var two = new NodeId (j);
             Assert.IsTrue (one.CompareTo (two) < 0);
             Assert.IsTrue (two.CompareTo (one) > 0);
             Assert.IsTrue (one.CompareTo (one) == 0);

@@ -95,7 +95,7 @@ namespace MonoTorrent
 
             this.Length = array.Length;
             this.array = new int[(array.Length + 31) / 32];
-            for (int i = 0; i < array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
                 Set (i, array[i]);
         }
 
@@ -116,7 +116,7 @@ namespace MonoTorrent
 
         public BitField Clone ()
         {
-            BitField b = new BitField (this.Length);
+            var b = new BitField (this.Length);
             Buffer.BlockCopy (array, 0, b.array, 0, array.Length * 4);
             b.TrueCount = TrueCount;
             return b;
@@ -132,7 +132,7 @@ namespace MonoTorrent
 
         public BitField Not ()
         {
-            for (int i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
 
             this.TrueCount = this.Length - this.TrueCount;
@@ -143,7 +143,7 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < this.array.Length; i++)
                 this.array[i] &= value.array[i];
 
             Validate ();
@@ -154,7 +154,7 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < this.array.Length; i++)
                 this.array[i] &= ~value.array[i];
 
             Validate ();
@@ -165,7 +165,7 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < this.array.Length; i++)
                 this.array[i] |= value.array[i];
 
             Validate ();
@@ -176,7 +176,7 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < this.array.Length; i++)
                 this.array[i] ^= value.array[i];
 
             Validate ();
@@ -188,7 +188,7 @@ namespace MonoTorrent
             if (!(obj is BitField bf) || this.array.Length != bf.array.Length || TrueCount != bf.TrueCount)
                 return false;
 
-            for (int i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < this.array.Length; i++)
                 if (array[i] != bf.array[i])
                     return false;
 
@@ -207,8 +207,8 @@ namespace MonoTorrent
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
-            int loopEnd = Math.Min ((endIndex / 32), array.Length - 1);
-            for (int i = (startIndex / 32); i <= loopEnd; i++) {
+            var loopEnd = Math.Min ((endIndex / 32), array.Length - 1);
+            for (var i = (startIndex / 32); i <= loopEnd; i++) {
                 if (this.array[i] == 0)        // This one has no true values
                     continue;
 
@@ -220,7 +220,7 @@ namespace MonoTorrent
                 if (end == Length && end > 0)
                     end--;
 
-                for (int j = start; j <= end; j++)
+                for (var j = start; j <= end; j++)
                     if (Get (j))     // This piece is true
                         return j;
             }
@@ -240,8 +240,8 @@ namespace MonoTorrent
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
-            int loopEnd = Math.Min ((endIndex / 32), array.Length - 1);
-            for (int i = (startIndex / 32); i <= loopEnd; i++) {
+            var loopEnd = Math.Min ((endIndex / 32), array.Length - 1);
+            for (var i = (startIndex / 32); i <= loopEnd; i++) {
                 if (this.array[i] == ~0)        // This one has no false values
                     continue;
 
@@ -253,7 +253,7 @@ namespace MonoTorrent
                 if (end == Length && end > 0)
                     end--;
 
-                for (int j = start; j <= end; j++)
+                for (var j = start; j <= end; j++)
                     if (!Get (j))     // This piece is true
                         return j;
             }
@@ -262,15 +262,15 @@ namespace MonoTorrent
         }
         internal void FromArray (byte[] buffer, int offset, int length)
         {
-            int end = Length / 32;
-            for (int i = 0; i < end; i++)
+            var end = Length / 32;
+            for (var i = 0; i < end; i++)
                 array[i] = (buffer[offset++] << 24) |
                            (buffer[offset++] << 16) |
                            (buffer[offset++] << 8) |
                            (buffer[offset++] << 0);
 
-            int shift = 24;
-            for (int i = end * 32; i < Length; i += 8) {
+            var shift = 24;
+            for (var i = end * 32; i < Length; i += 8) {
                 array[array.Length - 1] |= buffer[offset++] << shift;
                 shift -= 8;
             }
@@ -287,7 +287,7 @@ namespace MonoTorrent
 
         public IEnumerator<bool> GetEnumerator ()
         {
-            for (int i = 0; i < this.Length; i++)
+            for (var i = 0; i < this.Length; i++)
                 yield return Get (i);
         }
 
@@ -300,7 +300,7 @@ namespace MonoTorrent
                 throw new ArgumentException ("The selector should be the same length as this bitfield", nameof (selector));
 
             uint count = 0;
-            for (int i = 0; i < array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
                 count += CountBits ((uint) (array[i] & selector.array[i]));
             return (int) count;
         }
@@ -312,8 +312,8 @@ namespace MonoTorrent
 
         public override int GetHashCode ()
         {
-            int count = 0;
-            for (int i = 0; i < this.array.Length; i++)
+            var count = 0;
+            for (var i = 0; i < this.array.Length; i++)
                 count += this.array[i];
 
             return count;
@@ -343,14 +343,14 @@ namespace MonoTorrent
 
         internal BitField SetTrue (params int[] indices)
         {
-            foreach (int index in indices)
+            foreach (var index in indices)
                 Set (index, true);
             return this;
         }
 
         internal BitField SetFalse (params int[] indices)
         {
-            foreach (int index in indices)
+            foreach (var index in indices)
                 Set (index, false);
             return this;
         }
@@ -358,11 +358,11 @@ namespace MonoTorrent
         internal BitField SetAll (bool value)
         {
             if (value) {
-                for (int i = 0; i < this.array.Length; i++)
+                for (var i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;
                 Validate ();
             } else {
-                for (int i = 0; i < this.array.Length; i++)
+                for (var i = 0; i < this.array.Length; i++)
                     this.array[i] = 0;
                 this.TrueCount = 0;
             }
@@ -372,7 +372,7 @@ namespace MonoTorrent
 
         internal byte[] ToByteArray ()
         {
-            byte[] data = new byte[LengthInBytes];
+            var data = new byte[LengthInBytes];
             ToByteArray (data, 0);
             return data;
         }
@@ -383,16 +383,16 @@ namespace MonoTorrent
                 throw new ArgumentNullException (nameof (buffer));
 
             ZeroUnusedBits ();
-            int end = Length / 32;
-            for (int i = 0; i < end; i++) {
+            var end = Length / 32;
+            for (var i = 0; i < end; i++) {
                 buffer[offset++] = (byte) (array[i] >> 24);
                 buffer[offset++] = (byte) (array[i] >> 16);
                 buffer[offset++] = (byte) (array[i] >> 8);
                 buffer[offset++] = (byte) (array[i] >> 0);
             }
 
-            int shift = 24;
-            for (int i = end * 32; i < Length; i += 8) {
+            var shift = 24;
+            for (var i = end * 32; i < Length; i += 8) {
                 buffer[offset++] = (byte) (array[array.Length - 1] >> shift);
                 shift -= 8;
             }
@@ -401,8 +401,8 @@ namespace MonoTorrent
         [ExcludeFromCodeCoverage]
         string ToDebuggerString ()
         {
-            StringBuilder sb = new StringBuilder (this.array.Length * 16);
-            for (int i = 0; i < Length; i++) {
+            var sb = new StringBuilder (this.array.Length * 16);
+            for (var i = 0; i < Length; i++) {
                 sb.Append (Get (i) ? 'T' : 'F');
                 sb.Append (' ');
             }
@@ -418,7 +418,7 @@ namespace MonoTorrent
 
             // Update the population count
             uint count = 0;
-            for (int i = 0; i < array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
                 count += CountBits ((uint) array[i]);
             TrueCount = (int) count;
         }
@@ -433,7 +433,7 @@ namespace MonoTorrent
 
         void ZeroUnusedBits ()
         {
-            int shift = 32 - Length % 32;
+            var shift = 32 - Length % 32;
             if (shift != 0)
                 array[array.Length - 1] &= (-1 << shift);
         }

@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
             if ((offset + count) > file.Length)
                 throw new ArgumentOutOfRangeException ("Tried to read past the end of the file");
             if (!DontWrite)
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                     buffer[bufferOffset + i] = (byte) (bufferOffset + i);
             return count;
         }
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client
 
         public ConnectionPair WithTimeout ()
         {
-            CancellationTokenSource cancellation = new CancellationTokenSource (Timeout);
+            var cancellation = new CancellationTokenSource (Timeout);
             CancellationRegistration = cancellation.Token.Register (Dispose);
             return this;
         }
@@ -292,8 +292,8 @@ namespace MonoTorrent.Client
 
         public int TotalBlocks {
             get {
-                int count = 0;
-                long size = Torrent.Size;
+                var count = 0;
+                var size = Torrent.Size;
                 while (size > 0) {
                     count++;
                     size -= Piece.BlockSize;
@@ -344,11 +344,11 @@ namespace MonoTorrent.Client
 
         public PeerId CreatePeer (bool processingQueue, bool supportsFastPeer)
         {
-            StringBuilder sb = new StringBuilder ();
-            for (int i = 0; i < 20; i++)
+            var sb = new StringBuilder ();
+            for (var i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ('a', 'z'));
-            Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
-            PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
+            var peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
+            var id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.ProcessingQueue = processingQueue;
             return id;
@@ -406,11 +406,11 @@ namespace MonoTorrent.Client
 
         private static void AddAnnounces (BEncodedDictionary dict, string[][] tiers)
         {
-            BEncodedList announces = new BEncodedList ();
-            foreach (string[] tier in tiers) {
-                BEncodedList bTier = new BEncodedList ();
+            var announces = new BEncodedList ();
+            foreach (var tier in tiers) {
+                var bTier = new BEncodedList ();
                 announces.Add (bTier);
-                foreach (string s in tier)
+                foreach (var s in tier)
                     bTier.Add ((BEncodedString) s);
             }
             dict["announce"] = (BEncodedString) tiers[0][0];
@@ -419,8 +419,8 @@ namespace MonoTorrent.Client
 
         static BEncodedDictionary CreateTorrent (int pieceLength, TorrentFile[] files, string[][] tier)
         {
-            BEncodedDictionary dict = new BEncodedDictionary ();
-            BEncodedDictionary infoDict = new BEncodedDictionary ();
+            var dict = new BEncodedDictionary ();
+            var infoDict = new BEncodedDictionary ();
 
             if (tier != null)
                 AddAnnounces (dict, tier);
@@ -442,12 +442,12 @@ namespace MonoTorrent.Client
         static void AddFiles (BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
         {
             long totalSize = pieceLength - 1;
-            BEncodedList bFiles = new BEncodedList ();
-            for (int i = 0; i < files.Length; i++) {
-                BEncodedList path = new BEncodedList ();
-                foreach (string s in files[i].Path.Split ('/'))
+            var bFiles = new BEncodedList ();
+            for (var i = 0; i < files.Length; i++) {
+                var path = new BEncodedList ();
+                foreach (var s in files[i].Path.Split ('/'))
                     path.Add ((BEncodedString) s);
-                BEncodedDictionary d = new BEncodedDictionary ();
+                var d = new BEncodedDictionary ();
                 d["path"] = path;
                 d["length"] = (BEncodedNumber) files[i].Length;
                 bFiles.Add (d);
@@ -548,7 +548,7 @@ namespace MonoTorrent.Client
 
         internal static TestRig CreateSingleFile (int torrentSize, int pieceLength, bool metadataMode)
         {
-            TorrentFile[] files = StandardSingleFile ();
+            var files = StandardSingleFile ();
             files[0] = new TorrentFile (files[0].Path, torrentSize);
             return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), files, metadataMode);
         }

@@ -66,7 +66,7 @@ namespace MonoTorrent.Client.PiecePicking
             GenerateRarestFirst (available, otherPeers);
 
             while (rarest.Count > 0) {
-                BitField current = rarest.Pop ();
+                var current = rarest.Pop ();
                 var bundle = base.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
                 spares.Push (current);
 
@@ -83,14 +83,14 @@ namespace MonoTorrent.Client.PiecePicking
             while (rarest.Count > 0)
                 spares.Push (rarest.Pop ());
 
-            BitField current = DequeueSpare ();
+            var current = DequeueSpare ();
             current.From (peerBitfield);
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push (current);
 
             // Get a cloned copy of the bitfield and begin iterating to find the rarest pieces
-            for (int i = 0; i < otherPeers.Count; i++) {
+            for (var i = 0; i < otherPeers.Count; i++) {
                 if (otherPeers[i].BitField.AllTrue)
                     continue;
 

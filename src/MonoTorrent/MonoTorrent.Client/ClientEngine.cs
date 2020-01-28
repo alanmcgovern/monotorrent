@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
         public long TotalDownloadSpeed {
             get {
                 long total = 0;
-                for (int i = 0; i < torrents.Count; i++)
+                for (var i = 0; i < torrents.Count; i++)
                     total += torrents[i].Monitor.DownloadSpeed;
                 return total;
             }
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
         public long TotalUploadSpeed {
             get {
                 long total = 0;
-                for (int i = 0; i < torrents.Count; i++)
+                for (var i = 0; i < torrents.Count; i++)
                     total += torrents[i].Monitor.UploadSpeed;
                 return total;
             }
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client
                 } else {
                     // Add new peer to matched Torrent
                     var peer = new Peer ("", args.Uri);
-                    int peersAdded = manager.AddPeer (peer, fromTrackers: false, prioritise: true) ? 1 : 0;
+                    var peersAdded = manager.AddPeer (peer, fromTrackers: false, prioritise: true) ? 1 : 0;
                     manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
                 }
             } catch {
@@ -285,7 +285,7 @@ namespace MonoTorrent.Client
             await MainLoop;
 
             var tasks = new List<Task> ();
-            foreach (TorrentManager manager in torrents)
+            foreach (var manager in torrents)
                 tasks.Add (manager.PauseAsync ());
             await Task.WhenAll (tasks);
         }
@@ -378,7 +378,7 @@ namespace MonoTorrent.Client
                 return;
 
             await MainLoop;
-            foreach (TorrentManager manager in torrents) {
+            foreach (var manager in torrents) {
                 if (!manager.CanUseDht)
                     continue;
 
@@ -400,8 +400,8 @@ namespace MonoTorrent.Client
 
             await MainLoop;
 
-            List<Task> tasks = new List<Task> ();
-            for (int i = 0; i < torrents.Count; i++)
+            var tasks = new List<Task> ();
+            for (var i = 0; i < torrents.Count; i++)
                 tasks.Add (torrents[i].StartAsync ());
             await Task.WhenAll (tasks);
         }
@@ -428,8 +428,8 @@ namespace MonoTorrent.Client
             CheckDisposed ();
 
             await MainLoop;
-            List<Task> tasks = new List<Task> ();
-            for (int i = 0; i < torrents.Count; i++)
+            var tasks = new List<Task> ();
+            for (var i = 0; i < torrents.Count; i++)
                 tasks.Add (torrents[i].StopAsync (timeout));
             await Task.WhenAll (tasks);
         }
@@ -472,7 +472,7 @@ namespace MonoTorrent.Client
             ConnectionManager.TryConnect ();
             DiskManager.Tick ();
 
-            for (int i = 0; i < this.torrents.Count; i++)
+            for (var i = 0; i < this.torrents.Count; i++)
                 this.torrents[i].Mode.Tick (tickCount);
 
             RaiseStatsUpdate (new StatsUpdateEventArgs ());
@@ -509,7 +509,7 @@ namespace MonoTorrent.Client
 
         static BEncodedString GeneratePeerId ()
         {
-            StringBuilder sb = new StringBuilder (20);
+            var sb = new StringBuilder (20);
             sb.Append ("-");
             sb.Append (VersionInfo.ClientVersion);
             sb.Append ("-");

@@ -58,9 +58,9 @@ namespace MonoTorrent.Dht.Messages
         {
             base.Handle (engine, node);
 
-            FindNodeResponse response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+            var response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
 
-            Node targetNode = engine.RoutingTable.FindNode (Target);
+            var targetNode = engine.RoutingTable.FindNode (Target);
             response.Nodes = targetNode != null
                 ? targetNode.CompactNode ()
                 : Node.CompactNode (engine.RoutingTable.GetClosest (Target));

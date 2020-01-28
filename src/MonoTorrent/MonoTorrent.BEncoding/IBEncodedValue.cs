@@ -45,7 +45,7 @@ namespace MonoTorrent.BEncoding
         /// <returns>Byte array containing the BEncoded Data</returns>
         public byte[] Encode ()
         {
-            byte[] buffer = new byte[LengthInBytes ()];
+            var buffer = new byte[LengthInBytes ()];
             if (Encode (buffer, 0) != buffer.Length)
                 throw new BEncodingException ("Error encoding the data");
 
@@ -78,7 +78,7 @@ namespace MonoTorrent.BEncoding
             if (data == null)
                 throw new ArgumentNullException (nameof(data));
 
-            using RawReader stream = new RawReader (new MemoryStream (data));
+            using var stream = new RawReader (new MemoryStream (data));
             return (Decode (stream));
         }
 
@@ -110,7 +110,7 @@ namespace MonoTorrent.BEncoding
             if (offset > buffer.Length - length)
                 throw new ArgumentOutOfRangeException (nameof(length));
 
-            using RawReader reader = new RawReader (new MemoryStream (buffer, offset, length), strictDecoding);
+            using var reader = new RawReader (new MemoryStream (buffer, offset, length), strictDecoding);
             return (Decode (reader));
         }
 

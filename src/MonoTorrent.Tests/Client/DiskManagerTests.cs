@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
                 .ToArray ();
 
 
-            int pieceLength = Piece.BlockSize * 3;
+            var pieceLength = Piece.BlockSize * 3;
             // Turn all the files into one byte array. Group the byte array into bittorrent pieces. Hash that piece.
             var hashes = fileBytes
                 .SelectMany (t => t)
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
             };
 
             writer = new PieceWriter ();
-            for (int i = 0; i < files.Length; i++)
+            for (var i = 0; i < files.Length; i++)
                 writer.Data.Add (files[i], fileBytes[i]);
 
             settings = new EngineSettings ();
@@ -164,9 +164,9 @@ namespace MonoTorrent.Client
 
             // Queue up 6 reads, none should process.
             var buffer = new byte[Piece.BlockSize];
-            int count = 6;
+            var count = 6;
             var tasks = new List<Task> ();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
 
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#1");
@@ -177,14 +177,14 @@ namespace MonoTorrent.Client
 
             // Give a proper max read rate.
             settings.MaximumDiskReadRate = Piece.BlockSize * 2;
-            for (int i = 0; i < 2; i++) {
+            for (var i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
                 count -= 2;
                 Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#3." + i);
             }
 
             // If we add more reads after we used up our allowance they still won't process.
-            for (int i = 0; i < 2; i++) {
+            for (var i = 0; i < 2; i++) {
                 count++;
                 tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
             }
@@ -209,9 +209,9 @@ namespace MonoTorrent.Client
 
             // Queue up 6 reads, none should process.
             var buffer = new byte[Piece.BlockSize];
-            int count = 6;
+            var count = 6;
             var tasks = new List<ReusableTask> ();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 tasks.Add (diskManager.WriteAsync (fileData, 0, buffer, buffer.Length));
 
             Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#1");
@@ -222,14 +222,14 @@ namespace MonoTorrent.Client
 
             // Give a proper max read rate.
             settings.MaximumDiskWriteRate = Piece.BlockSize * 2;
-            for (int i = 0; i < 2; i++) {
+            for (var i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
                 count -= 2;
                 Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#3." + i);
             }
 
             // If we add more writes after we used up our allowance they still won't process.
-            for (int i = 0; i < 2; i++) {
+            for (var i = 0; i < 2; i++) {
                 count++;
                 tasks.Add (diskManager.WriteAsync (fileData, 0, buffer, buffer.Length));
             }
@@ -251,7 +251,7 @@ namespace MonoTorrent.Client
             var buffer = new byte[fileData.Size];
             Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
 
-            int offset = 0;
+            var offset = 0;
             foreach (var data in fileData.Data) {
                 Assert.IsTrue (Toolbox.ByteMatch (buffer, offset, data, 0, data.Length), "#2");
                 offset += data.Length;
@@ -299,7 +299,7 @@ namespace MonoTorrent.Client
             settings.MaximumDiskReadRate = Piece.BlockSize;
             await diskManager.Tick (1000);
 
-            for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
+            for (var i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
                 _ = diskManager.ReadAsync (fileData, 0, buffer, buffer.Length);
 
             while (diskManager.PendingReads > 0)
@@ -321,7 +321,7 @@ namespace MonoTorrent.Client
                 offset += data.Length;
             }
 
-            for (int i = 0; i < fileData.Hashes.Length; i++) {
+            for (var i = 0; i < fileData.Hashes.Length; i++) {
                 // Check twice because the first check should give us the result from the incremental hash.
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
@@ -333,7 +333,7 @@ namespace MonoTorrent.Client
         {
             var allData = fileData.Data.SelectMany (t => t).ToArray ();
 
-            int offset = 0;
+            var offset = 0;
             foreach (var block in allData.Partition (Piece.BlockSize)) {
                 await diskManager.WriteAsync (fileData, offset, block, block.Length);
                 offset += block.Length;
@@ -345,7 +345,7 @@ namespace MonoTorrent.Client
                 offset += data.Length;
             }
 
-            for (int i = 0; i < fileData.Hashes.Length; i++) {
+            for (var i = 0; i < fileData.Hashes.Length; i++) {
                 // Check twice because the first check should give us the result from the incremental hash.
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
@@ -442,7 +442,7 @@ namespace MonoTorrent.Client
             settings.MaximumDiskWriteRate = Piece.BlockSize;
             await diskManager.Tick (1000);
 
-            for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
+            for (var i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
                 _ = diskManager.WriteAsync (fileData, 0, buffer, buffer.Length);
 
             while (diskManager.PendingWrites > 0)

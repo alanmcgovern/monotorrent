@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
 
         public TorrentFileStream FindStream (string path)
         {
-            for (int i = 0; i < Streams.Count; i++)
+            for (var i = 0; i < Streams.Count; i++)
                 if (Streams[i].Path == path)
                     return Streams[i];
             return null;
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
 
         internal TorrentFileStream GetStream (TorrentFile file, FileAccess access)
         {
-            TorrentFileStream s = FindStream (file.FullPath);
+            var s = FindStream (file.FullPath);
 
             if (s != null) {
                 // If we are requesting write access and the current stream does not have it
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
 
         internal bool CloseStream (string path)
         {
-            TorrentFileStream s = FindStream (path);
+            var s = FindStream (path);
             if (s != null)
                 CloseAndRemove (s);
 

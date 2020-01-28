@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException ("Message decoding not supported");
 
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, messageLength);
             written += Write (buffer, written, MessageId);
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (24);
+            var sb = new StringBuilder (24);
             sb.Append ("Suggest Piece");
             sb.Append (" Index: ");
             sb.Append (PieceIndex);

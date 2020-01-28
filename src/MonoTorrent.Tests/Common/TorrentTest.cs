@@ -50,13 +50,13 @@ namespace MonoTorrent.Common
         [SetUp]
         public void StartUp ()
         {
-            DateTime current = new DateTime (2006, 7, 1, 5, 5, 5);
-            DateTime epochStart = new DateTime (1970, 1, 1, 0, 0, 0);
-            TimeSpan span = current - epochStart;
+            var current = new DateTime (2006, 7, 1, 5, 5, 5);
+            var epochStart = new DateTime (1970, 1, 1, 0, 0, 0);
+            var span = current - epochStart;
             creationTime = (long) span.TotalSeconds;
             Console.WriteLine ($"{creationTime}Creation seconds");
 
-            BEncodedDictionary torrentInfo = new BEncodedDictionary {
+            var torrentInfo = new BEncodedDictionary {
                 { "announce", new BEncodedString ("http://myannouceurl/announce") },
                 { "creation date", new BEncodedNumber (creationTime) },
                 { "nodes", new BEncodedList () },                    //FIXME: What is this?
@@ -72,7 +72,7 @@ namespace MonoTorrent.Common
         }
         private BEncodedDictionary CreateInfoDict ()
         {
-            BEncodedDictionary dict = new BEncodedDictionary {
+            var dict = new BEncodedDictionary {
                 { "source", new BEncodedString ("http://www.thisiswhohostedit.com") },
                 { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))) },
                 { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("ed2k isn't a sha, but who cares"))) },
@@ -91,13 +91,13 @@ namespace MonoTorrent.Common
         }
         private BEncodedList CreateFiles ()
         {
-            BEncodedList files = new BEncodedList ();
+            var files = new BEncodedList ();
 
-            BEncodedList path = new BEncodedList {
+            var path = new BEncodedList {
                 new BEncodedString ("file1.txt")
             };
 
-            BEncodedDictionary file = new BEncodedDictionary {
+            var file = new BEncodedDictionary {
                 { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
                 { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
                 { "length", new BEncodedNumber (50000) },
@@ -328,7 +328,7 @@ namespace MonoTorrent.Common
         [Test]
         public void StartEndIndices ()
         {
-            int pieceLength = 32 * 32;
+            var pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", 0),
                 new TorrentFile ("File1", pieceLength),
@@ -338,7 +338,7 @@ namespace MonoTorrent.Common
                 new TorrentFile ("File5", 236),
                 new TorrentFile ("File6", pieceLength * 7)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
+            var t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#0a");
             Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#0b");
@@ -365,12 +365,12 @@ namespace MonoTorrent.Common
         [Test]
         public void StartEndIndices2 ()
         {
-            int pieceLength = 32 * 32;
+            var pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength),
                 new TorrentFile ("File1", 0)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
+            var t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
@@ -382,12 +382,12 @@ namespace MonoTorrent.Common
         [Test]
         public void StartEndIndices3 ()
         {
-            int pieceLength = 32 * 32;
+            var pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 10)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
+            var t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
@@ -399,12 +399,12 @@ namespace MonoTorrent.Common
         [Test]
         public void StartEndIndices4 ()
         {
-            int pieceLength = 32 * 32;
+            var pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 11)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
+            var t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
@@ -416,13 +416,13 @@ namespace MonoTorrent.Common
         [Test]
         public void StartEndIndices5 ()
         {
-            int pieceLength = 32 * 32;
+            var pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 10),
                 new TorrentFile ("File1", 1)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
+            var t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
             Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");

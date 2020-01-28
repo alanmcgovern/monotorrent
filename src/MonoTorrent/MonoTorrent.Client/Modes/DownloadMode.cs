@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
 
             UpdateSeedingDownloadingState ();
 
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
+            for (var i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 if (!ShouldConnect (Manager.Peers.ConnectedPeers[i])) {
                     ConnectionManager.CleanupSocket (Manager, Manager.Peers.ConnectedPeers[i]);
                     i--;
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.Modes
             if (Manager.Torrent != null) {
                 foreach (var file in Manager.Torrent.Files) {
                     if (file.Priority != Priority.DoNotDownload) {
-                        for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                        for (var i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
                             PartialProgressUpdater[i] = true;
                     }
                 }

@@ -62,12 +62,12 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, ConnectionId);
             written += Write (buffer, written, Action);
             written += Write (buffer, written, TransactionId);
-            for (int i = 0; i < InfoHashes.Count; i++)
+            for (var i = 0; i < InfoHashes.Count; i++)
                 written += Write (buffer, written, InfoHashes[i]);
 
             return written - offset;

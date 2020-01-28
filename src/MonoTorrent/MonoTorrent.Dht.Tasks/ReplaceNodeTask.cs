@@ -57,14 +57,14 @@ namespace MonoTorrent.Dht.Tasks
             if (bucket.Nodes[0].LastSeen < TimeSpan.FromMinutes (3)) {
                 return;
             } else {
-                Node oldest = bucket.Nodes[0];
+                var oldest = bucket.Nodes[0];
                 var args = await engine.SendQueryAsync (new Ping (engine.LocalId), oldest);
 
                 if (args.TimedOut) {
                     // If the node didn't respond and it's no longer in our bucket,
                     // we need to send a ping to the oldest node in the bucket
                     // Otherwise if we have a non-responder and it's still there, replace it!
-                    int index = bucket.Nodes.IndexOf (oldest);
+                    var index = bucket.Nodes.IndexOf (oldest);
                     if (index < 0) {
                         await Execute ();
                     } else {

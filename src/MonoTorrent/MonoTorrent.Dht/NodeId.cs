@@ -2,10 +2,10 @@
 // NodeId.cs
 //
 // Authors:
-//   Jérémie Laval <jeremie.laval@gmail.com>
+//   Jï¿½rï¿½mie Laval <jeremie.laval@gmail.com>
 //   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Jérémie Laval, Alan McGovern
+// Copyright (C) 2008 Jï¿½rï¿½mie Laval, Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -90,7 +90,7 @@ namespace MonoTorrent.Dht
             if (other is null)
                 return 1;
 
-            for (int i = 0; i < Bytes.Length; i++) {
+            for (var i = 0; i < Bytes.Length; i++) {
                 if (Bytes[i] != other.Bytes[i])
                     return Bytes[i] - other.Bytes[i];
             }
@@ -118,7 +118,7 @@ namespace MonoTorrent.Dht
         public static NodeId operator ^ (NodeId left, NodeId right)
         {
             var clone = (byte[]) left.Bytes.Clone ();
-            for (int i = 0; i < right.Bytes.Length; i++)
+            for (var i = 0; i < right.Bytes.Length; i++)
                 clone[i] ^= right.Bytes[i];
             return new NodeId (clone);
         }
@@ -152,7 +152,7 @@ namespace MonoTorrent.Dht
 
         public static NodeId Create ()
         {
-            byte[] b = new byte[20];
+            var b = new byte[20];
             lock (random)
                 random.NextBytes (b);
             return new NodeId (b);

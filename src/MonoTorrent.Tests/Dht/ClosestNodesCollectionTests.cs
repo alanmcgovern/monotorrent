@@ -29,7 +29,7 @@ namespace MonoTorrent.Dht
             var closeNodes = new List<Node> ();
             var farNodes = new List<Node> ();
 
-            for (int i = 0; i < Bucket.MaxCapacity; i++) {
+            for (var i = 0; i < Bucket.MaxCapacity; i++) {
                 closeNodes.Add (new Node (new NodeId (value << i), new IPEndPoint (IPAddress.Any, i)));
                 farNodes.Add (new Node (new NodeId (value << (i + Bucket.MaxCapacity)), new IPEndPoint (IPAddress.Any, i + Bucket.MaxCapacity)));
             }

@@ -92,9 +92,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
+            var d = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
 
-            if (d.TryGetValue (MaxRequestKey, out BEncodedValue val))
+            if (d.TryGetValue (MaxRequestKey, out var val))
                 MaxRequests = (int) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (VersionKey, out val))
                 version = ((BEncodedString) val).Text;
@@ -109,8 +109,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private void LoadSupports (BEncodedDictionary supports)
         {
-            ExtensionSupports list = new ExtensionSupports ();
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> k in supports)
+            var list = new ExtensionSupports ();
+            foreach (var k in supports)
                 list.Add (new ExtensionSupport (k.Key.Text, (byte) ((BEncodedNumber) k.Value).Number));
 
             this.Supports = list;
@@ -118,8 +118,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
-            BEncodedDictionary dict = Create ();
+            var written = offset;
+            var dict = Create ();
 
             written += Write (buffer, written, dict.LengthInBytes () + 1 + 1);
             written += Write (buffer, written, MessageId);
@@ -135,8 +135,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (!ClientEngine.SupportsExtended)
                 throw new MessageException ("Libtorrent extension messages not supported");
 
-            BEncodedDictionary mainDict = new BEncodedDictionary ();
-            BEncodedDictionary supportsDict = new BEncodedDictionary ();
+            var mainDict = new BEncodedDictionary ();
+            var supportsDict = new BEncodedDictionary ();
 
             mainDict.Add (MaxRequestKey, (BEncodedNumber) MaxRequests);
             mainDict.Add (VersionKey, (BEncodedString) Version);

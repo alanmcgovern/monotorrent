@@ -90,7 +90,7 @@ namespace MonoTorrent.Tracker.Listeners
         async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
         {
             using (context.Response) {
-                bool isScrape = context.Request.RawUrl.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
+                var isScrape = context.Request.RawUrl.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
 
                 if (IncompleteAnnounce || IncompleteScrape) {
                     await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024, token);
@@ -99,7 +99,7 @@ namespace MonoTorrent.Tracker.Listeners
 
                 BEncodedValue responseData = Handle (context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
 
-                byte[] response = responseData.Encode ();
+                var response = responseData.Encode ();
                 context.Response.ContentType = "text/plain";
                 context.Response.StatusCode = 200;
                 context.Response.ContentLength64 = response.LongLength;

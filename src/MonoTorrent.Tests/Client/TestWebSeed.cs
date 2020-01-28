@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
         public void CreatePeerIds ()
         {
             var ids = new HashSet<BEncodedString> ();
-            for (int i = 0; i < 20; i++) {
+            for (var i = 0; i < 20; i++) {
                 var id = HttpConnection.CreatePeerId ();
                 Assert.AreEqual (20, id.TextBytes.Length, "#1");
                 Assert.IsTrue (ids.Add (id), "#2");
@@ -166,7 +166,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ReceiveFirst ()
         {
-            byte[] buffer = new byte[1024 * 1024 * 3];
+            var buffer = new byte[1024 * 1024 * 3];
             var receiveTask = NetworkIO.ReceiveAsync (connection, buffer, 0, 4, null, null, null);
             var task = Send (requests.Encode (), 0, requests.ByteLength);
 
@@ -178,7 +178,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SendFirst ()
         {
-            byte[] buffer = new byte[1024 * 1024 * 3];
+            var buffer = new byte[1024 * 1024 * 3];
             var task = Send (requests.Encode (), 0, requests.ByteLength);
             var receiveTask = connection.ReceiveAsync (buffer, 0, 4);
 
@@ -195,7 +195,7 @@ namespace MonoTorrent.Client
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.Dequeue ();
 
-            byte[] sendBuffer = requests.Encode ();
+            var sendBuffer = requests.Encode ();
             var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
 
             Assert.ThrowsAsync<ArgumentException> (() => sendTask);
@@ -205,9 +205,9 @@ namespace MonoTorrent.Client
         public void CompleteChunkBeforeRequestNext ()
         {
             var messages = requests.ToRequestMessages ().ToList ();
-            for (int i = 0; i < messages.Count - 1; i++) {
+            for (var i = 0; i < messages.Count - 1; i++) {
                 rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength));
-                int orig = id.AmRequestingPiecesCount;
+                var orig = id.AmRequestingPiecesCount;
                 rig.Manager.PieceManager.AddPieceRequests (id);
                 Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
             }
@@ -244,17 +244,17 @@ namespace MonoTorrent.Client
         {
             var allRequests = requests.ToRequestMessages ().ToList ();
             while (allRequests.Count > 0) {
-                int size = IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (buffer, 0));
+                var size = IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (buffer, 0));
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
 
-                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer, 0, size + 4, rig.Manager.Torrent);
+                var m = (PieceMessage) PeerMessage.DecodeMessage (buffer, 0, size + 4, rig.Manager.Torrent);
                 var request = allRequests[0];
                 Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
                 Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");
                 Assert.AreEqual (request.StartOffset, m.StartOffset, "#1");
 
-                for (int i = 0; i < request.RequestLength; i++)
+                for (var i = 0; i < request.RequestLength; i++)
                     if (buffer[i + 13] != (byte) (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
                         throw new Exception ("Corrupted data received");
 
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            Uri baseUri = new Uri (ListenerURL);
+            var baseUri = new Uri (ListenerURL);
             baseUri = new Uri (baseUri, $"{rig.Manager.Torrent.Name}/");
             if (rig.Manager.Torrent.Files.Length > 1) {
                 Assert.AreEqual (new Uri (baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
@@ -282,25 +282,25 @@ namespace MonoTorrent.Client
                 if (result.AsyncState != listener)
                     throw new Exception ("give up");
 
-                HttpListenerContext c = ((HttpListener) result.AsyncState).EndGetContext (result);
+                var c = ((HttpListener) result.AsyncState).EndGetContext (result);
                 Console.WriteLine ("Got Context");
                 requestedUrl.Add (c.Request.Url.OriginalString);
                 Match match = null;
-                string range = c.Request.Headers["range"];
+                var range = c.Request.Headers["range"];
 
                 if (!(range != null && (match = rangeMatcher.Match (range)).Success))
                     Assert.Fail ("No valid range specified");
 
-                int start = int.Parse (match.Groups[1].Captures[0].Value);
-                int end = int.Parse (match.Groups[2].Captures[0].Value);
+                var start = int.Parse (match.Groups[1].Captures[0].Value);
+                var end = int.Parse (match.Groups[2].Captures[0].Value);
 
 
                 long globalStart = 0;
-                bool exists = false;
-                string p = rig.Manager.Torrent.Files.Length > 1
+                var exists = false;
+                var p = rig.Manager.Torrent.Files.Length > 1
                     ? c.Request.RawUrl.Substring (10 + rig.Torrent.Name.Length + 1)
                     : c.Request.RawUrl.Substring (10);
-                foreach (TorrentFile file in rig.Manager.Torrent.Files) {
+                foreach (var file in rig.Manager.Torrent.Files) {
                     if (file.Path.Replace ('\\', '/') != p) {
                         globalStart += file.Length;
                         continue;
@@ -310,7 +310,7 @@ namespace MonoTorrent.Client
                     break;
                 }
 
-                TorrentFile[] files = rig.Manager.Torrent.Files;
+                var files = rig.Manager.Torrent.Files;
                 if (files.Length == 1 && rig.Torrent.GetRightHttpSeeds[0] == c.Request.Url.OriginalString) {
                     globalStart = 0;
                     exists = start < files[0].Length && end < files[0].Length;
@@ -320,8 +320,8 @@ namespace MonoTorrent.Client
                     c.Response.StatusCode = (int) HttpStatusCode.RequestedRangeNotSatisfiable;
                     c.Response.Close ();
                 } else {
-                    byte[] data = partialData ? new byte[(end - start) / 2] : new byte[end - start + 1];
-                    for (int i = 0; i < data.Length; i++)
+                    var data = partialData ? new byte[(end - start) / 2] : new byte[end - start + 1];
+                    for (var i = 0; i < data.Length; i++)
                         data[i] = (byte) (globalStart + i);
 
                     c.Response.Close (data, false);
@@ -345,7 +345,7 @@ namespace MonoTorrent.Client
             rig = TestRig.CreateSingleFile ();
             rig.Torrent.GetRightHttpSeeds.Add ($"{ListenerURL}File1.exe");
 
-            string url = rig.Torrent.GetRightHttpSeeds[0];
+            var url = rig.Torrent.GetRightHttpSeeds[0];
             connection = new HttpConnection (new Uri (url));
             connection.Manager = rig.Manager;
             rig.Manager.UnhashedPieces.SetAll (false);

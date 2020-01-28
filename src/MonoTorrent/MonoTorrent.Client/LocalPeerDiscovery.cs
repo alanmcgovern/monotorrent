@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
                         continue;
 
                     // If the port is invalid, ignore it!
-                    int portcheck = int.Parse (portString.Split (' ').Last ());
+                    var portcheck = int.Parse (portString.Split (' ').Last ());
                     if (portcheck <= 0 || portcheck > 65535)
                         continue;
 

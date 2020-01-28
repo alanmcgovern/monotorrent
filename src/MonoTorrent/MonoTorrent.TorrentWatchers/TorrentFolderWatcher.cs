@@ -81,7 +81,7 @@ namespace MonoTorrent.TorrentWatcher
 
         public void ForceScan ()
         {
-            foreach (string path in Directory.GetFiles (torrentDirectory, this.watchFilter))
+            foreach (var path in Directory.GetFiles (torrentDirectory, this.watchFilter))
                 RaiseTorrentFound (path);
         }
 

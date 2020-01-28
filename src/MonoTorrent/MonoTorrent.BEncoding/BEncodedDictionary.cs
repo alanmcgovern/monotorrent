@@ -67,13 +67,13 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = 0;
+            var written = 0;
 
             //Dictionaries start with 'd'
             buffer[offset] = (byte) 'd';
             written++;
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this) {
+            foreach (var keypair in this) {
                 written += keypair.Key.Encode (buffer, offset + written);
                 written += keypair.Value.Encode (buffer, offset + written);
             }
@@ -140,7 +140,7 @@ namespace MonoTorrent.BEncoding
         {
             BEncodedString key = null;
             BEncodedValue value = null;
-            BEncodedDictionary torrent = new BEncodedDictionary ();
+            var torrent = new BEncodedDictionary ();
             if (reader.ReadByte () != 'd')
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
@@ -173,10 +173,10 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes ()
         {
-            int length = 0;
+            var length = 0;
             length += 1;   // Dictionaries start with 'd'
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary) {
+            foreach (var keypair in this.dictionary) {
                 length += keypair.Key.LengthInBytes ();
                 length += keypair.Value.LengthInBytes ();
             }
@@ -196,8 +196,8 @@ namespace MonoTorrent.BEncoding
             if (this.dictionary.Count != other.dictionary.Count)
                 return false;
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary) {
-                if (!other.TryGetValue (keypair.Key, out BEncodedValue val))
+            foreach (var keypair in this.dictionary) {
+                if (!other.TryGetValue (keypair.Key, out var val))
                     return false;
 
                 if (!keypair.Value.Equals (val))
@@ -209,8 +209,8 @@ namespace MonoTorrent.BEncoding
 
         public override int GetHashCode ()
         {
-            int result = 0;
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
+            var result = 0;
+            foreach (var keypair in dictionary) {
                 result ^= keypair.Key.GetHashCode ();
                 result ^= keypair.Value.GetHashCode ();
             }
@@ -266,7 +266,7 @@ namespace MonoTorrent.BEncoding
             => GetValueOrDefault (key, null);
 
         public BEncodedValue GetValueOrDefault (BEncodedString key, BEncodedValue defaultValue)
-            => dictionary.TryGetValue (key, out BEncodedValue value) ? value : defaultValue;
+            => dictionary.TryGetValue (key, out var value) ? value : defaultValue;
 
         //public int IndexOf(KeyValuePair<BEncodedString, IBEncodedValue> item)
         //{

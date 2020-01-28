@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
         {
             Assert.AreEqual (5, loop.QueueWait (() => 5), "#1");
 
-            ManualResetEvent handle = new ManualResetEvent (false);
+            var handle = new ManualResetEvent (false);
             loop.QueueWait (() => handle.Set());
             Assert.IsTrue (handle.WaitOne (5000, true), "#2");
         }
@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
         public void RepeatedTask ()
         {
             //Console.WriteLine("Starting");
-            ManualResetEvent handle = new ManualResetEvent (false);
+            var handle = new ManualResetEvent (false);
             loop.QueueTimeout (TimeSpan.FromMilliseconds (0), delegate {
                 this.count++;
                 if (count == 3) {
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
         [Test]
         public void LongRunningTask ()
         {
-            ManualResetEvent handle = new ManualResetEvent (false);
+            var handle = new ManualResetEvent (false);
             loop.QueueTimeout (TimeSpan.FromMilliseconds (10), delegate {
                 Thread.Sleep (50);
                 if (++count == 3) {

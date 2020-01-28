@@ -90,7 +90,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, messageLength + RequestLength);
             written += Write (buffer, written, MessageId);
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("PieceMessage ");
             sb.Append (" Index ");
             sb.Append (PieceIndex);

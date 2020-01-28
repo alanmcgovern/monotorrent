@@ -65,11 +65,11 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException (nameof (node));
 
-            Bucket bucket = Buckets.Find (b => b.CanContain (node));
+            var bucket = Buckets.Find (b => b.CanContain (node));
             if (bucket.Nodes.Contains (node))
                 return false;
 
-            bool added = bucket.Add (node);
+            var added = bucket.Add (node);
             if (!added && bucket.CanContain (LocalNode))
                 if (Split (bucket))
                     return Add (node, raiseNodeAdded);
@@ -85,8 +85,8 @@ namespace MonoTorrent.Dht
 
         internal Node FindNode (NodeId id)
         {
-            foreach (Bucket b in Buckets)
-                foreach (Node n in b.Nodes)
+            foreach (var b in Buckets)
+                foreach (var n in b.Nodes)
                     if (n.Id.Equals (id))
                         return n;
 
@@ -103,15 +103,15 @@ namespace MonoTorrent.Dht
             if (!bucket.CanSplit)
                 return false;//to avoid infinite loop when add same node
 
-            NodeId median = NodeId.Median (bucket.Min, bucket.Max);
-            Bucket left = new Bucket (bucket.Min, median);
-            Bucket right = new Bucket (median, bucket.Max);
+            var median = NodeId.Median (bucket.Min, bucket.Max);
+            var left = new Bucket (bucket.Min, median);
+            var right = new Bucket (median, bucket.Max);
 
             Remove (bucket);
             Add (left);
             Add (right);
 
-            foreach (Node n in bucket.Nodes)
+            foreach (var n in bucket.Nodes)
                 Add (n, false);
 
             if (bucket.Replacement != null)
@@ -122,8 +122,8 @@ namespace MonoTorrent.Dht
 
         public int CountNodes ()
         {
-            int r = 0;
-            foreach (Bucket b in Buckets)
+            var r = 0;
+            foreach (var b in Buckets)
                 r += b.Nodes.Count;
             return r;
         }

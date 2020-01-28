@@ -70,12 +70,12 @@ namespace MonoTorrent.Tracker
         [Test]
         public async Task MultipleAnnounce ()
         {
-            Random r = new Random ();
+            var r = new Random ();
 
-            for (int i = 0; i < 20; i++) {
-                InfoHash infoHash = new InfoHash (new byte[20]);
+            for (var i = 0; i < 20; i++) {
+                var infoHash = new InfoHash (new byte[20]);
                 r.NextBytes (infoHash.Hash);
-                TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
+                var tier = new TrackerTier (new[] { uri.ToString () });
                 var parameters = new AnnounceParameters (0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new string ('1', 20), "", 1411, false);
                 await tier.Trackers[0].AnnounceAsync (parameters);

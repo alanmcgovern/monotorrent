@@ -128,7 +128,7 @@ namespace MonoTorrent.Client
         internal Mode Mode {
             get { return mode; }
             set {
-                Mode oldMode = mode;
+                var oldMode = mode;
                 mode = value;
                 ModeChanged?.Invoke (oldMode, mode);
                 if (oldMode != null)
@@ -355,7 +355,7 @@ namespace MonoTorrent.Client
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
 
-            if (Torrent.TryLoad (torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
+            if (Torrent.TryLoad (torrentSave, out var torrent) && torrent.InfoHash == magnetLink.InfoHash)
                 Torrent = torrent;
 
             Initialise (savePath, "", announces);
@@ -381,7 +381,7 @@ namespace MonoTorrent.Client
 
 
             if (HasMetadata) {
-                foreach (TorrentFile file in Torrent.Files)
+                foreach (var file in Torrent.Files)
                     file.FullPath = Path.Combine (SavePath, file.Path);
             }
         }
@@ -716,8 +716,8 @@ namespace MonoTorrent.Client
             if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
-            int count = 0;
-            foreach (Peer p in peers)
+            var count = 0;
+            foreach (var p in peers)
                 count += AddPeer (p, fromTrackers, prioritise: false) ? 1 : 0;
             return count;
         }
@@ -744,15 +744,15 @@ namespace MonoTorrent.Client
             // The PiecePickers will no longer ignore this piece as it has now been hash checked.
             UnhashedPieces[index] = false;
 
-            TorrentFile[] files = this.Torrent.Files;
+            var files = this.Torrent.Files;
 
-            for (int i = 0; i < files.Length; i++)
+            for (var i = 0; i < files.Length; i++)
                 if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
                     files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
 
             if (hashPassed) {
-                List<PeerId> connected = Peers.ConnectedPeers;
-                for (int i = 0; i < connected.Count; i++)
+                var connected = Peers.ConnectedPeers;
+                for (var i = 0; i < connected.Count; i++)
                     connected[i].IsAllowedFastPieces.Remove (index);
             }
 
@@ -815,7 +815,7 @@ namespace MonoTorrent.Client
             if (InfoHash != data.Infohash || Torrent.Pieces.Count != data.Bitfield.Length)
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
-            for (int i = 0; i < Torrent.Pieces.Count; i++)
+            for (var i = 0; i < Torrent.Pieces.Count; i++)
                 OnPieceHashed (i, data.Bitfield[i]);
             UnhashedPieces.From (data.UnhashedPieces);
 
@@ -848,7 +848,7 @@ namespace MonoTorrent.Client
             if (e.Successful) {
                 await ClientEngine.MainLoop;
 
-                int count = AddPeers (e.Peers, true);
+                var count = AddPeers (e.Peers, true);
                 RaisePeersFound (new TrackerPeersAdded (this, count, e.Peers.Count, e.Tracker));
             }
         }

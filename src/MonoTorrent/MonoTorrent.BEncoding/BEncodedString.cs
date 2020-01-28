@@ -130,7 +130,7 @@ namespace MonoTorrent.BEncoding
         /// <returns>The number of bytes encoded</returns>
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
             written += WriteLengthAsAscii (buffer, written, TextBytes.Length);
             written += Message.WriteAscii (buffer, written, ":");
             written += Message.Write (buffer, written, TextBytes);
@@ -142,12 +142,12 @@ namespace MonoTorrent.BEncoding
             if (asciiLength > 100000)
                 return Message.WriteAscii (buffer, offset, TextBytes.Length.ToString ());
 
-            bool hasWritten = false;
-            int written = offset;
-            for (int remainder = 100000; remainder > 1; remainder /= 10) {
+            var hasWritten = false;
+            var written = offset;
+            for (var remainder = 100000; remainder > 1; remainder /= 10) {
                 if (asciiLength < remainder && !hasWritten)
                     continue;
-                byte resultChar = (byte) ('0' + asciiLength / remainder);
+                var resultChar = (byte) ('0' + asciiLength / remainder);
                 written += Message.Write (buffer, written, resultChar);
                 asciiLength %= remainder;
                 hasWritten = true;
@@ -165,7 +165,7 @@ namespace MonoTorrent.BEncoding
             if (reader == null)
                 throw new ArgumentNullException (nameof (reader));
 
-            string length = string.Empty;
+            var length = string.Empty;
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != ':'))         // read in how many characters
                 length += (char) reader.ReadByte ();                                 // the string is
@@ -173,7 +173,7 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte () != ':')                                           // remove the ':'
                 throw new BEncodingException ("Invalid data found. Aborting");
 
-            if (!int.TryParse (length, out int letterCount))
+            if (!int.TryParse (length, out var letterCount))
                 throw new BEncodingException ($"Invalid BEncodedString. Length was '{length}' instead of a number");
 
             TextBytes = new byte[letterCount];
@@ -188,10 +188,10 @@ namespace MonoTorrent.BEncoding
         public override int LengthInBytes ()
         {
             // The length is equal to the length-prefix + ':' + length of data
-            int prefix = 1; // Account for ':'
+            var prefix = 1; // Account for ':'
 
             // Count the number of characters needed for the length prefix
-            for (int i = TextBytes.Length; i != 0; i = i / 10)
+            for (var i = TextBytes.Length; i != 0; i = i / 10)
                 prefix += 1;
 
             if (TextBytes.Length == 0)
@@ -212,9 +212,9 @@ namespace MonoTorrent.BEncoding
                 return 1;
 
             int difference;
-            int length = TextBytes.Length > other.TextBytes.Length ? other.TextBytes.Length : TextBytes.Length;
+            var length = TextBytes.Length > other.TextBytes.Length ? other.TextBytes.Length : TextBytes.Length;
 
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
                 if ((difference = TextBytes[i].CompareTo (other.TextBytes[i])) != 0)
                     return difference;
 
@@ -247,8 +247,8 @@ namespace MonoTorrent.BEncoding
 
         public override int GetHashCode ()
         {
-            int hash = 0;
-            for (int i = 0; i < TextBytes.Length; i++)
+            var hash = 0;
+            for (var i = 0; i < TextBytes.Length; i++)
                 hash += TextBytes[i];
 
             return hash;

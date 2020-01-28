@@ -90,10 +90,10 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = 0;
+            var written = 0;
             buffer[offset] = (byte) 'l';
             written++;
-            for (int i = 0; i < this.list.Count; i++)
+            for (var i = 0; i < this.list.Count; i++)
                 written += this.list[i].Encode (buffer, offset + written);
             buffer[offset + written] = (byte) 'e';
             written++;
@@ -125,10 +125,10 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes ()
         {
-            int length = 0;
+            var length = 0;
 
             length += 1;   // Lists start with 'l'
-            for (int i = 0; i < this.list.Count; i++)
+            for (var i = 0; i < this.list.Count; i++)
                 length += this.list[i].LengthInBytes ();
 
             length += 1;   // Lists end with 'e'
@@ -143,7 +143,7 @@ namespace MonoTorrent.BEncoding
             if (!(obj is BEncodedList other))
                 return false;
 
-            for (int i = 0; i < this.list.Count; i++)
+            for (var i = 0; i < this.list.Count; i++)
                 if (!this.list[i].Equals (other.list[i]))
                     return false;
 
@@ -153,8 +153,8 @@ namespace MonoTorrent.BEncoding
 
         public override int GetHashCode ()
         {
-            int result = 0;
-            for (int i = 0; i < list.Count; i++)
+            var result = 0;
+            for (var i = 0; i < list.Count; i++)
                 result ^= list[i].GetHashCode ();
 
             return result;

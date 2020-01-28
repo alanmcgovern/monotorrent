@@ -138,7 +138,7 @@ namespace MonoTorrent.Client.Tracker
         {
             while (!token.IsCancellationRequested) {
                 var received = await client.ReceiveAsync ();
-                UdpTrackerMessage rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
+                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
 
                 if (transactionId == rsp.TransactionId) {
                     if (rsp is ErrorMessage error) {

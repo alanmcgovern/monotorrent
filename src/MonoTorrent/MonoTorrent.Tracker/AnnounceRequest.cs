@@ -62,7 +62,7 @@ namespace MonoTorrent.Tracker
         /// </summary>
         public TorrentEvent Event {
             get {
-                string e = Parameters["event"];
+                var e = Parameters["event"];
                 if (e != null) {
                     if (e.Equals ("started"))
                         return TorrentEvent.Started;
@@ -138,7 +138,7 @@ namespace MonoTorrent.Tracker
 
             /* If the user has supplied an IP address, we use that instead of
              * the IP address we read from the announce request connection. */
-            if (IPAddress.TryParse (Parameters["ip"] ?? "", out IPAddress supplied) && !supplied.Equals (IPAddress.Any))
+            if (IPAddress.TryParse (Parameters["ip"] ?? "", out var supplied) && !supplied.Equals (IPAddress.Any))
                 ClientAddress = new IPEndPoint (supplied, Port);
             else
                 ClientAddress = new IPEndPoint (address, Port);
@@ -146,15 +146,15 @@ namespace MonoTorrent.Tracker
 
         InfoHash CheckMandatoryFields ()
         {
-            List<string> keys = new List<string> (Parameters.AllKeys);
-            foreach (string field in MandatoryFields) {
+            var keys = new List<string> (Parameters.AllKeys);
+            foreach (var field in MandatoryFields) {
                 if (keys.Contains (field))
                     continue;
 
                 Response.Add (FailureKey, (BEncodedString) ("mandatory announce parameter " + field + " in query missing"));
                 return null;
             }
-            byte[] hash = UriHelper.UrlDecode (Parameters["info_hash"]);
+            var hash = UriHelper.UrlDecode (Parameters["info_hash"]);
             if (hash.Length != 20) {
                 Response.Add (FailureKey, (BEncodedString) (
                     $"infohash was {hash.Length} bytes long, it must be 20 bytes long."));
@@ -166,7 +166,7 @@ namespace MonoTorrent.Tracker
         int ParseInt (string str, int? defaultValue = null)
         {
             str = Parameters[str];
-            if (!int.TryParse (str, out int p))
+            if (!int.TryParse (str, out var p))
                 p = defaultValue ?? 0;
             return p;
         }

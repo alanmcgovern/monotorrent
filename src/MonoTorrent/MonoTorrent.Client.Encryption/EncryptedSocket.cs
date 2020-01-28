@@ -189,9 +189,9 @@ namespace MonoTorrent.Client.Encryption
 
         private int RandomNumber (int max)
         {
-            byte[] b = new byte[4];
+            var b = new byte[4];
             random.GetBytes (b);
-            uint val = BitConverter.ToUInt32 (b, 0);
+            var val = BitConverter.ToUInt32 (b, 0);
             return (int) (val % max);
         }
         #endregion
@@ -242,16 +242,16 @@ namespace MonoTorrent.Client.Encryption
         protected async ReusableTask Synchronize (byte[] syncData, int syncStopPoint)
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
-            int filled = 0;
+            var filled = 0;
             var synchronizeWindow = ClientEngine.BufferPool.Rent (syncData.Length);
 
             while (bytesReceived < syncStopPoint) {
-                int received = syncData.Length - filled;
+                var received = syncData.Length - filled;
                 await NetworkIO.ReceiveAsync (socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
 
                 bytesReceived += received;
-                bool matched = true;
-                for (int i = 0; i < syncData.Length && matched; i++)
+                var matched = true;
+                for (var i = 0; i < syncData.Length && matched; i++)
                     matched &= syncData[i] == synchronizeWindow[i];
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
@@ -261,8 +261,8 @@ namespace MonoTorrent.Client.Encryption
                 } else {
                     // See if the current window contains the first byte of the expected synchronize data
                     // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
-                    int shift = -1;
-                    for (int i = 1; i < syncData.Length && shift == -1; i++)
+                    var shift = -1;
+                    for (var i = 1; i < syncData.Length && shift == -1; i++)
                         if (synchronizeWindow[i] == syncData[0])
                             shift = i;
 
@@ -293,7 +293,7 @@ namespace MonoTorrent.Client.Encryption
                 return;
             }
             if (initialBuffer != null) {
-                int toCopy = Math.Min (initialBufferCount, length);
+                var toCopy = Math.Min (initialBufferCount, length);
                 Array.Copy (initialBuffer, initialBufferOffset, buffer, 0, toCopy);
                 initialBufferOffset += toCopy;
                 initialBufferCount -= toCopy;
@@ -372,15 +372,15 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>Resulting concatenated buffer</returns>
         protected byte[] Combine (params byte[][] data)
         {
-            int cursor = 0;
-            int totalLength = 0;
+            var cursor = 0;
+            var totalLength = 0;
 
-            foreach (byte[] datum in data)
+            foreach (var datum in data)
                 totalLength += datum.Length;
 
-            byte[] combined = new byte[totalLength];
+            var combined = new byte[totalLength];
 
-            for (int i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
                 cursor += Message.Write (combined, cursor, data[i]);
 
             return combined;
@@ -419,7 +419,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected byte[] Len (byte[] data)
         {
-            byte[] lenBuffer = new byte[2];
+            var lenBuffer = new byte[2];
             lenBuffer[0] = (byte) ((data.Length >> 8) & 0xff);
             lenBuffer[1] = (byte) ((data.Length) & 0xff);
             return lenBuffer;

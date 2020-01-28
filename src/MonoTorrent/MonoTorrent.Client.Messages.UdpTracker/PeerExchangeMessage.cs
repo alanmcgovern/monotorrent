@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, offset, ByteLength - 4);
             written += Write (buffer, written, MessageId);
@@ -113,8 +113,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override string ToString ()
         {
-            BEncodedString added = (BEncodedString) peerDict[AddedKey];
-            int numPeers = added.TextBytes.Length / 6;
+            var added = (BEncodedString) peerDict[AddedKey];
+            var numPeers = added.TextBytes.Length / 6;
 
             return $"PeerExchangeMessage: {numPeers} peers";
         }

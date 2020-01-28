@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
 
             while (count > 0) {
                 int transferred;
-                bool unlimited = rateLimiter?.Unlimited ?? true;
+                var unlimited = rateLimiter?.Unlimited ?? true;
                 var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
 
             while (count > 0) {
                 int transferred;
-                bool unlimited = rateLimiter?.Unlimited ?? true;
+                var unlimited = rateLimiter?.Unlimited ?? true;
                 var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {

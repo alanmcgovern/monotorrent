@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
             Bitfield = bitfield?.Clone () ?? throw new ArgumentNullException (nameof (bitfield));
             UnhashedPieces = unhashedPieces?.Clone () ?? throw new ArgumentNullException (nameof (UnhashedPieces));
 
-            for (int i = 0; i < Bitfield.Length; i++) {
+            for (var i = 0; i < Bitfield.Length; i++) {
                 if (bitfield[i] && unhashedPieces[i])
                     throw new ArgumentException ($"The bitfield is set to true at index {i} but that piece is marked as unhashed.");
             }
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
             Infohash = new InfoHash (((BEncodedString) dict[InfoHashKey]).TextBytes);
 
             Bitfield = new BitField ((int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
-            byte[] data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
+            var data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
             Bitfield.FromArray (data, 0, data.Length);
 
             UnhashedPieces = new BitField (Bitfield.Length);
@@ -136,7 +136,7 @@ namespace MonoTorrent.Client
 
         public void Encode (Stream s)
         {
-            byte[] data = Encode ().Encode ();
+            var data = Encode ().Encode ();
             s.Write (data, 0, data.Length);
         }
     }

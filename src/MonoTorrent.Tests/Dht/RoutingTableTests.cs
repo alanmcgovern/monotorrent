@@ -27,8 +27,8 @@ namespace MonoTorrent.Dht
         public void AddSame ()
         {
             table.Clear ();
-            for (int i = 0; i < Bucket.MaxCapacity; i++) {
-                byte[] id = (byte[]) this.id.Clone ();
+            for (var i = 0; i < Bucket.MaxCapacity; i++) {
+                var id = (byte[]) this.id.Clone ();
                 table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
             }
 
@@ -42,8 +42,8 @@ namespace MonoTorrent.Dht
         [Test]
         public void AddSimilar ()
         {
-            for (int i = 0; i < Bucket.MaxCapacity * 3; i++) {
-                byte[] id = (byte[]) this.id.Clone ();
+            for (var i = 0; i < Bucket.MaxCapacity * 3; i++) {
+                var id = (byte[]) this.id.Clone ();
                 id[0] += (byte) i;
                 table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
             }
@@ -62,19 +62,19 @@ namespace MonoTorrent.Dht
         [Test]
         public void GetClosestTest ()
         {
-            TestHelper.ManyNodes (out table, out List<NodeId> nodes);
+            TestHelper.ManyNodes (out table, out var nodes);
 
 
             var closest = table.GetClosest (table.LocalNode.Id).ToList ();
             Assert.AreEqual (8, closest.Count, "#1");
-            for (int i = 0; i < 8; i++)
+            for (var i = 0; i < 8; i++)
                 Assert.IsTrue (closest.Exists (node => nodes[i].Equals (closest[i].Id)));
         }
 
         private void CheckBuckets ()
         {
-            foreach (Bucket b in table.Buckets)
-                foreach (Node n in b.Nodes)
+            foreach (var b in table.Buckets)
+                foreach (var n in b.Nodes)
                     Assert.IsTrue (n.Id >= b.Min && n.Id < b.Max);
         }
     }

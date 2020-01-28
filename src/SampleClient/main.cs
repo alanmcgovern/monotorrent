@@ -56,7 +56,7 @@ namespace SampleClient
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
-            EngineSettings engineSettings = new EngineSettings {
+            var engineSettings = new EngineSettings {
                 SavePath = downloadsPath,
                 ListenPort = port
             };
@@ -66,19 +66,19 @@ namespace SampleClient
             //engineSettings.MaxReadRate = 1 * 1024 * 1024;
 
             // Create the default settings which a torrent will have.
-            TorrentSettings torrentDefaults = new TorrentSettings ();
+            var torrentDefaults = new TorrentSettings ();
 
             // Create an instance of the engine.
             engine = new ClientEngine (engineSettings);
 
-            byte[] nodes = Array.Empty<byte> ();
+            var nodes = Array.Empty<byte> ();
             try {
                 nodes = File.ReadAllBytes (dhtNodeFile);
             } catch {
                 Console.WriteLine ("No existing dht nodes could be loaded");
             }
 
-            DhtEngine dht = new DhtEngine (new IPEndPoint (IPAddress.Any, port));
+            var dht = new DhtEngine (new IPEndPoint (IPAddress.Any, port));
             await engine.RegisterDhtAsync (dht);
 
             // This starts the Dht engine but does not wait for the full initialization to
@@ -102,7 +102,7 @@ namespace SampleClient
             }
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
-            foreach (string file in Directory.GetFiles (torrentsPath)) {
+            foreach (var file in Directory.GetFiles (torrentsPath)) {
                 if (file.EndsWith (".torrent", StringComparison.OrdinalIgnoreCase)) {
                     try {
                         // Load the .torrent from the file into a Torrent instance
@@ -116,7 +116,7 @@ namespace SampleClient
                     }
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager (torrent, downloadsPath, torrentDefaults);
+                    var manager = new TorrentManager (torrent, downloadsPath, torrentDefaults);
                     if (fastResume.ContainsKey (torrent.InfoHash.ToHex ()))
                         manager.LoadFastResume (new FastResume ((BEncodedDictionary) fastResume[torrent.InfoHash.ToHex ()]));
                     await engine.Register (manager);
@@ -138,7 +138,7 @@ namespace SampleClient
 
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
-            foreach (TorrentManager manager in torrents) {
+            foreach (var manager in torrents) {
                 manager.PeerConnected += (o, e) => {
                     lock (listener)
                         listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
@@ -171,9 +171,9 @@ namespace SampleClient
 
             // While the torrents are still running, print out some stats to the screen.
             // Details for all the loaded torrent managers are shown.
-            int i = 0;
-            bool running = true;
-            StringBuilder sb = new StringBuilder (1024);
+            var i = 0;
+            var running = true;
+            var sb = new StringBuilder (1024);
             while (running) {
                 if ((i++) % 10 == 0) {
                     sb.Remove (0, sb.Length);
@@ -187,7 +187,7 @@ namespace SampleClient
                     AppendFormat (sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten / 1024.0);
                     AppendFormat (sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
 
-                    foreach (TorrentManager manager in torrents) {
+                    foreach (var manager in torrents) {
                         AppendSeparator (sb);
                         AppendFormat (sb, "State:           {0}", manager.State);
                         AppendFormat (sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
@@ -196,14 +196,14 @@ namespace SampleClient
                         AppendFormat (sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
                         AppendFormat (sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
                         AppendFormat (sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        MonoTorrent.Client.Tracker.ITracker tracker = manager.TrackerManager.CurrentTracker;
+                        var tracker = manager.TrackerManager.CurrentTracker;
                         //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
                         AppendFormat (sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
                         AppendFormat (sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
                         if (manager.PieceManager != null)
                             AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 
-                        foreach (PeerId p in await manager.GetPeersAsync ())
+                        foreach (var p in await manager.GetPeersAsync ())
                             AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Uri,
                                                                                       p.Monitor.DownloadSpeed / 1024.0,
                                                                                       p.AmRequestingPiecesCount,
@@ -211,7 +211,7 @@ namespace SampleClient
 
                         AppendFormat (sb, "", null);
                         if (manager.Torrent != null)
-                            foreach (TorrentFile file in manager.Torrent.Files)
+                            foreach (var file in manager.Torrent.Files)
                                 AppendFormat (sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                     }
                     Console.Clear ();
@@ -247,8 +247,8 @@ namespace SampleClient
 
         private static async Task Shutdown ()
         {
-            BEncodedDictionary fastResume = new BEncodedDictionary ();
-            for (int i = 0; i < torrents.Count; i++) {
+            var fastResume = new BEncodedDictionary ();
+            for (var i = 0; i < torrents.Count; i++) {
                 var stoppingTask = torrents[i].StopAsync ();
                 while (torrents[i].State != TorrentState.Stopped) {
                     Console.WriteLine ("{0} is {1}", torrents[i].Torrent.Name, torrents[i].State);

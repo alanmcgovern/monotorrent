@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.PieceWriters
             Check.File (file);
             Check.Buffer (buffer);
 
-            for (int i = 0; i < CachedBlocks.Count; i++) {
+            for (var i = 0; i < CachedBlocks.Count; i++) {
                 if (CachedBlocks[i].File != file)
                     continue;
                 if (CachedBlocks[i].Offset != offset || CachedBlocks[i].File != file || CachedBlocks[i].Count != count)
@@ -122,10 +122,10 @@ namespace MonoTorrent.Client.PieceWriters
                 if (CacheUsed > (Capacity - count))
                     Flush (0);
 
-                byte[] cacheBuffer = ClientEngine.BufferPool.Rent (count);
+                var cacheBuffer = ClientEngine.BufferPool.Rent (count);
                 Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
 
-                CachedBlock block = new CachedBlock ();
+                var block = new CachedBlock ();
                 block.Buffer = cacheBuffer;
                 block.Count = count;
                 block.Offset = offset;
@@ -159,7 +159,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         void Flush (int index)
         {
-            CachedBlock b = CachedBlocks[index];
+            var b = CachedBlocks[index];
             CachedBlocks.RemoveAt (index);
             Interlocked.Add (ref cacheUsed, -b.Count);
             Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);

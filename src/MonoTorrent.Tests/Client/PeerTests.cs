@@ -17,8 +17,8 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             peers = new List<Peer> ();
-            for (int i = 0; i < 10; i++) {
-                Uri uri = new Uri ($"ipv4://192.168.0.{i}:1");
+            for (var i = 0; i < 10; i++) {
+                var uri = new Uri ($"ipv4://192.168.0.{i}:1");
                 peers.Add (new Peer (new string (i.ToString ()[0], 20), uri));
             }
             peers.Add (new Peer (new string ('a', 20), new Uri ("ipv4://255.255.255.255:6530")));
@@ -30,30 +30,30 @@ namespace MonoTorrent.Client
         [Test]
         public void CompactPeer ()
         {
-            string peerId = "12345abcde12345abcde";
-            Uri uri = new Uri ("ipv4://192.168.0.5:12345");
-            Peer p = new Peer (peerId, uri);
+            var peerId = "12345abcde12345abcde";
+            var uri = new Uri ("ipv4://192.168.0.5:12345");
+            var p = new Peer (peerId, uri);
 
-            byte[] compact = p.CompactPeer ();
-            Peer peer = Peer.Decode (compact)[0];
+            var compact = p.CompactPeer ();
+            var peer = Peer.Decode (compact)[0];
             Assert.AreEqual (p.ConnectionUri, peer.ConnectionUri, "#1");
         }
 
         [Test]
         public void CorruptDictionary ()
         {
-            BEncodedList l = new BEncodedList ();
-            BEncodedDictionary d = new BEncodedDictionary ();
+            var l = new BEncodedList ();
+            var d = new BEncodedDictionary ();
             l.Add (d);
-            IList<Peer> decoded = Peer.Decode (l);
+            var decoded = Peer.Decode (l);
             Assert.AreEqual (0, decoded.Count, "#1");
         }
 
         [Test]
         public void CorruptList ()
         {
-            BEncodedList list = new BEncodedList ();
-            for (int i = 0; i < peers.Count; i++)
+            var list = new BEncodedList ();
+            for (var i = 0; i < peers.Count; i++)
                 list.Add ((BEncodedString) peers[i].CompactPeer ());
 
             list.Insert (2, new BEncodedNumber (5));
@@ -61,14 +61,14 @@ namespace MonoTorrent.Client
 
             list.Clear ();
             list.Add (new BEncodedString (new byte[3]));
-            IList<Peer> decoded = Peer.Decode (list);
+            var decoded = Peer.Decode (list);
             Assert.AreEqual (0, decoded.Count, "#1");
         }
 
         [Test]
         public void CorruptString ()
         {
-            IList<Peer> p = Peer.Decode ("1234");
+            var p = Peer.Decode ("1234");
             Assert.AreEqual (0, p.Count, "#1");
 
             byte[] b = { 255, 255, 255, 255, 255, 255 };
@@ -84,8 +84,8 @@ namespace MonoTorrent.Client
         public void DecodeList ()
         {
             // List of String
-            BEncodedList list = new BEncodedList ();
-            foreach (Peer p in peers)
+            var list = new BEncodedList ();
+            foreach (var p in peers)
                 list.Add ((BEncodedString) p.CompactPeer ());
 
             VerifyDecodedPeers (Peer.Decode (list));
@@ -94,9 +94,9 @@ namespace MonoTorrent.Client
         [Test]
         public void DecodeDictionary ()
         {
-            BEncodedList list = new BEncodedList ();
-            foreach (Peer p in peers) {
-                BEncodedDictionary dict = new BEncodedDictionary ();
+            var list = new BEncodedList ();
+            foreach (var p in peers) {
+                var dict = new BEncodedDictionary ();
                 dict.Add ("ip", (BEncodedString) p.ConnectionUri.Host);
                 dict.Add ("port", (BEncodedNumber) p.ConnectionUri.Port);
                 dict.Add ("peer id", p.PeerId);
@@ -109,8 +109,8 @@ namespace MonoTorrent.Client
         [Test]
         public void DecodeCompact ()
         {
-            byte[] bytes = new byte[peers.Count * 6];
-            for (int i = 0; i < peers.Count; i++)
+            var bytes = new byte[peers.Count * 6];
+            for (var i = 0; i < peers.Count; i++)
                 peers[i].CompactPeer (bytes, i * 6);
             VerifyDecodedPeers (Peer.Decode (bytes));
         }
@@ -188,7 +188,7 @@ namespace MonoTorrent.Client
         private void VerifyDecodedPeers (IList<Peer> decoded)
         {
             Assert.AreEqual (peers.Count, decoded.Count, "#1");
-            foreach (Peer dec in decoded)
+            foreach (var dec in decoded)
                 Assert.IsTrue (peers.Exists (p => p.ConnectionUri.Equals (dec.ConnectionUri)));
         }
     }

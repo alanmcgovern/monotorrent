@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Connections
             public HttpRequestData (RequestMessage request)
             {
                 Request = request;
-                PieceMessage m = new PieceMessage (request.PieceIndex, request.StartOffset, request.RequestLength);
+                var m = new PieceMessage (request.PieceIndex, request.StartOffset, request.RequestLength);
                 TotalToReceive = m.ByteLength;
             }
         }
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client.Connections
             }
 
             // Once we've sent the length header, the next thing we need to send is the metadata for the 'Piece' message
-            int written = 0;
+            var written = 0;
             if (!CurrentRequest.SentHeader) {
                 CurrentRequest.SentHeader = true;
 
@@ -251,12 +251,12 @@ namespace MonoTorrent.Client.Connections
         {
             SendResult = new TaskCompletionSource<object> ();
 
-            List<RequestMessage> bundle = DecodeMessages (buffer, offset, count);
+            var bundle = DecodeMessages (buffer, offset, count);
             if (bundle.Count > 0) {
                 RequestMessages.AddRange (bundle);
                 // The RequestMessages are always sequential
-                RequestMessage start = bundle[0];
-                RequestMessage end = bundle[bundle.Count - 1];
+                var start = bundle[0];
+                var end = bundle[bundle.Count - 1];
                 CreateWebRequests (start, end);
             } else {
                 return count;
@@ -270,8 +270,8 @@ namespace MonoTorrent.Client.Connections
         static List<RequestMessage> DecodeMessages (byte[] buffer, int offset, int count)
         {
             var messages = new List<RequestMessage> ();
-            for (int i = offset; i < offset + count;) {
-                PeerMessage message = PeerMessage.DecodeMessage (buffer, i, count + offset - i, null);
+            for (var i = offset; i < offset + count;) {
+                var message = PeerMessage.DecodeMessage (buffer, i, count + offset - i, null);
                 if (message is RequestMessage msg)
                     messages.Add (msg);
                 i += message.ByteLength;
@@ -284,18 +284,18 @@ namespace MonoTorrent.Client.Connections
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
-            Uri uri = Uri;
+            var uri = Uri;
 
             if (Uri.OriginalString.EndsWith ("/"))
                 uri = new Uri (uri, $"{Manager.Torrent.Name}/");
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            long startOffset = (long) start.PieceIndex * Manager.Torrent.PieceLength + start.StartOffset;
-            long endOffset = (long) end.PieceIndex * Manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
+            var startOffset = (long) start.PieceIndex * Manager.Torrent.PieceLength + start.StartOffset;
+            var endOffset = (long) end.PieceIndex * Manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
 
-            foreach (TorrentFile file in Manager.Torrent.Files) {
-                Uri u = uri;
+            foreach (var file in Manager.Torrent.Files) {
+                var u = uri;
                 if (Manager.Torrent.Files.Length > 1)
                     u = new Uri (u, file.Path);
                 if (endOffset == 0)
@@ -308,7 +308,7 @@ namespace MonoTorrent.Client.Connections
                 }
                 // We want data from the end of the current file and from the next few files
                 else if (endOffset >= file.Length) {
-                    HttpWebRequest request = (HttpWebRequest) WebRequest.Create (u);
+                    var request = (HttpWebRequest) WebRequest.Create (u);
                     request.AddRange (startOffset, file.Length - 1);
                     WebRequests.Enqueue (new KeyValuePair<WebRequest, int> (request, (int) (file.Length - startOffset)));
                     startOffset = 0;
@@ -316,7 +316,7 @@ namespace MonoTorrent.Client.Connections
                 }
                 // All the data we want is from within this file
                 else {
-                    HttpWebRequest request = (HttpWebRequest) WebRequest.Create (u);
+                    var request = (HttpWebRequest) WebRequest.Create (u);
                     request.AddRange (startOffset, endOffset - 1);
                     WebRequests.Enqueue (new KeyValuePair<WebRequest, int> (request, (int) (endOffset - startOffset)));
                     endOffset = 0;

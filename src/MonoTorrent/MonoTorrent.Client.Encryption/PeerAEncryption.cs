@@ -61,26 +61,26 @@ namespace MonoTorrent.Client.Encryption
             CreateCryptors (KeyABytes, KeyBBytes);
 
             // 3 A->B: HASH('req1', S)
-            byte[] req1 = Hash (Req1Bytes, S);
+            var req1 = Hash (Req1Bytes, S);
 
             // ... HASH('req2', SKEY)
-            byte[] req2 = Hash (Req2Bytes, SKEY.Hash);
+            var req2 = Hash (Req2Bytes, SKEY.Hash);
 
             // ... HASH('req3', S)
-            byte[] req3 = Hash (Req3Bytes, S);
+            var req3 = Hash (Req3Bytes, S);
 
             // HASH('req2', SKEY) xor HASH('req3', S)
-            for (int i = 0; i < req2.Length; i++)
+            for (var i = 0; i < req2.Length; i++)
                 req2[i] ^= req3[i];
 
-            byte[] padC = GeneratePad ();
+            var padC = GeneratePad ();
 
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
             var bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                              + 2 + padC.Length + 2 + InitialPayload.Length;
             var buffer = ClientEngine.BufferPool.Rent (bufferLength);
 
-            int offset = 0;
+            var offset = 0;
             offset += Message.Write (buffer, offset, req1);
             offset += Message.Write (buffer, offset, req2);
             offset += Message.Write (buffer, offset, VerificationConstant);

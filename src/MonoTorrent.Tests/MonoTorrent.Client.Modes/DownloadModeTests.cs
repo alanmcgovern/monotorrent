@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Settings.MaximumConnections = 100;
             var peers = new List<Peer> ();
-            for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i++)
+            for (var i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i++)
                 peers.Add (new Peer ("", new Uri ($"ipv4://192.168.0.1:{i + 1000}")));
             var added = await Manager.AddPeersAsync (peers);
             Assert.AreEqual (added, Manager.Settings.MaximumPeerDetails, "#1");
@@ -229,7 +229,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void PartialProgress_AllDownloaded_AllDownloadable ()
         {
-            for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+            for (var i = 0; i < Manager.Torrent.Pieces.Count; i++)
                 Manager.OnPieceHashed (i, true);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -244,7 +244,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void PartialProgress_AllDownloaded_SomeDownloadable ()
         {
-            for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+            for (var i = 0; i < Manager.Torrent.Pieces.Count; i++)
                 Manager.OnPieceHashed (i, true);
 
             foreach (var file in Manager.Torrent.Files)

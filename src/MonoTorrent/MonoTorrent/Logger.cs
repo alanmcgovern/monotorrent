@@ -98,7 +98,7 @@ namespace MonoTorrent
                     sb.Append (connection.EndPoint);
 
                 sb.Append (formatting != null ? string.Format (message, formatting) : message);
-                string s = sb.ToString ();
+                var s = sb.ToString ();
                 listeners.ForEach (delegate (TraceListener l) { l.WriteLine (s); });
             }
         }

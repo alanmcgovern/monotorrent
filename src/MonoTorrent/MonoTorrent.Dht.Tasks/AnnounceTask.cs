@@ -55,11 +55,11 @@ namespace MonoTorrent.Dht.Tasks
 
         public async Task ExecuteAsync ()
         {
-            GetPeersTask getpeers = new GetPeersTask (engine, infoHash);
+            var getpeers = new GetPeersTask (engine, infoHash);
             var nodes = await getpeers.ExecuteAsync ();
 
             var announceTasks = new List<Task> ();
-            foreach (Node n in nodes) {
+            foreach (var n in nodes) {
                 if (n.Token != null) {
                     var query = new AnnouncePeer (engine.LocalId, infoHash, port, n.Token);
                     announceTasks.Add (engine.SendQueryAsync (query, n));

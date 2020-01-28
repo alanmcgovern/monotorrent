@@ -130,7 +130,7 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Methods
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write (buffer, written, (byte) ProtocolString.Length);
             written += WriteAscii (buffer, written, ProtocolString);
@@ -179,7 +179,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <returns></returns>
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("HandshakeMessage ");
             sb.Append (" PeerID ");
             sb.Append (PeerId.Text);

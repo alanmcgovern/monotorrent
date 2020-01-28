@@ -64,11 +64,11 @@ namespace MonoTorrent.Dht.Tasks
             }
 
             while (activeQueries.Count > 0) {
-                Task<SendQueryEventArgs> completed = await Task.WhenAny (activeQueries);
+                var completed = await Task.WhenAny (activeQueries);
                 activeQueries.Remove (completed);
 
                 // If it timed out or failed just move to the next query.
-                SendQueryEventArgs query = await completed;
+                var query = await completed;
                 if (query.Response == null)
                     continue;
 

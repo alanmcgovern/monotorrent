@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.PieceWriters
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException (nameof(offset));
 
-            TorrentFileStream stream = GetStream (file, FileAccess.ReadWrite);
+            var stream = GetStream (file, FileAccess.ReadWrite);
             stream.Seek (offset, SeekOrigin.Begin);
             stream.Write (buffer, bufferOffset, count);
         }

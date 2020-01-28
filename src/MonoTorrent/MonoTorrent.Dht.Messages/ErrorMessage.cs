@@ -54,7 +54,7 @@ namespace MonoTorrent.Dht.Messages
         public ErrorMessage (BEncodedValue transactionId, ErrorCode error, string message)
             : base (ErrorType)
         {
-            BEncodedList l = new BEncodedList ();
+            var l = new BEncodedList ();
             l.Add (new BEncodedNumber ((int) error));
             l.Add (new BEncodedString (message));
             properties.Add (ErrorListKey, l);

@@ -98,9 +98,9 @@ namespace MonoTorrent.Client.Modes
 
         private void NextPeer ()
         {
-            bool flag = false;
+            var flag = false;
 
-            foreach (PeerId id in Manager.Peers.ConnectedPeers) {
+            foreach (var id in Manager.Peers.ConnectedPeers) {
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
                     if (id == currentId)
                         flag = true;
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.Modes
                 }
             }
             //second pass without removing the currentid and previous ones
-            foreach (PeerId id in Manager.Peers.ConnectedPeers) {
+            foreach (var id in Manager.Peers.ConnectedPeers) {
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
                     currentId = id;
                     return;
@@ -136,17 +136,17 @@ namespace MonoTorrent.Client.Modes
                     if (bitField.AllTrue) {
                         byte[] hash;
                         Stream.Position = 0;
-                        using (SHA1 hasher = HashAlgoFactory.Create<SHA1> ())
+                        using (var hasher = HashAlgoFactory.Create<SHA1> ())
                             hash = hasher.ComputeHash (Stream);
 
                         if (!Manager.InfoHash.Equals (hash)) {
                             bitField.SetAll (false);
                         } else {
                             Stream.Position = 0;
-                            BEncodedDictionary dict = new BEncodedDictionary ();
+                            var dict = new BEncodedDictionary ();
                             dict.Add ("info", BEncodedValue.Decode (Stream));
                             // FIXME: Add the trackers too
-                            if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
+                            if (Torrent.TryLoad (dict.Encode (), out var t)) {
                                 try {
                                     if (Directory.Exists (savePath))
                                         savePath = Path.Combine (savePath, $"{Manager.InfoHash.ToHex ()}.torrent");
@@ -186,7 +186,7 @@ namespace MonoTorrent.Client.Modes
 
         private void SwitchToRegular ()
         {
-            foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
+            foreach (var id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
             Manager.Bitfield = new BitField (Manager.Torrent.Pieces.Count);
             Manager.PartialProgressSelector = new BitField (Manager.Torrent.Pieces.Count);
@@ -199,7 +199,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.SavePath = Path.Combine (Manager.SavePath, Manager.Torrent.Name);
             }
 
-            foreach (TorrentFile file in Manager.Torrent.Files)
+            foreach (var file in Manager.Torrent.Files)
                 file.FullPath = Path.Combine (Manager.SavePath, file.Path);
             _ = Manager.StartAsync ();
         }
@@ -231,11 +231,11 @@ namespace MonoTorrent.Client.Modes
 
         private void RequestNextNeededPiece (PeerId id)
         {
-            int index = bitField.FirstFalse ();
+            var index = bitField.FirstFalse ();
             if (index == -1)
                 return;//throw exception or switch to regular?
 
-            LTMetadata m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
+            var m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
             id.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
         }
@@ -243,13 +243,13 @@ namespace MonoTorrent.Client.Modes
         internal Torrent GetTorrent ()
         {
             byte[] calculatedInfoHash;
-            using (SHA1 sha = HashAlgoFactory.Create<SHA1> ())
+            using (var sha = HashAlgoFactory.Create<SHA1> ())
                 calculatedInfoHash = sha.ComputeHash (Stream.ToArray ());
             if (!Manager.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception ("invalid metadata");//restart ?
 
-            BEncodedValue d = BEncodedValue.Decode (Stream);
-            BEncodedDictionary dict = new BEncodedDictionary ();
+            var d = BEncodedValue.Decode (Stream);
+            var dict = new BEncodedDictionary ();
             dict.Add ("info", d);
 
             return Torrent.LoadCore (dict);
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client.Modes
 
             if (id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
                 Stream = new MemoryStream (new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
-                int size = message.MetadataSize % LTMetadata.BlockSize;
+                var size = message.MetadataSize % LTMetadata.BlockSize;
                 if (size > 0)
                     size = 1;
                 size += message.MetadataSize / LTMetadata.BlockSize;

@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public void CanAnnouceOrScrapeTest ()
         {
-            HTTPTracker t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/myurl"));
+            var t = (HTTPTracker) TrackerFactory.Create (new Uri ("http://mytracker.com/myurl"));
             Assert.IsFalse (t.CanScrape, "#1");
             Assert.IsTrue (t.CanAnnounce, "#1b");
 
@@ -174,7 +174,7 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public void Announce_Timeout ()
         {
-            TaskCompletionSource<bool> s = new TaskCompletionSource<bool> ();
+            var s = new TaskCompletionSource<bool> ();
             listener.AnnounceReceived += (o, e) => s.Task.Wait ();
             tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try {

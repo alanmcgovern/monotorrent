@@ -171,14 +171,14 @@ namespace MonoTorrent
                 return selector;
 
             selector = new BitField (totalPieces);
-            for (int i = StartPieceIndex; i <= EndPieceIndex; i++)
+            for (var i = StartPieceIndex; i <= EndPieceIndex; i++)
                 selector[i] = true;
             return selector;
         }
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (32);
+            var sb = new StringBuilder (32);
             sb.Append ("File: ");
             sb.Append (Path);
             sb.Append (" StartIndex: ");

@@ -46,14 +46,14 @@ namespace MonoTorrent.Client
 
         internal static List<int> Calculate (byte[] addressBytes, InfoHash infohash, int count, uint numberOfPieces)
         {
-            byte[] hashBuffer = new byte[24];                // The hash buffer to be used in hashing
+            var hashBuffer = new byte[24];                // The hash buffer to be used in hashing
             var results = new List<int> (count);  // The results array which will be returned
 
             // 1) Convert the bytes into an int32 and make them Network order
-            int ip = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (addressBytes, 0));
+            var ip = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (addressBytes, 0));
 
             // 2) binary AND this value with 0xFFFFFF00 to select the three most sigificant bytes
-            int ipMostSignificant = (int) (0xFFFFFF00 & ip);
+            var ipMostSignificant = (int) (0xFFFFFF00 & ip);
 
             // 3) Make ipMostSignificant into NetworkOrder
             var ip2 = (uint) IPAddress.HostToNetworkOrder (ipMostSignificant);
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
                 lock (hasher)
                     hashBuffer = hasher.ComputeHash (hashBuffer);
 
-                for (int i = 0; i < 20; i += 4) {
+                for (var i = 0; i < 20; i += 4) {
                     var result = (uint) IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (hashBuffer, i));
 
                     result %= numberOfPieces;

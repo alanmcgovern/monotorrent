@@ -68,8 +68,8 @@ namespace MonoTorrent.Client
 
         public int UnchokedPeers {
             get {
-                int peersCount = 0;
-                foreach (PeerId peer in peers)
+                var peersCount = 0;
+                foreach (var peer in peers)
                     if (!peer.AmChoking)
                         peersCount++;
                 return peersCount;
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
         public PeerId GetFirstInterestedChokedPeer ()
         {
             //Look for a choked peer
-            foreach (PeerId peer in peers)
+            foreach (var peer in peers)
                 if (peer.Connection != null)
                     if (peer.IsInterested && peer.AmChoking)
                         return peer;
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client
             //Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
             PeerId longestIntervalPeer = null;
             double longestIntervalPeerTime = 0;
-            foreach (PeerId peer in peers)
+            foreach (var peer in peers)
                 if (peer.Connection != null)
                     if (peer.AmChoking) {
                         if (!peer.LastUnchoked.IsRunning)
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
                             else {
                                 // Compare dates to determine whether the new one has a longer interval (but halve the interval
                                 // if the peer has never sent us any data)
-                                double newInterval = peer.LastUnchoked.Elapsed.TotalSeconds;
+                                var newInterval = peer.LastUnchoked.Elapsed.TotalSeconds;
                                 if (peer.Monitor.DataBytesDownloaded == 0)
                                     newInterval = newInterval / 2;
                                 if (newInterval > longestIntervalPeerTime) {

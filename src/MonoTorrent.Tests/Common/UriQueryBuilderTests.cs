@@ -43,7 +43,7 @@ namespace MonoTorrent.Common
         [Test]
         public void TestToString ()
         {
-            UriQueryBuilder bld = new UriQueryBuilder ("http://mytest.com/announce.aspx?key=1");
+            var bld = new UriQueryBuilder ("http://mytest.com/announce.aspx?key=1");
             bld.Add ("key", 2);
             bld.Add ("foo", 2);
             bld.Add ("foo", "bar");
@@ -57,7 +57,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx"), bld.ToUri (), "#3");
 
             bld = new UriQueryBuilder ("http://mytest.com/announce.aspx");
-            byte[] infoHash = new byte[] { 0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc };
+            var infoHash = new byte[] { 0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc };
             bld.Add ("key", UriHelper.UrlEncode (infoHash));
             Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (), "#4");
 
@@ -67,7 +67,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ContainQuery ()
         {
-            UriQueryBuilder bld = new UriQueryBuilder ("http://mytest.com/announce.aspx?key=1&foo=bar");
+            var bld = new UriQueryBuilder ("http://mytest.com/announce.aspx?key=1&foo=bar");
             Assert.IsTrue (bld.Contains ("key"), "#1");
             Assert.IsTrue (bld.Contains ("foo"), "#2");
             Assert.IsFalse (bld.Contains ("bar"), "#3");
@@ -76,7 +76,7 @@ namespace MonoTorrent.Common
         [Test]
         public void CaseInsensitiveTest ()
         {
-            UriQueryBuilder b = new UriQueryBuilder ("http://www.example.com?first=1&second=2&third=4");
+            var b = new UriQueryBuilder ("http://www.example.com?first=1&second=2&third=4");
             Assert.IsTrue (b.Contains ("FiRsT"));
             Assert.AreEqual (b["FiRst"], "1");
         }
@@ -84,7 +84,7 @@ namespace MonoTorrent.Common
         [Test]
         public void AddParams ()
         {
-            UriQueryBuilder b = new UriQueryBuilder ("http://example.com");
+            var b = new UriQueryBuilder ("http://example.com");
             b["Test"] = "2";
             b["Test"] = "7";
             Assert.AreEqual ("7", b["Test"], "#1");

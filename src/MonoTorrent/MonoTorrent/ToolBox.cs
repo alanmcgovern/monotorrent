@@ -38,9 +38,9 @@ namespace MonoTorrent
         private static readonly Random r = new Random ();
         public static int Count<T> (IEnumerable<T> enumerable, Predicate<T> predicate)
         {
-            int count = 0;
+            var count = 0;
 
-            foreach (T t in enumerable)
+            foreach (var t in enumerable)
                 if (predicate (t))
                     count++;
 
@@ -51,7 +51,7 @@ namespace MonoTorrent
         {
             long count = 0;
 
-            foreach (T t in enumerable)
+            foreach (var t in enumerable)
                 count += action (t);
 
             return count;
@@ -67,11 +67,11 @@ namespace MonoTorrent
         /// <param name="array"></param>
         public static void Randomize<T> (List<T> array)
         {
-            List<T> clone = new List<T> (array);
+            var clone = new List<T> (array);
             array.Clear ();
 
             while (clone.Count > 0) {
-                int index = r.Next (0, clone.Count);
+                var index = r.Next (0, clone.Count);
                 array.Add (clone[index]);
                 clone.RemoveAt (index);
             }
@@ -117,7 +117,7 @@ namespace MonoTorrent
                 return false;
 
             // Check if any elements are unequal
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 if (array1[offset1 + i] != array2[offset2 + i])
                     return false;
 

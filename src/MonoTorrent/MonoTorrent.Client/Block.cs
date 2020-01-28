@@ -141,7 +141,7 @@ namespace MonoTorrent.Client
 
         internal static int IndexOf (Block[] blocks, int startOffset, int blockLength)
         {
-            int index = startOffset / Piece.BlockSize;
+            var index = startOffset / Piece.BlockSize;
             if (blocks[index].StartOffset != startOffset || blocks[index].RequestLength != blockLength)
                 return -1;
             return index;

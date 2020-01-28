@@ -56,7 +56,7 @@ namespace MonoTorrent.TorrentWatcher
         /// </summary>
         public void StartAll ()
         {
-            for (int i = 0; i < Count; i++)
+            for (var i = 0; i < Count; i++)
                 this[i].Start ();
         }
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.TorrentWatcher
         /// </summary>
         public void StopAll ()
         {
-            for (int i = 0; i < Count; i++)
+            for (var i = 0; i < Count; i++)
                 this[i].Stop ();
         }
 
@@ -76,7 +76,7 @@ namespace MonoTorrent.TorrentWatcher
         /// </summary>
         public void ForceScanAll ()
         {
-            for (int i = 0; i < Count; i++)
+            for (var i = 0; i < Count; i++)
                 this[i].ForceScan ();
         }
 

@@ -73,7 +73,7 @@ namespace MonoTorrent.Dht.Messages
 
         public static DhtMessage DecodeMessage (BEncodedDictionary dictionary)
         {
-            if (!TryDecodeMessage (dictionary, out DhtMessage message, out string error))
+            if (!TryDecodeMessage (dictionary, out var message, out var error))
                 throw new MessageException (ErrorCode.GenericError, error);
 
             return message;
@@ -81,7 +81,7 @@ namespace MonoTorrent.Dht.Messages
 
         public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message)
         {
-            return TryDecodeMessage (dictionary, out message, out string error);
+            return TryDecodeMessage (dictionary, out message, out var error);
         }
 
         public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message, out string error)
@@ -89,7 +89,7 @@ namespace MonoTorrent.Dht.Messages
             message = null;
             error = null;
 
-            if (!dictionary.TryGetValue (MessageTypeKey, out BEncodedValue messageType)) {
+            if (!dictionary.TryGetValue (MessageTypeKey, out var messageType)) {
                 message = null;
                 error = "The BEncodedDictionary did not contain the 'q' key, so the message type could not be identified";
                 return false;
@@ -101,8 +101,8 @@ namespace MonoTorrent.Dht.Messages
                 message = new ErrorMessage (dictionary);
                 messages.Remove (message.TransactionId);
             } else {
-                BEncodedString key = (BEncodedString) dictionary[TransactionIdKey];
-                if (messages.TryGetValue (key, out QueryMessage query)) {
+                var key = (BEncodedString) dictionary[TransactionIdKey];
+                if (messages.TryGetValue (key, out var query)) {
                     messages.Remove (key);
                     try {
                         message = query.CreateResponse (dictionary);

@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PieceWriters
         public void FillFirstBuffer ()
         {
             // Write 4 blocks to the stream and then verify they can all be read
-            for (int i = 0; i < 4; i++) {
+            for (var i = 0; i < 4; i++) {
                 var buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
                 level1.Write (file, Piece.BlockSize * i, buffer, 0, buffer.Length);
             }
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.PieceWriters
             Assert.AreEqual (Piece.BlockSize, level2.CacheUsed, "#2");
 
             // Read them all back out and verify them
-            for (int i = 0; i < 4; i++) {
+            for (var i = 0; i < 4; i++) {
                 var buffer = new byte[Piece.BlockSize];
                 level1.Read (file, Piece.BlockSize * i, buffer, 0, Piece.BlockSize);
                 Assert.That (buffer, Is.All.EqualTo ((byte) (i + 1)));

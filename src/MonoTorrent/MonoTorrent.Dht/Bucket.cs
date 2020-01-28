@@ -81,7 +81,7 @@ namespace MonoTorrent.Dht
             }
             //test replace
 
-            for (int i = Nodes.Count - 1; i >= 0; i--) {
+            for (var i = Nodes.Count - 1; i >= 0; i--) {
                 if (Nodes[i].State != NodeState.Bad)
                     continue;
 

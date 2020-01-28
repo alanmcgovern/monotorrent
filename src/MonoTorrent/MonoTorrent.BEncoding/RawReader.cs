@@ -106,7 +106,7 @@ namespace MonoTorrent.BEncoding
 
         public override int Read (byte[] buffer, int offset, int count)
         {
-            int read = 0;
+            var read = 0;
             if (hasPeek && count > 0) {
                 hasPeek = false;
                 buffer[offset] = peeked[0];

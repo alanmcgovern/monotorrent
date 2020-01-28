@@ -118,7 +118,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            IConnection2 connection = ConnectionConverter.Convert (ConnectionFactory.Create (peer.ConnectionUri));
+            var connection = ConnectionConverter.Convert (ConnectionFactory.Create (peer.ConnectionUri));
             if (connection == null)
                 return;
 
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
                     connection.Dispose ();
                     manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer, ConnectionFailureReason.Unreachable, manager));
                 } else {
-                    PeerId id = new PeerId (peer, connection, manager.Bitfield?.Clone ().SetAll (false));
+                    var id = new PeerId (peer, connection, manager.Bitfield?.Clone ().SetAll (false));
                     id.LastMessageReceived.Restart ();
                     id.LastMessageSent.Restart ();
 
@@ -268,9 +268,9 @@ namespace MonoTorrent.Client
 
             try {
                 // We can reuse this peer if the connection says so and it's not marked as inactive
-                bool canReuse = (id.Connection?.CanReconnect ?? false)
-                    && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
-                    && id.Peer.AllowedEncryption != EncryptionTypes.None;
+                var canReuse = (id.Connection?.CanReconnect ?? false)
+                               && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
+                               && id.Peer.AllowedEncryption != EncryptionTypes.None;
 
                 manager.PieceManager.Picker.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
@@ -325,7 +325,7 @@ namespace MonoTorrent.Client
         internal void IncomingConnectionAccepted (TorrentManager manager, PeerId id)
         {
             try {
-                bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
+                var maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
                 if (LocalPeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen) {
                     CleanupSocket (manager, id);
                     return;
@@ -400,7 +400,7 @@ namespace MonoTorrent.Client
             if (BanPeer == null)
                 return false;
 
-            AttemptConnectionEventArgs e = new AttemptConnectionEventArgs (peer);
+            var e = new AttemptConnectionEventArgs (peer);
             BanPeer (this, e);
             return e.BanPeer;
         }
@@ -454,7 +454,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // Remove the peer from the lists so we can start connecting to him
-            Peer peer = manager.Peers.AvailablePeers[i];
+            var peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt (i);
 
             if (ShouldBanPeer (peer))

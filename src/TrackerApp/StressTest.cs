@@ -26,8 +26,8 @@ namespace TrackerApp
 
         public StressTest (int torrents, int peers, int requests)
         {
-            for (int i = 0; i < torrents; i++) {
-                byte[] infoHash = new byte[20];
+            for (var i = 0; i < torrents; i++) {
+                var infoHash = new byte[20];
                 random.NextBytes (infoHash);
                 hashes.Add (new InfoHash (infoHash).UrlEncode ());
             }
@@ -38,14 +38,14 @@ namespace TrackerApp
 
         public void Start (string trackerAddress)
         {
-            for (int i = 0; i < threads.Length; i++) {
+            for (var i = 0; i < threads.Length; i++) {
                 threads[i] = new Thread ((ThreadStart) delegate {
-                    StringBuilder sb = new StringBuilder ();
-                    int torrent = 0;
+                    var sb = new StringBuilder ();
+                    var torrent = 0;
                     while (true) {
                         sb.Remove (0, sb.Length);
 
-                        int ipaddress = random.Next (0, hashes.Count);
+                        var ipaddress = random.Next (0, hashes.Count);
 
                         sb.Append (trackerAddress);
                         sb.Append ("?info_hash=");
@@ -63,7 +63,7 @@ namespace TrackerApp
                         sb.Append ("&compact=");
                         sb.Append ("1");
 
-                        WebRequest req = WebRequest.Create (sb.ToString ());
+                        var req = WebRequest.Create (sb.ToString ());
                         req.BeginGetResponse (delegate (IAsyncResult r) {
                             try {
                                 req.EndGetResponse (r).Close ();

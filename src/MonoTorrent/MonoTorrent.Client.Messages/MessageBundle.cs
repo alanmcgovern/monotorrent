@@ -64,8 +64,8 @@ namespace MonoTorrent.Client.Messages
 
         public override int ByteLength {
             get {
-                int total = 0;
-                for (int i = 0; i < Messages.Count; i++)
+                var total = 0;
+                for (var i = 0; i < Messages.Count; i++)
                     total += Messages[i].ByteLength;
                 return total;
             }
@@ -78,9 +78,9 @@ namespace MonoTorrent.Client.Messages
 
         public override int Encode (byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
-            for (int i = 0; i < Messages.Count; i++)
+            for (var i = 0; i < Messages.Count; i++)
                 written += Messages[i].Encode (buffer, written);
 
             return CheckWritten (written - offset);

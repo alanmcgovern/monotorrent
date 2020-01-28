@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
             temp = new BitField (bitfield.Length);
 
             files.Clear ();
-            for (int i = 0; i < torrentData.Files.Length; i++)
+            for (var i = 0; i < torrentData.Files.Length; i++)
                 files.Add (new Files (torrentData.Files[i], torrentData.Files[i].GetSelector (bitfield.Length)));
             BuildSelectors ();
         }
@@ -126,7 +126,7 @@ namespace MonoTorrent.Client.PiecePicking
                 return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             // Start with the highest priority and work our way down.
-            for (int i = 0; i < prioritised.Count; i++) {
+            for (var i = 0; i < prioritised.Count; i++) {
                 temp.From (prioritised[i]).And (available);
                 if (!temp.AllFalse) {
                     var result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client.PiecePicking
             // At least one file is not set to DoNotDownload
             temp.From (files[0].Selector);
             allPrioritisedPieces.From (files[0].Selector);
-            for (int i = 1; i < files.Count && files[i].Priority != Priority.DoNotDownload; i++) {
+            for (var i = 1; i < files.Count && files[i].Priority != Priority.DoNotDownload; i++) {
                 allPrioritisedPieces.Or (files[i].Selector);
 
                 if (files[i].Priority == files[i - 1].Priority) {
@@ -175,8 +175,8 @@ namespace MonoTorrent.Client.PiecePicking
 
         bool ShouldRebuildSelectors ()
         {
-            bool needsUpdate = false;
-            for (int i = 0; i < files.Count; i++)
+            var needsUpdate = false;
+            for (var i = 0; i < files.Count; i++)
                 needsUpdate |= files[i].TryRefreshPriority ();
             return needsUpdate;
         }

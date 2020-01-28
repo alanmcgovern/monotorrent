@@ -91,9 +91,9 @@ namespace MonoTorrent.Client
 
         internal void UpdatePeerCounts ()
         {
-            int seeds = 0;
-            int leeches = 0;
-            for (int i = 0; i < ActivePeers.Count; i++) {
+            var seeds = 0;
+            var leeches = 0;
+            for (var i = 0; i < ActivePeers.Count; i++) {
                 if (ActivePeers[i].IsSeeder)
                     seeds++;
                 else

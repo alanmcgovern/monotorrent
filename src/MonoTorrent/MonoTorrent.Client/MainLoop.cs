@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         {
             if (span.TotalMilliseconds < 1)
                 span = TimeSpan.FromMilliseconds (1);
-            bool disposed = false;
+            var disposed = false;
             Timer timer = null;
 
             void Callback (object state)

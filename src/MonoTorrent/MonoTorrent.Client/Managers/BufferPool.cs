@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
 
             lock (MassiveBuffers) {
                 byte[] buffer;
-                for (int i = 0; i < MassiveBuffers.Count; i++)
+                for (var i = 0; i < MassiveBuffers.Count; i++)
                     if ((buffer = MassiveBuffers.Dequeue ()).Length >= minCapacity)
                         return buffer;
                     else

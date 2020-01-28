@@ -67,7 +67,7 @@ namespace MonoTorrent.Tracker
             rig.Trackables.ForEach (delegate (Trackable t) { Assert.IsFalse (rig.Tracker.Add (t), "#2"); });
 
             // Clone each one and ensure that the clone can't be added
-            List<Trackable> clones = new List<Trackable> ();
+            var clones = new List<Trackable> ();
             rig.Trackables.ForEach (delegate (Trackable t) { clones.Add (new Trackable (Clone (t.InfoHash), t.Name)); });
 
             clones.ForEach (delegate (Trackable t) { Assert.IsFalse (rig.Tracker.Add (t), "#3"); });
@@ -98,8 +98,8 @@ namespace MonoTorrent.Tracker
                 Assert.AreEqual (0, m.Count, "#2");
             }
 
-            foreach (Peer p in manager.GetPeers ()) {
-                PeerDetails d = rig.Peers.Find (details =>
+            foreach (var p in manager.GetPeers ()) {
+                var d = rig.Peers.Find (details =>
                     details.ClientAddress == p.ClientAddress.Address && details.Port == p.ClientAddress.Port);
                 Assert.AreEqual (d.Downloaded, p.Downloaded, "#3");
                 Assert.AreEqual (d.peerId, p.PeerId, "#4");
@@ -111,7 +111,7 @@ namespace MonoTorrent.Tracker
         [Test]
         public void AnnounceInvalidTest ()
         {
-            int i = 0;
+            var i = 0;
             rig.Peers.ForEach (delegate (PeerDetails d) { rig.Listener.Handle (d, (TorrentEvent) ((i++) % 4), rig.Trackables[0]); });
             Assert.AreEqual (0, rig.Tracker.Count, "#1");
         }
@@ -119,7 +119,7 @@ namespace MonoTorrent.Tracker
         [Test]
         public void CheckPeersAdded ()
         {
-            int i = 0;
+            var i = 0;
             AddAllTrackables ();
 
             List<PeerDetails>[] lists = { new List<PeerDetails> (), new List<PeerDetails> (), new List<PeerDetails> (), new List<PeerDetails> () };
@@ -130,10 +130,10 @@ namespace MonoTorrent.Tracker
 
             for (i = 0; i < 4; i++) {
                 var manager = rig.Tracker.GetTrackerItem (rig.Trackables[i]);
-                List<Peer> peers = manager.GetPeers ();
+                var peers = manager.GetPeers ();
                 Assert.AreEqual (25, peers.Count, "#1");
 
-                foreach (Peer p in peers) {
+                foreach (var p in peers) {
                     Assert.IsTrue (lists[i].Exists (d => d.Port == p.ClientAddress.Port &&
                                                          d.ClientAddress == p.ClientAddress.Address));
                 }
@@ -189,21 +189,21 @@ namespace MonoTorrent.Tracker
             rig.Tracker.AllowNonCompact = true;
             rig.Tracker.Add (rig.Trackables[0]);
 
-            List<PeerDetails> peers = new List<PeerDetails> ();
-            for (int i = 0; i < 25; i++)
+            var peers = new List<PeerDetails> ();
+            for (var i = 0; i < 25; i++)
                 peers.Add (rig.Peers[i]);
 
-            for (int i = 0; i < peers.Count; i++)
+            for (var i = 0; i < peers.Count; i++)
                 rig.Listener.Handle (peers[i], TorrentEvent.Started, rig.Trackables[0]);
 
-            BEncodedDictionary dict = (BEncodedDictionary) rig.Listener.Handle (rig.Peers[24], TorrentEvent.None, rig.Trackables[0]);
-            BEncodedList list = (BEncodedList) dict["peers"];
+            var dict = (BEncodedDictionary) rig.Listener.Handle (rig.Peers[24], TorrentEvent.None, rig.Trackables[0]);
+            var list = (BEncodedList) dict["peers"];
             Assert.AreEqual (25, list.Count, "#1");
 
             foreach (BEncodedDictionary d in list) {
-                IPAddress up = IPAddress.Parse (d["ip"].ToString ());
-                int port = (int) ((BEncodedNumber) d["port"]).Number;
-                BEncodedString peerId = (BEncodedString) d["peer id"];
+                var up = IPAddress.Parse (d["ip"].ToString ());
+                var port = (int) ((BEncodedNumber) d["port"]).Number;
+                var peerId = (BEncodedString) d["peer id"];
 
                 Assert.IsTrue (peers.Exists (pd =>
                     pd.ClientAddress.Equals (up) && pd.Port == port && pd.peerId.Equals (peerId)), "#2");

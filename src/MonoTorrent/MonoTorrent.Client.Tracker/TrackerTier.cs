@@ -42,8 +42,8 @@ namespace MonoTorrent.Client.Tracker
         internal TrackerTier (IEnumerable<string> trackerUrls)
         {
             var trackerList = new List<ITracker> ();
-            foreach (string trackerUrl in trackerUrls) {
-                if (!Uri.TryCreate (trackerUrl, UriKind.Absolute, out Uri result)) {
+            foreach (var trackerUrl in trackerUrls) {
+                if (!Uri.TryCreate (trackerUrl, UriKind.Absolute, out var result)) {
                     Logger.Log (null, "TrackerTier - Invalid tracker Url specified: {0}", trackerUrl);
                     continue;
                 }

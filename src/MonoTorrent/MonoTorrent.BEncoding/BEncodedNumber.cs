@@ -80,9 +80,9 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode (byte[] buffer, int offset)
         {
-            long number = this.number;
+            var number = this.number;
 
-            int written = offset;
+            var written = offset;
             buffer[written++] = (byte) 'i';
 
             if (number < 0) {
@@ -91,12 +91,12 @@ namespace MonoTorrent.BEncoding
             }
             // Reverse the number '12345' to get '54321'
             long reversed = 0;
-            for (long i = number; i != 0; i /= 10)
+            for (var i = number; i != 0; i /= 10)
                 reversed = reversed * 10 + i % 10;
 
             // Write each digit of the reversed number to the array. We write '1'
             // first, then '2', etc
-            for (long i = reversed; i != 0; i /= 10)
+            for (var i = reversed; i != 0; i /= 10)
                 buffer[written++] = (byte) (i % 10 + '0');
 
             if (number == 0)
@@ -104,7 +104,7 @@ namespace MonoTorrent.BEncoding
 
             // If the original number ends in one or more zeros, they are lost
             // when we reverse the number. We add them back in here.
-            for (long i = number; i % 10 == 0 && number != 0; i /= 10)
+            for (var i = number; i % 10 == 0 && number != 0; i /= 10)
                 buffer[written++] = (byte) '0';
 
             buffer[written++] = (byte) 'e';
@@ -118,7 +118,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader">RawReader containing a BEncoded Number</param>
         internal override void DecodeInternal (RawReader reader)
         {
-            int sign = 1;
+            var sign = 1;
             if (reader == null)
                 throw new ArgumentNullException (nameof(reader));
 
@@ -152,8 +152,8 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes ()
         {
-            long number = this.number;
-            int count = 2; // account for the 'i' and 'e'
+            var number = this.number;
+            var count = 2; // account for the 'i' and 'e'
 
             if (number == 0)
                 return count + 1;
@@ -162,7 +162,7 @@ namespace MonoTorrent.BEncoding
                 number = -number;
                 count++;
             }
-            for (long i = number; i != 0; i /= 10)
+            for (var i = number; i != 0; i /= 10)
                 count++;
 
             return count;

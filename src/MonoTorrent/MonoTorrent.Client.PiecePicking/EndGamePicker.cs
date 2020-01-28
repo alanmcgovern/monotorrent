@@ -70,8 +70,8 @@ namespace MonoTorrent.Client.PiecePicking
         // Cancels a pending request when the predicate returns 'true'
         void CancelWhere (Predicate<Request> predicate, bool sendCancel)
         {
-            for (int i = 0; i < Requests.Count; i++) {
-                Request r = Requests[i];
+            for (var i = 0; i < Requests.Count; i++) {
+                var r = Requests[i];
                 if (predicate (r)) {
                     r.Peer.AmRequestingPiecesCount--;
                     if (sendCancel)
@@ -111,8 +111,8 @@ namespace MonoTorrent.Client.PiecePicking
             // 'Requests' should contain a list of all the pieces we need to complete
             pieces = new List<Piece> (requests);
             TorrentData = torrentData;
-            foreach (Piece piece in pieces) {
-                for (int i = 0; i < piece.BlockCount; i++)
+            foreach (var piece in pieces) {
+                for (var i = 0; i < piece.BlockCount; i++)
                     if (piece.Blocks[i].RequestedOff != null && !piece.Blocks[i].Received)
                         this.Requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
             }
@@ -133,11 +133,11 @@ namespace MonoTorrent.Client.PiecePicking
             LoadPieces (available);
 
             // 1) See if there are any blocks which have not been requested at all. Request the block if the peer has it
-            foreach (Piece p in pieces) {
+            foreach (var p in pieces) {
                 if (!available[p.Index] || p.AllBlocksRequested)
                     continue;
 
-                for (int i = 0; i < p.BlockCount; i++) {
+                for (var i = 0; i < p.BlockCount; i++) {
                     if (p.Blocks[i].Requested)
                         continue;
                     var requestMessage = p.Blocks[i].CreateRequest (peer);
@@ -148,18 +148,18 @@ namespace MonoTorrent.Client.PiecePicking
 
             // 2) For each block with an existing request, add another request. We do a search from the start
             //    of the list to the end. So when we add a duplicate request, move both requests to the end of the list
-            foreach (Piece p in pieces) {
+            foreach (var p in pieces) {
                 if (!available[p.Index])
                     continue;
 
-                for (int i = 0; i < p.BlockCount; i++) {
+                for (var i = 0; i < p.BlockCount; i++) {
                     if (p.Blocks[i].Received || AlreadyRequested (p.Blocks[i], peer))
                         continue;
 
-                    int c = Requests.Count;
-                    for (int j = 0; j < Requests.Count - 1 && (c-- > 0); j++) {
+                    var c = Requests.Count;
+                    for (var j = 0; j < Requests.Count - 1 && (c-- > 0); j++) {
                         if (Requests[j].Block.PieceIndex == p.Index && Requests[j].Block.StartOffset == p.Blocks[i].StartOffset) {
-                            Request r = Requests[j];
+                            var r = Requests[j];
                             Requests.RemoveAt (j);
                             Requests.Add (r);
                             j--;
@@ -176,17 +176,17 @@ namespace MonoTorrent.Client.PiecePicking
 
         void LoadPieces (BitField b)
         {
-            int length = b.Length;
-            for (int i = b.FirstTrue (0, length); i != -1; i = b.FirstTrue (i + 1, length))
+            var length = b.Length;
+            for (var i = b.FirstTrue (0, length); i != -1; i = b.FirstTrue (i + 1, length))
                 if (!pieces.Exists (p => p.Index == i))
                     pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
         }
 
         private bool AlreadyRequested (Block block, IPieceRequester peer)
         {
-            bool b = Requests.Exists (r => r.Block.PieceIndex == block.PieceIndex &&
-                                           r.Block.StartOffset == block.StartOffset &&
-                                           r.Peer == peer);
+            var b = Requests.Exists (r => r.Block.PieceIndex == block.PieceIndex &&
+                                          r.Block.StartOffset == block.StartOffset &&
+                                          r.Peer == peer);
             return b;
         }
 
