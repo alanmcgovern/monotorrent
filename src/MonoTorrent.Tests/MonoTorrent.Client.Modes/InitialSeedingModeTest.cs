@@ -37,9 +37,7 @@ namespace MonoTorrent.Client.Modes
     [TestFixture]
     public class InitialSeedingModeTests
     {
-        InitialSeedingMode Mode {
-            get { return Rig.Manager.Mode as InitialSeedingMode; }
-        }
+        InitialSeedingMode Mode => Rig.Manager.Mode as InitialSeedingMode;
 
         TestRig Rig {
             get; set;

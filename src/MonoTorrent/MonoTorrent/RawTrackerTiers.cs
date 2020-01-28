@@ -71,8 +71,8 @@ namespace MonoTorrent
         }
 
         public RawTrackerTier this[int index] {
-            get { return new RawTrackerTier ((BEncodedList) Tiers[index]); }
-            set { Tiers[index] = value.Tier; }
+            get => new RawTrackerTier ((BEncodedList) Tiers[index]);
+            set => Tiers[index] = value.Tier;
         }
 
         public void Add (RawTrackerTier item)
@@ -111,13 +111,9 @@ namespace MonoTorrent
             return index != -1;
         }
 
-        public int Count {
-            get { return Tiers.Count; }
-        }
+        public int Count => Tiers.Count;
 
-        public bool IsReadOnly {
-            get { return Tiers.IsReadOnly; }
-        }
+        public bool IsReadOnly => Tiers.IsReadOnly;
 
         public IEnumerator<RawTrackerTier> GetEnumerator ()
         {

@@ -35,9 +35,7 @@ namespace MonoTorrent.Client
     {
         public TorrentFile File { get; }
 
-        public string Path {
-            get { return File.FullPath; }
-        }
+        public string Path => File.FullPath;
 
 
         public TorrentFileStream (TorrentFile file, FileMode mode, FileAccess access, FileShare share)

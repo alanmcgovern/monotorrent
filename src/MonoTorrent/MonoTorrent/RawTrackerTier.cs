@@ -37,8 +37,8 @@ namespace MonoTorrent
     public class RawTrackerTier : IList<string>
     {
         public string this[int index] {
-            get { return ((BEncodedString) Tier[index]).Text; }
-            set { Tier[index] = new BEncodedString (value); }
+            get => ((BEncodedString) Tier[index]).Text;
+            set => Tier[index] = new BEncodedString (value);
         }
 
         internal BEncodedList Tier {
@@ -103,13 +103,9 @@ namespace MonoTorrent
             return Tier.Remove ((BEncodedString) item);
         }
 
-        public int Count {
-            get { return Tier.Count; }
-        }
+        public int Count => Tier.Count;
 
-        public bool IsReadOnly {
-            get { return Tier.IsReadOnly; }
-        }
+        public bool IsReadOnly => Tier.IsReadOnly;
 
         public IEnumerator<string> GetEnumerator ()
         {

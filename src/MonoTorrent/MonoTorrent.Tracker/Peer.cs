@@ -58,9 +58,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// A byte[] containing the peer's IPEndpoint in compact form
         ///</summary>
-        internal byte[] CompactEntry {
-            get { return GenerateCompactPeersEntry (); }
-        }
+        internal byte[] CompactEntry => GenerateCompactPeersEntry ();
 
         internal object DictionaryKey { get; }
 
@@ -77,9 +75,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// True if the peer has completed the torrent
         /// </summary>
-        public bool HasCompleted {
-            get { return Remaining == 0; }
-        }
+        public bool HasCompleted => Remaining == 0;
 
         /// <summary>
         /// The time when the peer last announced at
@@ -87,9 +83,7 @@ namespace MonoTorrent.Tracker
         public DateTime LastAnnounceTime { get; set; }
 
         ///<summary>The peer entry in non compact format.</summary> 
-        internal BEncodedDictionary NonCompactEntry {
-            get { return GeneratePeersEntry (); }
-        }
+        internal BEncodedDictionary NonCompactEntry => GeneratePeersEntry ();
 
         ///<summary>
         ///The Id of the client software

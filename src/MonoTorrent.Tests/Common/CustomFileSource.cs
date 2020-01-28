@@ -8,13 +8,9 @@ namespace MonoTorrent.Common
             get; private set;
         }
 
-        public bool IgnoreHidden {
-            get { return false; }
-        }
+        public bool IgnoreHidden => false;
 
-        public string TorrentName {
-            get { return "Name"; }
-        }
+        public string TorrentName => "Name";
 
         public CustomFileSource (List<FileMapping> files)
         {

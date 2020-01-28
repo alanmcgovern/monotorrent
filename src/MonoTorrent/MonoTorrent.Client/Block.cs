@@ -49,12 +49,10 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public int PieceIndex {
-            get { return piece.Index; }
-        }
+        public int PieceIndex => piece.Index;
 
         public bool Received {
-            get { return received; }
+            get => received;
             internal set {
                 if (value && !received)
                     piece.TotalReceived++;
@@ -67,7 +65,7 @@ namespace MonoTorrent.Client
         }
 
         public bool Requested {
-            get { return requested; }
+            get => requested;
             private set {
                 if (value && !requested)
                     piece.TotalRequested++;
@@ -81,11 +79,8 @@ namespace MonoTorrent.Client
 
         public int RequestLength { get; }
 
-        public bool RequestTimedOut {
-            get { // 60 seconds timeout for a request to fulfill
-                return !Received && RequestedOff != null && RequestedOff.TimeSinceLastMessageReceived > TimeSpan.FromMinutes (1);
-            }
-        }
+        // 60 seconds timeout for a request to fulfill
+        public bool RequestTimedOut => !Received && RequestedOff != null && RequestedOff.TimeSinceLastMessageReceived > TimeSpan.FromMinutes (1);
 
         internal IPieceRequester RequestedOff { get; private set; }
 

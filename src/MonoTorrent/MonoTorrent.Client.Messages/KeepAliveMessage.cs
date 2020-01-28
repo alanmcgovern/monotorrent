@@ -66,9 +66,8 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength {
-            get { return (4); }
-        }
+        public override int ByteLength => (4);
+
         #endregion
 
 

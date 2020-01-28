@@ -47,19 +47,13 @@ namespace MonoTorrent
 
         readonly int[] array;
 
-        internal bool AllFalse {
-            get { return TrueCount == 0; }
-        }
+        internal bool AllFalse => TrueCount == 0;
 
-        internal bool AllTrue {
-            get { return TrueCount == Length; }
-        }
+        internal bool AllTrue => TrueCount == Length;
 
         public int Length { get; }
 
-        public double PercentComplete {
-            get { return (double) TrueCount / Length * 100.0; }
-        }
+        public double PercentComplete => (double) TrueCount / Length * 100.0;
 
         #endregion
 
@@ -105,8 +99,8 @@ namespace MonoTorrent
         #region Methods BitArray
 
         public bool this[int index] {
-            get { return Get (index); }
-            internal set { Set (index, value); }
+            get => Get (index);
+            internal set => Set (index, value);
         }
 
         object ICloneable.Clone ()
@@ -319,9 +313,7 @@ namespace MonoTorrent
             return count;
         }
 
-        public int LengthInBytes {
-            get { return (Length + 7) / 8; }      //8 bits in a byte.
-        }
+        public int LengthInBytes => (Length + 7) / 8; //8 bits in a byte.
 
         public BitField Set (int index, bool value)
         {

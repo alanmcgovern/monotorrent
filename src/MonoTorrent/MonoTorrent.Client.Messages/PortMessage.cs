@@ -45,13 +45,9 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Public Properties
 
-        public override int ByteLength {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
 
-        public int Port {
-            get { return port; }
-        }
+        public int Port => port;
 
         #endregion
 

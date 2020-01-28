@@ -36,9 +36,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString TargetKey = "target";
         static readonly BEncodedString QueryName = "find_node";
 
-        public NodeId Target {
-            get { return new NodeId ((BEncodedString) Parameters[TargetKey]); }
-        }
+        public NodeId Target => new NodeId ((BEncodedString) Parameters[TargetKey]);
 
         public FindNode (NodeId id, NodeId target)
             : base (id, QueryName)

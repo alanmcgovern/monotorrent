@@ -36,9 +36,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString InfoHashKey = "info_hash";
         static readonly BEncodedString QueryName = "get_peers";
 
-        public NodeId InfoHash {
-            get { return new NodeId ((BEncodedString) Parameters[InfoHashKey]); }
-        }
+        public NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
 
         public GetPeers (NodeId id, NodeId infohash)
             : base (id, QueryName)

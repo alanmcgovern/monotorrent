@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// the rest of the file will be treated rarest-first
         /// </summary>
         public int HighPrioritySetStart {
-            get { return highPrioritySetStart; }
+            get => highPrioritySetStart;
             set {
                 if (highPrioritySetStart < value)
                     highPrioritySetStart = value;
@@ -67,9 +67,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         public int HighPrioritySetSize { get; set; }
 
-        public int MediumPrioritySetStart {
-            get { return HighPrioritySetStart + HighPrioritySetSize + 1; }
-        }
+        public int MediumPrioritySetStart => HighPrioritySetStart + HighPrioritySetSize + 1;
 
         /// <summary>
         /// This is the size ratio between the medium and high priority sets. Equivalent to mu in Tribler's Give-to-get paper.
@@ -80,9 +78,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Read-only value for size of the medium priority set. To set the medium priority size, use MediumToHighRatio.
         /// </summary>
-        public int MediumPrioritySetSize {
-            get { return HighPrioritySetSize * MediumToHighRatio; }
-        }
+        public int MediumPrioritySetSize => HighPrioritySetSize * MediumToHighRatio;
 
         #endregion Member Variables
 

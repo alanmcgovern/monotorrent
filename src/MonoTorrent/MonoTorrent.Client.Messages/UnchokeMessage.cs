@@ -49,9 +49,7 @@ namespace MonoTorrent.Client.Messages.Standard
             // No decoding needed
         }
 
-        public override int ByteLength {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
 
         public override string ToString ()
         {

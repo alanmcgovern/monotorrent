@@ -61,9 +61,7 @@ namespace MonoTorrent.Client.Connections
             public readonly int TotalToReceive;
             public int TotalReceived;
 
-            public bool Complete {
-                get { return TotalToReceive == TotalReceived; }
-            }
+            public bool Complete => TotalToReceive == TotalReceived;
 
             public HttpRequestData (RequestMessage request)
             {

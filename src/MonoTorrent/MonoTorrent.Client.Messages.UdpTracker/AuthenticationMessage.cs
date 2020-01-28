@@ -38,9 +38,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         string username;
         byte[] password;
 
-        public override int ByteLength {
-            get { return 4 + usernameLength + 8; }
-        }
+        public override int ByteLength => 4 + usernameLength + 8;
 
         public override void Decode (byte[] buffer, int offset, int length)
         {

@@ -43,9 +43,7 @@ namespace MonoTorrent.Client
         public DateTime LastUnchoked;
         public int TotalPieces;
 
-        public double ShareRatio {
-            get { return (SharedPieces + 1.0) / (TotalPieces + 1.0); }
-        }
+        public double ShareRatio => (SharedPieces + 1.0) / (TotalPieces + 1.0);
 
         public ChokeData (PeerId peer)
         {
@@ -83,17 +81,11 @@ namespace MonoTorrent.Client
             get { return peers.Exists (d => d.Peer.AmChoking && d.Peer.IsInterested); }
         }
 
-        public bool Complete {
-            get { return bitfield.AllTrue; }
-        }
+        public bool Complete => bitfield.AllTrue;
 
-        public int MaxAdvertised {
-            get { return 4; }
-        }
+        public int MaxAdvertised => 4;
 
-        internal int PeerCount {
-            get { return peers.Count; }
-        }
+        internal int PeerCount => peers.Count;
 
         public InitialSeedUnchoker (TorrentManager manager)
             : base (manager)

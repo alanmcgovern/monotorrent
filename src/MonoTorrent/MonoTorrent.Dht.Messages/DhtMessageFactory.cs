@@ -44,9 +44,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
 
 
-        public static int RegisteredMessages {
-            get { return messages.Count; }
-        }
+        public static int RegisteredMessages => messages.Count;
 
         static DhtMessageFactory ()
         {

@@ -53,9 +53,7 @@ namespace MonoTorrent.Client
 
         #region Public Properties
 
-        public int Count {
-            get { return peers.Count; }
-        }
+        public int Count => peers.Count;
 
         public bool MorePeers {
             get {

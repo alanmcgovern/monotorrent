@@ -282,13 +282,9 @@ namespace MonoTorrent.Client
         static readonly Random Random = new Random (1000);
         static int port = 10000;
 
-        public int BlocksPerPiece {
-            get { return Torrent.PieceLength / (16 * 1024); }
-        }
+        public int BlocksPerPiece => Torrent.PieceLength / (16 * 1024);
 
-        public int Pieces {
-            get { return Torrent.Pieces.Count; }
-        }
+        public int Pieces => Torrent.Pieces.Count;
 
         public int TotalBlocks {
             get {
@@ -324,9 +320,7 @@ namespace MonoTorrent.Client
 
         public BEncodedDictionary TorrentDict { get; set; }
 
-        internal CustomTracker Tracker {
-            get { return (CustomTracker) Manager.TrackerManager.CurrentTracker; }
-        }
+        internal CustomTracker Tracker => (CustomTracker) Manager.TrackerManager.CurrentTracker;
 
 
         readonly string savePath;

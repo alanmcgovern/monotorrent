@@ -16,13 +16,9 @@ namespace TrackerApp
         readonly Thread[] threads;
         readonly int threadSleepTime;
 
-        public int RequestRate {
-            get { return (int) requests.Rate; }
-        }
+        public int RequestRate => (int) requests.Rate;
 
-        public long TotalTrackerRequests {
-            get { return requests.Total; }
-        }
+        public long TotalTrackerRequests => requests.Total;
 
         public StressTest (int torrents, int peers, int requests)
         {

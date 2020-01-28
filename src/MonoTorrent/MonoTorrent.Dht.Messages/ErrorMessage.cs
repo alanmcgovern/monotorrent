@@ -36,21 +36,13 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";
 
-        internal override NodeId Id {
-            get { return new NodeId (new byte[20]); }
-        }
+        internal override NodeId Id => new NodeId (new byte[20]);
 
-        BEncodedList ErrorList {
-            get { return (BEncodedList) properties[ErrorListKey]; }
-        }
+        BEncodedList ErrorList => (BEncodedList) properties[ErrorListKey];
 
-        ErrorCode ErrorCode {
-            get { return ((ErrorCode) ((BEncodedNumber) ErrorList[0]).Number); }
-        }
+        ErrorCode ErrorCode => ((ErrorCode) ((BEncodedNumber) ErrorList[0]).Number);
 
-        string Message {
-            get { return ((BEncodedString) ErrorList[1]).Text; }
-        }
+        string Message => ((BEncodedString) ErrorList[1]).Text;
 
         public ErrorMessage (BEncodedValue transactionId, ErrorCode error, string message)
             : base (ErrorType)

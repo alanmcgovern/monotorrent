@@ -31,9 +31,7 @@ namespace MonoTorrent.Client.Modes
 {
     class PausedMode : Mode
     {
-        public override TorrentState State {
-            get { return TorrentState.Paused; }
-        }
+        public override TorrentState State => TorrentState.Paused;
 
         public PausedMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)

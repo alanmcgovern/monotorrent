@@ -42,33 +42,21 @@ namespace MonoTorrent.Client
 
         #region Fields
 
-        public Block this[int index] {
-            get { return Blocks[index]; }
-        }
+        public Block this[int index] => Blocks[index];
 
         internal Block[] Blocks { get; set; }
 
-        public bool AllBlocksRequested {
-            get { return TotalRequested == BlockCount; }
-        }
+        public bool AllBlocksRequested => TotalRequested == BlockCount;
 
-        public bool AllBlocksReceived {
-            get { return TotalReceived == BlockCount; }
-        }
+        public bool AllBlocksReceived => TotalReceived == BlockCount;
 
-        public bool AllBlocksWritten {
-            get { return TotalWritten == BlockCount; }
-        }
+        public bool AllBlocksWritten => TotalWritten == BlockCount;
 
-        public int BlockCount {
-            get { return Blocks.Length; }
-        }
+        public int BlockCount => Blocks.Length;
 
         public int Index { get; }
 
-        public bool NoBlocksRequested {
-            get { return TotalRequested == 0; }
-        }
+        public bool NoBlocksRequested => TotalRequested == 0;
 
         public int TotalReceived { get; internal set; }
 

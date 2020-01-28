@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
         public Error Error { get; private set; }
 
         internal Mode Mode {
-            get { return mode; }
+            get => mode;
             set {
                 var oldMode = mode;
                 mode = value;

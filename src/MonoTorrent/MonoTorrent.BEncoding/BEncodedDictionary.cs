@@ -258,9 +258,7 @@ namespace MonoTorrent.BEncoding
             dictionary.CopyTo (array, arrayIndex);
         }
 
-        public int Count {
-            get { return dictionary.Count; }
-        }
+        public int Count => dictionary.Count;
 
         public BEncodedValue GetValueOrDefault (BEncodedString key)
             => GetValueOrDefault (key, null);
@@ -278,9 +276,7 @@ namespace MonoTorrent.BEncoding
         //    this.dictionary.Insert(index, item);
         //}
 
-        public bool IsReadOnly {
-            get { return false; }
-        }
+        public bool IsReadOnly => false;
 
         public bool Remove (BEncodedString key)
         {
@@ -298,17 +294,13 @@ namespace MonoTorrent.BEncoding
         }
 
         public BEncodedValue this[BEncodedString key] {
-            get { return dictionary[key]; }
-            set { dictionary[key] = value; }
+            get => dictionary[key];
+            set => dictionary[key] = value;
         }
 
-        public ICollection<BEncodedString> Keys {
-            get { return dictionary.Keys; }
-        }
+        public ICollection<BEncodedString> Keys => dictionary.Keys;
 
-        public ICollection<BEncodedValue> Values {
-            get { return dictionary.Values; }
-        }
+        public ICollection<BEncodedValue> Values => dictionary.Values;
 
         public IEnumerator<KeyValuePair<BEncodedString, BEncodedValue>> GetEnumerator ()
         {

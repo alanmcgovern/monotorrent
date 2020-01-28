@@ -70,23 +70,21 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         }
 
         public byte[] Added {
-            set { peerDict[AddedKey] = (BEncodedString) (value ?? Array.Empty<byte> ()); }
-            get { return ((BEncodedString) peerDict[AddedKey]).TextBytes; }
+            set => peerDict[AddedKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
+            get => ((BEncodedString) peerDict[AddedKey]).TextBytes;
         }
 
         public byte[] AddedDotF {
-            set { peerDict[AddedDotFKey] = (BEncodedString) (value ?? Array.Empty<byte> ()); }
-            get { return ((BEncodedString) peerDict[AddedDotFKey]).TextBytes; }
+            set => peerDict[AddedDotFKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
+            get => ((BEncodedString) peerDict[AddedDotFKey]).TextBytes;
         }
 
         public byte[] Dropped {
-            set { peerDict[DroppedKey] = (BEncodedString) (value ?? Array.Empty<byte> ()); }
-            get { return ((BEncodedString) peerDict[DroppedKey]).TextBytes; }
+            set => peerDict[DroppedKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
+            get => ((BEncodedString) peerDict[DroppedKey]).TextBytes;
         }
 
-        public override int ByteLength {
-            get { return 4 + 1 + 1 + peerDict.LengthInBytes (); }
-        }
+        public override int ByteLength => 4 + 1 + 1 + peerDict.LengthInBytes ();
 
         public override void Decode (byte[] buffer, int offset, int length)
         {

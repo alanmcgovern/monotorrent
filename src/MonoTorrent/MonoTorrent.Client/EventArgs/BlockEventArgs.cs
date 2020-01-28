@@ -43,9 +43,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The block whose state changed
         /// </summary>
-        public Block Block {
-            get { return block; }
-        }
+        public Block Block => block;
 
 
         /// <summary>

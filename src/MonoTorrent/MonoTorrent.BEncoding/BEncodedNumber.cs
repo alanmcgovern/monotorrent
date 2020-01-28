@@ -41,8 +41,8 @@ namespace MonoTorrent.BEncoding
         /// The value of the BEncodedNumber
         /// </summary>
         public long Number {
-            get { return number; }
-            set { number = value; }
+            get => number;
+            set => number = value;
         }
         internal long number;
         #endregion

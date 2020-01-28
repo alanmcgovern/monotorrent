@@ -42,9 +42,7 @@ namespace MonoTorrent.Client
 
     class RangeCollection
     {
-        public int Count {
-            get { return Ranges.Count; }
-        }
+        public int Count => Ranges.Count;
 
         internal List<AddressRange> Ranges { get; } = new List<AddressRange> ();
 

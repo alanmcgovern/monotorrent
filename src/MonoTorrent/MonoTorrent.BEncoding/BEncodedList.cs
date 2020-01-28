@@ -194,9 +194,7 @@ namespace MonoTorrent.BEncoding
             list.CopyTo (array, arrayIndex);
         }
 
-        public int Count {
-            get { return list.Count; }
-        }
+        public int Count => list.Count;
 
         public int IndexOf (BEncodedValue item)
         {
@@ -208,9 +206,7 @@ namespace MonoTorrent.BEncoding
             list.Insert (index, item);
         }
 
-        public bool IsReadOnly {
-            get { return false; }
-        }
+        public bool IsReadOnly => false;
 
         public bool Remove (BEncodedValue item)
         {
@@ -223,8 +219,8 @@ namespace MonoTorrent.BEncoding
         }
 
         public BEncodedValue this[int index] {
-            get { return list[index]; }
-            set { list[index] = value; }
+            get => list[index];
+            set => list[index] = value;
         }
 
         public IEnumerator<BEncodedValue> GetEnumerator ()

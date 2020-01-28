@@ -45,14 +45,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         string version;
 
-        public override int ByteLength {
-            get {
-                // FIXME Implement this properly
-
-                // The length of the payload, 4 byte length prefix, 1 byte BT message id, 1 byte LT message id
-                return Create ().LengthInBytes () + 4 + 1 + 1;
-            }
-        }
+        // FIXME Implement this properly
+        // The length of the payload, 4 byte length prefix, 1 byte BT message id, 1 byte LT message id
+        public override int ByteLength => Create ().LengthInBytes () + 4 + 1 + 1;
 
         public int MaxRequests { get; set; }
 
@@ -62,9 +57,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public ExtensionSupports Supports { get; set; }
 
-        public string Version {
-            get { return version ?? ""; }
-        }
+        public string Version => version ?? "";
 
         public int MetadataSize { get; set; }
 

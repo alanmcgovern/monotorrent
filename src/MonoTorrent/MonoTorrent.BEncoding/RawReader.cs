@@ -53,26 +53,18 @@ namespace MonoTorrent.BEncoding
             StrictDecoding = strictDecoding;
         }
 
-        public override bool CanRead {
-            get { return input.CanRead; }
-        }
+        public override bool CanRead => input.CanRead;
 
-        public override bool CanSeek {
-            get { return input.CanSeek; }
-        }
+        public override bool CanSeek => input.CanSeek;
 
-        public override bool CanWrite {
-            get { return false; }
-        }
+        public override bool CanWrite => false;
 
         public override void Flush ()
         {
             throw new NotSupportedException ();
         }
 
-        public override long Length {
-            get { return input.Length; }
-        }
+        public override long Length => input.Length;
 
         public int PeekByte ()
         {

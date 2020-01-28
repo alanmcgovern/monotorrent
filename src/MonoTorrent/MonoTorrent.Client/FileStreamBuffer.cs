@@ -39,9 +39,7 @@ namespace MonoTorrent.Client
         // The most recently used is at the last position in the array
         readonly int maxStreams;
 
-        public int Count {
-            get { return Streams.Count; }
-        }
+        public int Count => Streams.Count;
 
         public List<TorrentFileStream> Streams { get; }
 

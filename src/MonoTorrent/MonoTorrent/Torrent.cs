@@ -98,9 +98,7 @@ namespace MonoTorrent
         /// <summary>
         /// The creation date of the .torrent file
         /// </summary>
-        public DateTime CreationDate {
-            get { return creationDate; }
-        }
+        public DateTime CreationDate => creationDate;
 
 
         /// <summary>
@@ -118,9 +116,7 @@ namespace MonoTorrent
         /// <summary>
         /// The list of files contained within the .torrent which are available for download
         /// </summary>
-        public TorrentFile[] Files {
-            get { return torrentFiles; }
-        }
+        public TorrentFile[] Files => torrentFiles;
 
 
         /// <summary>
@@ -142,8 +138,8 @@ namespace MonoTorrent
         /// In the case of a multi file torrent, it is the name of the root folder.
         /// </summary>
         public string Name {
-            get { return name; }
-            private set { name = value; }
+            get => name;
+            private set => name = value;
         }
 
 
@@ -156,17 +152,13 @@ namespace MonoTorrent
         /// <summary>
         /// The length of each piece in bytes.
         /// </summary>
-        public int PieceLength {
-            get { return pieceLength; }
-        }
+        public int PieceLength => pieceLength;
 
 
         /// <summary>
         /// This is the array of hashes contained within the torrent.
         /// </summary>
-        public Hashes Pieces {
-            get { return pieces; }
-        }
+        public Hashes Pieces => pieces;
 
 
         /// <summary>
@@ -191,8 +183,8 @@ namespace MonoTorrent
         /// The total size of all the files that have to be downloaded.
         /// </summary>
         public long Size {
-            get { return size; }
-            private set { size = value; }
+            get => size;
+            private set => size = value;
         }
 
 
@@ -206,8 +198,8 @@ namespace MonoTorrent
         /// This is the path at which the .torrent file is located
         /// </summary>
         public string TorrentPath {
-            get { return torrentPath; }
-            internal set { torrentPath = value; }
+            get => torrentPath;
+            internal set => torrentPath = value;
         }
 
         /// <summary>
