@@ -248,10 +248,10 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
-                this.DhtEngine.Dispose ();
-                this.DiskManager.Dispose ();
-                this.listenManager.Dispose ();
-                this.LocalPeerDiscovery.Stop ();
+                DhtEngine.Dispose ();
+                DiskManager.Dispose ();
+                listenManager.Dispose ();
+                LocalPeerDiscovery.Stop ();
             });
         }
 
@@ -301,7 +301,7 @@ namespace MonoTorrent.Client
 
             if (Contains (manager.Torrent))
                 throw new TorrentException ("A manager for this torrent has already been registered");
-            this.torrents.Add (manager);
+            torrents.Add (manager);
             ConnectionManager.Add (manager);
 
             manager.Engine = this;
@@ -446,7 +446,7 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException ("The manager must be stopped before it can be unregistered");
 
-            this.torrents.Remove (manager);
+            torrents.Remove (manager);
             ConnectionManager.Remove (manager);
 
             manager.Engine = null;
@@ -472,8 +472,8 @@ namespace MonoTorrent.Client
             ConnectionManager.TryConnect ();
             DiskManager.Tick ();
 
-            for (var i = 0; i < this.torrents.Count; i++)
-                this.torrents[i].Mode.Tick (tickCount);
+            for (var i = 0; i < torrents.Count; i++)
+                torrents[i].Mode.Tick (tickCount);
 
             RaiseStatsUpdate (new StatsUpdateEventArgs ());
         }

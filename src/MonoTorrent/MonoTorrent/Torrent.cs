@@ -99,7 +99,7 @@ namespace MonoTorrent
         /// The creation date of the .torrent file
         /// </summary>
         public DateTime CreationDate {
-            get { return this.creationDate; }
+            get { return creationDate; }
         }
 
 
@@ -119,7 +119,7 @@ namespace MonoTorrent
         /// The list of files contained within the .torrent which are available for download
         /// </summary>
         public TorrentFile[] Files {
-            get { return this.torrentFiles; }
+            get { return torrentFiles; }
         }
 
 
@@ -142,8 +142,8 @@ namespace MonoTorrent
         /// In the case of a multi file torrent, it is the name of the root folder.
         /// </summary>
         public string Name {
-            get { return this.name; }
-            private set { this.name = value; }
+            get { return name; }
+            private set { name = value; }
         }
 
 
@@ -165,7 +165,7 @@ namespace MonoTorrent
         /// This is the array of hashes contained within the torrent.
         /// </summary>
         public Hashes Pieces {
-            get { return this.pieces; }
+            get { return pieces; }
         }
 
 
@@ -191,8 +191,8 @@ namespace MonoTorrent
         /// The total size of all the files that have to be downloaded.
         /// </summary>
         public long Size {
-            get { return this.size; }
-            private set { this.size = value; }
+            get { return size; }
+            private set { size = value; }
         }
 
 
@@ -206,7 +206,7 @@ namespace MonoTorrent
         /// This is the path at which the .torrent file is located
         /// </summary>
         public string TorrentPath {
-            get { return this.torrentPath; }
+            get { return torrentPath; }
             internal set { torrentPath = value; }
         }
 
@@ -222,16 +222,16 @@ namespace MonoTorrent
 
         protected Torrent ()
         {
-            this.AnnounceUrls = new RawTrackerTiers ();
-            this.Comment = string.Empty;
-            this.CreatedBy = string.Empty;
-            this.creationDate = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            this.Encoding = string.Empty;
-            this.name = string.Empty;
-            this.Publisher = string.Empty;
-            this.PublisherUrl = string.Empty;
-            this.Source = string.Empty;
-            this.GetRightHttpSeeds = new List<string> ();
+            AnnounceUrls = new RawTrackerTiers ();
+            Comment = string.Empty;
+            CreatedBy = string.Empty;
+            creationDate = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            Encoding = string.Empty;
+            name = string.Empty;
+            Publisher = string.Empty;
+            PublisherUrl = string.Empty;
+            Source = string.Empty;
+            GetRightHttpSeeds = new List<string> ();
         }
 
         #endregion
@@ -270,7 +270,7 @@ namespace MonoTorrent
 
         public override string ToString ()
         {
-            return this.name;
+            return name;
         }
 
         #endregion Public Methods
@@ -288,7 +288,7 @@ namespace MonoTorrent
             if (data.Length % 20 != 0)
                 throw new TorrentException ("Invalid infohash detected");
 
-            this.pieces = new Hashes (data, data.Length / 20);
+            pieces = new Hashes (data, data.Length / 20);
         }
 
 
@@ -380,7 +380,7 @@ namespace MonoTorrent
                 size += length;
             }
 
-            this.torrentFiles = files.ToArray ();
+            torrentFiles = files.ToArray ();
         }
 
 
@@ -392,41 +392,41 @@ namespace MonoTorrent
         private void ProcessInfo (BEncodedDictionary dictionary)
         {
             Metadata = dictionary.Encode ();
-            this.pieceLength = int.Parse (dictionary["piece length"].ToString ());
+            pieceLength = int.Parse (dictionary["piece length"].ToString ());
             LoadHashPieces (((BEncodedString) dictionary["pieces"]).TextBytes);
 
             foreach (var keypair in dictionary) {
                 switch (keypair.Key.Text) {
                     case ("source"):
-                        this.Source = keypair.Value.ToString ();
+                        Source = keypair.Value.ToString ();
                         break;
 
                     case ("sha1"):
-                        this.SHA1 = ((BEncodedString) keypair.Value).TextBytes;
+                        SHA1 = ((BEncodedString) keypair.Value).TextBytes;
                         break;
 
                     case ("ed2k"):
-                        this.ED2K = ((BEncodedString) keypair.Value).TextBytes;
+                        ED2K = ((BEncodedString) keypair.Value).TextBytes;
                         break;
 
                     case ("publisher-url.utf-8"):
                         if (keypair.Value.ToString ().Length > 0)
-                            this.PublisherUrl = keypair.Value.ToString ();
+                            PublisherUrl = keypair.Value.ToString ();
                         break;
 
                     case ("publisher-url"):
                         if ((String.IsNullOrEmpty (PublisherUrl)) && (keypair.Value.ToString ().Length > 0))
-                            this.PublisherUrl = keypair.Value.ToString ();
+                            PublisherUrl = keypair.Value.ToString ();
                         break;
 
                     case ("publisher.utf-8"):
                         if (keypair.Value.ToString ().Length > 0)
-                            this.Publisher = keypair.Value.ToString ();
+                            Publisher = keypair.Value.ToString ();
                         break;
 
                     case ("publisher"):
                         if ((String.IsNullOrEmpty (Publisher)) && (keypair.Value.ToString ().Length > 0))
-                            this.Publisher = keypair.Value.ToString ();
+                            Publisher = keypair.Value.ToString ();
                         break;
 
                     case ("files"):
@@ -435,12 +435,12 @@ namespace MonoTorrent
 
                     case ("name.utf-8"):
                         if (keypair.Value.ToString ().Length > 0)
-                            this.name = keypair.Value.ToString ();
+                            name = keypair.Value.ToString ();
                         break;
 
                     case ("name"):
-                        if ((String.IsNullOrEmpty (this.name)) && (keypair.Value.ToString ().Length > 0))
-                            this.name = keypair.Value.ToString ();
+                        if ((String.IsNullOrEmpty (name)) && (keypair.Value.ToString ().Length > 0))
+                            name = keypair.Value.ToString ();
                         break;
 
                     case ("piece length"):  // Already handled
@@ -450,7 +450,7 @@ namespace MonoTorrent
                         break;      // This is a singlefile torrent
 
                     case ("private"):
-                        this.IsPrivate = (keypair.Value.ToString () == "1") ? true : false;
+                        IsPrivate = (keypair.Value.ToString () == "1") ? true : false;
                         break;
 
                     default:
@@ -458,18 +458,18 @@ namespace MonoTorrent
                 }
             }
 
-            if (this.torrentFiles == null)   // Not a multi-file torrent
+            if (torrentFiles == null)   // Not a multi-file torrent
             {
                 var length = long.Parse (dictionary["length"].ToString ());
-                this.size = length;
-                var path = this.name;
+                size = length;
+                var path = name;
                 var md5 = (dictionary.ContainsKey ("md5")) ? ((BEncodedString) dictionary["md5"]).TextBytes : null;
                 var ed2k = (dictionary.ContainsKey ("ed2k")) ? ((BEncodedString) dictionary["ed2k"]).TextBytes : null;
                 var sha1 = (dictionary.ContainsKey ("sha1")) ? ((BEncodedString) dictionary["sha1"]).TextBytes : null;
 
-                this.torrentFiles = new TorrentFile[1];
+                torrentFiles = new TorrentFile[1];
                 var endPiece = Math.Min (Pieces.Count - 1, (int) ((size + (pieceLength - 1)) / pieceLength));
-                this.torrentFiles[0] = new TorrentFile (path, length, path, 0, endPiece, 0, md5, ed2k, sha1);
+                torrentFiles[0] = new TorrentFile (path, length, path, 0, endPiece, 0, md5, ed2k, sha1);
             }
         }
 

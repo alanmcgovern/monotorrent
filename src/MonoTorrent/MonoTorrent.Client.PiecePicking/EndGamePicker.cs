@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.PiecePicking
             foreach (var piece in pieces) {
                 for (var i = 0; i < piece.BlockCount; i++)
                     if (piece.Blocks[i].RequestedOff != null && !piece.Blocks[i].Received)
-                        this.Requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
+                        Requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
             }
         }
 

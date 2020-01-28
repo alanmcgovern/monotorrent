@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
         public PeerEventArgs (TorrentManager manager, PeerId peer)
             : base (manager)
         {
-            this.Peer = peer;
+            Peer = peer;
         }
     }
 }

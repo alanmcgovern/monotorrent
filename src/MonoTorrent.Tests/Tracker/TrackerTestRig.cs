@@ -80,8 +80,8 @@ namespace MonoTorrent.Tracker
     {
         public Trackable (InfoHash infoHash, string name)
         {
-            this.InfoHash = infoHash;
-            this.Name = name;
+            InfoHash = infoHash;
+            Name = name;
         }
 
         public InfoHash InfoHash { get; }

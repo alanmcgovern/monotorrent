@@ -58,8 +58,8 @@ namespace MonoTorrent.Client
             Manager = manager;
             this.id = id;
 
-            this.addedPeers = new List<Peer> ();
-            this.droppedPeers = new List<Peer> ();
+            addedPeers = new List<Peer> ();
+            droppedPeers = new List<Peer> ();
             manager.OnPeerFound += OnAdd;
         }
 

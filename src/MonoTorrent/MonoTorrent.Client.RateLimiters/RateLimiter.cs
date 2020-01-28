@@ -53,16 +53,16 @@ namespace MonoTorrent.Client.RateLimiters
             // for peer communications. For disk access and whatnot, a 5% overshoot is fine.
             maxRate = (long) (maxRate * 1.05);
             var errorRateDown = maxRate - actualRate;
-            var delta = (long) (0.4 * errorRateDown + 0.6 * this.savedError);
-            this.savedError = errorRateDown;
+            var delta = (long) (0.4 * errorRateDown + 0.6 * savedError);
+            savedError = errorRateDown;
 
             var increaseAmount = maxRate + delta;
-            Interlocked.Add (ref this.chunks, increaseAmount);
-            if (this.chunks > (maxRate * 1.2))
-                Interlocked.Exchange (ref this.chunks, (int) (maxRate * 1.2));
+            Interlocked.Add (ref chunks, increaseAmount);
+            if (chunks > (maxRate * 1.2))
+                Interlocked.Exchange (ref chunks, (int) (maxRate * 1.2));
 
-            if (this.chunks < (maxRate / 2))
-                Interlocked.Exchange (ref this.chunks, (maxRate / 2));
+            if (chunks < (maxRate / 2))
+                Interlocked.Exchange (ref chunks, (maxRate / 2));
 
             if (maxRate == 0)
                 chunks = 0;

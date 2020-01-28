@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         /// The block whose state changed
         /// </summary>
         public Block Block {
-            get { return this.block; }
+            get { return block; }
         }
 
 
@@ -76,8 +76,8 @@ namespace MonoTorrent.Client
         private void Init (Block block, Piece piece, PeerId id)
         {
             this.block = block;
-            this.ID = id;
-            this.Piece = piece;
+            ID = id;
+            Piece = piece;
         }
 
         #endregion
@@ -87,14 +87,14 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            return (!(obj is BlockEventArgs args)) ? false : this.Piece.Equals (args.Piece)
-                                                             && this.ID.Equals (args.ID)
-                                                             && this.block.Equals (args.block);
+            return (!(obj is BlockEventArgs args)) ? false : Piece.Equals (args.Piece)
+                                                             && ID.Equals (args.ID)
+                                                             && block.Equals (args.block);
         }
 
         public override int GetHashCode ()
         {
-            return this.block.GetHashCode ();
+            return block.GetHashCode ();
         }
 
         #endregion Methods

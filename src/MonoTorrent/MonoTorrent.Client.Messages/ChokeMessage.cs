@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int GetHashCode ()
         {
-            return this.ToString ().GetHashCode ();
+            return ToString ().GetHashCode ();
         }
         #endregion
     }

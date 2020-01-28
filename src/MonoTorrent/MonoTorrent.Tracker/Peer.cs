@@ -40,12 +40,12 @@ namespace MonoTorrent.Tracker
         internal Peer (IPEndPoint endPoint, object dictionaryKey)
         {
             ClientAddress = endPoint;
-            this.DictionaryKey = dictionaryKey;
+            DictionaryKey = dictionaryKey;
         }
 
         internal Peer (AnnounceRequest par, object dictionaryKey)
         {
-            this.DictionaryKey = dictionaryKey;
+            DictionaryKey = dictionaryKey;
             Update (par);
         }
 

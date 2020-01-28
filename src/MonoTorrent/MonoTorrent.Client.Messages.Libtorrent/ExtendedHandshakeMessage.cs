@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (privateTorrent)
                 Supports.Remove (PeerExchangeMessage.Support);
 
-            this.MetadataSize = metadataSize;
+            MetadataSize = metadataSize;
             LocalPort = localListenPort;
         }
         #endregion
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             foreach (var k in supports)
                 list.Add (new ExtensionSupport (k.Key.Text, (byte) ((BEncodedNumber) k.Value).Number));
 
-            this.Supports = list;
+            Supports = list;
         }
 
         public override int Encode (byte[] buffer, int offset)

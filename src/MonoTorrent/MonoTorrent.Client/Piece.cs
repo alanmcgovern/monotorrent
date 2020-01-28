@@ -43,31 +43,31 @@ namespace MonoTorrent.Client
         #region Fields
 
         public Block this[int index] {
-            get { return this.Blocks[index]; }
+            get { return Blocks[index]; }
         }
 
         internal Block[] Blocks { get; set; }
 
         public bool AllBlocksRequested {
-            get { return this.TotalRequested == BlockCount; }
+            get { return TotalRequested == BlockCount; }
         }
 
         public bool AllBlocksReceived {
-            get { return this.TotalReceived == BlockCount; }
+            get { return TotalReceived == BlockCount; }
         }
 
         public bool AllBlocksWritten {
-            get { return this.TotalWritten == BlockCount; }
+            get { return TotalWritten == BlockCount; }
         }
 
         public int BlockCount {
-            get { return this.Blocks.Length; }
+            get { return Blocks.Length; }
         }
 
         public int Index { get; }
 
         public bool NoBlocksRequested {
-            get { return this.TotalRequested == 0; }
+            get { return TotalRequested == 0; }
         }
 
         public int TotalReceived { get; internal set; }
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
 
         internal Piece (int pieceIndex, int pieceLength, long torrentSize)
         {
-            this.Index = pieceIndex;
+            Index = pieceIndex;
 
             // Request last piece. Special logic needed
             if ((torrentSize - (long) pieceIndex * pieceLength) < pieceLength)
@@ -133,17 +133,17 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            return (!(obj is Piece p)) ? false : this.Index.Equals (p.Index);
+            return (!(obj is Piece p)) ? false : Index.Equals (p.Index);
         }
 
         public System.Collections.IEnumerator GetEnumerator ()
         {
-            return this.Blocks.GetEnumerator ();
+            return Blocks.GetEnumerator ();
         }
 
         public override int GetHashCode ()
         {
-            return this.Index;
+            return Index;
         }
 
         #endregion

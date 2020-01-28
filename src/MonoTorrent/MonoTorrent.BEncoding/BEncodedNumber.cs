@@ -60,7 +60,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="value">The value of the BEncodedNumber</param>
         public BEncodedNumber (long value)
         {
-            this.number = value;
+            number = value;
         }
 
         public static implicit operator BEncodedNumber (long value)
@@ -182,13 +182,13 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 throw new ArgumentNullException (nameof(other));
 
-            return this.number.CompareTo (other.number);
+            return number.CompareTo (other.number);
         }
 
 
         public int CompareTo (long other)
         {
-            return this.number.CompareTo (other);
+            return number.CompareTo (other);
         }
         #endregion
 
@@ -204,7 +204,7 @@ namespace MonoTorrent.BEncoding
             if (!(obj is BEncodedNumber obj2))
                 return false;
 
-            return (this.number == obj2.number);
+            return (number == obj2.number);
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int GetHashCode ()
         {
-            return this.number.GetHashCode ();
+            return number.GetHashCode ();
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override string ToString ()
         {
-            return (this.number.ToString ());
+            return (number.ToString ());
         }
         #endregion
     }

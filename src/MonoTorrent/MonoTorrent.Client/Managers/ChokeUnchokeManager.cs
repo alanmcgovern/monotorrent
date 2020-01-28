@@ -403,7 +403,7 @@ namespace MonoTorrent.Client
             var uploadBandwidthUsed = 0;
             foreach (var pid in sortedPeers) {
                 // unchoke the top interested peers till we reach the max bandwidth allotted.
-                if (uploadBandwidthUsed < this.owningTorrent.Settings.MaximumUploadSpeed && pid.IsInterested) {
+                if (uploadBandwidthUsed < owningTorrent.Settings.MaximumUploadSpeed && pid.IsInterested) {
                     Unchoke (pid);
 
                     uploadBandwidthUsed += pid.UploadRateForRecip;
@@ -412,8 +412,8 @@ namespace MonoTorrent.Client
                 }
             }
 
-            this.timeOfLastReview = DateTime.Now;
-            this.ReviewsExecuted++;
+            timeOfLastReview = DateTime.Now;
+            ReviewsExecuted++;
 
         }
 

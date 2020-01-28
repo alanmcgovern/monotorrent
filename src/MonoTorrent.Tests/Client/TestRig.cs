@@ -325,7 +325,7 @@ namespace MonoTorrent.Client
         public BEncodedDictionary TorrentDict { get; set; }
 
         internal CustomTracker Tracker {
-            get { return (CustomTracker) this.Manager.TrackerManager.CurrentTracker; }
+            get { return (CustomTracker) Manager.TrackerManager.CurrentTracker; }
         }
 
 
@@ -388,7 +388,7 @@ namespace MonoTorrent.Client
             this.files = files;
             this.savePath = savePath;
             this.piecelength = piecelength;
-            this.tier = trackers;
+            tier = trackers;
             MetadataMode = metadataMode;
             MetadataPath = "metadataSave.torrent";
             Listener = new CustomListener ();

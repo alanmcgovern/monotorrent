@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="pieceIndex">The index of the piece that you "have"</param>
         public HaveMessage (int pieceIndex)
         {
-            this.PieceIndex = pieceIndex;
+            PieceIndex = pieceIndex;
         }
         #endregion
 
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.PieceIndex = ReadInt (buffer, offset);
+            PieceIndex = ReadInt (buffer, offset);
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Messages.Standard
             var sb = new System.Text.StringBuilder ();
             sb.Append ("HaveMessage ");
             sb.Append (" Index ");
-            sb.Append (this.PieceIndex);
+            sb.Append (PieceIndex);
             return sb.ToString ();
         }
 
@@ -112,12 +112,12 @@ namespace MonoTorrent.Client.Messages.Standard
             if (!(obj is HaveMessage msg))
                 return false;
 
-            return (this.PieceIndex == msg.PieceIndex);
+            return (PieceIndex == msg.PieceIndex);
         }
 
         public override int GetHashCode ()
         {
-            return this.PieceIndex.GetHashCode ();
+            return PieceIndex.GetHashCode ();
         }
         #endregion
     }

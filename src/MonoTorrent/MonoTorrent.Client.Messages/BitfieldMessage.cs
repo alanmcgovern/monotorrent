@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="length">The length of the bitfield</param>
         public BitfieldMessage (int length)
         {
-            this.BitField = new BitField (length);
+            BitField = new BitField (length);
         }
 
 
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="bitfield">The bitfield to use</param>
         public BitfieldMessage (BitField bitfield)
         {
-            this.BitField = bitfield;
+            BitField = bitfield;
         }
         #endregion
 
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.BitField.FromArray (buffer, offset, length);
+            BitField.FromArray (buffer, offset, length);
         }
 
         public override int Encode (byte[] buffer, int offset)
@@ -90,7 +90,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Returns the length of the message in bytes
         /// </summary>
         public override int ByteLength {
-            get { return (this.BitField.LengthInBytes + 5); }
+            get { return (BitField.LengthInBytes + 5); }
         }
         #endregion
 
@@ -110,12 +110,12 @@ namespace MonoTorrent.Client.Messages.Standard
             if (!(obj is BitfieldMessage bf))
                 return false;
 
-            return this.BitField.Equals (bf.BitField);
+            return BitField.Equals (bf.BitField);
         }
 
         public override int GetHashCode ()
         {
-            return this.BitField.GetHashCode ();
+            return BitField.GetHashCode ();
         }
         #endregion
     }

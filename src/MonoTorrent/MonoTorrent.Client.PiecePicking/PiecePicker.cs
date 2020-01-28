@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         protected PiecePicker (PiecePicker picker)
         {
-            this.BasePicker = picker;
+            BasePicker = picker;
         }
 
         void CheckOverriden ()

@@ -149,156 +149,156 @@ namespace MonoTorrent
         {
             Match m;
 
-            this.PeerId = peerId;
+            PeerId = peerId;
             var idAsText = peerId.Text;
             if (idAsText.StartsWith ("-WebSeed-", System.StringComparison.Ordinal)) {
-                this.ShortId = "WebSeed";
-                this.Client = ClientApp.WebSeed;
+                ShortId = "WebSeed";
+                Client = ClientApp.WebSeed;
                 return;
             }
 
             #region Standard style peers
             if ((m = standard.Match (idAsText)).Success) {
-                this.ShortId = m.Groups[1].Value;
+                ShortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value) {
                     case ("AG"):
                     case ("A~"):
-                        this.Client = ClientApp.Ares;
+                        Client = ClientApp.Ares;
                         break;
                     case ("AR"):
-                        this.Client = ClientApp.Artic;
+                        Client = ClientApp.Artic;
                         break;
                     case ("AT"):
-                        this.Client = ClientApp.Artemis;
+                        Client = ClientApp.Artemis;
                         break;
                     case ("AX"):
-                        this.Client = ClientApp.BitPump;
+                        Client = ClientApp.BitPump;
                         break;
                     case ("AV"):
-                        this.Client = ClientApp.Avicora;
+                        Client = ClientApp.Avicora;
                         break;
                     case ("AZ"):
-                        this.Client = ClientApp.Azureus;
+                        Client = ClientApp.Azureus;
                         break;
                     case ("BB"):
-                        this.Client = ClientApp.BitBuddy;
+                        Client = ClientApp.BitBuddy;
                         break;
 
                     case ("BC"):
-                        this.Client = ClientApp.BitComet;
+                        Client = ClientApp.BitComet;
                         break;
 
                     case ("BF"):
-                        this.Client = ClientApp.Bitflu;
+                        Client = ClientApp.Bitflu;
                         break;
 
                     case ("BS"):
-                        this.Client = ClientApp.BTSlave;
+                        Client = ClientApp.BTSlave;
                         break;
 
                     case ("BX"):
-                        this.Client = ClientApp.BitTorrentX;
+                        Client = ClientApp.BitTorrentX;
                         break;
 
                     case ("CD"):
-                        this.Client = ClientApp.EnhancedCTorrent;
+                        Client = ClientApp.EnhancedCTorrent;
                         break;
 
                     case ("CT"):
-                        this.Client = ClientApp.CTorrent;
+                        Client = ClientApp.CTorrent;
                         break;
 
                     case ("DE"):
-                        this.Client = ClientApp.DelugeTorrent;
+                        Client = ClientApp.DelugeTorrent;
                         break;
 
                     case ("EB"):
-                        this.Client = ClientApp.EBit;
+                        Client = ClientApp.EBit;
                         break;
 
                     case ("ES"):
-                        this.Client = ClientApp.ElectricSheep;
+                        Client = ClientApp.ElectricSheep;
                         break;
 
                     case ("KT"):
-                        this.Client = ClientApp.KTorrent;
+                        Client = ClientApp.KTorrent;
                         break;
 
                     case ("LP"):
-                        this.Client = ClientApp.Lphant;
+                        Client = ClientApp.Lphant;
                         break;
 
                     case ("lt"):
                     case ("LT"):
-                        this.Client = ClientApp.LibTorrent;
+                        Client = ClientApp.LibTorrent;
                         break;
 
                     case ("MP"):
-                        this.Client = ClientApp.MooPolice;
+                        Client = ClientApp.MooPolice;
                         break;
 
                     case ("MO"):
-                        this.Client = ClientApp.MonoTorrent;
+                        Client = ClientApp.MonoTorrent;
                         break;
 
                     case ("MT"):
-                        this.Client = ClientApp.MoonlightTorrent;
+                        Client = ClientApp.MoonlightTorrent;
                         break;
 
                     case ("qB"):
-                        this.Client = ClientApp.qBittorrent;
+                        Client = ClientApp.qBittorrent;
                         break;
 
                     case ("QT"):
-                        this.Client = ClientApp.Qt4Torrent;
+                        Client = ClientApp.Qt4Torrent;
                         break;
 
                     case ("RT"):
-                        this.Client = ClientApp.Retriever;
+                        Client = ClientApp.Retriever;
                         break;
 
                     case ("SB"):
-                        this.Client = ClientApp.Swiftbit;
+                        Client = ClientApp.Swiftbit;
                         break;
 
                     case ("SS"):
-                        this.Client = ClientApp.SwarmScope;
+                        Client = ClientApp.SwarmScope;
                         break;
 
                     case ("SZ"):
-                        this.Client = ClientApp.Shareaza;
+                        Client = ClientApp.Shareaza;
                         break;
 
                     case ("TN"):
-                        this.Client = ClientApp.TorrentDotNET;
+                        Client = ClientApp.TorrentDotNET;
                         break;
 
                     case ("TR"):
-                        this.Client = ClientApp.Transmission;
+                        Client = ClientApp.Transmission;
                         break;
 
                     case ("TS"):
-                        this.Client = ClientApp.Torrentstorm;
+                        Client = ClientApp.Torrentstorm;
                         break;
 
                     case ("UL"):
-                        this.Client = ClientApp.uLeecher;
+                        Client = ClientApp.uLeecher;
                         break;
 
                     case ("UT"):
-                        this.Client = ClientApp.uTorrent;
+                        Client = ClientApp.uTorrent;
                         break;
 
                     case "UW":
-                        this.Client = ClientApp.uTorrentWeb;
+                        Client = ClientApp.uTorrentWeb;
                         break;
 
                     case ("XT"):
-                        this.Client = ClientApp.XanTorrent;
+                        Client = ClientApp.XanTorrent;
                         break;
 
                     case ("ZT"):
-                        this.Client = ClientApp.ZipTorrent;
+                        Client = ClientApp.ZipTorrent;
                         break;
 
                     default:
@@ -312,34 +312,34 @@ namespace MonoTorrent
 
             #region Shadows Style
             if ((m = shadows.Match (idAsText)).Success) {
-                this.ShortId = m.Groups[1].Value;
+                ShortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value) {
                     case ("A"):
-                        this.Client = ClientApp.ABC;
+                        Client = ClientApp.ABC;
                         break;
 
                     case ("O"):
-                        this.Client = ClientApp.OspreyPermaseed;
+                        Client = ClientApp.OspreyPermaseed;
                         break;
 
                     case ("R"):
-                        this.Client = ClientApp.Tribler;
+                        Client = ClientApp.Tribler;
                         break;
 
                     case ("S"):
-                        this.Client = ClientApp.ShadowsClient;
+                        Client = ClientApp.ShadowsClient;
                         break;
 
                     case ("T"):
-                        this.Client = ClientApp.BitTornado;
+                        Client = ClientApp.BitTornado;
                         break;
 
                     case ("U"):
-                        this.Client = ClientApp.UPnPNatBitTorrent;
+                        Client = ClientApp.UPnPNatBitTorrent;
                         break;
 
                     default:
-                        this.Client = ClientApp.Unknown;
+                        Client = ClientApp.Unknown;
                         break;
                 }
                 return;
@@ -348,83 +348,83 @@ namespace MonoTorrent
 
             #region Brams Client
             if ((m = brahms.Match (idAsText)).Success) {
-                this.ShortId = "M";
-                this.Client = ClientApp.BitTorrent;
+                ShortId = "M";
+                Client = ClientApp.BitTorrent;
                 return;
             }
             #endregion
 
             #region BitLord
             if ((m = bitlord.Match (idAsText)).Success) {
-                this.Client = ClientApp.BitLord;
-                this.ShortId = "lord";
+                Client = ClientApp.BitLord;
+                ShortId = "lord";
                 return;
             }
             #endregion
 
             #region BitComet
             if ((m = bitcomet.Match (idAsText)).Success) {
-                this.Client = ClientApp.BitComet;
-                this.ShortId = "BC";
+                Client = ClientApp.BitComet;
+                ShortId = "BC";
                 return;
             }
             #endregion
 
             #region XBT
             if ((m = xbt.Match (idAsText)).Success) {
-                this.Client = ClientApp.XBTClient;
-                this.ShortId = "XBT";
+                Client = ClientApp.XBTClient;
+                ShortId = "XBT";
                 return;
             }
             #endregion
 
             #region Opera
             if ((m = opera.Match (idAsText)).Success) {
-                this.Client = ClientApp.Opera;
-                this.ShortId = "OP";
+                Client = ClientApp.Opera;
+                ShortId = "OP";
             }
             #endregion
 
             #region MLDonkey
             if ((m = mldonkey.Match (idAsText)).Success) {
-                this.Client = ClientApp.MLDonkey;
-                this.ShortId = "ML";
+                Client = ClientApp.MLDonkey;
+                ShortId = "ML";
                 return;
             }
             #endregion
 
             #region Bits on wheels
             if ((m = bow.Match (idAsText)).Success) {
-                this.Client = ClientApp.BitsOnWheels;
-                this.ShortId = "BOW";
+                Client = ClientApp.BitsOnWheels;
+                ShortId = "BOW";
                 return;
             }
             #endregion
 
             #region Queen Bee
             if ((m = queenbee.Match (idAsText)).Success) {
-                this.Client = ClientApp.QueenBee;
-                this.ShortId = "Q";
+                Client = ClientApp.QueenBee;
+                ShortId = "Q";
                 return;
             }
             #endregion
 
             #region BitTornado special style
             if ((m = bittornado.Match (idAsText)).Success) {
-                this.ShortId = m.Groups[1].Value;
-                this.Client = ClientApp.BitTornado;
+                ShortId = m.Groups[1].Value;
+                Client = ClientApp.BitTornado;
                 return;
             }
             #endregion
 
-            this.Client = ClientApp.Unknown;
-            this.ShortId = idAsText;
+            Client = ClientApp.Unknown;
+            ShortId = idAsText;
         }
 
 
         public override string ToString ()
         {
-            return this.ShortId;
+            return ShortId;
         }
     }
 }

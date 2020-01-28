@@ -294,12 +294,12 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal long GetDownloadRate ()
         {
-            if (this.lastMeasuredDownloadRate > 0) {
-                return this.lastMeasuredDownloadRate;
+            if (lastMeasuredDownloadRate > 0) {
+                return lastMeasuredDownloadRate;
             } else {
                 // assume that his upload rate will match his estimated download rate, and 
                 // get the estimated active set size
-                var estimatedDownloadRate = this.EstimatedDownloadRate;
+                var estimatedDownloadRate = EstimatedDownloadRate;
                 var activeSetSize = GetActiveSetSize (estimatedDownloadRate);
 
                 return estimatedDownloadRate / activeSetSize;
@@ -319,14 +319,14 @@ namespace MonoTorrent.Client
 
                 LastChokedTime.Restart ();
             } else {
-                this.RoundsUnchoked++;
+                RoundsUnchoked++;
 
                 if (AmInterested) {
                     //if we are interested and unchoked, update last measured download rate, unless it is 0
-                    if (this.Monitor.DownloadSpeed > 0) {
-                        this.lastMeasuredDownloadRate = this.Monitor.DownloadSpeed;
+                    if (Monitor.DownloadSpeed > 0) {
+                        lastMeasuredDownloadRate = Monitor.DownloadSpeed;
 
-                        this.maxObservedDownloadSpeed = Math.Max (this.lastMeasuredDownloadRate, this.maxObservedDownloadSpeed);
+                        maxObservedDownloadSpeed = Math.Max (lastMeasuredDownloadRate, maxObservedDownloadSpeed);
                     }
                 }
             }
@@ -334,7 +334,7 @@ namespace MonoTorrent.Client
             // last rate wasn't sufficient to achieve reciprocation
             if (!AmChoking && IsChoking && IsInterested) // only increase upload rate if he's interested, otherwise he won't request any pieces
             {
-                this.UploadRateForRecip = (this.UploadRateForRecip * 12) / 10;
+                UploadRateForRecip = (UploadRateForRecip * 12) / 10;
             }
 
             // we've been unchoked by this guy for a while....
@@ -342,7 +342,7 @@ namespace MonoTorrent.Client
                     && LastChokedTime.Elapsed.TotalSeconds > 30
                     && LastRateReductionTime.Elapsed.TotalSeconds > 30)           // only do rate reduction every 30s
             {
-                this.UploadRateForRecip = (this.UploadRateForRecip * 9) / 10;
+                UploadRateForRecip = (UploadRateForRecip * 9) / 10;
                 LastRateReductionTime.Restart ();
             }
         }
@@ -354,7 +354,7 @@ namespace MonoTorrent.Client
         /// <returns>True if the upload rate for recip is greater than the actual upload rate</returns>
         internal bool IsUnderUploadLimit ()
         {
-            return this.UploadRateForRecip > this.Monitor.UploadSpeed;
+            return UploadRateForRecip > Monitor.UploadSpeed;
         }
 
 

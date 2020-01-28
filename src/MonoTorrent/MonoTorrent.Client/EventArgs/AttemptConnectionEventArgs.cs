@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 
         public AttemptConnectionEventArgs (Peer peer)
         {
-            this.Peer = peer;
+            Peer = peer;
         }
     }
 }

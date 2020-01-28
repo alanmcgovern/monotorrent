@@ -63,7 +63,7 @@ namespace MonoTorrent
         internal Hashes (byte[] hashData, int count)
         {
             this.hashData = hashData;
-            this.Count = count;
+            Count = count;
         }
 
         #endregion Constructors
@@ -90,7 +90,7 @@ namespace MonoTorrent
 
             var start = hashIndex * HashCodeLength;
             for (var i = 0; i < HashCodeLength; i++)
-                if (hash[i] != this.hashData[i + start])
+                if (hash[i] != hashData[i + start])
                     return false;
 
             return true;
@@ -108,7 +108,7 @@ namespace MonoTorrent
 
             // Read out our specified piece's hash data
             var hash = new byte[HashCodeLength];
-            Buffer.BlockCopy (this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
+            Buffer.BlockCopy (hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;
         }

@@ -131,17 +131,17 @@ namespace MonoTorrent
 
         public TorrentFile (string path, long length, string fullPath, int startIndex, int endIndex, int startOffset, byte[] md5, byte[] ed2k, byte[] sha1)
         {
-            this.BitField = new BitField (endIndex - startIndex + 1);
-            this.ED2K = ed2k;
-            this.EndPieceIndex = endIndex;
-            this.FullPath = fullPath;
-            this.Length = length;
-            this.MD5 = md5;
-            this.Path = path;
-            this.Priority = Priority.Normal;
-            this.SHA1 = sha1;
-            this.StartPieceIndex = startIndex;
-            this.StartPieceOffset = startOffset;
+            BitField = new BitField (endIndex - startIndex + 1);
+            ED2K = ed2k;
+            EndPieceIndex = endIndex;
+            FullPath = fullPath;
+            Length = length;
+            MD5 = md5;
+            Path = path;
+            Priority = Priority.Normal;
+            SHA1 = sha1;
+            StartPieceIndex = startIndex;
+            StartPieceOffset = startOffset;
         }
 
         #endregion

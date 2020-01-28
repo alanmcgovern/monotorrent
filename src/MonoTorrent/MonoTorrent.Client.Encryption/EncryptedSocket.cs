@@ -159,8 +159,8 @@ namespace MonoTorrent.Client.Encryption
         public virtual async ReusableTask HandshakeAsync (IConnection2 socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
-            this.initialBufferOffset = offset;
-            this.initialBufferCount = count;
+            initialBufferOffset = offset;
+            initialBufferCount = count;
             await HandshakeAsync (socket);
         }
 

@@ -82,9 +82,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             : this ()
         {
             ExtensionId = extensionId;
-            this.MetadataMessageType = type;
-            this.MetadataPiece = metadata;
-            this.Piece = piece;
+            MetadataMessageType = type;
+            MetadataPiece = metadata;
+            Piece = piece;
 
             dict = new BEncodedDictionary ();
             dict.Add (MessageTypeKey, (BEncodedNumber) (int) MetadataMessageType);

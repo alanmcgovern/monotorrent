@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
             //Console.WriteLine("Starting");
             var handle = new ManualResetEvent (false);
             loop.QueueTimeout (TimeSpan.FromMilliseconds (0), delegate {
-                this.count++;
+                count++;
                 if (count == 3) {
                     handle.Set ();
                     return false;

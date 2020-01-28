@@ -98,10 +98,10 @@ namespace MonoTorrent.Client
         public InitialSeedUnchoker (TorrentManager manager)
             : base (manager)
         {
-            this.advertisedPieces = new List<SeededPiece> ();
-            this.bitfield = new BitField (manager.Bitfield.Length);
-            this.peers = new List<ChokeData> ();
-            this.temp = new BitField (bitfield.Length);
+            advertisedPieces = new List<SeededPiece> ();
+            bitfield = new BitField (manager.Bitfield.Length);
+            peers = new List<ChokeData> ();
+            temp = new BitField (bitfield.Length);
         }
 
         public override void Choke (PeerId id)

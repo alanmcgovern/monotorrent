@@ -48,17 +48,17 @@ namespace MonoTorrent
         private readonly int[] array;
 
         internal bool AllFalse {
-            get { return this.TrueCount == 0; }
+            get { return TrueCount == 0; }
         }
 
         internal bool AllTrue {
-            get { return this.TrueCount == this.Length; }
+            get { return TrueCount == Length; }
         }
 
         public int Length { get; }
 
         public double PercentComplete {
-            get { return (double) this.TrueCount / this.Length * 100.0; }
+            get { return (double) TrueCount / Length * 100.0; }
         }
 
         #endregion
@@ -81,8 +81,8 @@ namespace MonoTorrent
             if (length < 1)
                 throw new ArgumentOutOfRangeException (nameof(length), "Length must be greater than zero");
 
-            this.Length = length;
-            this.array = new int[(length + 31) / 32];
+            Length = length;
+            array = new int[(length + 31) / 32];
         }
 
         public BitField (bool[] array)
@@ -93,7 +93,7 @@ namespace MonoTorrent
             if (array.Length < 1)
                 throw new ArgumentOutOfRangeException ("The array must contain at least one element", nameof (array));
 
-            this.Length = array.Length;
+            Length = array.Length;
             this.array = new int[(array.Length + 31) / 32];
             for (var i = 0; i < array.Length; i++)
                 Set (i, array[i]);
@@ -105,8 +105,8 @@ namespace MonoTorrent
         #region Methods BitArray
 
         public bool this[int index] {
-            get { return this.Get (index); }
-            internal set { this.Set (index, value); }
+            get { return Get (index); }
+            internal set { Set (index, value); }
         }
 
         object ICloneable.Clone ()
@@ -116,7 +116,7 @@ namespace MonoTorrent
 
         public BitField Clone ()
         {
-            var b = new BitField (this.Length);
+            var b = new BitField (Length);
             Buffer.BlockCopy (array, 0, b.array, 0, array.Length * 4);
             b.TrueCount = TrueCount;
             return b;
@@ -132,10 +132,10 @@ namespace MonoTorrent
 
         public BitField Not ()
         {
-            for (var i = 0; i < this.array.Length; i++)
-                this.array[i] = ~this.array[i];
+            for (var i = 0; i < array.Length; i++)
+                array[i] = ~array[i];
 
-            this.TrueCount = this.Length - this.TrueCount;
+            TrueCount = Length - TrueCount;
             return this;
         }
 
@@ -143,8 +143,8 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (var i = 0; i < this.array.Length; i++)
-                this.array[i] &= value.array[i];
+            for (var i = 0; i < array.Length; i++)
+                array[i] &= value.array[i];
 
             Validate ();
             return this;
@@ -154,8 +154,8 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (var i = 0; i < this.array.Length; i++)
-                this.array[i] &= ~value.array[i];
+            for (var i = 0; i < array.Length; i++)
+                array[i] &= ~value.array[i];
 
             Validate ();
             return this;
@@ -165,8 +165,8 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (var i = 0; i < this.array.Length; i++)
-                this.array[i] |= value.array[i];
+            for (var i = 0; i < array.Length; i++)
+                array[i] |= value.array[i];
 
             Validate ();
             return this;
@@ -176,8 +176,8 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (var i = 0; i < this.array.Length; i++)
-                this.array[i] ^= value.array[i];
+            for (var i = 0; i < array.Length; i++)
+                array[i] ^= value.array[i];
 
             Validate ();
             return this;
@@ -185,10 +185,10 @@ namespace MonoTorrent
 
         public override bool Equals (object obj)
         {
-            if (!(obj is BitField bf) || this.array.Length != bf.array.Length || TrueCount != bf.TrueCount)
+            if (!(obj is BitField bf) || array.Length != bf.array.Length || TrueCount != bf.TrueCount)
                 return false;
 
-            for (var i = 0; i < this.array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
                 if (array[i] != bf.array[i])
                     return false;
 
@@ -197,7 +197,7 @@ namespace MonoTorrent
 
         public int FirstTrue ()
         {
-            return this.FirstTrue (0, this.Length);
+            return FirstTrue (0, Length);
         }
 
         public int FirstTrue (int startIndex, int endIndex)
@@ -209,13 +209,13 @@ namespace MonoTorrent
             // For the case when endIndex == 0, we need to ensure we don't go negative
             var loopEnd = Math.Min ((endIndex / 32), array.Length - 1);
             for (var i = (startIndex / 32); i <= loopEnd; i++) {
-                if (this.array[i] == 0)        // This one has no true values
+                if (array[i] == 0)        // This one has no true values
                     continue;
 
                 start = i * 32;
                 end = start + 32;
                 start = (start < startIndex) ? startIndex : start;
-                end = (end > this.Length) ? this.Length : end;
+                end = (end > Length) ? Length : end;
                 end = (end > endIndex) ? endIndex : end;
                 if (end == Length && end > 0)
                     end--;
@@ -242,13 +242,13 @@ namespace MonoTorrent
             // For the case when endIndex == 0, we need to ensure we don't go negative
             var loopEnd = Math.Min ((endIndex / 32), array.Length - 1);
             for (var i = (startIndex / 32); i <= loopEnd; i++) {
-                if (this.array[i] == ~0)        // This one has no false values
+                if (array[i] == ~0)        // This one has no false values
                     continue;
 
                 start = i * 32;
                 end = start + 32;
                 start = (start < startIndex) ? startIndex : start;
-                end = (end > this.Length) ? this.Length : end;
+                end = (end > Length) ? Length : end;
                 end = (end > endIndex) ? endIndex : end;
                 if (end == Length && end > 0)
                     end--;
@@ -282,12 +282,12 @@ namespace MonoTorrent
             if (index < 0 || index >= Length)
                 throw new ArgumentOutOfRangeException (nameof(index));
 
-            return (this.array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
+            return (array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
         }
 
         public IEnumerator<bool> GetEnumerator ()
         {
-            for (var i = 0; i < this.Length; i++)
+            for (var i = 0; i < Length; i++)
                 yield return Get (i);
         }
 
@@ -313,14 +313,14 @@ namespace MonoTorrent
         public override int GetHashCode ()
         {
             var count = 0;
-            for (var i = 0; i < this.array.Length; i++)
-                count += this.array[i];
+            for (var i = 0; i < array.Length; i++)
+                count += array[i];
 
             return count;
         }
 
         public int LengthInBytes {
-            get { return (this.Length + 7) / 8; }      //8 bits in a byte.
+            get { return (Length + 7) / 8; }      //8 bits in a byte.
         }
 
         public BitField Set (int index, bool value)
@@ -329,13 +329,13 @@ namespace MonoTorrent
                 throw new ArgumentOutOfRangeException (nameof(index));
 
             if (value) {
-                if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) == 0)// If it's not already true
+                if ((array[index >> 5] & (1 << (31 - (index & 31)))) == 0)// If it's not already true
                     TrueCount++;                                        // Increase true count
-                this.array[index >> 5] |= (1 << (31 - index & 31));
+                array[index >> 5] |= (1 << (31 - index & 31));
             } else {
-                if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) != 0)// If it's not already false
+                if ((array[index >> 5] & (1 << (31 - (index & 31)))) != 0)// If it's not already false
                     TrueCount--;                                        // Decrease true count
-                this.array[index >> 5] &= ~(1 << (31 - (index & 31)));
+                array[index >> 5] &= ~(1 << (31 - (index & 31)));
             }
 
             return this;
@@ -358,13 +358,13 @@ namespace MonoTorrent
         internal BitField SetAll (bool value)
         {
             if (value) {
-                for (var i = 0; i < this.array.Length; i++)
-                    this.array[i] = ~0;
+                for (var i = 0; i < array.Length; i++)
+                    array[i] = ~0;
                 Validate ();
             } else {
-                for (var i = 0; i < this.array.Length; i++)
-                    this.array[i] = 0;
-                this.TrueCount = 0;
+                for (var i = 0; i < array.Length; i++)
+                    array[i] = 0;
+                TrueCount = 0;
             }
 
             return this;
@@ -401,7 +401,7 @@ namespace MonoTorrent
         [ExcludeFromCodeCoverage]
         string ToDebuggerString ()
         {
-            var sb = new StringBuilder (this.array.Length * 16);
+            var sb = new StringBuilder (array.Length * 16);
             for (var i = 0; i < Length; i++) {
                 sb.Append (Get (i) ? 'T' : 'F');
                 sb.Append (' ');

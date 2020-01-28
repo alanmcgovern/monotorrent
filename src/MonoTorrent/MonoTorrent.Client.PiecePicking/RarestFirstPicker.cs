@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.PiecePicking
         public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             base.Initialise (bitfield, torrentData, requests);
-            this.length = bitfield.Length;
+            length = bitfield.Length;
         }
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)

@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.PiecePicking
         public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             this.bitfield = bitfield;
-            this.endgameSelector = new BitField (bitfield.Length);
+            endgameSelector = new BitField (bitfield.Length);
             this.torrentData = torrentData;
             inEndgame = false;
 

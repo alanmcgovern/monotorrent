@@ -50,11 +50,11 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            this.path = GetType ().Assembly.Location;
+            path = GetType ().Assembly.Location;
             for (var i = 0; i >= 0; i++)
                 if (!Directory.Exists ($"temp{i}")) {
-                    this.directoryName = $"temp{i}";
-                    this.fullPath = Path.Combine (this.path, this.directoryName);
+                    directoryName = $"temp{i}";
+                    fullPath = Path.Combine (path, directoryName);
                     Directory.CreateDirectory (fullPath);
                     break;
                 }
@@ -67,8 +67,8 @@ namespace MonoTorrent.Client
         /// </summary>
         private void GenerateTestFiles ()
         {
-            var file1 = File.OpenWrite (Path.Combine (this.fullPath, "file1.txt"));
-            var file2 = File.OpenWrite (Path.Combine (this.fullPath, "file2.txt"));
+            var file1 = File.OpenWrite (Path.Combine (fullPath, "file1.txt"));
+            var file2 = File.OpenWrite (Path.Combine (fullPath, "file2.txt"));
 
             var data = "this is my teststring. It's not really that long, but i'll be writing a lot more where this come from\r\n";
 
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
         [TearDown]
         public void RemoveTempFiles ()
         {
-            foreach (var str in Directory.GetFiles (Path.Combine (this.path, this.directoryName)))
+            foreach (var str in Directory.GetFiles (Path.Combine (path, directoryName)))
                 File.Delete (str);
 
             Directory.Delete (Path.Combine (path, "temp"));
