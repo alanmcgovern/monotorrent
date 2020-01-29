@@ -37,10 +37,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     {
         public static readonly ExtensionSupport Support = CreateSupport ("ut_pex");
 
-        private BEncodedDictionary peerDict;
-        private static readonly BEncodedString AddedKey = "added";
-        private static readonly BEncodedString AddedDotFKey = "added.f";
-        private static readonly BEncodedString DroppedKey = "dropped";
+        BEncodedDictionary peerDict;
+        static readonly BEncodedString AddedKey = "added";
+        static readonly BEncodedString AddedDotFKey = "added.f";
+        static readonly BEncodedString DroppedKey = "dropped";
 
         public PeerExchangeMessage ()
             : base (Support.MessageId)
@@ -70,23 +70,21 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         }
 
         public byte[] Added {
-            set { peerDict[AddedKey] = (BEncodedString) (value ?? Array.Empty<byte> ()); }
-            get { return ((BEncodedString) peerDict[AddedKey]).TextBytes; }
+            set => peerDict[AddedKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
+            get => ((BEncodedString) peerDict[AddedKey]).TextBytes;
         }
 
         public byte[] AddedDotF {
-            set { peerDict[AddedDotFKey] = (BEncodedString) (value ?? Array.Empty<byte> ()); }
-            get { return ((BEncodedString) peerDict[AddedDotFKey]).TextBytes; }
+            set => peerDict[AddedDotFKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
+            get => ((BEncodedString) peerDict[AddedDotFKey]).TextBytes;
         }
 
         public byte[] Dropped {
-            set { peerDict[DroppedKey] = (BEncodedString) (value ?? Array.Empty<byte> ()); }
-            get { return ((BEncodedString) peerDict[DroppedKey]).TextBytes; }
+            set => peerDict[DroppedKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
+            get => ((BEncodedString) peerDict[DroppedKey]).TextBytes;
         }
 
-        public override int ByteLength {
-            get { return 4 + 1 + 1 + peerDict.LengthInBytes (); }
-        }
+        public override int ByteLength => 4 + 1 + 1 + peerDict.LengthInBytes ();
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
@@ -113,7 +111,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override string ToString ()
         {
-            BEncodedString added = (BEncodedString) peerDict[AddedKey];
+            var added = (BEncodedString) peerDict[AddedKey];
             int numPeers = added.TextBytes.Length / 6;
 
             return $"PeerExchangeMessage: {numPeers} peers";

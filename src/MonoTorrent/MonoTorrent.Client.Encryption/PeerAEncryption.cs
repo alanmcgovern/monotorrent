@@ -76,9 +76,9 @@ namespace MonoTorrent.Client.Encryption
             byte[] padC = GeneratePad ();
 
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
-            var bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
+            int bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                              + 2 + padC.Length + 2 + InitialPayload.Length;
-            var buffer = ClientEngine.BufferPool.Rent (bufferLength);
+            byte[] buffer = ClientEngine.BufferPool.Rent (bufferLength);
 
             int offset = 0;
             offset += Message.Write (buffer, offset, req1);
@@ -115,13 +115,13 @@ namespace MonoTorrent.Client.Encryption
 
             // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
             byte[] padD = null;
-            var verifyBytesLength = 4 + 2;
-            var verifyBytes = ClientEngine.BufferPool.Rent (verifyBytesLength);
+            int verifyBytesLength = 4 + 2;
+            byte[] verifyBytes = ClientEngine.BufferPool.Rent (verifyBytesLength);
             try {
                 await ReceiveMessage (verifyBytes, verifyBytesLength); // crypto_select, len(padD) ...
                 DoDecrypt (verifyBytes, 0, verifyBytesLength);
 
-                var padDLength = Message.ReadShort (verifyBytes, 4);
+                short padDLength = Message.ReadShort (verifyBytes, 4);
                 padD = ClientEngine.BufferPool.Rent (padDLength);
 
                 await ReceiveMessage (padD, padDLength);

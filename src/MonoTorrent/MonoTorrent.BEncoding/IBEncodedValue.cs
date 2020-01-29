@@ -76,9 +76,9 @@ namespace MonoTorrent.BEncoding
         public static BEncodedValue Decode (byte[] data)
         {
             if (data == null)
-                throw new ArgumentNullException (nameof(data));
+                throw new ArgumentNullException (nameof (data));
 
-            using RawReader stream = new RawReader (new MemoryStream (data));
+            using var stream = new RawReader (new MemoryStream (data));
             return (Decode (stream));
         }
 
@@ -102,15 +102,15 @@ namespace MonoTorrent.BEncoding
         public static BEncodedValue Decode (byte[] buffer, int offset, int length, bool strictDecoding)
         {
             if (buffer == null)
-                throw new ArgumentNullException (nameof(buffer));
+                throw new ArgumentNullException (nameof (buffer));
 
             if (offset < 0 || length < 0)
                 throw new IndexOutOfRangeException ("Neither offset or length can be less than zero");
 
             if (offset > buffer.Length - length)
-                throw new ArgumentOutOfRangeException (nameof(length));
+                throw new ArgumentOutOfRangeException (nameof (length));
 
-            using RawReader reader = new RawReader (new MemoryStream (buffer, offset, length), strictDecoding);
+            using var reader = new RawReader (new MemoryStream (buffer, offset, length), strictDecoding);
             return (Decode (reader));
         }
 
@@ -123,7 +123,7 @@ namespace MonoTorrent.BEncoding
         public static BEncodedValue Decode (Stream stream)
         {
             if (stream == null)
-                throw new ArgumentNullException (nameof(stream));
+                throw new ArgumentNullException (nameof (stream));
 
             return Decode (new RawReader (stream));
         }
@@ -137,7 +137,7 @@ namespace MonoTorrent.BEncoding
         public static BEncodedValue Decode (RawReader reader)
         {
             if (reader == null)
-                throw new ArgumentNullException (nameof(reader));
+                throw new ArgumentNullException (nameof (reader));
 
             BEncodedValue data;
             switch (reader.PeekByte ()) {

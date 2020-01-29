@@ -43,7 +43,7 @@ namespace MonoTorrent
 
         #region Private Fields
 
-        private readonly byte[] hashData;
+        readonly byte[] hashData;
 
         #endregion Private Fields
 
@@ -63,7 +63,7 @@ namespace MonoTorrent
         internal Hashes (byte[] hashData, int count)
         {
             this.hashData = hashData;
-            this.Count = count;
+            Count = count;
         }
 
         #endregion Constructors
@@ -80,17 +80,17 @@ namespace MonoTorrent
         public bool IsValid (byte[] hash, int hashIndex)
         {
             if (hash == null)
-                throw new ArgumentNullException (nameof(hash));
+                throw new ArgumentNullException (nameof (hash));
 
             if (hash.Length != HashCodeLength)
-                throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof(hash));
+                throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
 
             if (hashIndex < 0 || hashIndex >= Count)
-                throw new ArgumentOutOfRangeException (nameof(hashIndex), $"hashIndex must be between 0 and {Count}");
+                throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
 
             int start = hashIndex * HashCodeLength;
             for (int i = 0; i < HashCodeLength; i++)
-                if (hash[i] != this.hashData[i + start])
+                if (hash[i] != hashData[i + start])
                     return false;
 
             return true;
@@ -104,11 +104,11 @@ namespace MonoTorrent
         public byte[] ReadHash (int hashIndex)
         {
             if (hashIndex < 0 || hashIndex >= Count)
-                throw new ArgumentOutOfRangeException (nameof(hashIndex));
+                throw new ArgumentOutOfRangeException (nameof (hashIndex));
 
             // Read out our specified piece's hash data
             byte[] hash = new byte[HashCodeLength];
-            Buffer.BlockCopy (this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
+            Buffer.BlockCopy (hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;
         }

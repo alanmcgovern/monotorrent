@@ -49,7 +49,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         public Task WaitForStoppingToComplete ()
-            => WaitForStoppingToComplete (Timeout.InfiniteTimeSpan);
+        {
+            return WaitForStoppingToComplete (Timeout.InfiniteTimeSpan);
+        }
 
         public async Task WaitForStoppingToComplete (TimeSpan timeout)
         {
@@ -63,10 +65,11 @@ namespace MonoTorrent.Client.Modes
                 Manager.PieceManager.Reset ();
                 Manager.finishedPieces.Clear ();
 
-                var stoppingTasks = new List<Task> ();
-                stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
+                var stoppingTasks = new List<Task> {
+                    Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent)
+                };
                 if (Manager.TrackerManager.CurrentTracker != null && Manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok) {
-                    var announceTask = Manager.TrackerManager.Announce (TorrentEvent.Stopped);
+                    Task announceTask = Manager.TrackerManager.Announce (TorrentEvent.Stopped);
                     if (timeout != Timeout.InfiniteTimeSpan)
                         announceTask = Task.WhenAny (announceTask, Task.Delay (timeout));
                     stoppingTasks.Add (announceTask);

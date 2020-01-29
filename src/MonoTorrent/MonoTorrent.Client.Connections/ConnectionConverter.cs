@@ -65,27 +65,43 @@ namespace MonoTorrent.Client.Connections
         public Uri Uri => Connection.Uri;
 
         public V1ToV2Converter (IConnection connection)
-            => Connection = connection;
+        {
+            Connection = connection;
+        }
 
         public async ReusableTask ConnectAsync ()
-            => await Connection.ConnectAsync ();
+        {
+            await Connection.ConnectAsync ();
+        }
 
         public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
-            => await Connection.ReceiveAsync (buffer, offset, count);
+        {
+            return await Connection.ReceiveAsync (buffer, offset, count);
+        }
 
         public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
-            => await Connection.SendAsync (buffer, offset, count);
+        {
+            return await Connection.SendAsync (buffer, offset, count);
+        }
 
         Task IConnection.ConnectAsync ()
-            => Connection.ConnectAsync ();
+        {
+            return Connection.ConnectAsync ();
+        }
 
         Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-            => Connection.ReceiveAsync (buffer, offset, count);
+        {
+            return Connection.ReceiveAsync (buffer, offset, count);
+        }
 
         Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-            => Connection.SendAsync (buffer, offset, count);
+        {
+            return Connection.SendAsync (buffer, offset, count);
+        }
 
         public void Dispose ()
-            => Connection.Dispose ();
+        {
+            Connection.Dispose ();
+        }
     }
 }

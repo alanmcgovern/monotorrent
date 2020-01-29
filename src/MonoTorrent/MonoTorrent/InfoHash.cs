@@ -84,7 +84,7 @@ namespace MonoTorrent
 
         public string ToHex ()
         {
-            StringBuilder sb = new StringBuilder (40);
+            var sb = new StringBuilder (40);
             for (int i = 0; i < Hash.Length; i++) {
                 string hex = Hash[i].ToString ("X");
                 if (hex.Length != 2)
@@ -127,7 +127,7 @@ namespace MonoTorrent
             infoHash = infoHash.ToLower ();
             int infohashOffset = 0;
             byte[] hash = new byte[20];
-            var temp = new byte[8];
+            byte[] temp = new byte[8];
             for (int i = 0; i < hash.Length;) {
                 for (int j = 0; j < 8; j++)
                     if (!base32DecodeTable.TryGetValue (infoHash[infohashOffset++], out temp[j]))

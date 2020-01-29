@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         {
             messageDict = new Dictionary<byte, Func<ITorrentData, PeerMessage>> ();
 
-            var id = Register (data => new ExtendedHandshakeMessage ());
+            byte id = Register (data => new ExtendedHandshakeMessage ());
             if (id != 0)
                 throw new InvalidOperationException ("The handshake message should be registered with id '0'");
 
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 throw new ArgumentNullException (nameof (creator));
 
             lock (messageDict) {
-                var id = (byte) messageDict.Count;
+                byte id = (byte) messageDict.Count;
                 messageDict.Add (id, creator);
                 return id;
             }
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (!messageDict.TryGetValue (buffer[offset], out Func<ITorrentData, PeerMessage> creator))
                 throw new ProtocolException ("Unknown extension message received");
 
-            var message = creator (manager);
+            PeerMessage message = creator (manager);
             message.Decode (buffer, offset + 1, count - 1);
             return message;
         }

@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        private readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
+        readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
 
         #endregion
 
@@ -51,7 +51,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         public BEncodedDictionary ()
         {
-            this.dictionary = new SortedDictionary<BEncodedString, BEncodedValue> ();
+            dictionary = new SortedDictionary<BEncodedString, BEncodedValue> ();
         }
 
         #endregion
@@ -94,7 +94,7 @@ namespace MonoTorrent.BEncoding
             DecodeInternal (reader, reader.StrictDecoding);
         }
 
-        private void DecodeInternal (RawReader reader, bool strictDecoding)
+        void DecodeInternal (RawReader reader, bool strictDecoding)
         {
             BEncodedString key = null;
             BEncodedValue value = null;
@@ -140,7 +140,7 @@ namespace MonoTorrent.BEncoding
         {
             BEncodedString key = null;
             BEncodedValue value = null;
-            BEncodedDictionary torrent = new BEncodedDictionary ();
+            var torrent = new BEncodedDictionary ();
             if (reader.ReadByte () != 'd')
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
@@ -176,7 +176,7 @@ namespace MonoTorrent.BEncoding
             int length = 0;
             length += 1;   // Dictionaries start with 'd'
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary) {
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 length += keypair.Key.LengthInBytes ();
                 length += keypair.Value.LengthInBytes ();
             }
@@ -193,10 +193,10 @@ namespace MonoTorrent.BEncoding
             if (!(obj is BEncodedDictionary other))
                 return false;
 
-            if (this.dictionary.Count != other.dictionary.Count)
+            if (dictionary.Count != other.dictionary.Count)
                 return false;
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary) {
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 if (!other.TryGetValue (keypair.Key, out BEncodedValue val))
                     return false;
 
@@ -228,45 +228,47 @@ namespace MonoTorrent.BEncoding
         #region IDictionary and IList methods
         public void Add (BEncodedString key, BEncodedValue value)
         {
-            this.dictionary.Add (key, value);
+            dictionary.Add (key, value);
         }
 
         public void Add (KeyValuePair<BEncodedString, BEncodedValue> item)
         {
-            this.dictionary.Add (item.Key, item.Value);
+            dictionary.Add (item.Key, item.Value);
         }
         public void Clear ()
         {
-            this.dictionary.Clear ();
+            dictionary.Clear ();
         }
 
         public bool Contains (KeyValuePair<BEncodedString, BEncodedValue> item)
         {
-            if (!this.dictionary.ContainsKey (item.Key))
+            if (!dictionary.ContainsKey (item.Key))
                 return false;
 
-            return this.dictionary[item.Key].Equals (item.Value);
+            return dictionary[item.Key].Equals (item.Value);
         }
 
         public bool ContainsKey (BEncodedString key)
         {
-            return this.dictionary.ContainsKey (key);
+            return dictionary.ContainsKey (key);
         }
 
         public void CopyTo (KeyValuePair<BEncodedString, BEncodedValue>[] array, int arrayIndex)
         {
-            this.dictionary.CopyTo (array, arrayIndex);
+            dictionary.CopyTo (array, arrayIndex);
         }
 
-        public int Count {
-            get { return this.dictionary.Count; }
-        }
+        public int Count => dictionary.Count;
 
         public BEncodedValue GetValueOrDefault (BEncodedString key)
-            => GetValueOrDefault (key, null);
+        {
+            return GetValueOrDefault (key, null);
+        }
 
         public BEncodedValue GetValueOrDefault (BEncodedString key, BEncodedValue defaultValue)
-            => dictionary.TryGetValue (key, out BEncodedValue value) ? value : defaultValue;
+        {
+            return dictionary.TryGetValue (key, out BEncodedValue value) ? value : defaultValue;
+        }
 
         //public int IndexOf(KeyValuePair<BEncodedString, IBEncodedValue> item)
         //{
@@ -278,46 +280,40 @@ namespace MonoTorrent.BEncoding
         //    this.dictionary.Insert(index, item);
         //}
 
-        public bool IsReadOnly {
-            get { return false; }
-        }
+        public bool IsReadOnly => false;
 
         public bool Remove (BEncodedString key)
         {
-            return this.dictionary.Remove (key);
+            return dictionary.Remove (key);
         }
 
         public bool Remove (KeyValuePair<BEncodedString, BEncodedValue> item)
         {
-            return this.dictionary.Remove (item.Key);
+            return dictionary.Remove (item.Key);
         }
 
         public bool TryGetValue (BEncodedString key, out BEncodedValue value)
         {
-            return this.dictionary.TryGetValue (key, out value);
+            return dictionary.TryGetValue (key, out value);
         }
 
         public BEncodedValue this[BEncodedString key] {
-            get { return this.dictionary[key]; }
-            set { this.dictionary[key] = value; }
+            get => dictionary[key];
+            set => dictionary[key] = value;
         }
 
-        public ICollection<BEncodedString> Keys {
-            get { return this.dictionary.Keys; }
-        }
+        public ICollection<BEncodedString> Keys => dictionary.Keys;
 
-        public ICollection<BEncodedValue> Values {
-            get { return this.dictionary.Values; }
-        }
+        public ICollection<BEncodedValue> Values => dictionary.Values;
 
         public IEnumerator<KeyValuePair<BEncodedString, BEncodedValue>> GetEnumerator ()
         {
-            return this.dictionary.GetEnumerator ();
+            return dictionary.GetEnumerator ();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
         {
-            return this.dictionary.GetEnumerator ();
+            return dictionary.GetEnumerator ();
         }
         #endregion
     }

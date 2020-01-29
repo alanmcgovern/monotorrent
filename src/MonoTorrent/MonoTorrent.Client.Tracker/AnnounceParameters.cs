@@ -66,33 +66,53 @@ namespace MonoTorrent.Client.Tracker
         }
 
         public AnnounceParameters WithBytesDownloaded (long bytesDownloaded)
-            => bytesDownloaded == BytesDownloaded ? this : new AnnounceParameters (bytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        {
+            return bytesDownloaded == BytesDownloaded ? this : new AnnounceParameters (bytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithBytesLeft (long bytesLeft)
-            => bytesLeft == BytesLeft ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, bytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        {
+            return bytesLeft == BytesLeft ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, bytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithBytesUploaded (long bytesUploaded)
-            => bytesUploaded == BytesUploaded ? this : new AnnounceParameters (BytesDownloaded, bytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        {
+            return bytesUploaded == BytesUploaded ? this : new AnnounceParameters (BytesDownloaded, bytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithClientEvent (TorrentEvent clientEvent)
-            => clientEvent == ClientEvent ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, clientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        {
+            return clientEvent == ClientEvent ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, clientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithInfoHash (InfoHash infoHash)
-            => infoHash == InfoHash ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, infoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        {
+            return infoHash == InfoHash ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, infoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithIPAddress (string ipAddress)
-            => ipAddress == IPAddress ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, ipAddress, Port, SupportsEncryption);
+        {
+            return ipAddress == IPAddress ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, ipAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithPeerId (BEncodedString peerId)
-            => peerId == PeerId ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, peerId, IPAddress, Port, SupportsEncryption);
+        {
+            return peerId == PeerId ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, peerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithPort (int port)
-            => port == Port ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, port, SupportsEncryption);
+        {
+            return port == Port ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithRequireEncryption (bool requireEncryption)
-            => requireEncryption == RequireEncryption ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, requireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        {
+            return requireEncryption == RequireEncryption ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, requireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+        }
 
         public AnnounceParameters WithSupportsEncryption (bool supportsEncryption)
-            => supportsEncryption == SupportsEncryption ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, supportsEncryption);
+        {
+            return supportsEncryption == SupportsEncryption ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, supportsEncryption);
+        }
     }
 }

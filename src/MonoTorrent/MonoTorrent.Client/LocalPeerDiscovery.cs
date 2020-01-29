@@ -107,13 +107,13 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public async Task Announce (InfoHash infoHash)
         {
-            var message = string.Format (BaseSearchString, Settings.ListenPort, infoHash.ToHex ());
-            var data = Encoding.ASCII.GetBytes (message);
+            string message = string.Format (BaseSearchString, Settings.ListenPort, infoHash.ToHex ());
+            byte[] data = Encoding.ASCII.GetBytes (message);
 
             // If there's another application on the system which joined the bittorrent LPD broadcast group, we'll be unable to
             // join it and will have a PortInUse error. However, we can still *send* broadcast messages using any UDP client.
             using var sendingClient = new UdpClient ();
-            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces ()) {
+            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces ()) {
                 try {
                     //if (!nic.SupportsMulticast) continue;
                     sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
@@ -128,13 +128,13 @@ namespace MonoTorrent.Client
         {
             while (!token.IsCancellationRequested) {
                 try {
-                    var result = await client.ReceiveAsync ().ConfigureAwait (false);
-                    var receiveString = Encoding.ASCII.GetString (result.Buffer)
+                    UdpReceiveResult result = await client.ReceiveAsync ().ConfigureAwait (false);
+                    string[] receiveString = Encoding.ASCII.GetString (result.Buffer)
                         .Split (new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-                    var portString = receiveString.FirstOrDefault (t => t.StartsWith ("Port: ", StringComparison.Ordinal));
-                    var hashString = receiveString.FirstOrDefault (t => t.StartsWith ("Infohash: ", StringComparison.Ordinal));
-                    var cookieString = receiveString.FirstOrDefault (t => t.StartsWith ("cookie", StringComparison.Ordinal));
+                    string portString = receiveString.FirstOrDefault (t => t.StartsWith ("Port: ", StringComparison.Ordinal));
+                    string hashString = receiveString.FirstOrDefault (t => t.StartsWith ("Infohash: ", StringComparison.Ordinal));
+                    string cookieString = receiveString.FirstOrDefault (t => t.StartsWith ("cookie", StringComparison.Ordinal));
 
                     // An invalid response was received if these are missing.
                     if (portString == null || hashString == null)

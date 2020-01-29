@@ -35,24 +35,21 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     sealed class ExtendedHandshakeMessage : ExtensionMessage
     {
-        private static readonly BEncodedString MaxRequestKey = "reqq";
-        private static readonly BEncodedString PortKey = "p";
-        private static readonly BEncodedString SupportsKey = "m";
-        private static readonly BEncodedString VersionKey = "v";
-        private static readonly BEncodedString MetadataSizeKey = "metadata_size";
+        static readonly BEncodedString MaxRequestKey = "reqq";
+        static readonly BEncodedString PortKey = "p";
+        static readonly BEncodedString SupportsKey = "m";
+        static readonly BEncodedString VersionKey = "v";
+        static readonly BEncodedString MetadataSizeKey = "metadata_size";
 
         internal static readonly ExtensionSupport Support = new ExtensionSupport ("LT_handshake", 0);
 
-        private string version;
+        string version;
 
-        public override int ByteLength {
-            get {
+        public override int ByteLength =>
                 // FIXME Implement this properly
 
                 // The length of the payload, 4 byte length prefix, 1 byte BT message id, 1 byte LT message id
-                return Create ().LengthInBytes () + 4 + 1 + 1;
-            }
-        }
+                Create ().LengthInBytes () + 4 + 1 + 1;
 
         public int MaxRequests { get; set; }
 
@@ -62,9 +59,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public ExtensionSupports Supports { get; set; }
 
-        public string Version {
-            get { return version ?? ""; }
-        }
+        public string Version => version ?? "";
 
         public int MetadataSize { get; set; }
 
@@ -82,7 +77,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (privateTorrent)
                 Supports.Remove (PeerExchangeMessage.Support);
 
-            this.MetadataSize = metadataSize;
+            MetadataSize = metadataSize;
             LocalPort = localListenPort;
         }
         #endregion
@@ -107,13 +102,13 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 MetadataSize = (int) ((BEncodedNumber) val).Number;
         }
 
-        private void LoadSupports (BEncodedDictionary supports)
+        void LoadSupports (BEncodedDictionary supports)
         {
-            ExtensionSupports list = new ExtensionSupports ();
+            var list = new ExtensionSupports ();
             foreach (KeyValuePair<BEncodedString, BEncodedValue> k in supports)
                 list.Add (new ExtensionSupport (k.Key.Text, (byte) ((BEncodedNumber) k.Value).Number));
 
-            this.Supports = list;
+            Supports = list;
         }
 
         public override int Encode (byte[] buffer, int offset)
@@ -130,13 +125,13 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             return written - offset;
         }
 
-        private BEncodedDictionary Create ()
+        BEncodedDictionary Create ()
         {
             if (!ClientEngine.SupportsExtended)
                 throw new MessageException ("Libtorrent extension messages not supported");
 
-            BEncodedDictionary mainDict = new BEncodedDictionary ();
-            BEncodedDictionary supportsDict = new BEncodedDictionary ();
+            var mainDict = new BEncodedDictionary ();
+            var supportsDict = new BEncodedDictionary ();
 
             mainDict.Add (MaxRequestKey, (BEncodedNumber) MaxRequests);
             mainDict.Add (VersionKey, (BEncodedString) Version);

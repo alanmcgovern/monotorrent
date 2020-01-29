@@ -36,7 +36,7 @@ namespace MonoTorrent
     {
         #region Private Fields
 
-        private BitField selector;
+        BitField selector;
 
         #endregion Private Fields
 
@@ -48,9 +48,7 @@ namespace MonoTorrent
         /// </summary>
         public BitField BitField { get; }
 
-        public long BytesDownloaded {
-            get { return (long) (BitField.PercentComplete * Length / 100.0); }
-        }
+        public long BytesDownloaded => (long) (BitField.PercentComplete * Length / 100.0);
 
         /// <summary>
         /// The ED2K hash of the file
@@ -131,17 +129,17 @@ namespace MonoTorrent
 
         public TorrentFile (string path, long length, string fullPath, int startIndex, int endIndex, int startOffset, byte[] md5, byte[] ed2k, byte[] sha1)
         {
-            this.BitField = new BitField (endIndex - startIndex + 1);
-            this.ED2K = ed2k;
-            this.EndPieceIndex = endIndex;
-            this.FullPath = fullPath;
-            this.Length = length;
-            this.MD5 = md5;
-            this.Path = path;
-            this.Priority = Priority.Normal;
-            this.SHA1 = sha1;
-            this.StartPieceIndex = startIndex;
-            this.StartPieceOffset = startOffset;
+            BitField = new BitField (endIndex - startIndex + 1);
+            ED2K = ed2k;
+            EndPieceIndex = endIndex;
+            FullPath = fullPath;
+            Length = length;
+            MD5 = md5;
+            Path = path;
+            Priority = Priority.Normal;
+            SHA1 = sha1;
+            StartPieceIndex = startIndex;
+            StartPieceOffset = startOffset;
         }
 
         #endregion
@@ -178,7 +176,7 @@ namespace MonoTorrent
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (32);
+            var sb = new StringBuilder (32);
             sb.Append ("File: ");
             sb.Append (Path);
             sb.Append (" StartIndex: ");

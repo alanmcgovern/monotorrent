@@ -38,9 +38,7 @@ namespace MonoTorrent.Client.Modes
         readonly BitField zero;
         readonly InitialSeedUnchoker unchoker;
 
-        public override TorrentState State {
-            get { return TorrentState.Seeding; }
-        }
+        public override TorrentState State => TorrentState.Seeding;
 
         public InitialSeedingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
@@ -94,7 +92,7 @@ namespace MonoTorrent.Client.Modes
             if (unchoker.Complete) {
                 PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
                 PeerMessage haveAllMessage = new HaveAllMessage ();
-                foreach (var peer in Manager.Peers.ConnectedPeers) {
+                foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
                     PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
                     peer.Enqueue (message);
                 }

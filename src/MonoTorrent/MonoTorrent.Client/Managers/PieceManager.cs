@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
         {
             if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece)) {
                 id.LastBlockReceived.Restart ();
-                var block = piece.Blocks[message.StartOffset / Piece.BlockSize];
+                Block block = piece.Blocks[message.StartOffset / Piece.BlockSize];
 
                 if (BlockReceived != null)
                     RaiseBlockReceived (new BlockEventArgs (Manager, block, piece, id));
@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking || id.SupportsFastPeer) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    var request = Picker.ContinueExistingRequest (id);
+                    PieceRequest request = Picker.ContinueExistingRequest (id);
                     if (request != null)
                         id.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
                     else
@@ -130,8 +130,8 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0)) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    var otherPeers = Manager.Peers.ConnectedPeers ?? new List<PeerId> ();
-                    var request = Picker.PickPiece (id, id.BitField, otherPeers, count);
+                    List<PeerId> otherPeers = Manager.Peers.ConnectedPeers ?? new List<PeerId> ();
+                    IList<PieceRequest> request = Picker.PickPiece (id, id.BitField, otherPeers, count);
                     if (request != null && request.Count > 0)
                         id.Enqueue (new RequestBundle (request));
                     else

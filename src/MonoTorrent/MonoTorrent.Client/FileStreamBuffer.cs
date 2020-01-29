@@ -37,11 +37,9 @@ namespace MonoTorrent.Client
     {
         // A list of currently open filestreams. Note: The least recently used is at position 0
         // The most recently used is at the last position in the array
-        private readonly int maxStreams;
+        readonly int maxStreams;
 
-        public int Count {
-            get { return Streams.Count; }
-        }
+        public int Count => Streams.Count;
 
         public List<TorrentFileStream> Streams { get; }
 
@@ -51,7 +49,7 @@ namespace MonoTorrent.Client
             Streams = new List<TorrentFileStream> (maxStreams);
         }
 
-        private void Add (TorrentFileStream stream)
+        void Add (TorrentFileStream stream)
         {
             Logger.Log (null, "Opening filestream: {0}", stream.Path);
 
@@ -129,7 +127,7 @@ namespace MonoTorrent.Client
             return s != null;
         }
 
-        private void CloseAndRemove (TorrentFileStream s)
+        void CloseAndRemove (TorrentFileStream s)
         {
             Logger.Log (null, "Closing and removing: {0}", s.Path);
             Streams.Remove (s);

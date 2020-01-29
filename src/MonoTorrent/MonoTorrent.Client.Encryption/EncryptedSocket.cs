@@ -80,10 +80,10 @@ namespace MonoTorrent.Client.Encryption
         readonly SHA1 hasher;
 
         // Cryptors for the handshaking
-        private RC4 encryptor;
-        private RC4 decryptor;
+        RC4 encryptor;
+        RC4 decryptor;
 
-        private EncryptionTypes allowedEncryption;
+        EncryptionTypes allowedEncryption;
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
@@ -91,12 +91,12 @@ namespace MonoTorrent.Client.Encryption
         protected IConnection2 socket;
 
         // Data to be passed to initial ReceiveMessage requests
-        private byte[] initialBuffer;
-        private int initialBufferOffset;
-        private int initialBufferCount;
+        byte[] initialBuffer;
+        int initialBufferOffset;
+        int initialBufferCount;
 
         // State information to be checked against abort conditions
-        private int bytesReceived;
+        int bytesReceived;
 
         #endregion
 
@@ -137,8 +137,8 @@ namespace MonoTorrent.Client.Encryption
 
             // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
             // These two steps will be done simultaneously to save time due to latency
-            var first = SendY ();
-            var second = ReceiveY ();
+            ReusableTask first = SendY ();
+            ReusableTask second = ReceiveY ();
             try {
                 await first;
                 await second;
@@ -159,8 +159,8 @@ namespace MonoTorrent.Client.Encryption
         public virtual async ReusableTask HandshakeAsync (IConnection2 socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
-            this.initialBufferOffset = offset;
-            this.initialBufferCount = count;
+            initialBufferOffset = offset;
+            initialBufferCount = count;
             await HandshakeAsync (socket);
         }
 
@@ -187,7 +187,7 @@ namespace MonoTorrent.Client.Encryption
             Decryptor.Decrypt (data, offset, data, offset, length);
         }
 
-        private int RandomNumber (int max)
+        int RandomNumber (int max)
         {
             byte[] b = new byte[4];
             random.GetBytes (b);
@@ -204,8 +204,8 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected async ReusableTask SendY ()
         {
-            var length = 96 + RandomNumber (512);
-            var toSend = ClientEngine.BufferPool.Rent (length);
+            int length = 96 + RandomNumber (512);
+            byte[] toSend = ClientEngine.BufferPool.Rent (length);
             Buffer.BlockCopy (Y, 0, toSend, 0, 96);
             random.GetBytes (toSend, 96, length - 96);
             try {
@@ -221,7 +221,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected async ReusableTask ReceiveY ()
         {
-            var otherY = new byte[96];
+            byte[] otherY = new byte[96];
             await ReceiveMessage (otherY, 96);
             S = ModuloCalculator.Calculate (otherY, X);
             await doneReceiveY ();
@@ -243,7 +243,7 @@ namespace MonoTorrent.Client.Encryption
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            var synchronizeWindow = ClientEngine.BufferPool.Rent (syncData.Length);
+            byte[] synchronizeWindow = ClientEngine.BufferPool.Rent (syncData.Length);
 
             while (bytesReceived < syncStopPoint) {
                 int received = syncData.Length - filled;

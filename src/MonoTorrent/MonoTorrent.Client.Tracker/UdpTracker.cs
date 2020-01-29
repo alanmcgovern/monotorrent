@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Tracker
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
-                var connectionId = await ConnectionIdTask;
+                long connectionId = await ConnectionIdTask;
 
                 var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters);
                 var announce = (AnnounceResponseMessage) await SendAndReceiveAsync (message);
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client.Tracker
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
-                var connectionId = await ConnectionIdTask;
+                long connectionId = await ConnectionIdTask;
 
                 var infohashes = new List<byte[]> { parameters.InfoHash.Hash };
                 var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
@@ -137,8 +137,8 @@ namespace MonoTorrent.Client.Tracker
         async Task<UdpTrackerMessage> ReceiveAsync (UdpClient client, int transactionId, CancellationToken token)
         {
             while (!token.IsCancellationRequested) {
-                var received = await client.ReceiveAsync ();
-                UdpTrackerMessage rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
+                UdpReceiveResult received = await client.ReceiveAsync ();
+                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
 
                 if (transactionId == rsp.TransactionId) {
                     if (rsp is ErrorMessage error) {
@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.Tracker
 
         void SendAsync (UdpClient client, UdpTrackerMessage msg, CancellationToken token)
         {
-            var buffer = msg.Encode ();
+            byte[] buffer = msg.Encode ();
             client.Send (buffer, buffer.Length);
 
             ClientEngine.MainLoop.QueueTimeout (RetryDelay, () => {

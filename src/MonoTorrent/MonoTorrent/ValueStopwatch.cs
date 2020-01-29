@@ -35,14 +35,16 @@ namespace MonoTorrent
     struct ValueStopwatch
     {
         public static ValueStopwatch StartNew ()
-            => new ValueStopwatch { startedAt = Stopwatch.GetTimestamp () };
+        {
+            return new ValueStopwatch { startedAt = Stopwatch.GetTimestamp () };
+        }
 
         long elapsed;
         long startedAt;
 
         public TimeSpan Elapsed {
             get {
-                var totalElapsed = elapsed;
+                long totalElapsed = elapsed;
                 if (IsRunning)
                     totalElapsed += Stopwatch.GetTimestamp () - startedAt;
 

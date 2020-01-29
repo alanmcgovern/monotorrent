@@ -141,8 +141,8 @@ namespace MonoTorrent.Client.Connections
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
             var tcs = (ReusableTaskCompletionSource<int>) e.UserToken;
-            var error = e.SocketError;
-            var transferred = e.BytesTransferred;
+            SocketError error = e.SocketError;
+            int transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
             e.UserToken = null;
 
@@ -168,12 +168,14 @@ namespace MonoTorrent.Client.Connections
         #region Async Methods
 
         async Task IConnection.ConnectAsync ()
-            => await ConnectAsync ();
+        {
+            await ConnectAsync ();
+        }
 
         public async ReusableTask ConnectAsync ()
         {
             var tcs = new ReusableTaskCompletionSource<int> ();
-            var args = GetSocketAsyncEventArgs (null);
+            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (null);
             args.RemoteEndPoint = EndPoint;
             args.UserToken = tcs;
 
@@ -184,7 +186,9 @@ namespace MonoTorrent.Client.Connections
         }
 
         async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-            => await ReceiveAsync (buffer, offset, count);
+        {
+            return await ReceiveAsync (buffer, offset, count);
+        }
 
         public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
@@ -194,7 +198,7 @@ namespace MonoTorrent.Client.Connections
                 return ReceiveTcs.Task;
             }
 
-            var args = GetSocketAsyncEventArgs (buffer);
+            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
             args.UserToken = ReceiveTcs;
 
@@ -213,7 +217,9 @@ namespace MonoTorrent.Client.Connections
         }
 
         async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-            => await SendAsync (buffer, offset, count);
+        {
+            return await SendAsync (buffer, offset, count);
+        }
 
         public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
         {
@@ -223,7 +229,7 @@ namespace MonoTorrent.Client.Connections
                 return SendTcs.Task;
             }
 
-            var args = GetSocketAsyncEventArgs (buffer);
+            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
             args.UserToken = SendTcs;
 

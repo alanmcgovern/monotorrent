@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Connections
 
         internal static BEncodedString CreatePeerId ()
         {
-            var peerId = "-WebSeed-";
+            string peerId = "-WebSeed-";
             peerId += Interlocked.Increment (ref webSeedId).ToString ().PadLeft (20 - peerId.Length, '0');
             return peerId;
         }
@@ -61,14 +61,12 @@ namespace MonoTorrent.Client.Connections
             public readonly int TotalToReceive;
             public int TotalReceived;
 
-            public bool Complete {
-                get { return TotalToReceive == TotalReceived; }
-            }
+            public bool Complete => TotalToReceive == TotalReceived;
 
             public HttpRequestData (RequestMessage request)
             {
                 Request = request;
-                PieceMessage m = new PieceMessage (request.PieceIndex, request.StartOffset, request.RequestLength);
+                var m = new PieceMessage (request.PieceIndex, request.StartOffset, request.RequestLength);
                 TotalToReceive = m.ByteLength;
             }
         }
@@ -91,7 +89,7 @@ namespace MonoTorrent.Client.Connections
 
         WebResponse DataStreamResponse { get; set; }
 
-        private bool Disposed { get; set; }
+        bool Disposed { get; set; }
 
         EndPoint IConnection.EndPoint => null;
 
@@ -117,7 +115,7 @@ namespace MonoTorrent.Client.Connections
         public HttpConnection (Uri uri)
         {
             if (uri == null)
-                throw new ArgumentNullException (nameof(uri));
+                throw new ArgumentNullException (nameof (uri));
             if (!string.Equals (uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) && !string.Equals (uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException ("Scheme is not http or https");
 
@@ -127,7 +125,9 @@ namespace MonoTorrent.Client.Connections
         #endregion Constructors
 
         Task IConnection.ConnectAsync ()
-            => Task.CompletedTask;
+        {
+            return Task.CompletedTask;
+        }
 
         public ReusableTask ConnectAsync ()
         {
@@ -135,7 +135,9 @@ namespace MonoTorrent.Client.Connections
         }
 
         async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-            => await ReceiveAsync (buffer, offset, count);
+        {
+            return await ReceiveAsync (buffer, offset, count);
+        }
 
         public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
         {
@@ -185,7 +187,7 @@ namespace MonoTorrent.Client.Connections
             // If we have already connected to the server then DataStream will be non-null and we can just read the next bunch
             // of data from it.
             if (DataStream != null) {
-                var result = await DataStream.ReadAsync (buffer, offset, count);
+                int result = await DataStream.ReadAsync (buffer, offset, count);
                 DataStreamCount -= result;
                 // If result is zero it means we've read the last data from the stream.
                 if (result == 0) {
@@ -229,7 +231,7 @@ namespace MonoTorrent.Client.Connections
             // Finally, if we have had no datastream what we need to do is execute the next web request in our list,
             // and then begin reading data from that stream.
             while (WebRequests.Count > 0) {
-                var r = WebRequests.Dequeue ();
+                KeyValuePair<WebRequest, int> r = WebRequests.Dequeue ();
                 using var cts = new CancellationTokenSource (ConnectionTimeout);
                 using (cts.Token.Register (() => r.Key.Abort ())) {
                     DataStreamResponse = await r.Key.GetResponseAsync ();
@@ -245,7 +247,9 @@ namespace MonoTorrent.Client.Connections
         }
 
         async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-            => await SendAsync (buffer, offset, count);
+        {
+            return await SendAsync (buffer, offset, count);
+        }
 
         public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
         {
@@ -271,7 +275,7 @@ namespace MonoTorrent.Client.Connections
         {
             var messages = new List<RequestMessage> ();
             for (int i = offset; i < offset + count;) {
-                PeerMessage message = PeerMessage.DecodeMessage (buffer, i, count + offset - i, null);
+                var message = PeerMessage.DecodeMessage (buffer, i, count + offset - i, null);
                 if (message is RequestMessage msg)
                     messages.Add (msg);
                 i += message.ByteLength;
@@ -280,7 +284,7 @@ namespace MonoTorrent.Client.Connections
         }
 
 
-        private void CreateWebRequests (RequestMessage start, RequestMessage end)
+        void CreateWebRequests (RequestMessage start, RequestMessage end)
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
@@ -308,7 +312,7 @@ namespace MonoTorrent.Client.Connections
                 }
                 // We want data from the end of the current file and from the next few files
                 else if (endOffset >= file.Length) {
-                    HttpWebRequest request = (HttpWebRequest) WebRequest.Create (u);
+                    var request = (HttpWebRequest) WebRequest.Create (u);
                     request.AddRange (startOffset, file.Length - 1);
                     WebRequests.Enqueue (new KeyValuePair<WebRequest, int> (request, (int) (file.Length - startOffset)));
                     startOffset = 0;
@@ -316,7 +320,7 @@ namespace MonoTorrent.Client.Connections
                 }
                 // All the data we want is from within this file
                 else {
-                    HttpWebRequest request = (HttpWebRequest) WebRequest.Create (u);
+                    var request = (HttpWebRequest) WebRequest.Create (u);
                     request.AddRange (startOffset, endOffset - 1);
                     WebRequests.Enqueue (new KeyValuePair<WebRequest, int> (request, (int) (endOffset - startOffset)));
                     endOffset = 0;

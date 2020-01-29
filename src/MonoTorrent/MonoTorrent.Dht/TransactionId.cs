@@ -38,8 +38,8 @@ namespace MonoTorrent.Dht
 
         public static BEncodedString NextId ()
         {
-            var value = Interlocked.Increment (ref current);
-            var data = new[] { (byte) (value >> 8), (byte) value };
+            int value = Interlocked.Increment (ref current);
+            byte[] data = new[] { (byte) (value >> 8), (byte) value };
             return new BEncodedString (data);
         }
     }

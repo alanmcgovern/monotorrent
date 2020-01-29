@@ -36,9 +36,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString TargetKey = "target";
         static readonly BEncodedString QueryName = "find_node";
 
-        public NodeId Target {
-            get { return new NodeId ((BEncodedString) Parameters[TargetKey]); }
-        }
+        public NodeId Target => new NodeId ((BEncodedString) Parameters[TargetKey]);
 
         public FindNode (NodeId id, NodeId target)
             : base (id, QueryName)
@@ -52,13 +50,15 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
-            => new FindNodeResponse (parameters);
+        {
+            return new FindNodeResponse (parameters);
+        }
 
         public override void Handle (DhtEngine engine, Node node)
         {
             base.Handle (engine, node);
 
-            FindNodeResponse response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+            var response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
 
             Node targetNode = engine.RoutingTable.FindNode (Target);
             response.Nodes = targetNode != null

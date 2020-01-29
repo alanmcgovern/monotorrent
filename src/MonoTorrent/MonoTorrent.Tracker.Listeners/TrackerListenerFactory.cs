@@ -40,7 +40,9 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateHttp (int port)
-            => new HttpTrackerListener (IPAddress.Any, port);
+        {
+            return new HttpTrackerListener (IPAddress.Any, port);
+        }
 
         /// <summary>
         /// Creates a listener to receive incoming HTTP requests on the given local IP address and port.
@@ -50,7 +52,9 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateHttp (IPAddress address, int port)
-            => new HttpTrackerListener (address, port);
+        {
+            return new HttpTrackerListener (address, port);
+        }
 
         /// <summary>
         /// Creates a listener to receive incoming HTTP requests on the given local endpoint.
@@ -59,7 +63,9 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="endpoint">The local endpoint to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateHttp (IPEndPoint endpoint)
-            => new HttpTrackerListener (endpoint);
+        {
+            return new HttpTrackerListener (endpoint);
+        }
 
         /// <summary>
         /// Creates a listener to receive incoming HTTP requests on the given HTTP prefix. If
@@ -69,7 +75,9 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="httpPrefix">The HTTP prefix to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateHttp (string httpPrefix)
-            => new HttpTrackerListener (httpPrefix);
+        {
+            return new HttpTrackerListener (httpPrefix);
+        }
 
         /// <summary>
         /// Creates a listener which binds to IPAddress.Any and listens for incoming UDP requests on the given local port.
@@ -77,7 +85,9 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateUdp (int port)
-            => new UdpTrackerListener (port);
+        {
+            return new UdpTrackerListener (port);
+        }
 
         /// <summary>
         /// Creates a listener which listens for incoming UDP requests on the given local IP address and port.
@@ -86,7 +96,9 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateUdp (IPAddress address, int port)
-            => new UdpTrackerListener (new IPEndPoint (address, port));
+        {
+            return new UdpTrackerListener (new IPEndPoint (address, port));
+        }
 
         /// <summary>
         /// Creates a listener which listens for incoming UDP requests on the given local IP address and port.
@@ -94,6 +106,8 @@ namespace MonoTorrent.Tracker.Listeners
         /// <param name="endpoint">The local endpoint to bind to.</param>
         /// <returns></returns>
         public static ITrackerListener CreateUdp (IPEndPoint endpoint)
-            => new UdpTrackerListener (endpoint);
+        {
+            return new UdpTrackerListener (endpoint);
+        }
     }
 }

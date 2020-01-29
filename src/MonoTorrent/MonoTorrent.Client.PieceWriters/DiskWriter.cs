@@ -34,11 +34,9 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : IPieceWriter
     {
-        private readonly FileStreamBuffer streamsBuffer;
+        readonly FileStreamBuffer streamsBuffer;
 
-        public int OpenFiles {
-            get { return streamsBuffer.Count; }
-        }
+        public int OpenFiles => streamsBuffer.Count;
 
         public DiskWriter ()
             : this (10)
@@ -80,7 +78,7 @@ namespace MonoTorrent.Client.PieceWriters
             Check.Buffer (buffer);
 
             if (offset < 0 || offset + count > file.Length)
-                throw new ArgumentOutOfRangeException (nameof(offset));
+                throw new ArgumentOutOfRangeException (nameof (offset));
 
             Stream s = GetStream (file, FileAccess.Read);
             if (s.Length < offset + count)
@@ -97,7 +95,7 @@ namespace MonoTorrent.Client.PieceWriters
             Check.Buffer (buffer);
 
             if (offset < 0 || offset + count > file.Length)
-                throw new ArgumentOutOfRangeException (nameof(offset));
+                throw new ArgumentOutOfRangeException (nameof (offset));
 
             TorrentFileStream stream = GetStream (file, FileAccess.ReadWrite);
             stream.Seek (offset, SeekOrigin.Begin);

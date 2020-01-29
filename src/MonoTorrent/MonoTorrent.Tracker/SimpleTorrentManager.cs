@@ -204,7 +204,7 @@ namespace MonoTorrent.Tracker
             UpdateCounts ();
         }
 
-        private void UpdateCounts ()
+        void UpdateCounts ()
         {
             int tempComplete = 0;
             int tempIncomplete = 0;

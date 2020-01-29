@@ -35,8 +35,8 @@ namespace MonoTorrent.Dht.Tasks
 {
     class RefreshBucketTask
     {
-        private readonly Bucket bucket;
-        private readonly DhtEngine engine;
+        readonly Bucket bucket;
+        readonly DhtEngine engine;
 
         public RefreshBucketTask (DhtEngine engine, Bucket bucket)
         {
@@ -51,10 +51,10 @@ namespace MonoTorrent.Dht.Tasks
 
             bucket.SortBySeen ();
 
-            foreach (var node in bucket.Nodes.ToArray ()) {
+            foreach (Node node in bucket.Nodes.ToArray ()) {
                 var message = new FindNode (engine.LocalId, node.Id);
 
-                var args = await engine.SendQueryAsync (message, node);
+                SendQueryEventArgs args = await engine.SendQueryAsync (message, node);
                 if (!args.TimedOut)
                     return;
             }

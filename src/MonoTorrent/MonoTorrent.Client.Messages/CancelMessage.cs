@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     class CancelMessage : PeerMessage
     {
-        private const int messageLength = 13;
+        const int messageLength = 13;
         internal static readonly byte MessageId = 8;
 
 
@@ -76,9 +76,9 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="requestLength">The length in bytes of the block of data to cancel</param>
         public CancelMessage (int pieceIndex, int startOffset, int requestLength)
         {
-            this.PieceIndex = pieceIndex;
-            this.StartOffset = startOffset;
-            this.RequestLength = requestLength;
+            PieceIndex = pieceIndex;
+            StartOffset = startOffset;
+            RequestLength = requestLength;
         }
         #endregion
 
@@ -107,9 +107,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
         #endregion
 
 
@@ -120,14 +118,14 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <returns></returns>
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("CancelMessage ");
             sb.Append (" Index ");
-            sb.Append (this.PieceIndex);
+            sb.Append (PieceIndex);
             sb.Append (" Offset ");
-            sb.Append (this.StartOffset);
+            sb.Append (StartOffset);
             sb.Append (" Length ");
-            sb.Append (this.RequestLength);
+            sb.Append (RequestLength);
             return sb.ToString ();
         }
 
@@ -136,16 +134,16 @@ namespace MonoTorrent.Client.Messages.Standard
             if (!(obj is CancelMessage msg))
                 return false;
 
-            return (this.PieceIndex == msg.PieceIndex
-                    && this.StartOffset == msg.StartOffset
-                    && this.RequestLength == msg.RequestLength);
+            return (PieceIndex == msg.PieceIndex
+                    && StartOffset == msg.StartOffset
+                    && RequestLength == msg.RequestLength);
         }
 
         public override int GetHashCode ()
         {
-            return (this.PieceIndex.GetHashCode ()
-                ^ this.RequestLength.GetHashCode ()
-                ^ this.StartOffset.GetHashCode ());
+            return (PieceIndex.GetHashCode ()
+                ^ RequestLength.GetHashCode ()
+                ^ StartOffset.GetHashCode ());
         }
         #endregion
     }

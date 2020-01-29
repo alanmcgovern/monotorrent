@@ -63,7 +63,7 @@ namespace MonoTorrent
             LoadFiles ();
         }
 
-        private void LoadFiles ()
+        void LoadFiles ()
         {
             char sep = System.IO.Path.DirectorySeparatorChar;
             string fullPath = System.IO.Path.GetFullPath (Path);
@@ -78,13 +78,13 @@ namespace MonoTorrent
 
             // Process all directories and subdirectories of this folder
             // and add all the files to the 'files' list.
-            List<string> files = new List<string> ();
-            Queue<string> directories = new Queue<string> ();
+            var files = new List<string> ();
+            var directories = new Queue<string> ();
             directories.Enqueue (fullPath);
             while (directories.Count > 0) {
                 string current = directories.Dequeue ();
                 if (IgnoreHidden) {
-                    DirectoryInfo info = new DirectoryInfo (current);
+                    var info = new DirectoryInfo (current);
                     if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
                         continue;
                 }

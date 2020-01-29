@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class HaveMessage : PeerMessage
     {
         internal static readonly byte MessageId = 4;
-        private const int messageLength = 5;
+        const int messageLength = 5;
 
 
         #region Member Variables
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="pieceIndex">The index of the piece that you "have"</param>
         public HaveMessage (int pieceIndex)
         {
-            this.PieceIndex = pieceIndex;
+            PieceIndex = pieceIndex;
         }
         #endregion
 
@@ -81,15 +81,13 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.PieceIndex = ReadInt (buffer, offset);
+            PieceIndex = ReadInt (buffer, offset);
         }
 
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
         #endregion
 
 
@@ -100,10 +98,10 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <returns></returns>
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("HaveMessage ");
             sb.Append (" Index ");
-            sb.Append (this.PieceIndex);
+            sb.Append (PieceIndex);
             return sb.ToString ();
         }
 
@@ -112,12 +110,12 @@ namespace MonoTorrent.Client.Messages.Standard
             if (!(obj is HaveMessage msg))
                 return false;
 
-            return (this.PieceIndex == msg.PieceIndex);
+            return (PieceIndex == msg.PieceIndex);
         }
 
         public override int GetHashCode ()
         {
-            return this.PieceIndex.GetHashCode ();
+            return PieceIndex.GetHashCode ();
         }
         #endregion
     }

@@ -50,7 +50,9 @@ namespace MonoTorrent.Client.PiecePicking
             }
 
             public int CompareTo (Files other)
-                => (int) other.Priority - (int) Priority;
+            {
+                return (int) other.Priority - (int) Priority;
+            }
 
             public bool TryRefreshPriority ()
             {
@@ -129,7 +131,7 @@ namespace MonoTorrent.Client.PiecePicking
             for (int i = 0; i < prioritised.Count; i++) {
                 temp.From (prioritised[i]).And (available);
                 if (!temp.AllFalse) {
-                    var result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
+                    IList<PieceRequest> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
                     if (result != null)
                         return result;
                 }

@@ -36,9 +36,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     class LTMetadata : ExtensionMessage
     {
         public static readonly ExtensionSupport Support = CreateSupport ("ut_metadata");
-        private static readonly BEncodedString MessageTypeKey = "msg_type";
-        private static readonly BEncodedString PieceKey = "piece";
-        private static readonly BEncodedString TotalSizeKey = "total_size";
+        static readonly BEncodedString MessageTypeKey = "msg_type";
+        static readonly BEncodedString PieceKey = "piece";
+        static readonly BEncodedString TotalSizeKey = "total_size";
         internal static readonly int BlockSize = 16384;//16Kb
 
         internal enum eMessageType
@@ -82,13 +82,14 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             : this ()
         {
             ExtensionId = extensionId;
-            this.MetadataMessageType = type;
-            this.MetadataPiece = metadata;
-            this.Piece = piece;
+            MetadataMessageType = type;
+            MetadataPiece = metadata;
+            Piece = piece;
 
-            dict = new BEncodedDictionary ();
-            dict.Add (MessageTypeKey, (BEncodedNumber) (int) MetadataMessageType);
-            dict.Add (PieceKey, (BEncodedNumber) piece);
+            dict = new BEncodedDictionary {
+                { MessageTypeKey, (BEncodedNumber) (int) MetadataMessageType },
+                { PieceKey, (BEncodedNumber) piece }
+            };
 
             if (MetadataMessageType == eMessageType.Data) {
                 Check.Metadata (metadata);
@@ -108,7 +109,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            using RawReader reader = new RawReader (new MemoryStream (buffer, offset, length, false), false);
+            using var reader = new RawReader (new MemoryStream (buffer, offset, length, false), false);
             BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (reader);
             int totalSize = 0;
 

@@ -118,7 +118,7 @@ namespace MonoTorrent.Client.Modes
             // a zero length file and someone deletes it after the first piece has been written to disk, it will
             // never be recreated. If the downloaded data requires this file to exist, we have an issue.
             if (Manager.HasMetadata) {
-                foreach (var file in Manager.Torrent.Files)
+                foreach (TorrentFile file in Manager.Torrent.Files)
                     if (!file.BitField.AllFalse && Manager.HashChecked && file.Length > 0)
                         Manager.HashChecked &= await DiskManager.CheckFileExistsAsync (file);
             }

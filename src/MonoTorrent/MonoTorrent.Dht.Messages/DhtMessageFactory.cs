@@ -44,9 +44,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
 
 
-        public static int RegisteredMessages {
-            get { return messages.Count; }
-        }
+        public static int RegisteredMessages => messages.Count;
 
         static DhtMessageFactory ()
         {
@@ -101,7 +99,7 @@ namespace MonoTorrent.Dht.Messages
                 message = new ErrorMessage (dictionary);
                 messages.Remove (message.TransactionId);
             } else {
-                BEncodedString key = (BEncodedString) dictionary[TransactionIdKey];
+                var key = (BEncodedString) dictionary[TransactionIdKey];
                 if (messages.TryGetValue (key, out QueryMessage query)) {
                     messages.Remove (key);
                     try {

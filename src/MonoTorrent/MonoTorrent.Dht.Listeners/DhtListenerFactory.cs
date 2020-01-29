@@ -39,7 +39,9 @@ namespace MonoTorrent.Dht.Listeners
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
         public static IDhtListener CreateUdp (int port)
-            => CreateUdp (IPAddress.Any, port);
+        {
+            return CreateUdp (IPAddress.Any, port);
+        }
 
         /// <summary>
         /// Creates a listener which listens for incoming UDP requests on the given local IP address and port.
@@ -48,7 +50,9 @@ namespace MonoTorrent.Dht.Listeners
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
         public static IDhtListener CreateUdp (IPAddress address, int port)
-            => CreateUdp (new IPEndPoint (address, port));
+        {
+            return CreateUdp (new IPEndPoint (address, port));
+        }
 
         /// <summary>
         /// Creates a listener which listens for incoming UDP requests on the given local IP address and port.
@@ -56,6 +60,8 @@ namespace MonoTorrent.Dht.Listeners
         /// <param name="endpoint">The local endpoint to bind to.</param>
         /// <returns></returns>
         public static IDhtListener CreateUdp (IPEndPoint endpoint)
-            => new DhtListener (endpoint);
+        {
+            return new DhtListener (endpoint);
+        }
     }
 }

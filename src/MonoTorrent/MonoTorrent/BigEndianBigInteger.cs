@@ -47,9 +47,9 @@ namespace MonoTorrent
         static BigEndianBigInteger ()
         {
             Type readonlySpanByte = null;
-            var ctor = typeof (BigInteger).GetConstructors ()
+            System.Reflection.ConstructorInfo ctor = typeof (BigInteger).GetConstructors ()
                 .FirstOrDefault (c => {
-                    var parameters = c.GetParameters ();
+                    System.Reflection.ParameterInfo[] parameters = c.GetParameters ();
                     if (parameters.Length != 3)
                         return false;
                     if (!parameters[0].ParameterType.Name.Contains ("ReadOnlySpan"))
@@ -68,7 +68,7 @@ namespace MonoTorrent
             if (ctor == null) {
                 OptimisedCtor = FallbackConstructor;
             } else {
-                var arrayParam = Expression.Parameter (typeof (byte[]));
+                ParameterExpression arrayParam = Expression.Parameter (typeof (byte[]));
 
                 OptimisedCtor = Expression.Lambda<Func<byte[], BigInteger>> (
                     Expression.New (ctor, Expression.New (readonlySpanByte.GetConstructor (new[] { typeof (byte[]) }), arrayParam), Expression.Constant (true), Expression.Constant (true)),
@@ -76,11 +76,11 @@ namespace MonoTorrent
                 ).Compile ();
             }
 
-            var method = typeof (BigInteger).GetMethod ("ToByteArray", new[] { typeof (bool), typeof (bool) });
+            System.Reflection.MethodInfo method = typeof (BigInteger).GetMethod ("ToByteArray", new[] { typeof (bool), typeof (bool) });
             if (method == null) {
                 OptimisedToByteArray = FallbackToBigEndianByteArray;
             } else {
-                var param = Expression.Parameter (typeof (BigInteger));
+                ParameterExpression param = Expression.Parameter (typeof (BigInteger));
                 OptimisedToByteArray = Expression.Lambda<Func<BigInteger, byte[]>> (
                     Expression.Call (param, method, Expression.Constant (true), Expression.Constant (true)),
                     param
@@ -90,7 +90,7 @@ namespace MonoTorrent
 
         internal static BigInteger FallbackConstructor (byte[] value)
         {
-            var littleEndianArray = new byte[value.Length + 1];
+            byte[] littleEndianArray = new byte[value.Length + 1];
 
             // Swap endian-ness and append a trailing '0' to ensure the value is treated as
             // a positive integer
@@ -101,16 +101,18 @@ namespace MonoTorrent
         }
 
         internal static byte[] FallbackToBigEndianByteArray (BigEndianBigInteger value)
-            => FallbackToBigEndianByteArray (value.Value);
+        {
+            return FallbackToBigEndianByteArray (value.Value);
+        }
 
         internal static byte[] FallbackToBigEndianByteArray (BigInteger value)
         {
-            var littleEndianArray = value.ToByteArray ();
+            byte[] littleEndianArray = value.ToByteArray ();
             int count = littleEndianArray.Length;
             while (count > 0 && littleEndianArray[count - 1] == 0)
                 count--;
 
-            var result = new byte[count];
+            byte[] result = new byte[count];
             for (int i = 0; i < count; i++)
                 result[i] = littleEndianArray[count - i - 1];
             return result;
@@ -118,7 +120,9 @@ namespace MonoTorrent
 #endif
 
         public static BigEndianBigInteger Parse (string value)
-            => new BigEndianBigInteger (BigInteger.Parse (value));
+        {
+            return new BigEndianBigInteger (BigInteger.Parse (value));
+        }
 
         BigInteger Value { get; }
 
@@ -142,73 +146,114 @@ namespace MonoTorrent
         }
 
         public static BigEndianBigInteger operator + (BigEndianBigInteger left, BigEndianBigInteger right)
-            => new BigEndianBigInteger (left.Value + right.Value);
+        {
+            return new BigEndianBigInteger (left.Value + right.Value);
+        }
 
         public static BigEndianBigInteger operator - (BigEndianBigInteger left, BigEndianBigInteger right)
-            => new BigEndianBigInteger (left.Value - right.Value);
+        {
+            return new BigEndianBigInteger (left.Value - right.Value);
+        }
 
         public static BigEndianBigInteger operator / (BigEndianBigInteger left, int value)
-            => new BigEndianBigInteger (left.Value / value);
+        {
+            return new BigEndianBigInteger (left.Value / value);
+        }
 
         public static BigEndianBigInteger operator * (BigEndianBigInteger left, int value)
-             => new BigEndianBigInteger (left.Value * value);
+        {
+            return new BigEndianBigInteger (left.Value * value);
+        }
 
         public static BigEndianBigInteger operator << (BigEndianBigInteger value, int shift)
-            => new BigEndianBigInteger (value.Value << shift);
+        {
+            return new BigEndianBigInteger (value.Value << shift);
+        }
 
         public static BigEndianBigInteger operator >> (BigEndianBigInteger value, int shift)
-            => new BigEndianBigInteger (value.Value >> shift);
+        {
+            return new BigEndianBigInteger (value.Value >> shift);
+        }
 
         public static bool operator > (BigEndianBigInteger left, BigEndianBigInteger right)
-            => left.Value > right.Value;
+        {
+            return left.Value > right.Value;
+        }
 
         public static bool operator > (BigEndianBigInteger left, long right)
-            => left.Value > right;
+        {
+            return left.Value > right;
+        }
 
         public static bool operator >= (BigEndianBigInteger left, BigEndianBigInteger right)
-            => left.Value >= right.Value;
+        {
+            return left.Value >= right.Value;
+        }
 
         public static bool operator >= (BigEndianBigInteger left, long right)
-            => left.Value >= right;
+        {
+            return left.Value >= right;
+        }
 
         public static bool operator < (BigEndianBigInteger left, BigEndianBigInteger right)
-            => left.Value < right.Value;
+        {
+            return left.Value < right.Value;
+        }
 
         public static bool operator < (BigEndianBigInteger left, long value)
-            => left.Value < value;
+        {
+            return left.Value < value;
+        }
 
         public static bool operator <= (BigEndianBigInteger left, BigEndianBigInteger right)
-            => left.Value <= right.Value;
+        {
+            return left.Value <= right.Value;
+        }
 
         public static bool operator <= (BigEndianBigInteger left, long value)
-            => left.Value <= value;
+        {
+            return left.Value <= value;
+        }
 
         public static bool operator == (BigEndianBigInteger left, BigEndianBigInteger right)
-            => left.Value == right.Value;
+        {
+            return left.Value == right.Value;
+        }
 
         public static bool operator != (BigEndianBigInteger left, BigEndianBigInteger right)
-            => left.Value != right.Value;
+        {
+            return left.Value != right.Value;
+        }
 
         public int CompareTo (BigEndianBigInteger other)
-            => Value.CompareTo (other.Value);
+        {
+            return Value.CompareTo (other.Value);
+        }
 
         public override bool Equals (object obj)
-            => obj is BigEndianBigInteger val && Equals (val);
+        {
+            return obj is BigEndianBigInteger val && Equals (val);
+        }
 
         public bool Equals (BigEndianBigInteger other)
-            => other.Value == Value;
+        {
+            return other.Value == Value;
+        }
 
         public override int GetHashCode ()
-            => Value.GetHashCode ();
+        {
+            return Value.GetHashCode ();
+        }
 
         public BigEndianBigInteger ModPow (BigEndianBigInteger exponent, BigEndianBigInteger modulus)
-            => new BigEndianBigInteger (BigInteger.ModPow (Value, exponent.Value, modulus.Value));
+        {
+            return new BigEndianBigInteger (BigInteger.ModPow (Value, exponent.Value, modulus.Value));
+        }
 
         public byte[] ToByteArray ()
-#if NETSTANDARD2_1
-            => Value.ToByteArray (true, true);
-#else
-            => OptimisedToByteArray (Value);
+        {
+            return OptimisedToByteArray (Value);
+        }
 #endif
     }
 }

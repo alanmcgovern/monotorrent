@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         protected PiecePicker (PiecePicker picker)
         {
-            this.BasePicker = picker;
+            BasePicker = picker;
         }
 
         void CheckOverriden ()
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client.PiecePicking
         }
         public PieceRequest PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
         {
-            var bundle = PickPiece (peer, available, otherPeers, 1);
+            IList<PieceRequest> bundle = PickPiece (peer, available, otherPeers, 1);
             return bundle?.Single ();
         }
         public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)

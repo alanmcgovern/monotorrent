@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Messages
 
         public IEnumerable<RequestMessage> ToRequestMessages ()
         {
-            foreach (var req in Requests)
+            foreach (PieceRequest req in Requests)
                 yield return new RequestMessage (req.PieceIndex, req.StartOffset, req.RequestLength);
         }
     }

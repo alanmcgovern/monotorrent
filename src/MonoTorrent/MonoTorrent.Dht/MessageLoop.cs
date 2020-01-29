@@ -152,18 +152,24 @@ namespace MonoTorrent.Dht
         }
 
         void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query)
-            => QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query));
+        {
+            QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query));
+        }
 
         void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
-            => QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, response));
+        {
+            QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, response));
+        }
 
         void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
-            => QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, error));
+        {
+            QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, error));
+        }
 
-        private async Task SendMessages ()
+        async Task SendMessages ()
         {
             for (int i = 0; i < 5 && SendQueue.Count > 0; i++) {
-                var details = SendQueue.Dequeue ();
+                SendDetails details = SendQueue.Dequeue ();
 
                 details.SentAt = ValueStopwatch.StartNew ();
                 if (details.Message is QueryMessage)
@@ -186,14 +192,14 @@ namespace MonoTorrent.Dht
                 Listener.Stop ();
         }
 
-        private void TimeoutMessage ()
+        void TimeoutMessage ()
         {
-            foreach (var v in WaitingResponse) {
+            foreach (KeyValuePair<BEncodedValue, SendDetails> v in WaitingResponse) {
                 if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
                     WaitingResponseTimedOut.Add (v.Value);
             }
 
-            foreach (var v in WaitingResponseTimedOut) {
+            foreach (SendDetails v in WaitingResponseTimedOut) {
                 DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
                 WaitingResponse.Remove (v.Message.TransactionId);
 
@@ -204,12 +210,12 @@ namespace MonoTorrent.Dht
             WaitingResponseTimedOut.Clear ();
         }
 
-        private void ReceiveMessage ()
+        void ReceiveMessage ()
         {
             KeyValuePair<IPEndPoint, DhtMessage> receive = ReceiveQueue.Dequeue ();
             DhtMessage message = receive.Value;
             IPEndPoint source = receive.Key;
-            SendDetails query = default (SendDetails);
+            var query = default (SendDetails);
 
             try {
                 Node node = Engine.RoutingTable.FindNode (message.Id);

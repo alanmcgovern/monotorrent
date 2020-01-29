@@ -44,9 +44,7 @@ namespace MonoTorrent
         readonly bool autoCreate;
         readonly Queue<T> cache;
 
-        public int Count {
-            get { return cache.Count; }
-        }
+        public int Count => cache.Count;
 
         public Cache ()
             : this (false)
@@ -57,7 +55,7 @@ namespace MonoTorrent
         public Cache (bool autoCreate)
         {
             this.autoCreate = autoCreate;
-            this.cache = new Queue<T> ();
+            cache = new Queue<T> ();
         }
 
         public T Dequeue ()

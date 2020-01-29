@@ -183,7 +183,9 @@ namespace MonoTorrent.Client
         }
 
         void IDisposable.Dispose ()
-            => Dispose ();
+        {
+            Dispose ();
+        }
 
         internal void Dispose ()
         {
@@ -231,7 +233,7 @@ namespace MonoTorrent.Client
                 if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
                  || incrementalHash.NextOffsetToHash == manager.Size) {
                     incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                    var result = incrementalHash.Hasher.Hash;
+                    byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
                     IncrementalHashes.Remove (pieceIndex);
                     return result;
@@ -256,7 +258,7 @@ namespace MonoTorrent.Client
 
             byte[] hashBuffer = ClientEngine.BufferPool.Rent (Piece.BlockSize);
             try {
-                var hasher = incrementalHash.Hasher;
+                SHA1 hasher = incrementalHash.Hasher;
 
                 while (startOffset != endOffset) {
                     int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
@@ -267,7 +269,7 @@ namespace MonoTorrent.Client
                 }
 
                 hasher.TransformFinalBlock (hashBuffer, 0, 0);
-                var result = hasher.Hash;
+                byte[] result = hasher.Hash;
                 return result;
             } finally {
                 IncrementalHashCache.Enqueue (incrementalHash);
@@ -289,7 +291,7 @@ namespace MonoTorrent.Client
 
             // Process all pending reads/writes then close any open streams
             ProcessBufferedIO (true);
-            foreach (var file in manager.Files)
+            foreach (TorrentFile file in manager.Files)
                 Writer.Close (file);
         }
 
@@ -300,7 +302,9 @@ namespace MonoTorrent.Client
         /// <param name="manager">The torrent containing the files to flush</param>
         /// <returns></returns>
         public Task FlushAsync (ITorrentData manager)
-            => FlushAsync (manager, -1);
+        {
+            return FlushAsync (manager, -1);
+        }
 
         /// <summary>
         /// Iterates over every file in this torrent which is contains data from the specified piece and
@@ -317,7 +321,7 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             await WaitForPendingWrites ();
-            foreach (var file in manager.Files) {
+            foreach (TorrentFile file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
                     Writer.Flush (file);
             }
@@ -438,7 +442,7 @@ namespace MonoTorrent.Client
 
                 try {
                     Interlocked.Add (ref pendingReads, -io.count);
-                    var result = Read (io.manager, io.offset, io.buffer, io.count);
+                    bool result = Read (io.manager, io.offset, io.buffer, io.count);
                     io.tcs.SetResult (result);
                 } catch (Exception ex) {
                     io.tcs.SetException (ex);
@@ -455,7 +459,7 @@ namespace MonoTorrent.Client
 
             int i;
             int totalRead = 0;
-            var files = manager.Files;
+            TorrentFile[] files = manager.Files;
 
             for (i = 0; i < files.Length; i++) {
                 if (offset < files[i].Length)
@@ -490,7 +494,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Tick ()
         {
-            var delta = (int) UpdateTimer.ElapsedMilliseconds;
+            int delta = (int) UpdateTimer.ElapsedMilliseconds;
             if (delta > 800)
                 Tick (delta, false);
         }
@@ -518,7 +522,7 @@ namespace MonoTorrent.Client
             WriteLimiter.UpdateChunks (Settings.MaximumDiskWriteRate, WriteRate);
             ReadLimiter.UpdateChunks (Settings.MaximumDiskReadRate, ReadRate);
 
-            var processTask = ProcessBufferedIOAsync ();
+            ReusableTask processTask = ProcessBufferedIOAsync ();
             return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
         }
 
@@ -531,7 +535,7 @@ namespace MonoTorrent.Client
 
             int i;
             int totalWritten = 0;
-            var files = manager.Files;
+            TorrentFile[] files = manager.Files;
 
             for (i = 0; i < files.Length; i++) {
                 if (offset < files[i].Length)

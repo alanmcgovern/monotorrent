@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.Encryption
 
         public static byte[] Calculate (BigEndianBigInteger a, BigEndianBigInteger b)
         {
-            var bytes = a.ModPow (b, Prime).ToByteArray ();
+            byte[] bytes = a.ModPow (b, Prime).ToByteArray ();
             if (bytes.Length < 96) {
                 byte[] oldBytes = bytes;
                 bytes = new byte[96];

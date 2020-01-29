@@ -48,13 +48,9 @@ namespace MonoTorrent.Dht
         }
 #pragma warning restore 0067
 
-        public bool Disposed {
-            get { return false; }
-        }
+        public bool Disposed => false;
 
-        public DhtState State {
-            get { return DhtState.NotReady; }
-        }
+        public DhtState State => DhtState.NotReady;
 
         public void Add (BEncodedList nodes)
         {

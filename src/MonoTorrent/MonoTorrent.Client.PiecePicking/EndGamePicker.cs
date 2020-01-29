@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.PiecePicking
             foreach (Piece piece in pieces) {
                 for (int i = 0; i < piece.BlockCount; i++)
                     if (piece.Blocks[i].RequestedOff != null && !piece.Blocks[i].Received)
-                        this.Requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
+                        Requests.Add (new Request (piece.Blocks[i].RequestedOff, piece.Blocks[i]));
             }
         }
 
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.PiecePicking
                 for (int i = 0; i < p.BlockCount; i++) {
                     if (p.Blocks[i].Requested)
                         continue;
-                    var requestMessage = p.Blocks[i].CreateRequest (peer);
+                    PieceRequest requestMessage = p.Blocks[i].CreateRequest (peer);
                     Requests.Add (new Request (peer, p.Blocks[i]));
                     return new[] { requestMessage };
                 }
@@ -165,7 +165,7 @@ namespace MonoTorrent.Client.PiecePicking
                             j--;
                         }
                     }
-                    var requestMessage = p.Blocks[i].CreateRequest (peer);
+                    PieceRequest requestMessage = p.Blocks[i].CreateRequest (peer);
                     Requests.Add (new Request (peer, p.Blocks[i]));
                     return new[] { requestMessage };
                 }
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.PiecePicking
                     pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
         }
 
-        private bool AlreadyRequested (Block block, IPieceRequester peer)
+        bool AlreadyRequested (Block block, IPieceRequester peer)
         {
             bool b = Requests.Exists (r => r.Block.PieceIndex == block.PieceIndex &&
                                            r.Block.StartOffset == block.StartOffset &&
@@ -211,7 +211,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            var r = Requests.SingleOrDefault (t => t.Block.PieceIndex == pieceIndex && t.Block.StartOffset == startOffset && t.Block.RequestLength == length && t.Peer == peer);
+            Request r = Requests.SingleOrDefault (t => t.Block.PieceIndex == pieceIndex && t.Block.StartOffset == startOffset && t.Block.RequestLength == length && t.Peer == peer);
             if (r == null) {
                 piece = null;
                 return false;

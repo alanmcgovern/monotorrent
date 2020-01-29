@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
         public PeerAddedEventArgs (TorrentManager manager, Peer peerAdded)
             : base (manager)
         {
-            this.Peer = peerAdded;
+            Peer = peerAdded;
         }
         #endregion
     }

@@ -45,9 +45,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             ConnectionId = connectionId;
         }
 
-        public override int ByteLength {
-            get { return 8 + 4 + 4; }
-        }
+        public override int ByteLength => 8 + 4 + 4;
 
         public override void Decode (byte[] buffer, int offset, int length)
         {

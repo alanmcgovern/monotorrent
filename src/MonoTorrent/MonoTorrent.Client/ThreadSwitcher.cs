@@ -39,7 +39,10 @@ namespace MonoTorrent.Client
         static readonly WaitCallback Callback = (state) => ((Action) state).Invoke ();
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public ThreadSwitcher GetAwaiter () => this;
+        public ThreadSwitcher GetAwaiter ()
+        {
+            return this;
+        }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
         public bool IsCompleted => false;

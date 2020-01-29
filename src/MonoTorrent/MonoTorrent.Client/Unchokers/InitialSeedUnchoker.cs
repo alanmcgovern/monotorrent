@@ -43,9 +43,7 @@ namespace MonoTorrent.Client
         public DateTime LastUnchoked;
         public int TotalPieces;
 
-        public double ShareRatio {
-            get { return (SharedPieces + 1.0) / (TotalPieces + 1.0); }
-        }
+        public double ShareRatio => (SharedPieces + 1.0) / (TotalPieces + 1.0);
 
         public ChokeData (PeerId peer)
         {
@@ -79,29 +77,21 @@ namespace MonoTorrent.Client
         readonly List<ChokeData> peers;
         readonly BitField temp;
 
-        bool PendingUnchoke {
-            get { return peers.Exists (d => d.Peer.AmChoking && d.Peer.IsInterested); }
-        }
+        bool PendingUnchoke => peers.Exists (d => d.Peer.AmChoking && d.Peer.IsInterested);
 
-        public bool Complete {
-            get { return bitfield.AllTrue; }
-        }
+        public bool Complete => bitfield.AllTrue;
 
-        public int MaxAdvertised {
-            get { return 4; }
-        }
+        public int MaxAdvertised => 4;
 
-        internal int PeerCount {
-            get { return peers.Count; }
-        }
+        internal int PeerCount => peers.Count;
 
         public InitialSeedUnchoker (TorrentManager manager)
             : base (manager)
         {
-            this.advertisedPieces = new List<SeededPiece> ();
-            this.bitfield = new BitField (manager.Bitfield.Length);
-            this.peers = new List<ChokeData> ();
-            this.temp = new BitField (bitfield.Length);
+            advertisedPieces = new List<SeededPiece> ();
+            bitfield = new BitField (manager.Bitfield.Length);
+            peers = new List<ChokeData> ();
+            temp = new BitField (bitfield.Length);
         }
 
         public override void Choke (PeerId id)
@@ -259,7 +249,7 @@ namespace MonoTorrent.Client
         public override void UnchokeReview ()
         {
             if (PendingUnchoke) {
-                List<ChokeData> dupePeers = new List<ChokeData> (peers);
+                var dupePeers = new List<ChokeData> (peers);
                 foreach (ChokeData data in dupePeers)
                     TryChoke (data);
 

@@ -42,9 +42,7 @@ namespace MonoTorrent.Client
 
     class RangeCollection
     {
-        public int Count {
-            get { return Ranges.Count; }
-        }
+        public int Count => Ranges.Count;
 
         internal List<AddressRange> Ranges { get; } = new List<AddressRange> ();
 
@@ -79,7 +77,7 @@ namespace MonoTorrent.Client
 
         public void AddRange (IEnumerable<AddressRange> ranges)
         {
-            List<AddressRange> list = new List<AddressRange> (ranges);
+            var list = new List<AddressRange> (ranges);
             list.Sort ((x, y) => x.Start.CompareTo (y.Start));
 
             foreach (AddressRange r in list)
@@ -149,7 +147,7 @@ namespace MonoTorrent.Client
                 return;
 
             for (int i = item.Start; i <= item.End; i++) {
-                AddressRange addressRange = new AddressRange (i, i);
+                var addressRange = new AddressRange (i, i);
                 int index = Ranges.BinarySearch (addressRange, new RangeComparer ());
                 if (index < 0) {
                     index = Math.Max ((~index) - 1, 0);

@@ -135,7 +135,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (24);
+            var sb = new StringBuilder (24);
             sb.Append ("Reject Request");
             sb.Append (" Index: ");
             sb.Append (PieceIndex);

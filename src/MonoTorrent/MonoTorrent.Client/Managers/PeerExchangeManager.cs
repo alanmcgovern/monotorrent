@@ -41,11 +41,11 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private readonly PeerId id;
-        private readonly List<Peer> addedPeers;
-        private readonly List<Peer> droppedPeers;
-        private bool disposed;
-        private const int MAX_PEERS = 50;
+        readonly PeerId id;
+        readonly List<Peer> addedPeers;
+        readonly List<Peer> droppedPeers;
+        bool disposed;
+        const int MAX_PEERS = 50;
 
         TorrentManager Manager { get; }
 
@@ -58,8 +58,8 @@ namespace MonoTorrent.Client
             Manager = manager;
             this.id = id;
 
-            this.addedPeers = new List<Peer> ();
-            this.droppedPeers = new List<Peer> ();
+            addedPeers = new List<Peer> ();
+            droppedPeers = new List<Peer> ();
             manager.OnPeerFound += OnAdd;
         }
 

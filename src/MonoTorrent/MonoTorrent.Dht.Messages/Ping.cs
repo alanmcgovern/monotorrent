@@ -48,13 +48,15 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
-            => new PingResponse (parameters);
+        {
+            return new PingResponse (parameters);
+        }
 
         public override void Handle (DhtEngine engine, Node node)
         {
             base.Handle (engine, node);
 
-            PingResponse m = new PingResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+            var m = new PingResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
             engine.MessageLoop.EnqueueSend (m, node, node.EndPoint);
         }
     }

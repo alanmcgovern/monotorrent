@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             Leechers = ReadInt (buffer, offset + 12);
             Seeders = ReadInt (buffer, offset + 16);
 
-            var peers = Peer.FromCompact (buffer, 20);
+            IList<Peer> peers = Peer.FromCompact (buffer, 20);
             Peers.AddRange (peers);
         }
 

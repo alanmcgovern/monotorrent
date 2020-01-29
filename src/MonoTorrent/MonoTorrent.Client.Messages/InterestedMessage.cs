@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class InterestedMessage : PeerMessage
     {
         internal static readonly byte MessageId = 2;
-        private const int messageLength = 1;
+        const int messageLength = 1;
 
 
         #region Constructors
@@ -67,9 +67,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
         #endregion
 
 
@@ -90,7 +88,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int GetHashCode ()
         {
-            return this.ToString ().GetHashCode ();
+            return ToString ().GetHashCode ();
         }
         #endregion
     }

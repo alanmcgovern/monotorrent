@@ -41,11 +41,11 @@ namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {
-        private BitField bitField;
+        BitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
-        private PeerId currentId;
+        PeerId currentId;
         string savePath;
-        private DateTime requestTimeout;
+        DateTime requestTimeout;
 
         bool HasAnnounced { get; set; }
         internal MemoryStream Stream { get; set; }
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        private void SendRequestToNextPeer ()
+        void SendRequestToNextPeer ()
         {
             NextPeer ();
 
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        private void NextPeer ()
+        void NextPeer ()
         {
             bool flag = false;
 
@@ -143,8 +143,9 @@ namespace MonoTorrent.Client.Modes
                             bitField.SetAll (false);
                         } else {
                             Stream.Position = 0;
-                            BEncodedDictionary dict = new BEncodedDictionary ();
-                            dict.Add ("info", BEncodedValue.Decode (Stream));
+                            var dict = new BEncodedDictionary {
+                                { "info", BEncodedValue.Decode (Stream) }
+                            };
                             // FIXME: Add the trackers too
                             if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
                                 try {
@@ -184,7 +185,7 @@ namespace MonoTorrent.Client.Modes
 
         }
 
-        private void SwitchToRegular ()
+        void SwitchToRegular ()
         {
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
@@ -229,13 +230,13 @@ namespace MonoTorrent.Client.Modes
             // Nothing
         }
 
-        private void RequestNextNeededPiece (PeerId id)
+        void RequestNextNeededPiece (PeerId id)
         {
             int index = bitField.FirstFalse ();
             if (index == -1)
                 return;//throw exception or switch to regular?
 
-            LTMetadata m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
+            var m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
             id.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
         }
@@ -248,9 +249,10 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception ("invalid metadata");//restart ?
 
-            BEncodedValue d = BEncodedValue.Decode (Stream);
-            BEncodedDictionary dict = new BEncodedDictionary ();
-            dict.Add ("info", d);
+            var d = BEncodedValue.Decode (Stream);
+            var dict = new BEncodedDictionary {
+                { "info", d }
+            };
 
             return Torrent.LoadCore (dict);
         }

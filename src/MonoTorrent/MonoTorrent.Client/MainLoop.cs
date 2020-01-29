@@ -51,7 +51,10 @@ namespace MonoTorrent.Client
 
         class CacheableManualResetEventSlim : ManualResetEventSlim, ICacheable
         {
-            public void Initialise () => Reset ();
+            public void Initialise ()
+            {
+                Reset ();
+            }
         }
 
         readonly Queue<QueuedTask> actions = new Queue<QueuedTask> ();
@@ -130,7 +133,7 @@ namespace MonoTorrent.Client
 
         void Queue (QueuedTask task)
         {
-            var shouldSet = false;
+            bool shouldSet = false;
             lock (actions) {
                 actions.Enqueue (task);
                 if (actions.Count == 1)
@@ -153,7 +156,7 @@ namespace MonoTorrent.Client
             if (thread == Thread.CurrentThread) {
                 d (state);
             } else {
-                var waiter = cache.Dequeue ();
+                CacheableManualResetEventSlim waiter = cache.Dequeue ();
                 Queue (new QueuedTask { SendOrPostCallback = d, State = state, WaitHandle = waiter });
                 waiter.Wait ();
                 cache.Enqueue (waiter);
@@ -162,7 +165,10 @@ namespace MonoTorrent.Client
 
         #region If you await the MainLoop you'll swap to it's thread!
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public MainLoop GetAwaiter () => this;
+        public MainLoop GetAwaiter ()
+        {
+            return this;
+        }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
         public bool IsCompleted => thread == Thread.CurrentThread;
@@ -185,7 +191,9 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <returns></returns>
         public static ThreadSwitcher SwitchToThreadpool ()
-            => new ThreadSwitcher ();
+        {
+            return new ThreadSwitcher ();
+        }
 
         #endregion
     }

@@ -168,10 +168,14 @@ namespace MonoTorrent.Client
         public string SavePath { get; set; } = null;
 
         object ICloneable.Clone ()
-            => Clone ();
+        {
+            return Clone ();
+        }
 
         public EngineSettings Clone ()
-            => (EngineSettings) MemberwiseClone ();
+        {
+            return (EngineSettings) MemberwiseClone ();
+        }
 
         public override bool Equals (object obj)
         {

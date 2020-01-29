@@ -47,7 +47,7 @@ namespace MonoTorrent
         public static string UrlEncode (byte[] bytes)
         {
             if (bytes == null)
-                throw new ArgumentNullException (nameof(bytes));
+                throw new ArgumentNullException (nameof (bytes));
 
             var result = new MemoryStream (bytes.Length);
             for (int i = 0; i < bytes.Length; i++)
@@ -61,7 +61,7 @@ namespace MonoTorrent
             if (null == s)
                 return null;
 
-            var e = Encoding.UTF8;
+            Encoding e = Encoding.UTF8;
             if (s.IndexOf ('%') == -1 && s.IndexOf ('+') == -1)
                 return e.GetBytes (s);
 

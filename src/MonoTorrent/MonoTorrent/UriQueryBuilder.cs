@@ -35,7 +35,7 @@ using System.Diagnostics;
 
 namespace MonoTorrent
 {
-    [DebuggerDisplay ("{" + nameof(ToUri) + " ()}")]
+    [DebuggerDisplay ("{" + nameof (ToUri) + " ()}")]
     class UriQueryBuilder
     {
         readonly UriBuilder builder;
@@ -48,8 +48,8 @@ namespace MonoTorrent
         }
 
         public string this[string key] {
-            get { return queryParams[key]; }
-            set { queryParams[key] = value; }
+            get => queryParams[key];
+            set => queryParams[key] = value;
         }
 
         public UriQueryBuilder (Uri uri)

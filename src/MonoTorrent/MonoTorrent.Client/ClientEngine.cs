@@ -83,14 +83,14 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         internal static readonly BufferPool BufferPool = new BufferPool ();
-        private readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
-        private int tickCount;
-        private readonly List<TorrentManager> torrents;
+        readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        int tickCount;
+        readonly List<TorrentManager> torrents;
 
-        private readonly RateLimiter uploadLimiter;
-        private readonly RateLimiterGroup uploadLimiters;
-        private readonly RateLimiter downloadLimiter;
-        private readonly RateLimiterGroup downloadLimiters;
+        readonly RateLimiter uploadLimiter;
+        readonly RateLimiterGroup uploadLimiters;
+        readonly RateLimiter downloadLimiter;
+        readonly RateLimiterGroup downloadLimiters;
 
         #endregion
 
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        private void CheckDisposed ()
+        void CheckDisposed ()
         {
             if (Disposed)
                 throw new ObjectDisposedException (GetType ().Name);
@@ -248,10 +248,10 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
-                this.DhtEngine.Dispose ();
-                this.DiskManager.Dispose ();
-                this.listenManager.Dispose ();
-                this.LocalPeerDiscovery.Stop ();
+                DhtEngine.Dispose ();
+                DiskManager.Dispose ();
+                listenManager.Dispose ();
+                LocalPeerDiscovery.Stop ();
             });
         }
 
@@ -260,7 +260,7 @@ namespace MonoTorrent.Client
             try {
                 await MainLoop;
 
-                var manager = Torrents.FirstOrDefault (t => t.InfoHash == args.InfoHash);
+                TorrentManager manager = Torrents.FirstOrDefault (t => t.InfoHash == args.InfoHash);
                 // There's no TorrentManager in the engine
                 if (manager == null)
                     return;
@@ -301,7 +301,7 @@ namespace MonoTorrent.Client
 
             if (Contains (manager.Torrent))
                 throw new TorrentException ("A manager for this torrent has already been registered");
-            this.torrents.Add (manager);
+            torrents.Add (manager);
             ConnectionManager.Add (manager);
 
             manager.Engine = this;
@@ -357,13 +357,13 @@ namespace MonoTorrent.Client
         {
             await MainLoop;
 
-            var manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+            TorrentManager manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
 
             if (manager == null)
                 return;
 
             if (manager.CanUseDht) {
-                var successfullyAdded = await manager.AddPeersAsync (e.Peers);
+                int successfullyAdded = await manager.AddPeersAsync (e.Peers);
                 manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
             } else {
                 // This is only used for unit testing to validate that even if the DHT engine
@@ -392,7 +392,9 @@ namespace MonoTorrent.Client
 
         [EditorBrowsable (EditorBrowsableState.Never)]
         public Task StartAll ()
-            => StartAllAsync ();
+        {
+            return StartAllAsync ();
+        }
 
         public async Task StartAllAsync ()
         {
@@ -400,7 +402,7 @@ namespace MonoTorrent.Client
 
             await MainLoop;
 
-            List<Task> tasks = new List<Task> ();
+            var tasks = new List<Task> ();
             for (int i = 0; i < torrents.Count; i++)
                 tasks.Add (torrents[i].StartAsync ());
             await Task.WhenAll (tasks);
@@ -408,14 +410,18 @@ namespace MonoTorrent.Client
 
         [EditorBrowsable (EditorBrowsableState.Never)]
         public Task StopAll ()
-            => StopAllAsync ();
+        {
+            return StopAllAsync ();
+        }
 
         /// <summary>
         /// Stops all active <see cref="TorrentManager"/> instances.
         /// </summary>
         /// <returns></returns>
         public Task StopAllAsync ()
-            => StopAllAsync (Timeout.InfiniteTimeSpan);
+        {
+            return StopAllAsync (Timeout.InfiniteTimeSpan);
+        }
 
         /// <summary>
         /// Stops all active <see cref="TorrentManager"/> instances. The final announce for each <see cref="TorrentManager"/> will be limited
@@ -428,7 +434,7 @@ namespace MonoTorrent.Client
             CheckDisposed ();
 
             await MainLoop;
-            List<Task> tasks = new List<Task> ();
+            var tasks = new List<Task> ();
             for (int i = 0; i < torrents.Count; i++)
                 tasks.Add (torrents[i].StopAsync (timeout));
             await Task.WhenAll (tasks);
@@ -446,7 +452,7 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException ("The manager must be stopped before it can be unregistered");
 
-            this.torrents.Remove (manager);
+            torrents.Remove (manager);
             ConnectionManager.Remove (manager);
 
             manager.Engine = null;
@@ -459,7 +465,7 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-        private void LogicTick ()
+        void LogicTick ()
         {
             tickCount++;
 
@@ -472,8 +478,8 @@ namespace MonoTorrent.Client
             ConnectionManager.TryConnect ();
             DiskManager.Tick ();
 
-            for (int i = 0; i < this.torrents.Count; i++)
-                this.torrents[i].Mode.Tick (tickCount);
+            for (int i = 0; i < torrents.Count; i++)
+                torrents[i].Mode.Tick (tickCount);
 
             RaiseStatsUpdate (new StatsUpdateEventArgs ());
         }
@@ -509,7 +515,7 @@ namespace MonoTorrent.Client
 
         static BEncodedString GeneratePeerId ()
         {
-            StringBuilder sb = new StringBuilder (20);
+            var sb = new StringBuilder (20);
             sb.Append ("-");
             sb.Append (VersionInfo.ClientVersion);
             sb.Append ("-");

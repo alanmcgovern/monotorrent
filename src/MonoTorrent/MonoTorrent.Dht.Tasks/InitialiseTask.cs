@@ -61,7 +61,7 @@ namespace MonoTorrent.Dht.Tasks
                     engine.Add (node);
                 await SendFindNode (initialNodes);
             } else {
-                Node utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
+                var utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
                 await SendFindNode (new[] { utorrent });
             }
         }
@@ -71,7 +71,7 @@ namespace MonoTorrent.Dht.Tasks
             var activeRequests = new List<Task<SendQueryEventArgs>> ();
             var nodes = new ClosestNodesCollection (engine.LocalId);
 
-            foreach (var node in newNodes) {
+            foreach (Node node in newNodes) {
                 var request = new FindNode (engine.LocalId, engine.LocalId);
                 activeRequests.Add (engine.SendQueryAsync (request, node));
                 nodes.Add (node);
@@ -81,10 +81,10 @@ namespace MonoTorrent.Dht.Tasks
                 var completed = await Task.WhenAny (activeRequests);
                 activeRequests.Remove (completed);
 
-                var args = await completed;
+                SendQueryEventArgs args = await completed;
                 if (args.Response != null) {
                     var response = (FindNodeResponse) args.Response;
-                    foreach (var node in Node.FromCompactNode (response.Nodes)) {
+                    foreach (Node node in Node.FromCompactNode (response.Nodes)) {
                         if (nodes.Add (node)) {
                             var request = new FindNode (engine.LocalId, engine.LocalId);
                             activeRequests.Add (engine.SendQueryAsync (request, node));

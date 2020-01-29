@@ -146,7 +146,7 @@ namespace MonoTorrent.Tracker
 
         InfoHash CheckMandatoryFields ()
         {
-            List<string> keys = new List<string> (Parameters.AllKeys);
+            var keys = new List<string> (Parameters.AllKeys);
             foreach (string field in MandatoryFields) {
                 if (keys.Contains (field))
                     continue;

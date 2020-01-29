@@ -44,9 +44,9 @@ namespace MonoTorrent.TorrentWatcher
 
         #region Member Variables
 
-        private FileSystemWatcher watcher;
-        private readonly string torrentDirectory;
-        private readonly string watchFilter;
+        FileSystemWatcher watcher;
+        readonly string torrentDirectory;
+        readonly string watchFilter;
 
         #endregion
 
@@ -56,10 +56,10 @@ namespace MonoTorrent.TorrentWatcher
         public TorrentFolderWatcher (string torrentDirectory, string watchFilter)
         {
             if (torrentDirectory == null)
-                throw new ArgumentNullException (nameof(torrentDirectory));
+                throw new ArgumentNullException (nameof (torrentDirectory));
 
             if (watchFilter == null)
-                throw new ArgumentNullException (nameof(watchFilter));
+                throw new ArgumentNullException (nameof (watchFilter));
 
             if (!Directory.Exists (torrentDirectory))
                 Directory.CreateDirectory (torrentDirectory);
@@ -81,25 +81,26 @@ namespace MonoTorrent.TorrentWatcher
 
         public void ForceScan ()
         {
-            foreach (string path in Directory.GetFiles (torrentDirectory, this.watchFilter))
+            foreach (string path in Directory.GetFiles (torrentDirectory, watchFilter))
                 RaiseTorrentFound (path);
         }
 
         public void Start ()
         {
-            if (this.watcher == null) {
-                this.watcher = new FileSystemWatcher (torrentDirectory);
-                this.watcher.Filter = this.watchFilter;
+            if (watcher == null) {
+                watcher = new FileSystemWatcher (torrentDirectory) {
+                    Filter = watchFilter
+                };
                 //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
-                this.watcher.Created += OnCreated;
-                this.watcher.Deleted += OnDeleted;
+                watcher.Created += OnCreated;
+                watcher.Deleted += OnDeleted;
             }
-            this.watcher.EnableRaisingEvents = true;
+            watcher.EnableRaisingEvents = true;
         }
 
         public void Stop ()
         {
-            this.watcher.EnableRaisingEvents = false;
+            watcher.EnableRaisingEvents = false;
         }
 
         #endregion
@@ -108,13 +109,13 @@ namespace MonoTorrent.TorrentWatcher
         #region Event Handlers
 
         ///<summary>Gets called when a File with .torrent extension was added to the torrentDirectory</summary>
-        private void OnCreated (object sender, FileSystemEventArgs e)
+        void OnCreated (object sender, FileSystemEventArgs e)
         {
             RaiseTorrentFound (e.FullPath);
         }
 
         ///<summary>Gets called when a File with .torrent extension was deleted from the torrentDirectory</summary>
-        private void OnDeleted (object sender, FileSystemEventArgs e)
+        void OnDeleted (object sender, FileSystemEventArgs e)
         {
             RaiseTorrentLost (e.FullPath);
         }

@@ -48,17 +48,17 @@ namespace MonoTorrent.Client.PiecePicking
 
         // this represents the last byte played in a video player, as the high priority
         // set designates pieces that are needed VERY SOON
-        private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
+        int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
 
         /// <summary>
         /// Gets or sets first "high priority" piece. The n pieces after this will be requested in-order,
         /// the rest of the file will be treated rarest-first
         /// </summary>
         public int HighPrioritySetStart {
-            get { return this.highPrioritySetStart; }
+            get => highPrioritySetStart;
             set {
-                if (this.highPrioritySetStart < value)
-                    this.highPrioritySetStart = value;
+                if (highPrioritySetStart < value)
+                    highPrioritySetStart = value;
             }
         }
 
@@ -67,9 +67,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         public int HighPrioritySetSize { get; set; }
 
-        public int MediumPrioritySetStart {
-            get { return HighPrioritySetStart + HighPrioritySetSize + 1; }
-        }
+        public int MediumPrioritySetStart => HighPrioritySetStart + HighPrioritySetSize + 1;
 
         /// <summary>
         /// This is the size ratio between the medium and high priority sets. Equivalent to mu in Tribler's Give-to-get paper.
@@ -80,9 +78,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Read-only value for size of the medium priority set. To set the medium priority size, use MediumToHighRatio.
         /// </summary>
-        public int MediumPrioritySetSize {
-            get { return this.HighPrioritySetSize * MediumToHighRatio; }
-        }
+        public int MediumPrioritySetSize => HighPrioritySetSize * MediumToHighRatio;
 
         #endregion Member Variables
 
@@ -119,8 +115,8 @@ namespace MonoTorrent.Client.PiecePicking
         internal SlidingWindowPicker (PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
             : base (picker)
         {
-            this.HighPrioritySetSize = highPrioritySetSize;
-            this.MediumToHighRatio = mediumToHighRatio;
+            HighPrioritySetSize = highPrioritySetSize;
+            MediumToHighRatio = mediumToHighRatio;
         }
 
 
@@ -137,7 +133,7 @@ namespace MonoTorrent.Client.PiecePicking
             // set the high priority set start to the beginning of the first file that we have to download
             foreach (TorrentFile file in torrentData.Files) {
                 if (file.Priority == Priority.DoNotDownload)
-                    this.highPrioritySetStart = file.EndPieceIndex;
+                    highPrioritySetStart = file.EndPieceIndex;
                 else
                     break;
             }

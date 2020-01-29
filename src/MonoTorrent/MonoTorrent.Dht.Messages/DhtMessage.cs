@@ -51,13 +51,11 @@ namespace MonoTorrent.Dht.Messages
             get;
         }
 
-        public BEncodedString MessageType {
-            get { return (BEncodedString) properties[MessageTypeKey]; }
-        }
+        public BEncodedString MessageType => (BEncodedString) properties[MessageTypeKey];
 
         public BEncodedValue TransactionId {
-            get { return properties[TransactionIdKey]; }
-            set { properties[TransactionIdKey] = value; }
+            get => properties[TransactionIdKey];
+            set => properties[TransactionIdKey] = value;
         }
 
 
@@ -74,9 +72,7 @@ namespace MonoTorrent.Dht.Messages
             properties = dictionary;
         }
 
-        public override int ByteLength {
-            get { return properties.LengthInBytes (); }
-        }
+        public override int ByteLength => properties.LengthInBytes ();
 
         public override void Decode (byte[] buffer, int offset, int length)
         {

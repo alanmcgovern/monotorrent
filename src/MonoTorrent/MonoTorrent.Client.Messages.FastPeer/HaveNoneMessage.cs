@@ -56,12 +56,18 @@ namespace MonoTorrent.Client.Messages.FastPeer
         }
 
         public override bool Equals (object obj)
-            => obj is HaveNoneMessage;
+        {
+            return obj is HaveNoneMessage;
+        }
 
         public override int GetHashCode ()
-            => 1;
+        {
+            return 1;
+        }
 
         public override string ToString ()
-            => "HaveNoneMessage";
+        {
+            return "HaveNoneMessage";
+        }
     }
 }

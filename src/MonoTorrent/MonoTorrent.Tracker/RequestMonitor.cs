@@ -64,10 +64,14 @@ namespace MonoTorrent.Tracker
         }
 
         internal void AnnounceReceived ()
-            => Announces.AddDelta (1);
+        {
+            Announces.AddDelta (1);
+        }
 
         internal void ScrapeReceived ()
-            => Scrapes.AddDelta (1);
+        {
+            Scrapes.AddDelta (1);
+        }
 
         internal void Tick ()
         {

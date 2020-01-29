@@ -47,9 +47,13 @@ namespace MonoTorrent.Client
         int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
 
         void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
-            => Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
+        {
+            Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
+        }
 
         void IPieceRequester.HashedPiece (bool succeeded)
-            => Peer.HashedPiece (succeeded);
+        {
+            Peer.HashedPiece (succeeded);
+        }
     }
 }

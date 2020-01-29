@@ -162,7 +162,9 @@ namespace MonoTorrent.Tracker
         /// <param name="trackable">The trackable to add</param>
         /// <returns></returns>
         public bool Add (ITrackable trackable)
-            => Add (trackable, new ClientAddressComparer ());
+        {
+            return Add (trackable, new ClientAddressComparer ());
+        }
 
         /// <summary>
         /// Adds the trackable to the server
@@ -317,18 +319,19 @@ namespace MonoTorrent.Tracker
             }
 
             var managers = new List<ITrackerItem> ();
-            BEncodedDictionary files = new BEncodedDictionary ();
+            var files = new BEncodedDictionary ();
             for (int i = 0; i < e.InfoHashes.Count; i++) {
                 if (!Torrents.TryGetValue (e.InfoHashes[i], out SimpleTorrentManager manager))
                     continue;
 
                 managers.Add (manager);
 
-                BEncodedDictionary dict = new BEncodedDictionary ();
-                dict.Add ("complete", new BEncodedNumber (manager.Complete));
-                dict.Add ("downloaded", new BEncodedNumber (manager.Downloaded));
-                dict.Add ("incomplete", new BEncodedNumber (manager.Incomplete));
-                dict.Add ("name", new BEncodedString (manager.Trackable.Name));
+                var dict = new BEncodedDictionary {
+                    { "complete", new BEncodedNumber (manager.Complete) },
+                    { "downloaded", new BEncodedNumber (manager.Downloaded) },
+                    { "incomplete", new BEncodedNumber (manager.Incomplete) },
+                    { "name", new BEncodedString (manager.Trackable.Name) }
+                };
                 files.Add (new BEncodedString (e.InfoHashes[i].Hash), dict);
             }
             RaisePeerScraped (new ScrapeEventArgs (managers));
@@ -337,19 +340,25 @@ namespace MonoTorrent.Tracker
         }
 
         internal void RaisePeerAnnounced (AnnounceEventArgs e)
-            => PeerAnnounced?.Invoke (this, e);
+        {
+            PeerAnnounced?.Invoke (this, e);
+        }
 
         internal void RaisePeerScraped (ScrapeEventArgs e)
-            => PeerScraped?.Invoke (this, e);
+        {
+            PeerScraped?.Invoke (this, e);
+        }
 
         internal void RaisePeerTimedOut (TimedOutEventArgs e)
-            => PeerTimedOut?.Invoke (this, e);
+        {
+            PeerTimedOut?.Invoke (this, e);
+        }
 
         public void RegisterListener (ITrackerListener listener)
         {
             CheckDisposed ();
             if (listener == null)
-                throw new ArgumentNullException (nameof(listener));
+                throw new ArgumentNullException (nameof (listener));
 
             listener.AnnounceReceived += ListenerReceivedAnnounce;
             listener.ScrapeReceived += ListenerReceivedScrape;
@@ -364,7 +373,7 @@ namespace MonoTorrent.Tracker
         {
             CheckDisposed ();
             if (trackable == null)
-                throw new ArgumentNullException (nameof(trackable));
+                throw new ArgumentNullException (nameof (trackable));
 
             lock (Torrents)
                 Torrents.Remove (trackable.InfoHash);
@@ -374,7 +383,7 @@ namespace MonoTorrent.Tracker
         {
             CheckDisposed ();
             if (listener == null)
-                throw new ArgumentNullException (nameof(listener));
+                throw new ArgumentNullException (nameof (listener));
 
             listener.AnnounceReceived -= ListenerReceivedAnnounce;
             listener.ScrapeReceived -= ListenerReceivedScrape;

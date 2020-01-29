@@ -71,14 +71,18 @@ namespace MonoTorrent.Client.Messages.FastPeer
         }
 
         public override bool Equals (object obj)
-            => (obj as AllowedFastMessage)?.PieceIndex == PieceIndex;
+        {
+            return (obj as AllowedFastMessage)?.PieceIndex == PieceIndex;
+        }
 
         public override int GetHashCode ()
-            => PieceIndex.GetHashCode ();
+        {
+            return PieceIndex.GetHashCode ();
+        }
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (24);
+            var sb = new StringBuilder (24);
             sb.Append ("AllowedFast");
             sb.Append (" Index: ");
             sb.Append (PieceIndex);

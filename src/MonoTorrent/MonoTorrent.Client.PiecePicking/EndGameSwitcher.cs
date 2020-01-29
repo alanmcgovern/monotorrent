@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.PiecePicking
         public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             this.bitfield = bitfield;
-            this.endgameSelector = new BitField (bitfield.Length);
+            endgameSelector = new BitField (bitfield.Length);
             this.torrentData = torrentData;
             inEndgame = false;
 
@@ -120,13 +120,13 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            var bundle = ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+            IList<PieceRequest> bundle = ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame ())
                 return ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
             return bundle;
         }
 
-        private bool TryEnableEndgame ()
+        bool TryEnableEndgame ()
         {
             if (inEndgame)
                 return false;

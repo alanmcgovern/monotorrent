@@ -40,7 +40,7 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    internal enum ErrorCode
+    enum ErrorCode
     {
         GenericError = 201,
         ServerError = 202,
@@ -120,7 +120,7 @@ namespace MonoTorrent.Dht
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            InitialiseTask task = new InitialiseTask (this, Node.FromCompactNode (nodes));
+            var task = new InitialiseTask (this, Node.FromCompactNode (nodes));
             _ = task.ExecuteAsync ();
         }
 
@@ -219,7 +219,7 @@ namespace MonoTorrent.Dht
             foreach (Bucket b in RoutingTable.Buckets) {
                 if (b.LastChanged > BucketRefreshTimeout) {
                     b.Changed ();
-                    RefreshBucketTask task = new RefreshBucketTask (this, b);
+                    var task = new RefreshBucketTask (this, b);
                     refreshTasks.Add (task.Execute ());
                 }
             }
@@ -249,7 +249,7 @@ namespace MonoTorrent.Dht
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
-            SendQueryEventArgs e = default (SendQueryEventArgs);
+            var e = default (SendQueryEventArgs);
             for (int i = 0; i < 4; i++) {
                 e = await MessageLoop.SendAsync (query, node);
 
@@ -268,7 +268,9 @@ namespace MonoTorrent.Dht
         }
 
         public async Task StartAsync ()
-            => await StartAsync (Array.Empty<byte> ());
+        {
+            await StartAsync (Array.Empty<byte> ());
+        }
 
         public async Task StartAsync (byte[] initialNodes)
         {

@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Tracker
 
             // Check if this tracker supports scraping
             var trackerTiers = new List<TrackerTier> ();
-            foreach (var tier in announces)
+            foreach (RawTrackerTier tier in announces)
                 trackerTiers.Add (new TrackerTier (tier));
             trackerTiers.RemoveAll (tier => tier.Trackers.Count == 0);
             Tiers = trackerTiers.AsReadOnly ();
@@ -108,10 +108,14 @@ namespace MonoTorrent.Client.Tracker
         #region Methods
 
         public async Task Announce ()
-            => await Announce (TorrentEvent.None);
+        {
+            await Announce (TorrentEvent.None);
+        }
 
         public async Task Announce (TorrentEvent clientEvent)
-            => await Announce (clientEvent, null);
+        {
+            await Announce (clientEvent, null);
+        }
 
         public async Task Announce (ITracker tracker)
         {
@@ -127,18 +131,18 @@ namespace MonoTorrent.Client.Tracker
             LastAnnounce.Restart ();
             LastUpdated = DateTime.UtcNow;
 
-            var p = RequestFactory.CreateAnnounce (clientEvent);
+            AnnounceParameters p = RequestFactory.CreateAnnounce (clientEvent);
 
             foreach ((TrackerTier trackerTier, ITracker tracker) in GetNextTracker (referenceTracker)) {
                 try {
                     // If we have not announced to this Tracker tier yet then we should replace the ClientEvent.
                     // But if we end up announcing to a different Tracker tier we may want to send the
                     // original/unmodified args.
-                    var actualArgs = p;
+                    AnnounceParameters actualArgs = p;
                     if (!trackerTier.SentStartedEvent)
                         actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
 
-                    var peers = await tracker.AnnounceAsync (actualArgs);
+                    List<Peer> peers = await tracker.AnnounceAsync (actualArgs);
                     LastAnnounceSucceeded = true;
                     AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, true, peers.AsReadOnly ()));
                     return;
@@ -160,11 +164,11 @@ namespace MonoTorrent.Client.Tracker
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            var tuple = GetNextTracker (tracker).FirstOrDefault ();
+            Tuple<TrackerTier, ITracker> tuple = GetNextTracker (tracker).FirstOrDefault ();
             if (tuple != null && !tuple.Item2.CanScrape)
                 throw new TorrentException ("This tracker does not support scraping");
             try {
-                var parameters = RequestFactory.CreateScrape ();
+                ScrapeParameters parameters = RequestFactory.CreateScrape ();
                 await tuple.Item2.ScrapeAsync (parameters);
                 ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, true));
             } catch {
@@ -174,8 +178,8 @@ namespace MonoTorrent.Client.Tracker
 
         IEnumerable<Tuple<TrackerTier, ITracker>> GetNextTracker (ITracker referenceTracker)
         {
-            foreach (var tier in Tiers)
-                foreach (var tracker in tier.Trackers.OrderBy (t => t.TimeSinceLastAnnounce))
+            foreach (TrackerTier tier in Tiers)
+                foreach (ITracker tracker in tier.Trackers.OrderBy (t => t.TimeSinceLastAnnounce))
                     if (referenceTracker == null || referenceTracker == tracker)
                         yield return Tuple.Create (tier, tracker);
         }

@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Tracker
         public HTTPTracker (Uri announceUrl)
             : base (announceUrl)
         {
-            var uri = announceUrl.OriginalString;
+            string uri = announceUrl.OriginalString;
             if (uri.EndsWith ("/announce", StringComparison.OrdinalIgnoreCase))
                 ScrapeUri = new Uri ($"{uri.Substring (0, uri.Length - "/announce".Length)}/scrape");
             else if (uri.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
@@ -76,14 +76,14 @@ namespace MonoTorrent.Client.Tracker
             WarningMessage = "";
             var peers = new List<Peer> ();
 
-            var announceString = CreateAnnounceString (parameters);
+            Uri announceString = CreateAnnounceString (parameters);
             var request = (HttpWebRequest) WebRequest.Create (announceString);
             request.UserAgent = VersionInfo.ClientVersion;
             request.Proxy = new WebProxy ();   // If i don't do this, i can't run the webrequest. It's wierd.
 
             WebResponse response;
             using var cts = new CancellationTokenSource (RequestTimeout);
-            using var registration = cts.Token.Register (() => request.Abort ());
+            using CancellationTokenRegistration registration = cts.Token.Register (() => request.Abort ());
 
             try {
                 response = await request.GetResponseAsync ().ConfigureAwait (false);
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client.Tracker
             }
 
             try {
-                using var responseRegistration = cts.Token.Register (() => response.Close ());
+                using CancellationTokenRegistration responseRegistration = cts.Token.Register (() => response.Close ());
                 using (response) {
                     peers = await AnnounceReceivedAsync (request, response).ConfigureAwait (false);
                     Status = TrackerState.Ok;
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client.Tracker
             request.Proxy = new WebProxy ();
 
             using var cts = new CancellationTokenSource (RequestTimeout);
-            using var registration = cts.Token.Register (() => request.Abort ());
+            using CancellationTokenRegistration registration = cts.Token.Register (() => request.Abort ());
 
             WebResponse response;
             try {
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client.Tracker
             }
 
             try {
-                using var responseRegistration = cts.Token.Register (() => response.Close ());
+                using CancellationTokenRegistration responseRegistration = cts.Token.Register (() => response.Close ());
                 using (response)
                     await ScrapeReceivedAsync (parameters.InfoHash, response).ConfigureAwait (false);
                 Status = TrackerState.Ok;
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.Tracker
 
         Uri CreateAnnounceString (AnnounceParameters parameters)
         {
-            UriQueryBuilder b = new UriQueryBuilder (Uri);
+            var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
              .Add ("peer_id", parameters.PeerId.UrlEncode ())
              .Add ("port", parameters.Port)
@@ -187,8 +187,8 @@ namespace MonoTorrent.Client.Tracker
             int totalRead = 0;
             byte[] buffer = new byte[2048];
 
-            using MemoryStream dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
-            using (var reader = response.GetResponseStream ()) {
+            using var dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
+            using (Stream reader = response.GetResponseStream ()) {
                 // If there is a ContentLength, use that to decide how much we read.
                 if (response.ContentLength > 0) {
                     while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
@@ -292,7 +292,7 @@ namespace MonoTorrent.Client.Tracker
             if (!dict.ContainsKey ("files")) {
                 return;
             }
-            BEncodedDictionary files = (BEncodedDictionary) dict["files"];
+            var files = (BEncodedDictionary) dict["files"];
             if (files.Count != 1)
                 throw new TrackerException ("The scrape response contained unexpected data");
 

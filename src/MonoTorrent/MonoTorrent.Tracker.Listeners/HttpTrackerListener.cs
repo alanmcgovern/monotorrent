@@ -58,7 +58,7 @@ namespace MonoTorrent.Tracker.Listeners
         public HttpTrackerListener (string httpPrefix)
         {
             if (string.IsNullOrEmpty (httpPrefix))
-                throw new ArgumentNullException (nameof(httpPrefix));
+                throw new ArgumentNullException (nameof (httpPrefix));
 
             Prefix = httpPrefix;
         }
@@ -80,7 +80,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             while (!token.IsCancellationRequested) {
                 try {
-                    var context = await listener.GetContextAsync ().ConfigureAwait (false);
+                    HttpListenerContext context = await listener.GetContextAsync ().ConfigureAwait (false);
                     ProcessContextAsync (context, token);
                 } catch {
                 }

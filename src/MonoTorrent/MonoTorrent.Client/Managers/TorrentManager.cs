@@ -93,11 +93,11 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private bool disposed;
+        bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         internal bool isInEndGame;       // Set true when the torrent enters end game processing
-        private Mode mode;
-        private readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
+        Mode mode;
+        readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         #endregion Member Variables
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
         /// Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
         /// torrent will not be considered to be Complete until they are downloaded.
         /// </summary>
-        public bool Complete => this.Bitfield.AllTrue;
+        public bool Complete => Bitfield.AllTrue;
 
         RateLimiter DownloadLimiter { get; set; }
 
@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
         public Error Error { get; private set; }
 
         internal Mode Mode {
-            get { return mode; }
+            get => mode;
             set {
                 Mode oldMode = mode;
                 mode = value;
@@ -147,8 +147,8 @@ namespace MonoTorrent.Client
 
         internal int PeerReviewRoundsComplete {
             get {
-                if (this.chokeUnchoker is ChokeUnchokeManager)
-                    return ((ChokeUnchokeManager) this.chokeUnchoker).ReviewsExecuted;
+                if (chokeUnchoker is ChokeUnchokeManager)
+                    return ((ChokeUnchokeManager) chokeUnchoker).ReviewsExecuted;
                 else
                     return 0;
             }
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
         /// </summary>
-        public bool IsInEndGame => State == TorrentState.Downloading && this.isInEndGame;
+        public bool IsInEndGame => State == TorrentState.Downloading && isInEndGame;
 
         public ConnectionMonitor Monitor { get; private set; }
 
@@ -230,7 +230,7 @@ namespace MonoTorrent.Client
                 if (PartialProgressSelector.TrueCount == Bitfield.Length)
                     return Progress;
 
-                var totalTrue = Bitfield.CountTrue (PartialProgressSelector);
+                int totalTrue = Bitfield.CountTrue (PartialProgressSelector);
                 return (totalTrue * 100.0) / PartialProgressSelector.TrueCount;
             }
         }
@@ -316,9 +316,9 @@ namespace MonoTorrent.Client
             Check.Settings (settings);
             Check.BaseDirectory (baseDirectory);
 
-            this.Torrent = torrent;
-            this.InfoHash = torrent.InfoHash;
-            this.Settings = settings;
+            Torrent = torrent;
+            InfoHash = torrent.InfoHash;
+            Settings = settings;
 
             Initialise (savePath, baseDirectory, torrent.AnnounceUrls);
             ChangePicker (CreateStandardPicker ());
@@ -333,8 +333,8 @@ namespace MonoTorrent.Client
             Check.TorrentSave (torrentSave);
             Check.Announces (announces);
 
-            this.InfoHash = infoHash;
-            this.Settings = settings;
+            InfoHash = infoHash;
+            Settings = settings;
             this.torrentSave = torrentSave;
 
             Initialise (savePath, "", announces);
@@ -348,8 +348,8 @@ namespace MonoTorrent.Client
             Check.Settings (settings);
             Check.TorrentSave (torrentSave);
 
-            this.InfoHash = magnetLink.InfoHash;
-            this.Settings = settings;
+            InfoHash = magnetLink.InfoHash;
+            Settings = settings;
             this.torrentSave = torrentSave;
             IList<RawTrackerTier> announces = new RawTrackerTiers ();
             if (magnetLink.AnnounceUrls != null)
@@ -365,15 +365,15 @@ namespace MonoTorrent.Client
 
         void Initialise (string savePath, string baseDirectory, IList<RawTrackerTier> announces)
         {
-            this.Bitfield = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
-            this.PartialProgressSelector = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
-            this.UnhashedPieces = new BitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
-            this.SavePath = Path.Combine (savePath, baseDirectory);
-            this.finishedPieces = new Queue<HaveMessage> ();
-            this.Monitor = new ConnectionMonitor ();
-            this.InactivePeerManager = new InactivePeerManager (this);
-            this.Peers = new PeerManager ();
-            this.PieceManager = new PieceManager (this);
+            Bitfield = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
+            PartialProgressSelector = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
+            UnhashedPieces = new BitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
+            SavePath = Path.Combine (savePath, baseDirectory);
+            finishedPieces = new Queue<HaveMessage> ();
+            Monitor = new ConnectionMonitor ();
+            InactivePeerManager = new InactivePeerManager (this);
+            Peers = new PeerManager ();
+            PieceManager = new PieceManager (this);
             SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces));
 
             Mode = new StoppedMode (this, null, null, null);
@@ -438,7 +438,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override string ToString ()
         {
-            return Torrent == null ? "<Metadata Mode>" : this.Torrent.Name;
+            return Torrent == null ? "<Metadata Mode>" : Torrent.Name;
         }
 
 
@@ -449,7 +449,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override bool Equals (object obj)
         {
-            return (!(obj is TorrentManager m)) ? false : this.Equals (m);
+            return (!(obj is TorrentManager m)) ? false : Equals (m);
         }
 
 
@@ -483,7 +483,9 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="autoStart">True if a the TorrentManager should be started as soon as the hashcheck completes.</param>
         public Task HashCheckAsync (bool autoStart)
-            => HashCheckAsync (autoStart, true);
+        {
+            return HashCheckAsync (autoStart, true);
+        }
 
         internal async Task HashCheckAsync (bool autoStart, bool setStoppedModeWhenDone)
         {
@@ -640,7 +642,9 @@ namespace MonoTorrent.Client
         /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped.
         /// </summary>
         public Task StopAsync ()
-            => StopAsync (Timeout.InfiniteTimeSpan);
+        {
+            return StopAsync (Timeout.InfiniteTimeSpan);
+        }
 
         /// <summary>
         /// Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped. The final
@@ -744,7 +748,7 @@ namespace MonoTorrent.Client
             // The PiecePickers will no longer ignore this piece as it has now been hash checked.
             UnhashedPieces[index] = false;
 
-            TorrentFile[] files = this.Torrent.Files;
+            TorrentFile[] files = Torrent.Files;
 
             for (int i = 0; i < files.Length; i++)
                 if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
@@ -760,14 +764,18 @@ namespace MonoTorrent.Client
         }
 
         internal void RaiseTorrentStateChanged (TorrentStateChangedEventArgs e)
-            => TorrentStateChanged?.InvokeAsync (this, e);
+        {
+            TorrentStateChanged?.InvokeAsync (this, e);
+        }
 
         /// <summary>
         /// Raise the connection attempt failed event
         /// </summary>
         /// <param name="args"></param>
         internal void RaiseConnectionAttemptFailed (ConnectionAttemptFailedEventArgs args)
-            => ConnectionAttemptFailed?.InvokeAsync (this, args);
+        {
+            ConnectionAttemptFailed?.InvokeAsync (this, args);
+        }
 
         internal void UpdateLimiters ()
         {
@@ -785,7 +793,7 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("This action cannot be performed until metadata has been retrieved");
         }
 
-        private void CheckRegisteredAndDisposed ()
+        void CheckRegisteredAndDisposed ()
         {
             if (Engine == null)
                 throw new TorrentException ("This manager has not been registed with an Engine");
@@ -819,7 +827,7 @@ namespace MonoTorrent.Client
                 OnPieceHashed (i, data.Bitfield[i]);
             UnhashedPieces.From (data.UnhashedPieces);
 
-            this.HashChecked = true;
+            HashChecked = true;
         }
 
         public FastResume SaveFastResume ()

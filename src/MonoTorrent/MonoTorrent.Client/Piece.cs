@@ -42,33 +42,21 @@ namespace MonoTorrent.Client
 
         #region Fields
 
-        public Block this[int index] {
-            get { return this.Blocks[index]; }
-        }
+        public Block this[int index] => Blocks[index];
 
         internal Block[] Blocks { get; set; }
 
-        public bool AllBlocksRequested {
-            get { return this.TotalRequested == BlockCount; }
-        }
+        public bool AllBlocksRequested => TotalRequested == BlockCount;
 
-        public bool AllBlocksReceived {
-            get { return this.TotalReceived == BlockCount; }
-        }
+        public bool AllBlocksReceived => TotalReceived == BlockCount;
 
-        public bool AllBlocksWritten {
-            get { return this.TotalWritten == BlockCount; }
-        }
+        public bool AllBlocksWritten => TotalWritten == BlockCount;
 
-        public int BlockCount {
-            get { return this.Blocks.Length; }
-        }
+        public int BlockCount => Blocks.Length;
 
         public int Index { get; }
 
-        public bool NoBlocksRequested {
-            get { return this.TotalRequested == 0; }
-        }
+        public bool NoBlocksRequested => TotalRequested == 0;
 
         public int TotalReceived { get; internal set; }
 
@@ -83,7 +71,7 @@ namespace MonoTorrent.Client
 
         internal Piece (int pieceIndex, int pieceLength, long torrentSize)
         {
-            this.Index = pieceIndex;
+            Index = pieceIndex;
 
             // Request last piece. Special logic needed
             if ((torrentSize - (long) pieceIndex * pieceLength) < pieceLength)
@@ -102,7 +90,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void LastPiece (int pieceIndex, int pieceLength, long torrentSize)
+        void LastPiece (int pieceIndex, int pieceLength, long torrentSize)
         {
             int bytesRemaining = (int) (torrentSize - ((long) pieceIndex * pieceLength));
             int numberOfBlocks = bytesRemaining / BlockSize;
@@ -133,17 +121,17 @@ namespace MonoTorrent.Client
 
         public override bool Equals (object obj)
         {
-            return (!(obj is Piece p)) ? false : this.Index.Equals (p.Index);
+            return (!(obj is Piece p)) ? false : Index.Equals (p.Index);
         }
 
         public System.Collections.IEnumerator GetEnumerator ()
         {
-            return this.Blocks.GetEnumerator ();
+            return Blocks.GetEnumerator ();
         }
 
         public override int GetHashCode ()
         {
-            return this.Index;
+            return Index;
         }
 
         #endregion
