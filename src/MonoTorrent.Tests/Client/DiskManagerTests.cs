@@ -119,19 +119,28 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             var random = new Random ();
-            var files = new[] {
-                new TorrentFile ("First",  Piece.BlockSize / 2),
-                new TorrentFile ("Second", Piece.BlockSize),
-                new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
-                new TorrentFile ("Fourth", Piece.BlockSize * 6 + Piece.BlockSize / 2),
+            var filePieces = new[] {
+                ("First",  Piece.BlockSize / 2),
+                ("Second", Piece.BlockSize),
+                ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
+                ("Fourth", Piece.BlockSize * 6 + Piece.BlockSize / 2),
             };
+
+            int pieceLength = Piece.BlockSize * 3;
+
+            var files = new List<TorrentFile> ();
+            long total = 0;
+            foreach ((string name, long length) in filePieces) {
+                var file = new TorrentFile (name, length, name, (int)( total / pieceLength), (int)((total + length) / pieceLength), (int)(total % pieceLength), null, null, null);
+                total += file.Length;
+                files.Add (file);
+            }
 
             var fileBytes = files
                 .Select (f => { var b = new byte[f.Length]; random.NextBytes (b); return b; })
                 .ToArray ();
 
 
-            int pieceLength = Piece.BlockSize * 3;
             // Turn all the files into one byte array. Group the byte array into bittorrent pieces. Hash that piece.
             var hashes = fileBytes
                 .SelectMany (t => t)
@@ -141,14 +150,14 @@ namespace MonoTorrent.Client
 
             fileData = new TestTorrentData {
                 Data = fileBytes,
-                Files = files,
+                Files = files.ToArray (),
                 Hashes = hashes,
                 Size = files.Sum (f => f.Length),
                 PieceLength = pieceLength
             };
 
             writer = new PieceWriter ();
-            for (int i = 0; i < files.Length; i++)
+            for (int i = 0; i < files.Count; i++)
                 writer.Data.Add (files[i], fileBytes[i]);
 
             settings = new EngineSettings ();
@@ -243,6 +252,35 @@ namespace MonoTorrent.Client
 
             foreach (var v in tasks)
                 Assert.DoesNotThrowAsync (async () => await v.WithTimeout (1000), "#6");
+        }
+
+        [Test]
+        public void FindFile_FirstFile ()
+        {
+            var file = fileData.Files[0];
+            Assert.AreEqual (0, diskManager.FindFileIndex (fileData.Files, 0, fileData.PieceLength));
+            Assert.AreEqual (0, diskManager.FindFileIndex (fileData.Files, 1, fileData.PieceLength));
+            Assert.AreEqual (0, diskManager.FindFileIndex (fileData.Files, file.Length - 1, fileData.PieceLength));
+        }
+
+        [Test]
+        public void FindFile_SecondFile ()
+        {
+            Assert.AreEqual (1, diskManager.FindFileIndex (fileData.Files, fileData.Files[0].Length, fileData.PieceLength));
+        }
+
+        [Test]
+        public void FindFile_LastFile ()
+        {
+            Assert.AreEqual (fileData.Files.Length - 1, diskManager.FindFileIndex (fileData.Files, fileData.Files.Last ().Length - 1, fileData.PieceLength));
+        }
+
+        [Test]
+        public void FindFile_InvalidOffset ()
+        {
+            var totalSize = fileData.Files.Sum (t => t.Length);
+            Assert.Negative (diskManager.FindFileIndex (fileData.Files, totalSize, fileData.PieceLength));
+            Assert.Negative (diskManager.FindFileIndex (fileData.Files, -1, fileData.PieceLength));
         }
 
         [Test]

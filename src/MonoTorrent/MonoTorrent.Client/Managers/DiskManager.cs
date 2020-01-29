@@ -47,6 +47,32 @@ namespace MonoTorrent.Client
 
         readonly Dictionary<int, IncrementalHashData> IncrementalHashes = new Dictionary<int, IncrementalHashData> ();
 
+        class TorrentFileFinder : IComparer<TorrentFile>
+        {
+            long Offset { get; }
+
+            long PieceLength { get; }
+
+            public TorrentFileFinder (long offset, int pieceLength)
+            {
+                Offset = offset;
+                PieceLength = pieceLength;
+            }
+            public int Compare (TorrentFile x, TorrentFile y)
+            {
+                var fileStart = (x.StartPieceIndex * PieceLength) + x.StartPieceOffset;
+                var fileEnd = fileStart + x.Length;
+
+                if (Offset >= fileStart && Offset < fileEnd)
+                    return 0;
+                if (Offset >= fileEnd)
+                    return -1;
+                if (Offset < fileStart)
+                    return 1;
+                throw new InvalidOperationException ("Could not detect location of torrent file");
+            }
+        }
+
         class IncrementalHashData : ICacheable
         {
             public readonly SHA1 Hasher;
@@ -450,6 +476,11 @@ namespace MonoTorrent.Client
             }
         }
 
+        internal int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
+        {
+            return Array.BinarySearch (files, null, new TorrentFileFinder (offset, pieceLength));
+        }
+
         bool Read (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             ReadMonitor.AddDelta (count);
@@ -457,16 +488,10 @@ namespace MonoTorrent.Client
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            int i;
             int totalRead = 0;
             TorrentFile[] files = manager.Files;
-
-            for (i = 0; i < files.Length; i++) {
-                if (offset < files[i].Length)
-                    break;
-
-                offset -= files[i].Length;
-            }
+            int i = FindFileIndex (files, offset, manager.PieceLength);
+            offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
 
             while (totalRead < count) {
                 int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
@@ -533,16 +558,10 @@ namespace MonoTorrent.Client
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            int i;
             int totalWritten = 0;
             TorrentFile[] files = manager.Files;
-
-            for (i = 0; i < files.Length; i++) {
-                if (offset < files[i].Length)
-                    break;
-
-                offset -= files[i].Length;
-            }
+            int i = FindFileIndex (files, offset, manager.PieceLength);
+            offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
 
             while (totalWritten < count) {
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
