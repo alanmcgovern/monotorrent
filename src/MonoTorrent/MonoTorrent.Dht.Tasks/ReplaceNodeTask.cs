@@ -35,9 +35,9 @@ namespace MonoTorrent.Dht.Tasks
 {
     class ReplaceNodeTask
     {
-        private Bucket bucket;
-        private DhtEngine engine;
-        private Node newNode;
+        readonly Bucket bucket;
+        readonly DhtEngine engine;
+        readonly Node newNode;
 
         public ReplaceNodeTask (DhtEngine engine, Bucket bucket, Node newNode)
         {
@@ -58,7 +58,7 @@ namespace MonoTorrent.Dht.Tasks
                 return;
             } else {
                 Node oldest = bucket.Nodes[0];
-                var args = await engine.SendQueryAsync (new Ping (engine.LocalId), oldest);
+                SendQueryEventArgs args = await engine.SendQueryAsync (new Ping (engine.LocalId), oldest);
 
                 if (args.TimedOut) {
                     // If the node didn't respond and it's no longer in our bucket,

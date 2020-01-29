@@ -42,7 +42,9 @@ namespace MonoTorrent.BEncoding
         internal static readonly BEncodedString Empty = new BEncodedString (Array.Empty<byte> ());
 
         public static bool IsNullOrEmpty (BEncodedString value)
-            => (value?.TextBytes.Length ?? 0) == 0;
+        {
+            return (value?.TextBytes.Length ?? 0) == 0;
+        }
 
         public static BEncodedString FromUrlEncodedString (string urlEncodedValue)
         {
@@ -111,10 +113,14 @@ namespace MonoTorrent.BEncoding
         }
 
         public static implicit operator BEncodedString (char[] value)
-            => value == null ? null : new BEncodedString (value);
+        {
+            return value == null ? null : new BEncodedString (value);
+        }
 
         public static implicit operator BEncodedString (byte[] value)
-            => value == null ? null : new BEncodedString (value);
+        {
+            return value == null ? null : new BEncodedString (value);
+        }
 
         #endregion
 
@@ -165,7 +171,6 @@ namespace MonoTorrent.BEncoding
             if (reader == null)
                 throw new ArgumentNullException (nameof (reader));
 
-            int letterCount;
             string length = string.Empty;
 
             while ((reader.PeekByte () != -1) && (reader.PeekByte () != ':'))         // read in how many characters
@@ -174,8 +179,8 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte () != ':')                                           // remove the ':'
                 throw new BEncodingException ("Invalid data found. Aborting");
 
-            if (!int.TryParse (length, out letterCount))
-                throw new BEncodingException (string.Format ("Invalid BEncodedString. Length was '{0}' instead of a number", length));
+            if (!int.TryParse (length, out int letterCount))
+                throw new BEncodingException ($"Invalid BEncodedString. Length was '{length}' instead of a number");
 
             TextBytes = new byte[letterCount];
             if (reader.Read (TextBytes, 0, letterCount) != letterCount)
@@ -256,13 +261,19 @@ namespace MonoTorrent.BEncoding
         }
 
         public string UrlEncode ()
-            => UriHelper.UrlEncode (TextBytes);
+        {
+            return UriHelper.UrlEncode (TextBytes);
+        }
 
         public string ToHex ()
-            => BitConverter.ToString (TextBytes);
+        {
+            return BitConverter.ToString (TextBytes);
+        }
 
         public override string ToString ()
-            => Encoding.UTF8.GetString (TextBytes);
+        {
+            return Encoding.UTF8.GetString (TextBytes);
+        }
 
         #endregion
     }

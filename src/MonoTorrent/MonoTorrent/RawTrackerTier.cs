@@ -37,8 +37,8 @@ namespace MonoTorrent
     public class RawTrackerTier : IList<string>
     {
         public string this[int index] {
-            get { return ((BEncodedString) Tier[index]).Text; }
-            set { Tier[index] = new BEncodedString (value); }
+            get => ((BEncodedString) Tier[index]).Text;
+            set => Tier[index] = new BEncodedString (value);
         }
 
         internal BEncodedList Tier {
@@ -58,7 +58,7 @@ namespace MonoTorrent
         public RawTrackerTier (IEnumerable<string> announces)
             : this ()
         {
-            foreach (var v in announces)
+            foreach (string v in announces)
                 Add (v);
         }
 
@@ -94,7 +94,7 @@ namespace MonoTorrent
 
         public void CopyTo (string[] array, int arrayIndex)
         {
-            foreach (var s in this)
+            foreach (string s in this)
                 array[arrayIndex++] = s;
         }
 
@@ -103,13 +103,9 @@ namespace MonoTorrent
             return Tier.Remove ((BEncodedString) item);
         }
 
-        public int Count {
-            get { return Tier.Count; }
-        }
+        public int Count => Tier.Count;
 
-        public bool IsReadOnly {
-            get { return Tier.IsReadOnly; }
-        }
+        public bool IsReadOnly => Tier.IsReadOnly;
 
         public IEnumerator<string> GetEnumerator ()
         {

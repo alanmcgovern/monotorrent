@@ -119,7 +119,7 @@ namespace MonoTorrent
                 speedsIndex = (speedsIndex + 1) % speeds.Length;
             }
 
-            var sumTotal = speeds[0];
+            long sumTotal = speeds[0];
             for (int i = 1; i < speedsCount; i++)
                 sumTotal += speeds[i];
 

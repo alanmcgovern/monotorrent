@@ -48,8 +48,8 @@ namespace MonoTorrent
         static readonly BEncodedString PublisherUrlKey = "publisher-url";
 
         public string Announce {
-            get { return GetString (Metadata, AnnounceKey); }
-            set { SetString (Metadata, AnnounceKey, value); }
+            get => GetString (Metadata, AnnounceKey);
+            set => SetString (Metadata, AnnounceKey, value);
         }
 
         public IList<RawTrackerTier> Announces {
@@ -61,23 +61,23 @@ namespace MonoTorrent
         }
 
         public string Comment {
-            get { return GetString (Metadata, CommentKey); }
-            set { SetString (Metadata, CommentKey, value); }
+            get => GetString (Metadata, CommentKey);
+            set => SetString (Metadata, CommentKey, value);
         }
 
         public string CreatedBy {
-            get { return GetString (Metadata, CreatedByKey); }
-            set { SetString (Metadata, CreatedByKey, value); }
+            get => GetString (Metadata, CreatedByKey);
+            set => SetString (Metadata, CreatedByKey, value);
         }
 
         public string Encoding {
-            get { return GetString (Metadata, EncodingKey); }
-            private set { SetString (Metadata, EncodingKey, value); }
+            get => GetString (Metadata, EncodingKey);
+            private set => SetString (Metadata, EncodingKey, value);
         }
 
         protected BEncodedDictionary InfoDict {
-            get { return GetDictionary (Metadata, InfoKey); }
-            private set { SetDictionary (Metadata, InfoKey, value); }
+            get => GetDictionary (Metadata, InfoKey);
+            private set => SetDictionary (Metadata, InfoKey, value);
         }
 
         protected BEncodedDictionary Metadata {
@@ -85,23 +85,23 @@ namespace MonoTorrent
         }
 
         public long PieceLength {
-            get { return GetLong (InfoDict, PieceLengthKey); }
-            set { SetLong (InfoDict, PieceLengthKey, value); }
+            get => GetLong (InfoDict, PieceLengthKey);
+            set => SetLong (InfoDict, PieceLengthKey, value);
         }
 
         public bool Private {
-            get { return GetLong (InfoDict, PrivateKey) == 1; }
-            set { SetLong (InfoDict, PrivateKey, value ? 1 : 0); }
+            get => GetLong (InfoDict, PrivateKey) == 1;
+            set => SetLong (InfoDict, PrivateKey, value ? 1 : 0);
         }
 
         public string Publisher {
-            get { return GetString (InfoDict, PublisherKey); }
-            set { SetString (InfoDict, PublisherKey, value); }
+            get => GetString (InfoDict, PublisherKey);
+            set => SetString (InfoDict, PublisherKey, value);
         }
 
         public string PublisherUrl {
-            get { return GetString (InfoDict, PublisherUrlKey); }
-            set { SetString (InfoDict, PublisherUrlKey, value); }
+            get => GetString (InfoDict, PublisherUrlKey);
+            set => SetString (InfoDict, PublisherUrlKey, value);
         }
 
         protected EditableTorrent ()
@@ -126,8 +126,7 @@ namespace MonoTorrent
         {
             Metadata = metadata;
 
-            BEncodedValue value;
-            if (!Metadata.TryGetValue (AnnounceListKey, out value)) {
+            if (!Metadata.TryGetValue (AnnounceListKey, out BEncodedValue value)) {
                 value = new BEncodedList ();
                 Metadata.Add (AnnounceListKey, value);
             }
@@ -148,8 +147,7 @@ namespace MonoTorrent
 
         public BEncodedValue GetCustom (BEncodedString key)
         {
-            BEncodedValue value;
-            if (Metadata.TryGetValue (key, out value))
+            if (Metadata.TryGetValue (key, out BEncodedValue value))
                 return value;
             return null;
         }
@@ -157,8 +155,7 @@ namespace MonoTorrent
         public BEncodedValue GetCustomSecure (BEncodedString key)
         {
             CheckCanEditSecure ();
-            BEncodedValue value;
-            if (InfoDict.TryGetValue (key, out value))
+            if (InfoDict.TryGetValue (key, out BEncodedValue value))
                 return value;
             return null;
         }
@@ -201,18 +198,16 @@ namespace MonoTorrent
             //            if (dictionary == InfoDict)
             //                CheckCanEditSecure ();
 
-            BEncodedValue value;
-            if (dictionary.TryGetValue (key, out value))
+            if (dictionary.TryGetValue (key, out BEncodedValue value))
                 return (BEncodedDictionary) value;
             return null;
         }
 
         protected long GetLong (BEncodedDictionary dictionary, BEncodedString key)
         {
-            BEncodedValue value;
-            if (dictionary.TryGetValue (key, out value))
+            if (dictionary.TryGetValue (key, out BEncodedValue value))
                 return ((BEncodedNumber) value).Number;
-            throw new ArgumentException (string.Format ("The value for key {0} was not a BEncodedNumber", key));
+            throw new ArgumentException ($"The value for key {key} was not a BEncodedNumber");
         }
 
         protected string GetString (BEncodedDictionary dictionary, BEncodedString key)

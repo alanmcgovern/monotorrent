@@ -45,15 +45,21 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         public override bool Equals (object obj)
-            => Equals (obj as PieceRequest);
+        {
+            return Equals (obj as PieceRequest);
+        }
 
         public bool Equals (PieceRequest other)
-            => other != null
-            && other.PieceIndex == PieceIndex
-            && other.StartOffset == StartOffset
-            && other.RequestLength == RequestLength;
+        {
+            return other != null
+                       && other.PieceIndex == PieceIndex
+                       && other.StartOffset == StartOffset
+                       && other.RequestLength == RequestLength;
+        }
 
         public override int GetHashCode ()
-            => PieceIndex;
+        {
+            return PieceIndex;
+        }
     }
 }

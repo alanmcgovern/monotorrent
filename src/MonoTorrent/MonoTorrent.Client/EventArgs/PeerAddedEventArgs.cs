@@ -38,10 +38,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The number of peers that were added in the last update
         /// </summary>
-        public Peer Peer {
-            get { return this.peer; }
-        }
-        private Peer peer;
+        public Peer Peer { get; }
+
         #endregion
 
 
@@ -54,7 +52,7 @@ namespace MonoTorrent.Client
         public PeerAddedEventArgs (TorrentManager manager, Peer peerAdded)
             : base (manager)
         {
-            this.peer = peerAdded;
+            Peer = peerAdded;
         }
         #endregion
     }

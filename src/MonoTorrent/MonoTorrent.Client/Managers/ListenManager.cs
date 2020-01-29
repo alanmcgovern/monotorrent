@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
 
         public void Dispose ()
         {
-            foreach (var listener in Listeners.ToArray ())
+            foreach (IPeerListener listener in Listeners.ToArray ())
                 Unregister (listener);
             Listeners.Clear ();
         }
@@ -92,8 +92,8 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < Engine.Torrents.Count; i++)
                     skeys.Add (Engine.Torrents[i].InfoHash);
 
-                var connection = ConnectionConverter.Convert (e.Connection);
-                var result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, skeys.ToArray ());
+                IConnection2 connection = ConnectionConverter.Convert (e.Connection);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, skeys.ToArray ());
                 if (!await HandleHandshake (e.Peer, connection, result.Handshake, result.Decryptor, result.Encryptor))
                     connection.Dispose ();
             } catch {

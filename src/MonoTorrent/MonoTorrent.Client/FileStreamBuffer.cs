@@ -37,40 +37,35 @@ namespace MonoTorrent.Client
     {
         // A list of currently open filestreams. Note: The least recently used is at position 0
         // The most recently used is at the last position in the array
-        private List<TorrentFileStream> list;
-        private int maxStreams;
+        readonly int maxStreams;
 
-        public int Count {
-            get { return list.Count; }
-        }
+        public int Count => Streams.Count;
 
-        public List<TorrentFileStream> Streams {
-            get { return list; }
-        }
+        public List<TorrentFileStream> Streams { get; }
 
         public FileStreamBuffer (int maxStreams)
         {
             this.maxStreams = maxStreams;
-            list = new List<TorrentFileStream> (maxStreams);
+            Streams = new List<TorrentFileStream> (maxStreams);
         }
 
-        private void Add (TorrentFileStream stream)
+        void Add (TorrentFileStream stream)
         {
             Logger.Log (null, "Opening filestream: {0}", stream.Path);
 
             // If we have our maximum number of streams open, just dispose and dump the least recently used one
-            if (maxStreams != 0 && list.Count >= list.Capacity) {
-                Logger.Log (null, "We've reached capacity: {0}", list.Count);
-                CloseAndRemove (list[0]);
+            if (maxStreams != 0 && Streams.Count >= Streams.Capacity) {
+                Logger.Log (null, "We've reached capacity: {0}", Streams.Count);
+                CloseAndRemove (Streams[0]);
             }
-            list.Add (stream);
+            Streams.Add (stream);
         }
 
         public TorrentFileStream FindStream (string path)
         {
-            for (int i = 0; i < list.Count; i++)
-                if (list[i].Path == path)
-                    return list[i];
+            for (int i = 0; i < Streams.Count; i++)
+                if (Streams[i].Path == path)
+                    return Streams[i];
             return null;
         }
 
@@ -86,8 +81,8 @@ namespace MonoTorrent.Client
                     s = null;
                 } else {
                     // Place the filestream at the end so we know it's been recently used
-                    list.Remove (s);
-                    list.Add (s);
+                    Streams.Remove (s);
+                    Streams.Add (s);
                 }
             }
 
@@ -117,8 +112,8 @@ namespace MonoTorrent.Client
 
         public void Dispose ()
         {
-            list.ForEach (delegate (TorrentFileStream s) { s.Dispose (); });
-            list.Clear ();
+            Streams.ForEach (delegate (TorrentFileStream s) { s.Dispose (); });
+            Streams.Clear ();
         }
 
         #endregion
@@ -132,10 +127,10 @@ namespace MonoTorrent.Client
             return s != null;
         }
 
-        private void CloseAndRemove (TorrentFileStream s)
+        void CloseAndRemove (TorrentFileStream s)
         {
             Logger.Log (null, "Closing and removing: {0}", s.Path);
-            list.Remove (s);
+            Streams.Remove (s);
             s.Dispose ();
         }
     }

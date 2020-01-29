@@ -91,14 +91,14 @@ namespace MonoTorrent.Client.Modes
                     await PausedCompletionSource.Task;
                     Cancellation.Token.ThrowIfCancellationRequested ();
 
-                    var hash = await DiskManager.GetHashAsync (Manager.Torrent, index);
+                    byte[] hash = await DiskManager.GetHashAsync (Manager.Torrent, index);
 
                     if (Cancellation.Token.IsCancellationRequested) {
                         await DiskManager.CloseFilesAsync (Manager.Torrent);
                         Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 
-                    var hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
+                    bool hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
                     Manager.OnPieceHashed (index, hashPassed);
                 }
             } else {

@@ -33,7 +33,10 @@ namespace System.Runtime.CompilerServices
 {
     struct AsyncVoidMethodBuilder
     {
-        public static AsyncVoidMethodBuilder Create () => new AsyncVoidMethodBuilder ();
+        public static AsyncVoidMethodBuilder Create ()
+        {
+            return new AsyncVoidMethodBuilder ();
+        }
 
         public void SetException (Exception e)
         {

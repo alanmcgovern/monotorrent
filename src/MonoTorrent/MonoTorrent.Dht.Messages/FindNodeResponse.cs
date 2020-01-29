@@ -37,7 +37,7 @@ namespace MonoTorrent.Dht.Messages
 
         public BEncodedString Nodes {
             get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey) ?? BEncodedString.Empty;
-            set { Parameters[NodesKey] = value; }
+            set => Parameters[NodesKey] = value;
         }
 
         public FindNodeResponse (NodeId id, BEncodedValue transactionId)

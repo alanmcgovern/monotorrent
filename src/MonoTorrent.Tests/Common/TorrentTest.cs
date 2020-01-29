@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -45,7 +45,7 @@ namespace MonoTorrent.Common
         readonly System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create ();
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [SetUp]
         public void StartUp ()
@@ -54,7 +54,7 @@ namespace MonoTorrent.Common
             DateTime epochStart = new DateTime (1970, 1, 1, 0, 0, 0);
             TimeSpan span = current - epochStart;
             creationTime = (long) span.TotalSeconds;
-            Console.WriteLine (creationTime.ToString () + "Creation seconds");
+            Console.WriteLine ($"{creationTime}Creation seconds");
 
             BEncodedDictionary torrentInfo = new BEncodedDictionary {
                 { "announce", new BEncodedString ("http://myannouceurl/announce") },
@@ -63,7 +63,7 @@ namespace MonoTorrent.Common
                 { "comment.utf-8", new BEncodedString ("my big long comment") },
                 { "comment", new BEncodedString ("my big long comment") },
                 { "azureus_properties", new BEncodedDictionary () }, //FIXME: What is this?
-                { "created by", new BEncodedString ("MonoTorrent/" + VersionInfo.ClientVersion) },
+                { "created by", new BEncodedString ($"MonoTorrent/{VersionInfo.ClientVersion}") },
                 { "encoding", new BEncodedString ("UTF-8") },
                 { "info", CreateInfoDict () },
                 { "private", new BEncodedString ("1") }
@@ -92,14 +92,12 @@ namespace MonoTorrent.Common
         private BEncodedList CreateFiles ()
         {
             BEncodedList files = new BEncodedList ();
-            BEncodedDictionary file;
-            BEncodedList path;
 
-            path = new BEncodedList {
+            BEncodedList path = new BEncodedList {
                 new BEncodedString ("file1.txt")
             };
 
-            file = new BEncodedDictionary {
+            BEncodedDictionary file = new BEncodedDictionary {
                 { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
                 { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
                 { "length", new BEncodedNumber (50000) },
@@ -167,7 +165,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void AnnounceUrl ()
@@ -178,7 +176,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void CreationDate ()
@@ -193,7 +191,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Comment ()
@@ -202,12 +200,12 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void CreatedBy ()
         {
-            Assert.AreEqual (torrent.CreatedBy, "MonoTorrent/" + VersionInfo.ClientVersion);
+            Assert.AreEqual (torrent.CreatedBy, $"MonoTorrent/{VersionInfo.ClientVersion}");
         }
 
         [Test]
@@ -220,7 +218,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void ED2K ()
@@ -229,7 +227,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Encoding ()
@@ -238,7 +236,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Files ()
@@ -274,7 +272,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Name ()
@@ -283,7 +281,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Private ()
@@ -292,7 +290,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void PublisherUrl ()
@@ -301,7 +299,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void PieceLength ()
@@ -310,7 +308,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Publisher ()
@@ -319,7 +317,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Size ()
@@ -437,7 +435,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void Source ()
@@ -446,7 +444,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
         public void SHA1 ()

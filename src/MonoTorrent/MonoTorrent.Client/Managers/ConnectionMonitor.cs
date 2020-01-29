@@ -46,29 +46,17 @@ namespace MonoTorrent.Client
 
         #region Public Properties
 
-        public long DataBytesDownloaded {
-            get { return DataDown.Total; }
-        }
+        public long DataBytesDownloaded => DataDown.Total;
 
-        public long DataBytesUploaded {
-            get { return DataUp.Total; }
-        }
+        public long DataBytesUploaded => DataUp.Total;
 
-        public long DownloadSpeed {
-            get { return DataDown.Rate + ProtocolDown.Rate; }
-        }
+        public long DownloadSpeed => DataDown.Rate + ProtocolDown.Rate;
 
-        public long ProtocolBytesDownloaded {
-            get { return ProtocolDown.Total; }
-        }
+        public long ProtocolBytesDownloaded => ProtocolDown.Total;
 
-        public long ProtocolBytesUploaded {
-            get { return ProtocolUp.Total; }
-        }
+        public long ProtocolBytesUploaded => ProtocolUp.Total;
 
-        public long UploadSpeed {
-            get { return DataUp.Rate + ProtocolUp.Rate; }
-        }
+        public long UploadSpeed => DataUp.Rate + ProtocolUp.Rate;
 
         #endregion Public Properties
 

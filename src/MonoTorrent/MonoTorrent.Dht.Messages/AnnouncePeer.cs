@@ -40,17 +40,11 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString PortKey = "port";
         static readonly BEncodedString TokenKey = "token";
 
-        internal NodeId InfoHash {
-            get { return new NodeId ((BEncodedString) Parameters[InfoHashKey]); }
-        }
+        internal NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
 
-        internal BEncodedNumber Port {
-            get { return (BEncodedNumber) Parameters[PortKey]; }
-        }
+        internal BEncodedNumber Port => (BEncodedNumber) Parameters[PortKey];
 
-        internal BEncodedString Token {
-            get { return (BEncodedString) Parameters[TokenKey]; }
-        }
+        internal BEncodedString Token => (BEncodedString) Parameters[TokenKey];
 
         public AnnouncePeer (NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
             : base (id, QueryName)
@@ -67,7 +61,9 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
-            => new AnnouncePeerResponse (parameters);
+        {
+            return new AnnouncePeerResponse (parameters);
+        }
 
         public override void Handle (DhtEngine engine, Node node)
         {

@@ -37,69 +37,67 @@ namespace MonoTorrent.Client.PiecePicking
     {
         protected static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds (45);
 
-        readonly PiecePicker picker;
-
-        public PiecePicker BasePicker => picker;
+        public PiecePicker BasePicker { get; }
 
         protected PiecePicker (PiecePicker picker)
         {
-            this.picker = picker;
+            BasePicker = picker;
         }
 
         void CheckOverriden ()
         {
-            if (picker == null)
+            if (BasePicker == null)
                 throw new InvalidOperationException ("This method must be overridden");
         }
 
         public virtual void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
             CheckOverriden ();
-            picker.CancelRequest (peer, piece, startOffset, length);
+            BasePicker.CancelRequest (peer, piece, startOffset, length);
         }
         public virtual void CancelRequests (IPieceRequester peer)
         {
             CheckOverriden ();
-            picker.CancelRequests (peer);
+            BasePicker.CancelRequests (peer);
         }
         public virtual void CancelTimedOutRequests ()
         {
             CheckOverriden ();
-            picker.CancelTimedOutRequests ();
+            BasePicker.CancelTimedOutRequests ();
         }
         public virtual PieceRequest ContinueExistingRequest (IPieceRequester peer)
         {
             CheckOverriden ();
-            return picker.ContinueExistingRequest (peer);
+            return BasePicker.ContinueExistingRequest (peer);
         }
         public virtual int CurrentReceivedCount ()
         {
             CheckOverriden ();
-            return picker.CurrentReceivedCount ();
+            return BasePicker.CurrentReceivedCount ();
         }
         public virtual int CurrentRequestCount ()
         {
             CheckOverriden ();
-            return picker.CurrentRequestCount ();
+            return BasePicker.CurrentRequestCount ();
         }
         public virtual List<Piece> ExportActiveRequests ()
         {
             CheckOverriden ();
-            return picker.ExportActiveRequests ();
+            return BasePicker.ExportActiveRequests ();
         }
         public virtual void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             CheckOverriden ();
-            picker.Initialise (bitfield, torrentData, requests);
+            BasePicker.Initialise (bitfield, torrentData, requests);
         }
         public virtual bool IsInteresting (BitField bitfield)
         {
             CheckOverriden ();
-            return picker.IsInteresting (bitfield);
+            return BasePicker.IsInteresting (bitfield);
         }
         public PieceRequest PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
         {
-            var bundle = PickPiece (peer, available, otherPeers, 1);
+            IList<PieceRequest> bundle = PickPiece (peer, available, otherPeers, 1);
             return bundle?.Single ();
         }
         public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)
@@ -109,17 +107,17 @@ namespace MonoTorrent.Client.PiecePicking
         public virtual IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             CheckOverriden ();
-            return picker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+            return BasePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
         public virtual void Reset ()
         {
             CheckOverriden ();
-            picker.Reset ();
+            BasePicker.Reset ();
         }
         public virtual bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             CheckOverriden ();
-            return picker.ValidatePiece (peer, pieceIndex, startOffset, length, out piece);
+            return BasePicker.ValidatePiece (peer, pieceIndex, startOffset, length, out piece);
         }
     }
 }

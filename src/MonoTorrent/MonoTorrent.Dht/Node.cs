@@ -71,7 +71,9 @@ namespace MonoTorrent.Dht
         }
 
         internal void Seen ()
-            => Seen (TimeSpan.Zero);
+        {
+            Seen (TimeSpan.Zero);
+        }
 
         internal void Seen (TimeSpan delta)
         {
@@ -109,7 +111,7 @@ namespace MonoTorrent.Dht
             return buffer;
         }
 
-        private void CompactNode (byte[] buffer, int offset)
+        void CompactNode (byte[] buffer, int offset)
         {
             Message.Write (buffer, offset, Id.Bytes);
             CompactPort (buffer, offset + 20);
@@ -117,9 +119,9 @@ namespace MonoTorrent.Dht
 
         internal static BEncodedString CompactNode (ICollection<Node> nodes)
         {
-            var count = 0;
-            var buffer = new byte[nodes.Count * 26];
-            foreach (var node in nodes) {
+            int count = 0;
+            byte[] buffer = new byte[nodes.Count * 26];
+            foreach (Node node in nodes) {
                 node.CompactNode (buffer, count * 26);
                 count++;
             }
@@ -131,8 +133,8 @@ namespace MonoTorrent.Dht
         {
             byte[] id = new byte[20];
             Buffer.BlockCopy (buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress ((uint) BitConverter.ToInt32 (buffer, offset + 20));
-            int port = (int) (ushort) IPAddress.NetworkToHostOrder ((short) BitConverter.ToUInt16 (buffer, offset + 24));
+            var address = new IPAddress ((uint) BitConverter.ToInt32 (buffer, offset + 20));
+            int port = (ushort) IPAddress.NetworkToHostOrder ((short) BitConverter.ToUInt16 (buffer, offset + 24));
             return new Node (new NodeId (id), new IPEndPoint (address, port));
         }
 
@@ -162,8 +164,8 @@ namespace MonoTorrent.Dht
                     else if (val is BEncodedNumber)
                         port = ((BEncodedNumber) val).Number;
                 }
-                IPAddress address;
-                IPAddress.TryParse (host, out address);
+
+                IPAddress.TryParse (host, out IPAddress address);
 
                 //REM: bad design from bitcomet we do not have node id so create it...
                 //or use torrent infohash?
@@ -174,17 +176,23 @@ namespace MonoTorrent.Dht
         }
 
         public override bool Equals (object obj)
-            => Equals (obj as Node);
+        {
+            return Equals (obj as Node);
+        }
 
         public bool Equals (Node other)
-            => Id.Equals (other?.Id);
+        {
+            return Id.Equals (other?.Id);
+        }
 
         public override int GetHashCode ()
-            => Id.GetHashCode ();
+        {
+            return Id.GetHashCode ();
+        }
 
         public override string ToString ()
         {
-            StringBuilder sb = new StringBuilder (48);
+            var sb = new StringBuilder (48);
             for (int i = 0; i < Id.Bytes.Length; i++) {
                 sb.Append (Id.Bytes[i]);
                 sb.Append ("-");

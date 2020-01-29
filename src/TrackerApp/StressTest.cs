@@ -10,11 +10,11 @@ namespace TrackerApp
 {
     public class StressTest
     {
-        List<string> hashes = new List<string> ();
-        Random random = new Random (1);
-        SpeedMonitor requests = new SpeedMonitor ();
-        Thread[] threads;
-        private int threadSleepTime = 0;
+        readonly List<string> hashes = new List<string> ();
+        readonly Random random = new Random (1);
+        readonly SpeedMonitor requests = new SpeedMonitor ();
+        readonly Thread[] threads;
+        private readonly int threadSleepTime;
 
         public int RequestRate {
             get { return (int) requests.Rate; }
@@ -63,7 +63,7 @@ namespace TrackerApp
                         sb.Append ("&compact=");
                         sb.Append ("1");
 
-                        WebRequest req = HttpWebRequest.Create (sb.ToString ());
+                        WebRequest req = WebRequest.Create (sb.ToString ());
                         req.BeginGetResponse (delegate (IAsyncResult r) {
                             try {
                                 req.EndGetResponse (r).Close ();
@@ -74,7 +74,7 @@ namespace TrackerApp
                             }
                         }, null);
 
-                        System.Threading.Thread.Sleep (threadSleepTime);
+                        Thread.Sleep (threadSleepTime);
                     }
                 });
                 threads[i].Start ();

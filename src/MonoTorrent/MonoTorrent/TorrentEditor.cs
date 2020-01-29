@@ -34,8 +34,8 @@ namespace MonoTorrent
     public class TorrentEditor : EditableTorrent
     {
         public new bool CanEditSecureMetadata {
-            get { return base.CanEditSecureMetadata; }
-            set { base.CanEditSecureMetadata = value; }
+            get => base.CanEditSecureMetadata;
+            set => base.CanEditSecureMetadata = value;
         }
 
         public TorrentEditor (Torrent torrent)
@@ -56,9 +56,9 @@ namespace MonoTorrent
                 RemoveCustom ("announce-list");
             } else {
                 var list = new BEncodedList ();
-                foreach (var rawTier in Announces) {
+                foreach (RawTrackerTier rawTier in Announces) {
                     var tier = new BEncodedList ();
-                    foreach (var announce in rawTier)
+                    foreach (string announce in rawTier)
                         tier.Add ((BEncodedString) announce);
                     list.Add (tier);
                 }

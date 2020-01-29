@@ -133,7 +133,7 @@ namespace MonoTorrent.Client
         void AllocateBuffers (int count, Queue<byte[]> bufferQueue, int bufferSize)
         {
             while (count-- > 0) {
-                var buffer = new byte[bufferSize];
+                byte[] buffer = new byte[bufferSize];
                 bufferQueue.Enqueue (buffer);
                 lock (AllocatedBuffers)
                     AllocatedBuffers.Add (buffer);

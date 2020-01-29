@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -34,9 +34,9 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     class KeepAliveMessage : PeerMessage
     {
-        private const int messageLength = 0;   // has no payload
+        const int messageLength = 0;   // has no payload
         internal static readonly byte MessageId = 0;
-        private static readonly byte[] payload = new byte[] { 0, 0, 0, 0 };
+        static readonly byte[] payload = { 0, 0, 0, 0 };
 
         #region Constructors
         /// <summary>
@@ -66,15 +66,13 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength {
-            get { return (4); }
-        }
+        public override int ByteLength => (4);
         #endregion
 
 
         #region Overridden Methods
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <returns></returns>
         public override string ToString ()
@@ -90,7 +88,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int GetHashCode ()
         {
-            return this.ToString ().GetHashCode ();
+            return ToString ().GetHashCode ();
         }
         #endregion
     }

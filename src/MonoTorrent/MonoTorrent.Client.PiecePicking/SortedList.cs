@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.PiecePicking
 {
     class SortList<T> : IList<T>
     {
-        private List<T> list;
+        readonly List<T> list;
 
         public SortList ()
         {
@@ -77,8 +77,8 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         public T this[int index] {
-            get { return list[index]; }
-            set { list[index] = value; }
+            get => list[index];
+            set => list[index] = value;
         }
 
         public void Add (T item)
@@ -105,18 +105,14 @@ namespace MonoTorrent.Client.PiecePicking
             list.CopyTo (array, arrayIndex);
         }
 
-        public int Count {
-            get { return list.Count; }
-        }
+        public int Count => list.Count;
 
         public void ForEach (Action<T> action)
         {
             list.ForEach (action);
         }
 
-        public bool IsReadOnly {
-            get { return false; }
-        }
+        public bool IsReadOnly => false;
 
         public bool Remove (T item)
         {

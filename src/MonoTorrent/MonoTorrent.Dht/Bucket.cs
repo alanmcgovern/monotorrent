@@ -109,7 +109,9 @@ namespace MonoTorrent.Dht
         }
 
         internal void Changed ()
-            => Changed (TimeSpan.Zero);
+        {
+            Changed (TimeSpan.Zero);
+        }
 
         internal void Changed (TimeSpan delta)
         {
@@ -118,27 +120,43 @@ namespace MonoTorrent.Dht
         }
 
         public int CompareTo (Bucket other)
-            => Min.CompareTo (other?.Min);
+        {
+            return Min.CompareTo (other?.Min);
+        }
 
         public override bool Equals (object obj)
-            => Equals (obj as Bucket);
+        {
+            return Equals (obj as Bucket);
+        }
 
         public bool Equals (Bucket other)
-            => Min.Equals (other?.Min) && Max.Equals (other?.Max);
+        {
+            return Min.Equals (other?.Min) && Max.Equals (other?.Max);
+        }
 
         public IEnumerator<Node> GetEnumerator ()
-            => Nodes.GetEnumerator ();
+        {
+            return Nodes.GetEnumerator ();
+        }
 
         IEnumerator IEnumerable.GetEnumerator ()
-            => GetEnumerator ();
+        {
+            return GetEnumerator ();
+        }
 
         public override int GetHashCode ()
-            => Min.GetHashCode () ^ Max.GetHashCode ();
+        {
+            return Min.GetHashCode () ^ Max.GetHashCode ();
+        }
 
         internal void SortBySeen ()
-            => Nodes.Sort (LastSeenComparer);
+        {
+            Nodes.Sort (LastSeenComparer);
+        }
 
         public override string ToString ()
-            => string.Format ("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
+        {
+            return string.Format ("Count: {2} Min: {0}  Max: {1}", Min, Max, Nodes.Count);
+        }
     }
 }

@@ -85,7 +85,9 @@ namespace MonoTorrent
         /// <param name="uri"></param>
         /// <returns></returns>
         public static MagnetLink Parse (string uri)
-            => FromUri (new Uri (uri));
+        {
+            return FromUri (new Uri (uri));
+        }
 
         /// <summary>
         /// Parses a magnet link from the given Uri. The uri should be in the form magnet:?xt=urn:btih:
@@ -153,10 +155,14 @@ namespace MonoTorrent
         }
 
         public string ToV1String ()
-            => ConvertToString ();
+        {
+            return ConvertToString ();
+        }
 
         public Uri ToV1Uri ()
-            => new Uri (ToV1String ());
+        {
+            return new Uri (ToV1String ());
+        }
 
         string ConvertToString ()
         {
@@ -170,12 +176,12 @@ namespace MonoTorrent
                 sb.Append (Name.UrlEncodeUTF8 ());
             }
 
-            foreach (var tracker in AnnounceUrls) {
+            foreach (string tracker in AnnounceUrls) {
                 sb.Append ("&tr=");
                 sb.Append (tracker.UrlEncodeUTF8 ());
             }
 
-            foreach (var webseed in Webseeds) {
+            foreach (string webseed in Webseeds) {
                 sb.Append ("&as=");
                 sb.Append (webseed.UrlEncodeUTF8 ());
             }

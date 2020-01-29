@@ -48,7 +48,9 @@ namespace MonoTorrent.Client
         /// <param name="bitfieldLength"></param>
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength)
-            => CreateNull (bitfieldLength, false, true, false);
+        {
+            return CreateNull (bitfieldLength, false, true, false);
+        }
 
         /// <summary>
         /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
@@ -196,13 +198,15 @@ namespace MonoTorrent.Client
 
         internal PeerMessage Dequeue ()
         {
-            var message = SendQueue[0];
+            PeerMessage message = SendQueue[0];
             SendQueue.RemoveAt (0);
             return message;
         }
 
         internal void Enqueue (PeerMessage message)
-            => EnqueueAt (message, SendQueue.Count);
+        {
+            EnqueueAt (message, SendQueue.Count);
+        }
 
         internal void EnqueueAt (PeerMessage message, int index)
         {
@@ -221,7 +225,7 @@ namespace MonoTorrent.Client
 
         #region BitTyrantasaurus implementation
 
-        private const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
+        const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
         ValueStopwatch LastRateReductionTime;                   // last time we reduced rate of this peer
         long lastMeasuredDownloadRate;                                   // last download rate measured
         ValueStopwatch TyrantStartTime;
@@ -229,7 +233,7 @@ namespace MonoTorrent.Client
         // stats
         long maxObservedDownloadSpeed;
 
-        private void InitializeTyrant ()
+        void InitializeTyrant ()
         {
             HaveMessageEstimatedDownloadedBytes = 0;
             TyrantStartTime.Restart ();
@@ -259,7 +263,7 @@ namespace MonoTorrent.Client
         internal int EstimatedDownloadRate {
             get {
                 int timeElapsed = (int) TyrantStartTime.Elapsed.TotalSeconds;
-                return (int) (timeElapsed == 0 ? 0 : ((long) HaveMessageEstimatedDownloadedBytes) / timeElapsed);
+                return (int) (timeElapsed == 0 ? 0 : HaveMessageEstimatedDownloadedBytes / timeElapsed);
             }
         }
 
@@ -268,8 +272,8 @@ namespace MonoTorrent.Client
         /// </summary>
         internal float Ratio {
             get {
-                float downloadRate = (float) GetDownloadRate ();
-                return downloadRate / (float) UploadRateForRecip;
+                float downloadRate = GetDownloadRate ();
+                return downloadRate / UploadRateForRecip;
             }
         }
 
@@ -294,12 +298,12 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal long GetDownloadRate ()
         {
-            if (this.lastMeasuredDownloadRate > 0) {
-                return this.lastMeasuredDownloadRate;
+            if (lastMeasuredDownloadRate > 0) {
+                return lastMeasuredDownloadRate;
             } else {
                 // assume that his upload rate will match his estimated download rate, and 
                 // get the estimated active set size
-                int estimatedDownloadRate = this.EstimatedDownloadRate;
+                int estimatedDownloadRate = EstimatedDownloadRate;
                 int activeSetSize = GetActiveSetSize (estimatedDownloadRate);
 
                 return estimatedDownloadRate / activeSetSize;
@@ -319,14 +323,14 @@ namespace MonoTorrent.Client
 
                 LastChokedTime.Restart ();
             } else {
-                this.RoundsUnchoked++;
+                RoundsUnchoked++;
 
                 if (AmInterested) {
                     //if we are interested and unchoked, update last measured download rate, unless it is 0
-                    if (this.Monitor.DownloadSpeed > 0) {
-                        this.lastMeasuredDownloadRate = this.Monitor.DownloadSpeed;
+                    if (Monitor.DownloadSpeed > 0) {
+                        lastMeasuredDownloadRate = Monitor.DownloadSpeed;
 
-                        this.maxObservedDownloadSpeed = Math.Max (this.lastMeasuredDownloadRate, this.maxObservedDownloadSpeed);
+                        maxObservedDownloadSpeed = Math.Max (lastMeasuredDownloadRate, maxObservedDownloadSpeed);
                     }
                 }
             }
@@ -334,7 +338,7 @@ namespace MonoTorrent.Client
             // last rate wasn't sufficient to achieve reciprocation
             if (!AmChoking && IsChoking && IsInterested) // only increase upload rate if he's interested, otherwise he won't request any pieces
             {
-                this.UploadRateForRecip = (this.UploadRateForRecip * 12) / 10;
+                UploadRateForRecip = (UploadRateForRecip * 12) / 10;
             }
 
             // we've been unchoked by this guy for a while....
@@ -342,7 +346,7 @@ namespace MonoTorrent.Client
                     && LastChokedTime.Elapsed.TotalSeconds > 30
                     && LastRateReductionTime.Elapsed.TotalSeconds > 30)           // only do rate reduction every 30s
             {
-                this.UploadRateForRecip = (this.UploadRateForRecip * 9) / 10;
+                UploadRateForRecip = (UploadRateForRecip * 9) / 10;
                 LastRateReductionTime.Restart ();
             }
         }
@@ -354,7 +358,7 @@ namespace MonoTorrent.Client
         /// <returns>True if the upload rate for recip is greater than the actual upload rate</returns>
         internal bool IsUnderUploadLimit ()
         {
-            return this.UploadRateForRecip > this.Monitor.UploadSpeed;
+            return UploadRateForRecip > Monitor.UploadSpeed;
         }
 
 

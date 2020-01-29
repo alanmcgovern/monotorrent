@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // If there are two or more pieces to choose, ensure we always start *at least* one
             // piece beyond the start index.
-            var midpoint = random.Next (startIndex + 1, endIndex);
+            int midpoint = random.Next (startIndex + 1, endIndex);
             return base.PickPiece (peer, available, otherPeers, count, midpoint, endIndex) ??
                    base.PickPiece (peer, available, otherPeers, count, startIndex, midpoint);
         }

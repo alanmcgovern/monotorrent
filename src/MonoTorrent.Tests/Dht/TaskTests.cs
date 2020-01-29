@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -46,7 +46,7 @@ namespace MonoTorrent.Dht
         DhtEngine engine;
         TestListener listener;
         Node node;
-        BEncodedString transactionId = "aa";
+        readonly BEncodedString transactionId = "aa";
 
         [SetUp]
         public void Setup ()
@@ -117,7 +117,7 @@ namespace MonoTorrent.Dht
                 if ((endpoint.Port == 3 && nodeCount == 0) ||
                      (endpoint.Port == 1 && nodeCount == 1) ||
                      (endpoint.Port == 5 && nodeCount == 2)) {
-                    Node n = b.Nodes.Find (delegate (Node no) { return no.EndPoint.Port == endpoint.Port; });
+                    Node n = b.Nodes.Find (no => no.EndPoint.Port == endpoint.Port);
                     n.Seen ();
                     PingResponse response = new PingResponse (n.Id, message.TransactionId);
                     listener.RaiseMessageReceived (response, node.EndPoint);
@@ -138,7 +138,7 @@ namespace MonoTorrent.Dht
                 nodes.Add (new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i)));
 
             listener.MessageSent += (message, endpoint) => {
-                Node current = nodes.Find (delegate (Node n) { return n.EndPoint.Port.Equals (endpoint.Port); });
+                Node current = nodes.Find (n => n.EndPoint.Port.Equals (endpoint.Port));
                 if (current == null)
                     return;
 
@@ -165,7 +165,7 @@ namespace MonoTorrent.Dht
 
             foreach (Bucket b in engine.RoutingTable.Buckets) {
                 Assert.IsTrue (b.LastChanged < TimeSpan.FromHours (1));
-                Assert.IsTrue (b.Nodes.Exists (delegate (Node n) { return n.LastSeen < TimeSpan.FromHours (1); }));
+                Assert.IsTrue (b.Nodes.Exists (n => n.LastSeen < TimeSpan.FromHours (1)));
             }
         }
 

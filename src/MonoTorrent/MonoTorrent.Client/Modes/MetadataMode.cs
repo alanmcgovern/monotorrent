@@ -41,11 +41,11 @@ namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {
-        private BitField bitField;
+        BitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
-        private PeerId currentId;
+        PeerId currentId;
         string savePath;
-        private DateTime requestTimeout;
+        DateTime requestTimeout;
 
         bool HasAnnounced { get; set; }
         internal MemoryStream Stream { get; set; }
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        private void SendRequestToNextPeer ()
+        void SendRequestToNextPeer ()
         {
             NextPeer ();
 
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        private void NextPeer ()
+        void NextPeer ()
         {
             bool flag = false;
 
@@ -142,15 +142,15 @@ namespace MonoTorrent.Client.Modes
                         if (!Manager.InfoHash.Equals (hash)) {
                             bitField.SetAll (false);
                         } else {
-                            Torrent t;
                             Stream.Position = 0;
-                            BEncodedDictionary dict = new BEncodedDictionary ();
-                            dict.Add ("info", BEncodedValue.Decode (Stream));
+                            var dict = new BEncodedDictionary {
+                                { "info", BEncodedValue.Decode (Stream) }
+                            };
                             // FIXME: Add the trackers too
-                            if (Torrent.TryLoad (dict.Encode (), out t)) {
+                            if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
                                 try {
                                     if (Directory.Exists (savePath))
-                                        savePath = Path.Combine (savePath, Manager.InfoHash.ToHex () + ".torrent");
+                                        savePath = Path.Combine (savePath, $"{Manager.InfoHash.ToHex ()}.torrent");
                                     File.Delete (savePath);
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {
@@ -180,12 +180,12 @@ namespace MonoTorrent.Client.Modes
                 case LTMetadata.eMessageType.Request://ever done in base class but needed to avoid default
                     break;
                 default:
-                    throw new MessageException (string.Format ("Invalid messagetype in LTMetadata: {0}", message.MetadataMessageType));
+                    throw new MessageException ($"Invalid messagetype in LTMetadata: {message.MetadataMessageType}");
             }
 
         }
 
-        private void SwitchToRegular ()
+        void SwitchToRegular ()
         {
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
@@ -205,38 +205,38 @@ namespace MonoTorrent.Client.Modes
             _ = Manager.StartAsync ();
         }
 
-        protected override void HandleAllowedFastMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.AllowedFastMessage message)
+        protected override void HandleAllowedFastMessage (PeerId id, Messages.FastPeer.AllowedFastMessage message)
         {
             // Disregard these when in metadata mode as we can't request regular pieces anyway
         }
 
-        protected override void HandleHaveAllMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveAllMessage message)
+        protected override void HandleHaveAllMessage (PeerId id, Messages.FastPeer.HaveAllMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveMessage (PeerId id, MonoTorrent.Client.Messages.Standard.HaveMessage message)
+        protected override void HandleHaveMessage (PeerId id, Messages.Standard.HaveMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveNoneMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveNoneMessage message)
+        protected override void HandleHaveNoneMessage (PeerId id, Messages.FastPeer.HaveNoneMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleInterestedMessage (PeerId id, MonoTorrent.Client.Messages.Standard.InterestedMessage message)
+        protected override void HandleInterestedMessage (PeerId id, Messages.Standard.InterestedMessage message)
         {
             // Nothing
         }
 
-        private void RequestNextNeededPiece (PeerId id)
+        void RequestNextNeededPiece (PeerId id)
         {
             int index = bitField.FirstFalse ();
             if (index == -1)
                 return;//throw exception or switch to regular?
 
-            LTMetadata m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
+            var m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
             id.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
         }
@@ -249,9 +249,10 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception ("invalid metadata");//restart ?
 
-            BEncodedValue d = BEncodedValue.Decode (Stream);
-            BEncodedDictionary dict = new BEncodedDictionary ();
-            dict.Add ("info", d);
+            var d = BEncodedValue.Decode (Stream);
+            var dict = new BEncodedDictionary {
+                { "info", d }
+            };
 
             return Torrent.LoadCore (dict);
         }

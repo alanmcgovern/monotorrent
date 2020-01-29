@@ -80,7 +80,7 @@ namespace MonoTorrent.Tracker.Listeners
             return request.Response;
         }
 
-        private NameValueCollection ParseQuery (string url)
+        NameValueCollection ParseQuery (string url)
         {
             // The '?' symbol will be there if we received the entire URL as opposed to
             // just the query string - we accept both therfore trim out the excess if we have the entire URL
@@ -88,7 +88,7 @@ namespace MonoTorrent.Tracker.Listeners
                 url = url.Substring (url.IndexOf ('?') + 1);
 
             string[] parts = url.Split ('&', '=');
-            NameValueCollection c = new NameValueCollection (1 + parts.Length / 2);
+            var c = new NameValueCollection (1 + parts.Length / 2);
             for (int i = 0; i < parts.Length; i += 2)
                 if (parts.Length > i + 1)
                     c.Add (parts[i], parts[i + 1]);
@@ -97,9 +97,13 @@ namespace MonoTorrent.Tracker.Listeners
         }
 
         protected void RaiseAnnounceReceived (AnnounceRequest e)
-            => AnnounceReceived?.Invoke (this, e);
+        {
+            AnnounceReceived?.Invoke (this, e);
+        }
 
         protected void RaiseScrapeReceived (TrackerScrapeRequest e)
-            => ScrapeReceived?.Invoke (this, e);
+        {
+            ScrapeReceived?.Invoke (this, e);
+        }
     }
 }

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
-        static readonly Predicate<Block> TimedOut = delegate (Block b) { return b.RequestTimedOut; };
+        static readonly Predicate<Block> TimedOut = b => b.RequestTimedOut;
 
         readonly SortList<Piece> requests;
 
@@ -62,17 +62,15 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
-            CancelWhere (delegate (Block b) {
-                return b.StartOffset == startOffset &&
-                       b.RequestLength == length &&
-                       b.PieceIndex == piece &&
-                       peer == b.RequestedOff;
-            });
+            CancelWhere (b => b.StartOffset == startOffset &&
+                              b.RequestLength == length &&
+                              b.PieceIndex == piece &&
+                              peer == b.RequestedOff);
         }
 
         public override void CancelRequests (IPieceRequester peer)
         {
-            CancelWhere (delegate (Block b) { return peer == b.RequestedOff; });
+            CancelWhere (b => peer == b.RequestedOff);
         }
 
         public override void CancelTimedOutRequests ()
@@ -84,7 +82,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             bool cancelled = false;
             for (int p = 0; p < requests.Count; p++) {
-                var blocks = requests[p].Blocks;
+                Block[] blocks = requests[p].Blocks;
                 for (int i = 0; i < blocks.Length; i++) {
                     if (predicate (blocks[i]) && !blocks[i].Received) {
                         cancelled = true;
@@ -94,7 +92,7 @@ namespace MonoTorrent.Client.PiecePicking
             }
 
             if (cancelled)
-                requests.RemoveAll (delegate (Piece p) { return p.NoBlocksRequested; });
+                requests.RemoveAll (p => p.NoBlocksRequested);
         }
 
         public override int CurrentReceivedCount ()
@@ -250,7 +248,7 @@ namespace MonoTorrent.Client.PiecePicking
             // Otherwise, if this peer has any of the pieces that are currently being requested, try to
             // request a block from one of those pieces
             for (int pIndex = 0; pIndex < requests.Count; pIndex++) {
-                var p = requests[pIndex];
+                Piece p = requests[pIndex];
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
                 if (p.AllBlocksRequested || p.AllBlocksReceived || !peer.BitField[p.Index] ||
@@ -277,8 +275,8 @@ namespace MonoTorrent.Client.PiecePicking
                     continue;
 
                 pieces.RemoveAt (i);
-                Piece p = new Piece (index, TorrentData.PieceLength, TorrentData.Size);
-                this.requests.Add (p);
+                var p = new Piece (index, TorrentData.PieceLength, TorrentData.Size);
+                requests.Add (p);
                 return p.Blocks[0].CreateRequest (peer);
             }
 
@@ -300,7 +298,7 @@ namespace MonoTorrent.Client.PiecePicking
             var bundle = new List<PieceRequest> (count);
             for (int i = 0; bundle.Count < count && i < piecesNeeded; i++) {
                 // Request the piece
-                Piece p = new Piece (checkIndex + i, TorrentData.PieceLength, TorrentData.Size);
+                var p = new Piece (checkIndex + i, TorrentData.PieceLength, TorrentData.Size);
                 requests.Add (p);
                 for (int j = 0; j < p.Blocks.Length && bundle.Count < count; j++)
                     bundle.Add (p.Blocks[j].CreateRequest (peer));
@@ -314,7 +312,7 @@ namespace MonoTorrent.Client.PiecePicking
             return requests.BinarySearch (null, Comparer) >= 0;
         }
 
-        private int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
+        int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
             int largestStart = 0;
             int largestEnd = 0;

@@ -34,8 +34,8 @@ namespace MonoTorrent.Client.Connections
 {
     public static class ConnectionFactory
     {
-        private static object locker = new object ();
-        private static Dictionary<string, Func<Uri, IConnection>> trackerTypes = new Dictionary<string, Func<Uri, IConnection>> ();
+        static readonly object locker = new object ();
+        static readonly Dictionary<string, Func<Uri, IConnection>> trackerTypes = new Dictionary<string, Func<Uri, IConnection>> ();
 
         static ConnectionFactory ()
         {
@@ -47,9 +47,9 @@ namespace MonoTorrent.Client.Connections
         public static void RegisterTypeForProtocol (string protocol, Type connectionType)
         {
             if (string.IsNullOrEmpty (protocol))
-                throw new ArgumentException ("cannot be null or empty", "protocol");
+                throw new ArgumentException ("cannot be null or empty", nameof (protocol));
             if (connectionType == null)
-                throw new ArgumentNullException ("connectionType");
+                throw new ArgumentNullException (nameof (connectionType));
 
             RegisterTypeForProtocol (protocol, uri => (IConnection) Activator.CreateInstance (connectionType, uri));
         }

@@ -41,8 +41,8 @@ namespace MonoTorrent.BEncoding
         /// The value of the BEncodedNumber
         /// </summary>
         public long Number {
-            get { return number; }
-            set { number = value; }
+            get => number;
+            set => number = value;
         }
         internal long number;
         #endregion
@@ -60,7 +60,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="value">The value of the BEncodedNumber</param>
         public BEncodedNumber (long value)
         {
-            this.number = value;
+            number = value;
         }
 
         public static implicit operator BEncodedNumber (long value)
@@ -120,7 +120,7 @@ namespace MonoTorrent.BEncoding
         {
             int sign = 1;
             if (reader == null)
-                throw new ArgumentNullException ("reader");
+                throw new ArgumentNullException (nameof (reader));
 
             if (reader.ReadByte () != 'i')              // remove the leading 'i'
                 throw new BEncodingException ("Invalid data found. Aborting.");
@@ -180,15 +180,15 @@ namespace MonoTorrent.BEncoding
         public int CompareTo (BEncodedNumber other)
         {
             if (other == null)
-                throw new ArgumentNullException ("other");
+                throw new ArgumentNullException (nameof (other));
 
-            return this.number.CompareTo (other.number);
+            return number.CompareTo (other.number);
         }
 
 
         public int CompareTo (long other)
         {
-            return this.number.CompareTo (other);
+            return number.CompareTo (other);
         }
         #endregion
 
@@ -201,11 +201,10 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override bool Equals (object obj)
         {
-            BEncodedNumber obj2 = obj as BEncodedNumber;
-            if (obj2 == null)
+            if (!(obj is BEncodedNumber obj2))
                 return false;
 
-            return (this.number == obj2.number);
+            return (number == obj2.number);
         }
 
         /// <summary>
@@ -214,7 +213,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int GetHashCode ()
         {
-            return this.number.GetHashCode ();
+            return number.GetHashCode ();
         }
 
         /// <summary>
@@ -223,7 +222,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override string ToString ()
         {
-            return (this.number.ToString ());
+            return (number.ToString ());
         }
         #endregion
     }

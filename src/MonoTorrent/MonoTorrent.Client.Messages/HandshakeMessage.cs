@@ -37,16 +37,14 @@ namespace MonoTorrent.Client.Messages.Standard
     class HandshakeMessage : PeerMessage
     {
         internal const int HandshakeLength = 68;
-        private readonly static byte[] ZeroedBits = new byte[8];
-        private const byte ExtendedMessagingFlag = 0x10;
-        private const byte FastPeersFlag = 0x04;
+        static readonly byte[] ZeroedBits = new byte[8];
+        const byte ExtendedMessagingFlag = 0x10;
+        const byte FastPeersFlag = 0x04;
 
 
         #region Member Variables
 
-        public override int ByteLength {
-            get { return HandshakeMessage.HandshakeLength; }
-        }
+        public override int ByteLength => HandshakeLength;
 
         /// <summary>
         /// The length of the protocol string
@@ -161,7 +159,7 @@ namespace MonoTorrent.Client.Messages.Standard
             PeerId = ReadBytes (buffer, ref offset, 20);
         }
 
-        private void CheckForSupports (byte[] buffer, ref int offset)
+        void CheckForSupports (byte[] buffer, ref int offset)
         {
             // Increment offset first so that the indices are consistent between Encoding and Decoding
             offset += 8;
@@ -179,7 +177,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <returns></returns>
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("HandshakeMessage ");
             sb.Append (" PeerID ");
             sb.Append (PeerId.Text);
@@ -191,9 +189,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            HandshakeMessage msg = obj as HandshakeMessage;
-
-            if (msg == null)
+            if (!(obj is HandshakeMessage msg))
                 return false;
 
             if (InfoHash != msg.InfoHash)

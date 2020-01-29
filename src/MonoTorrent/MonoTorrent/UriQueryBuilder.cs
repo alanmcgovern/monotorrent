@@ -35,11 +35,11 @@ using System.Diagnostics;
 
 namespace MonoTorrent
 {
-    [DebuggerDisplay ("{ToUri ()}")]
+    [DebuggerDisplay ("{" + nameof (ToUri) + " ()}")]
     class UriQueryBuilder
     {
-        UriBuilder builder;
-        Dictionary<string, string> queryParams;
+        readonly UriBuilder builder;
+        readonly Dictionary<string, string> queryParams;
 
         public UriQueryBuilder (string uri)
             : this (new Uri (uri))
@@ -48,13 +48,13 @@ namespace MonoTorrent
         }
 
         public string this[string key] {
-            get { return queryParams[key]; }
-            set { queryParams[key] = value; }
+            get => queryParams[key];
+            set => queryParams[key] = value;
         }
 
         public UriQueryBuilder (Uri uri)
         {
-            builder = new System.UriBuilder (uri);
+            builder = new UriBuilder (uri);
             queryParams = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
             ParseParameters ();
         }
@@ -90,7 +90,7 @@ namespace MonoTorrent
         {
             string result = "";
             foreach (KeyValuePair<string, string> keypair in queryParams)
-                result += keypair.Key + "=" + keypair.Value + "&";
+                result += $"{keypair.Key}={keypair.Value}&";
             builder.Query = result.Length == 0 ? result : result.Remove (result.Length - 1);
             return builder.Uri;
         }

@@ -32,7 +32,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class RequestMessage : PeerMessage
     {
         internal static readonly byte MessageId = 6;
-        private const int messageLength = 13;
+        const int messageLength = 13;
 
         internal const int MaxSize = 65536 + 64;
         internal const int MinSize = 4096;
@@ -88,10 +88,9 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals (object obj)
         {
-            RequestMessage msg = obj as RequestMessage;
-            return (msg == null) ? false : (PieceIndex == msg.PieceIndex
-                                            && StartOffset == msg.StartOffset
-                                            && RequestLength == msg.RequestLength);
+            return (!(obj is RequestMessage msg)) ? false : (PieceIndex == msg.PieceIndex
+                                                             && StartOffset == msg.StartOffset
+                                                             && RequestLength == msg.RequestLength);
         }
 
         public override int GetHashCode ()
@@ -102,7 +101,7 @@ namespace MonoTorrent.Client.Messages.Standard
         public override string ToString ()
         {
 
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("RequestMessage ");
             sb.Append (" Index ");
             sb.Append (PieceIndex);

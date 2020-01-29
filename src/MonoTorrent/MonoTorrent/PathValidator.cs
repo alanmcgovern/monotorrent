@@ -40,10 +40,10 @@ namespace MonoTorrent
 
             // Unix rooted
             if (path.StartsWith ("/"))
-                throw new ArgumentException (string.Format ("The path '{0}' cannot be an absolute path starting with '/'.", path));
+                throw new ArgumentException ($"The path '{path}' cannot be an absolute path starting with '/'.");
             // Windows rooted
             if (path.Length > 1 && path[1] == ':')
-                throw new ArgumentException (string.Format ("The path '{0}' cannot be an absolute path.", path));
+                throw new ArgumentException ($"The path '{path}' cannot be an absolute path.");
 
             // Embedded traversals
             if (path.Contains ("/../"))

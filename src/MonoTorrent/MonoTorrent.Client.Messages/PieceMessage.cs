@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class PieceMessage : PeerMessage
     {
         internal static readonly byte MessageId = 7;
-        private const int messageLength = 9;
+        const int messageLength = 9;
 
         /// <summary>
         /// The data associated with this block
@@ -110,11 +110,13 @@ namespace MonoTorrent.Client.Messages.Standard
         }
 
         public override int GetHashCode ()
-            => RequestLength.GetHashCode () ^ PieceIndex.GetHashCode () ^ StartOffset.GetHashCode ();
+        {
+            return RequestLength.GetHashCode () ^ PieceIndex.GetHashCode () ^ StartOffset.GetHashCode ();
+        }
 
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("PieceMessage ");
             sb.Append (" Index ");
             sb.Append (PieceIndex);

@@ -35,7 +35,7 @@ namespace MonoTorrent
 {
     static class Toolbox
     {
-        private static Random r = new Random ();
+        static readonly Random r = new Random ();
         public static int Count<T> (IEnumerable<T> enumerable, Predicate<T> predicate)
         {
             int count = 0;
@@ -58,7 +58,9 @@ namespace MonoTorrent
         }
 
         public static void InvokeAsync<T> (this EventHandler<T> handler, object o, T args)
-            => ThreadPool.QueueUserWorkItem (state => handler?.Invoke (o, args));
+        {
+            ThreadPool.QueueUserWorkItem (state => handler?.Invoke (o, args));
+        }
 
         /// <summary>
         /// Randomizes the contents of the array
@@ -67,7 +69,7 @@ namespace MonoTorrent
         /// <param name="array"></param>
         public static void Randomize<T> (List<T> array)
         {
-            List<T> clone = new List<T> (array);
+            var clone = new List<T> (array);
             array.Clear ();
 
             while (clone.Count > 0) {
@@ -86,9 +88,9 @@ namespace MonoTorrent
         public static bool ByteMatch (byte[] array1, byte[] array2)
         {
             if (array1 == null)
-                throw new ArgumentNullException ("array1");
+                throw new ArgumentNullException (nameof (array1));
             if (array2 == null)
-                throw new ArgumentNullException ("array2");
+                throw new ArgumentNullException (nameof (array2));
 
             if (array1.Length != array2.Length)
                 return false;
@@ -108,9 +110,9 @@ namespace MonoTorrent
         public static bool ByteMatch (byte[] array1, long offset1, byte[] array2, long offset2, long count)
         {
             if (array1 == null)
-                throw new ArgumentNullException ("array1");
+                throw new ArgumentNullException (nameof (array1));
             if (array2 == null)
-                throw new ArgumentNullException ("array2");
+                throw new ArgumentNullException (nameof (array2));
 
             // If either of the arrays is too small, they're not equal
             if ((array1.Length - offset1) < count || (array2.Length - offset2) < count)

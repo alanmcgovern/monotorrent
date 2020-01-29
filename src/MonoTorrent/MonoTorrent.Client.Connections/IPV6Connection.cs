@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Connections
             : base (socket, incoming)
         {
             var endpoint = (IPEndPoint) socket.RemoteEndPoint;
-            Uri = new Uri ("ipv6://" + endpoint.Address + ':' + endpoint.Port);
+            Uri = new Uri ($"ipv6://{endpoint.Address}{':'}{endpoint.Port}");
         }
     }
 }

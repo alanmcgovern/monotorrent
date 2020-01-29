@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -48,8 +48,8 @@ namespace MonoTorrent.Common
         public void SetUp ()
         {
             // The bool[] must be kept in sync with the byte[] constructor. They represent exactly the same thing.
-            initalValues = new bool[] { true, false, true, false, true, false, true, true, true, false, false, true };
-            secondValues = new bool[] { true, true, false, false, true, false, true, false, true, false, false, true };
+            initalValues = new[] { true, false, true, false, true, false, true, true, true, false, false, true };
+            secondValues = new[] { true, true, false, false, true, false, true, false, true, false, false, true };
             initialByteValues = new byte[] { 171, 144 };
             bf = new BitField (initalValues);
         }
@@ -57,8 +57,8 @@ namespace MonoTorrent.Common
         [Test]
         public void Constructor_Null ()
         {
-            Assert.Throws<ArgumentNullException> (() => new BitField ((bool[]) null));
-            Assert.Throws<ArgumentNullException> (() => new BitField ((byte[]) null, 2));
+            Assert.Throws<ArgumentNullException> (() => new BitField (null));
+            Assert.Throws<ArgumentNullException> (() => new BitField (null, 2));
 
         }
         [Test]
@@ -75,7 +75,7 @@ namespace MonoTorrent.Common
         {
             BitField bf2 = new BitField (initialByteValues, initalValues.Length);
             Assert.AreEqual (bf, bf2, "#1");
-            Assert.AreEqual (Toolbox.Count<bool> (initalValues, delegate (bool b) { return b; }), bf2.TrueCount, "#1");
+            Assert.AreEqual (Toolbox.Count (initalValues, b => b), bf2.TrueCount, "#1");
         }
 
         [Test]
@@ -84,7 +84,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < initalValues.Length; i++)
                 Assert.AreEqual (initalValues[i], bf[i], "#1:{0}", i);
 
-            Assert.AreEqual (Toolbox.Count<bool> (initalValues, delegate (bool b) { return b; }), bf.TrueCount, "#1");
+            Assert.AreEqual (Toolbox.Count (initalValues, b => b), bf.TrueCount, "#1");
         }
 
         [Ignore ("This is deliberately broken to work around bugs in azureus")]
@@ -139,7 +139,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray ()
         {
-            BitField first = new BitField (new bool[] { true, false, true, false, true, false, true, true, true, false, false });
+            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false });
             BitField second = new BitField (first.ToByteArray (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
@@ -149,7 +149,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray2 ()
         {
-            BitField first = new BitField (new bool[] { true, false, true, false, true, false, true, true, true, false, false, true });
+            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true });
             BitField second = new BitField (first.ToByteArray (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
@@ -159,7 +159,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray3 ()
         {
-            BitField first = new BitField (new bool[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
+            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
             BitField second = new BitField (first.ToByteArray (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
@@ -169,7 +169,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray4 ()
         {
-            BitField first = new BitField (new bool[] {  true, false, true, false, true, false, true, false,
+            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false,
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true, false});
@@ -182,7 +182,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray5 ()
         {
-            BitField first = new BitField (new bool[] {  true, false, true, false, true, false, true, false,
+            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false,
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true});
@@ -195,7 +195,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ToByteArray6 ()
         {
-            BitField first = new BitField (new bool[] {  true, false, true, false, true, false, true, false, true,
+            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false, true,
                                                         false, false, true, false, true, false, true, false,
                                                         true, false, false, false, true, true, true, false, true,
                                                         true, false, false, true, false, false, true});
@@ -347,7 +347,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < bf.Length; i++)
                 Assert.AreEqual (!initalValues[i], bf[i], "#1");
 
-            Assert.AreEqual (Toolbox.Count<bool> (initalValues, delegate (bool b) { return !b; }), bf.TrueCount, "#2");
+            Assert.AreEqual (Toolbox.Count (initalValues, b => !b), bf.TrueCount, "#2");
         }
 
         [Test]

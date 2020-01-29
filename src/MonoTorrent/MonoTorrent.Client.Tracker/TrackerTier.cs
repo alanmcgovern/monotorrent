@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Tracker
                     continue;
                 }
 
-                var tracker = TrackerFactory.Create (result);
+                ITracker tracker = TrackerFactory.Create (result);
                 if (tracker != null) {
                     trackerList.Add (tracker);
                 } else {

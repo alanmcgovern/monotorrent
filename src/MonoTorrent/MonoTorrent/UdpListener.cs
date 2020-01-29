@@ -58,7 +58,7 @@ namespace MonoTorrent
 
         protected override void Start (CancellationToken token)
         {
-            var client = Client = new UdpClient (OriginalEndPoint);
+            UdpClient client = Client = new UdpClient (OriginalEndPoint);
             EndPoint = (IPEndPoint) client.Client.LocalEndPoint;
             token.Register (() => {
                 client.SafeDispose ();
@@ -72,7 +72,7 @@ namespace MonoTorrent
         {
             while (!token.IsCancellationRequested) {
                 try {
-                    var result = await client.ReceiveAsync ().ConfigureAwait (false);
+                    UdpReceiveResult result = await client.ReceiveAsync ().ConfigureAwait (false);
                     MessageReceived?.Invoke (result.Buffer, result.RemoteEndPoint);
                 } catch (SocketException ex) {
                     // If the destination computer closes the connection

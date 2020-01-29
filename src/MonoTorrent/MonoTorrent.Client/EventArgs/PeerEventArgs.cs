@@ -30,16 +30,12 @@ namespace MonoTorrent.Client
 {
     class PeerEventArgs : TorrentEventArgs
     {
-        PeerId peer;
-
-        public PeerId Peer {
-            get { return peer; }
-        }
+        public PeerId Peer { get; }
 
         public PeerEventArgs (TorrentManager manager, PeerId peer)
             : base (manager)
         {
-            this.peer = peer;
+            Peer = peer;
         }
     }
 }

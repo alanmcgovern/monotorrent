@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.RateLimiters
 {
     sealed class RateLimiterGroup : IRateLimiter, IEnumerable<IRateLimiter>
     {
-        List<IRateLimiter> limiters;
+        readonly List<IRateLimiter> limiters;
 
         public bool Unlimited {
             get {

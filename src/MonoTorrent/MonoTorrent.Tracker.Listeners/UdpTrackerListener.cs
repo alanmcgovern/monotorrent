@@ -79,12 +79,12 @@ namespace MonoTorrent.Tracker.Listeners
             Task sendTask = null;
             while (!token.IsCancellationRequested) {
                 try {
-                    var result = await client.ReceiveAsync ();
+                    UdpReceiveResult result = await client.ReceiveAsync ();
                     byte[] data = result.Buffer;
                     if (data.Length < 16)
                         return;//bad request
 
-                    UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
+                    var request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
 
                     if (sendTask != null) {
                         try {
@@ -109,7 +109,7 @@ namespace MonoTorrent.Tracker.Listeners
                             sendTask = ReceiveError (client, (ErrorMessage) request, result.RemoteEndPoint);
                             break;
                         default:
-                            throw new ProtocolException (string.Format ("Invalid udp message received: {0}", request.Action));
+                            throw new ProtocolException ($"Invalid udp message received: {request.Action}");
                     }
                 } catch (Exception e) {
                     Logger.Log (null, e.ToString ());
@@ -134,7 +134,7 @@ namespace MonoTorrent.Tracker.Listeners
 
         //TODO is endpoint.Address.Address enough and do we really need this complex system for connection ID
         //advantage: this system know if we have ever connect before announce scrape request...
-        private long CreateConnectionID (IPEndPoint remotePeer)
+        long CreateConnectionID (IPEndPoint remotePeer)
         {
             curConnectionID++;
             if (!ConnectionIDs.ContainsKey (remotePeer.Address))
@@ -153,7 +153,7 @@ namespace MonoTorrent.Tracker.Listeners
                 TimeSpan interval = TimeSpan.Zero;
                 int leechers = 0;
                 int seeders = 0;
-                List<MonoTorrent.Client.Peer> peers = new List<MonoTorrent.Client.Peer> ();
+                var peers = new List<MonoTorrent.Client.Peer> ();
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("complete"):
@@ -185,20 +185,21 @@ namespace MonoTorrent.Tracker.Listeners
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
-        private NameValueCollection getCollection (AnnounceMessage announceMessage)
+        NameValueCollection getCollection (AnnounceMessage announceMessage)
         {
-            NameValueCollection res = new NameValueCollection ();
-            res.Add ("info_hash", announceMessage.InfoHash.UrlEncode ());
-            res.Add ("peer_id", announceMessage.PeerId.UrlEncode ());
-            res.Add ("port", announceMessage.Port.ToString ());
-            res.Add ("uploaded", announceMessage.Uploaded.ToString ());
-            res.Add ("downloaded", announceMessage.Downloaded.ToString ());
-            res.Add ("left", announceMessage.Left.ToString ());
-            res.Add ("compact", "1");//hardcode
-            res.Add ("numwant", announceMessage.NumWanted.ToString ());
-            res.Add ("ip", announceMessage.IP.ToString ());
-            res.Add ("key", announceMessage.Key.ToString ());
-            res.Add ("event", announceMessage.TorrentEvent.ToString ().ToLower ());
+            var res = new NameValueCollection {
+                { "info_hash", announceMessage.InfoHash.UrlEncode () },
+                { "peer_id", announceMessage.PeerId.UrlEncode () },
+                { "port", announceMessage.Port.ToString () },
+                { "uploaded", announceMessage.Uploaded.ToString () },
+                { "downloaded", announceMessage.Downloaded.ToString () },
+                { "left", announceMessage.Left.ToString () },
+                { "compact", "1" },//hardcode
+                { "numwant", announceMessage.NumWanted.ToString () },
+                { "ip", announceMessage.IP.ToString () },
+                { "key", announceMessage.Key.ToString () },
+                { "event", announceMessage.TorrentEvent.ToString ().ToLower () }
+            };
             return res;
         }
 
@@ -211,10 +212,10 @@ namespace MonoTorrent.Tracker.Listeners
             if (val.ContainsKey (TrackerRequest.FailureKey)) {
                 m = new ErrorMessage (scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString ());
             } else {
-                List<ScrapeDetails> scrapes = new List<ScrapeDetails> ();
+                var scrapes = new List<ScrapeDetails> ();
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val) {
-                    BEncodedDictionary dict = (BEncodedDictionary) keypair.Value;
+                    var dict = (BEncodedDictionary) keypair.Value;
                     int seeds = 0;
                     int leeches = 0;
                     int complete = 0;
@@ -231,7 +232,7 @@ namespace MonoTorrent.Tracker.Listeners
                                 break;
                         }
                     }
-                    ScrapeDetails sd = new ScrapeDetails (seeds, leeches, complete);
+                    var sd = new ScrapeDetails (seeds, leeches, complete);
                     scrapes.Add (sd);
                     if (scrapes.Count == 74)//protocole do not support to send more than 74 scrape at once...
                     {
@@ -247,20 +248,20 @@ namespace MonoTorrent.Tracker.Listeners
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
-        private NameValueCollection getCollection (ScrapeMessage scrapeMessage)
+        NameValueCollection getCollection (ScrapeMessage scrapeMessage)
         {
-            NameValueCollection res = new NameValueCollection ();
+            var res = new NameValueCollection ();
             if (scrapeMessage.InfoHashes.Count == 0)
                 return res;//no infohash????
             //TODO more than one infohash : paid attention to order in response!!!
-            InfoHash hash = new InfoHash (scrapeMessage.InfoHashes[0]);
+            var hash = new InfoHash (scrapeMessage.InfoHashes[0]);
             res.Add ("info_hash", hash.UrlEncode ());
             return res;
         }
 
         protected virtual Task ReceiveError (UdpClient client, ErrorMessage errorMessage, IPEndPoint remotePeer)
         {
-            throw new ProtocolException (String.Format ("ErrorMessage from :{0}", remotePeer.Address));
+            throw new ProtocolException ($"ErrorMessage from :{remotePeer.Address}");
         }
     }
 }

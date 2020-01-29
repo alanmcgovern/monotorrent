@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     abstract class ExtensionMessage : PeerMessage
     {
         internal static readonly byte MessageId = 20;
-        readonly static Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport> ();
 
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         {
             messageDict = new Dictionary<byte, Func<ITorrentData, PeerMessage>> ();
 
-            var id = Register (data => new ExtendedHandshakeMessage ());
+            byte id = Register (data => new ExtendedHandshakeMessage ());
             if (id != 0)
                 throw new InvalidOperationException ("The handshake message should be registered with id '0'");
 
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 throw new ArgumentNullException (nameof (creator));
 
             lock (messageDict) {
-                var id = (byte) messageDict.Count;
+                byte id = (byte) messageDict.Count;
                 messageDict.Add (id, creator);
                 return id;
             }
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         protected static ExtensionSupport CreateSupport (string name)
         {
-            return SupportedMessages.Find (delegate (ExtensionSupport s) { return s.Name == name; });
+            return SupportedMessages.Find (s => s.Name == name);
         }
 
         public static PeerMessage DecodeExtensionMessage (byte[] buffer, int offset, int count, ITorrentData manager)
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (!messageDict.TryGetValue (buffer[offset], out Func<ITorrentData, PeerMessage> creator))
                 throw new ProtocolException ("Unknown extension message received");
 
-            var message = creator (manager);
+            PeerMessage message = creator (manager);
             message.Decode (buffer, offset + 1, count - 1);
             return message;
         }

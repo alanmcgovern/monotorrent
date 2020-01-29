@@ -34,9 +34,7 @@ namespace MonoTorrent.Client.Modes
         BitField PartialProgressUpdater;
 
         TorrentState state;
-        public override TorrentState State {
-            get { return state; }
-        }
+        public override TorrentState State => state;
 
         public DownloadMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
@@ -83,7 +81,7 @@ namespace MonoTorrent.Client.Modes
 
             PartialProgressUpdater.SetAll (false);
             if (Manager.Torrent != null) {
-                foreach (var file in Manager.Torrent.Files) {
+                foreach (TorrentFile file in Manager.Torrent.Files) {
                     if (file.Priority != Priority.DoNotDownload) {
                         for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
                             PartialProgressUpdater[i] = true;

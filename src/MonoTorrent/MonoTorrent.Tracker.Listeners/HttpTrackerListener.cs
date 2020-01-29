@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -44,7 +44,7 @@ namespace MonoTorrent.Tracker.Listeners
         string Prefix { get; }
 
         public HttpTrackerListener (IPAddress address, int port)
-            : this (string.Format ("http://{0}:{1}/announce/", address, port))
+            : this ($"http://{address}:{port}/announce/")
         {
 
         }
@@ -58,7 +58,7 @@ namespace MonoTorrent.Tracker.Listeners
         public HttpTrackerListener (string httpPrefix)
         {
             if (string.IsNullOrEmpty (httpPrefix))
-                throw new ArgumentNullException ("httpPrefix");
+                throw new ArgumentNullException (nameof (httpPrefix));
 
             Prefix = httpPrefix;
         }
@@ -80,7 +80,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             while (!token.IsCancellationRequested) {
                 try {
-                    var context = await listener.GetContextAsync ().ConfigureAwait (false);
+                    HttpListenerContext context = await listener.GetContextAsync ().ConfigureAwait (false);
                     ProcessContextAsync (context, token);
                 } catch {
                 }
@@ -93,7 +93,7 @@ namespace MonoTorrent.Tracker.Listeners
                 bool isScrape = context.Request.RawUrl.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
 
                 if (IncompleteAnnounce || IncompleteScrape) {
-                    await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024);
+                    await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024, token);
                     return;
                 }
 

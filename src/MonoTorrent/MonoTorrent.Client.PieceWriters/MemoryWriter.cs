@@ -125,11 +125,12 @@ namespace MonoTorrent.Client.PieceWriters
                 byte[] cacheBuffer = ClientEngine.BufferPool.Rent (count);
                 Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
 
-                CachedBlock block = new CachedBlock ();
-                block.Buffer = cacheBuffer;
-                block.Count = count;
-                block.Offset = offset;
-                block.File = file;
+                var block = new CachedBlock {
+                    Buffer = cacheBuffer,
+                    Count = count,
+                    Offset = offset,
+                    File = file
+                };
                 CachedBlocks.Add (block);
                 Interlocked.Add (ref cacheUsed, block.Count);
             }
@@ -142,7 +143,9 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         public bool Exists (TorrentFile file)
-            => Writer.Exists (file);
+        {
+            return Writer.Exists (file);
+        }
 
         public void Flush (TorrentFile file)
         {

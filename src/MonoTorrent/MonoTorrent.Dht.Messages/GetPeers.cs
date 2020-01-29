@@ -36,9 +36,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString InfoHashKey = "info_hash";
         static readonly BEncodedString QueryName = "get_peers";
 
-        public NodeId InfoHash {
-            get { return new NodeId ((BEncodedString) Parameters[InfoHashKey]); }
-        }
+        public NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
 
         public GetPeers (NodeId id, NodeId infohash)
             : base (id, QueryName)
@@ -53,16 +51,18 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
-            => new GetPeersResponse (parameters);
+        {
+            return new GetPeersResponse (parameters);
+        }
 
         public override void Handle (DhtEngine engine, Node node)
         {
             base.Handle (engine, node);
 
             BEncodedString token = engine.TokenManager.GenerateToken (node);
-            GetPeersResponse response = new GetPeersResponse (engine.RoutingTable.LocalNode.Id, TransactionId, token);
+            var response = new GetPeersResponse (engine.RoutingTable.LocalNode.Id, TransactionId, token);
             if (engine.Torrents.ContainsKey (InfoHash)) {
-                BEncodedList list = new BEncodedList ();
+                var list = new BEncodedList ();
                 foreach (Node n in engine.Torrents[InfoHash])
                     list.Add (n.CompactPort ());
                 response.Values = list;

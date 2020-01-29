@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
             int ipMostSignificant = (int) (0xFFFFFF00 & ip);
 
             // 3) Make ipMostSignificant into NetworkOrder
-            var ip2 = (uint) IPAddress.HostToNetworkOrder (ipMostSignificant);
+            uint ip2 = (uint) IPAddress.HostToNetworkOrder (ipMostSignificant);
 
             // 4) Copy ip2 into the hashBuffer
             Buffer.BlockCopy (BitConverter.GetBytes (ip2), 0, hashBuffer, 0, 4);
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
                     hashBuffer = hasher.ComputeHash (hashBuffer);
 
                 for (int i = 0; i < 20; i += 4) {
-                    var result = (uint) IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (hashBuffer, i));
+                    uint result = (uint) IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (hashBuffer, i));
 
                     result %= numberOfPieces;
                     if (result > int.MaxValue)

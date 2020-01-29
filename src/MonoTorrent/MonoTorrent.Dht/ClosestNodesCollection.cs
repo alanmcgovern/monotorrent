@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht
 
             public int Compare (ValueTuple<NodeId, Node> x, ValueTuple<NodeId, Node> y)
             {
-                var result = x.Item1.CompareTo (y.Item1);
+                int result = x.Item1.CompareTo (y.Item1);
                 if (result == 0)
                     result = x.Item2.Id.CompareTo (y.Item2.Id);
                 return result;
@@ -73,7 +73,7 @@ namespace MonoTorrent.Dht
             var kvp = ValueTuple.Create (item.Id ^ Target, item);
 
             // The item is already here!
-            var insertionIndex = IndexOf (kvp);
+            int insertionIndex = IndexOf (kvp);
             if (insertionIndex >= 0)
                 return false;
 
@@ -91,13 +91,19 @@ namespace MonoTorrent.Dht
         }
 
         void ICollection<Node>.Add (Node item)
-            => Add (item);
+        {
+            Add (item);
+        }
 
         public void Clear ()
-            => Nodes.Clear ();
+        {
+            Nodes.Clear ();
+        }
 
         public bool Contains (Node item)
-            => IndexOf (item) >= 0;
+        {
+            return IndexOf (item) >= 0;
+        }
 
         void ICollection<Node>.CopyTo (Node[] array, int arrayIndex)
         {
@@ -106,23 +112,29 @@ namespace MonoTorrent.Dht
         }
 
         IEnumerator IEnumerable.GetEnumerator ()
-            => GetEnumerator ();
+        {
+            return GetEnumerator ();
+        }
 
         public IEnumerator<Node> GetEnumerator ()
         {
-            foreach (var v in Nodes)
+            foreach ((NodeId, Node) v in Nodes)
                 yield return v.Item2;
         }
 
         public int IndexOf (Node item)
-            => IndexOf (ValueTuple.Create (item.Id ^ Target, item));
+        {
+            return IndexOf (ValueTuple.Create (item.Id ^ Target, item));
+        }
 
         int IndexOf (ValueTuple<NodeId, Node> item)
-            => Nodes.BinarySearch (item, DistanceComparer.Instance);
+        {
+            return Nodes.BinarySearch (item, DistanceComparer.Instance);
+        }
 
         public bool Remove (Node item)
         {
-            var index = IndexOf (item);
+            int index = IndexOf (item);
             if (index >= 0)
                 Nodes.RemoveAt (index);
             return index >= 0;

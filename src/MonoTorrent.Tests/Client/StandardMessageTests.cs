@@ -296,7 +296,7 @@ namespace MonoTorrent.Client.Messages
         {
             orig.Encode (buffer, offset);
             Message dec = PeerMessage.DecodeMessage (buffer, offset, orig.ByteLength, torrentData);
-            Assert.IsTrue (orig.Equals (dec), string.Format ("orig: {0}, new: {1}", orig, dec));
+            Assert.IsTrue (orig.Equals (dec), $"orig: {orig}, new: {dec}");
 
             Assert.IsTrue (Toolbox.ByteMatch (orig.Encode (), PeerMessage.DecodeMessage (orig.Encode (), 0, orig.ByteLength, torrentData).Encode ()));
         }

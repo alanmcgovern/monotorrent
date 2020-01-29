@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -60,12 +60,12 @@ namespace MonoTorrent.Dht
             return Add (node, true);
         }
 
-        private bool Add (Node node, bool raiseNodeAdded)
+        bool Add (Node node, bool raiseNodeAdded)
         {
             if (node == null)
                 throw new ArgumentNullException (nameof (node));
 
-            Bucket bucket = Buckets.Find (delegate (Bucket b) { return b.CanContain (node); });
+            Bucket bucket = Buckets.Find (b => b.CanContain (node));
             if (bucket.Nodes.Contains (node))
                 return false;
 
@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht
             return added;
         }
 
-        private void Add (Bucket bucket)
+        void Add (Bucket bucket)
         {
             Buckets.Add (bucket);
             Buckets.Sort ();
@@ -93,19 +93,19 @@ namespace MonoTorrent.Dht
             return null;
         }
 
-        private void Remove (Bucket bucket)
+        void Remove (Bucket bucket)
         {
             Buckets.Remove (bucket);
         }
 
-        private bool Split (Bucket bucket)
+        bool Split (Bucket bucket)
         {
             if (!bucket.CanSplit)
                 return false;//to avoid infinite loop when add same node
 
-            NodeId median = NodeId.Median (bucket.Min, bucket.Max);
-            Bucket left = new Bucket (bucket.Min, median);
-            Bucket right = new Bucket (median, bucket.Max);
+            var median = NodeId.Median (bucket.Min, bucket.Max);
+            var left = new Bucket (bucket.Min, median);
+            var right = new Bucket (median, bucket.Max);
 
             Remove (bucket);
             Add (left);
@@ -137,18 +137,18 @@ namespace MonoTorrent.Dht
             // full. As such we should always be able to find the 8 closest nodes
             // by adding the nodes of the matching bucket, the bucket above, and the
             // bucket below.
-            var firstBucketIndex = Buckets.FindIndex (t => t.CanContain (target));
-            foreach (var node in Buckets[firstBucketIndex].Nodes)
+            int firstBucketIndex = Buckets.FindIndex (t => t.CanContain (target));
+            foreach (Node node in Buckets[firstBucketIndex].Nodes)
                 closestNodes.Add (node);
 
             // Try the bucket before this one
             if (firstBucketIndex > 0)
-                foreach (var node in Buckets[firstBucketIndex - 1].Nodes)
+                foreach (Node node in Buckets[firstBucketIndex - 1].Nodes)
                     closestNodes.Add (node);
 
             // Try the bucket after this one
             if (firstBucketIndex < (Buckets.Count - 1))
-                foreach (var node in Buckets[firstBucketIndex + 1].Nodes)
+                foreach (Node node in Buckets[firstBucketIndex + 1].Nodes)
                     closestNodes.Add (node);
 
             return closestNodes;

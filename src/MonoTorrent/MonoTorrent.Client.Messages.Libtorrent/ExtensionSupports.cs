@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 if (this[i].Name == support.Name)
                     return this[i].MessageId;
 
-            throw new MessageException (string.Format ("{0} is not supported by this peer", support.Name));
+            throw new MessageException ($"{support.Name} is not supported by this peer");
         }
     }
 }

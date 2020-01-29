@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 {
     class NetworkIO
     {
-        static MainLoop IOLoop = new MainLoop ("NetworkIO Loop");
+        static readonly MainLoop IOLoop = new MainLoop ("NetworkIO Loop");
 
         public struct QueuedIO
         {
@@ -72,14 +72,14 @@ namespace MonoTorrent.Client
         {
             IOLoop.QueueTimeout (TimeSpan.FromMilliseconds (100), delegate {
                 while (receiveQueue.Count > 0) {
-                    var io = receiveQueue.Peek ();
+                    QueuedIO io = receiveQueue.Peek ();
                     if (io.rateLimiter.TryProcess (io.count))
                         ReceiveQueuedAsync (receiveQueue.Dequeue ());
                     else
                         break;
                 }
                 while (sendQueue.Count > 0) {
-                    var io = sendQueue.Peek ();
+                    QueuedIO io = sendQueue.Peek ();
                     if (io.rateLimiter.TryProcess (io.count))
                         SendQueuedAsync (sendQueue.Dequeue ());
                     else
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
         static async void ReceiveQueuedAsync (QueuedIO io)
         {
             try {
-                var result = await io.connection.ReceiveAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
+                int result = await io.connection.ReceiveAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
                 io.tcs.SetResult (result);
             } catch (Exception ex) {
                 io.tcs.SetException (ex);
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
         static async void SendQueuedAsync (QueuedIO io)
         {
             try {
-                var result = await io.connection.SendAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
+                int result = await io.connection.SendAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
                 io.tcs.SetResult (result);
             } catch (Exception ex) {
                 io.tcs.SetException (ex);
@@ -118,7 +118,9 @@ namespace MonoTorrent.Client
         }
 
         public static ReusableTask ReceiveAsync (IConnection2 connection, byte[] buffer, int offset, int count)
-            => ReceiveAsync (connection, buffer, offset, count, null, null, null);
+        {
+            return ReceiveAsync (connection, buffer, offset, count, null, null, null);
+        }
 
         public static async ReusableTask ReceiveAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
@@ -127,7 +129,7 @@ namespace MonoTorrent.Client
             while (count > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+                int shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();
@@ -150,7 +152,9 @@ namespace MonoTorrent.Client
         }
 
         public static ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count)
-            => SendAsync (connection, buffer, offset, count, null, null, null);
+        {
+            return SendAsync (connection, buffer, offset, count, null, null, null);
+        }
 
         public static async ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
@@ -159,7 +163,7 @@ namespace MonoTorrent.Client
             while (count > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                var shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+                int shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();

@@ -58,13 +58,13 @@ namespace MonoTorrent.Dht.Tasks
             var closestNodes = new ClosestNodesCollection (InfoHash);
             var closestActiveNodes = new ClosestNodesCollection (InfoHash);
 
-            foreach (var node in Engine.RoutingTable.GetClosest (InfoHash)) {
+            foreach (Node node in Engine.RoutingTable.GetClosest (InfoHash)) {
                 if (closestNodes.Add (node))
                     activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
             }
 
             while (activeQueries.Count > 0) {
-                Task<SendQueryEventArgs> completed = await Task.WhenAny (activeQueries);
+                var completed = await Task.WhenAny (activeQueries);
                 activeQueries.Remove (completed);
 
                 // If it timed out or failed just move to the next query.
@@ -82,7 +82,7 @@ namespace MonoTorrent.Dht.Tasks
                 // The response contains nodes which should be closer to our target. If they are closer than nodes
                 // we've already checked, then let's query them!
                 if (response.Nodes != null) {
-                    foreach (var node in Node.FromCompactNode (response.Nodes))
+                    foreach (Node node in Node.FromCompactNode (response.Nodes))
                         if (closestNodes.Add (node))
                             activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
                 }

@@ -56,7 +56,7 @@ namespace MonoTorrent.Common
             Assert.IsEmpty (BigEndianBigInteger.FallbackToBigEndianByteArray (new BigEndianBigInteger (0)));
 
             // Check several arrays
-            foreach (var array in new byte[][] { new byte[0], new byte[1], new byte[2] }) {
+            foreach (var array in new[] { new byte[0], new byte[1], new byte[2] }) {
                 var fastPath = new BigEndianBigInteger (array);
                 var slowPath = new BigEndianBigInteger (BigEndianBigInteger.FallbackConstructor (array));
 

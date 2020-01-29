@@ -51,7 +51,9 @@ namespace MonoTorrent.Dht
         }
 
         public BEncodedString GenerateToken (Node node)
-            => GenerateToken (node, currentSecret);
+        {
+            return GenerateToken (node, currentSecret);
+        }
 
         BEncodedString GenerateToken (Node node, byte[] secret)
         {
@@ -70,6 +72,8 @@ namespace MonoTorrent.Dht
         }
 
         public bool VerifyToken (Node node, BEncodedString token)
-            => token.Equals (GenerateToken (node, currentSecret)) || token.Equals (GenerateToken (node, previousSecret));
+        {
+            return token.Equals (GenerateToken (node, currentSecret)) || token.Equals (GenerateToken (node, previousSecret));
+        }
     }
 }

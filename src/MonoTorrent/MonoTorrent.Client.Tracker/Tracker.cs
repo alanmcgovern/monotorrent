@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Tracker
 
         public async Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters)
         {
-            var result = await DoAnnounceAsync (parameters);
+            List<Peer> result = await DoAnnounceAsync (parameters);
             LastAnnounced.Restart ();
             return result;
         }
@@ -69,7 +69,9 @@ namespace MonoTorrent.Client.Tracker
         protected abstract Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters);
 
         public Task ScrapeAsync (ScrapeParameters parameters)
-            => DoScrapeAsync (parameters);
+        {
+            return DoScrapeAsync (parameters);
+        }
 
         protected abstract Task DoScrapeAsync (ScrapeParameters parameters);
     }

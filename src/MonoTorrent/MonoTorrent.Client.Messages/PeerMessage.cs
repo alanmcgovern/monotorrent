@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Messages
 {
     abstract class PeerMessage : Message
     {
-        readonly static Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
 
         static PeerMessage ()
         {
@@ -65,10 +65,11 @@ namespace MonoTorrent.Client.Messages
 
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection
-            Register (ExtensionMessage.MessageId, delegate (ITorrentData manager) { throw new MessageException ("Shouldn't decode extension message this way"); });
+            Register (ExtensionMessage.MessageId,
+                arg => throw new MessageException ("Shouldn't decode extension message this way"));
         }
 
-        private static void Register (byte identifier, Func<ITorrentData, PeerMessage> creator)
+        static void Register (byte identifier, Func<ITorrentData, PeerMessage> creator)
         {
             if (creator == null)
                 throw new ArgumentNullException (nameof (creator));
@@ -79,9 +80,6 @@ namespace MonoTorrent.Client.Messages
 
         public static PeerMessage DecodeMessage (byte[] buffer, int offset, int count, ITorrentData manager)
         {
-            PeerMessage message;
-            Func<ITorrentData, PeerMessage> creator;
-
             if (count < 4)
                 throw new ArgumentException ("A message must contain a 4 byte length prefix");
 
@@ -93,12 +91,12 @@ namespace MonoTorrent.Client.Messages
             if (buffer[offset + 4] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer, offset + 4 + 1, count - 4 - 1, manager);
 
-            if (!messageDict.TryGetValue (buffer[offset + 4], out creator))
+            if (!messageDict.TryGetValue (buffer[offset + 4], out Func<ITorrentData, PeerMessage> creator))
                 throw new ProtocolException ("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
-            message = creator (manager);
+            PeerMessage message = creator (manager);
             message.Decode (buffer, offset + 4 + 1, count - 4 - 1);
             return message;
         }

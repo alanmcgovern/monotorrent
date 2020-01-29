@@ -32,10 +32,10 @@ namespace MonoTorrent.Client
         [Test]
         public void TaskTest ()
         {
-            Assert.AreEqual (5, loop.QueueWait (delegate { return 5; }), "#1");
+            Assert.AreEqual (5, loop.QueueWait (() => 5), "#1");
 
             ManualResetEvent handle = new ManualResetEvent (false);
-            loop.QueueWait ((Action) delegate { handle.Set (); });
+            loop.QueueWait (() => handle.Set());
             Assert.IsTrue (handle.WaitOne (5000, true), "#2");
         }
 
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         {
             ManualResetEvent handle = new ManualResetEvent (false);
             loop.QueueTimeout (TimeSpan.FromMilliseconds (10), delegate {
-                System.Threading.Thread.Sleep (50);
+                Thread.Sleep (50);
                 if (++count == 3) {
                     handle.Set ();
                     return false;

@@ -35,17 +35,15 @@ namespace MonoTorrent.Client.Messages.Standard
     class HaveMessage : PeerMessage
     {
         internal static readonly byte MessageId = 4;
-        private const int messageLength = 5;
+        const int messageLength = 5;
 
 
         #region Member Variables
         /// <summary>
         /// The index of the piece that you "have"
         /// </summary>
-        public int PieceIndex {
-            get { return this.pieceIndex; }
-        }
-        private int pieceIndex;
+        public int PieceIndex { get; set; }
+
         #endregion
 
 
@@ -64,7 +62,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="pieceIndex">The index of the piece that you "have"</param>
         public HaveMessage (int pieceIndex)
         {
-            this.pieceIndex = pieceIndex;
+            PieceIndex = pieceIndex;
         }
         #endregion
 
@@ -76,22 +74,20 @@ namespace MonoTorrent.Client.Messages.Standard
 
             written += Write (buffer, written, messageLength);
             written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, pieceIndex);
+            written += Write (buffer, written, PieceIndex);
 
             return CheckWritten (written - offset);
         }
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.pieceIndex = ReadInt (buffer, offset);
+            PieceIndex = ReadInt (buffer, offset);
         }
 
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
         #endregion
 
 
@@ -102,26 +98,24 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <returns></returns>
         public override string ToString ()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder ();
+            var sb = new System.Text.StringBuilder ();
             sb.Append ("HaveMessage ");
             sb.Append (" Index ");
-            sb.Append (this.pieceIndex);
+            sb.Append (PieceIndex);
             return sb.ToString ();
         }
 
         public override bool Equals (object obj)
         {
-            HaveMessage msg = obj as HaveMessage;
-
-            if (msg == null)
+            if (!(obj is HaveMessage msg))
                 return false;
 
-            return (this.pieceIndex == msg.pieceIndex);
+            return (PieceIndex == msg.PieceIndex);
         }
 
         public override int GetHashCode ()
         {
-            return this.pieceIndex.GetHashCode ();
+            return PieceIndex.GetHashCode ();
         }
         #endregion
     }

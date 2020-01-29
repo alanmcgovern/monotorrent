@@ -106,7 +106,9 @@ namespace MonoTorrent.Client
         }
 
         public override bool Equals (object obj)
-            => Equals (obj as Peer);
+        {
+            return Equals (obj as Peer);
+        }
 
         public bool Equals (Peer other)
         {
@@ -121,7 +123,9 @@ namespace MonoTorrent.Client
         }
 
         public override int GetHashCode ()
-            => PeerId?.GetHashCode () ?? ConnectionUri.GetHashCode ();
+        {
+            return PeerId?.GetHashCode () ?? ConnectionUri.GetHashCode ();
+        }
 
         internal byte[] CompactPeer ()
         {
@@ -148,7 +152,9 @@ namespace MonoTorrent.Client
         }
 
         public override string ToString ()
-            => ConnectionUri.ToString ();
+        {
+            return ConnectionUri.ToString ();
+        }
 
         public static IList<Peer> Decode (BEncodedList peers)
         {
@@ -168,7 +174,7 @@ namespace MonoTorrent.Client
             return list;
         }
 
-        private static Peer DecodeFromDict (BEncodedDictionary dict)
+        static Peer DecodeFromDict (BEncodedDictionary dict)
         {
             BEncodedString peerId;
 
@@ -179,7 +185,7 @@ namespace MonoTorrent.Client
             else
                 peerId = BEncodedString.Empty;
 
-            Uri connectionUri = new Uri ("ipv4://" + dict["ip"].ToString () + ":" + dict["port"].ToString ());
+            var connectionUri = new Uri ($"ipv4://{dict["ip"]}:{dict["port"]}");
             return new Peer (peerId, connectionUri, EncryptionTypes.All);
         }
 
@@ -190,7 +196,7 @@ namespace MonoTorrent.Client
 
         internal static BEncodedList Encode (IEnumerable<Peer> peers)
         {
-            BEncodedList list = new BEncodedList ();
+            var list = new BEncodedList ();
             foreach (Peer p in peers)
                 list.Add ((BEncodedString) p.CompactPeer ());
             return list;
@@ -204,7 +210,7 @@ namespace MonoTorrent.Client
             byte[] byteOrderedData = data;
             int i = offset;
             ushort port;
-            StringBuilder sb = new StringBuilder (27);
+            var sb = new StringBuilder (27);
             var list = new List<Peer> ((byteOrderedData.Length / 6) + 1);
             while ((i + 5) < byteOrderedData.Length) {
                 sb.Remove (0, sb.Length);
@@ -223,7 +229,7 @@ namespace MonoTorrent.Client
                 sb.Append (':');
                 sb.Append (port);
 
-                Uri uri = new Uri (sb.ToString ());
+                var uri = new Uri (sb.ToString ());
                 list.Add (new Peer ("", uri, EncryptionTypes.All));
             }
 

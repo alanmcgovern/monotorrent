@@ -109,7 +109,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestFastHaveEverything ()
         {
             peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange (new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peer.IsAllowedFastPieces.AddRange (new[] { 1, 2, 3, 5, 8, 13, 21 });
 
             peer.BitField.SetAll (true);
             bitfield.SetAll (true);

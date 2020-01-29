@@ -50,7 +50,7 @@ namespace MonoTorrent.Dht
         {
             Bytes = value.ToByteArray ();
             if (Bytes.Length < 20) {
-                var newBytes = new byte[20];
+                byte[] newBytes = new byte[20];
                 Buffer.BlockCopy (Bytes, 0, newBytes, newBytes.Length - Bytes.Length, Bytes.Length);
                 Bytes = newBytes;
             }
@@ -80,10 +80,14 @@ namespace MonoTorrent.Dht
         }
 
         internal BEncodedString BencodedString ()
-            => new BEncodedString ((byte[]) Bytes.Clone ());
+        {
+            return new BEncodedString ((byte[]) Bytes.Clone ());
+        }
 
         public int CompareTo (object obj)
-            => CompareTo (obj as NodeId);
+        {
+            return CompareTo (obj as NodeId);
+        }
 
         public int CompareTo (NodeId other)
         {
@@ -98,57 +102,85 @@ namespace MonoTorrent.Dht
         }
 
         public override bool Equals (object obj)
-            => Equals (obj as NodeId);
+        {
+            return Equals (obj as NodeId);
+        }
 
         public bool Equals (NodeId other)
-            => other != null && Toolbox.ByteMatch (Bytes, other.Bytes);
+        {
+            return other != null && Toolbox.ByteMatch (Bytes, other.Bytes);
+        }
 
         public override int GetHashCode ()
-            => Bytes[0] << 24
-             | Bytes[1] << 16
-             | Bytes[2] << 8
-             | Bytes[3];
+        {
+            return Bytes[0] << 24
+                        | Bytes[1] << 16
+                        | Bytes[2] << 8
+                        | Bytes[3];
+        }
 
         public override string ToString ()
-            => BitConverter.ToString (Bytes);
+        {
+            return BitConverter.ToString (Bytes);
+        }
 
         internal static NodeId Median (NodeId min, NodeId max)
-            => new NodeId ((new BigEndianBigInteger (min.Bytes) + new BigEndianBigInteger (max.Bytes)) / 2);
+        {
+            return new NodeId ((new BigEndianBigInteger (min.Bytes) + new BigEndianBigInteger (max.Bytes)) / 2);
+        }
 
         public static NodeId operator ^ (NodeId left, NodeId right)
         {
-            var clone = (byte[]) left.Bytes.Clone ();
+            byte[] clone = (byte[]) left.Bytes.Clone ();
             for (int i = 0; i < right.Bytes.Length; i++)
                 clone[i] ^= right.Bytes[i];
             return new NodeId (clone);
         }
 
         public static NodeId operator - (NodeId first, NodeId second)
-            => new NodeId (new BigEndianBigInteger (first.Bytes) - new BigEndianBigInteger (second.Bytes));
+        {
+            return new NodeId (new BigEndianBigInteger (first.Bytes) - new BigEndianBigInteger (second.Bytes));
+        }
 
         public static bool operator > (NodeId first, NodeId second)
-            => first.CompareTo (second) > 0;
+        {
+            return first.CompareTo (second) > 0;
+        }
 
         public static bool operator > (NodeId first, int second)
-            => new BigEndianBigInteger (first.Bytes) > second;
+        {
+            return new BigEndianBigInteger (first.Bytes) > second;
+        }
 
         public static bool operator < (NodeId first, NodeId second)
-            => first.CompareTo (second) < 0;
+        {
+            return first.CompareTo (second) < 0;
+        }
 
         public static bool operator < (NodeId first, int second)
-            => new BigEndianBigInteger (first.Bytes) < second;
+        {
+            return new BigEndianBigInteger (first.Bytes) < second;
+        }
 
         public static bool operator <= (NodeId first, NodeId second)
-            => first.CompareTo (second) <= 0;
+        {
+            return first.CompareTo (second) <= 0;
+        }
 
         public static bool operator >= (NodeId first, NodeId second)
-            => first.CompareTo (second) >= 0;
+        {
+            return first.CompareTo (second) >= 0;
+        }
 
         public static bool operator == (NodeId first, NodeId second)
-            => first is null ? second is null : first.CompareTo (second) == 0;
+        {
+            return first is null ? second is null : first.CompareTo (second) == 0;
+        }
 
         public static bool operator != (NodeId first, NodeId second)
-            => !(first == second);
+        {
+            return !(first == second);
+        }
 
         public static NodeId Create ()
         {

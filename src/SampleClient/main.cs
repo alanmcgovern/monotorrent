@@ -50,7 +50,7 @@ namespace SampleClient
             int port;
             Torrent torrent = null;
             // Ask the user what port they want to use for incoming connections
-            Console.Write (Environment.NewLine + "Choose a listen port: ");
+            Console.Write ($"{Environment.NewLine}Choose a listen port: ");
             while (!Int32.TryParse (Console.ReadLine (), out port)) { }
 
             // Create the settings which the engine will use
@@ -123,7 +123,7 @@ namespace SampleClient
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add (manager);
-                    manager.PeersFound += new EventHandler<PeersAddedEventArgs> (manager_PeersFound);
+                    manager.PeersFound += manager_PeersFound;
                 }
             }
 
@@ -141,27 +141,28 @@ namespace SampleClient
             foreach (TorrentManager manager in torrents) {
                 manager.PeerConnected += (o, e) => {
                     lock (listener)
-                        listener.WriteLine (string.Format ("Connection succeeded: {0}", e.Peer.Uri));
+                        listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
                 };
                 manager.ConnectionAttemptFailed += (o, e) => {
                     lock (listener)
-                        listener.WriteLine (string.Format ("Connection failed: {0} - {1} - {2}", e.Peer.ConnectionUri, e.Reason, e.Peer.AllowedEncryption));
+                        listener.WriteLine (
+                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason} - {e.Peer.AllowedEncryption}");
                 };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
                     lock (listener)
-                        listener.WriteLine (string.Format ("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
+                        listener.WriteLine ($"Piece Hashed: {e.PieceIndex} - {(e.HashPassed ? "Pass" : "Fail")}");
                 };
 
                 // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
                 manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
                     lock (listener)
-                        listener.WriteLine ("OldState: " + e.OldState.ToString () + " NewState: " + e.NewState.ToString ());
+                        listener.WriteLine ($"OldState: {e.OldState} NewState: {e.NewState}");
                 };
 
                 // Every time the tracker's state changes, this is fired
                 manager.TrackerManager.AnnounceComplete += (sender, e) => {
-                    listener.WriteLine (string.Format ("{0}: {1}", e.Successful, e.Tracker));
+                    listener.WriteLine ($"{e.Successful}: {e.Tracker}");
                 };
 
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
@@ -176,7 +177,7 @@ namespace SampleClient
             while (running) {
                 if ((i++) % 10 == 0) {
                     sb.Remove (0, sb.Length);
-                    running = torrents.Exists (delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
+                    running = torrents.Exists (m => m.State != TorrentState.Stopped);
 
                     AppendFormat (sb, "Total Download Rate: {0:0.00}kB/sec", engine.TotalDownloadSpeed / 1024.0);
                     AppendFormat (sb, "Total Upload Rate:   {0:0.00}kB/sec", engine.TotalUploadSpeed / 1024.0);
@@ -187,7 +188,7 @@ namespace SampleClient
                     AppendFormat (sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
 
                     foreach (TorrentManager manager in torrents) {
-                        AppendSeperator (sb);
+                        AppendSeparator (sb);
                         AppendFormat (sb, "State:           {0}", manager.State);
                         AppendFormat (sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
                         AppendFormat (sb, "Progress:           {0:0.00}", manager.Progress);
@@ -225,10 +226,10 @@ namespace SampleClient
         static void manager_PeersFound (object sender, PeersAddedEventArgs e)
         {
             lock (listener)
-                listener.WriteLine (string.Format ("Found {0} new peers and {1} existing peers", e.NewPeers, e.ExistingPeers));//throw new Exception("The method or operation is not implemented.");
+                listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
         }
 
-        private static void AppendSeperator (StringBuilder sb)
+        private static void AppendSeparator (StringBuilder sb)
         {
             AppendFormat (sb, "", null);
             AppendFormat (sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
