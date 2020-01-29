@@ -252,8 +252,11 @@ namespace MonoTorrent
 
         public byte[] ToByteArray ()
         {
+#if NETSTANDARD2_1
+            return Value.ToByteArray (true, true);
+#else
             return OptimisedToByteArray (Value);
-        }
 #endif
+        }
     }
 }

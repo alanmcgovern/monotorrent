@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
 
 
         [DllImport ("Kernel32.dll")]
-        static bool DeviceIoControl (
+        static extern bool DeviceIoControl (
             SafeFileHandle hDevice,
             uint dwIoControlCode,
             IntPtr InBuffer,
@@ -132,7 +132,7 @@ namespace MonoTorrent.Client
         );
 
         [DllImportAttribute ("kernel32.dll")]
-        static SafeFileHandle CreateFileW (
+        static extern SafeFileHandle CreateFileW (
                 [In][MarshalAsAttribute (UnmanagedType.LPWStr)] string lpFileName,
                 uint dwDesiredAccess,
                 uint dwShareMode,
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
         );
 
         [DllImportAttribute ("kernel32.dll")]
-        static bool GetVolumeInformationW (
+        static extern bool GetVolumeInformationW (
             [In] [MarshalAsAttribute (UnmanagedType.LPWStr)] string lpRootPathName,
             [Out] [MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder lpVolumeNameBuffer,
             uint nVolumeNameSize,
