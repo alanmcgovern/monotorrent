@@ -28,9 +28,11 @@
 
 
 using System;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
+    [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
     public class Piece : IComparable<Piece>
     {
         internal const int BlockSize = (1 << 14); // 16kB
@@ -132,6 +134,11 @@ namespace MonoTorrent.Client
         public override int GetHashCode ()
         {
             return Index;
+        }
+
+        string ToDebuggerString ()
+        {
+            return $"Piece {Index}";
         }
 
         #endregion
