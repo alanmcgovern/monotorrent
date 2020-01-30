@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -258,29 +258,29 @@ namespace MonoTorrent.Client
         public void FindFile_FirstFile ()
         {
             var file = fileData.Files[0];
-            Assert.AreEqual (0, diskManager.FindFileIndex (fileData.Files, 0, fileData.PieceLength));
-            Assert.AreEqual (0, diskManager.FindFileIndex (fileData.Files, 1, fileData.PieceLength));
-            Assert.AreEqual (0, diskManager.FindFileIndex (fileData.Files, file.Length - 1, fileData.PieceLength));
+            Assert.AreEqual (0, DiskManager.FindFileIndex (fileData.Files, 0, fileData.PieceLength));
+            Assert.AreEqual (0, DiskManager.FindFileIndex (fileData.Files, 1, fileData.PieceLength));
+            Assert.AreEqual (0, DiskManager.FindFileIndex (fileData.Files, file.Length - 1, fileData.PieceLength));
         }
 
         [Test]
         public void FindFile_SecondFile ()
         {
-            Assert.AreEqual (1, diskManager.FindFileIndex (fileData.Files, fileData.Files[0].Length, fileData.PieceLength));
+            Assert.AreEqual (1, DiskManager.FindFileIndex (fileData.Files, fileData.Files[0].Length, fileData.PieceLength));
         }
 
         [Test]
         public void FindFile_LastFile ()
         {
-            Assert.AreEqual (fileData.Files.Length - 1, diskManager.FindFileIndex (fileData.Files, fileData.Files.Last ().Length - 1, fileData.PieceLength));
+            Assert.AreEqual (fileData.Files.Length - 1, DiskManager.FindFileIndex (fileData.Files, fileData.Files.Last ().Length - 1, fileData.PieceLength));
         }
 
         [Test]
         public void FindFile_InvalidOffset ()
         {
             var totalSize = fileData.Files.Sum (t => t.Length);
-            Assert.Negative (diskManager.FindFileIndex (fileData.Files, totalSize, fileData.PieceLength));
-            Assert.Negative (diskManager.FindFileIndex (fileData.Files, -1, fileData.PieceLength));
+            Assert.Negative (DiskManager.FindFileIndex (fileData.Files, totalSize, fileData.PieceLength));
+            Assert.Negative (DiskManager.FindFileIndex (fileData.Files, -1, fileData.PieceLength));
         }
 
         [Test]

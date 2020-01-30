@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -450,27 +450,19 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
+        internal static int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
         {
-            static int Locator (TorrentFile file, ValueTuple<long, int> state) {
-                // Force these two be longs right at the start so we don't overflow
-                // int32s when dealing with large torrents.
-                long offset = state.Item1;
-                long pieceLength = state.Item2;
-
-                var fileStart = (file.StartPieceIndex * pieceLength) + file.StartPieceOffset;
+            int Comparator (TorrentFile file, long fileOffset) {
+                var fileStart = (long) file.StartPieceIndex * pieceLength + file.StartPieceOffset;
                 var fileEnd = fileStart + file.Length;
+                var leftCheck = fileStart <= fileOffset;
+                var rightCheck = fileOffset < fileEnd;
+                return !leftCheck ? 1
+                  : rightCheck ? 0
+                  : -1;
+            }
 
-                if (offset >= fileStart && offset < fileEnd)
-                    return 0;
-                if (offset >= fileEnd)
-                    return -1;
-                if (offset < fileStart)
-                    return 1;
-                throw new InvalidOperationException ("Could not detect location of torrent file");
-            };
-
-            return files.BinarySearch (Locator, ValueTuple.Create (offset, pieceLength));
+            return files.BinarySearch (Comparator, offset);
         }
 
         bool Read (ITorrentData manager, long offset, byte[] buffer, int count)
