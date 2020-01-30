@@ -202,15 +202,19 @@ namespace MonoTorrent.Client.Connections
             args.SetBuffer (offset, count);
             args.UserToken = ReceiveTcs;
 
+#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             AsyncFlowControl? control = null;
             if (!ExecutionContext.IsFlowSuppressed ())
                 control = ExecutionContext.SuppressFlow ();
+#endif
 
             try {
                 if (!Socket.ReceiveAsync (args))
                     ReceiveTcs.SetResult (args.BytesTransferred);
             } finally {
+#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
+#endif
             }
 
             return ReceiveTcs.Task;
@@ -233,15 +237,19 @@ namespace MonoTorrent.Client.Connections
             args.SetBuffer (offset, count);
             args.UserToken = SendTcs;
 
+#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             AsyncFlowControl? control = null;
             if (!ExecutionContext.IsFlowSuppressed ())
                 control = ExecutionContext.SuppressFlow ();
+#endif
 
             try {
                 if (!Socket.SendAsync (args))
                     SendTcs.SetResult (count);
             } finally {
+#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
+#endif
             }
 
             return SendTcs.Task;
@@ -253,6 +261,6 @@ namespace MonoTorrent.Client.Connections
             Socket = null;
         }
 
-        #endregion
+#endregion
     }
 }

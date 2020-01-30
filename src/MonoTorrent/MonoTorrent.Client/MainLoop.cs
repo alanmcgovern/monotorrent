@@ -73,7 +73,9 @@ namespace MonoTorrent.Client
         void Loop ()
         {
             SetSynchronizationContext (this);
+#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             using (ExecutionContext.SuppressFlow ())
+#endif
                 while (true) {
                     QueuedTask? task = null;
 
@@ -163,7 +165,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        #region If you await the MainLoop you'll swap to it's thread!
+#region If you await the MainLoop you'll swap to it's thread!
         [EditorBrowsable (EditorBrowsableState.Never)]
         public MainLoop GetAwaiter ()
         {
@@ -195,6 +197,6 @@ namespace MonoTorrent.Client
             return new ThreadSwitcher ();
         }
 
-        #endregion
+#endregion
     }
 }
