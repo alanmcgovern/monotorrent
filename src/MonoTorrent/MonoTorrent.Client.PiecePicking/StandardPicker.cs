@@ -34,20 +34,6 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class StandardPicker : PiecePicker
     {
-        readonly BinaryIndexComparer Comparer = new BinaryIndexComparer ();
-
-        class BinaryIndexComparer : IComparer<Piece>
-        {
-            public int Index { get; set; }
-
-            public int Compare (Piece x, Piece y)
-            {
-                if (x == null)
-                    return Index.CompareTo (y.Index);
-                return x.Index.CompareTo (Index);
-            }
-        }
-
         static readonly Predicate<Block> TimedOut = b => b.RequestTimedOut;
 
         readonly SortList<Piece> requests;
@@ -178,10 +164,12 @@ namespace MonoTorrent.Client.PiecePicking
             requests.Clear ();
         }
 
+        static int IndexComparer (Piece piece, int comparand)
+            => piece.Index.CompareTo (comparand);
+
         public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            Comparer.Index = pieceIndex;
-            int pIndex = requests.BinarySearch (null, Comparer);
+            int pIndex = requests.BinarySearch (IndexComparer, pieceIndex);
 
             if (pIndex < 0) {
                 piece = null;
@@ -308,8 +296,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         protected bool AlreadyRequested (int index)
         {
-            Comparer.Index = index;
-            return requests.BinarySearch (null, Comparer) >= 0;
+            return requests.BinarySearch (IndexComparer, index) >= 0;
         }
 
         int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
