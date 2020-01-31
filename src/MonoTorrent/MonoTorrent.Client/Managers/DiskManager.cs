@@ -452,17 +452,18 @@ namespace MonoTorrent.Client
 
         internal static int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
         {
-            int Comparator (TorrentFile file, long fileOffset) {
+            static int Comparator (TorrentFile file, ValueTuple<long, int> offsetAndPieceLength) {
+                var (offset, pieceLength) = offsetAndPieceLength;
                 var fileStart = (long) file.StartPieceIndex * pieceLength + file.StartPieceOffset;
                 var fileEnd = fileStart + file.Length;
-                var leftCheck = fileStart <= fileOffset;
-                var rightCheck = fileOffset < fileEnd;
+                var leftCheck = fileStart <= offset;
+                var rightCheck = offset < fileEnd;
                 return !leftCheck ? 1
                   : rightCheck ? 0
                   : -1;
             }
 
-            return files.BinarySearch (Comparator, offset);
+            return files.BinarySearch (Comparator, ValueTuple.Create(offset, pieceLength));
         }
 
         bool Read (ITorrentData manager, long offset, byte[] buffer, int count)
