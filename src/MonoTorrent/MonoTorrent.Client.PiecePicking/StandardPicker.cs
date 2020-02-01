@@ -164,7 +164,7 @@ namespace MonoTorrent.Client.PiecePicking
             requests.Clear ();
         }
 
-        static int IndexComparer (Piece piece, int comparand)
+        static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
             => piece.Index.CompareTo (comparand);
 
         public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
