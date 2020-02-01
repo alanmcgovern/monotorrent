@@ -450,22 +450,22 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal static int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
-        {
-            static int Comparator (TorrentFile file, ValueTuple<long, int> offsetAndPieceLength) {
-                // Force these two be longs right at the start so we don't overflow
-                // int32s when dealing with large torrents.
-                (long offset, long pieceLength) = offsetAndPieceLength;
-                var fileStart = (long) file.StartPieceIndex * pieceLength + file.StartPieceOffset;
-                var fileEnd = fileStart + file.Length;
-                if (offset >= fileStart && offset < fileEnd)
-                    return 0;
-                if (offset >= fileEnd)
-                    return -1;
-                else
-                    return 1;
-            }
+        static Func<TorrentFile, ValueTuple<long, int>, int> Comparator = (file, offsetAndPieceLength) => {
+            // Force these two be longs right at the start so we don't overflow
+            // int32s when dealing with large torrents.
+            (long offset, long pieceLength) = offsetAndPieceLength;
+            var fileStart = (long) file.StartPieceIndex * pieceLength + file.StartPieceOffset;
+            var fileEnd = fileStart + file.Length;
+            if (offset >= fileStart && offset < fileEnd)
+                return 0;
+            if (offset >= fileEnd)
+                return -1;
+            else
+                return 1;
+        };
 
+        public static int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
+        {
             return files.BinarySearch (Comparator, ValueTuple.Create(offset, pieceLength));
         }
 
