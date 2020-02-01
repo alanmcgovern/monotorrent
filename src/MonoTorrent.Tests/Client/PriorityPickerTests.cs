@@ -209,20 +209,20 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.IsFalse (picker.IsInteresting (bf.SetAll (false).Set (multiFile.Files[1].StartPieceIndex + 1, true)), "#4");
             Assert.IsFalse (picker.IsInteresting (bf.SetAll (false).Set (multiFile.Files[1].EndPieceIndex - 1, true)), "#5");
 
-            bf = multiFile.Files[2].GetSelector (multiBitfield.Length);
+            bf = new BitField (multiBitfield.Length).SetTrue (multiFile.Files[2].GetSelector ());
             Assert.AreEqual (bf, tester.PickPieceBitfield[0], "#6");
 
-            bf = multiFile.Files[3].GetSelector (multiBitfield.Length)
-                .Or (multiFile.Files[7].GetSelector (multiBitfield.Length));
+            bf = new BitField (multiBitfield.Length).SetTrue (multiFile.Files[3].GetSelector ())
+                .SetTrue (multiFile.Files[7].GetSelector ());
             Assert.AreEqual (bf, tester.PickPieceBitfield[1], "#7");
 
-            bf = multiFile.Files[0].GetSelector (multiBitfield.Length);
+            bf = new BitField (multiBitfield.Length).SetTrue (multiFile.Files[0].GetSelector ());
             Assert.AreEqual (bf, tester.PickPieceBitfield[2], "#8");
 
-            bf = multiFile.Files[5].GetSelector (multiBitfield.Length);
+            bf = new BitField (multiBitfield.Length).SetTrue (multiFile.Files[5].GetSelector ());
             Assert.AreEqual (bf, tester.PickPieceBitfield[3], "#9");
 
-            bf = multiFile.Files[4].GetSelector (multiBitfield.Length);
+            bf = new BitField (multiBitfield.Length).SetTrue (multiFile.Files[4].GetSelector ());
             Assert.AreEqual (bf, tester.PickPieceBitfield[4], "#10");
         }
 
@@ -253,11 +253,11 @@ namespace MonoTorrent.Client.PiecePicking
             picker.PickPiece (multiPeer, multiBitfield, new List<PeerId> ());
             Assert.AreEqual (2, tester.PickPieceBitfield.Count, "#1");
             Assert.IsTrue (picker.IsInteresting (multiBitfield), "#2");
-            Assert.AreEqual (multiFile.Files[1].GetSelector (multiBitfield.Length), tester.PickPieceBitfield[0], "#3");
+            Assert.AreEqual (new BitField (multiBitfield.Length).SetTrue (multiFile.Files[1].GetSelector ()), tester.PickPieceBitfield[0], "#3");
 
             var bf = new BitField (multiBitfield.Length);
             foreach (var v in multiFile.Files.Except (new[] { multiFile.Files[1] }))
-                bf.Or (v.GetSelector (bf.Length));
+                bf.SetTrue (v.GetSelector ());
 
             Assert.AreEqual (bf, tester.PickPieceBitfield[1], "#4");
         }

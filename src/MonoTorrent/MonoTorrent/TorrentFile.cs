@@ -163,15 +163,9 @@ namespace MonoTorrent
             return Path.GetHashCode ();
         }
 
-        internal BitField GetSelector (int totalPieces)
+        internal ValueTuple<int, int> GetSelector ()
         {
-            if (selector != null)
-                return selector;
-
-            selector = new BitField (totalPieces);
-            for (int i = StartPieceIndex; i <= EndPieceIndex; i++)
-                selector[i] = true;
-            return selector;
+            return ValueTuple.Create (StartPieceIndex, EndPieceIndex);
         }
 
         public override string ToString ()

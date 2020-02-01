@@ -40,9 +40,9 @@ namespace MonoTorrent.Client.PiecePicking
         {
             public Priority Priority { get; private set; }
             readonly TorrentFile File;
-            public readonly BitField Selector;
+            public readonly ValueTuple<int, int> Selector;
 
-            public Files (TorrentFile file, BitField selector)
+            public Files (TorrentFile file, ValueTuple<int, int> selector)
             {
                 Priority = file.Priority;
                 File = file;
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             files.Clear ();
             for (int i = 0; i < torrentData.Files.Length; i++)
-                files.Add (new Files (torrentData.Files[i], torrentData.Files[i].GetSelector (bitfield.Length)));
+                files.Add (new Files (torrentData.Files[i], torrentData.Files[i].GetSelector ()));
             BuildSelectors ();
         }
 
@@ -158,16 +158,18 @@ namespace MonoTorrent.Client.PiecePicking
             }
 
             // At least one file is not set to DoNotDownload
-            temp.From (files[0].Selector);
-            allPrioritisedPieces.From (files[0].Selector);
+            temp.SetAll (false);
+            temp.SetTrue (files[0].Selector);
+            allPrioritisedPieces.From (temp);
             for (int i = 1; i < files.Count && files[i].Priority != Priority.DoNotDownload; i++) {
-                allPrioritisedPieces.Or (files[i].Selector);
+                allPrioritisedPieces.SetTrue (files[i].Selector);
 
                 if (files[i].Priority == files[i - 1].Priority) {
-                    temp.Or (files[i].Selector);
+                    temp.SetTrue (files[i].Selector);
                 } else if (!temp.AllFalse) {
                     prioritised.Add (temp.Clone ());
-                    temp.From (files[i].Selector);
+                    temp.SetAll (false);
+                    temp.SetTrue (files[i].Selector);
                 }
             }
 
