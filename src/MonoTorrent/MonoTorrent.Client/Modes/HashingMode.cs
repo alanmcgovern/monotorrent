@@ -75,6 +75,10 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.HasMetadata)
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
+            // Ensure the partial progress selector is up to date before we start hashing
+            UpdatePartialProgress ();
+
+            int piecesHashed = 0;
             Manager.HashFails = 0;
             if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
                 Cancellation.Token.ThrowIfCancellationRequested ();
@@ -82,7 +86,7 @@ namespace MonoTorrent.Client.Modes
                     if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
                         // so they also report that the piece is not available/downloaded.
-                        Manager.OnPieceHashed (index, false);
+                        Manager.OnPieceHashed (index, false, piecesHashed, Manager.PartialProgressSelector.TrueCount);
                         // Then mark this piece as being unhashed so we don't try to download it.
                         Manager.UnhashedPieces[index] = true;
                         continue;
@@ -99,13 +103,13 @@ namespace MonoTorrent.Client.Modes
                     }
 
                     bool hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
-                    Manager.OnPieceHashed (index, hashPassed);
+                    Manager.OnPieceHashed (index, hashPassed, piecesHashed++, Manager.PartialProgressSelector.TrueCount);
                 }
             } else {
                 await PausedCompletionSource.Task;
 
                 for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.OnPieceHashed (i, false);
+                    Manager.OnPieceHashed (i, false, piecesHashed++, Manager.Torrent.Pieces.Count);
             }
         }
 
