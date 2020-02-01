@@ -31,8 +31,6 @@ namespace MonoTorrent.Client.Modes
 {
     class DownloadMode : Mode
     {
-        BitField PartialProgressUpdater;
-
         TorrentState state;
         public override TorrentState State => state;
 
@@ -71,24 +69,6 @@ namespace MonoTorrent.Client.Modes
                     i--;
                 }
             }
-        }
-
-
-        internal void UpdatePartialProgress ()
-        {
-            if (PartialProgressUpdater == null || PartialProgressUpdater.Length != Manager.Bitfield.Length)
-                PartialProgressUpdater = new BitField (Manager.Bitfield.Length);
-
-            PartialProgressUpdater.SetAll (false);
-            if (Manager.Torrent != null) {
-                foreach (TorrentFile file in Manager.Torrent.Files) {
-                    if (file.Priority != Priority.DoNotDownload) {
-                        for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
-                            PartialProgressUpdater[i] = true;
-                    }
-                }
-            }
-            Manager.PartialProgressSelector.From (PartialProgressUpdater);
         }
 
         internal void UpdateSeedingDownloadingState ()

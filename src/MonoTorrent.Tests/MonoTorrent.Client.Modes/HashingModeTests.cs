@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -146,6 +147,29 @@ namespace MonoTorrent.Client.Modes
             await resumeEvent.WithTimeout ("#resume");
             Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
             Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
+        }
+
+        [Test]
+        public async Task ProgressWhileHashing ()
+        {
+            var tcs = new TaskCompletionSource<bool> ();
+            var args = new List<PieceHashedEventArgs> ();
+            Manager.PieceHashed += (o, e) => {
+                lock (args) {
+                    args.Add (e);
+                    if (args.Count == Manager.Torrent.Pieces.Count)
+                        tcs.SetResult (true);
+                }
+            };
+
+            await Manager.HashCheckAsync (false);
+            await tcs.Task.WithTimeout ("hashing");
+
+            args.Sort ((l, r) => l.PieceIndex.CompareTo (r.PieceIndex));
+            for (int i = 1; i < args.Count; i++)
+                Assert.Greater (args[i].Progress, args[i - 1].Progress, "#1." + i);
+            Assert.Greater (args.First ().Progress, 0, "#2");
+            Assert.AreEqual (1, args.Last ().Progress, "#3");
         }
 
         [Test]
