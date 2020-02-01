@@ -450,7 +450,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        static Func<TorrentFile, ValueTuple<long, int>, int> Comparator = (file, offsetAndPieceLength) => {
+        static readonly Func<TorrentFile, (long offset, int pieceLength), int> Comparator = (file, offsetAndPieceLength) => {
             // Force these two be longs right at the start so we don't overflow
             // int32s when dealing with large torrents.
             (long offset, long pieceLength) = offsetAndPieceLength;
@@ -466,7 +466,7 @@ namespace MonoTorrent.Client
 
         public static int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
         {
-            return files.BinarySearch (Comparator, ValueTuple.Create(offset, pieceLength));
+            return files.BinarySearch (Comparator, (offset, pieceLength));
         }
 
         bool Read (ITorrentData manager, long offset, byte[] buffer, int count)

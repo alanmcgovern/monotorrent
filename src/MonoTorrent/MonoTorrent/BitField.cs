@@ -333,9 +333,9 @@ namespace MonoTorrent
             return this;
         }
 
-        internal BitField SetTrue (ValueTuple<int, int> range)
+        internal BitField SetTrue ((int startPiece, int endPiece) range)
         {
-            for (int i = range.Item1; i <= range.Item2; i++)
+            for (int i = range.startPiece; i <= range.endPiece; i++)
                 Set (i, true);
             return this;
         }

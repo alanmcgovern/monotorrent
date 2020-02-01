@@ -155,9 +155,9 @@ namespace MonoTorrent
             return Path.GetHashCode ();
         }
 
-        internal ValueTuple<int, int> GetSelector ()
+        internal (int startPiece, int endPiece) GetSelector ()
         {
-            return ValueTuple.Create (StartPieceIndex, EndPieceIndex);
+            return (StartPieceIndex, EndPieceIndex);
         }
 
         public override string ToString ()

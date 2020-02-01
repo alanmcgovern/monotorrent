@@ -40,9 +40,9 @@ namespace MonoTorrent.Client.PiecePicking
         {
             public Priority Priority { get; private set; }
             readonly TorrentFile File;
-            public readonly ValueTuple<int, int> Selector;
+            public readonly (int startPiece, int endPiece) Selector;
 
-            public Files (TorrentFile file, ValueTuple<int, int> selector)
+            public Files (TorrentFile file, (int startPiece, int endPiece) selector)
             {
                 Priority = file.Priority;
                 File = file;
