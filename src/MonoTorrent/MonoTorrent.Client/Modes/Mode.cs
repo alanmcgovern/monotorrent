@@ -45,6 +45,7 @@ namespace MonoTorrent.Client.Modes
     abstract class Mode
     {
         bool hashingPendingFiles;
+        BitField PartialProgressUpdater;
 
         protected CancellationTokenSource Cancellation { get; }
         protected ConnectionManager ConnectionManager { get; }
@@ -363,7 +364,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, piece.Index);
-            Manager.OnPieceHashed (piece.Index, result);
+            Manager.OnPieceHashed (piece.Index, result, 1, 1);
             Manager.PieceManager.UnhashedPieces[piece.Index] = false;
             if (!result)
                 Manager.HashFails++;
@@ -684,7 +685,7 @@ namespace MonoTorrent.Client.Modes
                                 Cancellation.Token.ThrowIfCancellationRequested ();
 
                                 bool hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
-                                Manager.OnPieceHashed (index, hashPassed);
+                                Manager.OnPieceHashed (index, hashPassed, 1, 1);
 
                                 if (hashPassed)
                                     Manager.finishedPieces.Enqueue (new HaveMessage (index));
@@ -695,6 +696,23 @@ namespace MonoTorrent.Client.Modes
             } finally {
                 hashingPendingFiles = false;
             }
+        }
+
+        internal void UpdatePartialProgress ()
+        {
+            if (PartialProgressUpdater == null || PartialProgressUpdater.Length != Manager.Bitfield.Length)
+                PartialProgressUpdater = new BitField (Manager.Bitfield.Length);
+
+            PartialProgressUpdater.SetAll (false);
+            if (Manager.Torrent != null) {
+                foreach (TorrentFile file in Manager.Torrent.Files) {
+                    if (file.Priority != Priority.DoNotDownload) {
+                        for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                            PartialProgressUpdater[i] = true;
+                    }
+                }
+            }
+            Manager.PartialProgressSelector.From (PartialProgressUpdater);
         }
 
         void SendHaveMessagesToAll ()

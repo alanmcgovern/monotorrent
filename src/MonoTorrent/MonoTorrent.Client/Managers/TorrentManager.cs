@@ -753,6 +753,9 @@ namespace MonoTorrent.Client
         }
 
         internal void OnPieceHashed (int index, bool hashPassed)
+            => OnPieceHashed (index, hashPassed, 1, 1);
+
+        internal void OnPieceHashed (int index, bool hashPassed, int piecesHashed, int totalToHash)
         {
             Bitfield[index] = hashPassed;
             // The PiecePickers will no longer ignore this piece as it has now been hash checked.
@@ -834,7 +837,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
             for (int i = 0; i < Torrent.Pieces.Count; i++)
-                OnPieceHashed (i, data.Bitfield[i]);
+                OnPieceHashed (i, data.Bitfield[i], i, Torrent.Pieces.Count);
             UnhashedPieces.From (data.UnhashedPieces);
 
             HashChecked = true;
