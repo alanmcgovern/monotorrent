@@ -34,13 +34,6 @@ namespace MonoTorrent
 {
     public sealed class TorrentFile : IEquatable<TorrentFile>
     {
-        #region Private Fields
-
-        BitField selector;
-
-        #endregion Private Fields
-
-
         #region Member Variables
 
         /// <summary>
@@ -155,7 +148,6 @@ namespace MonoTorrent
         public bool Equals (TorrentFile other)
         {
             return other == null ? false : Path == other.Path && Length == other.Length;
-            ;
         }
 
         public override int GetHashCode ()
@@ -163,15 +155,9 @@ namespace MonoTorrent
             return Path.GetHashCode ();
         }
 
-        internal BitField GetSelector (int totalPieces)
+        internal ValueTuple<int, int> GetSelector ()
         {
-            if (selector != null)
-                return selector;
-
-            selector = new BitField (totalPieces);
-            for (int i = StartPieceIndex; i <= EndPieceIndex; i++)
-                selector[i] = true;
-            return selector;
+            return ValueTuple.Create (StartPieceIndex, EndPieceIndex);
         }
 
         public override string ToString ()
