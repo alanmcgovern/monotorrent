@@ -36,7 +36,6 @@ namespace MonoTorrent.Client.Tracker
     {
         public IList<ITracker> Trackers { get; }
 
-        internal bool SendingStartedEvent { get; set; }
         internal bool SentStartedEvent { get; set; }
 
         internal TrackerTier (IEnumerable<string> trackerUrls)
