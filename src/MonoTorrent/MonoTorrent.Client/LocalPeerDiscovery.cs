@@ -112,12 +112,17 @@ namespace MonoTorrent.Client
 
             // If there's another application on the system which joined the bittorrent LPD broadcast group, we'll be unable to
             // join it and will have a PortInUse error. However, we can still *send* broadcast messages using any UDP client.
+
+            // Ensure this doesn't run on the UI thread as the networking calls can do some (partially) blocking operations.
+            // Specifically 'NetworkInterface.GetAllNetworkInterfaces' is synchronous and can take hundreds of milliseconds.
+            await MainLoop.SwitchToThreadpool ();
+
             using var sendingClient = new UdpClient ();
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces ()) {
                 try {
                     //if (!nic.SupportsMulticast) continue;
                     sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
-                    await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint);
+                    await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint).ConfigureAwait (false);
                 } catch {
                     // If data can't be sent, just ignore the error
                 }
