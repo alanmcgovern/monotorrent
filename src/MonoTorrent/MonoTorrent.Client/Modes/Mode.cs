@@ -606,6 +606,9 @@ namespace MonoTorrent.Client.Modes
                     var peer = new Peer (peerId, uri);
 
                     var connection = (HttpConnection) ConnectionFactory.Create (uri);
+                    // Unsupported connection type.
+                    if (connection == null)
+                        continue;
                     connection.Manager = Manager;
 
                     var id = new PeerId (peer, connection, Manager.Bitfield.Clone ().SetAll (true));
