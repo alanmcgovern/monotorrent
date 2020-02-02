@@ -107,7 +107,7 @@ namespace SampleClient
                     try {
                         // Load the .torrent from the file into a Torrent instance
                         // You can use this to do preprocessing should you need to
-                        torrent = Torrent.Load (file);
+                        torrent = await Torrent.LoadAsync (file);
                         Console.WriteLine (torrent.InfoHash.ToString ());
                     } catch (Exception e) {
                         Console.Write ("Couldn't decode {0}: ", file);
