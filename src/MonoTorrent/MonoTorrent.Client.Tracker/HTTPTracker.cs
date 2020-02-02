@@ -71,6 +71,11 @@ namespace MonoTorrent.Client.Tracker
 
         protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
         {
+            // WebRequest.Create can be a comparatively slow operation as reported
+            // by profiling. Switch this to the threadpool so the querying of default
+            // proxies, and any DNS requests, are definitely not run on the main thread.
+            await MainLoop.SwitchToThreadpool ();
+
             // Clear out previous failure state
             FailureMessage = "";
             WarningMessage = "";
@@ -109,6 +114,11 @@ namespace MonoTorrent.Client.Tracker
 
         protected override async Task DoScrapeAsync (ScrapeParameters parameters)
         {
+            // WebRequest.Create can be a comparatively slow operation as reported
+            // by profiling. Switch this to the threadpool so the querying of default
+            // proxies, and any DNS requests, are definitely not run on the main thread.
+            await MainLoop.SwitchToThreadpool ();
+
             string url = ScrapeUri.OriginalString;
             // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
             if (url.IndexOf ('?') == -1)
