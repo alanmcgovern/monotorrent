@@ -33,6 +33,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
@@ -483,6 +484,15 @@ namespace MonoTorrent
         }
 
         /// <summary>
+        /// This method loads a .torrent file from the specified path.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        public static Task<Torrent> LoadAsync (string path)
+        {
+            return Task.Run (() => Load (path));
+        }
+
+        /// <summary>
         /// Loads a torrent from a byte[] containing the bencoded data
         /// </summary>
         /// <param name="data">The byte[] containing the data</param>
@@ -493,6 +503,16 @@ namespace MonoTorrent
 
             using var s = new MemoryStream (data);
             return Load (s, "");
+        }
+
+        /// <summary>
+        /// Loads a torrent from a byte[] containing the bencoded data
+        /// </summary>
+        /// <param name="data">The byte[] containing the data</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (byte[] data)
+        {
+            return Task.Run (() => Load (data));
         }
 
         /// <summary>
@@ -508,6 +528,16 @@ namespace MonoTorrent
                 throw new ArgumentNullException (nameof (stream));
 
             return Load (stream, "");
+        }
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (Stream stream)
+        {
+            return Task.Run (() => Load (stream));
         }
 
         /// <summary>
@@ -529,6 +559,17 @@ namespace MonoTorrent
             }
 
             return Load (location);
+        }
+
+        /// <summary>
+        /// Loads a .torrent file from the specified URL
+        /// </summary>
+        /// <param name="url">The URL to download the .torrent from</param>
+        /// <param name="location">The path to download the .torrent to before it gets loaded</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (Uri url, string location)
+        {
+            return Task.Run (() => Load (url, location));
         }
 
         /// <summary>
