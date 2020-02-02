@@ -42,6 +42,7 @@ namespace MonoTorrent.Client.Connections
             RegisterTypeForProtocol ("ipv4", uri => new IPV4Connection (uri));
             RegisterTypeForProtocol ("ipv6", uri => new IPV6Connection (uri));
             RegisterTypeForProtocol ("http", uri => new HttpConnection (uri));
+            RegisterTypeForProtocol ("https", uri => new HttpConnection (uri));
         }
 
         public static void RegisterTypeForProtocol (string protocol, Type connectionType)

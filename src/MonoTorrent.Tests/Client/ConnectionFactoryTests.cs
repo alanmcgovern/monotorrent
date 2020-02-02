@@ -14,5 +14,12 @@ namespace MonoTorrent.Client
         {
             Assert.IsNull (ConnectionFactory.Create (new Uri ("ipv4://127.0.1.2")));
         }
+
+        [Test]
+        public void Http ()
+        {
+            Assert.IsNotNull (ConnectionFactory.Create (new Uri ("http://127.0.1.2")));
+            Assert.IsNotNull (ConnectionFactory.Create (new Uri ("https://127.0.1.2")));
+        }
     }
 }
