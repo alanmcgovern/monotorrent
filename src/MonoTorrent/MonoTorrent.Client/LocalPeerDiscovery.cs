@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -80,6 +81,17 @@ namespace MonoTorrent.Client
         string Cookie { get; }
 
         /// <summary>
+        /// We glob together announces so that we don't iterate the network interfaces too frequently.
+        /// </summary>
+        Queue<InfoHash> PendingAnnounces { get; }
+
+        /// <summary>
+        /// Set to true when we're processing the pending announce queue.
+        /// </summary>
+        bool ProcessingAnnounces { get; set; }
+
+        Task RateLimiterTask { get; set; }
+        /// <summary>
         /// The settings object used by the associated <see cref="ClientEngine"/>.
         /// </summary>
         EngineSettings Settings { get; }
@@ -98,6 +110,8 @@ namespace MonoTorrent.Client
                 Cookie = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
             BroadcastEndPoint = new IPEndPoint (IPAddress.Broadcast, MulticastPort);
             BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastIpAddress}:{MulticastPort}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
+            PendingAnnounces = new Queue<InfoHash> ();
+            RateLimiterTask = Task.CompletedTask;
         }
 
         /// <summary>
@@ -105,26 +119,52 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="infoHash"></param>
         /// <returns></returns>
-        public async Task Announce (InfoHash infoHash)
+        public Task Announce (InfoHash infoHash)
         {
-            string message = string.Format (BaseSearchString, Settings.ListenPort, infoHash.ToHex ());
-            byte[] data = Encoding.ASCII.GetBytes (message);
+            lock (PendingAnnounces) {
+                PendingAnnounces.Enqueue (infoHash);
+                if (!ProcessingAnnounces) {
+                    ProcessingAnnounces = true;
+                    ProcessQueue ();
+                }
+            }
 
-            // If there's another application on the system which joined the bittorrent LPD broadcast group, we'll be unable to
-            // join it and will have a PortInUse error. However, we can still *send* broadcast messages using any UDP client.
+            return Task.CompletedTask;
+        }
 
+        async void ProcessQueue ()
+        {
             // Ensure this doesn't run on the UI thread as the networking calls can do some (partially) blocking operations.
             // Specifically 'NetworkInterface.GetAllNetworkInterfaces' is synchronous and can take hundreds of milliseconds.
             await MainLoop.SwitchToThreadpool ();
 
+            await RateLimiterTask;
+
             using var sendingClient = new UdpClient ();
-            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces ()) {
-                try {
-                    //if (!nic.SupportsMulticast) continue;
-                    sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
-                    await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint).ConfigureAwait (false);
-                } catch {
-                    // If data can't be sent, just ignore the error
+            var nics = NetworkInterface.GetAllNetworkInterfaces ();
+
+            while (true) {
+                InfoHash infoHash = null;
+                lock (PendingAnnounces) {
+                    if (PendingAnnounces.Count == 0) {
+                        // Enforce a minimum delay before the next announce to avoid killing CPU by iterating network interfaces.
+                        RateLimiterTask = Task.Delay (1000);
+                        ProcessingAnnounces = false;
+                        break;
+                    }
+                    infoHash = PendingAnnounces.Dequeue ();
+                }
+
+                string message = string.Format (BaseSearchString, Settings.ListenPort, infoHash.ToHex ());
+                byte[] data = Encoding.ASCII.GetBytes (message);
+
+                foreach (var nic in nics) {
+                    try {
+                        sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
+                        await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint).ConfigureAwait (false);
+                    } catch {
+                        // If data can't be sent, just ignore the error
+                    }
                 }
             }
         }
