@@ -110,7 +110,7 @@ namespace MonoTorrent.Streaming
 
             var range = context.Request.Headers["Range"];
             if (range != null && range.StartsWith ("bytes=")) {
-                Debug.WriteLine ("Client requested: {0}", range);
+                Debug.WriteLine (string.Format ("Client requested: {0}", range));
                 var parts = range.Substring ("bytes=".Length).Split (new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length == 1) {
                     firstByte = long.Parse (parts[0]);
@@ -119,6 +119,10 @@ namespace MonoTorrent.Streaming
                     lastByte = long.Parse (parts[1]); // The range is inclusive, so we should add '1' to this offset so we send the last byte.
                 }
             }
+
+            // Clamp the last byte in case someone's player is over-reading. UWP likes to overread because it's terrible.
+            if (lastByte > Stream.Length - 1)
+                lastByte = Stream.Length - 1;
 
             // Some HTTP magic
             var buffer = new byte[64 * 1024];
