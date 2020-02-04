@@ -95,6 +95,10 @@ namespace MonoTorrent.Streaming
             // The torrent is treated as one big block of data, so this is the offset at which the current file's data starts at.
             var torrentFileStartOffset = (long)File.StartPieceIndex * (long)Manager.Torrent.PieceLength + File.StartPieceOffset;
 
+            // Clamp things so we cannot overread.
+            if (Position + count > Length)
+                count = (int) (Length - Position);
+
             // Take our current position into account when calculating the start/end pieces of the data we're reading.
             var startPiece = (int) (torrentFileStartOffset + Position) / Manager.Torrent.PieceLength;
             var endPiece = (int) (torrentFileStartOffset + Position + count) / Manager.Torrent.PieceLength;
