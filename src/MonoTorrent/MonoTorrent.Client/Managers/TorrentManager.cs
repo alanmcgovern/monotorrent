@@ -773,7 +773,7 @@ namespace MonoTorrent.Client
                     connected[i].IsAllowedFastPieces.Remove (index);
             }
 
-            PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed));
+            PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
         }
 
         internal void RaiseTorrentStateChanged (TorrentStateChangedEventArgs e)
