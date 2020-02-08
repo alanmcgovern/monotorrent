@@ -75,11 +75,9 @@ namespace MonoTorrent.BEncoding
 
         public override int ReadByte ()
         {
-            if (hasPeek) {
-                hasPeek = false;
-                return peeked[0];
-            }
-            return base.ReadByte ();
+            var result = PeekByte ();
+            hasPeek = false;
+            return result;
         }
 
         public override long Position {
