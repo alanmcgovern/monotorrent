@@ -213,6 +213,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void benNumber_MaxMin ([Values (long.MinValue, long.MaxValue)] long value)
+        {
+            var number = new BEncodedNumber (value);
+            var result = BEncodedValue.Decode<BEncodedNumber> (number.Encode ());
+            Assert.AreEqual (result.Number, value);
+        }
+
+        [Test]
         public void benNumberEncodingBuffered ()
         {
             byte[] data = Encoding.UTF8.GetBytes ("i12345e");
@@ -391,8 +399,6 @@ namespace MonoTorrent.Common
         }
         #endregion
 
-
-        #region General Tests
         [Test]
         public void corruptBenDataDecode ()
         {
@@ -401,6 +407,103 @@ namespace MonoTorrent.Common
                 BEncodedValue.Decode (Encoding.UTF8.GetBytes (testString));
             });
         }
-        #endregion
+
+        [Test]
+        public void DecodeDictionary_MissingTrailingE ()
+        {
+            string benString = "d1:a1:b";
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeDictionary_OutOfOrder_NotStrict ()
+        {
+            string benString = "d1:b1:b1:a1:ae";
+            var dict = (BEncodedDictionary) BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString), false);
+            Assert.IsTrue (dict.ContainsKey ("a"));
+            Assert.IsTrue (dict.ContainsKey ("b"));
+        }
+
+        [Test]
+        public void DecodeDictionary_OutOfOrder_Strict ()
+        {
+            string benString = "d1:b1:b1:a1:ae";
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString), true));
+        }
+
+        [Test]
+        public void DecodeList_MissingTrailingE ()
+        {
+            string benString = "l1:a";
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeNumber_InvalidDigit ()
+        {
+            string benString = "i123$21e";
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeString_NoColon ()
+        {
+            string benString = "12";
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeString_TooShort ()
+        {
+            string benString = "5:test";
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeTorrentNotDictionary ()
+        {
+            string benString = "5:test";
+            Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeTorrent_MissingTrailingE ()
+        {
+            string benString = "d1:a1:b";
+            Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeTorrentWithDict ()
+        {
+            var dict = new BEncodedDictionary ();
+            dict.Add ("other", new BEncodedDictionary { { (BEncodedString) "test", (BEncodedString) "value" } });
+
+            var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
+            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
+        }
+
+        [Test]
+        public void DecodeTorrentWithInfo ()
+        {
+            var dict = new BEncodedDictionary ();
+            dict.Add ("info", new BEncodedDictionary { { (BEncodedString) "test", (BEncodedString) "value" } });
+
+            var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
+            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
+        }
+
+
+        [Test]
+        public void DecodeTorrentWithString ()
+        {
+            var dict = new BEncodedDictionary {
+                { "info", (BEncodedString) "value" }
+            };
+
+            var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
+            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
+        }
+
     }
 }

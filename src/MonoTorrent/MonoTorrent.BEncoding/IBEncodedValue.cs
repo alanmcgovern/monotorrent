@@ -37,8 +37,6 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public abstract class BEncodedValue
     {
-        internal abstract void DecodeInternal (RawReader reader);
-
         /// <summary>
         /// Encodes the BEncodedValue into a byte array
         /// </summary>
@@ -136,42 +134,7 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static BEncodedValue Decode (RawReader reader)
         {
-            if (reader == null)
-                throw new ArgumentNullException (nameof (reader));
-
-            BEncodedValue data;
-            switch (reader.PeekByte ()) {
-                case ('i'):                         // Integer
-                    data = new BEncodedNumber ();
-                    break;
-
-                case ('d'):                         // Dictionary
-                    data = new BEncodedDictionary ();
-                    break;
-
-                case ('l'):                         // List
-                    data = new BEncodedList ();
-                    break;
-
-                case ('1'):                         // String
-                case ('2'):
-                case ('3'):
-                case ('4'):
-                case ('5'):
-                case ('6'):
-                case ('7'):
-                case ('8'):
-                case ('9'):
-                case ('0'):
-                    data = new BEncodedString ();
-                    break;
-
-                default:
-                    throw new BEncodingException ("Could not find what value to decode");
-            }
-
-            data.DecodeInternal (reader);
-            return data;
+            return BEncodeDecoder.Decode (reader);
         }
 
 

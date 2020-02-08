@@ -100,21 +100,6 @@ namespace MonoTorrent.BEncoding
             return written;
         }
 
-        /// <summary>
-        /// Decodes a BEncodedList from the given StreamReader
-        /// </summary>
-        /// <param name="reader"></param>
-        internal override void DecodeInternal (RawReader reader)
-        {
-            if (reader.ReadByte () != 'l')                            // Remove the leading 'l'
-                throw new BEncodingException ("Invalid data found. Aborting");
-
-            while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e'))
-                list.Add (Decode (reader));
-
-            if (reader.ReadByte () != 'e')                            // Remove the trailing 'e'
-                throw new BEncodingException ("Invalid data found. Aborting");
-        }
         #endregion
 
 
@@ -125,13 +110,11 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes ()
         {
-            int length = 0;
+            int length = 2; // account for the prefix/suffix
 
-            length += 1;   // Lists start with 'l'
             for (int i = 0; i < list.Count; i++)
                 length += list[i].LengthInBytes ();
 
-            length += 1;   // Lists end with 'e'
             return length;
         }
         #endregion

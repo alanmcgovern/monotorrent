@@ -138,7 +138,7 @@ namespace MonoTorrent.BEncoding
         {
             int written = offset;
             written += WriteLengthAsAscii (buffer, written, TextBytes.Length);
-            written += Message.WriteAscii (buffer, written, ":");
+            buffer[written++] = (byte) ':';
             written += Message.Write (buffer, written, TextBytes);
             return written - offset;
         }
@@ -162,30 +162,6 @@ namespace MonoTorrent.BEncoding
             return written - offset;
         }
 
-        /// <summary>
-        /// Decodes a BEncodedString from the supplied StreamReader
-        /// </summary>
-        /// <param name="reader">The StreamReader containing the BEncodedString</param>
-        internal override void DecodeInternal (RawReader reader)
-        {
-            if (reader == null)
-                throw new ArgumentNullException (nameof (reader));
-
-            string length = string.Empty;
-
-            while ((reader.PeekByte () != -1) && (reader.PeekByte () != ':'))         // read in how many characters
-                length += (char) reader.ReadByte ();                                 // the string is
-
-            if (reader.ReadByte () != ':')                                           // remove the ':'
-                throw new BEncodingException ("Invalid data found. Aborting");
-
-            if (!int.TryParse (length, out int letterCount))
-                throw new BEncodingException ($"Invalid BEncodedString. Length was '{length}' instead of a number");
-
-            TextBytes = new byte[letterCount];
-            if (reader.Read (TextBytes, 0, letterCount) != letterCount)
-                throw new BEncodingException ("Couldn't decode string");
-        }
         #endregion
 
 
@@ -194,14 +170,12 @@ namespace MonoTorrent.BEncoding
         public override int LengthInBytes ()
         {
             // The length is equal to the length-prefix + ':' + length of data
-            int prefix = 1; // Account for ':'
+            // If the string is of length 0 we need to account for that too.
+            int prefix = TextBytes.Length == 0 ? 2 : 1; // Account for ':'
 
             // Count the number of characters needed for the length prefix
             for (int i = TextBytes.Length; i != 0; i = i / 10)
                 prefix += 1;
-
-            if (TextBytes.Length == 0)
-                prefix++;
 
             return prefix + TextBytes.Length;
         }
