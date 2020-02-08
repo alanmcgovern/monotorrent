@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
     {
         #region Member Variables
 
-        readonly SortedDictionary<BEncodedString, BEncodedValue> dictionary;
+        readonly SortedList<BEncodedString, BEncodedValue> dictionary;
 
         #endregion
 
@@ -51,7 +51,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         public BEncodedDictionary ()
         {
-            dictionary = new SortedDictionary<BEncodedString, BEncodedValue> ();
+            dictionary = new SortedList<BEncodedString, BEncodedValue> ();
         }
 
         #endregion
@@ -73,7 +73,7 @@ namespace MonoTorrent.BEncoding
             buffer[offset] = (byte) 'd';
             written++;
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this) {
+            foreach (var keypair in dictionary) {
                 written += keypair.Key.Encode (buffer, offset + written);
                 written += keypair.Value.Encode (buffer, offset + written);
             }
@@ -82,42 +82,6 @@ namespace MonoTorrent.BEncoding
             buffer[offset + written] = (byte) 'e';
             written++;
             return written;
-        }
-
-
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="reader"></param>
-        internal override void DecodeInternal (RawReader reader)
-        {
-            DecodeInternal (reader, reader.StrictDecoding);
-        }
-
-        void DecodeInternal (RawReader reader, bool strictDecoding)
-        {
-            BEncodedString key = null;
-            BEncodedValue value = null;
-            BEncodedString oldkey = null;
-
-            if (reader.ReadByte () != 'd')
-                throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
-
-            while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e')) {
-                key = (BEncodedString) Decode (reader);         // keys have to be BEncoded strings
-
-                if (oldkey != null && oldkey.CompareTo (key) > 0)
-                    if (strictDecoding)
-                        throw new BEncodingException (
-                            $"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
-
-                oldkey = key;
-                value = Decode (reader);                     // the value is a BEncoded value
-                dictionary.Add (key, value);
-            }
-
-            if (reader.ReadByte () != 'e')                                    // remove the trailing 'e'
-                throw new BEncodingException ("Invalid data found. Aborting");
         }
 
         public static BEncodedDictionary DecodeTorrent (byte[] bytes)
@@ -138,28 +102,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public static BEncodedDictionary DecodeTorrent (RawReader reader)
         {
-            BEncodedString key = null;
-            BEncodedValue value = null;
-            var torrent = new BEncodedDictionary ();
-            if (reader.ReadByte () != 'd')
-                throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
-
-            while ((reader.PeekByte () != -1) && (reader.PeekByte () != 'e')) {
-                key = (BEncodedString) Decode (reader);         // keys have to be BEncoded strings
-
-                if (reader.PeekByte () == 'd') {
-                    value = new BEncodedDictionary ();
-                    ((BEncodedDictionary) value).DecodeInternal (reader, key.Text.ToLower ().Equals ("info"));
-                } else
-                    value = Decode (reader);                     // the value is a BEncoded value
-
-                torrent.dictionary.Add (key, value);
-            }
-
-            if (reader.ReadByte () != 'e')                                    // remove the trailing 'e'
-                throw new BEncodingException ("Invalid data found. Aborting");
-
-            return torrent;
+            return BEncodeDecoder.DecodeTorrent (reader);
         }
 
         #endregion
@@ -173,14 +116,13 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes ()
         {
-            int length = 0;
-            length += 1;   // Dictionaries start with 'd'
+            int length = 2; // Account for the prefix/suffix
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 length += keypair.Key.LengthInBytes ();
                 length += keypair.Value.LengthInBytes ();
             }
-            length += 1;   // Dictionaries end with 'e'
+
             return length;
         }
 
@@ -255,7 +197,8 @@ namespace MonoTorrent.BEncoding
 
         public void CopyTo (KeyValuePair<BEncodedString, BEncodedValue>[] array, int arrayIndex)
         {
-            dictionary.CopyTo (array, arrayIndex);
+            foreach (var item in dictionary)
+                array[arrayIndex++] = new KeyValuePair<BEncodedString, BEncodedValue> (item.Key, item.Value);
         }
 
         public int Count => dictionary.Count;
