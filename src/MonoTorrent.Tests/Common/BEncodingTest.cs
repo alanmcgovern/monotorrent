@@ -446,6 +446,53 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void BEncodedString_Compare ()
+        {
+            Assert.Less (0, new BEncodedString ().CompareTo ((object)null));
+            Assert.AreEqual (0, new BEncodedString ().CompareTo (new BEncodedString ()));
+            Assert.AreEqual (0, new BEncodedString ("a").CompareTo (new BEncodedString ("a")));
+        }
+
+        [Test]
+        public void BEncodedString_Equals ()
+        {
+            Assert.IsFalse (new BEncodedString ("test").Equals (null));
+            Assert.IsFalse (new BEncodedString ("test").Equals ("tesT"));
+            Assert.IsTrue (new BEncodedString ("test").Equals ("test"));
+        }
+
+        [Test]
+        public void BEncodedString_FromUrlEncodedString ()
+        {
+            Assert.AreEqual (null, BEncodedString.FromUrlEncodedString (null));
+            Assert.AreEqual (new BEncodedString (), BEncodedString.FromUrlEncodedString (""));
+        }
+
+        [Test]
+        public void BEncodedString_ImplicitConversions ()
+        {
+            Assert.AreEqual (null, (BEncodedString) (string) null);
+            Assert.AreSame (BEncodedString.Empty, (BEncodedString) "");
+            Assert.AreEqual (new BEncodedString ("teststr"), (BEncodedString) "teststr");
+        }
+
+        [Test]
+        public void BEncodedString_THex ()
+        {
+            byte[] bytes = { 1, 2, 3, 4, 5 };
+            Assert.AreEqual (System.BitConverter.ToString (bytes), new BEncodedString (bytes).ToHex ());
+        }
+
+        [Test]
+        public void DecodeString_Empty ()
+        {
+            Assert.AreEqual (new BEncodedString (), new BEncodedString (""));
+            Assert.AreEqual (new BEncodedString (), new BEncodedString (new char[0]));
+            Assert.AreEqual (new BEncodedString (), (BEncodedString) new char[0]);
+            Assert.AreEqual (new BEncodedString (), BEncodedValue.Decode (Encoding.UTF8.GetBytes ("0:")));
+        }
+
+        [Test]
         public void DecodeString_NoColon ()
         {
             string benString = "12";
