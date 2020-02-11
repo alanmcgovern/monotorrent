@@ -109,7 +109,12 @@ namespace MonoTorrent
             for (int i = 0; i < parameters.Length; i++) {
                 string[] keyval = parameters[i].Split ('=');
                 if (keyval.Length != 2)
-                    throw new FormatException ("A field-value pair of the magnet link contain more than one equal'.");
+                {
+                    if(keyval[0].Substring (0, 2) == "tr")
+                        continue;
+                    else
+                        throw new FormatException ("A field-value pair of the magnet link contain more than one equal'.");
+                }
                 switch (keyval[0].Substring (0, 2)) {
                     case "xt"://exact topic
                         if (infoHash != null)
