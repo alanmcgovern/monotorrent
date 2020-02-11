@@ -120,6 +120,18 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void ValidMagnetLink_DoubleEquals_InTr ()
+        {
+            var rawUrl = "magnet:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&dn=B%201.0%20C%2060.torrent&tr=https://www.a.org/announce&trhttp://b.com:80/announce&tr=http%3A%2F%2Fwww.c.org/announce";
+            var magnet = MagnetLink.Parse (rawUrl);
+
+            Assert.AreEqual ("B 1.0 C 60.torrent", magnet.Name);
+            CollectionAssert.Contains (magnet.AnnounceUrls, "https://www.a.org/announce");
+            CollectionAssert.DoesNotContain (magnet.AnnounceUrls, "http://b.com:80/announce");
+            CollectionAssert.Contains (magnet.AnnounceUrls, "http://www.c.org/announce");
+        }
+
+        [Test]
         public void NullMagnetLink ()
         {
             Assert.Throws<ArgumentNullException> (() => new MagnetLink (null));
