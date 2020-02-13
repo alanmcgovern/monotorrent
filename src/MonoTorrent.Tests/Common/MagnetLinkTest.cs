@@ -132,6 +132,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void ValidMagnetLink_UnknownParameters ()
+        {
+            var rawUrl = "magnet:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&hello&invalid=parameter";
+            Assert.DoesNotThrow (() => MagnetLink.Parse (rawUrl));
+
+        }
+
+        [Test]
         public void NullMagnetLink ()
         {
             Assert.Throws<ArgumentNullException> (() => new MagnetLink (null));

@@ -108,12 +108,10 @@ namespace MonoTorrent
             string[] parameters = uri.Query.Substring (1).Split ('&');
             for (int i = 0; i < parameters.Length; i++) {
                 string[] keyval = parameters[i].Split ('=');
-                if (keyval.Length != 2)
-                {
-                    if(keyval[0].Substring (0, 2) == "tr")
-                        continue;
-                    else
-                        throw new FormatException ("A field-value pair of the magnet link contain more than one equal'.");
+                if (keyval.Length != 2) {
+                    // Skip anything we don't understand. Urls could theoretically contain many
+                    // unknown parameters.
+                    continue;
                 }
                 switch (keyval[0].Substring (0, 2)) {
                     case "xt"://exact topic
