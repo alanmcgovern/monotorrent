@@ -120,6 +120,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void ValidMagnetLink_DoubleEquals_InTr ()
+        {
+            var magnet = "magnet:?xt=urn:btih:A5183BB31F74B3C55927EEF2A743D246B1B67B34&dn=BitChe%201.0%20Build%2060.torrent&tr=https://www.ilcorsaroblu.org/announce&trhttp://tracker.openbittorrent.com:80/announce&tr=http%3A%2F%2Fwww.ilcorsaroblu.org/announce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.tntvillage.scambioetico.org%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A//zer0day.ch/announce%3A1337&tr=udp%3A//tracker.coppersurfer.tk%3A6969&tr=udp%3A//exodus.desync.com%3A6969&tr=udp%3A//thetracker.org/announce&tr=udp%3A//tracker.coppersurfer.tk%3A80/announce&tr=udp%3A//tracker.coppersurfer.tk%3A6969/announce&tr=udp%3A//9.rarbg.me:2740/announce&tr=udp%3A//9.rarbg.com:2710/announce&tr=udp%3A//bigfoot1942.sektori.org:6969/announce&tr=udp%3A//tracker.torrentyorg.pl:80/announce";
+            Assert.Throws<FormatException> (() => MagnetLink.FromUri (new Uri (magnet)));
+        }
+
+
+        [Test]
         public void NullMagnetLink ()
         {
             Assert.Throws<ArgumentNullException> (() => new MagnetLink (null));
