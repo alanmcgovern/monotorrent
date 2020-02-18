@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// The number of pieces which will be kept buffered to avoid stuttering while streaming media.
         /// </summary>
-        int HighPriorityCount => 30;
+        internal int HighPriorityCount => 30;
 
         ITorrentData TorrentData { get; set; }
 
