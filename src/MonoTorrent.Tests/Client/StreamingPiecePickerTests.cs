@@ -45,34 +45,41 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         BitField bitfield;
-        TestPicker checker;
         TorrentData data;
         PeerId peer;
-        StreamingPiecePicker picker;
+        int blocksPerPiece;
         int pieceCount;
 
         [SetUp]
         public void Setup ()
         {
+            blocksPerPiece = 4;
             pieceCount = 40;
-
-            checker = new TestPicker ();
-            picker = new StreamingPiecePicker (checker);
 
             bitfield = new BitField (pieceCount);
             data = new TorrentData {
-                PieceLength = Piece.BlockSize * 4,
-                Files = new[] { new TorrentFile ("Test", Piece.BlockSize * 4 * pieceCount) },
-                Size = Piece.BlockSize * 4 * pieceCount - 10
+                PieceLength = Piece.BlockSize * blocksPerPiece,
+                Files = new[] { new TorrentFile ("Test", Piece.BlockSize * blocksPerPiece * pieceCount) },
+                Size = Piece.BlockSize * blocksPerPiece * pieceCount - 10
             };
-            picker.Initialise (bitfield, data, Array.Empty<Piece> ());
 
             peer = PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true);
+        }
+
+        (StreamingPiecePicker picker, T basePicker) CreatePicker<T> ()
+            where T : PiecePicker, new ()
+        {
+            var basePicker = new T ();
+            var picker = new StreamingPiecePicker (basePicker);
+            picker.Initialise (bitfield, data, Enumerable.Empty<Piece> ());
+            return (picker, basePicker);
         }
 
         [Test]
         public void ReadDoesNotCancelRequests ()
         {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
             picker.PickPiece (peer, peer.BitField, Array.Empty<IPieceRequester> ());
             picker.ReadToPosition (data.Files[0], 0);
             picker.PickPiece (peer, peer.BitField, Array.Empty<IPieceRequester> ());
@@ -82,6 +89,8 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void SeekDoesCancelRequests ()
         {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
             picker.PickPiece (peer, peer.BitField, Array.Empty<IPieceRequester> ());
             picker.SeekToPosition (data.Files[0], 0);
             picker.PickPiece (peer, peer.BitField, Array.Empty<IPieceRequester> ());
@@ -89,11 +98,68 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void PickingSequential ()
+        public void HighPriorityPreferred ()
         {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
             checker.ReturnNoPiece = false;
-            var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
+            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
             Assert.AreEqual (checker.PickedIndex.Single (), Tuple.Create (0, picker.HighPriorityCount - 1));
+        }
+
+        [Test]
+        public void CheckPiecesPicker_Start ()
+        {
+            (var picker, var checker) = CreatePicker<StandardPicker> ();
+
+            var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
+            for (int i = 0; i < 16; i++)
+                Assert.AreEqual (i / 4, requests[i].PieceIndex);
+        }
+
+        [Test]
+        public void CheckPiecesPicker_Mid ()
+        {
+            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            picker.SeekToPosition (data.Files[0], data.PieceLength * 7);
+
+            var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
+            for (int i = 0; i < 16; i++)
+                Assert.AreEqual (i / 4 + 7, requests[i].PieceIndex);
+        }
+
+        [Test]
+        public void PickAfterHighPriorityDownloaded ()
+        {
+            (var streamingPicker, var checker) = CreatePicker<StandardPicker> ();
+
+            streamingPicker.SeekToPosition (data.Files[0], 0);
+            for (int i = 0; i < streamingPicker.HighPriorityCount; i++)
+                bitfield.SetTrue ((0, streamingPicker.HighPriorityCount));
+
+            var picker = new IgnoringPicker (bitfield, streamingPicker);
+            var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
+            for (int i = 0; i < 16; i++)
+                Assert.Greater (requests[i].PieceIndex, streamingPicker.HighPriorityCount);
+        }
+
+        [Test]
+        public void StreamingPickerSupportsPriority ()
+        {
+            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            data.Files[0].Priority = Priority.DoNotDownload;
+            picker.SeekToPosition (data.Files[0], 0);
+
+            // This should check the high priority range and low priority range
+            Assert.IsNull (picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16));
+
+            // This makes sure we check the low priority set by marking all the high priority
+            // pieces are received.
+            var ignoringPicker = new IgnoringPicker (bitfield, picker);
+            for (int i = 0; i < picker.HighPriorityCount; i++)
+                bitfield.SetTrue ((0, picker.HighPriorityCount));
+
+            Assert.IsNull (ignoringPicker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16));
         }
     }
 }
