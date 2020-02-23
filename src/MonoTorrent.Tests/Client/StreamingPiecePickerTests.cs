@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.PiecePicking
             bitfield = new BitField (pieceCount);
             data = new TorrentData {
                 PieceLength = Piece.BlockSize * blocksPerPiece,
-                Files = new[] { new TorrentFile ("Test", Piece.BlockSize * blocksPerPiece * pieceCount) },
+                Files = new[] { new TorrentFile ("Test", Piece.BlockSize * blocksPerPiece * pieceCount, 0, pieceCount - 1) },
                 Size = Piece.BlockSize * blocksPerPiece * pieceCount - 10
             };
 
@@ -91,10 +91,17 @@ namespace MonoTorrent.Client.PiecePicking
         {
             (var picker, var checker) = CreatePicker<TestPicker> ();
 
-            picker.PickPiece (peer, peer.BitField, Array.Empty<IPieceRequester> ());
+            PeerId[] peers = new [] {
+                PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
+                PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
+                PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
+            };
+            picker.PickPiece (peer, peer.BitField, peers);
             picker.SeekToPosition (data.Files[0], 0);
-            picker.PickPiece (peer, peer.BitField, Array.Empty<IPieceRequester> ());
+            picker.PickPiece (peer, peer.BitField, peers);
             Assert.IsTrue(checker.HasCancelledRequests);
+            Assert.IsTrue (peers.All (p => checker.CancelledRequestsFrom.Contains (p)));
+            Assert.IsTrue (checker.CancelledRequestsFrom.Contains (peer));
         }
 
         [Test]
@@ -139,7 +146,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             var picker = new IgnoringPicker (bitfield, streamingPicker);
             var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < requests.Count; i++)
                 Assert.Greater (requests[i].PieceIndex, streamingPicker.HighPriorityCount);
         }
 

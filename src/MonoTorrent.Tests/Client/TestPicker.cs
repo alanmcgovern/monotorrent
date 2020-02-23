@@ -46,6 +46,7 @@ namespace MonoTorrent.Client.PiecePicking
         public bool ReturnNoPiece = true;
 
         public bool HasCancelledRequests { get; set; }
+        public List<IPieceRequester> CancelledRequestsFrom { get; } = new List<IPieceRequester> ();
 
         public TestPicker ()
             : base (null)
@@ -55,11 +56,13 @@ namespace MonoTorrent.Client.PiecePicking
         public override void CancelRequests (IPieceRequester peer)
         {
             HasCancelledRequests = true;
+            CancelledRequestsFrom.Add (peer);
         }
 
         public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
             HasCancelledRequests = true;
+            CancelledRequestsFrom.Add (peer);
         }
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
