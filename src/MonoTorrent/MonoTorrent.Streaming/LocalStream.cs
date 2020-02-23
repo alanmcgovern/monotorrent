@@ -115,6 +115,11 @@ namespace MonoTorrent.Streaming
 
             cancellationToken.ThrowIfCancellationRequested ();
             if (Stream == null) {
+                // FIXME: Is it worth trying to use a stream managed by the normal internal buffer? I don't
+                // think so as those streams are supposed to be temporary, whereas the stream here is supposed
+                // to be kept open permanently so we can provide data to the user. If there's an issue in the
+                // future (highly likely :p ) then I'll have to augment the various APIs to allow a long-lived
+                // stream to be created, and then use the long-lived stream here.
                 Stream = new FileStream (File.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 Stream.Seek (Position, SeekOrigin.Begin);
             }
