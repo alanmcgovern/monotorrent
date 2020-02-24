@@ -33,6 +33,42 @@ using System.Threading;
 
 namespace MonoTorrent
 {
+    static class AsyncInvoker<T>
+        where T : EventArgs
+    {
+        static readonly ICache<AsyncInvokerState> Cache = new Cache<AsyncInvokerState> (true).Synchronize ();
+
+        class AsyncInvokerState : ICacheable
+        {
+            public EventHandler<T> Handler { get; private set; }
+            public T Args { get; private set; }
+            public object Sender { get; set; }
+
+            public void Initialise ()
+                => Initialise (null, null, null);
+
+            public AsyncInvokerState Initialise (EventHandler<T> handler, object sender, T args)
+            {
+                Handler = handler;
+                Sender = sender;
+                Args = args;
+                return this;
+            }
+        }
+
+        public static void InvokeAsync (EventHandler<T> handler, object sender, T args)
+        {
+            var state = Cache.Dequeue ().Initialise (handler, sender, args);
+            ThreadPool.QueueUserWorkItem (Invoker, state);
+        }
+
+        static readonly WaitCallback Invoker = (object o) => {
+            var state = (AsyncInvokerState) o;
+            state.Handler (state.Sender, state.Args);
+            Cache.Enqueue (state);
+        };
+    }
+
     static class Toolbox
     {
         static readonly Random r = new Random ();
@@ -58,9 +94,11 @@ namespace MonoTorrent
         }
 
         public static void InvokeAsync<T> (this EventHandler<T> handler, object o, T args)
+            where T : EventArgs
         {
-            ThreadPool.QueueUserWorkItem (state => handler?.Invoke (o, args));
+            AsyncInvoker<T>.InvokeAsync (handler, o, args);
         }
+
 
         /// <summary>
         /// Randomizes the contents of the array
