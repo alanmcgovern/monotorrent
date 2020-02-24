@@ -96,7 +96,8 @@ namespace MonoTorrent
         public static void InvokeAsync<T> (this EventHandler<T> handler, object o, T args)
             where T : EventArgs
         {
-            AsyncInvoker<T>.InvokeAsync (handler, o, args);
+            if (handler != null)
+                AsyncInvoker<T>.InvokeAsync (handler, o, args);
         }
 
 
