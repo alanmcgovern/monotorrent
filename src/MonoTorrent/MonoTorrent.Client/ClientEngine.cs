@@ -140,6 +140,12 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
+        public ClientEngine ()
+            : this(new EngineSettings ())
+        {
+
+        }
+
         public ClientEngine (EngineSettings settings)
             : this (settings, new DiskWriter ())
         {

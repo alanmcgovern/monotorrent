@@ -295,6 +295,17 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="torrent">The torrent to load in</param>
         /// <param name="savePath">The directory to save downloaded files to</param>
+        public TorrentManager (Torrent torrent, string savePath)
+            : this (torrent, savePath, new TorrentSettings ())
+        {
+
+        }
+
+        /// <summary>
+        /// Creates a new TorrentManager instance.
+        /// </summary>
+        /// <param name="torrent">The torrent to load in</param>
+        /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
         public TorrentManager (Torrent torrent, string savePath, TorrentSettings settings)
             : this (torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name)
