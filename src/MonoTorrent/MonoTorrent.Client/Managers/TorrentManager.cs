@@ -772,11 +772,15 @@ namespace MonoTorrent.Client
             // The PiecePickers will no longer ignore this piece as it has now been hash checked.
             UnhashedPieces[index] = false;
 
+            // This gives us the index of *one* of the files we need to update. We need to search up
+            // and down the array for other matching files as multiple files can share a piece.
             TorrentFile[] files = Torrent.Files;
+            var fileIndex = files.BinarySearch (PieceIndexComparer, index);
+            for (int i = fileIndex; i < files.Length && files[i].StartPieceIndex <= index; i++)
+                files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
 
-            for (int i = 0; i < files.Length; i++)
-                if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
-                    files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
+            for (int i = fileIndex - 1; i >= 0 && files[i].EndPieceIndex >= index; i--)
+                files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
 
             if (hashPassed) {
                 List<PeerId> connected = Peers.ConnectedPeers;
@@ -786,6 +790,15 @@ namespace MonoTorrent.Client
 
             PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
         }
+
+        static Func<TorrentFile, int, int> PieceIndexComparer = (TorrentFile file, int pieceIndex) => {
+            if (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex)
+                return 0;
+            if (pieceIndex > file.EndPieceIndex)
+                return -1;
+            else
+                return 1;
+        };
 
         internal void RaiseTorrentStateChanged (TorrentStateChangedEventArgs e)
         {
