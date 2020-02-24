@@ -106,25 +106,25 @@ namespace MonoTorrent.Client.Encryption
             }
 
             DoDecrypt (VerificationConstant, 0, VerificationConstant.Length);
-            await Synchronize (VerificationConstant, 616); // 4 B->A: ENCRYPT(VC)
+            await Synchronize (VerificationConstant, 616).ConfigureAwait (false); // 4 B->A: ENCRYPT(VC)
         }
 
         protected override async ReusableTask doneSynchronize ()
         {
-            await base.doneSynchronize (); // 4 B->A: ENCRYPT(VC, ...
+            await base.doneSynchronize ().ConfigureAwait (false); // 4 B->A: ENCRYPT(VC, ...
 
             // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
             byte[] padD = null;
             int verifyBytesLength = 4 + 2;
             byte[] verifyBytes = ClientEngine.BufferPool.Rent (verifyBytesLength);
             try {
-                await ReceiveMessage (verifyBytes, verifyBytesLength); // crypto_select, len(padD) ...
+                await ReceiveMessage (verifyBytes, verifyBytesLength).ConfigureAwait (false); // crypto_select, len(padD) ...
                 DoDecrypt (verifyBytes, 0, verifyBytesLength);
 
                 short padDLength = Message.ReadShort (verifyBytes, 4);
                 padD = ClientEngine.BufferPool.Rent (padDLength);
 
-                await ReceiveMessage (padD, padDLength);
+                await ReceiveMessage (padD, padDLength).ConfigureAwait (false);
                 DoDecrypt (padD, 0, padDLength);
                 SelectCrypto (verifyBytes, true);
             } finally {
