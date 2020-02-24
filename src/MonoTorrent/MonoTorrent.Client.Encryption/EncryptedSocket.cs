@@ -140,8 +140,8 @@ namespace MonoTorrent.Client.Encryption
             ReusableTask first = SendY ();
             ReusableTask second = ReceiveY ();
             try {
-                await first;
-                await second;
+                await first.ConfigureAwait (false);
+                await second.ConfigureAwait (false);
             } catch (Exception ex) {
                 socket.Dispose ();
                 throw new EncryptionException ("Encrypted handshake failed", ex);
@@ -161,7 +161,7 @@ namespace MonoTorrent.Client.Encryption
             this.initialBuffer = initialBuffer;
             initialBufferOffset = offset;
             initialBufferCount = count;
-            await HandshakeAsync (socket);
+            await HandshakeAsync (socket).ConfigureAwait (false);
         }
 
 
@@ -222,9 +222,9 @@ namespace MonoTorrent.Client.Encryption
         protected async ReusableTask ReceiveY ()
         {
             byte[] otherY = new byte[96];
-            await ReceiveMessage (otherY, 96);
+            await ReceiveMessage (otherY, 96).ConfigureAwait (false);
             S = ModuloCalculator.Calculate (otherY, X);
-            await doneReceiveY ();
+            await doneReceiveY ().ConfigureAwait (false);
         }
 
         protected abstract ReusableTask doneReceiveY ();
