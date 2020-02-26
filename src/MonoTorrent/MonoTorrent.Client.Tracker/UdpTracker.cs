@@ -123,10 +123,14 @@ namespace MonoTorrent.Client.Tracker
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (RetryDelay.TotalSeconds * MaxRetries));
 
             try {
+                // Calling the UdpClient ctor which takes a hostname, or calling the Connect method,
+                // results in a synchronous DNS resolve. Ensure we're on a threadpool thread to avoid
+                // blocking.
+                await MainLoop.SwitchToThreadpool ();
                 using var udpClient = new UdpClient (Uri.Host, Uri.Port);
                 using (cts.Token.Register (() => udpClient.Dispose ())) {
                     SendAsync (udpClient, msg, cts.Token);
-                    return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token);
+                    return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token).ConfigureAwait (false);
                 }
             } catch {
                 cts.Token.ThrowIfCancellationRequested ();
