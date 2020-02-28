@@ -324,11 +324,6 @@ namespace MonoTorrent.Client
 
         public BEncodedDictionary TorrentDict { get; set; }
 
-        internal CustomTracker Tracker {
-            get { return (CustomTracker) this.Manager.TrackerManager.CurrentTracker; }
-        }
-
-
         readonly string savePath;
         readonly int piecelength;
         readonly string[][] tier;

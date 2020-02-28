@@ -193,16 +193,19 @@ namespace MonoTorrent.Client.Modes
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
 
-            Assert.AreEqual (0, TrackerManager.Announces.Count, "#0");
+            Assert.AreEqual (1, TrackerManager.Announces.Count, "#0");
             Assert.AreEqual (TorrentState.Downloading, Manager.State, "#0b");
+            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#0");
 
             Manager.Bitfield[0] = true;
+            TrackerManager.Announces.Clear ();
             mode.Tick (0);
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#0c");
 
-            Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
+            Assert.AreEqual (2, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
-            Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[0].Item2, "#3");
+            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#3");
+            Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[1].Item2, "#4");
         }
 
         [Test]

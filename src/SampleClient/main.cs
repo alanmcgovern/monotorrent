@@ -196,10 +196,9 @@ namespace SampleClient
                         AppendFormat (sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
                         AppendFormat (sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
                         AppendFormat (sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        MonoTorrent.Client.Tracker.ITracker tracker = manager.TrackerManager.CurrentTracker;
-                        //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                        AppendFormat (sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                        AppendFormat (sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
+                        AppendFormat(sb, "Tracker Status");
+                        foreach (var tier in manager.TrackerManager.Tiers)
+                            AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapSucceeded}.");
                         if (manager.PieceManager != null)
                             AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 

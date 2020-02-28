@@ -82,15 +82,19 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
 
-            Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
+            // Technically this is not what we want. However the logic to avoid announcing to quickly
+            // is now inside TrackerManager so a mocked TrackerManager will double announce.
+            Assert.AreEqual (2, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
+            Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[1].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Started, TrackerManager.Announces[0].Item2, "#3");
+            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[1].Item2, "#3");
         }
 
         [Test]
         public async Task Announce_NoTrackers ()
         {
-            Assert.IsNull (Manager.TrackerManager.CurrentTracker, "#1");
+            Assert.AreEqual (0, Manager.TrackerManager.Tiers.Count, "#1");
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
