@@ -47,27 +47,28 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// Returns the tracker which will be used, by default, for Announce or Scrape requests.
         /// </summary>
+        [Obsolete("This is now a per-Tier value and should be accessed using TrackerTier.ActiveTracker.")]
         public ITracker CurrentTracker => Tiers.SelectMany (t => t.Trackers).OrderBy (t => t.TimeSinceLastAnnounce).FirstOrDefault ();
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        TrackerTier CurrentTier => Tiers.FirstOrDefault (t => t.Trackers.Contains (CurrentTracker));
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         /// True if the most recent Announce request was successful.
         /// </summary>
-        public bool LastAnnounceSucceeded { get; private set; }
-
-        /// <summary>
-        /// The timer tracking the time since the most recent Announce request was sent.
-        /// </summary>
-        ValueStopwatch LastAnnounce;
+        [Obsolete ("This is now a per-Tier value and should be accessed using TrackerTier.LastAnnounceSucceeded.")]
+        public bool LastAnnounceSucceeded => CurrentTier?.LastAnnounceSucceeded ?? false;
 
         /// <summary>
         /// The time, in UTC, when the most recent Announce request was sent
         /// </summary>
-        public DateTime LastUpdated { get; private set; }
+        public DateTime LastUpdated => CurrentTier?.LastUpdated ?? DateTime.MaxValue;
 
         /// <summary>
         /// The TorrentManager associated with this tracker
         /// </summary>
-        ITrackerRequestFactory RequestFactory { get; set; }
+        ITrackerRequestFactory RequestFactory { get; }
 
         /// <summary>
         /// The available trackers.
@@ -77,7 +78,7 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// The amount of time since the most recent Announce request was issued.
         /// </summary>
-        public TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
+        public TimeSpan TimeSinceLastAnnounce => CurrentTier?.TimeSinceLastAnnounce ?? TimeSpan.Zero;
 
         #endregion
 
@@ -92,7 +93,6 @@ namespace MonoTorrent.Client.Tracker
         internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
         {
             RequestFactory = requestFactory;
-            LastAnnounce = new ValueStopwatch ();
 
             // Check if this tracker supports scraping
             var trackerTiers = new List<TrackerTier> ();
@@ -108,80 +108,134 @@ namespace MonoTorrent.Client.Tracker
         #region Methods
 
         public async Task Announce ()
-        {
-            await Announce (TorrentEvent.None);
-        }
+            => await Announce (TorrentEvent.None);
 
         public async Task Announce (TorrentEvent clientEvent)
         {
-            await Announce (clientEvent, null);
+            // If the user initiates an Announce we need to go to the correct thread to process it.
+            await ClientEngine.MainLoop;
+
+            var announces = new List<Task> ();
+            for (int i = 0; i < Tiers.Count; i++) {
+                var tier = Tiers[i];
+                var tracker = tier.ActiveTracker;
+                var interval = tier.LastAnnounceSucceeded ? tracker.UpdateInterval : tracker.MinUpdateInterval;
+                if (tier.TimeSinceLastAnnounce > interval && (clientEvent != TorrentEvent.Stopped || tier.LastAnnounceSucceeded))
+                    announces.Add (AnnounceToTier (clientEvent, tier));
+            }
+            await Task.WhenAll (announces);
+        }
+
+        
+        async Task AnnounceToTier (TorrentEvent clientEvent, TrackerTier tier)
+        {
+            for (int i = 0; i < tier.Trackers.Count; i++) {
+                int trackerIndex = (i + tier.ActiveTrackerIndex) % tier.Trackers.Count;
+                var tracker = tier.Trackers[trackerIndex];
+
+                // We should really wait til after the announce to reset the timer. However
+                // there is no way to prevent us from announcing multiple times concurrently
+                // to the same tracker without resetting this timer. Our logic is completely
+                // dependent on 'time since last announce'
+                tier.LastAnnounce = ValueStopwatch.StartNew ();
+                var result = await Announce (clientEvent, tracker);
+                if (result) {
+                    tier.ActiveTrackerIndex = trackerIndex;
+                    tier.LastAnnounceSucceeded = true;
+                    return;
+                }
+            }
+
+            // All trackers failed to respond.
+            tier.LastAnnounceSucceeded = false;
         }
 
         public async Task Announce (ITracker tracker)
         {
             Check.Tracker (tracker);
+
+            // If the user initiates an Announce we need to go to the correct thread to process it.
+            await ClientEngine.MainLoop;
             await Announce (TorrentEvent.None, tracker);
         }
 
-        async Task Announce (TorrentEvent clientEvent, ITracker referenceTracker)
+        async Task<bool> Announce (TorrentEvent clientEvent, ITracker tracker)
         {
-            // If the user initiates an Announce we need to go to the correct thread to process it.
-            await ClientEngine.MainLoop;
+            var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
+            try {
+                // If we have not announced to this Tracker tier yet then we should replace the ClientEvent.
+                // But if we end up announcing to a different Tracker tier we may want to send the
+                // original/unmodified args.
+                AnnounceParameters actualArgs = RequestFactory.CreateAnnounce (clientEvent);
+                if (!trackerTier.SentStartedEvent)
+                    actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
 
-            LastAnnounce.Restart ();
-            LastUpdated = DateTime.UtcNow;
+                List<Peer> peers = await tracker.AnnounceAsync (actualArgs);
+                trackerTier.LastAnnounceSucceeded = true;
 
-            AnnounceParameters p = RequestFactory.CreateAnnounce (clientEvent);
-
-            foreach ((TrackerTier trackerTier, ITracker tracker) in GetNextTracker (referenceTracker)) {
-                try {
-                    // If we have not announced to this Tracker tier yet then we should replace the ClientEvent.
-                    // But if we end up announcing to a different Tracker tier we may want to send the
-                    // original/unmodified args.
-                    AnnounceParameters actualArgs = p;
-                    if (!trackerTier.SentStartedEvent)
-                        actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
-
-                    List<Peer> peers = await tracker.AnnounceAsync (actualArgs);
-                    LastAnnounceSucceeded = true;
-                    AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, true, peers.AsReadOnly ()));
-                    return;
-                } catch {
-                }
+                trackerTier.ActiveTrackerIndex = trackerTier.Trackers.IndexOf (tracker);
+                trackerTier.SentStartedEvent |= actualArgs.ClientEvent == TorrentEvent.Started;
+                trackerTier.LastAnnounce = ValueStopwatch.StartNew ();
+                AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, true, peers.AsReadOnly ()));
+                return true;
+            } catch {
             }
 
-            LastAnnounceSucceeded = false;
-            AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (null, false));
+            trackerTier.LastAnnounceSucceeded = false;
+            AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, false));
+            return false;
         }
 
         public async Task Scrape ()
         {
-            await Scrape (null);
+            // If the user initiates a Scrape we need to go to the correct thread to process it.
+            await ClientEngine.MainLoop;
+
+            var scrapes = new List<Task> ();
+            for (int i = 0; i < Tiers.Count; i++) {
+                var tier = Tiers[i];
+                var tracker = tier.ActiveTracker;
+                if (tier.TimeSinceLastScrape > tracker.UpdateInterval)
+                    scrapes.Add (ScrapeTier (tier));
+            }
+            await Task.WhenAll (scrapes);
+
+        }
+
+        async Task ScrapeTier (TrackerTier tier)
+        {
+            for (int i = 0; i < tier.Trackers.Count; i++) {
+                int trackerIndex = (i + tier.ActiveTrackerIndex) % tier.Trackers.Count;
+                var tracker = tier.Trackers[trackerIndex];
+
+                tier.LastScrape = ValueStopwatch.StartNew ();
+                await Scrape (tracker);
+                if (tier.LastScrapSucceeded)
+                    break;
+            }
+            // All trackers failed to respond.
         }
 
         public async Task Scrape (ITracker tracker)
         {
+            if (!tracker.CanScrape)
+                throw new TorrentException ("This tracker does not support scraping");
+
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            Tuple<TrackerTier, ITracker> tuple = GetNextTracker (tracker).FirstOrDefault ();
-            if (tuple != null && !tuple.Item2.CanScrape)
-                throw new TorrentException ("This tracker does not support scraping");
+            var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
+            trackerTier.LastScrape = ValueStopwatch.StartNew ();
+
             try {
                 ScrapeParameters parameters = RequestFactory.CreateScrape ();
-                await tuple.Item2.ScrapeAsync (parameters);
-                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, true));
+                await tracker.ScrapeAsync (parameters);
+                trackerTier.LastScrapSucceeded = true;
+                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tracker, true));
             } catch {
-                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tuple.Item2, false));
+                trackerTier.LastScrapSucceeded = false;
+                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tracker, false));
             }
-        }
-
-        IEnumerable<Tuple<TrackerTier, ITracker>> GetNextTracker (ITracker referenceTracker)
-        {
-            foreach (TrackerTier tier in Tiers)
-                foreach (ITracker tracker in tier.Trackers.OrderBy (t => t.TimeSinceLastAnnounce))
-                    if (referenceTracker == null || referenceTracker == tracker)
-                        yield return Tuple.Create (tier, tracker);
         }
 
         #endregion

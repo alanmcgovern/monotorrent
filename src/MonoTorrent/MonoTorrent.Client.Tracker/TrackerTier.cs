@@ -34,9 +34,24 @@ namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier
     {
+        public ITracker ActiveTracker => Trackers[ActiveTrackerIndex];
+
+        internal int ActiveTrackerIndex { get; set; }
+
         public IList<ITracker> Trackers { get; }
 
         internal bool SentStartedEvent { get; set; }
+
+        internal ValueStopwatch LastAnnounce { get; set; }
+        internal ValueStopwatch LastScrape { get; set; }
+
+        public bool LastAnnounceSucceeded { get; internal set; }
+        public bool LastScrapSucceeded { get; internal set; }
+
+        public DateTime LastUpdated { get; internal set; }
+
+        internal TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
+        internal TimeSpan TimeSinceLastScrape => LastScrape.IsRunning ? LastScrape.Elapsed : TimeSpan.MaxValue;
 
         internal TrackerTier (IEnumerable<string> trackerUrls)
         {

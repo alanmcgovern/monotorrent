@@ -582,18 +582,8 @@ namespace MonoTorrent.Client.Modes
                 }
             }
 
-            Tracker.ITracker tracker = Manager.TrackerManager.CurrentTracker;
-            if (tracker != null && (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading)) {
-                // If the last connection succeeded, then update at the regular interval
-                if (Manager.TrackerManager.LastAnnounceSucceeded) {
-                    if (Manager.TrackerManager.TimeSinceLastAnnounce > tracker.UpdateInterval) {
-                        _ = Manager.TrackerManager.Announce (TorrentEvent.None);
-                    }
-                }
-                // Otherwise update at the min interval
-                else if (Manager.TrackerManager.TimeSinceLastAnnounce > tracker.MinUpdateInterval) {
-                    _ = Manager.TrackerManager.Announce (TorrentEvent.None);
-                }
+            if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
+                _ = Manager.TrackerManager.Announce (TorrentEvent.None);
             }
         }
 

@@ -39,18 +39,21 @@ namespace MonoTorrent.Client.Tracker
         event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         /// <summary>
-        /// Returns the tracker which will be used, by default, for Announce or Scrape requests.
+        /// Returns the ITracker which mostly recently responded to an Announce or Scrape request.
         /// </summary>
+        [Obsolete("This is now a per-Tier value and should be accessed using TrackerTier.ActiveTier.")]
         ITracker CurrentTracker { get; }
 
         /// <summary>
         /// True if the most recent Announce request was successful.
         /// </summary>
+        [Obsolete("This is now a per-Tier value and should be accessed using TrackerTier.LastAnnounceSucceeded.")]
         bool LastAnnounceSucceeded { get; }
 
         /// <summary>
         /// The time, in UTC, when the most recent Announce request was sent
         /// </summary>
+        [Obsolete("This is now a per-Tier value and should be accessed using TrackerTier.LastUpdated.")]
         DateTime LastUpdated { get; }
 
         /// <summary>
@@ -64,7 +67,7 @@ namespace MonoTorrent.Client.Tracker
         TimeSpan TimeSinceLastAnnounce { get; }
 
         /// <summary>
-        /// Send an Announce request to the <see cref="CurrentTracker"/>.
+        /// Sends an announce request to each tierSend an Announce request to the <see cref="CurrentTracker"/>.
         /// </summary>
         /// <returns></returns>
         Task Announce ();
