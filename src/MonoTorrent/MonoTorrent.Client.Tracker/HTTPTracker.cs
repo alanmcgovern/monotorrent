@@ -63,6 +63,7 @@ namespace MonoTorrent.Client.Tracker
 
             CanAnnounce = true;
             CanScrape = ScrapeUri != null;
+            Status = TrackerState.Unknown;
 
             // Use a random integer prefixed by our identifier.
             lock (random)
@@ -91,6 +92,7 @@ namespace MonoTorrent.Client.Tracker
             using CancellationTokenRegistration registration = cts.Token.Register (() => request.Abort ());
 
             try {
+                Status = TrackerState.Connecting;
                 response = await request.GetResponseAsync ().ConfigureAwait (false);
             } catch (Exception ex) {
                 Status = TrackerState.Offline;

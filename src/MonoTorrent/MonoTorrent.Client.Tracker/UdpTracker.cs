@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +37,7 @@ using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Client.Tracker
 {
+    [DebuggerDisplay("{" + nameof(Uri)+ "}")]
     class UdpTracker : Tracker
     {
         Task<long> ConnectionIdTask { get; set; }
@@ -48,6 +50,7 @@ namespace MonoTorrent.Client.Tracker
         {
             CanScrape = true;
             CanAnnounce = true;
+            Status = TrackerState.Unknown;
         }
 
         protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
@@ -57,6 +60,7 @@ namespace MonoTorrent.Client.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
+                Status = TrackerState.Connecting;
                 var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters);
                 var announce = (AnnounceResponseMessage) await SendAndReceiveAsync (message);
                 MinUpdateInterval = announce.Interval;
@@ -173,11 +177,6 @@ namespace MonoTorrent.Client.Tracker
                     return false;
                 }
             });
-        }
-
-        public override string ToString ()
-        {
-            return Uri.ToString ();
         }
     }
 }
