@@ -39,7 +39,7 @@ namespace MonoTorrent.Streaming
     /// <summary>
     /// Prepare the TorrentManager so individual files can be accessed while they are downloading.
     /// </summary>
-    public class StreamProvider
+    class StreamProvider
     {
         TorrentManager Manager { get; }
         StreamingPiecePicker Picker { get; set; }
