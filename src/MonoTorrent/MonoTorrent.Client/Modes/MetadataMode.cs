@@ -46,6 +46,7 @@ namespace MonoTorrent.Client.Modes
         PeerId currentId;
         string savePath;
         DateTime requestTimeout;
+        bool stopWhenDone;
 
         bool HasAnnounced { get; set; }
         internal MemoryStream Stream { get; set; }
@@ -54,9 +55,16 @@ namespace MonoTorrent.Client.Modes
         public override TorrentState State => TorrentState.Metadata;
 
         public MetadataMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, string savePath)
+            : this (manager, diskManager, connectionManager, settings, savePath, false)
+        {
+
+        }
+
+        public MetadataMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, string savePath, bool stopWhenDone)
             : base (manager, diskManager, connectionManager, settings)
         {
             this.savePath = savePath;
+            this.stopWhenDone = stopWhenDone;
         }
 
         public override void Tick (int counter)
@@ -148,6 +156,10 @@ namespace MonoTorrent.Client.Modes
                             };
                             // FIXME: Add the trackers too
                             if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
+                                Manager.RaiseMetadataReceived (dict);
+                                if (stopWhenDone)
+                                    return;
+
                                 try {
                                     if (Directory.Exists (savePath))
                                         savePath = Path.Combine (savePath, $"{Manager.InfoHash.ToHex ()}.torrent");
