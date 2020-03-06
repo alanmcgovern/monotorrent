@@ -29,6 +29,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -151,6 +152,15 @@ namespace MonoTorrent.Client
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
             Assert.AreEqual (0, manager.Peers.AvailablePeers.Count, "#4");
+        }
+
+        [Test]
+        public void DownloadMetadata_Cancelled ()
+        {
+            var cts = new CancellationTokenSource ();
+            var task = rig.Engine.DownloadMetadataAsync (new MagnetLink (new InfoHash (new byte[20])), cts.Token);
+            cts.Cancel ();
+            Assert.ThrowsAsync<OperationCanceledException> (() => task);
         }
 
         [Test]

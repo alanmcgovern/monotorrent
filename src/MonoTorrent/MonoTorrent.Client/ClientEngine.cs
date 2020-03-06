@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -85,7 +86,16 @@ namespace MonoTorrent.Client
         internal static readonly BufferPool BufferPool = new BufferPool ();
         readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         int tickCount;
-        readonly List<TorrentManager> torrents;
+        /// <summary>
+        /// The <see cref="TorrentManager"/> instances registered by the user.
+        /// </summary>
+        readonly List<TorrentManager> publicTorrents;
+
+        /// <summary>
+        /// The <see cref="TorrentManager"/> instances registered by the user and the instances
+        /// implicitly created by <see cref="DownloadMetadataAsync(MagnetLink, CancellationToken)"/>.
+        /// </summary>
+        readonly List<TorrentManager> allTorrents;
 
         readonly RateLimiter uploadLimiter;
         readonly RateLimiterGroup uploadLimiters;
@@ -120,8 +130,8 @@ namespace MonoTorrent.Client
         public long TotalDownloadSpeed {
             get {
                 long total = 0;
-                for (int i = 0; i < torrents.Count; i++)
-                    total += torrents[i].Monitor.DownloadSpeed;
+                for (int i = 0; i < publicTorrents.Count; i++)
+                    total += publicTorrents[i].Monitor.DownloadSpeed;
                 return total;
             }
         }
@@ -129,8 +139,8 @@ namespace MonoTorrent.Client
         public long TotalUploadSpeed {
             get {
                 long total = 0;
-                for (int i = 0; i < torrents.Count; i++)
-                    total += torrents[i].Monitor.UploadSpeed;
+                for (int i = 0; i < publicTorrents.Count; i++)
+                    total += publicTorrents[i].Monitor.UploadSpeed;
                 return total;
             }
         }
@@ -179,8 +189,9 @@ namespace MonoTorrent.Client
             Listener = listener ?? throw new ArgumentNullException (nameof (listener));
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
-            torrents = new List<TorrentManager> ();
-            Torrents = new ReadOnlyCollection<TorrentManager> (torrents);
+            allTorrents = new List<TorrentManager> ();
+            publicTorrents = new List<TorrentManager> ();
+            Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
 
             DiskManager = new DiskManager (Settings, writer);
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
@@ -226,7 +237,7 @@ namespace MonoTorrent.Client
             if (infoHash == null)
                 return false;
 
-            return torrents.Exists (m => m.InfoHash.Equals (infoHash));
+            return publicTorrents.Exists (m => m.InfoHash.Equals (infoHash));
         }
 
         public bool Contains (Torrent torrent)
@@ -261,12 +272,36 @@ namespace MonoTorrent.Client
             });
         }
 
+        /// <summary>
+        /// Downloads the .torrent metadata for the provided MagnetLink.
+        /// </summary>
+        /// <param name="magnetLink">The MagnetLink to get the metadata for.</param>
+        /// <param name="token">The cancellation token used to to abort the download. This method will
+        /// only complete if the metadata successfully downloads, or the token is cancelled.</param>
+        /// <returns></returns>
+        public async Task<byte[]> DownloadMetadataAsync (MagnetLink magnetLink, CancellationToken token)
+        {
+            var manager = new TorrentManager (magnetLink);
+            var metadataCompleted = new TaskCompletionSource<byte[]> ();
+            using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
+            manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e);
+
+            await Register (manager, isPublic: false);
+            await manager.StartAsync (metadataOnly: true);
+            var data = await metadataCompleted.Task;
+            await manager.StopAsync ();
+            await Unregister (manager);
+
+            token.ThrowIfCancellationRequested ();
+            return data;
+        }
+
         async void HandleLocalPeerFound (object sender, LocalPeerFoundEventArgs args)
         {
             try {
                 await MainLoop;
 
-                TorrentManager manager = Torrents.FirstOrDefault (t => t.InfoHash == args.InfoHash);
+                TorrentManager manager = allTorrents.FirstOrDefault (t => t.InfoHash == args.InfoHash);
                 // There's no TorrentManager in the engine
                 if (manager == null)
                     return;
@@ -291,12 +326,15 @@ namespace MonoTorrent.Client
             await MainLoop;
 
             var tasks = new List<Task> ();
-            foreach (TorrentManager manager in torrents)
+            foreach (TorrentManager manager in publicTorrents)
                 tasks.Add (manager.PauseAsync ());
             await Task.WhenAll (tasks);
         }
 
         public async Task Register (TorrentManager manager)
+            => await Register (manager, true);
+
+        async Task Register (TorrentManager manager, bool isPublic)
         {
             CheckDisposed ();
             Check.Manager (manager);
@@ -307,7 +345,10 @@ namespace MonoTorrent.Client
 
             if (Contains (manager.Torrent))
                 throw new TorrentException ("A manager for this torrent has already been registered");
-            torrents.Add (manager);
+
+            allTorrents.Add (manager);
+            if (isPublic)
+                publicTorrents.Add (manager);
             ConnectionManager.Add (manager);
 
             manager.Engine = this;
@@ -363,7 +404,7 @@ namespace MonoTorrent.Client
         {
             await MainLoop;
 
-            TorrentManager manager = Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+            TorrentManager manager = allTorrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
 
             if (manager == null)
                 return;
@@ -384,7 +425,7 @@ namespace MonoTorrent.Client
                 return;
 
             await MainLoop;
-            foreach (TorrentManager manager in torrents) {
+            foreach (TorrentManager manager in allTorrents) {
                 if (!manager.CanUseDht)
                     continue;
 
@@ -409,8 +450,8 @@ namespace MonoTorrent.Client
             await MainLoop;
 
             var tasks = new List<Task> ();
-            for (int i = 0; i < torrents.Count; i++)
-                tasks.Add (torrents[i].StartAsync ());
+            for (int i = 0; i < publicTorrents.Count; i++)
+                tasks.Add (publicTorrents[i].StartAsync ());
             await Task.WhenAll (tasks);
         }
 
@@ -441,8 +482,8 @@ namespace MonoTorrent.Client
 
             await MainLoop;
             var tasks = new List<Task> ();
-            for (int i = 0; i < torrents.Count; i++)
-                tasks.Add (torrents[i].StopAsync (timeout));
+            for (int i = 0; i < publicTorrents.Count; i++)
+                tasks.Add (publicTorrents[i].StopAsync (timeout));
             await Task.WhenAll (tasks);
         }
 
@@ -458,7 +499,8 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException ("The manager must be stopped before it can be unregistered");
 
-            torrents.Remove (manager);
+            allTorrents.Remove (manager);
+            publicTorrents.Remove (manager);
             ConnectionManager.Remove (manager);
 
             manager.Engine = null;
@@ -484,8 +526,8 @@ namespace MonoTorrent.Client
             ConnectionManager.TryConnect ();
             DiskManager.Tick ();
 
-            for (int i = 0; i < torrents.Count; i++)
-                torrents[i].Mode.Tick (tickCount);
+            for (int i = 0; i < allTorrents.Count; i++)
+                allTorrents[i].Mode.Tick (tickCount);
 
             RaiseStatsUpdate (new StatsUpdateEventArgs ());
         }
@@ -514,7 +556,7 @@ namespace MonoTorrent.Client
         {
             CheckDisposed ();
             // If all the torrents are stopped, stop ticking
-            IsRunning = torrents.Exists (m => m.State != TorrentState.Stopped);
+            IsRunning = allTorrents.Exists (m => m.State != TorrentState.Stopped);
             if (!IsRunning)
                 Listener.Stop ();
         }

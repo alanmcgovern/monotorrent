@@ -32,7 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
@@ -44,6 +44,8 @@ namespace MonoTorrent.Client
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
         #region Events
+
+        internal event EventHandler<byte[]> MetadataReceived;
 
         /// <summary>
         /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
@@ -136,6 +138,11 @@ namespace MonoTorrent.Client
                 oldMode?.Dispose ();
                 mode.Tick (0);
             }
+        }
+
+        internal void RaiseMetadataReceived (BEncodedDictionary dict)
+        {
+            MetadataReceived?.Invoke (this, dict.Encode ());
         }
 
         /// <summary>
@@ -289,6 +296,11 @@ namespace MonoTorrent.Client
         #endregion
 
         #region Constructors
+        internal TorrentManager (MagnetLink magnetLink)
+            : this (magnetLink, "", new TorrentSettings (), "")
+        {
+
+        }
 
         /// <summary>
         /// Creates a new TorrentManager instance.
@@ -589,6 +601,9 @@ namespace MonoTorrent.Client
         /// Starts the TorrentManager
         /// </summary>
         public async Task StartAsync ()
+            => await StartAsync (false);
+
+        internal async Task StartAsync (bool metadataOnly)
         {
             await ClientEngine.MainLoop;
 
@@ -609,7 +624,7 @@ namespace MonoTorrent.Client
                     hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
-                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave);
+                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave, metadataOnly);
             } else {
                 StartTime = DateTime.Now;
                 var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
