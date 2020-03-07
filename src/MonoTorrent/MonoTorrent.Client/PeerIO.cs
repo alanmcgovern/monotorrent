@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
                 encryptor.Encrypt (buffer, 0, count);
 
                 // Assume protocol first, then swap it to data once we successfully send the data bytes.
-                await NetworkIO.SendAsync (connection, buffer, 0, count, pieceMessage == null ? null : rateLimiter, peerMonitor?.DataUp, managerMonitor?.DataUp).ConfigureAwait (false);
+                await NetworkIO.SendAsync (connection, buffer, 0, count, pieceMessage == null ? null : rateLimiter, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp).ConfigureAwait (false);
                 if (pieceMessage != null) {
                     peerMonitor?.ProtocolUp.AddDelta (-pieceMessage.RequestLength);
                     managerMonitor?.ProtocolUp.AddDelta (-pieceMessage.RequestLength);
