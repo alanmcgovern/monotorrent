@@ -583,10 +583,13 @@ namespace MonoTorrent
         {
             Check.Path (path);
 
+            torrent = null;
             try {
-                torrent = Load (path);
+                if (!string.IsNullOrEmpty (path) && File.Exists (path))
+                    torrent = Load (path);
             } catch {
-                torrent = null;
+                // We will return false if an exception is thrown as 'torrent' will still
+                // be null.
             }
 
             return torrent != null;
