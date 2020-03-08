@@ -169,6 +169,16 @@ namespace MonoTorrent.Client
         Stream ReadStream { get; }
         Stream WriteStream { get; }
 
+        /// <summary>
+        /// The speed monitor representing the TorrentManager this connection is associated with
+        /// </summary>
+        public ConnectionMonitor ManagerMonitor { get; } = new ConnectionMonitor ();
+
+        /// <summary>
+        /// The speed monitor representing this connection with this connection
+        /// </summary>
+        public ConnectionMonitor Monitor { get; } = new ConnectionMonitor ();
+
         public CustomConnection (Stream readStream, Stream writeStream, bool isIncoming)
         {
             ReadStream = readStream;
