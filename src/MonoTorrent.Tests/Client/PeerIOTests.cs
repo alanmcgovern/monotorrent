@@ -88,8 +88,8 @@ namespace MonoTorrent.Client
             for (int i = 4; i < 16; i++)
                 data[i] = byte.MaxValue;
 
-            var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null);
-            await NetworkIO.SendAsync (pair.Outgoing, data, 0, 20, null, null, null);
+            var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
+            await NetworkIO.SendAsync (pair.Outgoing, data, 0, 20);
 
             Assert.ThrowsAsync<ProtocolException> (async () => await task, "#1");
         }
@@ -106,6 +106,59 @@ namespace MonoTorrent.Client
             buffer = new KeepAliveMessage ().Encode ();
             await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
             Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
+        }
+
+        [Test]
+        public void IgnoreNullMonitors ()
+        {
+            var blockSize = Piece.BlockSize - 1234;
+            var msg = new PieceMessage (0, 0, blockSize) {
+                Data = new byte[blockSize]
+            };
+
+            Assert.DoesNotThrowAsync (() => {
+                return Task.WhenAll (
+                    PeerIO.SendMessageAsync (pair.Incoming, PlainTextEncryption.Instance, msg).AsTask (),
+                    PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance).AsTask ()
+                );
+            });
+        }
+
+        [Test]
+        public async Task CountPieceMessageBlockLengthAsData ()
+        {
+            var blockSize = Piece.BlockSize - 1234;
+            var msg = new PieceMessage (0, 0, blockSize) {
+                Data = new byte[blockSize]
+            };
+
+            var protocolSize = msg.ByteLength - blockSize;
+            await Task.WhenAll (
+                PeerIO.SendMessageAsync (pair.Incoming, PlainTextEncryption.Instance, msg, null, pair.Incoming.Monitor, pair.Incoming.ManagerMonitor).AsTask (),
+                PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance, null, pair.Outgoing.Monitor, pair.Outgoing.ManagerMonitor, null).AsTask ()
+            );
+
+            // incoming connection sends 1 message so should receive nothing.
+            Assert.AreEqual (0, pair.Incoming.Monitor.DataBytesDownloaded);
+            Assert.AreEqual (0, pair.Incoming.ManagerMonitor.DataBytesDownloaded);
+            Assert.AreEqual (0, pair.Incoming.Monitor.ProtocolBytesDownloaded);
+            Assert.AreEqual (0, pair.Incoming.ManagerMonitor.ProtocolBytesDownloaded);
+
+            Assert.AreEqual (blockSize, pair.Incoming.Monitor.DataBytesUploaded);
+            Assert.AreEqual (blockSize, pair.Incoming.ManagerMonitor.DataBytesUploaded);
+            Assert.AreEqual (protocolSize, pair.Incoming.Monitor.ProtocolBytesUploaded);
+            Assert.AreEqual (protocolSize, pair.Incoming.ManagerMonitor.ProtocolBytesUploaded);
+
+            // outgoing connection receives 1 message, so should send nothing.
+            Assert.AreEqual (0, pair.Outgoing.Monitor.DataBytesUploaded);
+            Assert.AreEqual (0, pair.Outgoing.ManagerMonitor.DataBytesUploaded);
+            Assert.AreEqual (0, pair.Outgoing.Monitor.ProtocolBytesUploaded);
+            Assert.AreEqual (0, pair.Outgoing.ManagerMonitor.ProtocolBytesUploaded);
+
+            Assert.AreEqual (blockSize, pair.Outgoing.Monitor.DataBytesDownloaded);
+            Assert.AreEqual (blockSize, pair.Outgoing.ManagerMonitor.DataBytesDownloaded);
+            Assert.AreEqual (protocolSize, pair.Outgoing.Monitor.ProtocolBytesDownloaded);
+            Assert.AreEqual (protocolSize, pair.Outgoing.ManagerMonitor.ProtocolBytesDownloaded);
         }
     }
 }

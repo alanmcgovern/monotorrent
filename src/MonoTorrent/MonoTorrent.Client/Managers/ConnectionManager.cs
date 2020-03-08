@@ -249,7 +249,7 @@ namespace MonoTorrent.Client
         {
             try {
                 while (true) {
-                    Messages.PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager);
+                    Messages.PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent);
                     if (id.Disposed) {
                         if (message is PieceMessage msg)
                             ClientEngine.BufferPool.Return (msg.Data);

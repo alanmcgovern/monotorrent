@@ -62,10 +62,10 @@ namespace MonoTorrent.Client
 
         public static ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection2 connection, IEncryption decryptor)
         {
-            return ReceiveMessageAsync (connection, decryptor, null, null, null);
+            return ReceiveMessageAsync (connection, decryptor, null, null, null, null);
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection2 connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor monitor, TorrentManager manager)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection2 connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
             byte[] messageLengthBuffer = null;
             byte[] messageBuffer = null;
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
             int messageBody;
             try {
                 messageLengthBuffer = ClientEngine.BufferPool.Rent (messageLength);
-                await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
 
@@ -95,17 +95,17 @@ namespace MonoTorrent.Client
 
             try {
                 // Always assume protocol first, then convert to data when we what message it is!
-                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageBuffer, messageLength, messageBody);
                 // FIXME: manager should never be null, except some of the unit tests do that.
-                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager?.Torrent);
+                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, torrentData);
                 if (data is PieceMessage msg) {
-                    monitor?.ProtocolDown.AddDelta (-msg.RequestLength);
-                    manager?.Monitor.ProtocolDown.AddDelta (-msg.RequestLength);
+                    peerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
+                    managerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
 
-                    monitor?.DataDown.AddDelta (msg.RequestLength);
-                    manager?.Monitor.DataDown.AddDelta (msg.RequestLength);
+                    peerMonitor?.DataDown.AddDelta (msg.RequestLength);
+                    managerMonitor?.DataDown.AddDelta (msg.RequestLength);
                 }
                 return data;
             } finally {
