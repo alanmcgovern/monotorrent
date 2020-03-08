@@ -74,10 +74,13 @@ namespace MonoTorrent.Client.Modes
                     announceTask = Task.WhenAny (announceTask, Task.Delay (timeout));
                 stoppingTasks.Add (announceTask);
 
+                // FIXME: Expose CancellationToken throughout this API.
                 var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);
                 var overallTasks = Task.WhenAll (stoppingTasks);
                 if (await Task.WhenAny (overallTasks, delayTask) == delayTask)
                     Logger.Log (null, "Timed out waiting for the announce request to complete");
+                else
+                    await overallTasks;
             } catch (Exception ex) {
                 Logger.Log (null, "Unexpected exception stopping a TorrentManager: {0}", ex);
             }
