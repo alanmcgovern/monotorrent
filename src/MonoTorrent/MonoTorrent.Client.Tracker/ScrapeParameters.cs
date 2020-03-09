@@ -27,15 +27,30 @@
 //
 
 
+using System.Threading;
+
 namespace MonoTorrent.Client.Tracker
 {
+    // FIXME: Seal this.
     public class ScrapeParameters
     {
         public InfoHash InfoHash { get; }
+        public CancellationToken Token { get; private set; }
 
+        // FIXME: make this internal
         public ScrapeParameters (InfoHash infoHash)
         {
             InfoHash = infoHash;
+        }
+
+        internal ScrapeParameters WithCancellationToken(CancellationToken token)
+        {
+            var clone = this;
+            if (token != Token) {
+                clone = (ScrapeParameters) MemberwiseClone ();
+                clone.Token = token;
+            }
+            return clone;
         }
     }
 }
