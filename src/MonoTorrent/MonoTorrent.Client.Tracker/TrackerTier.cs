@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -71,6 +72,11 @@ namespace MonoTorrent.Client.Tracker
             }
 
             Trackers = trackerList.AsReadOnly ();
+        }
+
+        internal TrackerTier (ITracker tracker)
+        {
+            Trackers = Array.AsReadOnly (new [] { tracker });
         }
     }
 }

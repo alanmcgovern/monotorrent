@@ -48,7 +48,9 @@ namespace MonoTorrent.Client.Tracker
         Uri Uri { get; }
         string WarningMessage { get; }
 
+        // FIXME: properly pass a cancellation token.
         Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters);
+        // FIXME: properly pass a cancellation token.
         Task ScrapeAsync (ScrapeParameters parameters);
     }
 }
