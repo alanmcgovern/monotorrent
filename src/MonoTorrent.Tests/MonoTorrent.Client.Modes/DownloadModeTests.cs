@@ -31,9 +31,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages.Libtorrent;
-
+using MonoTorrent.Client.Messages.Standard;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.Modes
@@ -206,6 +206,73 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
             Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#3");
             Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[1].Item2, "#4");
+        }
+
+        [Test]
+        public void MismatchedInfoHash ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length);
+            var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte)15, 20).ToArray ()), "peerid", VersionInfo.ProtocolStringV100);
+
+            Assert.Throws<TorrentException> (() => Manager.Mode.HandleMessage (peer, handshake));
+        }
+
+        [Test]
+        public void MismatchedProtocolString ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peerId = PeerId.CreateNull (Manager.Bitfield.Length);
+            var handshake = new HandshakeMessage (Manager.InfoHash, "peerid", "bleurgh");
+
+            Assert.Throws<ProtocolException> (() => Manager.Mode.HandleMessage (peerId, handshake));
+        }
+
+        [Test]
+        public void EmptyPeerId_PrivateTorrent ()
+        {
+            var manager = TestRig.CreatePrivate ();
+            manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (manager.Bitfield.Length);
+            peer.Peer.PeerId = null;
+            var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+
+            manager.Mode.HandleMessage (peer, handshake);
+            Assert.AreEqual (handshake.PeerId, peer.PeerID);
+        }
+
+        [Test]
+        public void EmptyPeerId_PublicTorrent ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length);
+            peer.Peer.PeerId = null;
+            var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+
+            Manager.Mode.HandleMessage (peer, handshake);
+            Assert.AreEqual (handshake.PeerId, peer.PeerID);
+        }
+
+        [Test]
+        public void MismatchedPeerId_PrivateTorrent ()
+        {
+            var manager = TestRig.CreatePrivate ();
+            manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (manager.Bitfield.Length);
+            var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+
+            Assert.Throws<TorrentException> (() => manager.Mode.HandleMessage (peer, handshake));
+        }
+
+        [Test]
+        public void MismatchedPeerId_PublicTorrent ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length);
+            var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+
+            Assert.DoesNotThrow (() => Manager.Mode.HandleMessage (peer, handshake));
+            Assert.AreEqual (peer.PeerID, handshake.PeerId);
         }
 
         [Test]
