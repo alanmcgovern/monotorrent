@@ -27,28 +27,33 @@
 //
 
 
+using System.Threading;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Tracker
 {
+    // FIXME: Seal this.
     public class AnnounceParameters
     {
-        public long BytesDownloaded { get; }
-        public long BytesLeft { get; }
-        public long BytesUploaded { get; }
-        public TorrentEvent ClientEvent { get; }
-        public InfoHash InfoHash { get; }
-        public string IPAddress { get; }
-        public BEncodedString PeerId { get; }
-        public int Port { get; }
-        public bool RequireEncryption { get; }
-        public bool SupportsEncryption { get; }
+        public long BytesDownloaded { get; private set; }
+        public long BytesLeft { get; private set; }
+        public long BytesUploaded { get; private set; }
+        public TorrentEvent ClientEvent { get; private set; }
+        public InfoHash InfoHash { get; private set; }
+        public string IPAddress { get; private set; }
+        public BEncodedString PeerId { get; private set; }
+        public int Port { get; private set; }
+        public bool RequireEncryption { get; private set; }
+        public bool SupportsEncryption { get; private set; }
+        public CancellationToken Token { get; private set; }
 
+        // FIXME: make this internal
         public AnnounceParameters ()
         {
 
         }
 
+        // FIXME: make this internal
         public AnnounceParameters (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
                            BEncodedString peerId, string ipAddress, int port, bool supportsEncryption)
@@ -65,54 +70,124 @@ namespace MonoTorrent.Client.Tracker
             SupportsEncryption = supportsEncryption;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithBytesDownloaded (long bytesDownloaded)
         {
-            return bytesDownloaded == BytesDownloaded ? this : new AnnounceParameters (bytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (bytesDownloaded != BytesDownloaded) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.BytesDownloaded = bytesDownloaded;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithBytesLeft (long bytesLeft)
         {
-            return bytesLeft == BytesLeft ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, bytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (bytesLeft != BytesLeft) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.BytesLeft = bytesLeft;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithBytesUploaded (long bytesUploaded)
         {
-            return bytesUploaded == BytesUploaded ? this : new AnnounceParameters (BytesDownloaded, bytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (bytesUploaded != BytesUploaded) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.BytesUploaded = bytesUploaded;
+            }
+            return clone;
         }
 
+        internal AnnounceParameters WithCancellationToken (CancellationToken token)
+        {
+            var clone = this;
+            if (token != Token) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.Token = token;
+            }
+            return clone;
+        }
+
+        // FIXME: make this internal
         public AnnounceParameters WithClientEvent (TorrentEvent clientEvent)
         {
-            return clientEvent == ClientEvent ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, clientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (clientEvent != ClientEvent) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.ClientEvent = clientEvent;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithInfoHash (InfoHash infoHash)
         {
-            return infoHash == InfoHash ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, infoHash, RequireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (infoHash != InfoHash) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.InfoHash = infoHash;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithIPAddress (string ipAddress)
         {
-            return ipAddress == IPAddress ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, ipAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (ipAddress != IPAddress) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.IPAddress = ipAddress;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithPeerId (BEncodedString peerId)
         {
-            return peerId == PeerId ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, peerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (!peerId.Equals (PeerId)) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.PeerId = peerId;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithPort (int port)
         {
-            return port == Port ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, port, SupportsEncryption);
+            var clone = this;
+            if (port != Port) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.Port = port;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithRequireEncryption (bool requireEncryption)
         {
-            return requireEncryption == RequireEncryption ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, requireEncryption, PeerId, IPAddress, Port, SupportsEncryption);
+            var clone = this;
+            if (requireEncryption != RequireEncryption) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.RequireEncryption = requireEncryption;
+            }
+            return clone;
         }
 
+        // FIXME: make this internal
         public AnnounceParameters WithSupportsEncryption (bool supportsEncryption)
         {
-            return supportsEncryption == SupportsEncryption ? this : new AnnounceParameters (BytesDownloaded, BytesUploaded, BytesLeft, ClientEvent, InfoHash, RequireEncryption, PeerId, IPAddress, Port, supportsEncryption);
+            var clone = this;
+            if (supportsEncryption != SupportsEncryption) {
+                clone = (AnnounceParameters) MemberwiseClone ();
+                clone.SupportsEncryption = supportsEncryption;
+            }
+            return clone;
         }
     }
 }
