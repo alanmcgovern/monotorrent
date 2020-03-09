@@ -73,7 +73,8 @@ namespace SampleClient
 
             byte[] nodes = Array.Empty<byte> ();
             try {
-                nodes = File.ReadAllBytes (dhtNodeFile);
+                if (File.Exists (dhtNodeFile))
+                    nodes = File.ReadAllBytes (dhtNodeFile);
             } catch {
                 Console.WriteLine ("No existing dht nodes could be loaded");
             }
@@ -94,11 +95,11 @@ namespace SampleClient
             if (!Directory.Exists (torrentsPath))
                 Directory.CreateDirectory (torrentsPath);
 
-            BEncodedDictionary fastResume;
+            BEncodedDictionary fastResume = new BEncodedDictionary ();
             try {
-                fastResume = BEncodedValue.Decode<BEncodedDictionary> (File.ReadAllBytes (fastResumeFile));
+                if (File.Exists (fastResumeFile))
+                    fastResume = BEncodedValue.Decode<BEncodedDictionary> (File.ReadAllBytes (fastResumeFile));
             } catch {
-                fastResume = new BEncodedDictionary ();
             }
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
