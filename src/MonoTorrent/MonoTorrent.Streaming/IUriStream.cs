@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Streaming
 {
-    interface IUriStream : IDisposable
+    public interface IUriStream : IDisposable
     {
         Uri Uri { get; }
     }
