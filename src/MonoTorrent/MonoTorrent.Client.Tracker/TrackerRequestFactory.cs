@@ -50,7 +50,7 @@ namespace MonoTorrent.Client.Tracker
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
             string ip = null;
-            int port = -1;
+            int port;
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
                 port = engine.Settings.ReportedAddress.Port;

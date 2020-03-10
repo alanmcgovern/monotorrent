@@ -77,8 +77,9 @@ namespace MonoTorrent.Client.Tracker
 
             listener.IncompleteAnnounce = listener.IncompleteScrape = false;
 
-            server = new TrackerServer (trackerId);
-            server.AllowUnregisteredTorrents = true;
+            server = new TrackerServer (trackerId) {
+                AllowUnregisteredTorrents = true
+            };
             server.RegisterListener (listener);
 
             tracker = (HTTPTracker) TrackerFactory.Create (AnnounceUrl);

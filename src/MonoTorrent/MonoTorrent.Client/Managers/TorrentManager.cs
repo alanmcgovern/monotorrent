@@ -806,7 +806,7 @@ namespace MonoTorrent.Client
             PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
         }
 
-        static Func<TorrentFile, int, int> PieceIndexComparer = (TorrentFile file, int pieceIndex) => {
+        static readonly Func<TorrentFile, int, int> PieceIndexComparer = (TorrentFile file, int pieceIndex) => {
             if (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex)
                 return 0;
             if (pieceIndex > file.EndPieceIndex)
