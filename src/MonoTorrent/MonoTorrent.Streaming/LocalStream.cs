@@ -54,6 +54,8 @@ namespace MonoTorrent.Streaming
 
         public override bool CanWrite => false;
 
+        internal bool Disposed { get; private set; }
+
         public override long Length => File.Length;
 
         public override long Position {
@@ -79,6 +81,8 @@ namespace MonoTorrent.Streaming
         protected override void Dispose (bool disposing)
         {
             base.Dispose (disposing);
+
+            Disposed = true;
             if (disposing) {
                 Stream?.Dispose ();
             }
@@ -92,8 +96,10 @@ namespace MonoTorrent.Streaming
 
         public override async Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
+            ThrowIfDisposed ();
+
             // The torrent is treated as one big block of data, so this is the offset at which the current file's data starts at.
-            var torrentFileStartOffset = (long)File.StartPieceIndex * (long)Manager.Torrent.PieceLength + File.StartPieceOffset;
+            var torrentFileStartOffset = (long) File.StartPieceIndex * (long) Manager.Torrent.PieceLength + File.StartPieceOffset;
 
             // Clamp things so we cannot overread.
             if (Position + count > Length)
@@ -111,6 +117,7 @@ namespace MonoTorrent.Streaming
                     break;
 
                 await Task.Delay (500, cancellationToken);
+                ThrowIfDisposed ();
             }
 
             cancellationToken.ThrowIfCancellationRequested ();
@@ -125,15 +132,18 @@ namespace MonoTorrent.Streaming
             }
 
             var read = await Stream.ReadAsync (buffer, offset, count, cancellationToken);
+            ThrowIfDisposed ();
+
             position += read;
             var oldHighPriority = Picker.HighPriorityPieceIndex;
             Picker.ReadToPosition (File, position);
-            Debug.WriteLine ($"Read to {position}. HighPriorityPiece: {oldHighPriority} -> {Picker.HighPriorityPieceIndex}");
             return read;
         }
 
         public override long Seek (long offset, SeekOrigin origin)
         {
+            ThrowIfDisposed ();
+
             switch (origin) {
                 case SeekOrigin.Begin:
                     position = offset;
@@ -150,7 +160,6 @@ namespace MonoTorrent.Streaming
 
             var oldHighPriority = Picker.HighPriorityPieceIndex;
             Picker.SeekToPosition (File, position);
-            Debug.WriteLine ($"Seek to {position}. HighPriorityPiece: {oldHighPriority} -> {Picker.HighPriorityPieceIndex}");
             Stream?.Seek (offset, origin);
             return position;
         }
@@ -160,5 +169,11 @@ namespace MonoTorrent.Streaming
 
         public override void Write (byte[] buffer, int offset, int count)
             => throw new NotSupportedException ();
+
+        void ThrowIfDisposed ()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (LocalStream));
+        }
     }
 }
