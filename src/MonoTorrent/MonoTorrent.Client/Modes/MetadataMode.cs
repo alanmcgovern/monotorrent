@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -204,8 +205,7 @@ namespace MonoTorrent.Client.Modes
             Manager.Bitfield = new BitField (Manager.Torrent.Pieces.Count);
             Manager.PartialProgressSelector = new BitField (Manager.Torrent.Pieces.Count);
             Manager.UnhashedPieces = new BitField (Manager.Torrent.Pieces.Count).SetAll (true);
-
-            Manager.ChangePicker (Manager.CreateStandardPicker ());
+            Manager.PieceManager.RefreshPickerWithMetadata (Manager.Bitfield, Manager.Torrent);
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             if (Manager.Torrent.Files.Length > 1) {
