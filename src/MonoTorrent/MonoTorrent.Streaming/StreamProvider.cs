@@ -45,10 +45,32 @@ namespace MonoTorrent.Streaming
         ClientEngine Engine { get; }
         StreamingPiecePicker Picker { get; }
 
+        /// <summary>
+        /// Returns true when the <see cref="StreamProvider"/> has been started.
+        /// </summary>
         public bool Active { get; private set; }
+
+        /// <summary>
+        /// Returns true when the <see cref="StreamProvider"/> has been paused.
+        /// </summary>
         public bool Paused { get; private set; }
+
+        /// <summary>
+        /// The underlying <see cref="TorrentManager"/> used to download the data.
+        /// It is safe to attach to events, retrieve state and also change any of
+        /// the settings associated with this TorrentManager. You should never
+        /// call StartAsync, StopAsync, PauseAsync or similar life-cycle methods,
+        /// nor should you attempt to register this with a <see cref="ClientEngine"/>.
+        /// </summary>
         public TorrentManager Manager { get; }
 
+        /// <summary>
+        /// Creates a StreamProvider for the given <see cref="Torrent"/> so that files
+        /// contained within the torrent can be accessed as they are downloading.
+        /// </summary>
+        /// <param name="engine">The engine used to host the download.</param>
+        /// <param name="saveDirectory">The directory where the torrents data will be saved</param>
+        /// <param name="torrent">The torrent to download</param>
         public StreamProvider (ClientEngine engine, string saveDirectory, Torrent torrent)
         {
             Engine = engine;
@@ -56,13 +78,26 @@ namespace MonoTorrent.Streaming
             Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
         }
 
-        public StreamProvider (ClientEngine engine, string saveDirectory, MagnetLink metadataLink, string metadataSaveDirectory)
+        /// <summary>
+        /// Creates a StreamProvider for the given <see cref="MagnetLink"/> so that files
+        /// contained within the torrent can be accessed as they are downloading.
+        /// </summary>
+        /// <param name="engine">The engine used to host the download.</param>
+        /// <param name="saveDirectory">The directory where the torrents data will be saved</param>
+        /// <param name="magnetLink">The MagnetLink to download</param>
+        /// <param name="metadataSaveDirectory">The directory where the metadata will be saved. The filename will be constucted using the InfoHash of the MagnetLink.</param>
+        public StreamProvider (ClientEngine engine, string saveDirectory, MagnetLink magnetLink, string metadataSaveDirectory)
         {
             Engine = engine;
-            Manager = new TorrentManager (metadataLink, saveDirectory, new TorrentSettings (), metadataSaveDirectory);
+            Manager = new TorrentManager (magnetLink, saveDirectory, new TorrentSettings (), metadataSaveDirectory);
             Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
         }
 
+        /// <summary>
+        /// Registers <see cref="Manager"/> with the <see cref="ClientEngine"/>
+        /// and calls <see cref="TorrentManager.StartAsync()"/>.
+        /// </summary>
+        /// <returns></returns>
         public async Task StartAsync ()
         {
             if (Active)
@@ -82,6 +117,10 @@ namespace MonoTorrent.Streaming
             Active = true;
         }
 
+        /// <summary>
+        /// Calls <see cref="TorrentManager.PauseAsync()"/> to pause Hashing, Seeding or Downloading.
+        /// </summary>
+        /// <returns></returns>
         public async Task PauseAsync ()
         {
             if (!Active)
@@ -93,6 +132,10 @@ namespace MonoTorrent.Streaming
             Paused = true;
         }
 
+        /// <summary>
+        /// Calls <see cref="TorrentManager.StartAsync()"/> to resume Hashing, Seeding or Downloading.
+        /// </summary>
+        /// <returns></returns>
         public async Task ResumeAsync ()
         {
             if (!Paused)
@@ -102,6 +145,13 @@ namespace MonoTorrent.Streaming
             Paused = false;
         }
 
+        /// <summary>
+        /// Calls <see cref="TorrentManager.StopAsync()"/> on <see cref="Manager"/> and unregisters
+        /// it from the <see cref="ClientEngine"/>. This will dispose the stream returned by the
+        /// most recent invocation of <see cref="CreateHttpStreamAsync(TorrentFile)"/> or
+        /// <see cref="CreateStreamAsync(TorrentFile)"/>.
+        /// </summary>
+        /// <returns></returns>
         public async Task StopAsync ()
         {
             if (!Active)
@@ -120,7 +170,8 @@ namespace MonoTorrent.Streaming
 
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
-        /// while it is downloading. This stream is seekable and readable.
+        /// while it is downloading. This stream is seekable and readable. This stream must be disposed
+        /// before another stream can be created.
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
@@ -141,7 +192,8 @@ namespace MonoTorrent.Streaming
 
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
-        /// while it is downloading. This stream is seekable and readable.
+        /// while it is downloading. This stream is seekable and readable. This stream must be disposed
+        /// before another stream can be created.
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
