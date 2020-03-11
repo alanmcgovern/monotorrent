@@ -53,13 +53,14 @@ namespace MonoTorrent.Streaming
         {
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
-            Picker = new StreamingPiecePicker (new StandardPicker ());
+            Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
         }
 
         public StreamProvider (ClientEngine engine, string saveDirectory, MagnetLink metadataLink, string metadataSaveDirectory)
         {
             Engine = engine;
             Manager = new TorrentManager (metadataLink, saveDirectory, new TorrentSettings (), metadataSaveDirectory);
+            Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
         }
 
         public async Task StartAsync ()
@@ -78,7 +79,6 @@ namespace MonoTorrent.Streaming
 
             await Engine.Register (Manager);
             await Manager.StartAsync ();
-            await Manager.ChangePickerAsync (Picker);
             Active = true;
         }
 
@@ -114,6 +114,7 @@ namespace MonoTorrent.Streaming
             }
             await Manager.StopAsync ();
             await Engine.Unregister (Manager);
+            ActiveStream.SafeDispose ();
             Active = false;
         }
 
@@ -129,6 +130,8 @@ namespace MonoTorrent.Streaming
                 throw new ArgumentNullException (nameof (file));
             if (!Manager.Torrent.Files.Contains (file))
                 throw new ArgumentException ("The TorrentFile is not from this TorrentManager", nameof (file));
+            if (!Active)
+                throw new InvalidOperationException ("You must call StartAsync before creating a stream.");
             if (ActiveStream != null && !ActiveStream.Disposed)
                 throw new InvalidOperationException ("You must Dispose the previous stream before creating a new one.");
             Picker.SeekToPosition (file, 0);

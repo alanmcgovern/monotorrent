@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
@@ -71,6 +72,7 @@ namespace MonoTorrent.Client
         #endregion Old
 
         TorrentManager Manager { get; }
+        PiecePicker originalPicker;
         internal PiecePicker Picker { get; private set; }
         internal BitField UnhashedPieces { get; private set; }
 
@@ -154,16 +156,21 @@ namespace MonoTorrent.Client
             return Picker.IsInteresting (id.BitField);
         }
 
-        internal void ChangePicker (PiecePicker picker, BitField bitfield, ITorrentData data)
+        internal void ChangePicker (PiecePicker picker, BitField bitfield)
         {
+            originalPicker = picker;
             if (UnhashedPieces.Length != bitfield.Length)
                 UnhashedPieces = new BitField (bitfield.Length);
 
             picker = new IgnoringPicker (bitfield, picker);
             picker = new IgnoringPicker (UnhashedPieces, picker);
-            IEnumerable<Piece> pieces = Picker == null ? new List<Piece> () : Picker.ExportActiveRequests ();
-            picker.Initialise (bitfield, data, pieces);
             Picker = picker;
+        }
+
+        internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
+        {
+            ChangePicker (originalPicker, bitfield);
+            Picker.Initialise (bitfield, data, Enumerable.Empty<Piece> ());
         }
 
         internal void Reset ()

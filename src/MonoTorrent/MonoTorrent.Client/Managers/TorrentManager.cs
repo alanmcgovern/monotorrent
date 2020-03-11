@@ -344,7 +344,6 @@ namespace MonoTorrent.Client
             Settings = settings;
 
             Initialise (savePath, baseDirectory, torrent.AnnounceUrls);
-            ChangePicker (CreateStandardPicker ());
         }
 
 
@@ -382,8 +381,6 @@ namespace MonoTorrent.Client
                 Torrent = torrent;
 
             Initialise (savePath, "", announces);
-            if (Torrent != null)
-                ChangePicker (CreateStandardPicker ());
         }
 
         void Initialise (string savePath, string baseDirectory, IList<RawTrackerTier> announces)
@@ -402,6 +399,7 @@ namespace MonoTorrent.Client
             Mode = new StoppedMode (this, null, null, null);
             CreateRateLimiters ();
 
+            ChangePicker (CreateStandardPicker ());
 
             if (HasMetadata) {
                 foreach (TorrentFile file in Torrent.Files)
@@ -432,7 +430,10 @@ namespace MonoTorrent.Client
         internal void ChangePicker (PiecePicker picker)
         {
             Check.Picker (picker);
-            PieceManager.ChangePicker (new IgnoringPicker (UnhashedPieces, picker), Bitfield, Torrent);
+            IEnumerable<Piece> pieces = PieceManager.Picker?.ExportActiveRequests () ?? new List<Piece> ();
+            PieceManager.ChangePicker (new IgnoringPicker (UnhashedPieces, picker), Bitfield);
+            if (Torrent != null)
+                PieceManager.Picker.Initialise (Bitfield, Torrent, pieces);
         }
 
         /// <summary>
