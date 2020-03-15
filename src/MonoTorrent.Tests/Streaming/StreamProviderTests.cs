@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.CodeDom;
+using System.IO;
 using System.Threading.Tasks;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PiecePicking;
-using MonoTorrent.Streaming;
 using NUnit.Framework;
 
 namespace MonoTorrent.Streaming
@@ -22,8 +20,8 @@ namespace MonoTorrent.Streaming
         public void Setup ()
         {
             Engine = new ClientEngine ();
-            MagnetLink = new MagnetLink (new InfoHash (new byte[20]), "MagnetDownload");
             Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Piece.BlockSize * 1024) }, Piece.BlockSize * 8);
+            MagnetLink = new MagnetLink (Torrent.InfoHash, "MagnetDownload");
         }
 
         [TearDown]
@@ -37,8 +35,42 @@ namespace MonoTorrent.Streaming
         public async Task DownloadMagnetLink ()
         {
             var provider = new StreamProvider (Engine, "testDir", MagnetLink, "magnetLinkDir");
+            Assert.IsNull (provider.Files);
+
             await provider.StartAsync ();
             CollectionAssert.Contains (Engine.Torrents, provider.Manager);
+        }
+
+        [Test]
+        public void DownloadMagnetLink_CachedTorrent ()
+        {
+            var metadataCacheDir = Path.Combine (Path.GetTempPath (), "magnetLinkDir");
+            var filePath = Path.Combine (metadataCacheDir, $"{MagnetLink.InfoHash.ToHex()}.torrent");
+            Directory.CreateDirectory (metadataCacheDir);
+            try {
+                File.WriteAllBytes (filePath, Torrent.ToDictionary ().Encode ());
+                var provider = new StreamProvider (Engine, "testDir", MagnetLink, metadataCacheDir);
+                Assert.IsNotNull (provider.Files);
+            } finally {
+                Directory.Delete (metadataCacheDir, true);
+            }
+        }
+
+        [Test]
+        public void DownloadMagnetLink_IncorrectCachedTorrent ()
+        {
+            var magnetLinkOtherInfoHash = new MagnetLink (new InfoHash (new byte[20]), "OtherHash");
+            var metadataCacheDir = Path.Combine (Path.GetTempPath (), "magnetLinkDir");
+            var filePath = Path.Combine (metadataCacheDir, $"{magnetLinkOtherInfoHash.InfoHash.ToHex ()}.torrent");
+            Directory.CreateDirectory (metadataCacheDir);
+            try {
+                // Write the data for one info hash into a torrent for another info hash.
+                File.WriteAllBytes (filePath, Torrent.ToDictionary ().Encode ());
+                var provider = new StreamProvider (Engine, "testDir", magnetLinkOtherInfoHash, metadataCacheDir);
+                Assert.IsNull (provider.Files);
+            } finally {
+                Directory.Delete (metadataCacheDir, true);
+            }
         }
 
         [Test]
@@ -176,6 +208,17 @@ namespace MonoTorrent.Streaming
             Assert.IsInstanceOf<StreamingPiecePicker> (provider.Manager.PieceManager.Picker.BasePicker.BasePicker.BasePicker);
             await provider.StartAsync ();
             Assert.IsInstanceOf<StreamingPiecePicker> (provider.Manager.PieceManager.Picker.BasePicker.BasePicker.BasePicker);
+        }
+
+        [Test]
+        public async Task WaitForMetadata_Cancellation ()
+        {
+            var provider = new StreamProvider (Engine, "testDir", MagnetLink, "magnetDir");
+            await provider.StartAsync ();
+
+            var metadataTask = provider.WaitForMetadataAsync ();
+            await provider.StopAsync ();
+            Assert.ThrowsAsync<TaskCanceledException> (() => metadataTask);
         }
     }
 }
