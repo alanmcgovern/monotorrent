@@ -28,8 +28,11 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PiecePicking;
@@ -51,10 +54,24 @@ namespace MonoTorrent.Streaming
         public bool Active { get; private set; }
 
         /// <summary>
+        /// Can be used to cancel pending operations when StopAsync is invoked.
+        /// </summary>
+        CancellationTokenSource Cancellation { get; set; }
+
+        /// <summary>
         /// Returns true when the <see cref="StreamProvider"/> has been paused.
         /// </summary>
         public bool Paused { get; private set; }
 
+        /// <summary>
+        /// If the <see cref="StreamProvider"/> was created using a <see cref="Torrent"/> then
+        /// the files will be available immediately. Otherwise the files will be available as soon
+        /// as the metadata has been downloaded. The <see cref="Task"/> returned by <see cref="WaitForMetadataAsync()"/>
+        /// will complete after this has been set to the list of files.
+        /// </summary>
+        public IList<TorrentFile> Files {
+            get; private set;
+        }
         /// <summary>
         /// The underlying <see cref="TorrentManager"/> used to download the data.
         /// It is safe to attach to events, retrieve state and also change any of
@@ -76,6 +93,7 @@ namespace MonoTorrent.Streaming
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
             Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
+            Files = Array.AsReadOnly (torrent.Files);
         }
 
         /// <summary>
@@ -85,12 +103,22 @@ namespace MonoTorrent.Streaming
         /// <param name="engine">The engine used to host the download.</param>
         /// <param name="saveDirectory">The directory where the torrents data will be saved</param>
         /// <param name="magnetLink">The MagnetLink to download</param>
-        /// <param name="metadataSaveDirectory">The directory where the metadata will be saved. The filename will be constucted using the InfoHash of the MagnetLink.</param>
+        /// <param name="metadataSaveDirectory">The directory where the metadata will be saved. The
+        /// filename will be constucted by appending '.torrent' to the value returned by <see cref="InfoHash.ToHex ()"/>
+        /// </param>
         public StreamProvider (ClientEngine engine, string saveDirectory, MagnetLink magnetLink, string metadataSaveDirectory)
         {
             Engine = engine;
-            Manager = new TorrentManager (magnetLink, saveDirectory, new TorrentSettings (), metadataSaveDirectory);
+            var path = Path.Combine (metadataSaveDirectory, $"{magnetLink.InfoHash.ToHex ()}.torrent");
+            Manager = new TorrentManager (magnetLink, saveDirectory, new TorrentSettings (), path);
             Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
+
+            // If the metadata for this MagnetLink has been downloaded/cached already, we will synchronously
+            // load it here and will have access to the list of Files. Otherwise we need to wait.
+            if (Manager.HasMetadata)
+                Files = Array.AsReadOnly (Manager.Torrent.Files);
+            else
+                Manager.MetadataReceived += (o, e) => Files = Array.AsReadOnly (e.torrent.Files);
         }
 
         /// <summary>
@@ -112,6 +140,7 @@ namespace MonoTorrent.Streaming
                     "stream the torrent using StreamProvider or to download it normally with the ClientEngine.");
             }
 
+            Cancellation = new CancellationTokenSource ();
             await Engine.Register (Manager);
             await Manager.StartAsync ();
             Active = true;
@@ -162,6 +191,8 @@ namespace MonoTorrent.Streaming
                     "The TorrentManager associated with this StreamProvider has already been stopped. " +
                     "It is an error to directly call StopAsync, PauseAsync or StartAsync on the TorrentManager.");
             }
+
+            Cancellation.Cancel ();
             await Manager.StopAsync ();
             await Engine.Unregister (Manager);
             ActiveStream.SafeDispose ();
@@ -202,6 +233,54 @@ namespace MonoTorrent.Streaming
             var stream = await CreateStreamAsync (file);
             var httpStreamer = new HttpStream (stream);
             return httpStreamer;
+        }
+
+        /// <summary>
+        /// If the <see cref="StreamProvider"/> was created using a MagnetLink, the <see cref="Task"/>
+        /// returned by this method will complete when the <see cref="Files"/> property is non-null. If
+        /// the <see cref="StreamProvider"/> was created using a <see cref="Torrent"/> instance then
+        /// this will return a completed task as <see cref="Files"/> will already be non-null.
+        /// This operation will be cancelled if <see cref="StopAsync"/> is invoked.
+        /// </summary>
+        public async Task WaitForMetadataAsync ()
+            => await WaitForMetadataAsync (CancellationToken.None);
+
+        /// <summary>
+        /// If the <see cref="StreamProvider"/> was created using a MagnetLink, the <see cref="Task"/>
+        /// returned by this method will complete when the <see cref="Files"/> property is non-null. If
+        /// the <see cref="StreamProvider"/> was created using a <see cref="Torrent"/> instance then
+        /// this will return a completed task as <see cref="Files"/> will already be non-null.
+        /// This operation will be cancelled if <see cref="StopAsync"/> is invoked.
+        /// </summary>
+        /// <param name="token">The cancellation token</param>
+        /// <returns></returns>
+        public async Task WaitForMetadataAsync (CancellationToken token)
+        {
+            if (!Active)
+                throw new InvalidOperationException ("You must call StartAsync first.");
+
+            if (Files != null)
+                return;
+
+            // Proxy to the main thread so there's no race condition
+            // between the metadata downloading and us attaching the
+            // EventHandler.
+            await ClientEngine.MainLoop;
+            token.ThrowIfCancellationRequested ();
+
+            // Cancel if the user call StopAsync or if they cancel the token they passed in
+            var cts = CancellationTokenSource.CreateLinkedTokenSource (token, Cancellation.Token);
+
+            // If the files still aren't available then let's wait for the metadata
+            // to be downloaded.
+            if (Files == null) {
+                var tcs = new TaskCompletionSource<bool> ();
+                using var reg = cts.Token.Register (() => tcs.TrySetCanceled ());
+                // The EventHandler set during StartAsync will ensure the list of
+                // files has been set.
+                Manager.MetadataReceived += (o, e) => tcs.TrySetResult (true);
+                await tcs.Task;
+            }
         }
     }
 }

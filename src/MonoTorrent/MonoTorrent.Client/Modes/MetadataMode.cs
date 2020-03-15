@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.Modes
                             };
                             // FIXME: Add the trackers too
                             if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
-                                Manager.RaiseMetadataReceived (dict);
+                                Manager.RaiseMetadataReceived (t, dict);
                                 if (stopWhenDone)
                                     return;
 
