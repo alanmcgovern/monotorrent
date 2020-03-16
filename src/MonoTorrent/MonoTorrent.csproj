@@ -71,7 +71,7 @@ Notable features include:
 -Endgame mode
 -Per torrent and global rate limiting
 -Individual file relocation</PackageDescription>
-      <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+      <PackageLicenseFile>LICENSE</PackageLicenseFile>
       <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
       <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
       <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
@@ -96,7 +96,7 @@ Notable features include:
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\LICENSE.md" Pack="true" PackagePath="/" />
+    <Content Include="..\..\LICENSE" Pack="true" PackagePath="/" />
   </ItemGroup>
     
   <ItemGroup>
