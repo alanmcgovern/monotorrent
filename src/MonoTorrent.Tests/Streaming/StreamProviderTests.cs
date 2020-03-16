@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PiecePicking;
@@ -88,7 +89,7 @@ namespace MonoTorrent.Streaming
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
             await provider.StartAsync ();
-            using var stream = provider.CreateStreamAsync (Torrent.Files[0]);
+            using var stream = await provider.CreateStreamAsync (Torrent.Files[0], false, CancellationToken.None);
             Assert.IsNotNull (stream);
         }
 
@@ -104,8 +105,8 @@ namespace MonoTorrent.Streaming
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
             await provider.StartAsync ();
-            using var stream = provider.CreateStreamAsync (Torrent.Files[0]);
-            Assert.ThrowsAsync<InvalidOperationException> (() => provider.CreateStreamAsync (Torrent.Files[0]));
+            using var stream = await provider.CreateStreamAsync (Torrent.Files[0], false, CancellationToken.None);
+            Assert.ThrowsAsync<InvalidOperationException> (() => provider.CreateStreamAsync (Torrent.Files[0], false, CancellationToken.None));
         }
 
         [Test]

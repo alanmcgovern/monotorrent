@@ -201,12 +201,38 @@ namespace MonoTorrent.Streaming
 
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
-        /// while it is downloading. This stream is seekable and readable. This stream must be disposed
+        /// while it is downloading. This stream is seekable and readable. The first and last pieces of
+        /// this file will be buffered before the stream is created. Finally, this stream must be disposed
         /// before another stream can be created.
         /// </summary>
-        /// <param name="file"></param>
+        /// <param name="file">The file to open</param>
         /// <returns></returns>
         public Task<Stream> CreateStreamAsync (TorrentFile file)
+            => CreateStreamAsync (file, prebuffer: true, CancellationToken.None);
+
+        /// <summary>
+        /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
+        /// while it is downloading. This stream is seekable and readable. The first and last pieces of
+        /// this file will be buffered before the stream is created. Finally, this stream must be disposed
+        /// before another stream can be created.
+        /// </summary>
+        /// <param name="file">The file to open</param>
+        /// <param name="token">The cancellation token</param>
+        /// <returns></returns>
+        public Task<Stream> CreateStreamAsync (TorrentFile file, CancellationToken token)
+            => CreateStreamAsync (file, prebuffer: true, token);
+
+        /// <summary>
+        /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
+        /// while it is downloading. This stream is seekable and readable. The first and last pieces of
+        /// this file will be buffered before the stream is created if <paramref name="prebuffer"/> is
+        /// set to true. Finally, this stream must be disposed before another stream can be created.
+        /// </summary>
+        /// <param name="file">The file to open</param>
+        /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns></returns>
+        public async Task<Stream> CreateStreamAsync (TorrentFile file, bool prebuffer, CancellationToken token)
         {
             if (file == null)
                 throw new ArgumentNullException (nameof (file));
@@ -216,9 +242,19 @@ namespace MonoTorrent.Streaming
                 throw new InvalidOperationException ("You must call StartAsync before creating a stream.");
             if (ActiveStream != null && !ActiveStream.Disposed)
                 throw new InvalidOperationException ("You must Dispose the previous stream before creating a new one.");
+
             Picker.SeekToPosition (file, 0);
             ActiveStream = new LocalStream (Manager, file, Picker);
-            return Task.FromResult<Stream> (ActiveStream);
+
+            var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
+            if (prebuffer) {
+                ActiveStream.Seek (ActiveStream.Length - 1, SeekOrigin.Begin);
+                await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
+
+                ActiveStream.Seek (0, SeekOrigin.Begin);
+                await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
+            }
+            return ActiveStream;
         }
 
         /// <summary>
@@ -226,11 +262,34 @@ namespace MonoTorrent.Streaming
         /// while it is downloading. This stream is seekable and readable. This stream must be disposed
         /// before another stream can be created.
         /// </summary>
-        /// <param name="file"></param>
+        /// <param name="file">The file to open</param>
         /// <returns></returns>
-        public async Task<IUriStream> CreateHttpStreamAsync (TorrentFile file)
+        public Task<IUriStream> CreateHttpStreamAsync (TorrentFile file)
+            => CreateHttpStreamAsync (file, prebuffer: true, CancellationToken.None);
+
+        /// <summary>
+        /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
+        /// while it is downloading. This stream is seekable and readable. This stream must be disposed
+        /// before another stream can be created.
+        /// </summary>
+        /// <param name="file">The file to open</param>
+        /// <param name="token">The cancellation token</param>
+        /// <returns></returns>
+        public Task<IUriStream> CreateHttpStreamAsync (TorrentFile file, CancellationToken token)
+            => CreateHttpStreamAsync (file, prebuffer: true, token);
+
+        /// <summary>
+        /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
+        /// while it is downloading. This stream is seekable and readable. This stream must be disposed
+        /// before another stream can be created.
+        /// </summary>
+        /// <param name="file">The file to open</param>
+        /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
+        /// <param name="token">The cancellation token</param>
+        /// <returns></returns>
+        public async Task<IUriStream> CreateHttpStreamAsync (TorrentFile file, bool prebuffer, CancellationToken token)
         {
-            var stream = await CreateStreamAsync (file);
+            var stream = await CreateStreamAsync (file, prebuffer, token);
             var httpStreamer = new HttpStream (stream);
             return httpStreamer;
         }
