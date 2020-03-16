@@ -29,20 +29,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace MonoTorrent
 {
+    [DebuggerDisplay("InfoHash: (hex) {System.BitConverter.ToString (Hash)}")]
     public class InfoHash : IEquatable<InfoHash>
     {
-        static readonly Dictionary<char, byte> base32DecodeTable;
+        static readonly Dictionary<char, byte> Base32DecodeTable;
 
         static InfoHash ()
         {
-            base32DecodeTable = new Dictionary<char, byte> ();
-            string table = "abcdefghijklmnopqrstuvwxyz234567";
+            Base32DecodeTable = new Dictionary<char, byte> ();
+            const string table = "abcdefghijklmnopqrstuvwxyz234567";
             for (int i = 0; i < table.Length; i++)
-                base32DecodeTable[table[i]] = (byte) i;
+                Base32DecodeTable[table[i]] = (byte) i;
         }
 
         internal byte[] Hash { get; }
@@ -51,7 +53,7 @@ namespace MonoTorrent
         {
             Check.InfoHash (infoHash);
             if (infoHash.Length != 20)
-                throw new ArgumentException ("Infohash must be exactly 20 bytes long");
+                throw new ArgumentException ("InfoHash must be exactly 20 bytes long", nameof (infoHash));
             Hash = (byte[]) infoHash.Clone ();
         }
 
@@ -94,11 +96,6 @@ namespace MonoTorrent
             return sb.ToString ();
         }
 
-        public override string ToString ()
-        {
-            return BitConverter.ToString (Hash);
-        }
-
         public string UrlEncode ()
         {
             return UriHelper.UrlEncode (Hash);
@@ -106,9 +103,9 @@ namespace MonoTorrent
 
         public static bool operator == (InfoHash left, InfoHash right)
         {
-            if ((object) left == null)
-                return (object) right == null;
-            if ((object) right == null)
+            if (left is null)
+                return right is null;
+            if (right is null)
                 return false;
             return Toolbox.ByteMatch (left.Hash, right.Hash);
         }
@@ -122,16 +119,16 @@ namespace MonoTorrent
         {
             Check.InfoHash (infoHash);
             if (infoHash.Length != 32)
-                throw new ArgumentException ("Infohash must be a base32 encoded 32 character string");
+                throw new ArgumentException ("InfoHash must be a base32 encoded 32 character string", nameof (infoHash));
 
             infoHash = infoHash.ToLower ();
-            int infohashOffset = 0;
+            int infoHashOffset = 0;
             byte[] hash = new byte[20];
             byte[] temp = new byte[8];
             for (int i = 0; i < hash.Length;) {
                 for (int j = 0; j < 8; j++)
-                    if (!base32DecodeTable.TryGetValue (infoHash[infohashOffset++], out temp[j]))
-                        throw new ArgumentException ("infoHash", "Value is not a valid base32 encoded string");
+                    if (!Base32DecodeTable.TryGetValue (infoHash[infoHashOffset++], out temp[j]))
+                        throw new ArgumentException ("Value is not a valid base32 encoded string", nameof (infoHash));
 
                 //8 * 5bits = 40 bits = 5 bytes
                 hash[i++] = (byte) ((temp[0] << 3) | (temp[1] >> 2));
@@ -148,7 +145,7 @@ namespace MonoTorrent
         {
             Check.InfoHash (infoHash);
             if (infoHash.Length != 40)
-                throw new ArgumentException ("Infohash must be 40 characters long");
+                throw new ArgumentException ("InfoHash must be 40 characters long", nameof (infoHash));
 
             byte[] hash = new byte[20];
             for (int i = 0; i < hash.Length; i++)
@@ -157,30 +154,9 @@ namespace MonoTorrent
             return new InfoHash (hash);
         }
 
+        [Obsolete("Use MagnetLink.Parse instead of this method")]
         public static InfoHash FromMagnetLink (string magnetLink)
-        {
-            Check.MagnetLink (magnetLink);
-            if (!magnetLink.StartsWith ("magnet:?"))
-                throw new ArgumentException ("Invalid magnet link format");
-            magnetLink = magnetLink.Substring ("magnet:?".Length);
-            int hashStart = magnetLink.IndexOf ("xt=urn:btih:");
-            if (hashStart == -1)
-                throw new ArgumentException ("Magnet link does not contain an infohash");
-            hashStart += "xt=urn:btih:".Length;
-
-            int hashEnd = magnetLink.IndexOf ('&', hashStart);
-            if (hashEnd == -1)
-                hashEnd = magnetLink.Length;
-
-            switch (hashEnd - hashStart) {
-                case 32:
-                    return FromBase32 (magnetLink.Substring (hashStart, 32));
-                case 40:
-                    return FromHex (magnetLink.Substring (hashStart, 40));
-                default:
-                    throw new ArgumentException ("Infohash must be base32 or hex encoded.");
-            }
-        }
+        => MagnetLink.Parse (magnetLink).InfoHash;
 
         public static InfoHash UrlDecode (string infoHash)
         {
