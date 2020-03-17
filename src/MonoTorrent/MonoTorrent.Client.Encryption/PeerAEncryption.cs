@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Encryption
             SKEY = InfoHash;
         }
 
-        protected override async ReusableTask doneReceiveY ()
+        protected override async ReusableTask DoneReceiveY ()
         {
             CreateCryptors (KeyABytes, KeyBBytes);
 
@@ -109,9 +109,9 @@ namespace MonoTorrent.Client.Encryption
             await Synchronize (VerificationConstant, 616).ConfigureAwait (false); // 4 B->A: ENCRYPT(VC)
         }
 
-        protected override async ReusableTask doneSynchronize ()
+        protected override async ReusableTask DoneSynchronize ()
         {
-            await base.doneSynchronize ().ConfigureAwait (false); // 4 B->A: ENCRYPT(VC, ...
+            await base.DoneSynchronize ().ConfigureAwait (false); // 4 B->A: ENCRYPT(VC, ...
 
             // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
             byte[] padD = null;

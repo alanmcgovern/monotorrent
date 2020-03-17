@@ -58,9 +58,9 @@ namespace MonoTorrent.Client
             int longestCalculatedInactiveTime = 0; // Seconds we calculated for the least attractive candidate
 
             // FIXME These three variables aren't used in the calculation - need to fix this.
-            int candidateSecondsConnected = 0;
-            int candidateSecondsSinceLastBlock = -1;
-            int candidateDataBytes = -1;
+            int candidateSecondsConnected ;
+            int candidateSecondsSinceLastBlock;
+            int candidateDataBytes;
             for (int i = 0; i < TorrentManager.Peers.ConnectedPeers.Count; i++) {
                 PeerId nextPeer = TorrentManager.Peers.ConnectedPeers[i];
                 if (nextPeer.Monitor.DataBytesDownloaded == 0 && nextPeer.WhenConnected.Elapsed > TorrentManager.Settings.TimeToWaitUntilIdle) {

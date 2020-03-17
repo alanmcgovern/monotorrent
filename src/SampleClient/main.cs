@@ -124,7 +124,7 @@ namespace SampleClient
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add (manager);
-                    manager.PeersFound += manager_PeersFound;
+                    manager.PeersFound += Manager_PeersFound;
                 }
             }
 
@@ -223,7 +223,7 @@ namespace SampleClient
             }
         }
 
-        static void manager_PeersFound (object sender, PeersAddedEventArgs e)
+        static void Manager_PeersFound (object sender, PeersAddedEventArgs e)
         {
             lock (listener)
                 listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");

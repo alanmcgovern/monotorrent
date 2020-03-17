@@ -148,10 +148,10 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.AreEqual (2, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual (2, other.AmRequestingPiecesCount, "#1");
 
-            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out Piece piece))
+            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out _))
                 Assert.Fail ("I should've validated!");
 
-            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
+            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out _))
                 Assert.Fail ("I should not have validated!");
 
             Assert.AreEqual (1, id.AmRequestingPiecesCount, "#1");
@@ -174,7 +174,7 @@ namespace MonoTorrent.Client.PiecePicking
                 requests.Add (m);
 
             foreach (var message in requests)
-                Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece));
+                Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out _));
 
             Assert.IsNotNull (picker.PickPiece (id, id.BitField, new List<PeerId> ()));
         }

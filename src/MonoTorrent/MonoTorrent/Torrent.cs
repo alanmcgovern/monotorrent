@@ -779,8 +779,7 @@ namespace MonoTorrent
                         var announces = (BEncodedList) keypair.Value;
 
                         for (int j = 0; j < announces.Count; j++) {
-                            if (announces[j] is BEncodedList) {
-                                var bencodedTier = (BEncodedList) announces[j];
+                            if (announces[j] is BEncodedList bencodedTier) {
                                 var tier = new List<string> (bencodedTier.Count);
 
                                 for (int k = 0; k < bencodedTier.Count; k++)

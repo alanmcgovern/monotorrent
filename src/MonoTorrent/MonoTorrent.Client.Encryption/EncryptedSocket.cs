@@ -224,10 +224,10 @@ namespace MonoTorrent.Client.Encryption
             byte[] otherY = new byte[96];
             await ReceiveMessage (otherY, 96).ConfigureAwait (false);
             S = ModuloCalculator.Calculate (otherY, X);
-            await doneReceiveY ().ConfigureAwait (false);
+            await DoneReceiveY ().ConfigureAwait (false);
         }
 
-        protected abstract ReusableTask doneReceiveY ();
+        protected abstract ReusableTask DoneReceiveY ();
 
         #endregion
 
@@ -256,7 +256,7 @@ namespace MonoTorrent.Client.Encryption
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
                 {
-                    await doneSynchronize ().ConfigureAwait (false);
+                    await DoneSynchronize ().ConfigureAwait (false);
                     return;
                 } else {
                     // See if the current window contains the first byte of the expected synchronize data
@@ -280,7 +280,7 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException ("Couldn't synchronise 1");
         }
 
-        protected virtual ReusableTask doneSynchronize ()
+        protected virtual ReusableTask DoneSynchronize ()
         {
             return ReusableTask.CompletedTask;
         }

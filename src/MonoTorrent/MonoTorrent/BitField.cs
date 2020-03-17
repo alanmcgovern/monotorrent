@@ -67,7 +67,7 @@ namespace MonoTorrent
             if (array.Length < 1)
                 throw new ArgumentOutOfRangeException (nameof (array), "Array length must be greater than zero");
 
-            FromArray (array, 0, array.Length);
+            FromArray (array, 0);
         }
 
         public BitField (int length)
@@ -254,14 +254,14 @@ namespace MonoTorrent
 
             return -1;              // Nothing is true
         }
-        internal void FromArray (byte[] buffer, int offset, int length)
+        internal void FromArray (byte[] buffer, int offset)
         {
             int end = Length / 32;
             for (int i = 0; i < end; i++)
                 array[i] = (buffer[offset++] << 24) |
                            (buffer[offset++] << 16) |
                            (buffer[offset++] << 8) |
-                           (buffer[offset++] << 0);
+                           (buffer[offset++]);
 
             int shift = 24;
             for (int i = end * 32; i < Length; i += 8) {
@@ -425,7 +425,7 @@ namespace MonoTorrent
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         static uint CountBits (uint v)
         {
-            v = v - ((v >> 1) & 0x55555555);
+            v -= (v >> 1) & 0x55555555;
             v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
             return (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101)) >> 24;
         }

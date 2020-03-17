@@ -94,12 +94,13 @@ namespace MonoTorrent.Client
         [Test]
         public void DecodeDictionary ()
         {
-            BEncodedList list = new BEncodedList ();
+            var list = new BEncodedList ();
             foreach (Peer p in peers) {
-                BEncodedDictionary dict = new BEncodedDictionary ();
-                dict.Add ("ip", (BEncodedString) p.ConnectionUri.Host);
-                dict.Add ("port", (BEncodedNumber) p.ConnectionUri.Port);
-                dict.Add ("peer id", p.PeerId);
+                var dict = new BEncodedDictionary {
+                    {"ip", (BEncodedString) p.ConnectionUri.Host},
+                    {"port", (BEncodedNumber) p.ConnectionUri.Port},
+                    {"peer id", p.PeerId}
+                };
                 list.Add (dict);
             }
 
@@ -119,12 +120,13 @@ namespace MonoTorrent.Client
         public void DecodePeerId ()
         {
             var peerId = new BEncodedString (Enumerable.Repeat ((byte) 255, 20).ToArray ());
-            var dict = new BEncodedDictionary ();
-            dict.Add ("ip", (BEncodedString) "1237.1.2.3");
-            dict.Add ("port", (BEncodedNumber) 12345);
+            var dict = new BEncodedDictionary {
+                {"ip", (BEncodedString) "1237.1.2.3"},
+                {"port", (BEncodedNumber) 12345}
+            };
             dict["peer id"] = peerId;
 
-            var peer = Peer.Decode (new BEncodedList { dict }).Single ();
+            var peer = Peer.Decode (new BEncodedList {dict}).Single ();
             Assert.AreEqual (peerId, peer.PeerId, "#1");
         }
 

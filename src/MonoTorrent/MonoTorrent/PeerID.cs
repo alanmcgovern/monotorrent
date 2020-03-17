@@ -311,39 +311,21 @@ namespace MonoTorrent
             #endregion
 
             #region Shadows Style
+
             if ((m = shadows.Match (idAsText)).Success) {
                 ShortId = m.Groups[1].Value;
-                switch (m.Groups[2].Value) {
-                    case ("A"):
-                        Client = ClientApp.ABC;
-                        break;
-
-                    case ("O"):
-                        Client = ClientApp.OspreyPermaseed;
-                        break;
-
-                    case ("R"):
-                        Client = ClientApp.Tribler;
-                        break;
-
-                    case ("S"):
-                        Client = ClientApp.ShadowsClient;
-                        break;
-
-                    case ("T"):
-                        Client = ClientApp.BitTornado;
-                        break;
-
-                    case ("U"):
-                        Client = ClientApp.UPnPNatBitTorrent;
-                        break;
-
-                    default:
-                        Client = ClientApp.Unknown;
-                        break;
-                }
+                Client = m.Groups[2].Value switch {
+                    ("A") => ClientApp.ABC,
+                    ("O") => ClientApp.OspreyPermaseed,
+                    ("R") => ClientApp.Tribler,
+                    ("S") => ClientApp.ShadowsClient,
+                    ("T") => ClientApp.BitTornado,
+                    ("U") => ClientApp.UPnPNatBitTorrent,
+                    _ => ClientApp.Unknown,
+                };
                 return;
             }
+
             #endregion
 
             #region Brams Client

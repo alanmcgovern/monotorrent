@@ -201,10 +201,10 @@ namespace SampleTracker
 
         private static int GetInt ()
         {
-            int ret = 0;
-            while (!int.TryParse (Console.ReadLine (), out ret)) {
+            while (true) {
+                if (int.TryParse (Console.ReadLine (), out int ret))
+                    return ret;
             }
-            return ret;
         }
     }
 }

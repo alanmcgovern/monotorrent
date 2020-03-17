@@ -174,7 +174,7 @@ namespace MonoTorrent.BEncoding
             int prefix = TextBytes.Length == 0 ? 2 : 1; // Account for ':'
 
             // Count the number of characters needed for the length prefix
-            for (int i = TextBytes.Length; i != 0; i = i / 10)
+            for (int i = TextBytes.Length; i != 0; i /= 10)
                 prefix += 1;
 
             return prefix + TextBytes.Length;

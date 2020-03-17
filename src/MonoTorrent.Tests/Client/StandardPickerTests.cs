@@ -315,7 +315,7 @@ namespace MonoTorrent.Client.PiecePicking
             picker.CancelRequests (peer);
             for (int i = 0; i < piece.BlockCount; i++) {
                 message = picker.PickPiece (peer, peer.BitField, peers);
-                Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece p), "#2." + i);
+                Assert.IsTrue (picker.ValidatePiece (peer, message.PieceIndex, message.StartOffset, message.RequestLength, out _), "#2." + i);
             }
             Assert.IsTrue (piece.AllBlocksRequested, "#3");
             Assert.IsTrue (piece.AllBlocksReceived, "#4");

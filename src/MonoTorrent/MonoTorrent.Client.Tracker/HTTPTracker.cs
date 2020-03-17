@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Tracker
             try {
                 using CancellationTokenRegistration responseRegistration = cts.Token.Register (() => response.Close ());
                 using (response) {
-                    peers = await AnnounceReceivedAsync (request, response).ConfigureAwait (false);
+                    peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
                     Status = TrackerState.Ok;
                     return peers;
                 }
@@ -233,7 +233,7 @@ namespace MonoTorrent.Client.Tracker
             return Uri.GetHashCode ();
         }
 
-        async Task<List<Peer>> AnnounceReceivedAsync (WebRequest request, WebResponse response)
+        async Task<List<Peer>> AnnounceReceivedAsync (WebResponse response)
         {
             await MainLoop.SwitchToThreadpool ();
 

@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
                                 // if the peer has never sent us any data)
                                 double newInterval = peer.LastUnchoked.Elapsed.TotalSeconds;
                                 if (peer.Monitor.DataBytesDownloaded == 0)
-                                    newInterval = newInterval / 2;
+                                    newInterval /= 2;
                                 if (newInterval > longestIntervalPeerTime) {
                                     //The new peer has a longer interval than the current one, replace it
                                     longestIntervalPeer = peer;

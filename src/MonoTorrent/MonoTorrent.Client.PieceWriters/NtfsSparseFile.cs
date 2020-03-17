@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
             var volumeName = new StringBuilder (MAX_PATH);
             var systemName = new StringBuilder (MAX_PATH);
 
-            bool result = GetVolumeInformationW (volume, volumeName, MAX_PATH, out uint serialNumber, out uint maxComponent, out uint fsFlags, systemName, MAX_PATH);
+            bool result = GetVolumeInformationW (volume, volumeName, MAX_PATH, out _, out _, out uint fsFlags, systemName, MAX_PATH);
             return result && (fsFlags & FILE_SUPPORTS_SPARSE_FILES) == FILE_SUPPORTS_SPARSE_FILES;
         }
 

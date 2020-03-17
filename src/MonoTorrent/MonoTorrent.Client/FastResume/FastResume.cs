@@ -90,31 +90,23 @@ namespace MonoTorrent.Client
 
             Bitfield = new BitField ((int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
             byte[] data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
-            Bitfield.FromArray (data, 0, data.Length);
+            Bitfield.FromArray (data, 0);
 
             UnhashedPieces = new BitField (Bitfield.Length);
             // If we're loading up an older version of the FastResume data then we
             if (dict.ContainsKey (UnhashedPiecesKey)) {
                 data = ((BEncodedString) dict[UnhashedPiecesKey]).TextBytes;
-                UnhashedPieces.FromArray (data, 0, data.Length);
+                UnhashedPieces.FromArray (data, 0);
             }
         }
 
-        void CheckContent (BEncodedDictionary dict, BEncodedString key, BEncodedNumber value)
-        {
-            CheckContent (dict, key);
-            if (!dict[key].Equals (value))
-                throw new TorrentException (
-                    $"Invalid FastResume data. The value of '{key}' was '{dict[key]}' instead of '{value}'");
-        }
-
-        void CheckContent (BEncodedDictionary dict, BEncodedString key)
+        static void CheckContent (BEncodedDictionary dict, BEncodedString key)
         {
             if (!dict.ContainsKey (key))
                 throw new TorrentException ($"Invalid FastResume data. Key '{key}' was not present");
         }
 
-        void CheckVersion (BEncodedDictionary dict)
+        static void CheckVersion (BEncodedDictionary dict)
         {
             long? version = (dict[VersionKey] as BEncodedNumber)?.Number;
             if (version.GetValueOrDefault () == 1 || version.GetValueOrDefault () == 2)
