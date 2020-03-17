@@ -47,11 +47,5 @@ namespace MonoTorrent.Client.RateLimiters
         {
             return Unlimited;
         }
-
-        public void UpdateChunks (long maxRate, long actualRate)
-        {
-            // This is a simple on/off limiter which prevents
-            // additional downloading if the diskwriter is backlogged
-        }
     }
 }

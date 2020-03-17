@@ -271,10 +271,11 @@ namespace MonoTorrent.Common
         public void benListEncoding ()
         {
             byte[] data = Encoding.UTF8.GetBytes ("l4:test5:tests6:testede");
-            BEncodedList list = new BEncodedList ();
-            list.Add (new BEncodedString ("test"));
-            list.Add (new BEncodedString ("tests"));
-            list.Add (new BEncodedString ("tested"));
+            BEncodedList list = new BEncodedList {
+                new BEncodedString ("test"),
+                new BEncodedString ("tests"),
+                new BEncodedString ("tested")
+            };
 
             Assert.IsTrue (Toolbox.ByteMatch (data, list.Encode ()));
         }
@@ -283,10 +284,11 @@ namespace MonoTorrent.Common
         public void benListEncodingBuffered ()
         {
             byte[] data = Encoding.UTF8.GetBytes ("l4:test5:tests6:testede");
-            BEncodedList list = new BEncodedList ();
-            list.Add (new BEncodedString ("test"));
-            list.Add (new BEncodedString ("tests"));
-            list.Add (new BEncodedString ("tested"));
+            BEncodedList list = new BEncodedList {
+                new BEncodedString ("test"),
+                new BEncodedString ("tests"),
+                new BEncodedString ("tested")
+            };
             byte[] result = new byte[list.LengthInBytes ()];
             list.Encode (result, 0);
             Assert.IsTrue (Toolbox.ByteMatch (data, result));
@@ -346,10 +348,11 @@ namespace MonoTorrent.Common
         {
             byte[] data = Encoding.UTF8.GetBytes ("d4:spaml1:a1:bee");
 
-            BEncodedDictionary dict = new BEncodedDictionary ();
-            BEncodedList list = new BEncodedList ();
-            list.Add (new BEncodedString ("a"));
-            list.Add (new BEncodedString ("b"));
+            var dict = new BEncodedDictionary ();
+            var list = new BEncodedList {
+                new BEncodedString ("a"),
+                new BEncodedString ("b")
+            };
             dict.Add ("spam", list);
             Assert.AreEqual (Encoding.UTF8.GetString (data), Encoding.UTF8.GetString (dict.Encode ()));
             Assert.IsTrue (Toolbox.ByteMatch (data, dict.Encode ()));
@@ -359,10 +362,11 @@ namespace MonoTorrent.Common
         public void benDictionaryEncodingBuffered ()
         {
             byte[] data = Encoding.UTF8.GetBytes ("d4:spaml1:a1:bee");
-            BEncodedDictionary dict = new BEncodedDictionary ();
-            BEncodedList list = new BEncodedList ();
-            list.Add (new BEncodedString ("a"));
-            list.Add (new BEncodedString ("b"));
+            var dict = new BEncodedDictionary ();
+            var list = new BEncodedList {
+                new BEncodedString ("a"),
+                new BEncodedString ("b")
+            };
             dict.Add ("spam", list);
             byte[] result = new byte[dict.LengthInBytes ()];
             dict.Encode (result, 0);
@@ -448,7 +452,7 @@ namespace MonoTorrent.Common
         [Test]
         public void BEncodedString_Compare ()
         {
-            Assert.Less (0, new BEncodedString ().CompareTo ((object)null));
+            Assert.Less (0, new BEncodedString ().CompareTo ((object) null));
             Assert.AreEqual (0, new BEncodedString ().CompareTo (new BEncodedString ()));
             Assert.AreEqual (0, new BEncodedString ("a").CompareTo (new BEncodedString ("a")));
         }
@@ -523,8 +527,9 @@ namespace MonoTorrent.Common
         [Test]
         public void DecodeTorrentWithDict ()
         {
-            var dict = new BEncodedDictionary ();
-            dict.Add ("other", new BEncodedDictionary { { (BEncodedString) "test", (BEncodedString) "value" } });
+            var dict = new BEncodedDictionary {
+                { "other", new BEncodedDictionary   { { "test", new BEncodedString ("value") } } }
+            };
 
             var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
             Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
@@ -533,8 +538,12 @@ namespace MonoTorrent.Common
         [Test]
         public void DecodeTorrentWithInfo ()
         {
-            var dict = new BEncodedDictionary ();
-            dict.Add ("info", new BEncodedDictionary { { (BEncodedString) "test", (BEncodedString) "value" } });
+            var infoDict = new BEncodedDictionary {
+                { "test", new BEncodedString ("value") }
+            };
+            var dict = new BEncodedDictionary {
+                { "info", infoDict }
+            };
 
             var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
             Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));

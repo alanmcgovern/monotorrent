@@ -447,14 +447,15 @@ namespace MonoTorrent.Client
         static void AddFiles (BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
         {
             long totalSize = pieceLength - 1;
-            BEncodedList bFiles = new BEncodedList ();
+            var bFiles = new BEncodedList ();
             for (int i = 0; i < files.Length; i++) {
-                BEncodedList path = new BEncodedList ();
+                var path = new BEncodedList ();
                 foreach (string s in files[i].Path.Split ('/'))
                     path.Add ((BEncodedString) s);
-                BEncodedDictionary d = new BEncodedDictionary ();
-                d["path"] = path;
-                d["length"] = (BEncodedNumber) files[i].Length;
+                var d = new BEncodedDictionary {
+                    ["path"] = path,
+                    ["length"] = (BEncodedNumber) files[i].Length
+                };
                 bFiles.Add (d);
                 totalSize += files[i].Length;
             }

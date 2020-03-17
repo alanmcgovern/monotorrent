@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            BitField.FromArray (buffer, offset, length);
+            BitField.FromArray (buffer, offset);
         }
 
         public override int Encode (byte[] buffer, int offset)

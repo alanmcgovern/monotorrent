@@ -13,18 +13,17 @@ namespace MonoTorrent.BEncoding
 
         internal static BEncodedDictionary DecodeTorrent (RawReader reader)
         {
-            BEncodedString key = null;
-            BEncodedValue value = null;
             var torrent = new BEncodedDictionary ();
             if (reader.ReadByte () != 'd')
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             int read;
             while ((read = reader.ReadByte ()) != -1 && read != 'e') {
-                key = (BEncodedString) Decode (reader, read);         // keys have to be BEncoded strings
+                BEncodedValue value;
+                var key = (BEncodedString) Decode (reader, read);         // keys have to be BEncoded strings
 
                 if ((read = reader.ReadByte ()) == 'd') {
-                    value = DecodeDictionary (reader, key == InfoKey);
+                    value = DecodeDictionary (reader, InfoKey.Equals (key));
                 } else
                     value = Decode (reader, read);                     // the value is a BEncoded value
 

@@ -191,10 +191,11 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public void ScrapeResponseTest ()
         {
-            List<ScrapeDetails> details = new List<ScrapeDetails> ();
-            details.Add (new ScrapeDetails (1, 2, 3));
-            details.Add (new ScrapeDetails (4, 5, 6));
-            details.Add (new ScrapeDetails (7, 8, 9));
+            List<ScrapeDetails> details = new List<ScrapeDetails> {
+                new ScrapeDetails (1, 2, 3),
+                new ScrapeDetails (4, 5, 6),
+                new ScrapeDetails (7, 8, 9)
+            };
 
             ScrapeResponseMessage m = new ScrapeResponseMessage (12345, details);
             ScrapeResponseMessage d = (ScrapeResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Response);

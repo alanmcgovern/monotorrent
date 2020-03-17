@@ -142,7 +142,7 @@ namespace MonoTorrent.Client
 
         void AllocateSlots (int alreadyUnchoked)
         {
-            PeerId peer = null;
+            PeerId peer;
 
             //Allocate interested peers to slots based on the latest review results
             //First determine how many slots are available to be allocated
@@ -370,54 +370,6 @@ namespace MonoTorrent.Client
             ReviewsExecuted++;
         }
 
-
-        /// <summary>
-        /// Review method for BitTyrant Choking/Unchoking Algorithm
-        /// </summary>
-        void ExecuteTyrantReview ()
-        {
-            // if we are seeding, don't deal with it - just send it to old method
-            if (!isDownloading)
-                ExecuteReview ();
-
-            var sortedPeers = new List<PeerId> ();
-
-            foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers) {
-                if (connectedPeer.Connection != null) {
-                    // update tyrant stats
-                    connectedPeer.UpdateTyrantStats ();
-                    sortedPeers.Add (connectedPeer);
-                }
-            }
-
-            // sort the list by BitTyrant ratio
-            sortedPeers.Sort ((p1, p2) => p2.Ratio.CompareTo (p1.Ratio));
-
-            //TODO: Make sure that lan-local peers always get unchoked. Perhaps an implementation like AZInstanceManager
-            //(in com.aelitis.azureus.core.instancemanager)
-
-
-            // After this is complete, sort them and and unchoke until upload capcity is met
-            // TODO: Should we consider some extra measures, like nascent peers, candidatePeers, optimisticUnchokeCandidates ETC.
-
-            int uploadBandwidthUsed = 0;
-            foreach (PeerId pid in sortedPeers) {
-                // unchoke the top interested peers till we reach the max bandwidth allotted.
-                if (uploadBandwidthUsed < owningTorrent.Settings.MaximumUploadSpeed && pid.IsInterested) {
-                    Unchoke (pid);
-
-                    uploadBandwidthUsed += pid.UploadRateForRecip;
-                } else {
-                    Choke (pid);
-                }
-            }
-
-            timeOfLastReview = DateTime.Now;
-            ReviewsExecuted++;
-
-        }
-
-
         /// <summary>
         /// Reallocates the specified number of upload slots
         /// </summary>
@@ -500,13 +452,6 @@ namespace MonoTorrent.Client
                     Peer.Enqueue (new RejectRequestMessage (pieceMessage));
                 }
             }
-        }
-
-        static double SecondsBetween (DateTime FirstTime, DateTime SecondTime)
-        {
-            //Calculate the number of seconds and fractions of a second that have elapsed between the first time and the second
-            TimeSpan difference = SecondTime.Subtract (FirstTime);
-            return difference.TotalMilliseconds / 1000;
         }
 
         public void Unchoke (PeerId PeerToUnchoke)

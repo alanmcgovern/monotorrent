@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write (buffer, written, TransactionId);
             written += Write (buffer, written, ConnectionId);
 
-            return ByteLength;
+            return written - offset;
         }
     }
 }

@@ -43,9 +43,5 @@ namespace MonoTorrent.Client.RateLimiters
         {
             return true;
         }
-
-        public void UpdateChunks (long maxRate, long actualRate)
-        {
-        }
     }
 }

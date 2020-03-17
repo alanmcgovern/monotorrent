@@ -52,23 +52,23 @@ namespace MonoTorrent.Client.Encryption
             PossibleSKEYs = possibleSKEYs;
         }
 
-        protected override async ReusableTask doneReceiveY ()
+        protected override async ReusableTask DoneReceiveY ()
         {
             byte[] req1 = Hash (Req1Bytes, S);
             await Synchronize (req1, 628).ConfigureAwait (false); // 3 A->B: HASH('req1', S)
         }
 
-        protected override async ReusableTask doneSynchronize ()
+        protected override async ReusableTask DoneSynchronize ()
         {
-            await base.doneSynchronize ().ConfigureAwait (false);
+            await base.DoneSynchronize ().ConfigureAwait (false);
 
             byte[] verifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
             await ReceiveMessage (verifyBytes, verifyBytes.Length).ConfigureAwait (false);
-            await gotVerification (verifyBytes).ConfigureAwait (false);
+            await GotVerification (verifyBytes).ConfigureAwait (false);
         }
 
-        async ReusableTask gotVerification (byte[] verifyBytes)
+        async ReusableTask GotVerification (byte[] verifyBytes)
         {
             byte[] torrentHash = new byte[20];
 

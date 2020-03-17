@@ -135,7 +135,6 @@ namespace MonoTorrent.Streaming
             ThrowIfDisposed ();
 
             position += read;
-            var oldHighPriority = Picker.HighPriorityPieceIndex;
             Picker.ReadToPosition (File, position);
             return read;
         }
@@ -158,7 +157,6 @@ namespace MonoTorrent.Streaming
                     throw new NotSupportedException ();
             }
 
-            var oldHighPriority = Picker.HighPriorityPieceIndex;
             Picker.SeekToPosition (File, position);
             Stream?.Seek (offset, origin);
             return position;

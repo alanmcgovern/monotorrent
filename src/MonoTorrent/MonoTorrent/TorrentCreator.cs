@@ -268,7 +268,7 @@ namespace MonoTorrent
             // to single threaded hashing too as it's unlikely we'll have sufficient data in our buffers to do any better.
             Task readAllTask = ReadAllDataAsync (startPiece * PieceLength, totalBytesToRead, synchronizer, files, writer, emptyBuffers, filledBuffers, token);
 
-            Task<byte[]> hashAllTask = HashAllDataAsync (startPiece, totalBytesToRead, emptyBuffers, filledBuffers, token);
+            Task<byte[]> hashAllTask = HashAllDataAsync (totalBytesToRead, emptyBuffers, filledBuffers, token);
 
             Task firstCompleted = null;
             try {
@@ -298,12 +298,9 @@ namespace MonoTorrent
 
         async Task ReadAllDataAsync (long startOffset, long totalBytesToRead, Synchronizer synchronizer, List<TorrentFile> files, IPieceWriter writer, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
         {
-            long origStartOffset = startOffset;
-            int read;
             await MainLoop.SwitchToThreadpool ();
 
             await synchronizer.Self.Task;
-
             foreach (TorrentFile file in files) {
                 long fileRead = 0;
                 if (startOffset >= file.Length) {
@@ -323,6 +320,7 @@ namespace MonoTorrent
                     int toRead = (int) Math.Min (buffer.Length, file.Length - fileRead);
                     toRead = (int) Math.Min (totalBytesToRead, toRead);
 
+                    int read;
                     lock (writer)
                         read = writer.Read (file, fileRead, buffer, 0, toRead);
                     if (read != toRead)
@@ -347,7 +345,7 @@ namespace MonoTorrent
             await filledBuffers.EnqueueAsync ((null, 0, null), token);
         }
 
-        async Task<byte[]> HashAllDataAsync (int startPiece, long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
+        async Task<byte[]> HashAllDataAsync (long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[], int, TorrentFile)> filledBuffers, CancellationToken token)
         {
             await MainLoop.SwitchToThreadpool ();
 

@@ -82,7 +82,7 @@ namespace MonoTorrent.Tracker.Listeners
                     UdpReceiveResult result = await client.ReceiveAsync ();
                     byte[] data = result.Buffer;
                     if (data.Length < 16)
-                        return;//bad request
+                        return; //bad request
 
                     var request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
 
@@ -94,23 +94,13 @@ namespace MonoTorrent.Tracker.Listeners
                         }
                     }
 
-
-                    switch (request.Action) {
-                        case 0:
-                            sendTask = ReceiveConnect (client, (ConnectMessage) request, result.RemoteEndPoint);
-                            break;
-                        case 1:
-                            sendTask = ReceiveAnnounce (client, (AnnounceMessage) request, result.RemoteEndPoint);
-                            break;
-                        case 2:
-                            sendTask = ReceiveScrape (client, (ScrapeMessage) request, result.RemoteEndPoint);
-                            break;
-                        case 3:
-                            sendTask = ReceiveError (client, (ErrorMessage) request, result.RemoteEndPoint);
-                            break;
-                        default:
-                            throw new ProtocolException ($"Invalid udp message received: {request.Action}");
-                    }
+                    sendTask = request.Action switch {
+                        0 => ReceiveConnect (client, (ConnectMessage) request, result.RemoteEndPoint),
+                        1 => ReceiveAnnounce (client, (AnnounceMessage) request, result.RemoteEndPoint),
+                        2 => ReceiveScrape (client, (ScrapeMessage) request, result.RemoteEndPoint),
+                        3 => ReceiveError (client, (ErrorMessage) request, result.RemoteEndPoint),
+                        _ => throw new ProtocolException ($"Invalid udp message received: {request.Action}")
+                    };
                 } catch (Exception e) {
                     Logger.Log (null, e.ToString ());
                 }
