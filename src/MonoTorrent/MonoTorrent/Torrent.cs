@@ -555,6 +555,7 @@ namespace MonoTorrent
                 using var client = new WebClient ();
                 client.DownloadFile (url, location);
             } catch (Exception ex) {
+                File.Delete (location);
                 throw new TorrentException ("Could not download .torrent file from the specified url", ex);
             }
 
@@ -567,9 +568,17 @@ namespace MonoTorrent
         /// <param name="url">The URL to download the .torrent from</param>
         /// <param name="location">The path to download the .torrent to before it gets loaded</param>
         /// <returns></returns>
-        public static Task<Torrent> LoadAsync (Uri url, string location)
+        public static async Task<Torrent> LoadAsync (Uri url, string location)
         {
-            return Task.Run (() => Load (url, location));
+            try {
+                using var client = new WebClient ();
+                await client.DownloadFileTaskAsync (url, location).ConfigureAwait (false);
+            } catch (Exception ex) {
+                File.Delete (location);
+                throw new TorrentException ("Could not download .torrent file from the specified url", ex);
+            }
+
+            return await LoadAsync (location).ConfigureAwait (false);
         }
 
         /// <summary>
