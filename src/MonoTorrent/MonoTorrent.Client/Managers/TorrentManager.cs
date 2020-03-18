@@ -152,15 +152,6 @@ namespace MonoTorrent.Client
         /// </summary>
         internal BitField UnhashedPieces { get; set; }
 
-        internal int PeerReviewRoundsComplete {
-            get {
-                if (chokeUnchoker is ChokeUnchokeManager)
-                    return ((ChokeUnchokeManager) chokeUnchoker).ReviewsExecuted;
-                else
-                    return 0;
-            }
-        }
-
         public bool HashChecked { get; internal set; }
 
         public int HashFails { get; internal set; }
