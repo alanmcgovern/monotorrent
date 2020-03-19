@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
         static readonly Random PeerIdRandomGenerator = new Random ();
         #region Global Constants
 
-        public static readonly bool SupportsInitialSeed = true;
+        public static readonly bool SupportsInitialSeed = false;
         public static readonly bool SupportsLocalPeerDiscovery = true;
         public static readonly bool SupportsWebSeed = true;
         public static readonly bool SupportsExtended = true;
