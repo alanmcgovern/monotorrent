@@ -86,7 +86,8 @@ namespace MonoTorrent.Client
                 ExecuteReview ();
             } else if (interestedCount <= Unchokeable.UploadSlots || Unchokeable.UploadSlots == 0) {
                 //Since we have enough slots to satisfy everyone that's interested, unchoke them all; no review needed
-                UnchokePeerList (chokedInterestedPeers);
+                foreach (var peer in chokedInterestedPeers)
+                    Unchoke (peer);
             } else if (minimumTimeBetweenReviews != TimeSpan.Zero && ((DateTime.Now - timeOfLastReview) >= minimumTimeBetweenReviews) &&
                   (skipDownload || skipUpload)) {
                 //Based on the time of the last review, a new review is due
@@ -384,12 +385,6 @@ namespace MonoTorrent.Client
             PeerToUnchoke.LastUnchoked.Restart ();
             PeerToUnchoke.FirstReviewPeriod = true;
             Logger.Log (PeerToUnchoke.Connection, "Unchoking");
-        }
-
-        void UnchokePeerList (List<PeerId> PeerList)
-        {
-            //Unchoke all the peers in the supplied list
-            PeerList.ForEach (Unchoke);
         }
 
         #endregion
