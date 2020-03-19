@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             Manager = manager;
             Settings = settings;
 
-            manager.chokeUnchoker = new ChokeUnchokeManager (manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
+            manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
         }
 
         public void HandleMessage (PeerId id, PeerMessage message)
@@ -636,7 +636,7 @@ namespace MonoTorrent.Client.Modes
 
             // Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
             if (Manager.chokeUnchoker == null)
-                Manager.chokeUnchoker = new ChokeUnchokeManager (Manager, Manager.Settings.MinimumTimeBetweenReviews, Manager.Settings.PercentOfMaxRateToSkipReview);
+                Manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (Manager));
             Manager.chokeUnchoker.UnchokeReview ();
         }
 
@@ -644,7 +644,7 @@ namespace MonoTorrent.Client.Modes
         {
             //Choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
             if (Manager.chokeUnchoker == null)
-                Manager.chokeUnchoker = new ChokeUnchokeManager (Manager, Manager.Settings.MinimumTimeBetweenReviews, Manager.Settings.PercentOfMaxRateToSkipReview);
+                Manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (Manager));
 
             Manager.chokeUnchoker.UnchokeReview ();
         }

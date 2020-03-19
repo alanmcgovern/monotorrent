@@ -107,22 +107,6 @@ namespace MonoTorrent.Client
         public int WebSeedSpeedTrigger { get; set; } = 15 * 1024;
 
         /// <summary>
-        /// The choke/unchoke manager reviews how each torrent is making use of its upload slots.  If appropriate, it releases one of the available slots and uses it to try a different peer
-        /// in case it gives us more data.  This value determines how long (in seconds) needs to expire between reviews.  If set too short, peers will have insufficient time to start
-        /// downloading data and the choke/unchoke manager will choke them too early.  If set too long, we will spend more time than is necessary waiting for a peer to give us data.
-        /// The default is 30 seconds.  A value of 0 disables the choke/unchoke manager altogether.
-        /// </summary>
-        internal TimeSpan MinimumTimeBetweenReviews { get; set; } = TimeSpan.FromSeconds (30);
-
-        /// <summary>
-        /// A percentage between 0 and 100; default 90.
-        /// When downloading, the choke/unchoke manager doesn't make any adjustments if the download speed is greater than this percentage of the maximum download rate.
-        /// That way it will not try to improve download speed when the only likley effect will be to reduce download speeds.
-        /// When uploading, the choke/unchoke manager doesn't make any adjustments if the upload speed is greater than this percentage of the maximum upload rate.
-        /// </summary>
-        internal int PercentOfMaxRateToSkipReview { get; set; } = 90;
-
-        /// <summary>
         /// The time, in seconds, the inactivity manager should wait until it can consider a peer eligible for disconnection.  Peers are disconnected only if they have not provided
         /// any data.  Default is 600.  A value of 0 disables the inactivity manager.
         /// </summary>
