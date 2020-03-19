@@ -73,6 +73,13 @@ namespace MonoTorrent.Client
             };
         }
 
+        internal static PeerId CreateInterested (int bitfieldLength)
+        {
+            var peer = CreateNull (bitfieldLength);
+            peer.IsInterested = true;
+            return peer;
+        }
+
         #region Choke/Unchoke
 
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
