@@ -152,21 +152,16 @@ namespace MonoTorrent.Client
             }
         }
 
-
-
-        public void Choke (PeerId peer)
+        void Choke (PeerId peer)
         {
-            //Choke the supplied peer
-
             if (peer.AmChoking)
-                //We're already choking this peer, nothing to do
-                return;
+                throw new InvalidOperationException ("Attempting to choke a peer who is already choked");
 
             peer.AmChoking = true;
             Unchokeable.UploadingTo--;
-            RejectPendingRequests (peer);
             peer.EnqueueAt (new ChokeMessage (), 0);
-            Logger.Log (peer.Connection, "Choking");
+            RejectPendingRequests (peer);
+            peer.LastUnchoked = new ValueStopwatch ();
         }
 
         void ExecuteReview ()
@@ -371,20 +366,16 @@ namespace MonoTorrent.Client
             }
         }
 
-        public void Unchoke (PeerId PeerToUnchoke)
+        void Unchoke (PeerId peer)
         {
-            //Unchoke the supplied peer
+            if (!peer.AmChoking)
+                throw new InvalidOperationException ("Attempting to unchoke a peer who is already unchoked");
 
-            if (!PeerToUnchoke.AmChoking)
-                //We're already unchoking this peer, nothing to do
-                return;
-
-            PeerToUnchoke.AmChoking = false;
+            peer.AmChoking = false;
             Unchokeable.UploadingTo++;
-            PeerToUnchoke.EnqueueAt (new UnchokeMessage (), 0);
-            PeerToUnchoke.LastUnchoked.Restart ();
-            PeerToUnchoke.FirstReviewPeriod = true;
-            Logger.Log (PeerToUnchoke.Connection, "Unchoking");
+            peer.EnqueueAt (new UnchokeMessage (), 0);
+            peer.LastUnchoked.Restart ();
+            peer.FirstReviewPeriod = true;
         }
 
         #endregion
