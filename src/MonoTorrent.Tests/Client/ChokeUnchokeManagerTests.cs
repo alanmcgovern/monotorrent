@@ -30,6 +30,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
@@ -64,6 +66,137 @@ namespace MonoTorrent.Client.Unchoking
         }
 
         [Test]
+        public void ChokeTwoPeers ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10)) {
+                UploadSlots = 1
+            };
+            unchokeable.Peers.ForEach (p => { p.AmChoking = false; unchokeable.UploadingTo++; });
+            new ChokeUnchokeManager (unchokeable).UnchokeReview ();
+            Assert.AreEqual (1, unchokeable.UploadingTo);
+            foreach (var peer in unchokeable.Peers.Where (t => t.AmChoking)) {
+                Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
+                Assert.AreEqual (0, peer.QueueLength);
+            }
+        }
+
+        [Test]
+        public void ChokePeer_FastExtensions_RequestingFastPiece ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10)) {
+                UploadSlots = 1
+            };
+
+            unchokeable.Peers.ForEach (p => {
+                p.AmChoking = false;
+                unchokeable.UploadingTo++;
+                p.AmAllowedFastPieces.Add (1);
+                p.SupportsFastPeer = true;
+                p.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+            });
+            new ChokeUnchokeManager (unchokeable).UnchokeReview ();
+            Assert.AreEqual (1, unchokeable.UploadingTo);
+            foreach (var peer in unchokeable.Peers) {
+                if (peer.AmChoking)
+                    Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
+                Assert.IsInstanceOf<PieceMessage> (peer.Dequeue ());
+                Assert.AreEqual (0, peer.QueueLength);
+            }
+        }
+
+        [Test]
+        public void ChokePeer_FastExtensions_RequestingPiece ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10)) {
+                UploadSlots = 1
+            };
+
+            unchokeable.Peers.ForEach (p => {
+                p.AmChoking = false;
+                unchokeable.UploadingTo++;
+                p.SupportsFastPeer = true;
+                p.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+            });
+            new ChokeUnchokeManager (unchokeable).UnchokeReview ();
+            Assert.AreEqual (1, unchokeable.UploadingTo);
+            foreach (var peer in unchokeable.Peers) {
+                if (peer.AmChoking) {
+                    Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
+                    Assert.IsInstanceOf<RejectRequestMessage> (peer.Dequeue ());
+                } else {
+                    Assert.IsInstanceOf<PieceMessage> (peer.Dequeue ());
+                }
+                Assert.AreEqual (0, peer.QueueLength);
+            }
+        }
+
+        [Test]
+        public void ChokePeer_NotInterested ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.Create (10),
+                PeerId.Create (10),
+                PeerId.Create (10)) {
+                UploadSlots = 1
+            };
+
+            // This is a peer who we unchoked because they wanted data
+            // but now they do not want any more data from us.
+            unchokeable.Peers.ForEach (p => {
+                p.IsInterested = false;
+                p.AmChoking = false;
+                unchokeable.UploadingTo++;
+            });
+            new ChokeUnchokeManager (unchokeable).UnchokeReview ();
+            Assert.AreEqual (0, unchokeable.UploadingTo);
+            foreach (var peer in unchokeable.Peers) {
+                Assert.IsTrue (peer.AmChoking);
+                Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
+                Assert.AreEqual (0, peer.QueueLength);
+            }
+        }
+
+        [Test]
+        public void ChokePeer_RequestingPiece ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10),
+                PeerId.CreateInterested (10)) {
+                UploadSlots = 1
+            };
+
+            unchokeable.Peers.ForEach (p => {
+                p.AmChoking = false;
+                unchokeable.UploadingTo++;
+                // SupportsFastPeer is set to false so this should be ignored.
+                // This will always be empty during normal downloading.
+                p.AmAllowedFastPieces.Add (1);
+                p.SupportsFastPeer = false;
+                p.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+            });
+            new ChokeUnchokeManager (unchokeable).UnchokeReview ();
+            Assert.AreEqual (1, unchokeable.UploadingTo);
+            foreach (var peer in unchokeable.Peers) {
+                if (peer.AmChoking) {
+                    Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
+                } else {
+                    Assert.IsInstanceOf<PieceMessage> (peer.Dequeue ());
+                }
+                Assert.AreEqual (0, peer.QueueLength);
+            }
+        }
+
+        [Test]
         public void UnchokeOneWithOneSlot ()
         {
             var unchokeable = new Unchokeable (PeerId.CreateInterested (10)) {
@@ -74,6 +207,7 @@ namespace MonoTorrent.Client.Unchoking
             Assert.IsFalse (unchokeable.Peers[0].AmChoking);
             Assert.AreEqual (1, unchokeable.UploadingTo);
         }
+
         [Test]
         public void UnchokeThreeWithOneSlot ()
         {
