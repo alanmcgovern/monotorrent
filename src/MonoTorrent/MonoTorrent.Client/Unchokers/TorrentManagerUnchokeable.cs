@@ -8,7 +8,12 @@ namespace MonoTorrent.Client
     {
         TorrentManager Manager { get; }
 
-        public bool Complete => Manager.Complete;
+        public event EventHandler<TorrentStateChangedEventArgs> StateChanged {
+            add { Manager.TorrentStateChanged += value; }
+            remove { Manager.TorrentStateChanged -= value; }
+        }
+
+        public bool Seeding => Manager.Complete;
 
         public long DownloadSpeed => Manager.Monitor.DownloadSpeed;
 

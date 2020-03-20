@@ -1,13 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
     interface IUnchokeable
     {
         /// <summary>
+        /// Raised whenever the torrent manager's state changes.
+        /// </summary>
+        event EventHandler<TorrentStateChangedEventArgs> StateChanged;
+
+        /// <summary>
         /// True if we are currently seeding.
         /// </summary>
-        bool Complete { get; }
+        bool Seeding { get; }
 
         /// <summary>
         /// Download speed in bytes/second.

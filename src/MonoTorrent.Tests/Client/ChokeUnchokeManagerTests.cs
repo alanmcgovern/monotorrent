@@ -43,7 +43,9 @@ namespace MonoTorrent.Client.Unchoking
     {
         class Unchokeable : IUnchokeable
         {
-            public bool Complete { get; set; }
+            public event EventHandler<TorrentStateChangedEventArgs> StateChanged;
+
+            public bool Seeding { get; set; }
 
             public long DownloadSpeed { get; set; }
 
@@ -62,6 +64,11 @@ namespace MonoTorrent.Client.Unchoking
             public Unchokeable (params PeerId[] peers)
             {
                 Peers.AddRange (peers);
+            }
+
+            public void RaiseStateChanged (TorrentStateChangedEventArgs e)
+            {
+                StateChanged?.Invoke (this, e);
             }
         }
 
@@ -163,6 +170,32 @@ namespace MonoTorrent.Client.Unchoking
                 Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
                 Assert.AreEqual (0, peer.QueueLength);
             }
+        }
+
+        [Test]
+        public void ChokePeer_NotInterested_ThenInterested ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.Create (10),
+                PeerId.Create (10),
+                PeerId.Create (10)) {
+                UploadSlots = 1
+            };
+            unchokeable.Peers.ForEach (p => {
+                p.IsInterested = false;
+                p.AmChoking = true;
+            });
+            var unchoker = new ChokeUnchokeManager (unchokeable);
+            unchoker.UnchokeReview ();
+            Assert.AreEqual (0, unchokeable.UploadingTo);
+
+            unchokeable.Peers.ForEach (p => {
+                p.IsInterested = true;
+            });
+            unchoker.UnchokeReview ();
+            Assert.AreEqual (1, unchokeable.UploadingTo);
+            // We preferred the one who has been choked the longest
+            Assert.IsFalse (unchokeable.Peers[0].AmChoking);
         }
 
         [Test]

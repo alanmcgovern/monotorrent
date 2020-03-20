@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client
@@ -53,26 +54,11 @@ namespace MonoTorrent.Client
 
         #region Public Properties
 
-        public int Count => peers.Count;
+        public int Count
+            => peers.Count;
 
-        public bool MorePeers {
-            get {
-                if (scanIndex < peers.Count)
-                    return true;
-                else
-                    return false;
-            }
-        }
-
-        public int UnchokedPeers {
-            get {
-                int peersCount = 0;
-                foreach (PeerId peer in peers)
-                    if (!peer.AmChoking)
-                        peersCount++;
-                return peersCount;
-            }
-        }
+        public bool MorePeers
+            => scanIndex < peers.Count;
 
         #endregion
 
@@ -102,9 +88,8 @@ namespace MonoTorrent.Client
         {
             //Look for a choked peer
             foreach (PeerId peer in peers)
-                if (peer.Connection != null)
-                    if (peer.IsInterested && peer.AmChoking)
-                        return peer;
+                if (peer.IsInterested && peer.AmChoking)
+                    return peer;
             //None found, return null
             return null;
         }
@@ -115,41 +100,35 @@ namespace MonoTorrent.Client
             PeerId longestIntervalPeer = null;
             double longestIntervalPeerTime = 0;
             foreach (PeerId peer in peers)
-                if (peer.Connection != null)
-                    if (peer.AmChoking) {
-                        if (!peer.LastUnchoked.IsRunning)
-                            //This is an untried peer that we haven't unchoked, return it
-                            return peer;
+                if (peer.IsInterested && peer.AmChoking) {
+                    if (!peer.LastUnchoked.IsRunning)
+                        //This is an untried peer that we haven't unchoked, return it
+                        return peer;
+                    else {
+                        //This is an unchoked peer that we have unchoked in the past
+                        //If this is the first one we've found, remember it
+                        if (longestIntervalPeer == null)
+                            longestIntervalPeer = peer;
                         else {
-                            //This is an unchoked peer that we have unchoked in the past
-                            //If this is the first one we've found, remember it
-                            if (longestIntervalPeer == null)
+                            // Compare dates to determine whether the new one has a longer interval (but halve the interval
+                            // if the peer has never sent us any data)
+                            double newInterval = peer.LastUnchoked.Elapsed.TotalSeconds;
+                            if (peer.Monitor.DataBytesDownloaded == 0)
+                                newInterval /= 2;
+                            if (newInterval > longestIntervalPeerTime) {
+                                //The new peer has a longer interval than the current one, replace it
                                 longestIntervalPeer = peer;
-                            else {
-                                // Compare dates to determine whether the new one has a longer interval (but halve the interval
-                                // if the peer has never sent us any data)
-                                double newInterval = peer.LastUnchoked.Elapsed.TotalSeconds;
-                                if (peer.Monitor.DataBytesDownloaded == 0)
-                                    newInterval /= 2;
-                                if (newInterval > longestIntervalPeerTime) {
-                                    //The new peer has a longer interval than the current one, replace it
-                                    longestIntervalPeer = peer;
-                                    longestIntervalPeerTime = newInterval;
-                                }
+                                longestIntervalPeerTime = newInterval;
                             }
                         }
                     }
+                }
             //Return the peer with the longest interval since it was unchoked, or null if none found
             return longestIntervalPeer;
         }
 
-        public bool Includes (PeerId peer)
-        {
-            //Return false if the supplied peer is null
-            if (peer == null)
-                return false;
-            return peers.Contains (peer);
-        }
+        public bool Contains (PeerId peer)
+            => peers.Contains (peer);
 
         public void Sort (bool IsSeeding)
         {
@@ -172,11 +151,6 @@ namespace MonoTorrent.Client
                         peers.Sort (CompareOptimisticUnchokeCandidatesWhileDownloading);
                     break;
             }
-        }
-
-        public void StartScan ()
-        {
-            scanIndex = 0;
         }
 
         #endregion
