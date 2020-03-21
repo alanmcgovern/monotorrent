@@ -41,6 +41,7 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 
@@ -115,13 +116,27 @@ namespace MonoTorrent.Client
 
         public bool Disposed { get; private set; }
 
+        /// <summary>
+        /// Returns true when <see cref="EnablePortForwardingAsync"/> is invoked. When enabled, the
+        /// engine will automatically forward ports using uPnP and/or NAT-PMP compatible routers.
+        /// </summary>
+        public bool PortForwardingEnabled => PortForwarder.Active;
+
         public IPeerListener Listener { get; }
 
         public ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
+        /// <summary>
+        /// When <see cref="PortForwardingEnabled"/> is set to true, this will return a representation
+        /// of the ports the engine is managing.
+        /// </summary>
+        public Mappings PortMappings => PortForwardingEnabled ? PortForwarder.Mappings : Mappings.Empty;
+
         public bool IsRunning { get; private set; }
 
         public BEncodedString PeerId { get; }
+
+        internal IPortForwarder PortForwarder { get; }
 
         public EngineSettings Settings { get; }
 
@@ -197,6 +212,8 @@ namespace MonoTorrent.Client
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
             DhtEngine = new NullDhtEngine ();
             listenManager = new ListenManager (this);
+            PortForwarder = new MonoNatPortForwarder ();
+
             MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (TickLength), delegate {
                 if (IsRunning && !Disposed)
                     LogicTick ();
@@ -543,22 +560,52 @@ namespace MonoTorrent.Client
             StatsUpdate?.InvokeAsync (this, args);
         }
 
-        internal void Start ()
+        internal async Task StartAsync ()
         {
             CheckDisposed ();
-            IsRunning = true;
-            if (Listener.Status == ListenerStatus.NotListening)
-                Listener.Start ();
+            if (!IsRunning) {
+                IsRunning = true;
+                if (Listener.Status == ListenerStatus.NotListening)
+                    Listener.Start ();
+                await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
+            }
         }
 
+        /// <summary>
+        /// Sets <see cref="PortForwardingEnabled"/> to true and begins searching for uPnP or
+        /// NAT-PMP compatible devices. If any are discovered they will be used to forward the
+        /// ports used by the engine.
+        /// </summary>
+        /// <param name="token">If the token is cancelled and an <see cref="OperationCanceledException"/>
+        /// is thrown then the engine is guaranteed to not be searching for compatible devices.</param>
+        /// <returns></returns>
+        public async Task EnablePortForwardingAsync (CancellationToken token)
+        {
+            await PortForwarder.StartAsync (token);
+        }
 
-        internal void Stop ()
+        /// <summary>
+        /// Sets <see cref="PortForwardingEnabled"/> to false and the engine will no longer
+        /// seach for uPnP or NAT-PMP compatible devices. Ports forwarding requests will
+        /// be deleted, where possible.
+        /// </summary>
+        /// <param name="token">If the token is cancelled the engine is guaranteed to no longer search
+        /// for compatible devices, but existing port forwarding requests may not be deleted.</param>
+        /// <returns></returns>
+        public async Task DisablePortForwardingAsync (CancellationToken token)
+        {
+            await PortForwarder.StopAsync (true, token);
+        }
+
+        internal async Task StopAsync ()
         {
             CheckDisposed ();
             // If all the torrents are stopped, stop ticking
             IsRunning = allTorrents.Exists (m => m.State != TorrentState.Stopped);
-            if (!IsRunning)
+            if (!IsRunning) {
                 Listener.Stop ();
+                await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort), CancellationToken.None);
+            }
         }
 
         static BEncodedString GeneratePeerId ()

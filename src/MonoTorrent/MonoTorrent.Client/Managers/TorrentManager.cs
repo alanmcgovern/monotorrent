@@ -606,7 +606,7 @@ namespace MonoTorrent.Client
 
             CheckRegisteredAndDisposed ();
 
-            Engine.Start ();
+            await Engine.StartAsync ();
             // If the torrent was "paused", then just update the state to Downloading and forcefully
             // make sure the peers begin sending/receiving again
             if (State == TorrentState.Paused) {
@@ -678,7 +678,7 @@ namespace MonoTorrent.Client
             if (State == TorrentState.Error) {
                 Error = null;
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-                Engine.Stop ();
+                await Engine.StopAsync ();
             } else if (State != TorrentState.Stopped) {
                 var stoppingMode = new StoppingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
@@ -686,7 +686,7 @@ namespace MonoTorrent.Client
 
                 stoppingMode.Token.ThrowIfCancellationRequested ();
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-                Engine.Stop ();
+                await Engine.StopAsync ();
             }
         }
 
