@@ -87,8 +87,8 @@ namespace MonoTorrent.Client.Modes
                     state = TorrentState.Seeding;
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
                 } else if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) < Manager.PartialProgressSelector.TrueCount && state == TorrentState.Seeding) {
-                    state = TorrentState.Seeding;
-                    Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
+                    state = TorrentState.Downloading;
+                    Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Seeding, TorrentState.Downloading));
                 }
             }
         }
