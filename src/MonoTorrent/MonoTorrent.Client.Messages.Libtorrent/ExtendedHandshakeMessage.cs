@@ -51,7 +51,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 // The length of the payload, 4 byte length prefix, 1 byte BT message id, 1 byte LT message id
                 Create ().LengthInBytes () + 4 + 1 + 1;
 
-        public int MaxRequests { get; set; }
+        /// <summary>
+        /// The maximum number of pending 16kB requests. Defaults to 192 requests, which is 3 megabytes of data.
+        /// </summary>
+        public int MaxRequests { get; set; } = 192;
 
         public int LocalPort {
             get; private set;
