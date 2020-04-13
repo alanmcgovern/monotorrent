@@ -397,7 +397,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_RelatedDownloaded_FileAdded ()
+        public async Task PartialProgress_RelatedDownloaded_FileAdded ()
         {
             Manager.OnPieceHashed (0, true);
 
@@ -411,13 +411,16 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#1");
 
             Manager.Torrent.Files.Skip (1).First ().Priority = Priority.Normal;
-            TorrentState oldState = TorrentState.Error;
-            TorrentState newState = TorrentState.Error;
+            var oldStateTask = new TaskCompletionSource<TorrentState> ();
+            var newStateTask = new TaskCompletionSource<TorrentState> ();
             Manager.TorrentStateChanged += (object sender, TorrentStateChangedEventArgs e) => {
-                oldState = e.OldState;
-                newState = e.NewState;
+                oldStateTask.SetResult (e.OldState);
+                newStateTask.SetResult (e.NewState);
             };
             mode.UpdateSeedingDownloadingState ();
+
+            var oldState = await oldStateTask.Task;
+            var newState = await newStateTask.Task;
 
             Assert.That (Manager.Progress, Is.GreaterThan (0.0), "#3a");
             Assert.That (Manager.Progress, Is.LessThan (100.0), "#3b");
