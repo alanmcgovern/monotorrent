@@ -391,6 +391,51 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task WriteDataFromTwoTorrentsConcurrently ()
+        {
+            // Data from the primary torrent
+            var allData = fileData.Data.SelectMany (t => t).ToArray ();
+
+            // Data from a different torrent which hits the same pieces.
+            var emptyBytes = new byte[Piece.BlockSize];
+            var otherData = new TestTorrentData {
+                Data = fileData.Data,
+                Files = fileData.Files,
+                Hashes = fileData.Hashes,
+                PieceLength = fileData.PieceLength,
+                Size = fileData.Size
+            };
+
+            int offset = 0;
+            foreach (var block in allData.Partition (Piece.BlockSize)) {
+                await diskManager.WriteAsync (fileData, offset, block, block.Length);
+
+                // Attempt to 'overwrite' the data from the primary torrent by writing the same block
+                // or the subsequent block
+                await diskManager.WriteAsync (otherData, offset, emptyBytes, block.Length);
+
+                // Don't accidentally write beyond the end of the data
+                if (offset + Piece.BlockSize < otherData.Size) {
+                    var count = offset + Piece.BlockSize + block.Length > otherData.Size ? otherData.Size % otherData.PieceLength : Piece.BlockSize;
+                    await diskManager.WriteAsync (otherData, offset + Piece.BlockSize, emptyBytes, (int) count);
+                }
+                offset += block.Length;
+            }
+
+            offset = 0;
+            foreach (var data in fileData.Data) {
+                Assert.IsTrue (Toolbox.ByteMatch (allData, offset, data, 0, data.Length), "#1");
+                offset += data.Length;
+            }
+
+            for (int i = 0; i < fileData.Hashes.Length; i++) {
+                // Check twice because the first check should give us the result from the incremental hash.
+                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
+                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
+            }
+        }
+
+        [Test]
         public async Task WriteBlock_SpanTwoFiles ()
         {
             var buffer = fileData.Data[0].Concat (fileData.Data[1]).Take (Piece.BlockSize).ToArray ();
