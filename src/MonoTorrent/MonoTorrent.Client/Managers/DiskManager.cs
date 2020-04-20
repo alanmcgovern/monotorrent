@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
     {
         static readonly ICache<IncrementalHashData> IncrementalHashCache = new Cache<IncrementalHashData> (true);
 
-        readonly Dictionary<int, IncrementalHashData> IncrementalHashes = new Dictionary<int, IncrementalHashData> ();
+        readonly Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> ();
 
         class IncrementalHashData : ICacheable
         {
@@ -225,7 +225,7 @@ namespace MonoTorrent.Client
 
             await IOLoop;
 
-            if (IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash)) {
+            if (IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash)) {
                 // We request the blocks for most pieces sequentially, and most (all?) torrent clients
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
@@ -235,7 +235,7 @@ namespace MonoTorrent.Client
                     incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
                     byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
-                    IncrementalHashes.Remove (pieceIndex);
+                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                     return result;
                 }
             } else {
@@ -273,7 +273,7 @@ namespace MonoTorrent.Client
                 return result;
             } finally {
                 IncrementalHashCache.Enqueue (incrementalHash);
-                IncrementalHashes.Remove (pieceIndex);
+                IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 ClientEngine.BufferPool.Return (hashBuffer);
             }
         }
@@ -364,6 +364,9 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask WriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
+            if (count < 1)
+                throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
+
             Interlocked.Add (ref pendingWrites, count);
             await IOLoop;
 
@@ -371,8 +374,8 @@ namespace MonoTorrent.Client
             long pieceStart = (long) pieceIndex * manager.PieceLength;
             long pieceEnd = pieceStart + manager.PieceLength;
 
-            if (!IncrementalHashes.TryGetValue (pieceIndex, out IncrementalHashData incrementalHash) && offset == pieceStart) {
-                incrementalHash = IncrementalHashes[pieceIndex] = IncrementalHashCache.Dequeue ();
+            if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && offset == pieceStart) {
+                incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
                 incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
             }
 
@@ -383,7 +386,7 @@ namespace MonoTorrent.Client
                 // unit tests do it for convenience sometimes. Keep things safe by cancelling
                 // incremental hashing if that occurs.
                 if ((incrementalHash.NextOffsetToHash + count) > pieceEnd) {
-                    IncrementalHashes.Remove (pieceIndex);
+                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 } else if (incrementalHash.NextOffsetToHash == offset) {
                     incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
                     incrementalHash.NextOffsetToHash += count;
@@ -472,6 +475,9 @@ namespace MonoTorrent.Client
         bool Read (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             ReadMonitor.AddDelta (count);
+
+            if (count < 1)
+                throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
 
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
