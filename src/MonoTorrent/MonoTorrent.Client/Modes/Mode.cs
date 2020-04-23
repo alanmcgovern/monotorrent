@@ -308,7 +308,17 @@ namespace MonoTorrent.Client.Modes
             // FIXME: Recreate the uri? Give warning?
             if (message.LocalPort > 0)
                 id.Peer.LocalPort = message.LocalPort;
-            id.MaxSupportedPendingRequests = Math.Max (1, message.MaxRequests);
+
+            // If MaxRequests is zero, or negative, ignore it.
+            if (message.MaxRequests > 0)
+                id.MaxSupportedPendingRequests = message.MaxRequests;
+            else
+                Logger.Log (id.Connection, "Invalid value for libtorrent extension handshake 'MaxRequests'.");
+
+            // Bugfix for MonoTorrent older than 1.0.19
+            if (id.ClientApp.Client == ClientApp.MonoTorrent)
+                id.MaxSupportedPendingRequests = Math.Max (id.MaxSupportedPendingRequests, 192);
+
             id.ExtensionSupports = message.Supports;
 
             if (id.ExtensionSupports.Supports (PeerExchangeMessage.Support.Name)) {
