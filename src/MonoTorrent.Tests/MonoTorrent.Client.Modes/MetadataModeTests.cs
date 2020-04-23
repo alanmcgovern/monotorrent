@@ -204,7 +204,7 @@ namespace MonoTorrent.Client.Modes
             PeerMessage m;
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is ExtendedHandshakeMessage ex) {
-                    Assert.AreEqual (192, ex.MaxRequests);
+                    Assert.AreEqual (ClientEngine.DefaultMaxPendingRequests, ex.MaxRequests);
                 } else if (m is LTMetadata metadata) {
                     if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request) {
                         metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, metadata.Piece, buffer);

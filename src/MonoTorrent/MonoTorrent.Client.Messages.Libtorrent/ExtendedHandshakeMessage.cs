@@ -30,6 +30,7 @@
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
@@ -52,9 +53,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 Create ().LengthInBytes () + 4 + 1 + 1;
 
         /// <summary>
-        /// The maximum number of pending 16kB requests. Defaults to 192 requests, which is 3 megabytes of data.
+        /// The maximum number of concurrent 16kB <see cref="RequestMessage"/>s which can be sent to this peer. Defaults to <see cref="ClientEngine.DefaultMaxPendingRequests"/> requests.
         /// </summary>
-        public int MaxRequests { get; set; } = 192;
+        public int MaxRequests { get; set; } = ClientEngine.DefaultMaxPendingRequests;
 
         public int LocalPort {
             get; private set;

@@ -45,10 +45,12 @@ namespace MonoTorrent.Client
     public class PieceManager
     {
         #region Old
-        // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
+        // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount
         internal const int BonusRequestPerKb = 10;
-        internal const int NormalRequestAmount = 2;
-        internal const int MaxEndGameRequests = 2;
+        // Default to a minimum of 8 blocks
+        internal const int NormalRequestAmount = 8;
+        // Allow 4 pending blocks per peer during end game
+        internal const int MaxEndGameRequests = 4;
 
         public event EventHandler<BlockEventArgs> BlockReceived;
         public event EventHandler<BlockEventArgs> BlockRequested;

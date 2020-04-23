@@ -182,8 +182,8 @@ namespace MonoTorrent.Client
             IsAllowedFastPieces = new List<int> ();
             SuggestedPieces = new List<int> ();
 
-            MaxPendingRequests = 2;
-            MaxSupportedPendingRequests = 50;
+            MaxPendingRequests = PieceManager.NormalRequestAmount;
+            MaxSupportedPendingRequests = ClientEngine.DefaultMaxPendingRequests;
 
             ExtensionSupports = new ExtensionSupports ();
             Monitor = new ConnectionMonitor ();

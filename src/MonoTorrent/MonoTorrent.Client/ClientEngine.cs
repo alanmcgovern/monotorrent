@@ -61,6 +61,8 @@ namespace MonoTorrent.Client
         static readonly Random PeerIdRandomGenerator = new Random ();
         #region Global Constants
 
+        // This is the number of 16kB requests which can be queued against one peer.
+        internal static readonly int DefaultMaxPendingRequests = 256;
         public static readonly bool SupportsInitialSeed = false;
         public static readonly bool SupportsLocalPeerDiscovery = true;
         public static readonly bool SupportsWebSeed = true;
