@@ -72,12 +72,13 @@ namespace MonoTorrent.Client.Listeners
         {
             Socket socket = null;
             try {
+                // Capture the socket (if any) and prepare the args for reuse
+                // by ensuring AcceptSocket is null.
+                socket = e.AcceptSocket;
+                e.AcceptSocket = null;
+
                 if (e.SocketError != SocketError.Success)
                     throw new SocketException ((int) e.SocketError);
-                socket = e.AcceptSocket;
-                // This is a crazy quirk of the API. We need to null this
-                // out if we re-use the args.
-                e.AcceptSocket = null;
 
                 IConnection connection;
                 if (socket.AddressFamily == AddressFamily.InterNetwork)
