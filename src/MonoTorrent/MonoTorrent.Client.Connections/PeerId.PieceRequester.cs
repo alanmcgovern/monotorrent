@@ -50,10 +50,5 @@ namespace MonoTorrent.Client
         {
             Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
         }
-
-        void IPieceRequester.HashedPiece (bool succeeded)
-        {
-            Peer.HashedPiece (succeeded);
-        }
     }
 }
