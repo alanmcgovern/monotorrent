@@ -57,10 +57,10 @@ namespace MonoTorrent.Client
         /// </summary>
         public List<string> Paths = new List<string> ();
 
-        public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (DoNotReadFrom.Contains (file))
-                return 0;
+                return ReusableTask.FromResult (0);
 
             if (!Paths.Contains (file.FullPath))
                 Paths.Add (file.FullPath);
@@ -70,37 +70,37 @@ namespace MonoTorrent.Client
             if (!DontWrite)
                 for (int i = 0; i < count; i++)
                     buffer[bufferOffset + i] = (byte) (bufferOffset + i);
-            return count;
+            return ReusableTask.FromResult (count);
         }
 
-        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-
+            return ReusableTask.CompletedTask;
         }
 
-        public void Close (TorrentFile file)
+        public ReusableTask CloseAsync (TorrentFile file)
         {
-
+            return ReusableTask.CompletedTask;
         }
 
         public void Dispose ()
         {
-
+            // Nothing
         }
 
-        public void Flush (TorrentFile file)
+        public ReusableTask FlushAsync (TorrentFile file)
         {
-
+            return ReusableTask.CompletedTask;
         }
 
-        public bool Exists (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (TorrentFile file)
         {
-            return FilesThatExist.Contains (file);
+            return ReusableTask.FromResult (FilesThatExist.Contains (file));
         }
 
-        public void Move (TorrentFile file, string newPath, bool overwrite)
+        public ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
         {
-
+            return ReusableTask.CompletedTask;
         }
     }
 

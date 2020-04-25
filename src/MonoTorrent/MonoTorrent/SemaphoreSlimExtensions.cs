@@ -1,10 +1,10 @@
-//
-// IPieceWriter.cs
+﻿//
+// SemaphoreSlimExtensions.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,17 +28,28 @@
 
 
 using System;
+using System.Threading;
+
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent
 {
-    public interface IPieceWriter : IDisposable
+    static class SemaphoreSlimExtensions
     {
-        ReusableTask CloseAsync (TorrentFile file);
-        ReusableTask<bool> ExistsAsync (TorrentFile file);
-        ReusableTask FlushAsync (TorrentFile file);
-        ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+        internal readonly struct Releaser : IDisposable
+        {
+            readonly SemaphoreSlim Semaphore;
+
+            public Releaser (SemaphoreSlim semaphore)
+                => Semaphore = semaphore;
+
+            public void Dispose ()
+                => Semaphore.Release ();
+        }
+        internal static async ReusableTask<Releaser> EnterAsync (this SemaphoreSlim semaphore)
+        {
+            await semaphore.WaitAsync ();
+            return new Releaser (semaphore);
+        }
     }
 }

@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-
 using MonoTorrent.Client.PieceWriters;
 
 using NUnit.Framework;
@@ -62,29 +61,7 @@ namespace MonoTorrent.Client
             public List<TorrentFile> ClosedFiles = new List<TorrentFile> ();
             public List<TorrentFile> ExistsFiles = new List<TorrentFile> ();
 
-            public void Close (TorrentFile file)
-            {
-            }
-
-            public void Dispose ()
-            {
-            }
-
-            public bool Exists (TorrentFile file)
-            {
-
-                return true;
-            }
-
-            public void Flush (TorrentFile file)
-            {
-            }
-
-            public void Move (TorrentFile file, string fullPath, bool overwrite)
-            {
-            }
-
-            public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 ReadData.Add (Tuple.Create (file, offset, count));
 
@@ -99,14 +76,39 @@ namespace MonoTorrent.Client
                     var data = Data[file];
                     Buffer.BlockCopy (data, (int) offset, buffer, bufferOffset, count);
                 }
-                return count;
+                return ReusableTask.FromResult (count);
             }
 
-            public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 var result = new byte[count];
                 Buffer.BlockCopy (buffer, bufferOffset, result, 0, count);
                 WrittenData.Add (Tuple.Create (file, offset, result));
+                return ReusableTask.CompletedTask;
+            }
+
+            public ReusableTask CloseAsync (TorrentFile file)
+            {
+                return ReusableTask.CompletedTask;
+            }
+
+            public ReusableTask<bool> ExistsAsync (TorrentFile file)
+            {
+                return ReusableTask.FromResult (true);
+            }
+
+            public ReusableTask FlushAsync (TorrentFile file)
+            {
+                return ReusableTask.CompletedTask;
+            }
+
+            public ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite)
+            {
+                return ReusableTask.CompletedTask;
+            }
+
+            public void Dispose ()
+            {
             }
         }
 

@@ -321,8 +321,8 @@ namespace MonoTorrent
                     toRead = (int) Math.Min (totalBytesToRead, toRead);
 
                     int read;
-                    lock (writer)
-                        read = writer.Read (file, fileRead, buffer, 0, toRead);
+                    // FIXME: thread safety
+                    read = await writer.ReadAsync (file, fileRead, buffer, 0, toRead);
                     if (read != toRead)
                         throw new InvalidOperationException ("The required data could not be read from the file.");
                     fileRead += read;
