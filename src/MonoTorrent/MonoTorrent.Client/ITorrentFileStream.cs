@@ -1,5 +1,5 @@
-//
-// IPieceWriter.cs
+﻿//
+// TorrentFileStream.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -30,15 +30,23 @@
 using System;
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.Client
 {
-    public interface IPieceWriter : IDisposable
+    interface ITorrentFileStream : IDisposable
     {
-        ReusableTask CloseAsync (TorrentFile file);
-        ReusableTask<bool> ExistsAsync (TorrentFile file);
-        ReusableTask FlushAsync (TorrentFile file);
-        ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+        bool CanWrite { get; }
+        bool Disposed { get; }
+        long Length { get; }
+        bool Rented { get; }
+        long Position { get; }
+
+        ReusableTask FlushAsync ();
+        ReusableTask<int> ReadAsync (byte[] buffer, int offset, int count);
+        ReusableTask SeekAsync (long position);
+        ReusableTask SetLengthAsync (long length);
+        ReusableTask WriteAsync (byte[] buffer, int offset, int count);
+
+        void Rent ();
+        void Release ();
     }
 }

@@ -28,7 +28,7 @@
 
 
 using System.Linq;
-
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.PieceWriters
@@ -50,12 +50,12 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
-        public void FillFirstBuffer ()
+        public async Task FillFirstBuffer ()
         {
             // Write 4 blocks to the stream and then verify they can all be read
             for (int i = 0; i < 4; i++) {
                 var buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
-                level1.Write (file, Piece.BlockSize * i, buffer, 0, buffer.Length);
+                await level1.WriteAsync (file, Piece.BlockSize * i, buffer, 0, buffer.Length);
             }
 
             Assert.AreEqual (Piece.BlockSize * 3, level1.CacheUsed, "#1");
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.PieceWriters
             // Read them all back out and verify them
             for (int i = 0; i < 4; i++) {
                 var buffer = new byte[Piece.BlockSize];
-                level1.Read (file, Piece.BlockSize * i, buffer, 0, Piece.BlockSize);
+                await level1.ReadAsync (file, Piece.BlockSize * i, buffer, 0, Piece.BlockSize);
                 Assert.That (buffer, Is.All.EqualTo ((byte) (i + 1)));
             }
             Assert.AreEqual (Piece.BlockSize * 3, level1.CacheHits, "#3");
@@ -73,24 +73,24 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
-        public void ReadWriteBlock ()
+        public async Task ReadWriteBlock ()
         {
             var buffer = Enumerable.Repeat ((byte) 55, Piece.BlockSize).ToArray ();
-            level1.Write (file, 0, buffer, 0, buffer.Length);
+            await level1.WriteAsync (file, 0, buffer, 0, buffer.Length);
 
             buffer = new byte[Piece.BlockSize];
-            level1.Read (file, 0, buffer, 0, buffer.Length);
+            await level1.ReadAsync (file, 0, buffer, 0, buffer.Length);
             Assert.That (buffer, Is.All.EqualTo (55));
         }
 
         [Test]
-        public void ReadWriteBlockChangeOriginal ()
+        public async Task ReadWriteBlockChangeOriginal ()
         {
             var buffer = Enumerable.Repeat ((byte) 5, Piece.BlockSize).ToArray ();
-            level1.Write (file, 0, buffer, 0, buffer.Length);
+            await level1.WriteAsync (file, 0, buffer, 0, buffer.Length);
 
             buffer = new byte[Piece.BlockSize];
-            level1.Read (file, 0, buffer, 0, buffer.Length);
+            await level1.ReadAsync (file, 0, buffer, 0, buffer.Length);
             Assert.That (buffer, Is.All.EqualTo ((byte) 5), "#2");
         }
     }
