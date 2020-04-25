@@ -29,7 +29,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -90,7 +92,7 @@ namespace MonoTorrent.Client.PieceWriters
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));
         }
 
-        public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File (file);
             Check.Buffer (buffer);
@@ -106,21 +108,21 @@ namespace MonoTorrent.Client.PieceWriters
             }
 
             Interlocked.Add (ref cacheMisses, count);
-            return Writer.Read (file, offset, buffer, bufferOffset, count);
+            return await Writer.ReadAsync (file, offset, buffer, bufferOffset, count);
         }
 
-        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync  (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Write (file, offset, buffer, bufferOffset, count, false);
+            await WriteAsync (file, offset, buffer, bufferOffset, count, false);
         }
 
-        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
+        public async ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
         {
             if (forceWrite) {
-                Writer.Write (file, offset, buffer, bufferOffset, count);
+                await Writer.WriteAsync (file, offset, buffer, bufferOffset, count);
             } else {
                 if (CacheUsed > (Capacity - count))
-                    Flush (0);
+                    await FlushAsync (0);
 
                 byte[] cacheBuffer = ClientEngine.BufferPool.Rent (count);
                 Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
@@ -136,51 +138,46 @@ namespace MonoTorrent.Client.PieceWriters
             }
         }
 
-        public void Close (TorrentFile file)
+        public async ReusableTask CloseAsync (TorrentFile file)
         {
-            Flush (file);
-            Writer.Close (file);
+            await FlushAsync (file);
+            await Writer.CloseAsync (file);
         }
 
-        public bool Exists (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (TorrentFile file)
         {
-            return Writer.Exists (file);
+            return Writer.ExistsAsync (file);
         }
 
-        public void Flush (TorrentFile file)
+        public async ReusableTask FlushAsync (TorrentFile file)
         {
-            CachedBlocks.RemoveAll (delegate (CachedBlock b) {
-                if (b.File != file)
-                    return false;
-
-                Interlocked.Add (ref cacheUsed, -b.Count);
-                Writer.Write (b.File, b.Offset, b.Buffer, 0, b.Count);
-                ClientEngine.BufferPool.Return (b.Buffer);
-                return true;
-            });
+            foreach (var block in CachedBlocks) {
+                if (block.File != file)
+                    continue;
+                Interlocked.Add (ref cacheUsed, -block.Count);
+                await Writer.WriteAsync (block.File, block.Offset, block.Buffer, 0, block.Count);
+                ClientEngine.BufferPool.Return (block.Buffer);
+            }
+            CachedBlocks.RemoveAll (b => b.File == file);
         }
 
-        void Flush (int index)
+        async ReusableTask FlushAsync (int index)
         {
             CachedBlock b = CachedBlocks[index];
             CachedBlocks.RemoveAt (index);
             Interlocked.Add (ref cacheUsed, -b.Count);
-            Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);
+            await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, true);
             ClientEngine.BufferPool.Return (b.Buffer);
         }
 
-        public void Move (TorrentFile file, string newPath, bool overwrite)
+        public async ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
         {
-            Writer.Move (file, newPath, overwrite);
+            await Writer.MoveAsync (file, newPath, overwrite);
         }
 
         public void Dispose ()
         {
-            // Flush everything currently held in memory
-            while (CachedBlocks.Count > 0)
-                Flush (CachedBlocks.Count - 1);
-
-            // Dispose the held writer
+            Debug.Assert (CachedBlocks.Count == 0, "MemoryWriter should have been flushed before being disposed");
             Writer.Dispose ();
         }
     }
