@@ -39,6 +39,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -673,7 +674,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        internal async Task TryHashPendingFilesAsync ()
+        internal async ReusableTask TryHashPendingFilesAsync ()
         {
             // If we cannot handle peer messages then we should not try to async hash.
             // This adds a little bit of a double meaning to the property (for now).
