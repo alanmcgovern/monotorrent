@@ -369,6 +369,7 @@ namespace MonoTorrent.Client
             if (isPublic)
                 publicTorrents.Add (manager);
             ConnectionManager.Add (manager);
+            listenManager.Add (manager.InfoHash);
 
             manager.Engine = this;
             manager.DownloadLimiters.Add (downloadLimiters);
@@ -521,6 +522,7 @@ namespace MonoTorrent.Client
             allTorrents.Remove (manager);
             publicTorrents.Remove (manager);
             ConnectionManager.Remove (manager);
+            listenManager.Remove (manager.InfoHash);
 
             manager.Engine = null;
             manager.DownloadLimiters.Remove (downloadLimiters);
