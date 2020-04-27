@@ -42,11 +42,30 @@ namespace MonoTorrent.Client
     {
         ClientEngine Engine { get; set; }
         List<IPeerListener> Listeners { get; }
+        InfoHash[] SKeys { get; set; }
 
         internal ListenManager (ClientEngine engine)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
             Listeners = new List<IPeerListener> ();
+            SKeys = Array.Empty<InfoHash> ();
+        }
+
+        public void Add (InfoHash skey)
+        {
+            var clone = new InfoHash[SKeys.Length + 1];
+            Array.Copy (SKeys, clone, SKeys.Length);
+            clone[clone.Length - 1] = skey;
+            SKeys = clone;
+        }
+
+        public void Remove (InfoHash skey)
+        {
+            var clone = new InfoHash[SKeys.Length - 1];
+            var index = Array.IndexOf (SKeys, skey);
+            Array.Copy (SKeys, clone, index);
+            Array.Copy (SKeys, index + 1, clone, index, clone.Length - index);
+            SKeys = clone;
         }
 
         public void Dispose ()
@@ -88,12 +107,8 @@ namespace MonoTorrent.Client
 
                 Logger.Log (e.Connection, "ListenManager - ConnectionReceived");
 
-                var skeys = new List<InfoHash> ();
-                for (int i = 0; i < Engine.Torrents.Count; i++)
-                    skeys.Add (Engine.Torrents[i].InfoHash);
-
                 IConnection2 connection = ConnectionConverter.Convert (e.Connection);
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, skeys.ToArray ());
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
                 if (!await HandleHandshake (e.Peer, connection, result.Handshake, result.Decryptor, result.Encryptor))
                     connection.Dispose ();
             } catch {
