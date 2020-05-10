@@ -36,7 +36,7 @@ namespace MonoTorrent
         public static void SafeDispose (this IDisposable disposable)
         {
             try {
-                disposable.Dispose ();
+                disposable?.Dispose ();
             } catch {
                 // Ignore
             }
