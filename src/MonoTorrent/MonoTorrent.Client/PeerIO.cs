@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
     {
         const int MaxMessageLength = Piece.BlockSize * 4;
 
-        public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IConnection2 connection, IEncryption decryptor)
+        public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IConnection connection, IEncryption decryptor)
         {
             using (ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
@@ -57,12 +57,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection2 connection, IEncryption decryptor)
+        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor)
         {
             return ReceiveMessageAsync (connection, decryptor, null, null, null, null);
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection2 connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
             int messageHeaderLength = 4;
             int messageBodyLength;
@@ -105,12 +105,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static ReusableTask SendMessageAsync (IConnection2 connection, IEncryption encryptor, PeerMessage message)
+        public static ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message)
         {
             return SendMessageAsync (connection, encryptor, message, null, null, null);
         }
 
-        public static async ReusableTask SendMessageAsync (IConnection2 connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
+        public static async ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
             int count = message.ByteLength;
             using (ClientEngine.BufferPool.Rent (count, out byte[] buffer)) {

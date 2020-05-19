@@ -109,10 +109,9 @@ namespace MonoTorrent.Client
 
                 Logger.Log (e.Connection, "ListenManager - ConnectionReceived");
 
-                IConnection2 connection = ConnectionConverter.Convert (e.Connection);
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
-                if (!await HandleHandshake (e.Peer, connection, result.Handshake, result.Decryptor, result.Encryptor))
-                    connection.Dispose ();
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
+                if (!await HandleHandshake (e.Peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
+                    e.Connection.Dispose ();
             } catch {
                 e.Connection.Dispose ();
             }

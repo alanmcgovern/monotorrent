@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            IConnection2 connection = ConnectionConverter.Convert (ConnectionFactory.Create (peer.ConnectionUri));
+            IConnection connection = ConnectionFactory.Create (peer.ConnectionUri);
             if (connection == null)
                 return;
 
@@ -248,7 +248,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async void ReceiveMessagesAsync (IConnection2 connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
+        internal async void ReceiveMessagesAsync (IConnection connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
         {
             try {
                 while (true) {

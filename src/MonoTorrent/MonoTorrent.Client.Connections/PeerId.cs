@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
     public partial class PeerId
     {
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
         /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
             => CreateNull (bitfieldLength);
 
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
         /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
         /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client
 
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        internal IConnection2 Connection { get; }
+        internal IConnection Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
@@ -197,7 +197,7 @@ namespace MonoTorrent.Client
         {
             if (connection == null)
                 throw new ArgumentNullException (nameof (connection));
-            Connection = ConnectionConverter.Convert (connection);
+            Connection = connection;
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
             BitField = bitfield;
         }
