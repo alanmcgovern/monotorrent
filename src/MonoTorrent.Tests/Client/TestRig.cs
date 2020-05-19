@@ -107,6 +107,7 @@ namespace MonoTorrent.Client
     class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
         public List<DateTime> AnnouncedAt = new List<DateTime> ();
+        public List<AnnounceParameters> AnnounceParameters = new List<AnnounceParameters> ();
         public List<DateTime> ScrapedAt = new List<DateTime> ();
 
         public bool FailAnnounce;
@@ -121,22 +122,23 @@ namespace MonoTorrent.Client
             CanScrape = true;
         }
 
-        protected override Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
             AnnouncedAt.Add (DateTime.Now);
             if (FailAnnounce)
                 throw new TrackerException ("Deliberately failing announce request", null);
 
-            return Task.FromResult (peers);
+            AnnounceParameters.Add (parameters);
+            return ReusableTask.FromResult (new AnnounceResponse (peers, null, null));
         }
 
-        protected override Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
             ScrapedAt.Add (DateTime.Now);
             if (FailScrape)
                 throw new TrackerException ("Deliberately failing scrape request", null);
 
-            return Task.CompletedTask;
+            return ReusableTask.FromResult (new ScrapeResponse (0, 0, 0));
         }
 
         public void AddPeer (Peer peer)

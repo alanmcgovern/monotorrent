@@ -27,8 +27,12 @@
 //
 
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.Tracker;
 
 using NUnit.Framework;
 
@@ -76,7 +80,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task Announce ()
         {
-            TrackerManager.AddTracker ("http://1.1.1.1");
+            await TrackerManager.AddTrackerAsync (TrackerFactory.Create (new Uri ("http://1.1.1.1")));
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -85,8 +89,8 @@ namespace MonoTorrent.Client.Modes
             // Technically this is not what we want. However the logic to avoid announcing to quickly
             // is now inside TrackerManager so a mocked TrackerManager will double announce.
             Assert.AreEqual (2, TrackerManager.Announces.Count, "#1");
-            Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
-            Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[1].Item1, "#2");
+            Assert.AreEqual (null, TrackerManager.Announces[0].Item1, "#2");
+            Assert.AreEqual (null, TrackerManager.Announces[1].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Started, TrackerManager.Announces[0].Item2, "#3");
             Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[1].Item2, "#3");
         }

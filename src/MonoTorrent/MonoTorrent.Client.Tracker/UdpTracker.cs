@@ -35,6 +35,8 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.UdpTracker;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client.Tracker
 {
     [DebuggerDisplay("{" + nameof(Uri)+ "}")]
@@ -53,7 +55,7 @@ namespace MonoTorrent.Client.Tracker
             Status = TrackerState.Unknown;
         }
 
-        protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
@@ -66,7 +68,7 @@ namespace MonoTorrent.Client.Tracker
                 MinUpdateInterval = announce.Interval;
 
                 Status = TrackerState.Ok;
-                return announce.Peers;
+                return new AnnounceResponse (announce.Peers, null, null);
             } catch (OperationCanceledException e) {
                 Status = TrackerState.Offline;
                 ConnectionIdTask = null;
@@ -78,7 +80,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        protected override async Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override async ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
@@ -95,6 +97,7 @@ namespace MonoTorrent.Client.Tracker
                     Incomplete = response.Scrapes[0].Leeches;
                 }
                 Status = TrackerState.Ok;
+                return new ScrapeResponse (Complete, Downloaded, Incomplete);
             } catch (OperationCanceledException e) {
                 Status = TrackerState.Offline;
                 ConnectionIdTask = null;

@@ -29,7 +29,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -59,20 +62,22 @@ namespace MonoTorrent.Client.Tracker
             WarningMessage = "";
         }
 
-        public async Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters)
+        public async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
-            List<Peer> result = await DoAnnounceAsync (parameters);
-            LastAnnounced.Restart ();
-            return result;
+            try {
+                return await DoAnnounceAsync (parameters, token);
+            } finally {
+                LastAnnounced.Restart ();
+            }
         }
 
-        protected abstract Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters);
+        protected abstract ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token);
 
-        public Task ScrapeAsync (ScrapeParameters parameters)
+        public ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
-            return DoScrapeAsync (parameters);
+            return DoScrapeAsync (parameters, token);
         }
 
-        protected abstract Task DoScrapeAsync (ScrapeParameters parameters);
+        protected abstract ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token);
     }
 }

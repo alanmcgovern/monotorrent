@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
@@ -78,7 +79,7 @@ namespace MonoTorrent.Tracker
                 TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
                 var parameters = new AnnounceParameters (0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new string ('1', 20), "", 1411, false);
-                await tier.Trackers[0].AnnounceAsync (parameters);
+                await tier.Trackers[0].AnnounceAsync (parameters, CancellationToken.None);
             }
         }
     }
