@@ -38,6 +38,8 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client.Tracker
 {
     class HTTPTracker : Tracker
@@ -71,7 +73,7 @@ namespace MonoTorrent.Client.Tracker
                 Key = new BEncodedString ($"{VersionInfo.ClientVersion}-{random.Next (1, int.MaxValue)}");
         }
 
-        protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
             // WebRequest.Create can be a comparatively slow operation as reported
             // by profiling. Switch this to the threadpool so the querying of default
@@ -86,7 +88,11 @@ namespace MonoTorrent.Client.Tracker
             Uri announceString = CreateAnnounceString (parameters);
             using var client = new HttpClient ();
             HttpResponseMessage response;
+
+            // Ensure the supplied 'token' causes the request to be cancelled too.
             using var cts = new CancellationTokenSource (RequestTimeout);
+            using var registration = token.Register (cts.Cancel);
+
             try {
                 Status = TrackerState.Connecting;
                 response = await client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead,  cts.Token);
@@ -101,7 +107,7 @@ namespace MonoTorrent.Client.Tracker
                 using (response) {
                     peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
                     Status = TrackerState.Ok;
-                    return peers;
+                    return new AnnounceResponse (peers, WarningMessage, FailureMessage);
                 }
             } catch (Exception ex) {
                 Status = TrackerState.InvalidResponse;
@@ -110,7 +116,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        protected override async Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override async ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
             // WebRequest.Create can be a comparatively slow operation as reported
             // by profiling. Switch this to the threadpool so the querying of default
@@ -127,7 +133,10 @@ namespace MonoTorrent.Client.Tracker
             using var client = new HttpClient ();
 
             HttpResponseMessage response;
+
+            // Ensure the supplied 'token' causes the request to be cancelled too.
             using var cts = new CancellationTokenSource (RequestTimeout);
+            using var registration = token.Register (cts.Cancel);
             try {
                 response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
             } catch (Exception ex) {
@@ -146,6 +155,7 @@ namespace MonoTorrent.Client.Tracker
                 FailureMessage = "The tracker returned an invalid or incomplete response";
                 throw new TrackerException (FailureMessage, ex);
             }
+            return new ScrapeResponse (Complete, Downloaded, Incomplete);
         }
 
         Uri CreateAnnounceString (AnnounceParameters parameters)

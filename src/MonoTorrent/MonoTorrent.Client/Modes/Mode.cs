@@ -603,7 +603,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
-                _ = Manager.TrackerManager.Announce (TorrentEvent.None);
+                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);
             }
         }
 

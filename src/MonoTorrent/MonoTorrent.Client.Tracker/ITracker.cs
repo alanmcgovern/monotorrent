@@ -29,26 +29,119 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
+    public class AnnounceResponse
+    {
+        /// <summary>
+        /// The failure message returned by the tracker.
+        /// </summary>
+        public string FailureMessage { get; }
+
+        /// <summary>
+        /// The list of peers returned by the tracker.
+        /// </summary>
+        public IList<Peer> Peers { get; }
+
+        /// <summary>
+        /// The warning message returned by the tracker.
+        /// </summary>
+        public string WarningMessage { get; }
+
+        public AnnounceResponse (IList<Peer> peers, string warningMessage, string failureMessage)
+        {
+            Peers = peers ?? Array.Empty<Peer> ();
+            WarningMessage = warningMessage;
+            FailureMessage = failureMessage;
+        }
+    }
+
+    public class ScrapeResponse
+    {
+        /// <summary>
+        /// The number of active peers which have completed downloading. Updated after a successful Scrape. Defaults to 0.
+        /// </summary>
+        public int Complete { get; }
+
+        /// <summary>
+        /// The number of peers that have ever completed downloading. Updated after a successful Scrape. Defaults to 0.
+        /// </summary>
+        public int Downloaded { get; }
+
+        /// <summary>
+        /// The number of active peers which have not completed downloading. Updated after a successul Scrape. Defaults to 0.
+        /// </summary>
+        public int Incomplete { get; }
+
+        public ScrapeResponse (int complete, int downloaded, int incomplete)
+        {
+            Complete = complete;
+            Downloaded = downloaded;
+            Incomplete = incomplete;
+        }
+    }
+
     public interface ITracker
     {
-        bool CanAnnounce { get; }
+        /// <summary>
+        /// True if the tracker supports Scrape requests.
+        /// </summary>
         bool CanScrape { get; }
-        int Complete { get; }
-        int Downloaded { get; }
-        string FailureMessage { get; }
-        int Incomplete { get; }
+
+        /// <summary>
+        /// The minimum interval between announce requests.
+        /// </summary>
         TimeSpan MinUpdateInterval { get; }
-        TrackerState Status { get; }
-        TimeSpan TimeSinceLastAnnounce { get; }
+
+        /// <summary>
+        /// The recommended interval between announce requests.
+        /// </summary>
         TimeSpan UpdateInterval { get; }
+
+        /// <summary>
+        /// The time since the last announce request was sent.
+        /// </summary>
+        TimeSpan TimeSinceLastAnnounce { get; }
+
+        /// <summary>
+        /// The status of the tracker after the most recent announce request.
+        /// </summary>
+        TrackerState Status { get; }
+
+        /// <summary>
+        /// The uri for the tracker
+        /// </summary>
         Uri Uri { get; }
+
+        /// <summary>
+        /// The warning message sent with the most recent announce request.
+        /// </summary>
         string WarningMessage { get; }
 
-        Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters);
-        Task ScrapeAsync (ScrapeParameters parameters);
+        /// <summary>
+        /// The failure message sent with the most recent announce request.
+        /// </summary>
+        string FailureMessage { get; }
+
+        /// <summary>
+        /// Send an announce request to the tracker.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="token">The token used to cancel the request.</param>
+        /// <returns></returns>
+        ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters parameters, CancellationToken token);
+
+        /// <summary>
+        /// Send a scrape request to the tracker.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="token">The token used to cancel the request.</param>
+        /// <returns></returns>
+        ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeParameters parameters, CancellationToken token);
     }
 }

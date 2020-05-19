@@ -385,7 +385,7 @@ namespace MonoTorrent.Client
             InactivePeerManager = new InactivePeerManager (this);
             Peers = new PeerManager ();
             PieceManager = new PieceManager (this);
-            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces));
+            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces, HasMetadata && Torrent.IsPrivate));
 
             Mode = new StoppedMode (this, null, null, null);
             CreateRateLimiters ();

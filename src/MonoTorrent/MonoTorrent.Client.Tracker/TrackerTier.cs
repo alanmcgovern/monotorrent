@@ -29,29 +29,90 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier
     {
+        internal event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
+        internal event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
+
+        /// <summary>
+        /// The <see cref="ITracker"/> which Announce and Scrape requests will be sent
+        /// to by default.
+        /// </summary>
         public ITracker ActiveTracker => Trackers[ActiveTrackerIndex];
 
-        internal int ActiveTrackerIndex { get; set; }
+        /// <summary>
+        /// A readonly list of all trackers contained within this Tier.
+        /// </summary>
+        public IList<ITracker> Trackers { get; private set; }
 
-        public IList<ITracker> Trackers { get; }
+        /// <summary>
+        /// The number of active peers which have completed downloading. Updated after a successful Scrape. Defaults to 0.
+        /// </summary>
+        public int Complete => LastScrapeResponse.Complete;
 
-        internal bool SentStartedEvent { get; set; }
+        /// <summary>
+        /// The number of peers that have ever completed downloading. Updated after a successful Scrape. Defaults to 0.
+        /// </summary>
+        public int Downloaded => LastScrapeResponse.Downloaded;
 
-        internal ValueStopwatch LastAnnounce { get; set; }
-        internal ValueStopwatch LastScrape { get; set; }
+        /// <summary>
+        /// The number of active peers which have not completed downloading. Updated after a successul Scrape. Defaults to 0.
+        /// </summary>
+        public int Incomplete => LastScrapeResponse.Incomplete;
 
-        public bool LastAnnounceSucceeded { get; internal set; }
-        public bool LastScrapSucceeded { get; internal set; }
+        /// <summary>
+        /// Returns true if the the most recent Announce was successful and <see cref="ITracker.UpdateInterval"/> seconds
+        /// have passed, or if <see cref="ITracker.MinUpdateInterval"/> seconds have passed and the Announce was unsuccessful.
+        /// Otherwise returns false.
+        /// </summary>
+        bool CanSendAnnounce {
+            get {
+                // NOTE: All trackers in a tier are supposed to be identical load balancers. As such we can
+                // assume all trackers have the same update intervals.
+                if (LastAnnounceSucceeded && TimeSinceLastAnnounce < ActiveTracker.UpdateInterval)
+                    return false;
+                if (!LastAnnounceSucceeded && TimeSinceLastAnnounce < ActiveTracker.MinUpdateInterval)
+                    return false;
+                return true;
+            }
+        }
 
-        public DateTime LastUpdated { get; internal set; }
+        /// <summary>
+        /// Returns true if <see cref="ITracker.UpdateInterval"/> seconds have passed since the most recent
+        /// scrape was sent.
+        /// </summary>
+        bool CanSendScrape {
+            get {
+                return TimeSinceLastScrape > ActiveTracker.UpdateInterval;
+            }
+        }
 
-        internal TimeSpan TimeSinceLastAnnounce => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
-        internal TimeSpan TimeSinceLastScrape => LastScrape.IsRunning ? LastScrape.Elapsed : TimeSpan.MaxValue;
+        int ActiveTrackerIndex { get; set; }
+        bool SentStartedEvent { get; set; }
+
+        ValueStopwatch LastAnnounce { get; set; }
+        ValueStopwatch LastScrape { get; set; }
+
+        public bool LastAnnounceSucceeded { get; private set; }
+        public bool LastScrapeSucceeded { get; internal set; }
+
+        public TimeSpan TimeSinceLastAnnounce {
+            get => LastAnnounce.IsRunning ? LastAnnounce.Elapsed : TimeSpan.MaxValue;
+            internal set => LastAnnounce = ValueStopwatch.WithTime (value);
+        }
+
+        public TimeSpan TimeSinceLastScrape {
+            get => LastScrape.IsRunning ? LastScrape.Elapsed : TimeSpan.MaxValue;
+            internal set => LastScrape = ValueStopwatch.WithTime (value);
+        }
+
+        ScrapeResponse LastScrapeResponse { get; set; } = new ScrapeResponse (0, 0, 0);
 
         internal TrackerTier (IEnumerable<string> trackerUrls)
         {
@@ -71,6 +132,130 @@ namespace MonoTorrent.Client.Tracker
             }
 
             Trackers = trackerList.AsReadOnly ();
+        }
+
+        internal TrackerTier (ITracker tracker)
+        {
+            Trackers = Array.AsReadOnly (new [] { tracker });
+        }
+
+        internal async ReusableTask<(ITracker, AnnounceResponse)> AnnounceAsync (AnnounceParameters args, CancellationToken token)
+        {
+            // Bail out if we're announcing too frequently for this tracker tier.
+            if (!CanSendAnnounce)
+                return (null, null);
+
+            if (!SentStartedEvent)
+                args = args.WithClientEvent (TorrentEvent.Started);
+
+            // Update before sending an announce so 'CanSendAnnounce' starts to return 'false'.
+            LastAnnounce = ValueStopwatch.StartNew ();
+
+            // If a specific tracker is passed to this method then only announce to that tracker. Otherwise
+            // we should try all trackers in a round-robin fashion.
+            for (int i = 0; i < Trackers.Count; i++) {
+                var tracker = Trackers[(ActiveTrackerIndex + i) % Trackers.Count];
+                try {
+                    var response = await DoAnnounceAsync (args, tracker, token);
+                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true));
+                    LastAnnounce = ValueStopwatch.StartNew ();
+                    LastAnnounceSucceeded = true;
+                    return (tracker, response);
+                } catch {
+                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, false));
+                    token.ThrowIfCancellationRequested ();
+                }
+            }
+
+            LastAnnounce = ValueStopwatch.StartNew ();
+            LastAnnounceSucceeded = false;
+            return (null, new AnnounceResponse (null, null, null));
+        }
+
+        internal async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters args, ITracker tracker, CancellationToken token)
+        {
+            if (!SentStartedEvent)
+                args = args.WithClientEvent (TorrentEvent.Started);
+
+            // Update before sending an announce so 'CanSendAnnounce' starts to return 'false'.
+            LastAnnounce = ValueStopwatch.StartNew ();
+
+            try {
+                var result = await DoAnnounceAsync (args, tracker, token);
+                AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true));
+                LastAnnounceSucceeded = true;
+                return result;
+            } catch {
+                AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, false));
+                LastAnnounceSucceeded = false;
+                token.ThrowIfCancellationRequested ();
+                throw;
+            } finally {
+                LastAnnounce = ValueStopwatch.StartNew ();
+            }
+        }
+
+        async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters args, ITracker tracker, CancellationToken token)
+        {
+            var response = await tracker.AnnounceAsync (args, token);
+            ActiveTrackerIndex = Trackers.IndexOf (tracker);
+            SentStartedEvent |= args.ClientEvent == TorrentEvent.Started;
+            return response;
+        }
+
+        internal async ReusableTask ScrapeAsync (ScrapeParameters args, CancellationToken token)
+        {
+            if (!CanSendScrape)
+                return;
+
+            for (int i = 0; i < Trackers.Count; i++) {
+                var tracker = Trackers[(ActiveTrackerIndex + i) % Trackers.Count];
+                try {
+                    LastScrapeResponse = await tracker.ScrapeAsync (args, token);
+                    ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, true));
+                } catch {
+                    ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, false));
+                    token.ThrowIfCancellationRequested ();
+                }
+            }
+        }
+
+        internal async ReusableTask ScrapeAsync (ScrapeParameters args, ITracker tracker, CancellationToken token)
+        {
+            try {
+                LastScrapeResponse = await tracker.ScrapeAsync (args, token);
+                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, true));
+            } catch {
+                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, false));
+                token.ThrowIfCancellationRequested ();
+            }
+        }
+
+        internal TrackerTier With (ITracker tracker)
+        {
+            if (Trackers.Contains (tracker))
+                return this;
+
+            var clonedTrackers = new List<ITracker> (Trackers);
+            clonedTrackers.Add (tracker);
+
+            var clonedTier = (TrackerTier) MemberwiseClone ();
+            clonedTier.Trackers = clonedTrackers;
+            return clonedTier;
+        }
+
+        internal TrackerTier Without (ITracker tracker)
+        {
+            if (!Trackers.Contains (tracker))
+                return this;
+
+            var clonedTrackers = new List<ITracker> (Trackers);
+            clonedTrackers.Remove (tracker);
+
+            var clonedTier = (TrackerTier) MemberwiseClone ();
+            clonedTier.Trackers = clonedTrackers;
+            clonedTier.ActiveTrackerIndex %= Trackers.Count;
+            return clonedTier;
         }
     }
 }
