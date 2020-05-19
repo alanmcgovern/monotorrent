@@ -136,6 +136,7 @@ namespace MonoTorrent.Client.Connections
             IsIncoming = isIncoming;
         }
 
+        static readonly HashSet<ReusableTaskCompletionSource<int>> hasBeenSeenAlready = new HashSet<ReusableTaskCompletionSource<int>> ();
         static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
@@ -145,6 +146,12 @@ namespace MonoTorrent.Client.Connections
             int transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
             e.UserToken = null;
+
+            if (e.Buffer == null)
+                lock (hasBeenSeenAlready)
+                    if (!hasBeenSeenAlready.Add (tcs)) {
+                        throw new Exception ("The completion delegate has been invoked twice");
+            }
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferPool, then we should put it back in the 'other' cache.
