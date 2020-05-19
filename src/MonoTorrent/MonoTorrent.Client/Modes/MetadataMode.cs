@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -90,7 +91,7 @@ namespace MonoTorrent.Client.Modes
             try {
                 Manager.DhtAnnounce ();
                 await Task.WhenAll (
-                    Manager.TrackerManager.Announce (),
+                    Manager.TrackerManager.AnnounceAsync(CancellationToken.None).AsTask (),
                     Manager.LocalPeerAnnounceAsync ()
                 );
             } catch {

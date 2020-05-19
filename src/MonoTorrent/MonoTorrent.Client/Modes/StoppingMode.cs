@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Modes
                 if (Manager.Torrent != null)
                     stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
 
-                Task announceTask = Manager.TrackerManager.Announce (TorrentEvent.Stopped);
+                Task announceTask = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Stopped, CancellationToken.None).AsTask ();
                 if (timeout != Timeout.InfiniteTimeSpan)
                     announceTask = Task.WhenAny (announceTask, Task.Delay (timeout));
                 stoppingTasks.Add (announceTask);

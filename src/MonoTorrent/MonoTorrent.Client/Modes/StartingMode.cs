@@ -29,6 +29,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Modes
@@ -109,8 +110,8 @@ namespace MonoTorrent.Client.Modes
                 // We need to announce before going into Downloading mode, otherwise we will
                 // send a regular announce instead of a 'Started' announce.
                 await Task.WhenAll (
-                    Manager.TrackerManager.Scrape (),
-                    Manager.TrackerManager.Announce (TorrentEvent.Started)
+                    Manager.TrackerManager.ScrapeAsync (CancellationToken.None).AsTask (),
+                    Manager.TrackerManager.AnnounceAsync (TorrentEvent.Started, CancellationToken.None).AsTask ()
                 );
             } catch {
                 // Ignore

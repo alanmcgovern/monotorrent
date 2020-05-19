@@ -27,6 +27,8 @@
 //
 
 
+using System.Threading;
+
 namespace MonoTorrent.Client.Modes
 {
     class DownloadMode : Mode
@@ -79,7 +81,7 @@ namespace MonoTorrent.Client.Modes
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;
                 Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
-                _ = Manager.TrackerManager.Announce (TorrentEvent.Completed);
+                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None);
             } else if (Manager.PartialProgressSelector.TrueCount > 0) {
                 // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
                 // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
