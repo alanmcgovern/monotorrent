@@ -43,14 +43,14 @@ namespace MonoTorrent.Client
 
         public struct QueuedIO
         {
-            public IConnection2 connection;
+            public IConnection connection;
             public byte[] buffer;
             public int offset;
             public int count;
             public IRateLimiter rateLimiter;
             public ReusableTaskCompletionSource<int> tcs;
 
-            public QueuedIO (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
+            public QueuedIO (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
             {
                 this.connection = connection;
                 this.buffer = buffer;
@@ -110,19 +110,19 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static async ReusableTask ConnectAsync (IConnection2 connection)
+        public static async ReusableTask ConnectAsync (IConnection connection)
         {
             await IOLoop;
 
             await connection.ConnectAsync ();
         }
 
-        public static ReusableTask ReceiveAsync (IConnection2 connection, byte[] buffer, int offset, int count)
+        public static ReusableTask ReceiveAsync (IConnection connection, byte[] buffer, int offset, int count)
         {
             return ReceiveAsync (connection, buffer, offset, count, null, null, null);
         }
 
-        public static async ReusableTask ReceiveAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask ReceiveAsync (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
@@ -151,12 +151,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count)
+        public static ReusableTask SendAsync (IConnection connection, byte[] buffer, int offset, int count)
         {
             return SendAsync (connection, buffer, offset, count, null, null, null);
         }
 
-        public static async ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask SendAsync (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 

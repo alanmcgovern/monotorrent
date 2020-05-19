@@ -38,7 +38,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    class SocketConnection : IConnection2
+    class SocketConnection : IConnection
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
@@ -167,11 +167,6 @@ namespace MonoTorrent.Client.Connections
 
         #region Async Methods
 
-        async Task IConnection.ConnectAsync ()
-        {
-            await ConnectAsync ();
-        }
-
         public async ReusableTask ConnectAsync ()
         {
             var tcs = new ReusableTaskCompletionSource<int> ();
@@ -183,11 +178,6 @@ namespace MonoTorrent.Client.Connections
                 tcs.SetResult (0);
 
             await tcs.Task;
-        }
-
-        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-        {
-            return await ReceiveAsync (buffer, offset, count);
         }
 
         public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
@@ -218,11 +208,6 @@ namespace MonoTorrent.Client.Connections
             }
 
             return ReceiveTcs.Task;
-        }
-
-        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-        {
-            return await SendAsync (buffer, offset, count);
         }
 
         public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)

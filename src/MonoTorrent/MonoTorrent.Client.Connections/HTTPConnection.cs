@@ -42,7 +42,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class HttpConnection : IConnection2
+    sealed class HttpConnection : IConnection
     {
         static int webSeedId;
 
@@ -124,19 +124,9 @@ namespace MonoTorrent.Client.Connections
 
         #endregion Constructors
 
-        Task IConnection.ConnectAsync ()
-        {
-            return Task.CompletedTask;
-        }
-
         public ReusableTask ConnectAsync ()
         {
             return ReusableTask.CompletedTask;
-        }
-
-        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-        {
-            return await ReceiveAsync (buffer, offset, count);
         }
 
         public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
@@ -244,11 +234,6 @@ namespace MonoTorrent.Client.Connections
             // If we reach this point it means that we processed all webrequests and still ended up receiving *less* data than we required,
             // and we did not throw an unexpected end of stream exception.
             throw new WebException ("Unable to download the required data from the server");
-        }
-
-        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-        {
-            return await SendAsync (buffer, offset, count);
         }
 
         public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
