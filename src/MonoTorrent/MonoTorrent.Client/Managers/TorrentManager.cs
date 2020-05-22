@@ -284,6 +284,15 @@ namespace MonoTorrent.Client
 
         public InfoHash InfoHash { get; }
 
+
+        /// <summary>
+        /// Torrent tracker announce Urls
+        /// </summary>
+        public IList<RawTrackerTier> AnnounceUrls
+        {
+            get;
+            private set;
+        }
         #endregion
 
         #region Constructors
@@ -376,6 +385,7 @@ namespace MonoTorrent.Client
 
         void Initialise (string savePath, string baseDirectory, IList<RawTrackerTier> announces)
         {
+            this.AnnounceUrls = announces;
             Bitfield = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
             PartialProgressSelector = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
             UnhashedPieces = new BitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);

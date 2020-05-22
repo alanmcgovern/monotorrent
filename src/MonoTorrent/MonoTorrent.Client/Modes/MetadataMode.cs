@@ -152,10 +152,23 @@ namespace MonoTorrent.Client.Modes
                             bitField.SetAll (false);
                         } else {
                             Stream.Position = 0;
-                            var dict = new BEncodedDictionary {
-                                { "info", BEncodedValue.Decode (Stream) }
-                            };
-                            // FIXME: Add the trackers too
+                            BEncodedDictionary dict = new BEncodedDictionary ();
+                            dict.Add ("info", BEncodedValue.Decode (Stream));
+
+                            if (this.Manager.AnnounceUrls != null) {
+                                BEncodedList announceTrackers = new BEncodedList ();
+                                foreach (RawTrackerTier rawTrackerTier in this.Manager.AnnounceUrls) {
+                                    BEncodedList announceUrls = new BEncodedList ();
+
+                                    foreach (var trackerUrl in rawTrackerTier) {
+                                        announceUrls.Add (new BEncodedString (trackerUrl));
+                                    }
+
+                                    announceTrackers.Add (announceUrls);
+                                }
+
+                                dict.Add ("announce-list", announceTrackers);
+                            }
                             if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
                                 Manager.RaiseMetadataReceived (t, dict);
                                 if (stopWhenDone)
