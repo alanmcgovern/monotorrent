@@ -155,13 +155,13 @@ namespace MonoTorrent.Client.Modes
                             BEncodedDictionary dict = new BEncodedDictionary ();
                             dict.Add ("info", BEncodedValue.Decode (Stream));
 
-                            if (this.Manager.AnnounceUrls != null) {
+                            if (Manager.TrackerManager.Tiers != null && Manager.TrackerManager.Tiers.Count > 0) {
                                 BEncodedList announceTrackers = new BEncodedList ();
-                                foreach (RawTrackerTier rawTrackerTier in this.Manager.AnnounceUrls) {
+                                foreach (var tier in Manager.TrackerManager.Tiers) {
                                     BEncodedList announceUrls = new BEncodedList ();
 
-                                    foreach (var trackerUrl in rawTrackerTier) {
-                                        announceUrls.Add (new BEncodedString (trackerUrl));
+                                    foreach (var tracker in tier.Trackers) {
+                                        announceUrls.Add (new BEncodedString (tracker.Uri.OriginalString));
                                     }
 
                                     announceTrackers.Add (announceUrls);

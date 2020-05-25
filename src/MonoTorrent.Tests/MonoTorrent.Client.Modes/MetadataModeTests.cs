@@ -221,6 +221,9 @@ namespace MonoTorrent.Client.Modes
             Assert.IsTrue (File.Exists (expectedPath), "#1");
             Torrent torrent = Torrent.Load (expectedPath);
             Assert.AreEqual (rig.Manager.InfoHash, torrent.InfoHash, "#2");
+            Assert.AreEqual (2, rig.Manager.Torrent.AnnounceUrls.Count, "#3");
+            Assert.AreEqual (2, rig.Manager.Torrent.AnnounceUrls[0].Count, "#4");
+            Assert.AreEqual (3, rig.Manager.Torrent.AnnounceUrls[1].Count, "#5");
         }
     }
 }

@@ -374,7 +374,7 @@ namespace MonoTorrent.Client
             TorrentDict = CreateTorrent (piecelength, files, tier);
             Torrent = Torrent.Load (TorrentDict);
             Manager = MetadataMode
-                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, new RawTrackerTiers ())
+                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, tier.Select (t => new RawTrackerTier (t)).ToList ())
                 : new TorrentManager (Torrent, savePath, new TorrentSettings ());
             await Engine.Register (Manager);
         }
