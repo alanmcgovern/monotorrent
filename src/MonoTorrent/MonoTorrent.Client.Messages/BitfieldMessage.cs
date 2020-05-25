@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
@@ -35,6 +37,8 @@ namespace MonoTorrent.Client.Messages.Standard
     class BitfieldMessage : PeerMessage
     {
         internal static readonly byte MessageId = 5;
+
+        internal static readonly BitfieldMessage UnknownLength = new BitfieldMessage (null);
 
         #region Member Variables
         /// <summary>
@@ -71,11 +75,13 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            BitField.FromArray (buffer, offset);
+            BitField?.FromArray (buffer, offset);
         }
 
         public override int Encode (byte[] buffer, int offset)
         {
+            if (BitField == null)
+                throw new InvalidOperationException ("Cannot send a BitfieldMessage without a Bitfield. Are you trying to send a bitfield during metadata mode?");
             int written = offset;
 
             written += Write (buffer, written, BitField.LengthInBytes + 1);
