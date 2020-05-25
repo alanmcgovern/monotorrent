@@ -246,8 +246,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             // We've sent all the pieces. Now we just wait for the torrentmanager to process them all.
-            while (rig.Manager.Mode is MetadataMode)
-                System.Threading.Thread.Sleep (10);
+            await rig.Manager.WaitForState (TorrentState.Downloading).WithTimeout ();
 
             Assert.IsTrue (File.Exists (expectedPath), "#1");
             Torrent torrent = Torrent.Load (expectedPath);
