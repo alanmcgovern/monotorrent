@@ -94,6 +94,8 @@ namespace MonoTorrent.Client.Connections
 
         public bool Connected => Socket.Connected;
 
+        bool Disposed { get; set; }
+
         EndPoint IConnection.EndPoint => EndPoint;
 
         public IPEndPoint EndPoint { get; }
@@ -137,11 +139,16 @@ namespace MonoTorrent.Client.Connections
         }
 
         static readonly HashSet<ReusableTaskCompletionSource<int>> hasBeenSeenAlready = new HashSet<ReusableTaskCompletionSource<int>> ();
-        static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
+        static async void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken;
+            var tcs = e.UserToken as ReusableTaskCompletionSource<int>;
+            if (tcs == null) {
+                var tuple = (Tuple<Task, ReusableTaskCompletionSource<int>>)e.UserToken;
+                await tuple.Item1;
+                tcs = tuple.Item2;
+            }
             SocketError error = e.SocketError;
             int transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
@@ -197,17 +204,41 @@ namespace MonoTorrent.Client.Connections
             return await ReceiveAsync (buffer, offset, count);
         }
 
-        public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+        public static void ClearStacktraces ()
         {
-            // If this has been disposed, then bail out
-            if (Socket == null) {
-                ReceiveTcs.SetResult (0);
-                return ReceiveTcs.Task;
+            lock (doubleReceiveStacktraces)
+                doubleReceiveStacktraces.Clear ();
+            lock (doubleSendStacktraces)
+                doubleSendStacktraces.Clear ();
+        }
+
+        int receiving = 0;
+        static readonly List<string> doubleReceiveStacktraces = new List<string> ();
+        public static string[] DoubleReceiveStacktraces {
+            get {
+                lock (doubleReceiveStacktraces)
+                    return doubleReceiveStacktraces.ToArray ();
+            }
+        }
+        public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+            => ReceiveAsync (buffer, offset, count, null);
+
+        internal async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count, Task delayCompletion)
+
+        {
+            if (Interlocked.Increment (ref receiving) != 1) {
+                lock (doubleReceiveStacktraces)
+                    doubleReceiveStacktraces.Add ($"Inc - Disposed: {Disposed} - {Environment.StackTrace}");
+                Socket.SafeDispose ();
             }
 
-            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
-            args.SetBuffer (offset, count);
-            args.UserToken = ReceiveTcs;
+            try {
+                SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
+                args.SetBuffer (offset, count);
+                if (delayCompletion == null)
+                    args.UserToken = ReceiveTcs;
+                else
+                    args.UserToken = Tuple.Create (delayCompletion, ReceiveTcs);
 
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             AsyncFlowControl? control = null;
@@ -215,16 +246,22 @@ namespace MonoTorrent.Client.Connections
                 control = ExecutionContext.SuppressFlow ();
 #endif
 
-            try {
-                if (!Socket.ReceiveAsync (args))
-                    ReceiveTcs.SetResult (args.BytesTransferred);
-            } finally {
+                try {
+                    if (!Socket.ReceiveAsync (args))
+                        ReceiveTcs.SetResult (args.BytesTransferred);
+                } finally {
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
 #endif
-            }
+                }
 
-            return ReceiveTcs.Task;
+                return await ReceiveTcs.Task;
+            } finally {
+                if (Interlocked.Decrement (ref receiving) != 0)
+                    lock (doubleReceiveStacktraces)
+                        doubleReceiveStacktraces.Add ($"Dec - Disposed: {Disposed} - {Environment.StackTrace}");
+
+            }
         }
 
         async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
@@ -232,17 +269,33 @@ namespace MonoTorrent.Client.Connections
             return await SendAsync (buffer, offset, count);
         }
 
+        int sending = 0;
+        static readonly List<string> doubleSendStacktraces = new List<string> ();
+        public static string[] DoubleSendStacktraces {
+            get {
+                lock (doubleSendStacktraces)
+                    return doubleSendStacktraces.ToArray ();
+            }
+        }
+
         public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
+            => SendAsync (buffer, offset, count, null);
+
+        internal async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count, Task delayCompletion)
         {
-            // If this has been disposed, then bail out
-            if (Socket == null) {
-                SendTcs.SetResult (0);
-                return SendTcs.Task;
+            if (Interlocked.Increment (ref sending) != 1) {
+                lock (doubleSendStacktraces)
+                    doubleSendStacktraces.Add ($"Inc - Disposed: {Disposed} - {Environment.StackTrace}");
+                Socket?.SafeDispose ();
             }
 
-            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
-            args.SetBuffer (offset, count);
-            args.UserToken = SendTcs;
+            try {
+                SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
+                args.SetBuffer (offset, count);
+                if (delayCompletion == null)
+                    args.UserToken = SendTcs;
+                else
+                    args.UserToken = Tuple.Create (delayCompletion, SendTcs);
 
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             AsyncFlowControl? control = null;
@@ -250,22 +303,27 @@ namespace MonoTorrent.Client.Connections
                 control = ExecutionContext.SuppressFlow ();
 #endif
 
-            try {
-                if (!Socket.SendAsync (args))
-                    SendTcs.SetResult (count);
-            } finally {
+                try {
+                    if (!Socket.SendAsync (args))
+                        SendTcs.SetResult (count);
+                } finally {
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
 #endif
-            }
+                }
 
-            return SendTcs.Task;
+                return await SendTcs.Task;
+            } finally {
+                if (Interlocked.Decrement (ref sending) != 0)
+                    lock (doubleSendStacktraces)
+                        doubleSendStacktraces.Add ($"Dec - Disposed: {Disposed} - {Environment.StackTrace}");
+            }
         }
 
         public void Dispose ()
         {
+            Disposed = true;
             Socket?.SafeDispose ();
-            Socket = null;
         }
 
 #endregion

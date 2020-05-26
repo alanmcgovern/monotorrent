@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -38,6 +40,7 @@ using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
+    [TestFixture]
     public class SocketConnectionTests
     {
         SocketConnection Incoming;
@@ -57,6 +60,30 @@ namespace MonoTorrent.Client
             Incoming = new IPV4Connection (s1a, true);
             Outgoing = new IPV4Connection (s1b, false);
             socketListener.Stop ();
+
+            SocketConnection.ClearStacktraces ();
+        }
+
+        [Test]
+        public void ReceiveConcurrently ()
+        {
+            var tcs = new TaskCompletionSource<object> ();
+            var receiveTask = Incoming.ReceiveAsync (new byte[100], 0, 100, tcs.Task);
+            Assert.ThrowsAsync<ObjectDisposedException> (() => Incoming.ReceiveAsync (new byte[100], 0, 100).AsTask ());
+            tcs.SetResult (null);
+            Assert.ThrowsAsync<SocketException> (() => receiveTask.AsTask ());
+            Assert.AreEqual (2, SocketConnection.DoubleReceiveStacktraces.Length);
+        }
+
+        [Test]
+        public async Task SendConcurrently ()
+        {
+            var tcs = new TaskCompletionSource<object> ();
+            var sendtask = Incoming.SendAsync (new byte[100], 0, 100, tcs.Task);
+            Assert.ThrowsAsync<ObjectDisposedException> (() => Incoming.SendAsync (new byte[100], 0, 100).AsTask ());
+            tcs.SetResult (null);
+            await sendtask;
+            Assert.AreEqual (2, SocketConnection.DoubleSendStacktraces.Length);
         }
 
         [Test]
@@ -66,7 +93,11 @@ namespace MonoTorrent.Client
             Incoming.Dispose ();
 
             // All we care about is that the task is marked as 'Complete'.
-            _ = await Task.WhenAny (task).WithTimeout (1000);
+            try {
+                await task.WithTimeout (1000);
+            } catch (SocketException) {
+                // Socket exceptions are expected if we dispose while receiving
+            }
             Assert.IsTrue (task.IsCompleted, "#1");
             GC.KeepAlive (task.Exception); // observe the exception (if any)
         }
@@ -78,7 +109,11 @@ namespace MonoTorrent.Client
             Incoming.Dispose ();
 
             // All we care about is that the task is marked as 'Complete'.
-            _ = await Task.WhenAny (task).WithTimeout (1000);
+            try {
+                await task.WithTimeout (1000);
+            } catch (SocketException) {
+                // Socket exceptions are expected if we dispose while sending
+            }
             Assert.IsTrue (task.IsCompleted, "#1");
             GC.KeepAlive (task.Exception); // observe the exception (if any)
         }
