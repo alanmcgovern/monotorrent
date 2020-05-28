@@ -36,6 +36,8 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages.Standard;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     class ListenManager : IDisposable
@@ -116,7 +118,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
+        async ReusableTask<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager man = null;
             if (message.ProtocolString != VersionInfo.ProtocolStringV100)

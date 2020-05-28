@@ -37,6 +37,8 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.RateLimiters;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     /// <summary>
@@ -325,7 +327,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The torrent which the peer is associated with.</param>
         /// <param name="id">The peer who just conencted</param>
-        internal async Task<bool> IncomingConnectionAcceptedAsync (TorrentManager manager, PeerId id)
+        internal async ReusableTask<bool> IncomingConnectionAcceptedAsync (TorrentManager manager, PeerId id)
         {
             try {
                 bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
