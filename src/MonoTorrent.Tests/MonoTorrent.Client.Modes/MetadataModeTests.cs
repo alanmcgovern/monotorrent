@@ -255,6 +255,9 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (2, rig.Manager.Torrent.AnnounceUrls[0].Count, "#4");
             Assert.AreEqual (3, rig.Manager.Torrent.AnnounceUrls[1].Count, "#5");
             Assert.IsTrue (receivedHaveNone, "#6");
+
+            var peer = PeerId.CreateNull (rig.Manager.Bitfield.Length, true, false, true);
+            Assert.DoesNotThrow (() => rig.Manager.PieceManager.AddPieceRequests (peer));
         }
     }
 }
