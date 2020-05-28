@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
@@ -324,21 +325,23 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The torrent which the peer is associated with.</param>
         /// <param name="id">The peer who just conencted</param>
-        internal void IncomingConnectionAccepted (TorrentManager manager, PeerId id)
+        internal async Task<bool> IncomingConnectionAcceptedAsync (TorrentManager manager, PeerId id)
         {
             try {
                 bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
                 if (LocalPeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen) {
                     CleanupSocket (manager, id);
-                    return;
+                    return false;
                 }
 
                 if (manager.Peers.ActivePeers.Contains (id.Peer)) {
                     Logger.Log (id.Connection, "ConnectionManager - Already connected to peer");
                     id.Connection.Dispose ();
-                    return;
+                    return false;
                 }
 
+                // Add the PeerId to the lists *before* doing anything asynchronous. This ensures that
+                // all PeerIds are tracked in 'ConnectedPeers' as soon as they're created.
                 Logger.Log (id.Connection, "ConnectionManager - Incoming connection fully accepted");
                 manager.Peers.AvailablePeers.Remove (id.Peer);
                 manager.Peers.ActivePeers.Add (id.Peer);
@@ -348,12 +351,18 @@ namespace MonoTorrent.Client
                 // Baseline the time the last block was received
                 id.LastBlockReceived.Restart ();
 
+                // Send our handshake now that we've decided to keep the connection
+                var handshake = new HandshakeMessage (manager.InfoHash, manager.Engine.PeerId, VersionInfo.ProtocolStringV100);
+                await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
+
                 manager.HandlePeerConnected (id);
 
                 // We've sent our handshake so begin our looping to receive incoming message
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
+                return true;
             } catch {
                 CleanupSocket (manager, id);
+                return false;
             }
         }
 
