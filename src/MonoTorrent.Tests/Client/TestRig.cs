@@ -547,12 +547,12 @@ namespace MonoTorrent.Client
             return new TorrentManager (editor.ToTorrent (), "", new TorrentSettings ());
         }
 
-        internal static TestRig CreateSingleFile (int torrentSize, int pieceLength)
+        internal static TestRig CreateSingleFile (long torrentSize, int pieceLength)
         {
             return CreateSingleFile (torrentSize, pieceLength, false);
         }
 
-        internal static TestRig CreateSingleFile (int torrentSize, int pieceLength, bool metadataMode)
+        internal static TestRig CreateSingleFile (long torrentSize, int pieceLength, bool metadataMode)
         {
             TorrentFile[] files = StandardSingleFile ();
             files[0] = new TorrentFile (files[0].Path, torrentSize);
@@ -564,7 +564,7 @@ namespace MonoTorrent.Client
             return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), StandardMultiFile (), metadataMode);
         }
 
-        internal static TorrentManager CreateSingleFileManager (int torrentSize, int pieceLength)
+        internal static TorrentManager CreateSingleFileManager (long torrentSize, int pieceLength)
         {
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;
         }
