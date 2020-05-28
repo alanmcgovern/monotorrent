@@ -76,13 +76,13 @@ namespace MonoTorrent.Client
         TorrentManager Manager { get; }
         PiecePicker originalPicker;
         internal PiecePicker Picker { get; private set; }
-        internal BitField UnhashedPieces { get; private set; }
+        internal BitField PendingHashCheckPieces { get; private set; }
 
         internal PieceManager (TorrentManager manager)
         {
             Manager = manager;
             Picker = new NullPicker ();
-            UnhashedPieces = new BitField (1);
+            PendingHashCheckPieces = new BitField (1);
         }
 
         internal Piece PieceDataReceived (PeerId id, PieceMessage message)
@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
                     RaiseBlockReceived (new BlockEventArgs (Manager, block, piece, id));
 
                 if (piece.AllBlocksReceived)
-                    UnhashedPieces[message.PieceIndex] = true;
+                    PendingHashCheckPieces[message.PieceIndex] = true;
                 return piece;
             }
             return null;
@@ -161,11 +161,22 @@ namespace MonoTorrent.Client
         internal void ChangePicker (PiecePicker picker, BitField bitfield)
         {
             originalPicker = picker;
-            if (UnhashedPieces.Length != bitfield.Length)
-                UnhashedPieces = new BitField (bitfield.Length);
+            if (PendingHashCheckPieces.Length != bitfield.Length)
+                PendingHashCheckPieces = new BitField (bitfield.Length);
 
+            // 'PendingHashCheckPieces' is the list of fully downloaded pieces which
+            // are waiting to be hash checked. We should not begin a second download of
+            // a piece while waiting to confirm if the original download was successful.
+            //
+            // 'Manager.UnhashedPieces' represents the pieces from the torrent which
+            // have not been hash checked as they are marked as 'DoNotDownload'. If
+            // a file is changed to be downloadable, the engine will hashcheck the data
+            // first and then remove them from the 'UnhashedPieces' bitfield which will
+            // make them downloadable. If they actually passed the hashcheck then they
+            // won't actually be requested again.
             picker = new IgnoringPicker (bitfield, picker);
-            picker = new IgnoringPicker (UnhashedPieces, picker);
+            picker = new IgnoringPicker (PendingHashCheckPieces, picker);
+            picker = new IgnoringPicker (Manager.UnhashedPieces, picker);
             Picker = picker;
         }
 
@@ -177,7 +188,7 @@ namespace MonoTorrent.Client
 
         internal void Reset ()
         {
-            UnhashedPieces.SetAll (false);
+            PendingHashCheckPieces.SetAll (false);
             Picker?.Reset ();
         }
 

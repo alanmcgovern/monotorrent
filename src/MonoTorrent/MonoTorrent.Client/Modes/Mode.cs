@@ -385,7 +385,7 @@ namespace MonoTorrent.Client.Modes
 
             bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, piece.Index);
             Manager.OnPieceHashed (piece.Index, result, 1, 1);
-            Manager.PieceManager.UnhashedPieces[piece.Index] = false;
+            Manager.PieceManager.PendingHashCheckPieces[piece.Index] = false;
             if (!result)
                 Manager.HashFails++;
 
