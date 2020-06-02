@@ -239,8 +239,7 @@ namespace MonoTorrent.Client.PiecePicking
                 Piece p = requests[pIndex];
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
-                if (p.AllBlocksRequested || p.AllBlocksReceived || !peer.BitField[p.Index] ||
-                    (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.RepeatedHashFails != 0))
+                if (p.AllBlocksRequested || p.AllBlocksReceived || !peer.BitField[p.Index])
                     continue;
 
                 for (int i = p.Blocks.Length - 1; i >= 0; i--)
