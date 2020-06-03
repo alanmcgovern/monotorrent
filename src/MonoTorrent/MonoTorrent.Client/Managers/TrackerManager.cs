@@ -41,10 +41,12 @@ namespace MonoTorrent.Client.Tracker
     /// <summary>
     /// Represents the connection to a tracker that an TorrentManager has
     /// </summary>
-    public class TrackerManager : ITrackerManager
+    class TrackerManager : ITrackerManager
     {
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
+
+        public SemaphoreSlim  AnnounceLimiter { get; }
 
         /// <summary>
         /// If this is set to 'true' then <see cref="AddTrackerAsync(ITracker)"/>,
@@ -71,6 +73,8 @@ namespace MonoTorrent.Client.Tracker
         /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
         internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces, bool isPrivate)
         {
+            AnnounceLimiter = new SemaphoreSlim (10);
+
             RequestFactory = requestFactory;
             Private = isPrivate;
 
@@ -153,7 +157,7 @@ namespace MonoTorrent.Client.Tracker
             var args = RequestFactory.CreateAnnounce (clientEvent);
             var announces = new List<Task> ();
             for (int i = 0; i < Tiers.Count; i++) {
-                var task = Tiers[i].AnnounceAsync (args, token);
+                var task = AnnounceTierAsync (Tiers[i], args, token);
                 if (task.IsCompleted)
                     await task;
                 else
@@ -163,6 +167,11 @@ namespace MonoTorrent.Client.Tracker
             if (announces.Count > 0)
                 await Task.WhenAll (announces);
         }
+        async ReusableTask AnnounceTierAsync (TrackerTier tier, AnnounceParameters args, CancellationToken token)
+        {
+            using (await AnnounceLimiter.EnterAsync ())
+                await tier.AnnounceAsync (args, token);
+        }
 
         public async ReusableTask AnnounceAsync (ITracker tracker, CancellationToken token)
         {
@@ -170,19 +179,18 @@ namespace MonoTorrent.Client.Tracker
 
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
-            await AnnounceAsync (TorrentEvent.None, tracker, token);
-        }
 
-        async ReusableTask<bool> AnnounceAsync (TorrentEvent clientEvent, ITracker tracker, CancellationToken token)
-        {
-            var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
-            AnnounceParameters args = RequestFactory.CreateAnnounce (clientEvent);
             try {
-                await trackerTier.AnnounceAsync (args, tracker, token);
-                return true;
+                var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
+                AnnounceParameters args = RequestFactory.CreateAnnounce (TorrentEvent.None);
+                await AnnounceTrackerAsync (trackerTier, args, tracker, token);
             } catch {
-                return false;
             }
+        }
+        async ReusableTask AnnounceTrackerAsync (TrackerTier tier, AnnounceParameters args, ITracker tracker, CancellationToken token)
+        {
+            using (await AnnounceLimiter.EnterAsync ())
+                await tier.AnnounceAsync (args, tracker, token);
         }
 
         public async ReusableTask ScrapeAsync (CancellationToken token)
