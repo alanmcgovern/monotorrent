@@ -55,6 +55,8 @@ namespace MonoTorrent.Tracker
         /// </summary>
         public IPEndPoint ClientAddress { get; private set; }
 
+        public Software ClientApp { get; private set; }
+
         ///<summary>
         /// A byte[] containing the peer's IPEndpoint in compact form
         ///</summary>
@@ -136,6 +138,7 @@ namespace MonoTorrent.Tracker
             Uploaded = parameters.Uploaded;
             Remaining = parameters.Left;
             PeerId = parameters.PeerId;
+            ClientApp = new Software (parameters.PeerId);
             LastAnnounceTime = now;
         }
 
