@@ -30,6 +30,8 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Logging;
+
 namespace MonoTorrent.Client.PiecePicking
 {
     public class StandardPicker : PiecePicker
