@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace MonoTorrent.Client.PortForwarding
@@ -55,7 +56,7 @@ namespace MonoTorrent.Client.PortForwarding
 
         internal Mappings ()
         {
-            Created = Pending = Failed = Array.AsReadOnly (Array.Empty<Mapping> ());
+            Created = Pending = Failed = Array.Empty<Mapping> ().ToReadonly ();
         }
 
         Mappings (IReadOnlyList<Mapping> created, IReadOnlyList<Mapping> pending, IReadOnlyList<Mapping> failed)
@@ -77,32 +78,32 @@ namespace MonoTorrent.Client.PortForwarding
 
         internal Mappings WithAllPending ()
         {
-            return new Mappings (Array.Empty<Mapping> (), Array.AsReadOnly (Created.Concat (Pending).Concat (Failed).ToArray ()), Array.Empty<Mapping> ());
+            return new Mappings (Array.Empty<Mapping> (), Created.Concat (Pending).Concat (Failed).ToReadonly (), Array.Empty<Mapping> ());
         }
 
         internal Mappings WithCreated (Mapping mapping)
         {
-            var created = !Created.Contains (mapping) ? Array.AsReadOnly (Created.Concat (new[] { mapping }).ToArray ()) : Created;
-            var failed = Failed.Contains (mapping) ? Array.AsReadOnly (Failed.Where (t => t != mapping).ToArray ()) : Failed;
-            var pending = Pending.Contains (mapping) ? Array.AsReadOnly (Pending.Where (t => t != mapping).ToArray ()) : Pending;
+            var created = !Created.Contains (mapping) ? Created.Concat (new[] { mapping }).ToReadonly () : Created;
+            var failed = Failed.Contains (mapping) ?  Failed.Where (t => t != mapping).ToReadonly () : Failed;
+            var pending = Pending.Contains (mapping) ? Pending.Where (t => t != mapping).ToReadonly () : Pending;
 
             return new Mappings (created, pending, failed);
         }
 
         internal Mappings WithFailed (Mapping mapping)
         {
-            var created = Created.Contains (mapping) ? Array.AsReadOnly (Created.Where (t => t != mapping).ToArray ()) : Created;
-            var failed = !Failed.Contains (mapping) ? Array.AsReadOnly (Failed.Concat (new[] { mapping }).ToArray ()) : Failed;
-            var pending = Pending.Contains (mapping) ? Array.AsReadOnly (Pending.Where (t => t != mapping).ToArray ()) : Pending;
+            var created = Created.Contains (mapping) ? Created.Where (t => t != mapping).ToReadonly () : Created;
+            var failed = !Failed.Contains (mapping) ? Failed.Concat (new[] { mapping }).ToReadonly () : Failed;
+            var pending = Pending.Contains (mapping) ? Pending.Where (t => t != mapping).ToReadonly () : Pending;
 
             return new Mappings (created, pending, failed);
         }
 
         internal Mappings WithPending (Mapping mapping)
         {
-            var created = Created.Contains (mapping) ? Array.AsReadOnly (Created.Where (t => t != mapping).ToArray ()) : Created;
-            var failed = Failed.Contains (mapping) ? Array.AsReadOnly (Failed.Where (t => t != mapping).ToArray ()) : Failed;
-            var pending = !Pending.Contains (mapping) ? Array.AsReadOnly (Pending.Concat (new[] { mapping }).ToArray ()) : Pending;
+            var created = Created.Contains (mapping) ? Created.Where (t => t != mapping).ToReadonly () : Created;
+            var failed = Failed.Contains (mapping) ? Failed.Where (t => t != mapping).ToReadonly () : Failed;
+            var pending = !Pending.Contains (mapping) ? Pending.Concat (new[] { mapping }).ToReadonly () : Pending;
 
             return new Mappings (created, pending, failed);
         }

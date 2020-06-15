@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;uap10.0</TargetFrameworks>
     <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -29,6 +29,24 @@
     </PropertyGroup>
   </Target>
 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'uap10.0'">
+    <!--<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>-->
+    <NugetTargetMoniker>UAP,Version=v10.1</NugetTargetMoniker>
+    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
+    <TargetFrameworkIdentifier>.NETCore</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+    <DefineConstants>$(DefineConstants);UWP</DefineConstants>
+    <LanguageTargets>$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets</LanguageTargets>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' ">
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform " Version="6.2.10" />
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.18362.2005" />
+    <!-- HACK: GitInfo is broken for UWP -->
+    <Compile Include="$(IntermediateOutputPath)\ThisAssembly.GitInfo.g.cs" />
+  </ItemGroup>
+    
   <!-- Restore success is in the .nuget.g.props file generated as part of msbuild /t:Restore. We do not -->
   <!-- want this logic to run if restore hasn't been executed as the 'GitVersion' target won't exist.   -->
   <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' " DependsOnTargets="GitVersion">

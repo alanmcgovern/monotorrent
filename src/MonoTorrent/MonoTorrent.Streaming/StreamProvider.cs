@@ -93,7 +93,7 @@ namespace MonoTorrent.Streaming
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
             Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
-            Files = Array.AsReadOnly (torrent.Files);
+            Files = torrent.Files.ToReadonly ();
         }
 
         /// <summary>
@@ -116,9 +116,9 @@ namespace MonoTorrent.Streaming
             // If the metadata for this MagnetLink has been downloaded/cached already, we will synchronously
             // load it here and will have access to the list of Files. Otherwise we need to wait.
             if (Manager.HasMetadata)
-                Files = Array.AsReadOnly (Manager.Torrent.Files);
+                Files = Manager.Torrent.Files.ToReadonly ();
             else
-                Manager.MetadataReceived += (o, e) => Files = Array.AsReadOnly (e.torrent.Files);
+                Manager.MetadataReceived += (o, e) => Files = e.torrent.Files.ToReadonly ();
         }
 
         /// <summary>

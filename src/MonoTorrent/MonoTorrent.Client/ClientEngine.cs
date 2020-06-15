@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
 
             allTorrents = new List<TorrentManager> ();
             publicTorrents = new List<TorrentManager> ();
-            Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
+            Torrents = publicTorrents.ToReadonly ();
 
             DiskManager = new DiskManager (Settings, writer);
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);

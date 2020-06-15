@@ -96,12 +96,12 @@ namespace MonoTorrent.Client
         bool Disposed { get; set; }
 
         /// <summary>
-        /// The number of bytes which are currently cached in memory, pending writing.
+        /// The number of bytes which are currently waiting to be read.
         /// </summary>
         public int PendingReads => pendingReads;
 
         /// <summary>
-        /// The number of bytes which are currently cached in memory, pending writing.
+        /// The number of bytes cached in memory which are waiting to be written.
         /// </summary>
         public int PendingWrites => pendingWrites;
 
