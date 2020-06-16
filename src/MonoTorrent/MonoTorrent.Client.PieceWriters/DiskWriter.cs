@@ -30,6 +30,8 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
@@ -38,8 +40,18 @@ namespace MonoTorrent.Client.PieceWriters
     {
         static readonly int DefaultMaxOpenFiles = 196;
 
-        static readonly Func<TorrentFile, FileAccess, ITorrentFileStream> DefaultStreamCreator =
-            (file, access) => new TorrentFileStream (file.FullPath, access);
+#if UWP
+        static readonly Func<TorrentFile, FileAccess, ReusableTask<ITorrentFileStream>> DefaultStreamCreator = async (file, access) => {
+            var openedFile = await Windows.Storage.StorageFile.GetFileFromPathAsync (file.FullPath);
+            var streamTask = access.HasFlag (FileAccess.Write) ? openedFile.OpenStreamForWriteAsync () : openedFile.OpenStreamForReadAsync ();
+            var stream = await streamTask;
+            // FIXME: return new TorrentFileStream (stream);
+            throw new NotImplementedException ();
+        };
+#else
+        static readonly Func<TorrentFile, FileAccess, ReusableTask<ITorrentFileStream>> DefaultStreamCreator =
+            (file, access) => ReusableTask.FromResult<ITorrentFileStream> (new TorrentFileStream (file.FullPath, access));
+#endif
 
         readonly SemaphoreSlim Limiter;
 
@@ -53,7 +65,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        internal DiskWriter (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator)
+        internal DiskWriter (Func<TorrentFile, FileAccess, ReusableTask<ITorrentFileStream>> streamCreator)
             : this (streamCreator, DefaultMaxOpenFiles)
         {
 
@@ -65,7 +77,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        internal DiskWriter (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator, int maxOpenFiles)
+        internal DiskWriter (Func<TorrentFile, FileAccess, ReusableTask<ITorrentFileStream>> streamCreator, int maxOpenFiles)
         {
             StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
             Limiter = new SemaphoreSlim (maxOpenFiles);
