@@ -41,13 +41,13 @@ namespace MonoTorrent.Common
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            HashAlgoFactory.Register<SHA1, SHA1Fake> ();
+            HashAlgoFactory.SHA1Builder = () => new SHA1Fake ();
         }
 
         [OneTimeTearDown]
         public void FixtureTeardown ()
         {
-            HashAlgoFactory.Register<SHA1, SHA1CryptoServiceProvider> ();
+            HashAlgoFactory.SHA1Builder = () => SHA1.Create ();
         }
 
         [SetUp]

@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht
 
         public TokenManager ()
         {
-            sha1 = HashAlgoFactory.Create<SHA1> ();
+            sha1 = HashAlgoFactory.SHA1 ();
             random = new RNGCryptoServiceProvider ();
             currentSecret = new byte[10];
             previousSecret = new byte[10];
