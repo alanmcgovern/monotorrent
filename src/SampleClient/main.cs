@@ -11,6 +11,7 @@ using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Dht;
+using MonoTorrent.Logging;
 
 namespace SampleClient
 {
@@ -48,6 +49,8 @@ namespace SampleClient
 
         private static async Task StartEngine ()
         {
+            LoggerFactory.Creator = (string className) => new TextLogger (Console.Out, className);
+
             int port;
             Torrent torrent = null;
             // Ask the user what port they want to use for incoming connections

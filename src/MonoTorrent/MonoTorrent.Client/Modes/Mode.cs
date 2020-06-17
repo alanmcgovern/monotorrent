@@ -39,12 +39,16 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Logging;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Modes
 {
     abstract class Mode
     {
+        static readonly Logger logger = Logger.Create ();
+
         bool hashingPendingFiles;
         BitField PartialProgressUpdater;
 
@@ -153,7 +157,7 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandleHandshakeMessage (PeerId id, HandshakeMessage message)
         {
             if (!message.ProtocolString.Equals (VersionInfo.ProtocolStringV100)) {
-                Logger.Log (id.Connection, "HandShake.Handle - Invalid protocol in handshake: {0}", message.ProtocolString);
+                logger.InfoFormatted (id.Connection, "Invalid protocol in handshake: {0}", message.ProtocolString);
                 throw new ProtocolException ("Invalid protocol string");
             }
 
@@ -164,7 +168,7 @@ namespace MonoTorrent.Client.Modes
 
             // If the infohash doesn't match, dump the connection
             if (message.InfoHash != Manager.InfoHash) {
-                Logger.Log (id.Connection, "HandShake.Handle - Invalid infohash");
+                logger.Info (id.Connection, "HandShake.Handle - Invalid infohash");
                 throw new TorrentException ("Invalid infohash. Not tracking this torrent");
             }
 
@@ -175,7 +179,7 @@ namespace MonoTorrent.Client.Modes
                     // match we should close the connection. I *think* uTorrent doesn't randomise peerids
                     // for private torrents. It's not documented very well. We may need to relax this check
                     // if other clients randomize for private torrents.
-                    Logger.Log (id.Connection, "HandShake.Handle - Invalid peerid");
+                    logger.Info (id.Connection, "HandShake.Handle - Invalid peerid");
                     throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
                 } else {
                     // We don't care about the mismatch for public torrents. uTorrent randomizes its PeerId, as do other clients.
@@ -314,7 +318,7 @@ namespace MonoTorrent.Client.Modes
             if (message.MaxRequests > 0)
                 id.MaxSupportedPendingRequests = message.MaxRequests;
             else
-                Logger.Log (id.Connection, "Invalid value for libtorrent extension handshake 'MaxRequests'.");
+                logger.InfoFormatted (id.Connection, "Invalid value for libtorrent extension handshake 'MaxRequests' {0}", message.MaxRequests);
 
             // Bugfix for MonoTorrent older than 1.0.19
             if (id.ClientApp.Client == ClientApp.MonoTorrent)

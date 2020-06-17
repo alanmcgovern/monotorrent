@@ -38,11 +38,14 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.UdpTracker;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Tracker.Listeners
 {
     class UdpTrackerListener : TrackerListener, ISocketListener
     {
+        static readonly Logger logger = Logger.Create ();
+
         public IPEndPoint EndPoint { get; private set; }
 
         IPEndPoint OriginalEndPoint { get; }
@@ -102,7 +105,7 @@ namespace MonoTorrent.Tracker.Listeners
                         _ => throw new ProtocolException ($"Invalid udp message received: {request.Action}")
                     };
                 } catch (Exception e) {
-                    Logger.Log (null, e.ToString ());
+                    logger.Exception (e, "Exception while receiving a message");
                 }
             }
         }

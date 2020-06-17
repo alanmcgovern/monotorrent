@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,11 +39,14 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {
+        static readonly Logger logger = Logger.Create ();
+
         BitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
         PeerId currentId;
@@ -183,7 +185,7 @@ namespace MonoTorrent.Client.Modes
                                     File.Delete (savePath);
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {
-                                    Logger.Log (null, "*METADATA EXCEPTION* - Can not write in {0} : {1}", savePath, ex);
+                                    logger.ExceptionFormated (ex, "Cannot write metadata to path '{0}'", savePath);
                                     Manager.TrySetError (Reason.WriteFailure, ex);
                                     return;
                                 }

@@ -29,13 +29,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Logging;
 
 using ReusableTasks;
 
@@ -46,6 +46,8 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionManager
     {
+        static readonly Logger logger = Logger.Create ();
+
         struct AsyncConnectState
         {
             public AsyncConnectState (TorrentManager manager, IConnection connection, ValueStopwatch timer)
@@ -155,7 +157,7 @@ namespace MonoTorrent.Client
                     id.LastMessageReceived.Restart ();
                     id.LastMessageSent.Restart ();
 
-                    Logger.Log (id.Connection, "ConnectionManager - Connection opened");
+                    logger.Info (id.Connection, "Connection opened");
 
                     ProcessNewOutgoingConnection (manager, id);
                 }
@@ -297,7 +299,7 @@ namespace MonoTorrent.Client
                         manager.Peers.BannedPeers.Add (id.Peer);
                 }
             } catch (Exception ex) {
-                Logger.Log (null, $"CleanupSocket Error {ex.Message}");
+                logger.Exception (ex, "An unexpected error occured cleaning up a connection");
             } finally {
                 manager.RaisePeerDisconnected (new PeerDisconnectedEventArgs (manager, id));
             }
@@ -338,14 +340,14 @@ namespace MonoTorrent.Client
                 }
 
                 if (manager.Peers.ActivePeers.Contains (id.Peer)) {
-                    Logger.Log (id.Connection, "ConnectionManager - Already connected to peer");
+                    logger.Info (id.Connection, "Already connected to peer");
                     id.Connection.Dispose ();
                     return false;
                 }
 
                 // Add the PeerId to the lists *before* doing anything asynchronous. This ensures that
                 // all PeerIds are tracked in 'ConnectedPeers' as soon as they're created.
-                Logger.Log (id.Connection, "ConnectionManager - Incoming connection fully accepted");
+                logger.Info (id.Connection, "Incoming connection fully accepted");
                 manager.Peers.AvailablePeers.Remove (id.Peer);
                 manager.Peers.ActivePeers.Add (id.Peer);
                 manager.Peers.ConnectedPeers.Add (id);

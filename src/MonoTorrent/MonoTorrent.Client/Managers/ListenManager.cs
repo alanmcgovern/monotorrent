@@ -35,6 +35,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Logging;
 
 using ReusableTasks;
 
@@ -42,6 +43,8 @@ namespace MonoTorrent.Client
 {
     class ListenManager : IDisposable
     {
+        static readonly Logger logger = Logger.Create ();
+
         ClientEngine Engine { get; set; }
         List<IPeerListener> Listeners { get; }
         InfoHash[] SKeys { get; set; }
@@ -107,7 +110,7 @@ namespace MonoTorrent.Client
                     return;
                 }
 
-                Logger.Log (e.Connection, "ListenManager - ConnectionReceived");
+                logger.Info (e.Connection, "ConnectionReceived");
 
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
                 if (!await HandleHandshake (e.Peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
@@ -148,7 +151,7 @@ namespace MonoTorrent.Client
             };
 
             man.Mode.HandleMessage (id, message);
-            Logger.Log (id.Connection, "ListenManager - Handshake successful handled");
+            logger.Info (id.Connection, "Handshake successful handled");
 
             id.ClientApp = new Software (message.PeerId);
 

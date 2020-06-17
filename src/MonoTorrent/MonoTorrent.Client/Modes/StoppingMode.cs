@@ -33,11 +33,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.Modes
 {
     class StoppingMode : Mode
     {
+        static readonly Logger logger = Logger.Create ();
+
         public override bool CanAcceptConnections => false;
         public override bool CanHandleMessages => false;
         public override bool CanHashCheck => false;
@@ -78,11 +81,11 @@ namespace MonoTorrent.Client.Modes
                 var delayTask = Task.Delay (TimeSpan.FromMinutes (1), Cancellation.Token);
                 var overallTasks = Task.WhenAll (stoppingTasks);
                 if (await Task.WhenAny (overallTasks, delayTask) == delayTask)
-                    Logger.Log (null, "Timed out waiting for the announce request to complete");
+                    logger.Error ("Timed out waiting for the announce request to complete");
                 else
                     await overallTasks;
             } catch (Exception ex) {
-                Logger.Log (null, "Unexpected exception stopping a TorrentManager: {0}", ex);
+                logger.Exception (ex, "Unexpected exception while stopping");
             }
         }
     }
