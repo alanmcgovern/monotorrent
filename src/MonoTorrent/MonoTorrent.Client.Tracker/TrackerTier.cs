@@ -31,12 +31,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+using MonoTorrent.Logging;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier
     {
+        static readonly Logger logger = Logger.Create ();
+
         internal event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         internal event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
@@ -119,7 +123,7 @@ namespace MonoTorrent.Client.Tracker
             var trackerList = new List<ITracker> ();
             foreach (string trackerUrl in trackerUrls) {
                 if (!Uri.TryCreate (trackerUrl, UriKind.Absolute, out Uri result)) {
-                    Logger.Log (null, "TrackerTier - Invalid tracker Url specified: {0}", trackerUrl);
+                    logger.InfoFormatted ("Invalid tracker Url specified: {0}", trackerUrl);
                     continue;
                 }
 
@@ -127,7 +131,7 @@ namespace MonoTorrent.Client.Tracker
                 if (tracker != null) {
                     trackerList.Add (tracker);
                 } else {
-                    Logger.Log (null, "Unsupported protocol {0}", result);
+                    logger.InfoFormatted ("Unsupported protocol {0}", result);
                 }
             }
 

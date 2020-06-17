@@ -37,6 +37,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Logging;
 
 using ReusableTasks;
 
@@ -44,6 +45,8 @@ namespace MonoTorrent.Client.Tracker
 {
     class HTTPTracker : Tracker
     {
+        static readonly Logger logger = Logger.Create ();
+
         static readonly Random random = new Random ();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds (10);
 
@@ -294,7 +297,7 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     default:
-                        Logger.Log (null, "HttpTracker - Unknown announce tag received: Key {0}  Value: {1}", keypair.Key.ToString (), keypair.Value.ToString ());
+                        logger.InfoFormatted ("Unknown announce tag received: Key {0}  Value: {1}", keypair.Key, keypair.Value);
                         break;
                 }
             }
@@ -330,7 +333,7 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     default:
-                        Logger.Log (null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString (), kp.Value.ToString ());
+                        logger.InfoFormatted ("Unknown scrape tag received: Key {0}  Value {1}", kp.Key, kp.Value);
                         break;
                 }
             }

@@ -30,12 +30,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+
+using MonoTorrent.Logging;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     class FileStreamBuffer : IDisposable
     {
+        static readonly Logger logger = Logger.Create ();
+
         internal readonly struct RentedStream : IDisposable
         {
             internal readonly ITorrentFileStream Stream;
@@ -104,7 +109,7 @@ namespace MonoTorrent.Client.PieceWriters
             if (s != null) {
                 // If we are requesting write access and the current stream does not have it
                 if (((access & FileAccess.Write) == FileAccess.Write) && !s.CanWrite) {
-                    Logger.Log (null, "Didn't have write permission - reopening");
+                    logger.InfoFormatted ("Didn't have write permission for {0} - reopening", file.Path);
                     CloseAndRemove (file, s);
                     s = null;
                 } else {
@@ -139,7 +144,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         void Add (TorrentFile file, ITorrentFileStream stream)
         {
-            Logger.Log (null, "Opening filestream: {0}", file.FullPath);
+            logger.InfoFormatted ("Opening filestream: {0}", file.FullPath);
 
             if (MaxStreams != 0 && Streams.Count >= MaxStreams) {
                 for (int i = 0; i < UsageOrder.Count; i++) {
@@ -155,7 +160,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         void CloseAndRemove (TorrentFile file, ITorrentFileStream s)
         {
-            Logger.Log (null, "Closing and removing: {0}", file.Path);
+            logger.InfoFormatted ("Closing and removing: {0}", file.Path);
             Streams.Remove (file);
             UsageOrder.Remove (file);
             s.Dispose ();
