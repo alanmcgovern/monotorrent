@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
 
             public IncrementalHashData ()
             {
-                Hasher = HashAlgoFactory.Create<SHA1> ();
+                Hasher = HashAlgoFactory.SHA1 ();
                 Initialise ();
             }
 
