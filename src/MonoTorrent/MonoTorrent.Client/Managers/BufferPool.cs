@@ -27,12 +27,32 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
     class BufferPool
     {
+        internal struct Releaser : IDisposable
+        {
+            internal byte[] Buffer;
+            BufferPool Pool;
+
+            internal Releaser (BufferPool pool, byte[] buffer)
+            {
+                Pool = pool;
+                Buffer = buffer;
+            }
+
+            public void Dispose ()
+            {
+                Pool.Return (Buffer);
+                Pool = null;
+                Buffer = null;
+            }
+        }
+
         const int AllocateDelta = 8;
 
         const int SmallMessageBufferSize = 256;
@@ -62,7 +82,7 @@ namespace MonoTorrent.Client
             AllocateBuffers (AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
-        public void Return (byte[] buffer)
+        void Return (byte[] buffer)
         {
             if (buffer == null)
                 return;
@@ -89,38 +109,38 @@ namespace MonoTorrent.Client
                     MassiveBuffers.Enqueue (buffer);
         }
 
-        public byte[] Rent (int minCapacity)
+        public Releaser Rent (int minCapacity, out byte[] buffer)
         {
             if (minCapacity <= SmallMessageBufferSize)
-                return Rent (SmallMessageBuffers, SmallMessageBufferSize);
+                return Rent (SmallMessageBuffers, SmallMessageBufferSize, out buffer);
 
             if (minCapacity <= MediumMessageBufferSize)
-                return Rent (MediumMessageBuffers, MediumMessageBufferSize);
+                return Rent (MediumMessageBuffers, MediumMessageBufferSize, out buffer);
 
             if (minCapacity <= LargeMessageBufferSize)
-                return Rent (LargeMessageBuffers, LargeMessageBufferSize);
+                return Rent (LargeMessageBuffers, LargeMessageBufferSize, out buffer);
 
             lock (MassiveBuffers) {
-                byte[] buffer;
                 for (int i = 0; i < MassiveBuffers.Count; i++)
                     if ((buffer = MassiveBuffers.Dequeue ()).Length >= minCapacity)
-                        return buffer;
+                        return new Releaser (this, buffer);
                     else
                         MassiveBuffers.Enqueue (buffer);
 
                 buffer = new byte[minCapacity];
                 lock (AllocatedBuffers)
                     AllocatedBuffers.Add (buffer);
-                return buffer;
+                return new Releaser (this, buffer);
             }
         }
 
-        byte[] Rent (Queue<byte[]> buffers, int bufferSize)
+        Releaser Rent (Queue<byte[]> buffers, int bufferSize, out byte[] buffer)
         {
             lock (buffers) {
                 if (buffers.Count == 0)
                     AllocateBuffers (AllocateDelta, buffers, bufferSize);
-                return buffers.Dequeue ();
+                buffer = buffers.Dequeue ();
+                return new Releaser (this, buffer);
             }
         }
 

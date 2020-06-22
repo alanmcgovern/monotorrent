@@ -345,7 +345,7 @@ namespace MonoTorrent.Client.Modes
             if (piece != null)
                 WritePieceAsync (message, piece);
             else
-                ClientEngine.BufferPool.Return (message.Data);
+                message.DataReleaser.Dispose ();
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests (id);
         }
@@ -363,7 +363,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.TrySetError (Reason.WriteFailure, ex);
                 return;
             } finally {
-                ClientEngine.BufferPool.Return (message.Data);
+                message.DataReleaser.Dispose ();
             }
 
             piece.TotalWritten++;
@@ -464,10 +464,6 @@ namespace MonoTorrent.Client.Modes
                 AppendFastPieces (id, bundle);
 
                 id.Enqueue (bundle);
-                if (!id.ProcessingQueue) {
-                    id.ProcessingQueue = true;
-                    ConnectionManager.ProcessQueue (Manager, id);
-                }
             } else {
                 ConnectionManager.CleanupSocket (Manager, id);
             }

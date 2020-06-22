@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
             try {
                 // Receive their handshake
                 HandshakeMessage handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
-                handshake.Handle (manager, id);
+                manager.Mode.HandleMessage (id, handshake);
             } catch {
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
                 id.Peer.AllowedEncryption &= ~id.EncryptionType;
@@ -255,10 +255,11 @@ namespace MonoTorrent.Client
                     Messages.PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent);
                     if (id.Disposed) {
                         if (message is PieceMessage msg)
-                            ClientEngine.BufferPool.Return (msg.Data);
+                            msg.DataReleaser.Dispose ();
+                        break;
                     } else {
                         id.LastMessageReceived.Restart ();
-                        message.Handle (torrentManager, id);
+                        torrentManager.Mode.HandleMessage (id, message);
                     }
                 }
             } catch {
@@ -381,7 +382,7 @@ namespace MonoTorrent.Client
 
                 try {
                     if (pm != null) {
-                        pm.Data = ClientEngine.BufferPool.Rent (pm.ByteLength);
+                        pm.DataReleaser = ClientEngine.BufferPool.Rent (pm.ByteLength, out _);
                         try {
                             await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength);
                         } catch (Exception ex) {
@@ -401,7 +402,7 @@ namespace MonoTorrent.Client
                     break;
                 } finally {
                     if (pm?.Data != null)
-                        ClientEngine.BufferPool.Return (pm.Data);
+                        pm.DataReleaser.Dispose ();
                 }
             }
 

@@ -78,58 +78,47 @@ namespace MonoTorrent.Client.Encryption
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
             int bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                              + 2 + padC.Length + 2 + InitialPayload.Length;
-            byte[] buffer = ClientEngine.BufferPool.Rent (bufferLength);
 
-            int offset = 0;
-            offset += Message.Write (buffer, offset, req1);
-            offset += Message.Write (buffer, offset, req2);
-            offset += Message.Write (buffer, offset, VerificationConstant);
-            DoEncrypt (buffer, offset - VerificationConstant.Length, VerificationConstant.Length);
+            using (ClientEngine.BufferPool.Rent (bufferLength, out byte[] buffer)) {
+                int offset = 0;
+                offset += Message.Write (buffer, offset, req1);
+                offset += Message.Write (buffer, offset, req2);
+                offset += Message.Write (buffer, offset, VerificationConstant);
+                DoEncrypt (buffer, offset - VerificationConstant.Length, VerificationConstant.Length);
 
-            offset += Message.Write (buffer, offset, DoEncrypt (CryptoProvide));
-            offset += Message.Write (buffer, offset, (short) padC.Length);
-            DoEncrypt (buffer, offset - 2, 2);
+                offset += Message.Write (buffer, offset, DoEncrypt (CryptoProvide));
+                offset += Message.Write (buffer, offset, (short) padC.Length);
+                DoEncrypt (buffer, offset - 2, 2);
 
-            offset += Message.Write (buffer, offset, DoEncrypt (padC));
+                offset += Message.Write (buffer, offset, DoEncrypt (padC));
 
-            // ... PadC, len(IA)), ENCRYPT(IA)
-            offset += Message.Write (buffer, offset, (short) InitialPayload.Length);
-            DoEncrypt (buffer, offset - 2, 2);
+                // ... PadC, len(IA)), ENCRYPT(IA)
+                offset += Message.Write (buffer, offset, (short) InitialPayload.Length);
+                DoEncrypt (buffer, offset - 2, 2);
 
-            offset += Message.Write (buffer, offset, DoEncrypt (InitialPayload));
+                offset += Message.Write (buffer, offset, DoEncrypt (InitialPayload));
 
-            // Send the entire message in one go
-            try {
+                // Send the entire message in one go
                 await NetworkIO.SendAsync (socket, buffer, 0, bufferLength).ConfigureAwait (false);
-            } finally {
-                ClientEngine.BufferPool.Return (buffer);
             }
-
             DoDecrypt (VerificationConstant, 0, VerificationConstant.Length);
             await Synchronize (VerificationConstant, 616).ConfigureAwait (false); // 4 B->A: ENCRYPT(VC)
         }
 
         protected override async ReusableTask DoneSynchronize ()
         {
-            await base.DoneSynchronize ().ConfigureAwait (false); // 4 B->A: ENCRYPT(VC, ...
-
             // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
-            byte[] padD = null;
             int verifyBytesLength = 4 + 2;
-            byte[] verifyBytes = ClientEngine.BufferPool.Rent (verifyBytesLength);
-            try {
+            using (ClientEngine.BufferPool.Rent (verifyBytesLength, out byte[] verifyBytes)) {
                 await ReceiveMessage (verifyBytes, verifyBytesLength).ConfigureAwait (false); // crypto_select, len(padD) ...
                 DoDecrypt (verifyBytes, 0, verifyBytesLength);
 
                 short padDLength = Message.ReadShort (verifyBytes, 4);
-                padD = ClientEngine.BufferPool.Rent (padDLength);
-
-                await ReceiveMessage (padD, padDLength).ConfigureAwait (false);
-                DoDecrypt (padD, 0, padDLength);
+                using (ClientEngine.BufferPool.Rent (padDLength, out byte[] padD)) {
+                    await ReceiveMessage (padD, padDLength).ConfigureAwait (false);
+                    DoDecrypt (padD, 0, padDLength);
+                }
                 SelectCrypto (verifyBytes, true);
-            } finally {
-                ClientEngine.BufferPool.Return (verifyBytes);
-                ClientEngine.BufferPool.Return (padD);
             }
         }
     }

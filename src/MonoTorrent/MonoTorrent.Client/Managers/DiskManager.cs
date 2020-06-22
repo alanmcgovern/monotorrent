@@ -256,25 +256,24 @@ namespace MonoTorrent.Client
             long startOffset = incrementalHash.NextOffsetToHash;
             long endOffset = Math.Min ((long) manager.PieceLength * (pieceIndex + 1), manager.Size);
 
-            byte[] hashBuffer = ClientEngine.BufferPool.Rent (Piece.BlockSize);
-            try {
-                SHA1 hasher = incrementalHash.Hasher;
+            using (ClientEngine.BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
+                try {
+                    SHA1 hasher = incrementalHash.Hasher;
 
-                while (startOffset != endOffset) {
-                    int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
-                    if (!await ReadAsync (manager, startOffset, hashBuffer, count).ConfigureAwait (false))
-                        return null;
-                    startOffset += count;
-                    hasher.TransformBlock (hashBuffer, 0, count, hashBuffer, 0);
+                    while (startOffset != endOffset) {
+                        int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
+                        if (!await ReadAsync (manager, startOffset, hashBuffer, count).ConfigureAwait (false))
+                            return null;
+                        startOffset += count;
+                        hasher.TransformBlock (hashBuffer, 0, count, hashBuffer, 0);
+                    }
+
+                    hasher.TransformFinalBlock (hashBuffer, 0, 0);
+                    return hasher.Hash;
+                } finally {
+                    IncrementalHashCache.Enqueue (incrementalHash);
+                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 }
-
-                hasher.TransformFinalBlock (hashBuffer, 0, 0);
-                byte[] result = hasher.Hash;
-                return result;
-            } finally {
-                IncrementalHashCache.Enqueue (incrementalHash);
-                IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
-                ClientEngine.BufferPool.Return (hashBuffer);
             }
         }
 
