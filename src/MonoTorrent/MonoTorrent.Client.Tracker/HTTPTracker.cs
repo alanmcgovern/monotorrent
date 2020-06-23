@@ -85,6 +85,8 @@ namespace MonoTorrent.Client.Tracker
 
             Uri announceString = CreateAnnounceString (parameters);
             using var client = new HttpClient ();
+            client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
+
             HttpResponseMessage response;
             using var cts = new CancellationTokenSource (RequestTimeout);
             try {
@@ -125,6 +127,7 @@ namespace MonoTorrent.Client.Tracker
                 url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
 
             using var client = new HttpClient ();
+            client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
             HttpResponseMessage response;
             using var cts = new CancellationTokenSource (RequestTimeout);
