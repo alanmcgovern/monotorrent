@@ -64,6 +64,11 @@ namespace MonoTorrent.Client.Connections
 
         public Uri Uri => Connection.Uri;
 
+        public bool PeerIOSend { get; set; }
+        public object PeerIOLocker { get; } = new object ();
+        public bool NetworkIOSend { get; set; }
+        public object NetworkIOLocker { get; } = new object ();
+
         public V1ToV2Converter (IConnection connection)
         {
             Connection = connection;

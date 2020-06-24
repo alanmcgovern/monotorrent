@@ -33,6 +33,12 @@ namespace MonoTorrent.Client.Connections
 {
     public interface IConnection2 : IConnection
     {
+        object PeerIOLocker { get; }
+        bool PeerIOSend { get; set; }
+
+        object NetworkIOLocker { get; }
+        bool NetworkIOSend { get; set; }
+
         new ReusableTask ConnectAsync ();
 
         new ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count);

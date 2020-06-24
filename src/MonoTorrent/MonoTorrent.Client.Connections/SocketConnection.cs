@@ -270,13 +270,43 @@ namespace MonoTorrent.Client.Connections
         }
 
         int sending = 0;
-        static readonly List<string> doubleSendStacktraces = new List<string> ();
+        internal static readonly List<string> doubleSendStacktraces = new List<string> ();
         public static string[] DoubleSendStacktraces {
             get {
                 lock (doubleSendStacktraces)
                     return doubleSendStacktraces.ToArray ();
             }
         }
+
+        bool peerIOSend;
+        bool networkIOSend;
+
+        public bool PeerIOSend {
+            get { return peerIOSend; }
+            set {
+                if (value && peerIOSend)
+                    lock (doubleSendStacktraces)
+                        doubleSendStacktraces.Add (Environment.StackTrace);
+                if (!value && !peerIOSend)
+                    lock (doubleSendStacktraces)
+                        doubleSendStacktraces.Add (Environment.StackTrace);
+                peerIOSend = value;
+            }
+        }
+        public object PeerIOLocker { get; } = new object ();
+        public bool NetworkIOSend {
+            get { return networkIOSend; }
+            set {
+                if (value && networkIOSend)
+                    lock (doubleSendStacktraces)
+                        doubleSendStacktraces.Add (Environment.StackTrace);
+                if (!value && !networkIOSend)
+                    lock (doubleSendStacktraces)
+                        doubleSendStacktraces.Add (Environment.StackTrace);
+                networkIOSend = value;
+            }
+        }
+        public object NetworkIOLocker { get; } = new object ();
 
         public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
             => SendAsync (buffer, offset, count, null);
@@ -304,8 +334,11 @@ namespace MonoTorrent.Client.Connections
 #endif
 
                 try {
-                    if (!Socket.SendAsync (args))
+                    if (!Socket.SendAsync (args)) {
+                        if (delayCompletion != null)
+                            await delayCompletion;
                         SendTcs.SetResult (count);
+                    }
                 } finally {
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();

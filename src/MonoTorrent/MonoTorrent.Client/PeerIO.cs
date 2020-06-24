@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 using MonoTorrent.Client.Connections;
@@ -120,6 +121,9 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask SendMessageAsync (IConnection2 connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
+            lock (connection.PeerIOLocker)
+                connection.PeerIOSend = true;
+
             int count = message.ByteLength;
             byte[] buffer = ClientEngine.BufferPool.Rent (count);
 
@@ -139,6 +143,9 @@ namespace MonoTorrent.Client
                 }
             } finally {
                 ClientEngine.BufferPool.Return (buffer);
+                lock (connection.PeerIOLocker)
+                    connection.PeerIOSend = false;
+
             }
         }
     }

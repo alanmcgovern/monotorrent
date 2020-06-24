@@ -158,30 +158,38 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask SendAsync (IConnection2 connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
+            lock (connection.NetworkIOLocker)
+                connection.NetworkIOSend = true;
+
             await IOLoop;
 
-            while (count > 0) {
-                int transferred;
-                bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+            try {
+                while (count > 0) {
+                    int transferred;
+                    bool unlimited = rateLimiter?.Unlimited ?? true;
+                    int shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
 
-                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
-                    var tcs = new ReusableTaskCompletionSource<int> ();
-                    await IOLoop;
-                    sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
-                    transferred = await tcs.Task.ConfigureAwait (false);
-                } else {
-                    transferred = await connection.SendAsync (buffer, offset, shouldRead).ConfigureAwait (false);
+                    if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
+                        var tcs = new ReusableTaskCompletionSource<int> ();
+                        await IOLoop;
+                        sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
+                        transferred = await tcs.Task.ConfigureAwait (false);
+                    } else {
+                        transferred = await connection.SendAsync (buffer, offset, shouldRead).ConfigureAwait (false);
+                    }
+
+                    if (transferred == 0)
+                        throw new ConnectionClosedException ("Socket send returned 0, indicating the connection has been closed.");
+
+                    peerMonitor?.AddDelta (transferred);
+                    managerMonitor?.AddDelta (transferred);
+
+                    offset += transferred;
+                    count -= transferred;
                 }
-
-                if (transferred == 0)
-                    throw new ConnectionClosedException ("Socket send returned 0, indicating the connection has been closed.");
-
-                peerMonitor?.AddDelta (transferred);
-                managerMonitor?.AddDelta (transferred);
-
-                offset += transferred;
-                count -= transferred;
+            } finally {
+                lock (connection.NetworkIOLocker)
+                    connection.NetworkIOSend = false;
             }
         }
     }

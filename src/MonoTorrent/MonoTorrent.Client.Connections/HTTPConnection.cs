@@ -106,6 +106,10 @@ namespace MonoTorrent.Client.Connections
         public Uri Uri { get; }
 
         Queue<KeyValuePair<WebRequest, int>> WebRequests { get; } = new Queue<KeyValuePair<WebRequest, int>> ();
+        public bool PeerIOSend { get; set; }
+        public object PeerIOLocker { get; } = new object ();
+        public bool NetworkIOSend { get; set; }
+        public object NetworkIOLocker { get; } = new object ();
 
         #endregion
 

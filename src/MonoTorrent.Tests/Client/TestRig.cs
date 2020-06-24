@@ -152,6 +152,11 @@ namespace MonoTorrent.Client
 
     public class CustomConnection : IConnection2
     {
+        public bool PeerIOSend { get; set; }
+        public object PeerIOLocker { get; } = new object ();
+        public bool NetworkIOSend { get; set; }
+        public object NetworkIOLocker { get; } = new object ();
+
         public byte[] AddressBytes => ((IPEndPoint) EndPoint).Address.GetAddressBytes ();
         public bool CanReconnect => false;
         public bool Connected { get; private set; } = true;
