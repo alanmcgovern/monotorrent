@@ -132,10 +132,9 @@ namespace MonoTorrent.Client.Encryption
             bool supportsRC4Full = allowedEncryption.HasFlag (EncryptionTypes.RC4Full);
             bool supportsPlainText = allowedEncryption.HasFlag (EncryptionTypes.PlainText);
 
+            // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
+            await MainLoop.SwitchToThreadpool ();
             if ((settings.PreferEncryption || !supportsPlainText) && (supportsRC4Header || supportsRC4Full)) {
-                // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
-                await MainLoop.SwitchToThreadpool ();
-
                 var encSocket = new PeerAEncryption (infoHash, allowedEncryption, handshake?.Encode ());
                 await encSocket.HandshakeAsync (connection).ConfigureAwait (false);
                 if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
