@@ -104,11 +104,31 @@ namespace MonoTorrent.Common
                 Assert.IsTrue (files.Exists (f => f.Equals (torrent.Files[i])));
         }
         [Test]
-        public async Task NoTrackersTest ()
+        public async Task AnnounceUrl_None ()
         {
             BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
             Torrent t = Torrent.Load (dict);
-            Assert.AreEqual (0, t.AnnounceUrls.Count, "#1");
+            Assert.IsFalse (dict.ContainsKey ("announce-list"));
+            Assert.IsFalse (dict.ContainsKey ("announce"));
+        }
+
+        [Test]
+        public async Task AnnounceUrl_Primary ()
+        {
+            creator.Announce = "http://127.0.0.1:12345/announce";
+            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
+            Assert.IsFalse (dict.ContainsKey ("announce-list"));
+            Assert.IsTrue (dict.ContainsKey ("announce"));
+        }
+
+        [Test]
+        public async Task AnnounceUrl_ManyTiers ()
+        {
+            foreach (var v in announces)
+                creator.Announces.Add (v);
+            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
+            Assert.IsTrue (dict.ContainsKey ("announce-list"));
+            Assert.IsFalse (dict.ContainsKey ("announce"));
         }
 
         [Test]
