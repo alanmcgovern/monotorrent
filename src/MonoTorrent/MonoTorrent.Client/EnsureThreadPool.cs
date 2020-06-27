@@ -1,5 +1,5 @@
 ﻿//
-// ThreadSwitcher.cs
+// EnsureThreadPool.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -34,18 +34,18 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    struct ThreadSwitcher : INotifyCompletion
+    struct EnsureThreadPool : INotifyCompletion
     {
         static readonly WaitCallback Callback = (state) => ((Action) state).Invoke ();
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public ThreadSwitcher GetAwaiter ()
+        public EnsureThreadPool GetAwaiter ()
         {
             return this;
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public bool IsCompleted => false;
+        public bool IsCompleted => Thread.CurrentThread.IsThreadPoolThread;
 
         [EditorBrowsable (EditorBrowsableState.Never)]
         public void GetResult ()
