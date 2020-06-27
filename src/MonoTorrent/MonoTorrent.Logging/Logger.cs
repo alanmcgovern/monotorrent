@@ -82,6 +82,12 @@ namespace MonoTorrent.Logging
                 Writer.Info (string.Format (format, p1, p2));
         }
 
+        internal void InfoFormatted (string format, object p1, int p2)
+        {
+            if (Writer != null)
+                Writer.Info (string.Format (format, p1, p2));
+        }
+
         internal void InfoFormatted (IConnection connection, string formatString, int p1)
         {
             if (Writer != null)
@@ -98,6 +104,12 @@ namespace MonoTorrent.Logging
         {
             if (Writer != null)
                 Writer.Error (message);
+        }
+
+        internal void ErrorFormatted (string format, object p1)
+        {
+            if (Writer != null)
+                Writer.Error (string.Format (format, p1));
         }
 
         internal void Exception (Exception ex, string message)
