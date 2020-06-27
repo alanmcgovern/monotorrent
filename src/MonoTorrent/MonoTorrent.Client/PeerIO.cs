@@ -46,6 +46,8 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IConnection connection, IEncryption decryptor)
         {
+            await MainLoop.SwitchToThreadpool ();
+
             using (ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
 
@@ -64,6 +66,8 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
+            await MainLoop.SwitchToThreadpool ();
+
             int messageHeaderLength = 4;
             int messageBodyLength;
             byte[] messageBuffer;
@@ -112,6 +116,8 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
+            await MainLoop.SwitchToThreadpool ();
+
             int count = message.ByteLength;
             using (ClientEngine.BufferPool.Rent (count, out byte[] buffer)) {
                 var pieceMessage = message as PieceMessage;
