@@ -159,10 +159,10 @@ namespace MonoTorrent.Client.PortForwarding
 
         async void RaiseMappingsChangedAsync ()
         {
-            if (MappingsChanged == null)
-                return;
-            await MainLoop.SwitchToThreadpool ();
-            MappingsChanged?.Invoke (this, EventArgs.Empty);
+            if (MappingsChanged != null) {
+                await MainLoop.SwitchThread ();
+                MappingsChanged.Invoke (this, EventArgs.Empty);
+            }
         }
     }
 }
