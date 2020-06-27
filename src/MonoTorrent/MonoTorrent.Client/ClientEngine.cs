@@ -457,12 +457,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public Task StartAll ()
-        {
-            return StartAllAsync ();
-        }
-
         public async Task StartAllAsync ()
         {
             CheckDisposed ();
@@ -473,12 +467,6 @@ namespace MonoTorrent.Client
             for (int i = 0; i < publicTorrents.Count; i++)
                 tasks.Add (publicTorrents[i].StartAsync ());
             await Task.WhenAll (tasks);
-        }
-
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public Task StopAll ()
-        {
-            return StopAllAsync ();
         }
 
         /// <summary>
