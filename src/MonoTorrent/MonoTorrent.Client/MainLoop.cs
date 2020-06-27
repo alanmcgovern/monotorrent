@@ -188,11 +188,22 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
+        /// When <see cref="ThreadSwitcher"/> is awaited the continuation will be executed
+        /// on the threadpool. If you are already on a threadpool thread the continuation
+        /// will execute synchronously.
+        /// </summary>
+        /// <returns></returns>
+        public static EnsureThreadPool SwitchToThreadpool ()
+        {
+            return new EnsureThreadPool ();
+        }
+
+        /// <summary>
         /// When <see cref="ThreadSwitcher"/> is awaited the continuation will always be queued on
         /// the ThreadPool for execution. It will never execute synchronously.
         /// </summary>
         /// <returns></returns>
-        public static ThreadSwitcher SwitchToThreadpool ()
+        public static ThreadSwitcher SwitchThread ()
         {
             return new ThreadSwitcher ();
         }
