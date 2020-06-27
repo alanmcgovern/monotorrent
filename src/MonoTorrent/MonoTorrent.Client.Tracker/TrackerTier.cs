@@ -143,11 +143,11 @@ namespace MonoTorrent.Client.Tracker
             Trackers = Array.AsReadOnly (new [] { tracker });
         }
 
-        internal async ReusableTask<(ITracker, AnnounceResponse)> AnnounceAsync (AnnounceParameters args, CancellationToken token)
+        internal async ReusableTask AnnounceAsync (AnnounceParameters args, CancellationToken token)
         {
             // Bail out if we're announcing too frequently for this tracker tier.
             if (!CanSendAnnounce)
-                return (null, null);
+                return;
 
             if (!SentStartedEvent)
                 args = args.WithClientEvent (TorrentEvent.Started);
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client.Tracker
                     AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true));
                     LastAnnounce = ValueStopwatch.StartNew ();
                     LastAnnounceSucceeded = true;
-                    return (tracker, response);
+                    return;
                 } catch {
                     AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, false));
                     token.ThrowIfCancellationRequested ();
@@ -173,7 +173,6 @@ namespace MonoTorrent.Client.Tracker
 
             LastAnnounce = ValueStopwatch.StartNew ();
             LastAnnounceSucceeded = false;
-            return (null, new AnnounceResponse (null, null, null));
         }
 
         internal async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters args, ITracker tracker, CancellationToken token)
