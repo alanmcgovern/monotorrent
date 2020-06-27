@@ -84,14 +84,6 @@ namespace MonoTorrent.Client
 
         void Return (byte[] buffer)
         {
-            if (buffer == null)
-                return;
-
-            // All buffers should be allocated in this class, so if something else is passed in that isn't the right size
-            // We just throw an exception as someone has done something wrong.
-            if (!Owns (buffer))
-                throw new TorrentException ("That buffer wasn't created by this manager");
-
             if (buffer.Length == SmallMessageBufferSize)
                 lock (SmallMessageBuffers)
                     SmallMessageBuffers.Enqueue (buffer);
