@@ -27,7 +27,6 @@
 //
 
 
-using System;
 using System.IO;
 
 namespace MonoTorrent.Logging
@@ -45,17 +44,17 @@ namespace MonoTorrent.Logging
 
         public void Debug (string message)
         {
-            Writer?.WriteLine ($"DEBUG:{0}:{1}", Prefix, message);
+            Writer?.WriteLine ($"DEBUG:{Prefix}:{message}");
         }
 
         public void Error (string message)
         {
-            Writer?.WriteLine ($"ERROR:{0}:{1}", Prefix, message);
+            Writer?.WriteLine ($"ERROR:{Prefix}:{message}");
         }
 
         public void Info (string message)
         {
-            Writer?.WriteLine ($"INFO: {0}:{1}", Prefix, message);
+            Writer?.WriteLine ($"INFO: {Prefix}:{message}");
         }
     }
 }
