@@ -111,6 +111,7 @@ namespace MonoTorrent.Client.Tracker
                 using var responseRegistration = cts.Token.Register (() => response.Dispose ());
                 using (response) {
                     peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
+                    logger.InfoFormatted ("Tracker {0} sent {1} peers", Uri, peers.Count);
                     Status = TrackerState.Ok;
                     return new AnnounceResponse (peers, WarningMessage, FailureMessage);
                 }
