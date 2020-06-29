@@ -49,7 +49,7 @@ namespace SampleClient
 
         private static async Task StartEngine ()
         {
-            LoggerFactory.Creator = (string className) => new TextLogger (Console.Out, className);
+            Logger.Factory = (string className) => new TextLogger (Console.Out, className);
 
             int port;
             Torrent torrent = null;
