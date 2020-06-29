@@ -107,7 +107,9 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.Read);
+                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+
+                await MainLoop.SwitchToThreadpool ();
                 if (rented.Stream.Length < offset + count)
                     return 0;
 
