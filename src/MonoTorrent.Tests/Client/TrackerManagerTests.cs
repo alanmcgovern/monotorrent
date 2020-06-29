@@ -107,9 +107,24 @@ namespace MonoTorrent.Client
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
+        [Test]
+        public async Task Announce_EmitEvent ()
+        {
+            foreach (var tier in trackers)
+                foreach (var tracker in tier)
+                    tracker.AddPeer (new Peer ("peerid", new Uri ("ipv4://127.123.123.123:12312")));
+
+            var tcs = new TaskCompletionSource<AnnounceResponseEventArgs> ();
+            trackerManager.AnnounceComplete += (o, e) => tcs.TrySetResult (e);
+
+            await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout ();
+
+            var result = await tcs.Task.WithTimeout ();
+            Assert.AreEqual (1, result.Peers.Count);
+        }
 
         [Test]
-        public async Task Announce ()
+        public async Task Announce_NoEvent_SkipSecond ()
         {
             await trackerManager.AnnounceAsync (CancellationToken.None);
             Assert.AreEqual (1, trackers[0][0].AnnouncedAt.Count, "#2");
@@ -120,6 +135,25 @@ namespace MonoTorrent.Client
             await trackerManager.AnnounceAsync (trackers[0][1], CancellationToken.None);
             Assert.AreEqual (1, trackers[0][1].AnnouncedAt.Count, "#6");
             Assert.That ((DateTime.Now - trackers[0][1].AnnouncedAt[0]) < TimeSpan.FromSeconds (1), "#7");
+        }
+
+        [Test]
+        public async Task Announce_SpecialEvent_DoNotSkipSecond (
+            [Values (TorrentEvent.Started, TorrentEvent.Stopped, TorrentEvent.Completed)]
+            TorrentEvent clientEvent)
+        {
+            await trackerManager.AnnounceAsync (clientEvent, CancellationToken.None);
+            Assert.AreEqual (1, trackers[0][0].AnnouncedAt.Count, "#1a");
+            Assert.AreEqual (1, trackers[1][0].AnnouncedAt.Count, "#1b");
+
+            await trackerManager.AnnounceAsync (clientEvent, CancellationToken.None);
+            Assert.AreEqual (2, trackers[0][0].AnnouncedAt.Count, "#2a");
+            Assert.AreEqual (2, trackers[1][0].AnnouncedAt.Count, "#2b");
+
+            for (int i = 1; i < trackers[0].Count; i++)
+                Assert.AreEqual (0, trackers[0][i].AnnouncedAt.Count, "#3." + i);
+            for (int i = 1; i < trackers[1].Count; i++)
+                Assert.AreEqual (0, trackers[1][i].AnnouncedAt.Count, "#4." + i);
         }
 
         [Test]
