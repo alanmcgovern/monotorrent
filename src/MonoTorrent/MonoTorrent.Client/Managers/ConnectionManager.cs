@@ -335,6 +335,7 @@ namespace MonoTorrent.Client
             try {
                 bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
                 if (LocalPeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen) {
+                    logger.Info ("Connected to self - disconnecting");
                     CleanupSocket (manager, id);
                     return false;
                 }
@@ -364,8 +365,10 @@ namespace MonoTorrent.Client
 
                 // We've sent our handshake so begin our looping to receive incoming message
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
+                logger.InfoFormatted ("Incoming connection fully accepted", id.Uri);
                 return true;
-            } catch {
+            } catch (Exception ex) {
+                logger.Exception (ex, "Error handling incoming connection");
                 CleanupSocket (manager, id);
                 return false;
             }
@@ -477,6 +480,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // Connect to the peer
+            logger.InfoFormatted ("Trying to connect to {0}", peer.ConnectionUri);
             ConnectToPeer (manager, peer);
             return true;
         }

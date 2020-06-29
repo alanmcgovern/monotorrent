@@ -164,8 +164,10 @@ namespace MonoTorrent.Client.Tracker
                     AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true, response.Peers));
                     LastAnnounce = ValueStopwatch.StartNew ();
                     LastAnnounceSucceeded = true;
+                    logger.InfoFormatted ("Announced to {0}", tracker.Uri);
                     return;
                 } catch {
+                    logger.ErrorFormatted ("Could not announce to {0}", tracker.Uri);
                     AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, false));
                     token.ThrowIfCancellationRequested ();
                 }
@@ -173,6 +175,7 @@ namespace MonoTorrent.Client.Tracker
 
             LastAnnounce = ValueStopwatch.StartNew ();
             LastAnnounceSucceeded = false;
+            logger.Error ("Could not announce to any tracker");
         }
 
         internal async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters args, ITracker tracker, CancellationToken token)
