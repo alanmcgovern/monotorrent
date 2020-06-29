@@ -714,6 +714,9 @@ namespace MonoTorrent.Client
             if (InactivePeerManager.InactivePeerList.Contains (peer.ConnectionUri))
                 return false;
 
+            if (Engine != null && Engine.PeerId.Equals (peer.PeerId))
+                return false;
+
             if (Peers.TotalPeers < Settings.MaximumPeerDetails) {
                 if (prioritise)
                     Peers.AvailablePeers.Insert (0, peer);
