@@ -381,6 +381,20 @@ namespace MonoTorrent.Client
                 incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
             }
 
+            ReusableTaskCompletionSource<bool> tcs = null;
+            ReusableTask writeTask = default;
+            if (WriteLimiter.TryProcess (count)) {
+                try {
+                    writeTask = DoWriteAsync (manager, offset, buffer, count);
+                } catch {
+                    Interlocked.Add (ref pendingWrites, -count);
+                    throw;
+                }
+            } else {
+                tcs = new ReusableTaskCompletionSource<bool> ();
+                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
+            }
+
             if (incrementalHash != null) {
                 // Incremental hashing does not perform proper bounds checking to ensure
                 // that pieces are correctly incrementally hashed even if 'count' is greater
@@ -390,21 +404,20 @@ namespace MonoTorrent.Client
                 if ((incrementalHash.NextOffsetToHash + count) > pieceEnd) {
                     IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 } else if (incrementalHash.NextOffsetToHash == offset) {
+                    await MainLoop.SwitchThread ();
                     incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
                     incrementalHash.NextOffsetToHash += count;
                 }
             }
 
-            if (WriteLimiter.TryProcess (count)) {
+            if (tcs != null)
+                await tcs.Task.ConfigureAwait (false);
+            else {
                 try {
-                    await DoWriteAsync (manager, offset, buffer, count);
+                    await writeTask.ConfigureAwait (false);
                 } finally {
                     Interlocked.Add (ref pendingWrites, -count);
                 }
-            } else {
-                var tcs = new ReusableTaskCompletionSource<bool> ();
-                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
-                await tcs.Task;
             }
         }
 
