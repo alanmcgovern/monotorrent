@@ -28,6 +28,11 @@ namespace SampleClient
 
         static void Main (string[] args)
         {
+            // Uncomment this to run the stress test
+            //
+            //var tester = new StressTest ();
+            //tester.RunAsync ().Wait ();
+
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine (basePath, "Torrents");				// This is the directory we will save .torrents to
