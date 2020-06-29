@@ -37,11 +37,18 @@ namespace MonoTorrent.Logging
 {
     class Logger
     {
+        /// <summary>
+        /// The factory method used to create new ILogger instances. The <see cref="string"/> parameter
+        /// is the <see cref="Type.FullName"/> for the class the ILogger is associated with. You can
+        /// return <see langword="null"/> for any class to disable logging for that class.
+        /// </summary>
+        public static Func<string, ILogger> Factory { get; set; }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static Logger Create ()
         {
             var callingClassName = new StackFrame (1).GetMethod ().ReflectedType.FullName;
-            var writer = LoggerFactory.Creator?.Invoke (callingClassName);
+            var writer = Factory?.Invoke (callingClassName);
             return new Logger (writer);
         }
 
