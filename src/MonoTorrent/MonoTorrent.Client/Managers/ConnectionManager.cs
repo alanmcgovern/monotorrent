@@ -278,7 +278,8 @@ namespace MonoTorrent.Client
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 bool canReuse = (id.Connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
-                    && id.Peer.AllowedEncryption != EncryptionTypes.None;
+                    && id.Peer.AllowedEncryption != EncryptionTypes.None
+                    && !manager.Engine.PeerId.Equals (id.PeerID);
 
                 manager.PieceManager.Picker.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
