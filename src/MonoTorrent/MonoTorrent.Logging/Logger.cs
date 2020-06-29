@@ -35,7 +35,7 @@ using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Logging
 {
-    class Logger
+    public class Logger
     {
         /// <summary>
         /// The factory method used to create new ILogger instances. The <see cref="string"/> parameter
