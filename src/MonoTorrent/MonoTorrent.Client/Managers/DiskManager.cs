@@ -232,7 +232,6 @@ namespace MonoTorrent.Client
                 // we'll compute the final hash by reading the data from disk.
                 if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
                  || incrementalHash.NextOffsetToHash == manager.Size) {
-                    incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
                     byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
                     IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
@@ -407,6 +406,11 @@ namespace MonoTorrent.Client
                     await MainLoop.SwitchThread ();
                     incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
                     incrementalHash.NextOffsetToHash += count;
+
+                    if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
+                        || incrementalHash.NextOffsetToHash == manager.Size) {
+                        incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+                    }
                 }
             }
 
