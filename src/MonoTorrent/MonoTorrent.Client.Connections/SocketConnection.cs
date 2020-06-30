@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.Connections
         {
             SocketAsyncEventArgs args;
             lock (bufferCache) {
-                if (buffer != null && ClientEngine.BufferPool.Owns (buffer)) {
+                if (buffer != null && NetworkIO.BufferPool.Owns (buffer)) {
                     if (!bufferCache.TryGetValue (buffer, out args)) {
                         bufferCache[buffer] = args = new SocketAsyncEventArgs ();
                         args.SetBuffer (buffer, 0, buffer.Length);
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Connections
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferPool, then we should put it back in the 'other' cache.
-            if (e.Buffer == null || !ClientEngine.BufferPool.Owns (e.Buffer)) {
+            if (e.Buffer == null || !NetworkIO.BufferPool.Owns (e.Buffer)) {
                 lock (bufferCache) {
                     if (e.Buffer != null)
                         e.SetBuffer (null, 0, 0);

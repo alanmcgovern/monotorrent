@@ -44,6 +44,8 @@ namespace MonoTorrent.Client
 {
     public class DiskManager : IDisposable
     {
+        internal static BufferPool BufferPool { get; } = new BufferPool ();
+
         static readonly ICache<IncrementalHashData> IncrementalHashCache = new Cache<IncrementalHashData> (true);
 
         readonly Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> ();
@@ -255,7 +257,7 @@ namespace MonoTorrent.Client
             long startOffset = incrementalHash.NextOffsetToHash;
             long endOffset = Math.Min ((long) manager.PieceLength * (pieceIndex + 1), manager.Size);
 
-            using (ClientEngine.BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
+            using (DiskManager.BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
                 try {
                     SHA1 hasher = incrementalHash.Hasher;
 

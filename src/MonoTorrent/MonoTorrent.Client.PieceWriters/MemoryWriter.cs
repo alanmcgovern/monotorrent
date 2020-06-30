@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.PieceWriters
                 if (CacheUsed > (Capacity - count))
                     await FlushAsync (0);
 
-                var releaser = ClientEngine.BufferPool.Rent (count, out byte[] cacheBuffer);
+                var releaser = DiskManager.BufferPool.Rent (count, out byte[] cacheBuffer);
                 Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
 
                 var block = new CachedBlock {
