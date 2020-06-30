@@ -77,7 +77,7 @@ namespace MonoTorrent.Client.Encryption
             // trying to decide what encryption to use
 
             var message = new HandshakeMessage ();
-            using (ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
+            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
                 message.Decode (buffer, 0, HandshakeMessage.HandshakeLength);
 
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.Encryption
             } else if (supportsPlainText) {
                 if (handshake != null) {
                     int length = handshake.ByteLength;
-                    using (ClientEngine.BufferPool.Rent (length, out byte[] buffer)) {
+                    using (NetworkIO.BufferPool.Rent (length, out byte[] buffer)) {
                         handshake.Encode (buffer, 0);
                         await NetworkIO.SendAsync (connection, buffer, 0, length, null, null, null).ConfigureAwait (false);
                     }

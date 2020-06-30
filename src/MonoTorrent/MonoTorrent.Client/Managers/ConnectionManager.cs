@@ -388,7 +388,7 @@ namespace MonoTorrent.Client
 
                 try {
                     if (pm != null) {
-                        pm.DataReleaser = ClientEngine.BufferPool.Rent (pm.ByteLength, out _);
+                        pm.DataReleaser = DiskManager.BufferPool.Rent (pm.ByteLength, out _);
                         try {
                             await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength);
                         } catch (Exception ex) {

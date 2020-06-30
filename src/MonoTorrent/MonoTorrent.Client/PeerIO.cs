@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         {
             await MainLoop.SwitchToThreadpool ();
 
-            using (ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
+            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
 
                 decryptor.Decrypt (buffer, 0, HandshakeMessage.HandshakeLength);
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
             byte[] messageBuffer;
             BufferPool.Releaser messageBufferReleaser;
 
-            using (ClientEngine.BufferPool.Rent (messageHeaderLength, out byte[] messageLengthBuffer)) {
+            using (NetworkIO.BufferPool.Rent (messageHeaderLength, out byte[] messageLengthBuffer)) {
                 await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageHeaderLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageHeaderLength);
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client
                 if (messageBodyLength == 0)
                     return new KeepAliveMessage ();
 
-                messageBufferReleaser = ClientEngine.BufferPool.Rent (messageBodyLength + messageHeaderLength, out messageBuffer);
+                messageBufferReleaser = NetworkIO.BufferPool.Rent (messageBodyLength + messageHeaderLength, out messageBuffer);
                 Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageHeaderLength);
             }
 
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchToThreadpool ();
 
             int count = message.ByteLength;
-            using (ClientEngine.BufferPool.Rent (count, out byte[] buffer)) {
+            using (NetworkIO.BufferPool.Rent (count, out byte[] buffer)) {
                 var pieceMessage = message as PieceMessage;
                 message.Encode (buffer, 0);
                 encryptor.Encrypt (buffer, 0, count);
