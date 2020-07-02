@@ -205,9 +205,9 @@ namespace MonoTorrent.Client.Encryption
         protected async ReusableTask SendY ()
         {
             int length = 96 + RandomNumber (512);
-            using (NetworkIO.BufferPool.Rent (length, out byte[] toSend)) {
-                Buffer.BlockCopy (Y, 0, toSend, 0, 96);
-                random.GetBytes (toSend, 96, length - 96);
+            using (NetworkIO.BufferPool.Rent (length, out ByteBuffer toSend)) {
+                Buffer.BlockCopy (Y, 0, toSend.Data, 0, 96);
+                random.GetBytes (toSend.Data, 96, length - 96);
                 await NetworkIO.SendAsync (socket, toSend, 0, length, null, null, null).ConfigureAwait (false);
             }
         }
@@ -218,10 +218,14 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected async ReusableTask ReceiveY ()
         {
-            byte[] otherY = new byte[96];
-            await ReceiveMessage (otherY, 96).ConfigureAwait (false);
-            S = ModuloCalculator.Calculate (otherY, X);
-            await DoneReceiveY ().ConfigureAwait (false);
+            var otherY = new byte[96];
+
+            using (NetworkIO.BufferPool.Rent (otherY.Length, out ByteBuffer buffer)) {
+                await ReceiveMessage (buffer, otherY.Length).ConfigureAwait (false);
+                Buffer.BlockCopy (buffer.Data, 0, otherY, 0, otherY.Length);
+                S = ModuloCalculator.Calculate (otherY, X);
+                await DoneReceiveY ().ConfigureAwait (false);
+            }
         }
 
         protected abstract ReusableTask DoneReceiveY ();
@@ -240,7 +244,7 @@ namespace MonoTorrent.Client.Encryption
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            using (NetworkIO.BufferPool.Rent (syncData.Length, out byte[] synchronizeWindow)) {
+            using (NetworkIO.BufferPool.Rent (syncData.Length, out ByteBuffer synchronizeWindow)) {
                 while (bytesReceived < syncStopPoint) {
                     int received = syncData.Length - filled;
                     await NetworkIO.ReceiveAsync (socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
@@ -248,7 +252,7 @@ namespace MonoTorrent.Client.Encryption
                     bytesReceived += received;
                     bool matched = true;
                     for (int i = 0; i < syncData.Length && matched; i++)
-                        matched &= syncData[i] == synchronizeWindow[i];
+                        matched &= syncData[i] == synchronizeWindow.Data[i];
 
                     if (matched) // the match started in the beginning of the window, so it must be a full match
                     {
@@ -259,14 +263,14 @@ namespace MonoTorrent.Client.Encryption
                         // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
                         int shift = -1;
                         for (int i = 1; i < syncData.Length && shift == -1; i++)
-                            if (synchronizeWindow[i] == syncData[0])
+                            if (synchronizeWindow.Data[i] == syncData[0])
                                 shift = i;
 
                         // The current data is all useless, so read an entire new window of data
                         if (shift > 0) {
                             filled = syncData.Length - shift;
                             // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
-                            Buffer.BlockCopy (synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
+                            Buffer.BlockCopy (synchronizeWindow.Data, shift, synchronizeWindow.Data, 0, syncData.Length - shift);
                         } else {
                             // The start point we thought we had is actually garbage, so throw away all the data we have
                             filled = 0;
@@ -281,14 +285,14 @@ namespace MonoTorrent.Client.Encryption
         #endregion
 
         #region I/O Functions
-        protected async ReusableTask ReceiveMessage (byte[] buffer, int length)
+        protected async ReusableTask ReceiveMessage (ByteBuffer buffer, int length)
         {
             if (length == 0) {
                 return;
             }
             if (initialBuffer != null) {
                 int toCopy = Math.Min (initialBufferCount, length);
-                Array.Copy (initialBuffer, initialBufferOffset, buffer, 0, toCopy);
+                Array.Copy (initialBuffer, initialBufferOffset, buffer.Data, 0, toCopy);
                 initialBufferOffset += toCopy;
                 initialBufferCount -= toCopy;
 

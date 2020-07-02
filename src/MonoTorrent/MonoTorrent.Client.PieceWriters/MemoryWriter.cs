@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.PieceWriters
             public TorrentFile File;
             public long Offset;
             public byte[] Buffer;
-            public BufferPool.Releaser BufferReleaser;
+            public ByteBufferPool.Releaser BufferReleaser;
             public int Count;
         }
 

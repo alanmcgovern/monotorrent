@@ -198,22 +198,22 @@ namespace MonoTorrent.Client
             Connected = false;
         }
 
-        public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+        public async ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min (88, count);
 
-            var result = await ReadStream.ReadAsync (buffer, offset, count, CancellationToken.None);
+            var result = await ReadStream.ReadAsync (buffer.Data, offset, count, CancellationToken.None);
             Receives.Add (result);
             return ManualBytesReceived ?? result;
         }
 
-        public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
+        public async ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min (88, count);
 
-            await WriteStream.WriteAsync (buffer, offset, count, CancellationToken.None);
+            await WriteStream.WriteAsync (buffer.Data, offset, count, CancellationToken.None);
             Sends.Add (count);
             return ManualBytesSent ?? count;
         }

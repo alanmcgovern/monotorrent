@@ -1,10 +1,10 @@
-//
-// IConnection.cs
+﻿//
+// ByteBuffer.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,31 +27,19 @@
 //
 
 
-using System;
-using System.Net;
+using System.Net.Sockets;
 
-using ReusableTasks;
-
-namespace MonoTorrent.Client.Connections
+namespace MonoTorrent.Client
 {
-    public interface IConnection : IDisposable
+    public sealed class ByteBuffer
     {
-        byte[] AddressBytes { get; }
+        public byte[] Data { get; }
 
-        bool Connected { get; }
+        internal SocketAsyncEventArgs Args { get; set; }
 
-        bool CanReconnect { get; }
-
-        bool IsIncoming { get; }
-
-        EndPoint EndPoint { get; }
-
-        ReusableTask ConnectAsync ();
-
-        ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count);
-
-        ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count);
-
-        Uri Uri { get; }
+        public ByteBuffer (int size)
+        {
+            Data = new byte[size];
+        }
     }
 }

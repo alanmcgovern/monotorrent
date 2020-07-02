@@ -237,7 +237,7 @@ namespace MonoTorrent.Client.Messages
         public void PieceEncoding ()
         {
             PieceMessage message = new PieceMessage (15, 10, Piece.BlockSize) {
-                DataReleaser = new BufferPool.Releaser (null, new byte[Piece.BlockSize])
+                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (Piece.BlockSize))
             };
             message.Encode (buffer, offset);
         }
@@ -245,7 +245,7 @@ namespace MonoTorrent.Client.Messages
         public void PieceDecoding ()
         {
             PieceMessage message = new PieceMessage (15, 10, Piece.BlockSize) {
-                DataReleaser = new BufferPool.Releaser (null, new byte[Piece.BlockSize])
+                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (Piece.BlockSize))
             };
             EncodeDecode (message);
         }
