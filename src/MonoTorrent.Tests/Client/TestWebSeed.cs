@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_ReceiveFirst ()
         {
-            var task = connection.ReceiveAsync (new byte[100], 0, 100).AsTask ();
+            var task = connection.ReceiveAsync (new ByteBuffer (100), 0, 100).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
         }
@@ -119,7 +119,9 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendFirst ()
         {
-            var task = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength).AsTask ();
+            var sendBuffer = new ByteBuffer (new MessageBundle (requests).ByteLength);
+            new MessageBundle (requests).Encode (sendBuffer.Data, 0);
+            var task = connection.SendAsync (sendBuffer, 0, requests.ByteLength).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
         }
@@ -127,13 +129,16 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendAndReceiveFirst ()
         {
-            var sendTask = connection.SendAsync (new MessageBundle (requests).Encode (), 0, requests.ByteLength).AsTask ();
-            var receiveTask = connection.ReceiveAsync (new byte[100000], 0, 100000);
+            var sendBuffer = new ByteBuffer (new MessageBundle (requests).ByteLength);
+            new MessageBundle (requests).Encode (sendBuffer.Data, 0);
+
+            var sendTask = connection.SendAsync (sendBuffer, 0, requests.ByteLength).AsTask ();
+            var receiveTask = connection.ReceiveAsync (new ByteBuffer (100000), 0, 100000);
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => sendTask, "#1");
             Assert.CatchAsync<OperationCanceledException> (async () => {
                 await receiveTask;
-                await connection.ReceiveAsync (new byte[100000], 0, 100000);
+                await connection.ReceiveAsync (new ByteBuffer (100000), 0, 100000);
             }, "#2");
         }
 
@@ -167,9 +172,12 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ReceiveFirst ()
         {
-            byte[] buffer = new byte[1024 * 1024 * 3];
+            var buffer = new ByteBuffer (1024 * 1024 * 3);
+            var sendBuffer = new ByteBuffer (requests.ByteLength);
+            requests.Encode (sendBuffer.Data, 0);
+
             var receiveTask = NetworkIO.ReceiveAsync (connection, buffer, 0, 4, null, null, null);
-            var task = Send (requests.Encode (), 0, requests.ByteLength);
+            var task = Send (sendBuffer, 0, requests.ByteLength);
 
             await receiveTask;
             await CompleteSendOrReceiveFirst (buffer);
@@ -179,8 +187,11 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SendFirst ()
         {
-            byte[] buffer = new byte[1024 * 1024 * 3];
-            var task = Send (requests.Encode (), 0, requests.ByteLength);
+            var buffer = new ByteBuffer (1024 * 1024 * 3);
+            var sendBuffer = new ByteBuffer (requests.ByteLength);
+            requests.Encode (sendBuffer.Data, 0);
+
+            var task = Send (sendBuffer, 0, requests.ByteLength);
             var receiveTask = connection.ReceiveAsync (buffer, 0, 4);
 
             await receiveTask;
@@ -196,8 +207,9 @@ namespace MonoTorrent.Client
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.Dequeue ();
 
-            byte[] sendBuffer = requests.Encode ();
-            var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
+            var sendBuffer = new ByteBuffer (requests.ByteLength);
+            requests.Encode (sendBuffer.Data, 0);
+            var sendTask = Send (sendBuffer, 0, sendBuffer.Data.Length, 1);
 
             Assert.ThrowsAsync<ArgumentException> (() => sendTask);
         }
@@ -228,7 +240,7 @@ namespace MonoTorrent.Client
             ChunkedRequest ();
         }
 
-        async Task Send (byte[] buffer, int offset, int count, int maxBytesPerChunk = -1)
+        async Task Send (ByteBuffer buffer, int offset, int count, int maxBytesPerChunk = -1)
         {
             if (maxBytesPerChunk == -1) {
                 await NetworkIO.SendAsync (connection, buffer, offset, count, null, null, null);
@@ -241,22 +253,22 @@ namespace MonoTorrent.Client
             }
         }
 
-        private async Task CompleteSendOrReceiveFirst (byte[] buffer)
+        private async Task CompleteSendOrReceiveFirst (ByteBuffer buffer)
         {
             var allRequests = requests.ToRequestMessages ().ToList ();
             while (allRequests.Count > 0) {
-                int size = IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (buffer, 0));
+                int size = IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (buffer.Data, 0));
 
                 await NetworkIO.ReceiveAsync (connection, buffer, 4, size, null, null, null);
 
-                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer, 0, size + 4, rig.Manager.Torrent);
+                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer.Data, 0, size + 4, rig.Manager.Torrent);
                 var request = allRequests[0];
                 Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
                 Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");
                 Assert.AreEqual (request.StartOffset, m.StartOffset, "#1");
 
                 for (int i = 0; i < request.RequestLength; i++)
-                    if (buffer[i + 13] != (byte) (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
+                    if (buffer.Data[i + 13] != (byte) (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
                         throw new Exception ("Corrupted data received");
 
                 allRequests.RemoveAt (0);

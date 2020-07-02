@@ -30,6 +30,7 @@
 
 using System;
 
+using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 
 using ReusableTasks;
@@ -60,10 +61,12 @@ namespace MonoTorrent.Client.Encryption
 
         protected override async ReusableTask DoneSynchronize ()
         {
-            byte[] verifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
-
-            await ReceiveMessage (verifyBytes, verifyBytes.Length).ConfigureAwait (false);
-            await GotVerification (verifyBytes).ConfigureAwait (false);
+            // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
+            var length = 20 + VerificationConstant.Length + 4 + 2;
+            using (NetworkIO.BufferPool.Rent (length, out ByteBuffer verifyBytes)) {
+                await ReceiveMessage (verifyBytes, length).ConfigureAwait (false);
+                await GotVerification (verifyBytes.Data).ConfigureAwait (false);
+            }
         }
 
         async ReusableTask GotVerification (byte[] verifyBytes)
@@ -90,15 +93,18 @@ namespace MonoTorrent.Client.Encryption
             // encryption will be used on the response
             int lenInitialPayload;
             int lenPadC = Message.ReadShort (verifyBytes, 32) + 2;
-            using (NetworkIO.BufferPool.Rent (lenPadC, out byte[] padC)) {
+            using (NetworkIO.BufferPool.Rent (lenPadC, out ByteBuffer padC)) {
                 await ReceiveMessage (padC, lenPadC).ConfigureAwait (false); // padC
-                DoDecrypt (padC, 0, lenPadC);
-                lenInitialPayload = Message.ReadShort (padC, lenPadC - 2);
+                DoDecrypt (padC.Data, 0, lenPadC);
+                lenInitialPayload = Message.ReadShort (padC.Data, lenPadC - 2);
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
-            await ReceiveMessage (InitialData, InitialData.Length).ConfigureAwait (false);
-            DoDecrypt (InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
+            using (NetworkIO.BufferPool.Rent (InitialData.Length, out ByteBuffer receiveBuffer)) {
+                await ReceiveMessage (receiveBuffer, InitialData.Length).ConfigureAwait (false);
+                Buffer.BlockCopy (receiveBuffer.Data, 0, InitialData, 0, lenInitialPayload);
+                DoDecrypt (InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
+            }
 
             // Step Four
             byte[] padD = GeneratePad ();
@@ -106,14 +112,14 @@ namespace MonoTorrent.Client.Encryption
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             int finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
-            using (NetworkIO.BufferPool.Rent (finalBufferLength, out byte[] buffer)) {
+            using (NetworkIO.BufferPool.Rent (finalBufferLength, out ByteBuffer buffer)) {
                 int offset = 0;
-                offset += Message.Write (buffer, offset, VerificationConstant);
-                offset += Message.Write (buffer, offset, CryptoSelect);
-                offset += Message.Write (buffer, offset, Len (padD));
-                offset += Message.Write (buffer, offset, padD);
+                offset += Message.Write (buffer.Data, offset, VerificationConstant);
+                offset += Message.Write (buffer.Data, offset, CryptoSelect);
+                offset += Message.Write (buffer.Data, offset, Len (padD));
+                offset += Message.Write (buffer.Data, offset, padD);
 
-                DoEncrypt (buffer, 0, finalBufferLength);
+                DoEncrypt (buffer.Data, 0, finalBufferLength);
                 await NetworkIO.SendAsync (socket, buffer, 0, finalBufferLength).ConfigureAwait (false);
             }
 

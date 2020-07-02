@@ -67,12 +67,12 @@ namespace MonoTorrent.Client
         {
         }
 
-        public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+        public ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
         {
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
+        public ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
         {
             return ReusableTask.FromResult (0);
         }

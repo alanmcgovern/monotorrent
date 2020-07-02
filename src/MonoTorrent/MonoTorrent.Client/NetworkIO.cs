@@ -39,18 +39,18 @@ namespace MonoTorrent.Client
 {
     class NetworkIO
     {
-        internal static BufferPool BufferPool { get; } = new BufferPool ();
+        internal static ByteBufferPool BufferPool { get; } = new ByteBufferPool ();
 
         public struct QueuedIO
         {
             public IConnection connection;
-            public byte[] buffer;
+            public ByteBuffer buffer;
             public int offset;
             public int count;
             public IRateLimiter rateLimiter;
             public ReusableTaskCompletionSource<int> tcs;
 
-            public QueuedIO (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
+            public QueuedIO (IConnection connection, ByteBuffer buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
             {
                 this.connection = connection;
                 this.buffer = buffer;
@@ -121,12 +121,12 @@ namespace MonoTorrent.Client
             await connection.ConnectAsync ();
         }
 
-        public static ReusableTask ReceiveAsync (IConnection connection, byte[] buffer, int offset, int count)
+        public static ReusableTask ReceiveAsync (IConnection connection, ByteBuffer buffer, int offset, int count)
         {
             return ReceiveAsync (connection, buffer, offset, count, null, null, null);
         }
 
-        public static async ReusableTask ReceiveAsync (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask ReceiveAsync (IConnection connection, ByteBuffer buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -155,12 +155,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static ReusableTask SendAsync (IConnection connection, byte[] buffer, int offset, int count)
+        public static ReusableTask SendAsync (IConnection connection, ByteBuffer buffer, int offset, int count)
         {
             return SendAsync (connection, buffer, offset, count, null, null, null);
         }
 
-        public static async ReusableTask SendAsync (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask SendAsync (IConnection connection, ByteBuffer buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await MainLoop.SwitchToThreadpool ();
 

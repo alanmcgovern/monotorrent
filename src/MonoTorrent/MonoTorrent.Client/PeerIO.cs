@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Net;
 
 using MonoTorrent.Client.Connections;
@@ -48,13 +49,13 @@ namespace MonoTorrent.Client
         {
             await MainLoop.SwitchToThreadpool ();
 
-            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
+            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out ByteBuffer buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
 
-                decryptor.Decrypt (buffer, 0, HandshakeMessage.HandshakeLength);
+                decryptor.Decrypt (buffer.Data, 0, HandshakeMessage.HandshakeLength);
 
                 var message = new HandshakeMessage ();
-                message.Decode (buffer, 0, HandshakeMessage.HandshakeLength);
+                message.Decode (buffer.Data, 0, HandshakeMessage.HandshakeLength);
                 return message;
             }
         }
@@ -70,15 +71,15 @@ namespace MonoTorrent.Client
 
             int messageHeaderLength = 4;
             int messageBodyLength;
-            byte[] messageBuffer;
-            BufferPool.Releaser messageBufferReleaser;
+            ByteBuffer messageBuffer;
+            ByteBufferPool.Releaser messageBufferReleaser;
 
-            using (NetworkIO.BufferPool.Rent (messageHeaderLength, out byte[] messageLengthBuffer)) {
+            using (NetworkIO.BufferPool.Rent (messageHeaderLength, out ByteBuffer messageLengthBuffer)) {
                 await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageHeaderLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
-                decryptor.Decrypt (messageLengthBuffer, 0, messageHeaderLength);
+                decryptor.Decrypt (messageLengthBuffer.Data, 0, messageHeaderLength);
 
-                messageBodyLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0));
+                messageBodyLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer.Data, 0));
                 if (messageBodyLength < 0 || messageBodyLength > MaxMessageLength) {
                     connection.Dispose ();
                     throw new ProtocolException ($"Invalid message length received. Value was '{messageBodyLength}'");
@@ -88,16 +89,16 @@ namespace MonoTorrent.Client
                     return new KeepAliveMessage ();
 
                 messageBufferReleaser = NetworkIO.BufferPool.Rent (messageBodyLength + messageHeaderLength, out messageBuffer);
-                Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageHeaderLength);
+                Buffer.BlockCopy (messageLengthBuffer.Data, 0, messageBuffer.Data, 0, messageHeaderLength);
             }
 
             using (messageBufferReleaser) {
                 // Always assume protocol first, then convert to data when we what message it is!
                 await NetworkIO.ReceiveAsync (connection, messageBuffer, messageHeaderLength, messageBodyLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
-                decryptor.Decrypt (messageBuffer, messageHeaderLength, messageBodyLength);
+                decryptor.Decrypt (messageBuffer.Data, messageHeaderLength, messageBodyLength);
                 // FIXME: manager should never be null, except some of the unit tests do that.
-                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageHeaderLength + messageBodyLength, torrentData);
+                var data = PeerMessage.DecodeMessage (messageBuffer.Data, 0, messageHeaderLength + messageBodyLength, torrentData);
                 if (data is PieceMessage msg) {
                     peerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
                     managerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
@@ -119,10 +120,10 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchToThreadpool ();
 
             int count = message.ByteLength;
-            using (NetworkIO.BufferPool.Rent (count, out byte[] buffer)) {
+            using (NetworkIO.BufferPool.Rent (count, out ByteBuffer buffer)) {
                 var pieceMessage = message as PieceMessage;
-                message.Encode (buffer, 0);
-                encryptor.Encrypt (buffer, 0, count);
+                message.Encode (buffer.Data, 0);
+                encryptor.Encrypt (buffer.Data, 0, count);
 
                 // Assume protocol first, then swap it to data once we successfully send the data bytes.
                 await NetworkIO.SendAsync (connection, buffer, 0, count, pieceMessage == null ? null : rateLimiter, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp).ConfigureAwait (false);

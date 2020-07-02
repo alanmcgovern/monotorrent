@@ -57,10 +57,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task LargeMessageBodyLength ()
         {
-            var buffer = new byte[4];
-            Message.Write (buffer, 0, int.MaxValue);
+            var buffer = new ByteBuffer (4);
+            Message.Write (buffer.Data, 0, int.MaxValue);
 
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
             Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
@@ -70,10 +70,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task NegativeMessageBodyLength ()
         {
-            var buffer = new byte[4];
-            Message.Write (buffer, 0, -6);
+            var buffer = new ByteBuffer (4);
+            Message.Write (buffer.Data, 0, -6);
 
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
             Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
@@ -83,10 +83,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task UnknownMessage ()
         {
-            var data = new byte[20];
-            Message.Write (data, 0, 16);
+            var data = new ByteBuffer (20);
+            Message.Write (data.Data, 0, 16);
             for (int i = 4; i < 16; i++)
-                data[i] = byte.MaxValue;
+                data.Data[i] = byte.MaxValue;
 
             var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
             await NetworkIO.SendAsync (pair.Outgoing, data, 0, 20);
@@ -97,14 +97,14 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ZeroMessageBodyIsKeepAlive ()
         {
-            var buffer = new byte[4];
+            var buffer = new ByteBuffer (4);
 
-            Message.Write (buffer, 0, 0);
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
+            Message.Write (buffer.Data, 0, 0);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
             Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
 
-            buffer = new KeepAliveMessage ().Encode ();
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Length);
+            new KeepAliveMessage ().Encode (buffer.Data, 0);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
             Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
         }
 
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
         {
             var blockSize = Piece.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
-                DataReleaser = new BufferPool.Releaser (null, new byte[blockSize])
+                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer(blockSize))
             };
 
             Assert.DoesNotThrowAsync (() => {
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
         {
             var blockSize = Piece.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
-                DataReleaser = new BufferPool.Releaser (null, new byte[blockSize])
+                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (blockSize))
             };
 
             var protocolSize = msg.ByteLength - blockSize;
