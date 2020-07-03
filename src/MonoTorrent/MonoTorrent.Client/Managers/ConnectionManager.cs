@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Logging;
@@ -252,20 +253,28 @@ namespace MonoTorrent.Client
 
         internal async void ReceiveMessagesAsync (IConnection connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
         {
+            await MainLoop.SwitchToThreadpool ();
             try {
                 while (true) {
-                    Messages.PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent);
-                    if (id.Disposed) {
-                        if (message is PieceMessage msg)
-                            msg.DataReleaser.Dispose ();
-                        break;
-                    } else {
-                        id.LastMessageReceived.Restart ();
-                        torrentManager.Mode.HandleMessage (id, message);
-                    }
+                    PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent).ConfigureAwait (false);
+                    HandleReceivedMessage (id, torrentManager, message);
                 }
             } catch {
+                await ClientEngine.MainLoop;
                 CleanupSocket (torrentManager, id);
+            }
+        }
+
+        static async void HandleReceivedMessage (PeerId id, TorrentManager torrentManager, PeerMessage message)
+        {
+            await ClientEngine.MainLoop;
+
+            if (id.Disposed) {
+                if (message is PieceMessage msg)
+                    msg.DataReleaser.Dispose ();
+            } else {
+                id.LastMessageReceived.Restart ();
+                torrentManager.Mode.HandleMessage (id, message);
             }
         }
 
