@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -137,7 +138,7 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = true;
             Unchokeable.UploadingTo--;
-            peer.EnqueueAt (new ChokeMessage (), 0);
+            peer.MessageQueue.EnqueueAt (new ChokeMessage (), 0);
             RejectPendingRequests (peer);
             peer.LastUnchoked = new ValueStopwatch ();
         }
@@ -311,34 +312,8 @@ namespace MonoTorrent.Client
         /// <param name="Peer"></param>
         void RejectPendingRequests (PeerId Peer)
         {
-            PeerMessage message;
-            PieceMessage pieceMessage;
-            int length = Peer.QueueLength;
-
-            for (int i = 0; i < length; i++) {
-                message = Peer.Dequeue ();
-                if (!(message is PieceMessage)) {
-                    Peer.Enqueue (message);
-                    continue;
-                }
-
-                pieceMessage = (PieceMessage) message;
-
-                // If the peer doesn't support fast peer, then we will never requeue the message
-                if (!(Peer.SupportsFastPeer && ClientEngine.SupportsFastPeer)) {
-                    Peer.IsRequestingPiecesCount--;
-                    continue;
-                }
-
-                // If the peer supports fast peer, queue the message if it is an AllowedFast piece
-                // Otherwise send a reject message for the piece
-                if (Peer.AmAllowedFastPieces.Contains (pieceMessage.PieceIndex))
-                    Peer.Enqueue (pieceMessage);
-                else {
-                    Peer.IsRequestingPiecesCount--;
-                    Peer.Enqueue (new RejectRequestMessage (pieceMessage));
-                }
-            }
+            var rejectedCount = Peer.MessageQueue.RejectRequests (Peer.SupportsFastPeer, Peer.AmAllowedFastPieces);
+            Interlocked.Add (ref Peer.isRequestingPiecesCount, rejectedCount);
         }
 
         void Unchoke (PeerId peer)
@@ -348,7 +323,7 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = false;
             Unchokeable.UploadingTo++;
-            peer.EnqueueAt (new UnchokeMessage (), 0);
+            peer.MessageQueue.EnqueueAt (new UnchokeMessage (), 0);
             peer.LastUnchoked.Restart ();
             peer.FirstReviewPeriod = true;
         }

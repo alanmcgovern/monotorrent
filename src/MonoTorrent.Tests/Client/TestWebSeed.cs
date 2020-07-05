@@ -97,9 +97,10 @@ namespace MonoTorrent.Client
             id.AmInterested = true;
             id.BitField.SetAll (true);
             id.MaxPendingRequests = numberOfPieces;
+            id.MessageQueue.SetReady ();
 
             rig.Manager.PieceManager.AddPieceRequests (id);
-            requests = (RequestBundle) id.Dequeue ();
+            requests = (RequestBundle) id.MessageQueue.TryDequeue ();
         }
 
         [TearDown]
@@ -205,7 +206,7 @@ namespace MonoTorrent.Client
             rig.Manager.PieceManager.Picker.CancelRequests (id);
 
             rig.Manager.PieceManager.AddPieceRequests (id);
-            requests = (RequestBundle) id.Dequeue ();
+            requests = (RequestBundle) id.MessageQueue.TryDequeue ();
 
             var sendBuffer = new ByteBuffer (requests.ByteLength);
             requests.Encode (sendBuffer.Data, 0);
@@ -368,9 +369,10 @@ namespace MonoTorrent.Client
             id.AmInterested = true;
             id.BitField.SetAll (true);
             id.MaxPendingRequests = numberOfPieces;
+            id.MessageQueue.SetReady ();
 
             rig.Manager.PieceManager.AddPieceRequests (id);
-            requests = (RequestBundle) id.Dequeue ();
+            requests = (RequestBundle) id.MessageQueue.TryDequeue ();
             await ReceiveFirst ();
             Assert.AreEqual (url, requestedUrl[0]);
         }

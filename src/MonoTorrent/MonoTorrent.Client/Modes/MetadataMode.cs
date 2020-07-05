@@ -267,7 +267,7 @@ namespace MonoTorrent.Client.Modes
                 return;//throw exception or switch to regular?
 
             var m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
-            id.Enqueue (m);
+            id.MessageQueue.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
         }
 

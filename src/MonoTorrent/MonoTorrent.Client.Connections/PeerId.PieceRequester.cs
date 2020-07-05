@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
 
         void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
         {
-            Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
+            MessageQueue.Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
         }
     }
 }
