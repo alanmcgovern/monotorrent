@@ -68,9 +68,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
-                ProcessingQueue = true
-            };
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false));
         }
 
         [TearDown]

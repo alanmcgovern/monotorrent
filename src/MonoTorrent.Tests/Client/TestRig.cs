@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -348,7 +349,9 @@ namespace MonoTorrent.Client
             Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
             PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
-            id.ProcessingQueue = processingQueue;
+            id.MessageQueue.SetReady ();
+            if (processingQueue)
+                id.MessageQueue.BeginProcessing (force: true);
             return id;
         }
 

@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
                 while (id.AmRequestingPiecesCount < maxRequests) {
                     PieceRequest request = Picker.ContinueExistingRequest (id);
                     if (request != null)
-                        id.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
                     else
                         break;
                 }
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
                     List<PeerId> otherPeers = Manager.Peers.ConnectedPeers ?? new List<PeerId> ();
                     IList<PieceRequest> request = Picker.PickPiece (id, id.BitField, otherPeers, count);
                     if (request != null && request.Count > 0)
-                        id.Enqueue (new RequestBundle (request));
+                        id.MessageQueue.Enqueue (new RequestBundle (request));
                     else
                         break;
                 }
