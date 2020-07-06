@@ -47,10 +47,15 @@ namespace MonoTorrent.Client
 
             public void Dispose ()
             {
+                if (Pool == null)
+                    return;
+
+                if (Buffer == null)
+                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
+
                 lock (Pool)
                     Pool.Enqueue (Buffer);
                 Pool = null;
-                Buffer = null;
             }
         }
 
