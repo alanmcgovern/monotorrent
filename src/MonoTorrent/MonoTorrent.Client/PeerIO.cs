@@ -124,12 +124,12 @@ namespace MonoTorrent.Client
             return SendMessageAsync (connection, encryptor, message, null, null, null);
         }
 
-        public static async ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
+        public static async ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ByteBuffer buffer = null)
         {
             await MainLoop.SwitchToThreadpool ();
 
             int count = message.ByteLength;
-            using (NetworkIO.BufferPool.Rent (count, out ByteBuffer buffer)) {
+            using (buffer == null ? NetworkIO.BufferPool.Rent (count, out buffer) : default) {
                 var pieceMessage = message as PieceMessage;
                 message.Encode (buffer.Data, 0);
                 encryptor.Encrypt (buffer.Data, 0, count);

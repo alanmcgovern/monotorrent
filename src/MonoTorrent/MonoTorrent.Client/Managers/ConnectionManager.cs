@@ -403,13 +403,17 @@ namespace MonoTorrent.Client
 
             await MainLoop.SwitchToThreadpool ();
 
+            ByteBufferPool.Releaser messageBuffer = default;
+            ByteBufferPool.Releaser pieceBuffer = default;
             PeerMessage msg;
-            while ((msg = id.MessageQueue.TryDequeue ()) != null) {
-                var pm = msg as PieceMessage;
+            try {
+                while ((msg = id.MessageQueue.TryDequeue ()) != null) {
+                    var msgLength = msg.ByteLength;
 
-                try {
-                    if (pm != null) {
-                        pm.DataReleaser = DiskManager.BufferPool.Rent (pm.ByteLength, out ByteBuffer _);
+                    if (msg is PieceMessage pm) {
+                        if (pieceBuffer.Buffer == null)
+                            pieceBuffer = DiskManager.BufferPool.Rent (msgLength, out ByteBuffer _);
+                        pm.DataReleaser = pieceBuffer;
                         try {
                             await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength).ConfigureAwait (false);
                         } catch (Exception ex) {
@@ -418,22 +422,27 @@ namespace MonoTorrent.Client
                             return;
                         }
                         System.Threading.Interlocked.Increment (ref id.piecesSent);
+                    } else {
+                        pieceBuffer.Dispose ();
                     }
 
-                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor).ConfigureAwait (false);
+                    if (messageBuffer.Buffer == null || messageBuffer.Buffer.Data.Length < msg.ByteLength) {
+                        messageBuffer.Dispose ();
+                        messageBuffer = NetworkIO.BufferPool.Rent (msgLength, out ByteBuffer _);
+                    }
+                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor, messageBuffer.Buffer).ConfigureAwait (false);
                     if (msg is PieceMessage)
                         System.Threading.Interlocked.Decrement (ref id.isRequestingPiecesCount);
 
                     id.LastMessageSent.Restart ();
-                } catch {
-                    await ClientEngine.MainLoop;
-                    CleanupSocket (manager, id);
-                    break;
-                } finally {
-                    if (pm?.Data != null)
-                        pm.DataReleaser.Dispose ();
                 }
-            } 
+            } catch {
+                await ClientEngine.MainLoop;
+                CleanupSocket (manager, id);
+            } finally {
+                messageBuffer.Dispose ();
+                pieceBuffer.Dispose ();
+            }
         }
 
         internal bool ShouldBanPeer (Peer peer)

@@ -148,6 +148,10 @@ namespace MonoTorrent.Client.PieceWriters
 
         public ReusableTask<bool> ExistsAsync (TorrentFile file)
         {
+            foreach (var item in CachedBlocks)
+                if (item.File == file)
+                    return ReusableTask.FromResult (true);
+
             return Writer.ExistsAsync (file);
         }
 
