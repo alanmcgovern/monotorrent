@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("Torrents with no metadata must use 'MetadataMode', not 'StartingMode'.");
 
             try {
-                Manager.PieceManager.Picker.Initialise (Manager.Bitfield, Manager.Torrent, Enumerable.Empty<Piece> ());
+                Manager.PieceManager.Picker.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<Piece> ());
                 await VerifyHashState ();
                 Cancellation.Token.ThrowIfCancellationRequested ();
             } catch (Exception ex) {
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.Modes
             // a zero length file and someone deletes it after the first piece has been written to disk, it will
             // never be recreated. If the downloaded data requires this file to exist, we have an issue.
             if (Manager.HasMetadata) {
-                foreach (TorrentFile file in Manager.Torrent.Files)
+                foreach (ITorrentFileInfo file in Manager.Files)
                     if (!file.BitField.AllFalse && Manager.HashChecked && file.Length > 0)
                         Manager.HashChecked &= await DiskManager.CheckFileExistsAsync (file);
             }

@@ -46,7 +46,7 @@ namespace MonoTorrent.Client
         class TestTorrentData : ITorrentData
         {
             public byte[][] Data { get; set; }
-            public TorrentFile[] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public byte[][] Hashes { get; set; }
             public int PieceLength { get; set; }
             public long Size { get; set; }
@@ -54,14 +54,14 @@ namespace MonoTorrent.Client
 
         class PieceWriter : IPieceWriter
         {
-            public Dictionary<TorrentFile, byte[]> Data = new Dictionary<TorrentFile, byte[]> ();
-            public readonly List<Tuple<TorrentFile, long, int>> ReadData = new List<Tuple<TorrentFile, long, int>> ();
-            public readonly List<Tuple<TorrentFile, long, byte[]>> WrittenData = new List<Tuple<TorrentFile, long, byte[]>> ();
+            public Dictionary<ITorrentFileInfo, byte[]> Data = new Dictionary<ITorrentFileInfo, byte[]> ();
+            public readonly List<Tuple<ITorrentFileInfo, long, int>> ReadData = new List<Tuple<ITorrentFileInfo, long, int>> ();
+            public readonly List<Tuple<ITorrentFileInfo, long, byte[]>> WrittenData = new List<Tuple<ITorrentFileInfo, long, byte[]>> ();
 
-            public List<TorrentFile> ClosedFiles = new List<TorrentFile> ();
-            public List<TorrentFile> ExistsFiles = new List<TorrentFile> ();
+            public List<ITorrentFileInfo> ClosedFiles = new List<ITorrentFileInfo> ();
+            public List<ITorrentFileInfo> ExistsFiles = new List<ITorrentFileInfo> ();
 
-            public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 ReadData.Add (Tuple.Create (file, offset, count));
 
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
                 return ReusableTask.FromResult (count);
             }
 
-            public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 var result = new byte[count];
                 Buffer.BlockCopy (buffer, bufferOffset, result, 0, count);
@@ -87,22 +87,22 @@ namespace MonoTorrent.Client
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask CloseAsync (TorrentFile file)
+            public ReusableTask CloseAsync (ITorrentFileInfo file)
             {
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask<bool> ExistsAsync (TorrentFile file)
+            public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
             {
                 return ReusableTask.FromResult (true);
             }
 
-            public ReusableTask FlushAsync (TorrentFile file)
+            public ReusableTask FlushAsync (ITorrentFileInfo file)
             {
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite)
+            public ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite)
             {
                 return ReusableTask.CompletedTask;
             }
@@ -130,10 +130,10 @@ namespace MonoTorrent.Client
 
             int pieceLength = Piece.BlockSize * 3;
 
-            var files = new List<TorrentFile> ();
+            var files = new List<ITorrentFileInfo> ();
             long total = 0;
             foreach ((string name, long length) in filePieces) {
-                var file = new TorrentFile (name, length, name, (int)( total / pieceLength), (int)((total + length) / pieceLength), (int)(total % pieceLength), null, null, null);
+                var file = new TorrentFileInfo (new TorrentFile (name, length, (int)( total / pieceLength), (int)((total + length) / pieceLength), (int)(total % pieceLength), null, null, null));
                 total += file.Length;
                 files.Add (file);
             }
@@ -274,7 +274,7 @@ namespace MonoTorrent.Client
         [Test]
         public void FindFile_LastFile ()
         {
-            Assert.AreEqual (fileData.Files.Length - 1, DiskManager.FindFileIndex (fileData.Files, fileData.Files.Last ().Length - 1, fileData.PieceLength));
+            Assert.AreEqual (fileData.Files.Count - 1, DiskManager.FindFileIndex (fileData.Files, fileData.Files.Last ().Length - 1, fileData.PieceLength));
         }
 
         [Test]

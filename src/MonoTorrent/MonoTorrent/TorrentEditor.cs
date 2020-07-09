@@ -38,12 +38,6 @@ namespace MonoTorrent
             set => base.CanEditSecureMetadata = value;
         }
 
-        public TorrentEditor (Torrent torrent)
-            : base (torrent)
-        {
-
-        }
-
         public TorrentEditor (BEncodedDictionary metadata)
             : base (metadata)
         {

@@ -231,7 +231,7 @@ namespace SampleClient
 
                         AppendFormat (sb, "", null);
                         if (manager.Torrent != null)
-                            foreach (TorrentFile file in manager.Torrent.Files)
+                            foreach (var file in manager.Files)
                                 AppendFormat (sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                     }
                     Console.Clear ();

@@ -38,12 +38,12 @@ namespace MonoTorrent.Client.PieceWriters
         MemoryWriter level1;
         MemoryWriter level2;
 
-        TorrentFile file;
+        ITorrentFileInfo file;
 
         [SetUp]
         public void Setup ()
         {
-            file = new TorrentFile ("Relative/Path.txt", Piece.BlockSize * 5);
+            file = new TorrentFileInfo (new TorrentFile ("Relative/Path.txt", Piece.BlockSize * 5));
 
             level2 = new MemoryWriter (new NullWriter (), Piece.BlockSize * 3);
             level1 = new MemoryWriter (level2, Piece.BlockSize * 3);

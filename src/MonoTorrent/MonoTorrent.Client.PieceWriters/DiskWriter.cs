@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.PieceWriters
     {
         static readonly int DefaultMaxOpenFiles = 196;
 
-        static readonly Func<TorrentFile, FileAccess, ITorrentFileStream> DefaultStreamCreator =
+        static readonly Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> DefaultStreamCreator =
             (file, access) => new TorrentFileStream (file.FullPath, access);
 
         readonly SemaphoreSlim Limiter;
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        internal DiskWriter (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator)
+        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator)
             : this (streamCreator, DefaultMaxOpenFiles)
         {
 
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        internal DiskWriter (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator, int maxOpenFiles)
+        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxOpenFiles)
         {
             StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
             Limiter = new SemaphoreSlim (maxOpenFiles);
@@ -76,20 +76,20 @@ namespace MonoTorrent.Client.PieceWriters
             StreamCache.Dispose ();
         }
 
-        public async ReusableTask CloseAsync (TorrentFile file)
+        public async ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             await StreamCache.CloseStreamAsync (file);
         }
 
-        public ReusableTask<bool> ExistsAsync (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
             return ReusableTask.FromResult (File.Exists (file.FullPath));
         }
 
-        public async ReusableTask FlushAsync (TorrentFile file)
+        public async ReusableTask FlushAsync (ITorrentFileInfo file)
             => await StreamCache.FlushAsync (file);
 
-        public async ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
+        public async ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
         {
             await StreamCache.CloseStreamAsync (file);
 
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.PieceWriters
             File.Move (file.FullPath, newPath);
         }
 
-        public async ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File (file);
             Check.Buffer (buffer);
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client.PieceWriters
             }
         }
 
-        public async ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File (file);
             Check.Buffer (buffer);

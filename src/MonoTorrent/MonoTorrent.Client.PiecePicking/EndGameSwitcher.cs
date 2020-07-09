@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Create the bitfield of pieces which are downloadable
             endgameSelector.SetAll (false);
-            for (int i = 0; i < torrentData.Files.Length; i++)
+            for (int i = 0; i < torrentData.Files.Count; i++)
                 if (torrentData.Files[i].Priority != Priority.DoNotDownload)
                     endgameSelector.SetTrue (torrentData.Files[i].GetSelector ());
 

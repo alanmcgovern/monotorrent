@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class NullWriter : IPieceWriter
     {
-        public ReusableTask CloseAsync (TorrentFile file)
+        public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
         }
@@ -42,27 +42,27 @@ namespace MonoTorrent.Client.PieceWriters
         {
         }
 
-        public ReusableTask<bool> ExistsAsync (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
             return ReusableTask.FromResult (false);
         }
 
-        public ReusableTask FlushAsync (TorrentFile file)
+        public ReusableTask FlushAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite)
+        public ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.CompletedTask;
         }

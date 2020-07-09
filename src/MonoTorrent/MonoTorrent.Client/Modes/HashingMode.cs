@@ -80,10 +80,10 @@ namespace MonoTorrent.Client.Modes
 
             int piecesHashed = 0;
             Manager.HashFails = 0;
-            if (await DiskManager.CheckAnyFilesExistAsync (Manager.Torrent)) {
+            if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
-                    if (!Manager.Torrent.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
+                    if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
                         // so they also report that the piece is not available/downloaded.
                         Manager.OnPieceHashed (index, false, piecesHashed, Manager.PartialProgressSelector.TrueCount);
@@ -95,10 +95,10 @@ namespace MonoTorrent.Client.Modes
                     await PausedCompletionSource.Task;
                     Cancellation.Token.ThrowIfCancellationRequested ();
 
-                    byte[] hash = await DiskManager.GetHashAsync (Manager.Torrent, index);
+                    byte[] hash = await DiskManager.GetHashAsync (Manager, index);
 
                     if (Cancellation.Token.IsCancellationRequested) {
-                        await DiskManager.CloseFilesAsync (Manager.Torrent);
+                        await DiskManager.CloseFilesAsync (Manager);
                         Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 

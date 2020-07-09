@@ -1,10 +1,41 @@
-﻿using System;
-using System.CodeDom;
+﻿//
+// StreamProviderTests.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2020 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PiecePicking;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Streaming
@@ -14,6 +45,7 @@ namespace MonoTorrent.Streaming
     {
         ClientEngine Engine { get; set; }
         MagnetLink MagnetLink { get; set; }
+        BEncodedDictionary torrentInfo;
         Torrent Torrent { get; set; }
 
 
@@ -21,7 +53,7 @@ namespace MonoTorrent.Streaming
         public void Setup ()
         {
             Engine = new ClientEngine ();
-            Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Piece.BlockSize * 1024) }, Piece.BlockSize * 8);
+            Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Piece.BlockSize * 1024) }, Piece.BlockSize * 8, out torrentInfo);
             MagnetLink = new MagnetLink (Torrent.InfoHash, "MagnetDownload");
         }
 
@@ -49,7 +81,7 @@ namespace MonoTorrent.Streaming
             var filePath = Path.Combine (metadataCacheDir, $"{MagnetLink.InfoHash.ToHex()}.torrent");
             Directory.CreateDirectory (metadataCacheDir);
             try {
-                File.WriteAllBytes (filePath, Torrent.ToDictionary ().Encode ());
+                File.WriteAllBytes (filePath, torrentInfo.Encode ());
                 var provider = new StreamProvider (Engine, "testDir", MagnetLink, metadataCacheDir);
                 Assert.IsNotNull (provider.Files);
             } finally {
@@ -66,7 +98,7 @@ namespace MonoTorrent.Streaming
             Directory.CreateDirectory (metadataCacheDir);
             try {
                 // Write the data for one info hash into a torrent for another info hash.
-                File.WriteAllBytes (filePath, Torrent.ToDictionary ().Encode ());
+                File.WriteAllBytes (filePath, torrentInfo.Encode ());
                 var provider = new StreamProvider (Engine, "testDir", magnetLinkOtherInfoHash, metadataCacheDir);
                 Assert.IsNull (provider.Files);
             } finally {
@@ -89,7 +121,7 @@ namespace MonoTorrent.Streaming
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
             await provider.StartAsync ();
-            using var stream = await provider.CreateStreamAsync (Torrent.Files[0], false, CancellationToken.None);
+            using var stream = await provider.CreateStreamAsync (provider.Files[0], false, CancellationToken.None);
             Assert.IsNotNull (stream);
         }
 
@@ -97,7 +129,7 @@ namespace MonoTorrent.Streaming
         public void CreateStreamBeforeStart ()
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
-            Assert.ThrowsAsync<InvalidOperationException> (() => provider.CreateHttpStreamAsync (Torrent.Files[0]));
+            Assert.ThrowsAsync<InvalidOperationException> (() => provider.CreateHttpStreamAsync (provider.Files[0]));
         }
 
         [Test]
@@ -105,8 +137,8 @@ namespace MonoTorrent.Streaming
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
             await provider.StartAsync ();
-            using var stream = await provider.CreateStreamAsync (Torrent.Files[0], false, CancellationToken.None);
-            Assert.ThrowsAsync<InvalidOperationException> (() => provider.CreateStreamAsync (Torrent.Files[0], false, CancellationToken.None));
+            using var stream = await provider.CreateStreamAsync (provider.Files[0], false, CancellationToken.None);
+            Assert.ThrowsAsync<InvalidOperationException> (() => provider.CreateStreamAsync (provider.Files[0], false, CancellationToken.None));
         }
 
         [Test]

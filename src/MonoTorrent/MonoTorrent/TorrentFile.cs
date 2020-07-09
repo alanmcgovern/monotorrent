@@ -32,19 +32,8 @@ using System.Text;
 
 namespace MonoTorrent
 {
-    public sealed class TorrentFile : IEquatable<TorrentFile>
+    public sealed class TorrentFile : IEquatable<TorrentFile>, ITorrentFile
     {
-        internal readonly System.Threading.SemaphoreSlim Locker = new System.Threading.SemaphoreSlim (1, 1);
-
-        #region Member Variables
-
-        /// <summary>
-        /// The number of pieces which have been successfully downloaded which are from this file
-        /// </summary>
-        public BitField BitField { get; }
-
-        public long BytesDownloaded => (long) (BitField.PercentComplete * Length / 100.0);
-
         /// <summary>
         /// The ED2K hash of the file
         /// </summary>
@@ -55,8 +44,6 @@ namespace MonoTorrent
         /// </summary>
         public int EndPieceIndex { get; }
 
-        public string FullPath { get; internal set; }
-
         /// <summary>
         /// The length of the file in bytes
         /// </summary>
@@ -65,7 +52,7 @@ namespace MonoTorrent
         /// <summary>
         /// The MD5 hash of the file
         /// </summary>
-        public byte[] MD5 { get; internal set; }
+        public byte[] MD5 { get; }
 
         /// <summary>
         /// In the case of a single torrent file, this is the name of the file.
@@ -73,11 +60,6 @@ namespace MonoTorrent
         /// (including the filename) from the base directory
         /// </summary>
         public string Path { get; }
-
-        /// <summary>
-        /// The priority of this torrent file
-        /// </summary>
-        public Priority Priority { get; set; }
 
         /// <summary>
         /// The SHA1 hash of the file
@@ -92,75 +74,40 @@ namespace MonoTorrent
         /// <summary>
         /// Piece byte offset of the file
         /// </summary>
-        public int StartPieceOffset { get; private set; }
+        public int StartPieceOffset { get; }
 
-        #endregion
-
-
-        #region Constructors
-        public TorrentFile (string path, long length)
-            : this (path, length, path)
+        internal TorrentFile (string path, long length)
+            : this (path, length, 0, 0)
         {
 
         }
 
-        public TorrentFile (string path, long length, string fullPath)
-            : this (path, length, fullPath, 0, 0)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex)
+            : this (path, length, startIndex, endIndex, 0, null, null, null)
         {
 
         }
 
-        public TorrentFile (string path, long length, int startIndex, int endIndex)
-            : this (path, length, path, startIndex, endIndex)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, int startOffset, byte[] md5, byte[] ed2k, byte[] sha1)
         {
-
-        }
-
-        public TorrentFile (string path, long length, string fullPath, int startIndex, int endIndex)
-            : this (path, length, fullPath, startIndex, endIndex, 0, null, null, null)
-        {
-
-        }
-
-        public TorrentFile (string path, long length, string fullPath, int startIndex, int endIndex, int startOffset, byte[] md5, byte[] ed2k, byte[] sha1)
-        {
-            BitField = new BitField (endIndex - startIndex + 1);
             ED2K = ed2k;
             EndPieceIndex = endIndex;
-            FullPath = fullPath;
             Length = length;
             MD5 = md5;
             Path = path;
-            Priority = Priority.Normal;
             SHA1 = sha1;
             StartPieceIndex = startIndex;
             StartPieceOffset = startOffset;
         }
 
-        #endregion
-
-
-        #region Methods
-
         public override bool Equals (object obj)
-        {
-            return Equals (obj as TorrentFile);
-        }
+            => Equals (obj as TorrentFile);
 
         public bool Equals (TorrentFile other)
-        {
-            return other == null ? false : Path == other.Path && Length == other.Length;
-        }
+            => Path == other?.Path && Length == other.Length;
 
         public override int GetHashCode ()
-        {
-            return Path.GetHashCode ();
-        }
-
-        internal (int startPiece, int endPiece) GetSelector ()
-        {
-            return (StartPieceIndex, EndPieceIndex);
-        }
+            => Path.GetHashCode ();
 
         public override string ToString ()
         {
@@ -173,7 +120,5 @@ namespace MonoTorrent
             sb.Append (EndPieceIndex);
             return sb.ToString ();
         }
-
-        #endregion Methods
     }
 }

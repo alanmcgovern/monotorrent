@@ -63,19 +63,19 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int Count => Streams.Count;
 
-        Func<TorrentFile, FileAccess, ITorrentFileStream> StreamCreator { get; }
-        Dictionary<TorrentFile, ITorrentFileStream> Streams { get; }
-        List<TorrentFile> UsageOrder { get; }
+        Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> StreamCreator { get; }
+        Dictionary<ITorrentFileInfo, ITorrentFileStream> Streams { get; }
+        List<ITorrentFileInfo> UsageOrder { get; }
 
-        internal FileStreamBuffer (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator, int maxStreams)
+        internal FileStreamBuffer (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxStreams)
         {
             StreamCreator = streamCreator;
             MaxStreams = maxStreams;
-            Streams = new Dictionary<TorrentFile, ITorrentFileStream> (maxStreams);
-            UsageOrder = new List<TorrentFile> ();
+            Streams = new Dictionary<ITorrentFileInfo, ITorrentFileStream> (maxStreams);
+            UsageOrder = new List<ITorrentFileInfo> ();
         }
 
-        internal async ReusableTask<bool> CloseStreamAsync (TorrentFile file)
+        internal async ReusableTask<bool> CloseStreamAsync (ITorrentFileInfo file)
         {
             using var rented = GetStream (file);
             if (rented.Stream != null) {
@@ -87,21 +87,21 @@ namespace MonoTorrent.Client.PieceWriters
             return false;
         }
 
-        internal async ReusableTask FlushAsync (TorrentFile file)
+        internal async ReusableTask FlushAsync (ITorrentFileInfo file)
         {
             using var rented = GetStream (file);
             if (rented.Stream != null)
                 await rented.Stream.FlushAsync ();
         }
 
-        internal RentedStream GetStream (TorrentFile file)
+        internal RentedStream GetStream (ITorrentFileInfo file)
         {
             if (Streams.TryGetValue (file, out ITorrentFileStream stream))
                 return new RentedStream (stream);
             return new RentedStream (null);
         }
 
-        internal async ReusableTask<RentedStream> GetStreamAsync (TorrentFile file, FileAccess access)
+        internal async ReusableTask<RentedStream> GetStreamAsync (ITorrentFileInfo file, FileAccess access)
         {
             if (!Streams.TryGetValue (file, out ITorrentFileStream s))
                 s = null;
@@ -142,7 +142,7 @@ namespace MonoTorrent.Client.PieceWriters
             return new RentedStream (s);
         }
 
-        void Add (TorrentFile file, ITorrentFileStream stream)
+        void Add (ITorrentFileInfo file, ITorrentFileStream stream)
         {
             logger.InfoFormatted ("Opening filestream: {0}", file.FullPath);
 
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client.PieceWriters
             UsageOrder.Add (file);
         }
 
-        void CloseAndRemove (TorrentFile file, ITorrentFileStream s)
+        void CloseAndRemove (ITorrentFileInfo file, ITorrentFileStream s)
         {
             logger.InfoFormatted ("Closing and removing: {0}", file.Path);
             Streams.Remove (file);

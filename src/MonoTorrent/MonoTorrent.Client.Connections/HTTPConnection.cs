@@ -285,7 +285,7 @@ namespace MonoTorrent.Client.Connections
 
             foreach (TorrentFile file in Manager.Torrent.Files) {
                 Uri u = uri;
-                if (Manager.Torrent.Files.Length > 1)
+                if (Manager.Torrent.Files.Count > 1)
                     u = new Uri (u, file.Path);
                 if (endOffset == 0)
                     break;

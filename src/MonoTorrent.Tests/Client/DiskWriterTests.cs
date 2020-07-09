@@ -40,18 +40,18 @@ namespace MonoTorrent.Client.PieceWriters
     public class DiskWriterTests
     {
         string Temp { get; set; }
-        TorrentFile[] Others { get; set; }
-        TorrentFile TorrentFile { get; set; }
+        ITorrentFileInfo[] Others { get; set; }
+        ITorrentFileInfo TorrentFile { get; set; }
 
         [SetUp]
         public void Setup ()
         {
             Temp = Path.GetTempPath () + "monotorrent_tests";
-            TorrentFile = new TorrentFile ("test.file", 12345, Path.Combine (Temp, "test.file"));
+            TorrentFile = new TorrentFileInfo (new TorrentFile ("test.file", 12345), Path.Combine (Temp, "test.file"));
             Others = new[] {
-                new TorrentFile ("test2.file", 12345, Path.Combine (Temp, "test2.file")),
-                new TorrentFile ("test3.file", 12345, Path.Combine (Temp, "test3.file")),
-                new TorrentFile ("test4.file", 12345, Path.Combine (Temp, "test4.file")),
+                new TorrentFileInfo (new TorrentFile ("test2.file", 12345), Path.Combine (Temp, "test2.file")),
+                new TorrentFileInfo (new TorrentFile ("test3.file", 12345), Path.Combine (Temp, "test3.file")),
+                new TorrentFileInfo (new TorrentFile ("test4.file", 12345), Path.Combine (Temp, "test4.file")),
             };
         }
 
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             var streams = new List<ManualStream> ();
             var streamCreated = new ReusableTaskCompletionSource<bool> ();
-            Func<TorrentFile, FileAccess, ITorrentFileStream> creator = (file, access) => {
+            Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> creator = (file, access) => {
                 var s = new ManualStream (file, access);
                 s.WriteTcs = new ReusableTaskCompletionSource<int> ();
                 streams.Add (s);

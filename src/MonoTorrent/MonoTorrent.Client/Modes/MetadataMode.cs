@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -189,9 +190,8 @@ namespace MonoTorrent.Client.Modes
                                     Manager.TrySetError (Reason.WriteFailure, ex);
                                     return;
                                 }
-                                t.TorrentPath = savePath;
-                                Manager.Torrent = t;
-                                SwitchToRegular ();
+                                Manager.SetMetadata (t);
+                                _ = Manager.StartAsync ();
                             } else {
                                 bitField.SetAll (false);
                             }
@@ -214,25 +214,6 @@ namespace MonoTorrent.Client.Modes
                     throw new MessageException ($"Invalid messagetype in LTMetadata: {message.MetadataMessageType}");
             }
 
-        }
-
-        void SwitchToRegular ()
-        {
-            foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
-                Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
-            Manager.Bitfield = new BitField (Manager.Torrent.Pieces.Count);
-            Manager.PartialProgressSelector = new BitField (Manager.Torrent.Pieces.Count);
-            Manager.UnhashedPieces = new BitField (Manager.Torrent.Pieces.Count).SetAll (true);
-            Manager.PieceManager.RefreshPickerWithMetadata (Manager.Bitfield, Manager.Torrent);
-
-            // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
-            if (Manager.Torrent.Files.Length > 1) {
-                Manager.SavePath = Path.Combine (Manager.SavePath, Manager.Torrent.Name);
-            }
-
-            foreach (TorrentFile file in Manager.Torrent.Files)
-                file.FullPath = Path.Combine (Manager.SavePath, file.Path);
-            _ = Manager.StartAsync ();
         }
 
         protected override void HandleAllowedFastMessage (PeerId id, Messages.FastPeer.AllowedFastMessage message)

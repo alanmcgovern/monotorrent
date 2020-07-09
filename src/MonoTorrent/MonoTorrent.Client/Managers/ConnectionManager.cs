@@ -260,7 +260,7 @@ namespace MonoTorrent.Client
                         releaser.Dispose ();
                         releaser = NetworkIO.BufferPool.Rent (Piece.BlockSize, out ByteBuffer _);
                     }
-                    PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent, releaser.Buffer).ConfigureAwait (false);
+                    PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager, releaser.Buffer).ConfigureAwait (false);
                     HandleReceivedMessage (id, torrentManager, message);
                 }
             } catch {
@@ -415,7 +415,7 @@ namespace MonoTorrent.Client
                             pieceBuffer = DiskManager.BufferPool.Rent (msgLength, out ByteBuffer _);
                         pm.DataReleaser = pieceBuffer;
                         try {
-                            await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength).ConfigureAwait (false);
+                            await DiskManager.ReadAsync (manager, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength).ConfigureAwait (false);
                         } catch (Exception ex) {
                             await ClientEngine.MainLoop;
                             manager.TrySetError (Reason.ReadFailure, ex);

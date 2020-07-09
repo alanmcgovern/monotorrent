@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        internal void SeekToPosition (TorrentFile file, long position)
+        internal void SeekToPosition (ITorrentFileInfo file, long position)
         {
             // Update the high priority set, then cancel pending requests.
             ReadToPosition (file, position);
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        internal void ReadToPosition (TorrentFile file, long position)
+        internal void ReadToPosition (ITorrentFileInfo file, long position)
         {
             HighPriorityPieceIndex = file.StartPieceIndex + (int) ((file.StartPieceOffset + position) / TorrentData.PieceLength);
         }
