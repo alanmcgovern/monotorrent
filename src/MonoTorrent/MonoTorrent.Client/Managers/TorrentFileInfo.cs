@@ -1,10 +1,10 @@
-//
-// NullWriter.cs
+﻿//
+// File.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,44 +27,46 @@
 //
 
 
-using ReusableTasks;
+using System;
+using System.Threading;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.Client
 {
-    public class NullWriter : IPieceWriter
+    class TorrentFileInfo : ITorrentFileInfo
     {
-        public ReusableTask CloseAsync (ITorrentFileInfo file)
+        public string FullPath { get; set; }
+
+        ITorrentFile TorrentFile { get; }
+
+        public BitField BitField { get; }
+
+        public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
+
+        public Priority Priority { get; set; } = Priority.Normal;
+
+        public string Path => TorrentFile.Path;
+
+        public int StartPieceIndex => TorrentFile.StartPieceIndex;
+
+        public int StartPieceOffset => TorrentFile.StartPieceOffset;
+
+        public int EndPieceIndex => TorrentFile.EndPieceIndex;
+
+        public long Length => TorrentFile.Length;
+
+        public TorrentFileInfo (ITorrentFile torrentFile)
+            : this (torrentFile, torrentFile.Path)
         {
-            return ReusableTask.CompletedTask;
         }
 
-        public void Dispose ()
+        public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
         {
+            TorrentFile = torrentFile;
+            FullPath = fullPath;
+            BitField = new BitField (torrentFile.EndPieceIndex - torrentFile.StartPieceIndex + 1);
         }
 
-        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
-        {
-            return ReusableTask.FromResult (false);
-        }
-
-        public ReusableTask FlushAsync (ITorrentFileInfo file)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            return ReusableTask.FromResult (0);
-        }
-
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            return ReusableTask.CompletedTask;
-        }
+        public (int startPiece, int endPiece) GetSelector ()
+            => (StartPieceIndex, EndPieceIndex);
     }
 }

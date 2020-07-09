@@ -316,9 +316,9 @@ namespace MonoTorrent.Client.Modes
             for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
                 Manager.OnPieceHashed (i, true);
 
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
-            Manager.Torrent.Files.Last ().Priority = Priority.Normal;
+            Manager.Files.Last ().Priority = Priority.Normal;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -344,7 +344,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void PartialProgress_NoneDownloaded_AllDoNotDownload ()
         {
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -361,9 +361,9 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.OnPieceHashed (0, true);
 
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
-            Manager.Torrent.Files.First ().Priority = Priority.Normal;
+            Manager.Files.First ().Priority = Priority.Normal;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -379,10 +379,10 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void PartialProgress_RelatedDownloaded2 ()
         {
-            var lastFile = Manager.Torrent.Files.Last ();
+            var lastFile = Manager.Files.Last ();
             Manager.OnPieceHashed (Manager.Torrent.Pieces.Count - 1, true);
 
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
             lastFile.Priority = Priority.Normal;
 
@@ -400,16 +400,16 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.OnPieceHashed (0, true);
 
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
-            Manager.Torrent.Files.First ().Priority = Priority.Normal;
+            Manager.Files.First ().Priority = Priority.Normal;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
             mode.UpdateSeedingDownloadingState ();
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#1");
 
-            Manager.Torrent.Files.Skip (1).First ().Priority = Priority.Normal;
+            Manager.Files.Skip (1).First ().Priority = Priority.Normal;
             var oldStateTask = new TaskCompletionSource<TorrentState> ();
             var newStateTask = new TaskCompletionSource<TorrentState> ();
             Manager.TorrentStateChanged += (object sender, TorrentStateChangedEventArgs e) => {
@@ -436,7 +436,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.OnPieceHashed (0, true);
 
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -452,9 +452,9 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.OnPieceHashed (0, true);
 
-            foreach (var file in Manager.Torrent.Files)
+            foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
-            Manager.Torrent.Files.Last ().Priority = Priority.Normal;
+            Manager.Files.Last ().Priority = Priority.Normal;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;

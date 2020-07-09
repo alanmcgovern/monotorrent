@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 using MonoTorrent.Client.Messages.Standard;
@@ -41,7 +42,7 @@ namespace MonoTorrent.Client.Messages
     {
         class TestTorrentData : ITorrentData
         {
-            public TorrentFile[] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }
@@ -59,6 +60,7 @@ namespace MonoTorrent.Client.Messages
                 buffer[i] = 0xff;
 
             torrentData = new TestTorrentData {
+                Files = new List<ITorrentFileInfo> (),
                 PieceLength = 16 * Piece.BlockSize,
                 Size = 40 * 16 * Piece.BlockSize,
             };

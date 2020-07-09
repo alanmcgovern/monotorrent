@@ -110,12 +110,6 @@ namespace MonoTorrent
 
         }
 
-        protected EditableTorrent (Torrent torrent)
-        {
-            Check.Torrent (torrent);
-            Initialise (torrent.ToDictionary ());
-        }
-
         protected EditableTorrent (BEncodedDictionary metadata)
         {
             Check.Metadata (metadata);

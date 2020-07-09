@@ -39,14 +39,14 @@ namespace MonoTorrent.Client.PiecePicking
         class Files : IComparable<Files>
         {
             public Priority Priority { get; private set; }
-            readonly TorrentFile File;
+            readonly ITorrentFileInfo File;
             public readonly (int startPiece, int endPiece) Selector;
 
-            public Files (TorrentFile file, (int startPiece, int endPiece) selector)
+            public Files (ITorrentFileInfo file)
             {
                 Priority = file.Priority;
                 File = file;
-                Selector = selector;
+                Selector = (file.StartPieceIndex, file.EndPieceIndex);
             }
 
             public int CompareTo (Files other)
@@ -85,8 +85,8 @@ namespace MonoTorrent.Client.PiecePicking
             temp = new BitField (bitfield.Length);
 
             files.Clear ();
-            for (int i = 0; i < torrentData.Files.Length; i++)
-                files.Add (new Files (torrentData.Files[i], torrentData.Files[i].GetSelector ()));
+            for (int i = 0; i < torrentData.Files.Count; i++)
+                files.Add (new Files (torrentData.Files[i]));
             BuildSelectors ();
         }
 

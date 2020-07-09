@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         class TestTorrentData : ITorrentData
         {
-            public TorrentFile[] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceCount => (int) (Size / PieceLength);
             public int PieceLength { get; set; }
             public long Size { get; set; }
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.PiecePicking
             var pieceLength = 256 * 1024;
 
             torrentData = new TestTorrentData {
-                Files = new[] { new TorrentFile ("One File", pieceLength * pieceCount, 0, pieceCount) },
+                Files = new[] { new TorrentFileInfo (new TorrentFile ("One File", pieceLength * pieceCount, 0, pieceCount)) },
                 PieceLength = pieceLength,
                 Size = pieceLength * pieceCount
             };

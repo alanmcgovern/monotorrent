@@ -29,7 +29,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
@@ -41,7 +43,7 @@ using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IDisposable, IEquatable<TorrentManager>
+    public class TorrentManager : IDisposable, IEquatable<TorrentManager>, ITorrentData
     {
         #region Events
 
@@ -107,7 +109,7 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public BitField Bitfield { get; internal set; }
+        public BitField Bitfield { get; private set; }
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
@@ -126,6 +128,10 @@ namespace MonoTorrent.Client
         public ClientEngine Engine { get; internal set; }
 
         public Error Error { get; private set; }
+
+        public IList<ITorrentFileInfo> Files { get; private set; }
+        public int PieceLength => Torrent == null ? -1 : Torrent.PieceLength;
+        public long Size => Torrent == null ? -1 : Torrent.Size;
 
         internal Mode Mode {
             get => mode;
@@ -146,7 +152,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// If <see cref="TorrentFile.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
+        /// If <see cref="ITorrentFileInfo.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
         /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
         /// to ensure pieces which have not been hash checked are never downloaded.
         /// </summary>
@@ -243,7 +249,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The directory to download the files to
         /// </summary>
-        public string SavePath { get; internal set; }
+        public string SavePath { get; private set; }
 
         /// <summary>
         /// The settings for with this TorrentManager
@@ -269,7 +275,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The Torrent contained within this TorrentManager
         /// </summary>
-        public Torrent Torrent { get; internal set; }
+        public Torrent Torrent { get; private set; }
 
         /// <summary>
         /// The number of peers that we are currently uploading to
@@ -311,34 +317,20 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
         public TorrentManager (Torrent torrent, string savePath, TorrentSettings settings)
-            : this (torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name)
-        {
-
-        }
-
-        /// <summary>
-        /// Creates a new TorrentManager instance.
-        /// </summary>
-        /// <param name="torrent">The torrent to load in</param>
-        /// <param name="savePath">The directory to save downloaded files to</param>
-        /// <param name="settings">The settings to use for controlling connections</param>
-        /// <param name="baseDirectory">In the case of a multi-file torrent, the name of the base directory containing the files. Defaults to Torrent.Name</param>
-        public TorrentManager (Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory)
         {
             Check.Torrent (torrent);
             Check.SavePath (savePath);
             Check.Settings (settings);
-            Check.BaseDirectory (baseDirectory);
 
-            Torrent = torrent;
             InfoHash = torrent.InfoHash;
             Settings = settings;
 
-            Initialise (savePath, baseDirectory, torrent.AnnounceUrls);
+            Initialise (savePath, torrent.AnnounceUrls);
+            SetMetadata (torrent);
         }
 
 
-        public TorrentManager (InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<RawTrackerTier> announces)
+        public TorrentManager (InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
         {
             Check.InfoHash (infoHash);
             Check.SavePath (savePath);
@@ -350,7 +342,7 @@ namespace MonoTorrent.Client
             Settings = settings;
             this.torrentSave = torrentSave;
 
-            Initialise (savePath, "", announces);
+            Initialise (savePath, announces);
         }
 
         public TorrentManager (MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
@@ -364,22 +356,21 @@ namespace MonoTorrent.Client
             InfoHash = magnetLink.InfoHash;
             Settings = settings;
             this.torrentSave = torrentSave;
-            IList<RawTrackerTier> announces = new RawTrackerTiers ();
+            var announces = new List<IList<string>> ();
             if (magnetLink.AnnounceUrls != null)
-                announces.Add (magnetLink.AnnounceUrls);
+                announces.Add (magnetLink.AnnounceUrls.ToArray ());
 
+            Initialise (savePath, announces);
             if (Torrent.TryLoad (torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
-                Torrent = torrent;
-
-            Initialise (savePath, "", announces);
+                SetMetadata (torrent);
         }
 
-        void Initialise (string savePath, string baseDirectory, IList<RawTrackerTier> announces)
+        void Initialise (string savePath, IList<IList<string>> announces)
         {
             Bitfield = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
             PartialProgressSelector = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
             UnhashedPieces = new BitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
-            SavePath = Path.Combine (savePath, baseDirectory);
+            SavePath = string.IsNullOrEmpty (savePath) ? Environment.CurrentDirectory : Path.GetFullPath (savePath);
             finishedPieces = new Queue<HaveMessage> ();
             Monitor = new ConnectionMonitor ();
             InactivePeerManager = new InactivePeerManager (this);
@@ -391,11 +382,6 @@ namespace MonoTorrent.Client
             CreateRateLimiters ();
 
             ChangePicker (CreateStandardPicker ());
-
-            if (HasMetadata) {
-                foreach (TorrentFile file in Torrent.Files)
-                    file.FullPath = Path.Combine (SavePath, file.Path);
-            }
         }
 
         void CreateRateLimiters ()
@@ -424,7 +410,7 @@ namespace MonoTorrent.Client
             IEnumerable<Piece> pieces = PieceManager.Picker?.ExportActiveRequests () ?? new List<Piece> ();
             PieceManager.ChangePicker (picker, Bitfield);
             if (Torrent != null)
-                PieceManager.Picker.Initialise (Bitfield, Torrent, pieces);
+                PieceManager.Picker.Initialise (Bitfield, this, pieces);
         }
 
         /// <summary>
@@ -541,7 +527,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task MoveFileAsync (TorrentFile file, string path)
+        public async Task MoveFileAsync (ITorrentFileInfo file, string path)
         {
             Check.File (file);
             Check.PathNotEmpty (path);
@@ -552,7 +538,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine.DiskManager.MoveFileAsync (file, path);
+                await Engine.DiskManager.MoveFileAsync ((TorrentFileInfo)file, path);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
             }
@@ -567,7 +553,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine.DiskManager.MoveFilesAsync (Torrent, newRoot, overWriteExisting);
+                await Engine.DiskManager.MoveFilesAsync (this, newRoot, overWriteExisting);
                 SavePath = newRoot;
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
@@ -587,6 +573,27 @@ namespace MonoTorrent.Client
             } else if (Mode is DownloadMode) {
                 Mode = new PausedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
+        }
+
+        internal void SetMetadata (Torrent torrent)
+        {
+            Torrent = torrent;
+            foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
+                Engine.ConnectionManager.CleanupSocket (this, id);
+            Bitfield = new BitField (Torrent.Pieces.Count);
+            PartialProgressSelector = new BitField (Torrent.Pieces.Count);
+            UnhashedPieces = new BitField (Torrent.Pieces.Count).SetAll (true);
+
+            // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
+            var savePath = SavePath;
+            if (Torrent.Files.Count > 1)
+                savePath = Path.Combine (savePath, Torrent.Name);
+
+            Files = Torrent.Files.Select (file =>
+                new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
+            ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
+
+            PieceManager.RefreshPickerWithMetadata (Bitfield, this);
         }
 
         /// <summary>
@@ -784,9 +791,9 @@ namespace MonoTorrent.Client
 
             // This gives us the index of *one* of the files we need to update. We need to search up
             // and down the array for other matching files as multiple files can share a piece.
-            TorrentFile[] files = Torrent.Files;
+            var files = Files;
             var fileIndex = files.BinarySearch (PieceIndexComparer, index);
-            for (int i = fileIndex; i < files.Length && files[i].StartPieceIndex <= index; i++)
+            for (int i = fileIndex; i < files.Count && files[i].StartPieceIndex <= index; i++)
                 files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
 
             for (int i = fileIndex - 1; i >= 0 && files[i].EndPieceIndex >= index; i--)
@@ -801,7 +808,7 @@ namespace MonoTorrent.Client
             PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
         }
 
-        static readonly Func<TorrentFile, int, int> PieceIndexComparer = (TorrentFile file, int pieceIndex) => {
+        static readonly Func<ITorrentFileInfo, int, int> PieceIndexComparer = (ITorrentFileInfo file, int pieceIndex) => {
             if (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex)
                 return 0;
             if (pieceIndex > file.EndPieceIndex)

@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.PiecePicking
             base.Initialise (bitfield, torrentData, requests);
 
             // set the high priority set start to the beginning of the first file that we have to download
-            foreach (TorrentFile file in torrentData.Files) {
+            foreach (var file in torrentData.Files) {
                 if (file.Priority == Priority.DoNotDownload)
                     highPrioritySetStart = file.EndPieceIndex;
                 else

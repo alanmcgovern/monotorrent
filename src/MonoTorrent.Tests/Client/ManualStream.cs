@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public ReusableTaskCompletionSource<int> WriteTcs { get; set; }
 
-        public ManualStream (TorrentFile file, FileAccess access)
+        public ManualStream (ITorrentFileInfo file, FileAccess access)
         {
             CanWrite = access.HasFlag (FileAccess.Write);
         }

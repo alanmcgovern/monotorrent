@@ -40,6 +40,7 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentTest
     {
+        BEncodedDictionary torrentInfo;
         private Torrent torrent;
         private long creationTime;
         readonly System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create ();
@@ -56,7 +57,7 @@ namespace MonoTorrent.Common
             creationTime = (long) span.TotalSeconds;
             Console.WriteLine ($"{creationTime}Creation seconds");
 
-            BEncodedDictionary torrentInfo = new BEncodedDictionary {
+            torrentInfo = new BEncodedDictionary {
                 { "announce", new BEncodedString ("http://myannouceurl/announce") },
                 { "creation date", new BEncodedNumber (creationTime) },
                 { "nodes", new BEncodedList () },                    //FIXME: What is this?
@@ -211,9 +212,8 @@ namespace MonoTorrent.Common
         [Test]
         public void NodesIsNotAList ()
         {
-            var dict = torrent.ToDictionary ();
-            dict["nodes"] = new BEncodedString ("192.168.0.1:12345");
-            torrent = Torrent.Load (dict);
+            torrentInfo["nodes"] = new BEncodedString ("192.168.0.1:12345");
+            torrent = Torrent.Load (torrentInfo);
             Assert.IsNull (torrent.Nodes, "#1");
         }
 
@@ -241,7 +241,7 @@ namespace MonoTorrent.Common
         [Test]
         public void Files ()
         {
-            Assert.AreEqual (4, torrent.Files.Length);
+            Assert.AreEqual (4, torrent.Files.Count);
 
             Assert.AreEqual ("file1.txt", torrent.Files[0].Path);
             Assert.AreEqual (50000, torrent.Files[0].Length);
@@ -259,8 +259,7 @@ namespace MonoTorrent.Common
         [Test]
         public void InvalidPath ()
         {
-            var dict = torrent.ToDictionary ();
-            var files = ((BEncodedDictionary) dict["info"])["files"] as BEncodedList;
+            var files = ((BEncodedDictionary) torrentInfo["info"])["files"] as BEncodedList;
 
             var newFile = new BEncodedDictionary ();
             var path = new BEncodedList (new BEncodedString[] { "test", "..", "bar" });
@@ -268,7 +267,7 @@ namespace MonoTorrent.Common
             newFile["length"] = (BEncodedNumber) 15251;
             files.Add (newFile);
 
-            Assert.Throws<ArgumentException> (() => Torrent.Load (dict));
+            Assert.Throws<ArgumentException> (() => Torrent.Load (torrentInfo));
         }
 
         /// <summary>

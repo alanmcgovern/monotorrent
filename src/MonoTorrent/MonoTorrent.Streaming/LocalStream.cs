@@ -63,7 +63,7 @@ namespace MonoTorrent.Streaming
             set => Seek (value, SeekOrigin.Begin);
         }
 
-        TorrentFile File { get; }
+        ITorrentFileInfo File { get; }
 
         TorrentManager Manager { get; }
 
@@ -71,7 +71,7 @@ namespace MonoTorrent.Streaming
 
         FileStream Stream { get; set; }
 
-        public LocalStream (TorrentManager manager, TorrentFile file, StreamingPiecePicker picker)
+        public LocalStream (TorrentManager manager, ITorrentFileInfo file, StreamingPiecePicker picker)
         {
             Manager = manager;
             File = file;

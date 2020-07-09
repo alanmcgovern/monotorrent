@@ -159,7 +159,7 @@ namespace MonoTorrent.Client.Modes
         {
             var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
             await Setup (true, torrent);
-            File.WriteAllBytes (torrent, rig.Torrent.ToBytes ());
+            File.WriteAllBytes (torrent, rig.TorrentDict.Encode ());
 
             await SendMetadataCore (torrent, new HaveNoneMessage ());
         }
@@ -181,12 +181,12 @@ namespace MonoTorrent.Client.Modes
             await SendMetadataCore (torrent, new HaveNoneMessage ());
 
             Assert.AreEqual (@"test.files", rig.Manager.Torrent.Name);
-            Assert.AreEqual (@"", rig.Manager.SavePath);
+            Assert.AreEqual (Environment.CurrentDirectory, rig.Manager.SavePath);
 
-            var torrentFiles = rig.Manager.Torrent.Files;
-            Assert.AreEqual (torrentFiles.Length, 1);
+            var torrentFiles = rig.Manager.Files;
+            Assert.AreEqual (torrentFiles.Count, 1);
             Assert.AreEqual (Path.Combine ("Dir1", "File1"), torrentFiles[0].Path);
-            Assert.AreEqual (Path.Combine ("Dir1", "File1"), torrentFiles[0].FullPath);
+            Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "Dir1", "File1"), torrentFiles[0].FullPath);
         }
 
         [Test]
@@ -197,19 +197,19 @@ namespace MonoTorrent.Client.Modes
             await SendMetadataCore (torrent, new HaveNoneMessage ());
 
             Assert.AreEqual (@"test.files", rig.Manager.Torrent.Name);
-            Assert.AreEqual (@"test.files", rig.Manager.SavePath);
+            Assert.AreEqual (Environment.CurrentDirectory, rig.Manager.SavePath);
 
-            var torrentFiles = rig.Manager.Torrent.Files;
-            Assert.AreEqual (torrentFiles.Length, 4);
+            var torrentFiles = rig.Manager.Files;
+            Assert.AreEqual (torrentFiles.Count, 4);
             Assert.AreEqual (Path.Combine ("Dir1", "File1"), torrentFiles[0].Path);
             Assert.AreEqual (Path.Combine ("Dir1", "Dir2", "File2"), torrentFiles[1].Path);
             Assert.AreEqual (@"File3", torrentFiles[2].Path);
             Assert.AreEqual (@"File4", torrentFiles[3].Path);
 
-            Assert.AreEqual (Path.Combine ("test.files", "Dir1", "File1"), torrentFiles[0].FullPath);
-            Assert.AreEqual (Path.Combine ("test.files", "Dir1", "Dir2", "File2"), torrentFiles[1].FullPath);
-            Assert.AreEqual (Path.Combine ("test.files", "File3"), torrentFiles[2].FullPath);
-            Assert.AreEqual (Path.Combine ("test.files", "File4"), torrentFiles[3].FullPath);
+            Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "test.files", "Dir1", "File1"), torrentFiles[0].FullPath);
+            Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "test.files", "Dir1", "Dir2", "File2"), torrentFiles[1].FullPath);
+            Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "test.files", "File3"), torrentFiles[2].FullPath);
+            Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "test.files", "File4"), torrentFiles[3].FullPath);
         }
 
         internal async Task SendMetadataCore (string expectedPath, PeerMessage sendAfterHandshakeMessage)
@@ -220,7 +220,7 @@ namespace MonoTorrent.Client.Modes
             // of the Connect method.
             var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.Metadata.Length, 5555);
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.InfoMetadata.Length, 5555);
             exHand.Supports.Add (LTMetadata.Support);
             await PeerIO.SendMessageAsync (connection, encryptor, exHand);
 
@@ -228,7 +228,7 @@ namespace MonoTorrent.Client.Modes
 
             bool receivedHaveNone = false;
             // 2) Receive the metadata requests from the other peer and fulfill them
-            byte[] buffer = rig.Torrent.Metadata;
+            byte[] buffer = rig.Torrent.InfoMetadata;
             int length = (buffer.Length + 16383) / 16384;
             PeerMessage m;
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {

@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         class TestTorrentData : ITorrentData
         {
-            public TorrentFile[] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
             public int Pieces => (int) Math.Ceiling ((double) Size / PieceLength);
             public long Size { get; set; }
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
         static TestTorrentData CreateSingleFile ()
         {
             int pieceLength = Piece.BlockSize * 16;
-            var file = new TorrentFile ("Single", pieceLength * 32 + 123, 0, 33);
+            var file = new TorrentFileInfo (new TorrentFile ("Single", pieceLength * 32 + 123, 0, 33));
             return new TestTorrentData {
                 Files = new[] { file },
                 PieceLength = pieceLength,
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.PiecePicking
                 var startIndex = (int) Math.Ceiling (((double) start) / pieceLength);
                 var endIndex = (int) Math.Ceiling (((double) start + size) / pieceLength);
                 start += size;
-                return new TorrentFile ($"File {index}", size, startIndex, endIndex);
+                return new TorrentFileInfo (new TorrentFile ($"File {index}", size, startIndex, endIndex));
             }).ToArray ();
 
             return new TestTorrentData {
