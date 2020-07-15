@@ -1,5 +1,5 @@
 ﻿//
-// File.cs
+// TorrentFileInfo.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com

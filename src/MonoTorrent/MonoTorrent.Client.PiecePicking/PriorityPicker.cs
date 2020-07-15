@@ -40,19 +40,16 @@ namespace MonoTorrent.Client.PiecePicking
         {
             public Priority Priority { get; private set; }
             readonly ITorrentFileInfo File;
-            public readonly (int startPiece, int endPiece) Selector;
+            public (int startPiece, int endPiece) Selector => File.GetSelector ();
 
             public Files (ITorrentFileInfo file)
             {
                 Priority = file.Priority;
                 File = file;
-                Selector = (file.StartPieceIndex, file.EndPieceIndex);
             }
 
             public int CompareTo (Files other)
-            {
-                return (int) other.Priority - (int) Priority;
-            }
+                => (int) other.Priority - (int) Priority;
 
             public bool TryRefreshPriority ()
             {
