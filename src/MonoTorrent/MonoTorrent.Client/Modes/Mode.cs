@@ -610,6 +610,7 @@ namespace MonoTorrent.Client.Modes
                     id.AmInterested = !Manager.Complete;
                     id.ClientApp = new Software (id.PeerID);
                     Manager.Peers.ConnectedPeers.Add (id);
+                    Interlocked.Increment (ref ConnectionManager.openConnections);
                     Manager.RaisePeerConnected (new PeerConnectedEventArgs (Manager, id));
                     ConnectionManager.ReceiveMessagesAsync (id.Connection, id.Decryptor, Manager.DownloadLimiters, id.Monitor, Manager, id);
                 }

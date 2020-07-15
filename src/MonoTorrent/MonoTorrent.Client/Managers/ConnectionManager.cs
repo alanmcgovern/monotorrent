@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
@@ -67,6 +68,8 @@ namespace MonoTorrent.Client
 
         internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
 
+        internal int openConnections;
+
         internal DiskManager DiskManager { get; }
 
         internal BEncodedString LocalPeerId { get; }
@@ -89,11 +92,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The number of open connections
         /// </summary>
-        public int OpenConnections => (int) ClientEngine.MainLoop.QueueWait (() =>
-                     (int) Toolbox.Accumulate (Torrents, (m) =>
-                         m.Peers.ConnectedPeers.Count
-                     )
-                );
+        public int OpenConnections => openConnections;
 
         List<AsyncConnectState> PendingConnects { get; }
 
@@ -185,6 +184,7 @@ namespace MonoTorrent.Client
 
             manager.Peers.ActivePeers.Add (id.Peer);
             manager.Peers.ConnectedPeers.Add (id);
+            Interlocked.Increment (ref openConnections);
 
             try {
                 // Create a handshake message to send to the peer
@@ -303,7 +303,8 @@ namespace MonoTorrent.Client
                 if (!id.AmChoking)
                     manager.UploadingTo--;
 
-                manager.Peers.ConnectedPeers.Remove (id);
+                if (manager.Peers.ConnectedPeers.Remove (id))
+                    Interlocked.Decrement (ref openConnections);
                 manager.Peers.ActivePeers.Remove (id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
@@ -367,6 +368,7 @@ namespace MonoTorrent.Client
                 manager.Peers.AvailablePeers.Remove (id.Peer);
                 manager.Peers.ActivePeers.Add (id.Peer);
                 manager.Peers.ConnectedPeers.Add (id);
+                Interlocked.Increment (ref openConnections);
 
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
