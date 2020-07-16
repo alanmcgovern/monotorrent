@@ -272,6 +272,7 @@ namespace MonoTorrent.Client
                     hasher.TransformFinalBlock (hashBuffer, 0, 0);
                     return hasher.Hash;
                 } finally {
+                    await IOLoop;
                     IncrementalHashCache.Enqueue (incrementalHash);
                     IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 }
