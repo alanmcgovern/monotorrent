@@ -293,7 +293,8 @@ namespace MonoTorrent.Client
             // Process all pending reads/writes then close any open streams
             await ProcessBufferedIOAsync (true);
             foreach (var file in manager.Files)
-                await Writer.CloseAsync (file);
+                using (await file.Locker.EnterAsync ())
+                    await Writer.CloseAsync (file);
         }
 
         /// <summary>
