@@ -408,12 +408,11 @@ namespace MonoTorrent.Client
                 } else if (incrementalHash.NextOffsetToHash == offset) {
                     await MainLoop.SwitchThread ();
                     incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
-                    incrementalHash.NextOffsetToHash += count;
-
-                    if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
-                        || incrementalHash.NextOffsetToHash == manager.Size) {
+                    if (incrementalHash.NextOffsetToHash + count == (long) manager.PieceLength * (pieceIndex + 1)
+                        || incrementalHash.NextOffsetToHash + count == manager.Size) {
                         incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
                     }
+                    incrementalHash.NextOffsetToHash += count;
                 }
             }
 
