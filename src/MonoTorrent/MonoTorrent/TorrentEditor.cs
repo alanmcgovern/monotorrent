@@ -50,7 +50,7 @@ namespace MonoTorrent
                 RemoveCustom ("announce-list");
             } else {
                 var list = new BEncodedList ();
-                foreach (RawTrackerTier rawTier in Announces) {
+                foreach (var rawTier in Announces) {
                     var tier = new BEncodedList ();
                     foreach (string announce in rawTier)
                         tier.Add ((BEncodedString) announce);

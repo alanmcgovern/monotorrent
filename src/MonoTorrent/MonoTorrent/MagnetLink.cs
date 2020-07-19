@@ -38,7 +38,7 @@ namespace MonoTorrent
         /// <summary>
         /// The list of tracker Urls.
         /// </summary>
-        public RawTrackerTier AnnounceUrls {
+        public IList<string> AnnounceUrls {
             get;
         }
 
@@ -74,7 +74,7 @@ namespace MonoTorrent
         {
             InfoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
             Name = name;
-            AnnounceUrls = new RawTrackerTier (announceUrls ?? Array.Empty<string> ());
+            AnnounceUrls = new List<string> (announceUrls ?? Array.Empty<string> ()).AsReadOnly ();
             Webseeds = new List<string> (webSeeds ?? Array.Empty<string> ()).AsReadOnly ();
             Size = size;
         }
@@ -98,7 +98,7 @@ namespace MonoTorrent
         {
             InfoHash infoHash = null;
             string name = null;
-            var announceUrls = new RawTrackerTier ();
+            var announceUrls = new List<string> ();
             var webSeeds = new List<string> ();
             long? size = null;
 

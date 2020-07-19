@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        static readonly string[][] trackerUrls = {
+        static readonly IList<IList<string>> trackerUrls = new[] {
             new [] {
                 "custom://tracker0.com/announce",
                 "custom://tracker1.com/announce",
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             TrackerFactory.Register ("custom", uri => new CustomTracker (uri));
-            trackerManager = new TrackerManager (new RequestFactory (), trackerUrls.Select (t => new RawTrackerTier (t)), true);
+            trackerManager = new TrackerManager (new RequestFactory (), trackerUrls, true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
@@ -316,10 +316,10 @@ namespace MonoTorrent.Client
         [Test]
         public void UnsupportedTrackers ()
         {
-            RawTrackerTier[] tiers = {
-                new RawTrackerTier { "unregistered://1.1.1.1:1111", "unregistered://1.1.1.2:1112" },
-                new RawTrackerTier { "unregistered://2.2.2.2:2221" },
-                new RawTrackerTier { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
+            var tiers = new []{
+                new List<string> { "unregistered://1.1.1.1:1111", "unregistered://1.1.1.2:1112" },
+                new List<string> { "unregistered://2.2.2.2:2221" },
+                new List<string> { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
             };
 
             var manager = new TrackerManager (new RequestFactory (), tiers, false);
