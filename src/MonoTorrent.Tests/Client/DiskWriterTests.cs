@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.PieceWriters
                 var s = new ManualStream (file, access);
                 s.WriteTcs = new ReusableTaskCompletionSource<int> ();
                 streams.Add (s);
-                streamCreated.TrySetResult (true);
+                streamCreated.SetResult (true);
                 return s;
             };
             using var writer = new DiskWriter (creator, 1);

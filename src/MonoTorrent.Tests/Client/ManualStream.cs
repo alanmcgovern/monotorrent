@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.PieceWriters
         public void Dispose ()
         {
             Disposed = true;
-            WriteTcs?.TrySetException (new ObjectDisposedException (nameof (ManualStream)));
+            WriteTcs?.SetException (new ObjectDisposedException (nameof (ManualStream)));
         }
 
         public ReusableTask FlushAsync ()
