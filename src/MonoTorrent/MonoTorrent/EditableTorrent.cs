@@ -114,6 +114,7 @@ namespace MonoTorrent
         protected EditableTorrent (BEncodedDictionary metadata)
         {
             Check.Metadata (metadata);
+            Announces = new List<List<string>> ();
             Initialise (BEncodedValue.Clone (metadata));
         }
 
