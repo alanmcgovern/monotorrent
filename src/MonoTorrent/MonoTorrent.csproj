@@ -92,7 +92,7 @@ Notable features include:
 
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.26" PrivateAssets="all" />
-    <PackageReference Include="Mono.Nat" Version="2.0.1" />
+    <PackageReference Include="Mono.Nat" Version="2.0.2" />
     <PackageReference Include="ReusableTasks" Version="2.0.0" />
   </ItemGroup>
 
