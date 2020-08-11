@@ -136,12 +136,9 @@ namespace MonoTorrent.Client.Encryption
             this.socket = socket ?? throw new ArgumentNullException (nameof (socket));
 
             // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
-            // These two steps will be done simultaneously to save time due to latency
-            ReusableTask first = SendY ();
-            ReusableTask second = ReceiveY ();
             try {
-                await first.ConfigureAwait (false);
-                await second.ConfigureAwait (false);
+                await SendY ().ConfigureAwait (false);
+                await ReceiveY ().ConfigureAwait (false);
             } catch (Exception ex) {
                 socket.Dispose ();
                 throw new EncryptionException ("Encrypted handshake failed", ex);
