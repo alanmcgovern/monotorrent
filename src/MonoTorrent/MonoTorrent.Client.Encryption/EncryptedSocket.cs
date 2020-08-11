@@ -32,7 +32,6 @@ using System;
 using System.Security.Cryptography;
 
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
 
 using ReusableTasks;
 
@@ -222,7 +221,7 @@ namespace MonoTorrent.Client.Encryption
             var otherY = new byte[96];
 
             using (NetworkIO.BufferPool.Rent (otherY.Length, out ByteBuffer buffer)) {
-                await ReceiveMessage (buffer, otherY.Length).ConfigureAwait (false);
+                await ReceiveMessageAsync (buffer, otherY.Length).ConfigureAwait (false);
                 Buffer.BlockCopy (buffer.Data, 0, otherY, 0, otherY.Length);
                 S = ModuloCalculator.Calculate (otherY, X);
                 await DoneReceiveY ().ConfigureAwait (false);
@@ -241,7 +240,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="syncData">Buffer with the data to synchronize to</param>
         /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
-        protected async ReusableTask Synchronize (byte[] syncData, int syncStopPoint)
+        protected async ReusableTask SynchronizeAsync (byte[] syncData, int syncStopPoint)
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
@@ -257,7 +256,7 @@ namespace MonoTorrent.Client.Encryption
 
                     if (matched) // the match started in the beginning of the window, so it must be a full match
                     {
-                        await DoneSynchronize ().ConfigureAwait (false);
+                        await DoneSynchronizeAsync ().ConfigureAwait (false);
                         return;
                     } else {
                         // See if the current window contains the first byte of the expected synchronize data
@@ -282,11 +281,11 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException ("Couldn't synchronise 1");
         }
 
-        protected abstract ReusableTask DoneSynchronize ();
+        protected abstract ReusableTask DoneSynchronizeAsync ();
         #endregion
 
         #region I/O Functions
-        protected async ReusableTask ReceiveMessage (ByteBuffer buffer, int length)
+        protected async ReusableTask ReceiveMessageAsync (ByteBuffer buffer, int length)
         {
             if (length == 0) {
                 return;
@@ -365,27 +364,6 @@ namespace MonoTorrent.Client.Encryption
         #region Utility Functions
 
         /// <summary>
-        /// Concatenates several byte buffers
-        /// </summary>
-        /// <param name="data">Buffers to concatenate</param>
-        /// <returns>Resulting concatenated buffer</returns>
-        protected byte[] Combine (params byte[][] data)
-        {
-            int cursor = 0;
-            int totalLength = 0;
-
-            foreach (byte[] datum in data)
-                totalLength += datum.Length;
-
-            byte[] combined = new byte[totalLength];
-
-            for (int i = 0; i < data.Length; i++)
-                cursor += Message.Write (combined, cursor, data[i]);
-
-            return combined;
-        }
-
-        /// <summary>
         /// Hash some data with SHA1
         /// </summary>
         /// <param name="first"></param>
@@ -401,16 +379,6 @@ namespace MonoTorrent.Client.Encryption
                 hasher.TransformBlock (third, 0, third.Length, third, 0);
             hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
             return hasher.Hash;
-        }
-
-        /// <summary>
-        /// Converts a 2-byte big endian integer into an int (reverses operation of Len())
-        /// </summary>
-        /// <param name="data">2 byte buffer</param>
-        /// <returns>int</returns>
-        protected int DeLen (byte[] data)
-        {
-            return (data[0] << 8) + data[1];
         }
 
         /// <summary>
@@ -463,7 +431,7 @@ namespace MonoTorrent.Client.Encryption
             decryptor.Decrypt (data, offset, data, offset, length);
         }
 
-        protected void SetMinCryptoAllowed (EncryptionTypes allowedEncryption)
+        void SetMinCryptoAllowed (EncryptionTypes allowedEncryption)
         {
             this.allowedEncryption = allowedEncryption;
 

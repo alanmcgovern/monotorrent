@@ -56,15 +56,15 @@ namespace MonoTorrent.Client.Encryption
         protected override async ReusableTask DoneReceiveY ()
         {
             byte[] req1 = Hash (Req1Bytes, S);
-            await Synchronize (req1, 628).ConfigureAwait (false); // 3 A->B: HASH('req1', S)
+            await SynchronizeAsync (req1, 628).ConfigureAwait (false); // 3 A->B: HASH('req1', S)
         }
 
-        protected override async ReusableTask DoneSynchronize ()
+        protected override async ReusableTask DoneSynchronizeAsync ()
         {
             // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
             var length = 20 + VerificationConstant.Length + 4 + 2;
             using (NetworkIO.BufferPool.Rent (length, out ByteBuffer verifyBytes)) {
-                await ReceiveMessage (verifyBytes, length).ConfigureAwait (false);
+                await ReceiveMessageAsync (verifyBytes, length).ConfigureAwait (false);
                 await GotVerification (verifyBytes.Data).ConfigureAwait (false);
             }
         }
@@ -94,14 +94,14 @@ namespace MonoTorrent.Client.Encryption
             int lenInitialPayload;
             int lenPadC = Message.ReadShort (verifyBytes, 32) + 2;
             using (NetworkIO.BufferPool.Rent (lenPadC, out ByteBuffer padC)) {
-                await ReceiveMessage (padC, lenPadC).ConfigureAwait (false); // padC
+                await ReceiveMessageAsync (padC, lenPadC).ConfigureAwait (false); // padC
                 DoDecrypt (padC.Data, 0, lenPadC);
                 lenInitialPayload = Message.ReadShort (padC.Data, lenPadC - 2);
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
             using (NetworkIO.BufferPool.Rent (InitialData.Length, out ByteBuffer receiveBuffer)) {
-                await ReceiveMessage (receiveBuffer, InitialData.Length).ConfigureAwait (false);
+                await ReceiveMessageAsync (receiveBuffer, InitialData.Length).ConfigureAwait (false);
                 Buffer.BlockCopy (receiveBuffer.Data, 0, InitialData, 0, lenInitialPayload);
                 DoDecrypt (InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
             }
