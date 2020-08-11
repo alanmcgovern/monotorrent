@@ -136,12 +136,13 @@ namespace MonoTorrent.Client.Encryption
             this.socket = socket ?? throw new ArgumentNullException (nameof (socket));
 
             // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
-            // These two steps will be done simultaneously to save time due to latency
-            ReusableTask first = SendY ();
-            ReusableTask second = ReceiveY ();
             try {
-                await first.ConfigureAwait (false);
-                await second.ConfigureAwait (false);
+                // Technically we could run SendY and ReceiveY in parallel, except that
+                // the current implementation of ReceiveY immediately does a 'SendAsync'
+                // when it receives it's data, and we do not want to have two concurrent
+                // SendAsync calls on the one IConnection.
+                await SendYAsync ().ConfigureAwait (false);
+                await ReceiveYAsync ().ConfigureAwait (false);
             } catch (Exception ex) {
                 socket.Dispose ();
                 throw new EncryptionException ("Encrypted handshake failed", ex);
@@ -202,7 +203,7 @@ namespace MonoTorrent.Client.Encryption
         /// Send Y to the remote client, with a random padding that is 0 to 512 bytes long
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async ReusableTask SendY ()
+        async ReusableTask SendYAsync ()
         {
             int length = 96 + RandomNumber (512);
             using (NetworkIO.BufferPool.Rent (length, out ByteBuffer toSend)) {
@@ -216,7 +217,7 @@ namespace MonoTorrent.Client.Encryption
         /// Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected async ReusableTask ReceiveY ()
+        async ReusableTask ReceiveYAsync ()
         {
             var otherY = new byte[96];
 
