@@ -302,7 +302,7 @@ namespace MonoTorrent.Client
             var manager = new TorrentManager (magnetLink);
             var metadataCompleted = new TaskCompletionSource<byte[]> ();
             using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
-            manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e.dict);
+            manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e);
 
             await Register (manager, isPublic: false);
             await manager.StartAsync (metadataOnly: true);

@@ -175,8 +175,8 @@ namespace MonoTorrent.Client.Modes
 
                                 dict.Add ("announce-list", announceTrackers);
                             }
-                            if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
-                                Manager.RaiseMetadataReceived (t, dict);
+                            var rawData = dict.Encode ();
+                            if (Torrent.TryLoad (rawData, out Torrent t)) {
                                 if (stopWhenDone)
                                     return;
 
@@ -192,6 +192,7 @@ namespace MonoTorrent.Client.Modes
                                 }
                                 Manager.SetMetadata (t);
                                 _ = Manager.StartAsync ();
+                                Manager.RaiseMetadataReceived (rawData);
                             } else {
                                 bitField.SetAll (false);
                             }
