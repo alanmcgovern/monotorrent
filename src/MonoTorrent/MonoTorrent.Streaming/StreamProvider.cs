@@ -117,8 +117,6 @@ namespace MonoTorrent.Streaming
             // load it here and will have access to the list of Files. Otherwise we need to wait.
             if (Manager.HasMetadata)
                 Files = Manager.Files;
-            else
-                Manager.MetadataReceived += (o, e) => Files = Manager.Files;
         }
 
         /// <summary>
@@ -250,7 +248,7 @@ namespace MonoTorrent.Streaming
 
             var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
             if (prebuffer) {
-                ActiveStream.Seek (ActiveStream.Length - 1, SeekOrigin.Begin);
+                ActiveStream.Seek (ActiveStream.Length - 2, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
 
                 ActiveStream.Seek (0, SeekOrigin.Begin);
@@ -329,19 +327,25 @@ namespace MonoTorrent.Streaming
             await ClientEngine.MainLoop;
             token.ThrowIfCancellationRequested ();
 
+            if (Manager.HasMetadata) {
+                Files = Manager.Files;
+                return;
+            }
+
             // Cancel if the user call StopAsync or if they cancel the token they passed in
             var cts = CancellationTokenSource.CreateLinkedTokenSource (token, Cancellation.Token);
 
-            // If the files still aren't available then let's wait for the metadata
-            // to be downloaded.
-            if (Files == null) {
-                var tcs = new TaskCompletionSource<bool> ();
-                using var reg = cts.Token.Register (() => tcs.TrySetCanceled ());
-                // The EventHandler set during StartAsync will ensure the list of
-                // files has been set.
-                Manager.MetadataReceived += (o, e) => tcs.TrySetResult (true);
+            var tcs = new TaskCompletionSource<bool> ();
+            using var reg = cts.Token.Register (() => tcs.TrySetCanceled ());
+            EventHandler<byte[]> metadataReceivedHandler = (o, e) => tcs.TrySetResult (true);
+            Manager.MetadataReceived += metadataReceivedHandler;
+            try {
                 await tcs.Task;
+            } finally {
+                Manager.MetadataReceived -= metadataReceivedHandler;
             }
+
+            Files = Manager.Files ?? throw new InvalidOperationException ("Internal error: The list of files should not be null after metadata has been received");
         }
     }
 }

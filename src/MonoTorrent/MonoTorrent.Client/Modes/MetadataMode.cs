@@ -181,8 +181,8 @@ namespace MonoTorrent.Client.Modes
                                     return;
 
                                 try {
-                                    if (Directory.Exists (savePath))
-                                        savePath = Path.Combine (savePath, $"{Manager.InfoHash.ToHex ()}.torrent");
+                                    if (!Directory.Exists (Path.GetDirectoryName (savePath)))
+                                        Directory.CreateDirectory (Path.GetDirectoryName (savePath));
                                     File.Delete (savePath);
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {
