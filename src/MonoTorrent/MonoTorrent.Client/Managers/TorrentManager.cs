@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        internal event EventHandler<(Torrent torrent, byte[] dict)> MetadataReceived;
+        internal event EventHandler<byte[]> MetadataReceived;
 
         /// <summary>
         /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
@@ -146,9 +146,9 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void RaiseMetadataReceived (Torrent torrent, BEncodedDictionary dict)
+        internal void RaiseMetadataReceived (byte[] metadata)
         {
-            MetadataReceived?.Invoke (this, (torrent, dict.Encode ()));
+            MetadataReceived?.Invoke (this, metadata);
         }
 
         /// <summary>
