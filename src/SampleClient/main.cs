@@ -12,6 +12,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Dht;
 using MonoTorrent.Logging;
+using MonoTorrent.Streaming;
 
 namespace SampleClient
 {
