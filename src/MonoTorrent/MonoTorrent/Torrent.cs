@@ -560,7 +560,9 @@ namespace MonoTorrent
             Check.Path (path);
 
             try {
-                return LoadCore ((BEncodedDictionary) BEncodedValue.Decode (stream));
+                var torrent = LoadCore ((BEncodedDictionary) BEncodedValue.Decode (stream));
+                torrent.Source = path;
+                return torrent;
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
             }
