@@ -60,11 +60,6 @@ namespace MonoTorrent.Client.PortForwarding
 
                 RaiseMappingsChangedAsync ();
             };
-
-            NatUtility.DeviceLost += async (o, e) => {
-                await ClientEngine.MainLoop;
-                Devices = Devices.Except (new[] { e.Device }).ToArray ();
-            };
         }
 
         public async Task RegisterMappingAsync (Mapping mapping)
