@@ -158,7 +158,7 @@ namespace MonoTorrent
             }
 
             if (infoHash == null)
-                throw new FormatException ("The magnet link did not contain a valid 'xt' paramater referencing the infohash");
+                throw new FormatException ("The magnet link did not contain a valid 'xt' parameter referencing the infohash");
 
             return new MagnetLink (infoHash, name, announceUrls, webSeeds, size);
         }
