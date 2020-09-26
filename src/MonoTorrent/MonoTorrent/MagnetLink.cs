@@ -115,19 +115,22 @@ namespace MonoTorrent
                 }
                 switch (keyval[0].Substring (0, 2)) {
                     case "xt"://exact topic
-                        if (infoHash != null)
-                            throw new FormatException ("More than one infohash in magnet link is not allowed.");
-
                         string val = keyval[1].Substring (9);
                         switch (keyval[1].Substring (0, 9)) {
                             case "urn:sha1:"://base32 hash
                             case "urn:btih:":
+                                if (infoHash != null)
+                                    throw new FormatException ("More than one infohash in magnet link is not allowed.");
+
                                 if (val.Length == 32)
                                     infoHash = InfoHash.FromBase32 (val);
                                 else if (val.Length == 40)
                                     infoHash = InfoHash.FromHex (val);
                                 else
                                     throw new FormatException ("Infohash must be base32 or hex encoded.");
+                                break;
+                            case "urn:btmh:":
+                                // placeholder to parse v2 multihash
                                 break;
                         }
                         break;
