@@ -343,7 +343,9 @@ namespace MonoTorrent.Client
 
             foreach (TorrentFileInfo file in manager.Files) {
                 string newPath = Path.Combine (newRoot, file.Path);
-                await Writer.MoveAsync (file, newPath, overwrite);
+                if (await Writer.ExistsAsync (file)) {
+                    await Writer.MoveAsync (file, newPath, overwrite);
+                }
                 file.FullPath = newPath;
             }
         }
