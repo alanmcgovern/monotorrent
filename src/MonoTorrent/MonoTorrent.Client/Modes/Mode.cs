@@ -221,7 +221,7 @@ namespace MonoTorrent.Client.Modes
         {
             if (message.MetadataMessageType == LTMetadata.eMessageType.Request) {
                 id.MessageQueue.Enqueue (Manager.HasMetadata
-                    ? new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.Metadata)
+                    ? new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.InfoMetadata)
                     : new LTMetadata (id, LTMetadata.eMessageType.Reject, message.Piece));
             }
         }
@@ -343,7 +343,7 @@ namespace MonoTorrent.Client.Modes
             long offset = (long) message.PieceIndex * Manager.Torrent.PieceLength + message.StartOffset;
 
             try {
-                await DiskManager.WriteAsync (Manager.Torrent, offset, message.Data, message.RequestLength);
+                await DiskManager.WriteAsync (Manager, offset, message.Data, message.RequestLength);
                 if (Cancellation.IsCancellationRequested)
                     return;
             } catch (Exception ex) {
@@ -362,7 +362,7 @@ namespace MonoTorrent.Client.Modes
             // Hashcheck the piece as we now have all the blocks.
             byte[] hash;
             try {
-                hash = await DiskManager.GetHashAsync (Manager.Torrent, piece.Index);
+                hash = await DiskManager.GetHashAsync (Manager, piece.Index);
                 if (Cancellation.IsCancellationRequested)
                     return;
             } catch (Exception ex) {
@@ -464,7 +464,7 @@ namespace MonoTorrent.Client.Modes
         protected virtual void AppendExtendedHandshake (PeerId id, MessageBundle bundle)
         {
             if (id.SupportsLTMessages && ClientEngine.SupportsExtended)
-                bundle.Messages.Add (new ExtendedHandshakeMessage (Manager.Torrent?.IsPrivate ?? false, Manager.HasMetadata ? Manager.Torrent.Metadata.Length : 0, Settings.ListenPort));
+                bundle.Messages.Add (new ExtendedHandshakeMessage (Manager.Torrent?.IsPrivate ?? false, Manager.HasMetadata ? Manager.Torrent.InfoMetadata.Length : 0, Settings.ListenPort));
         }
 
         protected virtual void AppendFastPieces (PeerId id, MessageBundle bundle)
@@ -590,7 +590,7 @@ namespace MonoTorrent.Client.Modes
         void DownloadLogic (int counter)
         {
             if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.DownloadSpeed < Manager.Settings.WebSeedSpeedTrigger) {
-                foreach (string seedUri in Manager.Torrent.GetRightHttpSeeds) {
+                foreach (string seedUri in Manager.Torrent.HttpSeeds) {
                     BEncodedString peerId = HttpConnection.CreatePeerId ();
 
                     var uri = new Uri (seedUri);
@@ -612,6 +612,7 @@ namespace MonoTorrent.Client.Modes
                     id.MessageQueue.SetReady ();
 
                     Manager.Peers.ConnectedPeers.Add (id);
+                    Interlocked.Increment (ref ConnectionManager.openConnections);
                     Manager.RaisePeerConnected (new PeerConnectedEventArgs (Manager, id));
                     // Try to queue up some piece requests off the peer
                     Manager.PieceManager.AddPieceRequests (id);
@@ -620,7 +621,7 @@ namespace MonoTorrent.Client.Modes
 
                 // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
                 // Add a boolean or something so that we don't add them twice.
-                Manager.Torrent.GetRightHttpSeeds.Clear ();
+                Manager.Torrent.HttpSeeds.Clear ();
             }
 
             // Remove inactive peers we haven't heard from if we're downloading
@@ -670,12 +671,12 @@ namespace MonoTorrent.Client.Modes
             // FIXME: Handle errors from DiskManager and also handle cancellation if the Mode is replaced.
             hashingPendingFiles = true;
             try {
-                foreach (TorrentFile file in Manager.Torrent.Files) {
+                foreach (var file in Manager.Files) {
                     // If the start piece *and* end piece have been hashed, then every piece in between must've been hashed!
                     if (file.Priority != Priority.DoNotDownload && (Manager.UnhashedPieces[file.StartPieceIndex] || Manager.UnhashedPieces[file.EndPieceIndex])) {
                         for (int index = file.StartPieceIndex; index <= file.EndPieceIndex; index++) {
                             if (Manager.UnhashedPieces[index]) {
-                                byte[] hash = await DiskManager.GetHashAsync (Manager.Torrent, index);
+                                byte[] hash = await DiskManager.GetHashAsync (Manager, index);
                                 Cancellation.Token.ThrowIfCancellationRequested ();
 
                                 bool hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
@@ -699,7 +700,7 @@ namespace MonoTorrent.Client.Modes
 
             PartialProgressUpdater.SetAll (false);
             if (Manager.Torrent != null) {
-                foreach (TorrentFile file in Manager.Torrent.Files) {
+                foreach (var file in Manager.Files) {
                     if (file.Priority != Priority.DoNotDownload) {
                         for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
                             PartialProgressUpdater[i] = true;

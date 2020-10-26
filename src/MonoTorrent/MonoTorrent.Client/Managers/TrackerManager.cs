@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Tracker
         /// <param name="requestFactory">The factory used to create tracker requests. Typically a <see cref="TorrentManager"/> instance.</param>
         /// <param name="announces">The list of tracker tiers</param>
         /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
-        internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces, bool isPrivate)
+        internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
         {
             AnnounceLimiter = new SemaphoreSlim (10);
 

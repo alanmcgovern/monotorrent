@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using MonoTorrent.BEncoding;
 
@@ -52,8 +53,8 @@ namespace MonoTorrent
             set => SetString (Metadata, AnnounceKey, value);
         }
 
-        public IList<RawTrackerTier> Announces {
-            get; private set;
+        public List<List<string>> Announces {
+            get;
         }
 
         protected bool CanEditSecureMetadata {
@@ -110,15 +111,10 @@ namespace MonoTorrent
 
         }
 
-        protected EditableTorrent (Torrent torrent)
-        {
-            Check.Torrent (torrent);
-            Initialise (torrent.ToDictionary ());
-        }
-
         protected EditableTorrent (BEncodedDictionary metadata)
         {
             Check.Metadata (metadata);
+            Announces = new List<List<string>> ();
             Initialise (BEncodedValue.Clone (metadata));
         }
 
@@ -130,7 +126,10 @@ namespace MonoTorrent
                 value = new BEncodedList ();
                 Metadata.Add (AnnounceListKey, value);
             }
-            Announces = new RawTrackerTiers ((BEncodedList) value);
+
+            if (value is BEncodedList tiers)
+                foreach (var tier in tiers.OfType<BEncodedList> ())
+                    Announces.Add (tier.OfType<BEncodedString> ().Select (t => t.Text).ToList ());
 
             if (string.IsNullOrEmpty (Encoding))
                 Encoding = "UTF-8";

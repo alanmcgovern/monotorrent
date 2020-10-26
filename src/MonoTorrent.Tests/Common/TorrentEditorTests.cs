@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
 
@@ -21,7 +22,7 @@ namespace MonoTorrent.Common
         [Test]
         public void Announces_OneTier ()
         {
-            var tier = new RawTrackerTier { "http://test.com/announce" };
+            var tier = new List<string> { "http://test.com/announce" };
             var editor = new TorrentEditor (new BEncodedDictionary ());
             editor.Announces.Add (tier);
 
@@ -33,7 +34,7 @@ namespace MonoTorrent.Common
         [Test]
         public void Announces_OneTierThenRemove ()
         {
-            var tier = new RawTrackerTier { "http://test.com/announce" };
+            var tier = new List<string> { "http://test.com/announce" };
             var editor = new TorrentEditor (new BEncodedDictionary ());
             editor.Announces.Add (tier);
 

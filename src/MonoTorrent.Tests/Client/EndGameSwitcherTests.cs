@@ -13,7 +13,7 @@ namespace MonoTorrent.Client.PiecePicking
             public BitField Bitfield { get; set; }
             public PeerId Seeder { get; set; }
 
-            public TorrentFile[] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }
@@ -30,7 +30,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             // Three pieces of length 32kb.
             SmallTorrent = new TestTorrentData {
-                Files = new[] { new TorrentFile ("foo", length: Piece.BlockSize * 2 * 3, startIndex: 0, endIndex: 2) },
+                Files = new[] { new TorrentFileInfo (new TorrentFile ("foo", length: Piece.BlockSize * 2 * 3, startIndex: 0, endIndex: 2)) },
                 PieceLength = Piece.BlockSize * 2,
                 Size = Piece.BlockSize * 2 * 3,
 
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Three hundred pieces of length 4MB.
             LargeTorrent = new TestTorrentData {
-                Files = new[] { new TorrentFile ("foo", length: Piece.BlockSize * 2 * 300, startIndex: 0, endIndex: 299) },
+                Files = new[] { new TorrentFileInfo (new TorrentFile ("foo", length: Piece.BlockSize * 2 * 300, startIndex: 0, endIndex: 299)) },
                 PieceLength = Piece.BlockSize * 256,
                 Size = Piece.BlockSize * 256 * 300,
 

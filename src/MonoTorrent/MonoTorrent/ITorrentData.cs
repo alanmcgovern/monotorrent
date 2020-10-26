@@ -27,15 +27,16 @@
 //
 
 
-namespace MonoTorrent
+using System.Collections.Generic;
+
+namespace MonoTorrent.Client
 {
     public interface ITorrentData
     {
-        // FIXME: Make all instances of TorrentFile[] be a readonly IList<T>
         /// <summary>
         /// The files contained within the Torrent
         /// </summary>
-        TorrentFile[] Files { get; }
+        IList<ITorrentFileInfo> Files { get; }
 
         /// <summary>
         /// The size, in bytes, of each piece

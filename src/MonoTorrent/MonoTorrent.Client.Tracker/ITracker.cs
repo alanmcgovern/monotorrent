@@ -28,64 +28,12 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class AnnounceResponse
-    {
-        /// <summary>
-        /// The failure message returned by the tracker.
-        /// </summary>
-        public string FailureMessage { get; }
-
-        /// <summary>
-        /// The list of peers returned by the tracker.
-        /// </summary>
-        public IList<Peer> Peers { get; }
-
-        /// <summary>
-        /// The warning message returned by the tracker.
-        /// </summary>
-        public string WarningMessage { get; }
-
-        public AnnounceResponse (IList<Peer> peers, string warningMessage, string failureMessage)
-        {
-            Peers = peers ?? Array.Empty<Peer> ();
-            WarningMessage = warningMessage;
-            FailureMessage = failureMessage;
-        }
-    }
-
-    public class ScrapeResponse
-    {
-        /// <summary>
-        /// The number of active peers which have completed downloading. Updated after a successful Scrape. Defaults to 0.
-        /// </summary>
-        public int Complete { get; }
-
-        /// <summary>
-        /// The number of peers that have ever completed downloading. Updated after a successful Scrape. Defaults to 0.
-        /// </summary>
-        public int Downloaded { get; }
-
-        /// <summary>
-        /// The number of active peers which have not completed downloading. Updated after a successul Scrape. Defaults to 0.
-        /// </summary>
-        public int Incomplete { get; }
-
-        public ScrapeResponse (int complete, int downloaded, int incomplete)
-        {
-            Complete = complete;
-            Downloaded = downloaded;
-            Incomplete = incomplete;
-        }
-    }
-
     public interface ITracker
     {
         /// <summary>

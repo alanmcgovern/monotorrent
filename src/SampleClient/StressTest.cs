@@ -17,7 +17,7 @@ namespace SampleClient
 {
     class NullWriter : IPieceWriter
     {
-        public ReusableTask CloseAsync (TorrentFile file)
+        public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
         }
@@ -26,27 +26,27 @@ namespace SampleClient
         {
         }
 
-        public ReusableTask<bool> ExistsAsync (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
             return ReusableTask.FromResult (false);
         }
 
-        public ReusableTask FlushAsync (TorrentFile file)
+        public ReusableTask FlushAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite)
+        public ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.CompletedTask;
         }
@@ -96,7 +96,7 @@ namespace SampleClient
 
             // Create the torrent file for the fake data
             var creator = new TorrentCreator ();
-            creator.Announces.Add (new RawTrackerTier ());
+            creator.Announces.Add (new List<string> ());
             creator.Announces [0].Add ("http://127.0.0.1:25611/announce");
 
             var metadata = await creator.CreateAsync (new TorrentFileSource (DataDir));
@@ -108,7 +108,7 @@ namespace SampleClient
                     var dataRead = new byte[16 * 1024];
                     int offset = (int)fileStream.Position;
                     int read = fileStream.Read (dataRead, 0, dataRead.Length);
-                    await seederWriter.WriteAsync (seeder.Torrents[0].Torrent.Files[0], offset, dataRead, 0, read);
+                    await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read);
                 }
             }
 

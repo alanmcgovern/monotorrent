@@ -69,7 +69,7 @@ namespace MonoTorrent.Streaming
         /// as the metadata has been downloaded. The <see cref="Task"/> returned by <see cref="WaitForMetadataAsync()"/>
         /// will complete after this has been set to the list of files.
         /// </summary>
-        public IList<TorrentFile> Files {
+        public IList<ITorrentFileInfo> Files {
             get; private set;
         }
         /// <summary>
@@ -93,7 +93,7 @@ namespace MonoTorrent.Streaming
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
             Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
-            Files = Array.AsReadOnly (torrent.Files);
+            Files = Manager.Files;
         }
 
         /// <summary>
@@ -116,9 +116,9 @@ namespace MonoTorrent.Streaming
             // If the metadata for this MagnetLink has been downloaded/cached already, we will synchronously
             // load it here and will have access to the list of Files. Otherwise we need to wait.
             if (Manager.HasMetadata)
-                Files = Array.AsReadOnly (Manager.Torrent.Files);
+                Files = Manager.Files;
             else
-                Manager.MetadataReceived += (o, e) => Files = Array.AsReadOnly (e.torrent.Files);
+                Manager.MetadataReceived += (o, e) => Files = Manager.Files;
         }
 
         /// <summary>
@@ -177,8 +177,8 @@ namespace MonoTorrent.Streaming
         /// <summary>
         /// Calls <see cref="TorrentManager.StopAsync()"/> on <see cref="Manager"/> and unregisters
         /// it from the <see cref="ClientEngine"/>. This will dispose the stream returned by the
-        /// most recent invocation of <see cref="CreateHttpStreamAsync(TorrentFile)"/> or
-        /// <see cref="CreateStreamAsync(TorrentFile)"/>.
+        /// most recent invocation of <see cref="CreateHttpStreamAsync(ITorrentFileInfo)"/> or
+        /// <see cref="CreateStreamAsync(ITorrentFileInfo)"/>.
         /// </summary>
         /// <returns></returns>
         public async Task StopAsync ()
@@ -207,7 +207,7 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <returns></returns>
-        public Task<Stream> CreateStreamAsync (TorrentFile file)
+        public Task<Stream> CreateStreamAsync (ITorrentFileInfo file)
             => CreateStreamAsync (file, prebuffer: true, CancellationToken.None);
 
         /// <summary>
@@ -219,7 +219,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public Task<Stream> CreateStreamAsync (TorrentFile file, CancellationToken token)
+        public Task<Stream> CreateStreamAsync (ITorrentFileInfo file, CancellationToken token)
             => CreateStreamAsync (file, prebuffer: true, token);
 
         /// <summary>
@@ -232,13 +232,13 @@ namespace MonoTorrent.Streaming
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns></returns>
-        public async Task<Stream> CreateStreamAsync (TorrentFile file, bool prebuffer, CancellationToken token)
+        public async Task<Stream> CreateStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
         {
             if (file == null)
                 throw new ArgumentNullException (nameof (file));
             if (Files == null)
                 throw new InvalidOperationException ("The metadata for this torrent has not been downloaded. You must call WaitForMetadataAsync before creating a stream.");
-            if (!Manager.Torrent.Files.Contains (file))
+            if (!Manager.Files.Contains (file))
                 throw new ArgumentException ("The TorrentFile is not from this TorrentManager", nameof (file));
             if (!Active)
                 throw new InvalidOperationException ("You must call StartAsync before creating a stream.");
@@ -266,7 +266,7 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (TorrentFile file)
+        public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file)
             => CreateHttpStreamAsync (file, prebuffer: true, CancellationToken.None);
 
         /// <summary>
@@ -277,7 +277,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (TorrentFile file, CancellationToken token)
+        public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, CancellationToken token)
             => CreateHttpStreamAsync (file, prebuffer: true, token);
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace MonoTorrent.Streaming
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public async Task<IUriStream> CreateHttpStreamAsync (TorrentFile file, bool prebuffer, CancellationToken token)
+        public async Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);
             var httpStreamer = new HttpStream (stream);

@@ -46,14 +46,9 @@ namespace MonoTorrent.Client
         internal static TimeSpan MinimumAnnounceInternal => TimeSpan.FromMinutes (1);
 
         /// <summary>
-        /// The port used by the multicast group
+        /// The IPAddress and port of the IPV4 multicast group.
         /// </summary>
-        static readonly int MulticastPort = 6771;
-
-        /// <summary>
-        /// The IPAddress of the multicast group.
-        /// </summary>
-        static readonly IPAddress MulticastIpAddress = IPAddress.Parse ("239.192.152.143");
+        static readonly IPEndPoint MulticastAddressV4 = new IPEndPoint (IPAddress.Parse ("239.192.152.143"), 6771);
 
         /// <summary>
         /// Used to generate a unique identifier for this client instance.
@@ -69,11 +64,6 @@ namespace MonoTorrent.Client
         /// When we send Announce we should embed the current <see cref="EngineSettings.ListenPort"/> as it is dynamic.
         /// </summary>
         string BaseSearchString { get; }
-
-        /// <summary>
-        /// This is where announce requests should be sent.
-        /// </summary>
-        IPEndPoint BroadcastEndPoint { get; }
 
         /// <summary>
         /// A random identifier used to detect our own Announces so we can ignore them.
@@ -102,14 +92,13 @@ namespace MonoTorrent.Client
         UdpClient UdpClient { get; set; }
 
         internal LocalPeerDiscovery (EngineSettings settings)
-            : base (new IPEndPoint (IPAddress.Any, MulticastPort))
+            : base (new IPEndPoint (IPAddress.Any, MulticastAddressV4.Port))
         {
             Settings = settings;
 
             lock (Random)
                 Cookie = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
-            BroadcastEndPoint = new IPEndPoint (MulticastIpAddress, MulticastPort);
-            BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastIpAddress}:{MulticastPort}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
+            BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastAddressV4.Address}:{MulticastAddressV4.Port}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
             PendingAnnounces = new Queue<InfoHash> ();
             RateLimiterTask = Task.CompletedTask;
         }
@@ -161,7 +150,7 @@ namespace MonoTorrent.Client
                 foreach (var nic in nics) {
                     try {
                         sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
-                        await sendingClient.SendAsync (data, data.Length, BroadcastEndPoint).ConfigureAwait (false);
+                        await sendingClient.SendAsync (data, data.Length, MulticastAddressV4).ConfigureAwait (false);
                     } catch {
                         // If data can't be sent, just ignore the error
                     }
@@ -213,7 +202,7 @@ namespace MonoTorrent.Client
 
             token.Register (() => UdpClient.SafeDispose ());
 
-            UdpClient.JoinMulticastGroup (MulticastIpAddress);
+            UdpClient.JoinMulticastGroup (MulticastAddressV4.Address);
             ReceiveAsync (UdpClient, token);
         }
     }

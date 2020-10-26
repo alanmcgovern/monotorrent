@@ -49,8 +49,8 @@ namespace MonoTorrent.Client
 {
     public class TestWriter : IPieceWriter
     {
-        public List<TorrentFile> FilesThatExist = new List<TorrentFile> ();
-        public List<TorrentFile> DoNotReadFrom = new List<TorrentFile> ();
+        public List<ITorrentFileInfo> FilesThatExist = new List<ITorrentFileInfo> ();
+        public List<ITorrentFileInfo> DoNotReadFrom = new List<ITorrentFileInfo> ();
         public bool DontWrite;
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public List<string> Paths = new List<string> ();
 
-        public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (DoNotReadFrom.Contains (file))
                 return ReusableTask.FromResult (0);
@@ -74,12 +74,12 @@ namespace MonoTorrent.Client
             return ReusableTask.FromResult (count);
         }
 
-        public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask CloseAsync (TorrentFile file)
+        public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
         }
@@ -89,17 +89,17 @@ namespace MonoTorrent.Client
             // Nothing
         }
 
-        public ReusableTask FlushAsync (TorrentFile file)
+        public ReusableTask FlushAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<bool> ExistsAsync (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
             return ReusableTask.FromResult (FilesThatExist.Contains (file));
         }
 
-        public ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
+        public ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
         }
@@ -370,7 +370,7 @@ namespace MonoTorrent.Client
             TorrentDict = CreateTorrent (piecelength, files, tier);
             Torrent = Torrent.Load (TorrentDict);
             Manager = MetadataMode
-                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, tier.Select (t => new RawTrackerTier (t)).ToList ())
+                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, tier)
                 : new TorrentManager (Torrent, savePath, new TorrentSettings ());
             await Engine.Register (Manager);
         }
@@ -435,8 +435,12 @@ namespace MonoTorrent.Client
         }
 
         internal static Torrent CreateMultiFileTorrent (TorrentFile[] files, int pieceLength)
+            => CreateMultiFileTorrent (files, pieceLength, out BEncodedDictionary _);
+
+        internal static Torrent CreateMultiFileTorrent (TorrentFile[] files, int pieceLength, out BEncodedDictionary torrentInfo)
         {
             using var rig = CreateMultiFile (files, pieceLength);
+            torrentInfo = rig.TorrentDict;
             return rig.Torrent;
         }
 

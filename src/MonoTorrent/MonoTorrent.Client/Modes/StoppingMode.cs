@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Modes
                 var stoppingTasks = new List<Task> ();
                 // We could be in metadata download mode
                 if (Manager.Torrent != null)
-                    stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager.Torrent));
+                    stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager));
 
                 Task announceTask = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Stopped, CancellationToken.None).AsTask ();
                 if (timeout != Timeout.InfiniteTimeSpan)

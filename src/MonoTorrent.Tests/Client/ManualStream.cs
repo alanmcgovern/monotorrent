@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public ReusableTaskCompletionSource<int> WriteTcs { get; set; }
 
-        public ManualStream (TorrentFile file, FileAccess access)
+        public ManualStream (ITorrentFileInfo file, FileAccess access)
         {
             CanWrite = access.HasFlag (FileAccess.Write);
         }
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.PieceWriters
         public void Dispose ()
         {
             Disposed = true;
-            WriteTcs?.TrySetException (new ObjectDisposedException (nameof (ManualStream)));
+            WriteTcs?.SetException (new ObjectDisposedException (nameof (ManualStream)));
         }
 
         public ReusableTask FlushAsync ()

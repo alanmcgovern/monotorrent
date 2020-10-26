@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         class TorrentData : ITorrentData
         {
-            public TorrentFile[] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.PiecePicking
             bitfield = new BitField (pieceCount);
             data = new TorrentData {
                 PieceLength = Piece.BlockSize * blocksPerPiece,
-                Files = new[] { new TorrentFile ("Test", Piece.BlockSize * blocksPerPiece * pieceCount, 0, pieceCount - 1) },
+                Files = new[] { new TorrentFileInfo (new TorrentFile ("Test", Piece.BlockSize * blocksPerPiece * pieceCount, 0, pieceCount - 1)) },
                 Size = Piece.BlockSize * blocksPerPiece * pieceCount - 10
             };
 

@@ -1,10 +1,10 @@
-//
-// NullWriter.cs
+﻿//
+// AnnounceResponse.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,44 +27,33 @@
 //
 
 
-using ReusableTasks;
+using System;
+using System.Collections.Generic;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.Client.Tracker
 {
-    public class NullWriter : IPieceWriter
+    public class AnnounceResponse
     {
-        public ReusableTask CloseAsync (ITorrentFileInfo file)
-        {
-            return ReusableTask.CompletedTask;
-        }
+        /// <summary>
+        /// The failure message returned by the tracker.
+        /// </summary>
+        public string FailureMessage { get; }
 
-        public void Dispose ()
-        {
-        }
+        /// <summary>
+        /// The list of peers returned by the tracker.
+        /// </summary>
+        public IList<Peer> Peers { get; }
 
-        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
-        {
-            return ReusableTask.FromResult (false);
-        }
+        /// <summary>
+        /// The warning message returned by the tracker.
+        /// </summary>
+        public string WarningMessage { get; }
 
-        public ReusableTask FlushAsync (ITorrentFileInfo file)
+        public AnnounceResponse (IList<Peer> peers, string warningMessage, string failureMessage)
         {
-            return ReusableTask.CompletedTask;
-        }
-
-        public ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            return ReusableTask.FromResult (0);
-        }
-
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            return ReusableTask.CompletedTask;
+            Peers = peers ?? Array.Empty<Peer> ();
+            WarningMessage = warningMessage;
+            FailureMessage = failureMessage;
         }
     }
 }

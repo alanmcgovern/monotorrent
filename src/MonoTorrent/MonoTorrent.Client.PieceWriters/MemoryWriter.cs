@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PieceWriters
     {
         struct CachedBlock
         {
-            public TorrentFile File;
+            public ITorrentFileInfo File;
             public long Offset;
             public byte[] Buffer;
             public ByteBufferPool.Releaser BufferReleaser;
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.PieceWriters
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));
         }
 
-        public async ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File (file);
             Check.Buffer (buffer);
@@ -112,12 +112,12 @@ namespace MonoTorrent.Client.PieceWriters
             return await Writer.ReadAsync (file, offset, buffer, bufferOffset, count);
         }
 
-        public async ReusableTask WriteAsync  (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync  (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             await WriteAsync (file, offset, buffer, bufferOffset, count, false);
         }
 
-        public async ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
         {
             if (forceWrite) {
                 await Writer.WriteAsync (file, offset, buffer, bufferOffset, count);
@@ -140,18 +140,22 @@ namespace MonoTorrent.Client.PieceWriters
             }
         }
 
-        public async ReusableTask CloseAsync (TorrentFile file)
+        public async ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             await FlushAsync (file);
             await Writer.CloseAsync (file);
         }
 
-        public ReusableTask<bool> ExistsAsync (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
+            foreach (var item in CachedBlocks)
+                if (item.File == file)
+                    return ReusableTask.FromResult (true);
+
             return Writer.ExistsAsync (file);
         }
 
-        public async ReusableTask FlushAsync (TorrentFile file)
+        public async ReusableTask FlushAsync (ITorrentFileInfo file)
         {
             foreach (var block in CachedBlocks) {
                 if (block.File != file)
@@ -173,7 +177,7 @@ namespace MonoTorrent.Client.PieceWriters
                 await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, true);
         }
 
-        public async ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
+        public async ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
         {
             await Writer.MoveAsync (file, newPath, overwrite);
         }

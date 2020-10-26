@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
             Writer.Dispose ();
         }
 
-        internal async Task<bool> CheckFileExistsAsync (TorrentFile file)
+        internal async Task<bool> CheckFileExistsAsync (ITorrentFileInfo file)
         {
             await IOLoop;
 
@@ -212,7 +212,7 @@ namespace MonoTorrent.Client
         {
             await IOLoop;
 
-            for (int i = 0; i < manager.Files.Length; i++)
+            for (int i = 0; i < manager.Files.Count; i++)
                 if (await Writer.ExistsAsync (manager.Files[i]).ConfigureAwait (false))
                     return true;
             return false;
@@ -272,6 +272,7 @@ namespace MonoTorrent.Client
                     hasher.TransformFinalBlock (hashBuffer, 0, 0);
                     return hasher.Hash;
                 } finally {
+                    await IOLoop;
                     IncrementalHashCache.Enqueue (incrementalHash);
                     IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 }
@@ -291,8 +292,9 @@ namespace MonoTorrent.Client
 
             // Process all pending reads/writes then close any open streams
             await ProcessBufferedIOAsync (true);
-            foreach (TorrentFile file in manager.Files)
-                await Writer.CloseAsync (file);
+            foreach (var file in manager.Files)
+                using (await file.Locker.EnterAsync ())
+                    await Writer.CloseAsync (file);
         }
 
         /// <summary>
@@ -320,13 +322,13 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             await WaitForPendingWrites ();
-            foreach (TorrentFile file in manager.Files) {
+            foreach (var file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
                     await Writer.FlushAsync (file);
             }
         }
 
-        internal async Task MoveFileAsync (TorrentFile file, string newPath)
+        internal async Task MoveFileAsync (TorrentFileInfo file, string newPath)
         {
             await IOLoop;
 
@@ -339,7 +341,7 @@ namespace MonoTorrent.Client
         {
             await IOLoop;
 
-            foreach (TorrentFile file in manager.Files) {
+            foreach (TorrentFileInfo file in manager.Files) {
                 string newPath = Path.Combine (newRoot, file.Path);
                 await Writer.MoveAsync (file, newPath, overwrite);
                 file.FullPath = newPath;
@@ -407,12 +409,11 @@ namespace MonoTorrent.Client
                 } else if (incrementalHash.NextOffsetToHash == offset) {
                     await MainLoop.SwitchThread ();
                     incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
-                    incrementalHash.NextOffsetToHash += count;
-
-                    if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
-                        || incrementalHash.NextOffsetToHash == manager.Size) {
+                    if (incrementalHash.NextOffsetToHash + count == (long) manager.PieceLength * (pieceIndex + 1)
+                        || incrementalHash.NextOffsetToHash + count == manager.Size) {
                         incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
                     }
+                    incrementalHash.NextOffsetToHash += count;
                 }
             }
 
@@ -474,7 +475,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        static readonly Func<TorrentFile, (long offset, int pieceLength), int> Comparator = (file, offsetAndPieceLength) => {
+        static readonly Func<ITorrentFileInfo, (long offset, int pieceLength), int> Comparator = (file, offsetAndPieceLength) => {
             // Force these two be longs right at the start so we don't overflow
             // int32s when dealing with large torrents.
             (long offset, long pieceLength) = offsetAndPieceLength;
@@ -488,7 +489,7 @@ namespace MonoTorrent.Client
                 return 1;
         };
 
-        public static int FindFileIndex (TorrentFile[] files, long offset, int pieceLength)
+        public static int FindFileIndex (IList<ITorrentFileInfo> files, long offset, int pieceLength)
         {
             return files.BinarySearch (Comparator, (offset, pieceLength));
         }
@@ -504,7 +505,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             int totalRead = 0;
-            TorrentFile[] files = manager.Files;
+            var files = manager.Files;
             int i = FindFileIndex (files, offset, manager.PieceLength);
             offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
 
@@ -526,7 +527,7 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        async ReusableTask<int> ReadFromFileAsync (TorrentFile torrentFile, long offset, byte[] buffer, int bufferOffset, int count)
+        async ReusableTask<int> ReadFromFileAsync (ITorrentFileInfo torrentFile, long offset, byte[] buffer, int bufferOffset, int count)
         {
             await torrentFile.Locker.WaitAsync ();
             try {
@@ -584,7 +585,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             int totalWritten = 0;
-            TorrentFile[] files = manager.Files;
+            var files = manager.Files;
             int i = FindFileIndex (files, offset, manager.PieceLength);
             offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
 

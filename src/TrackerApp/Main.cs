@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -62,7 +63,7 @@ namespace SampleTracker
         /// <summary>
         /// The files in the torrent
         /// </summary>
-        public TorrentFile[] Files { get; }
+        public IList<TorrentFile> Files { get; }
 
         /// <summary>
         /// The infohash of the torrent
