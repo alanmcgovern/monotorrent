@@ -71,11 +71,6 @@ namespace MonoTorrent.Client
             skipUpload = skipUpload && owningTorrent.Settings.MaximumUploadSpeed > 0;
 
             foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers) {
-                // If the peer is interesting try to queue up some piece requests off him
-                // If he is choking, we will only queue a piece if there is a FastPiece we can choose
-                if (connectedPeer.AmInterested)
-                     owningTorrent.PieceManager.AddPieceRequests (connectedPeer);
-
                 if (!connectedPeer.Peer.IsSeeder) {
                     if (!connectedPeer.IsInterested && !connectedPeer.AmChoking) {
                         //This peer is disinterested and unchoked; choke it

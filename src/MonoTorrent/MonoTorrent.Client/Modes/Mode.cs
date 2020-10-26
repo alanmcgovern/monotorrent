@@ -620,6 +620,8 @@ namespace MonoTorrent.Client.Modes
                     id.ClientApp = new Software (id.PeerID);
                     Manager.Peers.ConnectedPeers.Add (id);
                     Manager.RaisePeerConnected (new PeerConnectedEventArgs (Manager, id));
+                    // Try to queue up some piece requests off the peer
+                    Manager.PieceManager.AddPieceRequests (id);
                     ConnectionManager.ReceiveMessagesAsync (id.Connection, id.Decryptor, Manager.DownloadLimiters, id.Monitor, Manager, id);
                 }
 
