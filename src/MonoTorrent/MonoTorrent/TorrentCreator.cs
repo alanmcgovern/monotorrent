@@ -198,11 +198,27 @@ namespace MonoTorrent
 
         void AddCommonStuff (BEncodedDictionary torrent)
         {
-            if (Announces.Count == 0 || (Announces.Count == 1 && Announces[0].Count <= 1))
-                RemoveCustom ("announce-list");
-
-            if (Announces.Count > 0 && Announces[0].Count > 0)
-                Announce = Announces[0][0];
+            if (Announces.Count == 0) {
+                torrent.Remove ("announce-list");
+                if (Announce == null)
+                    torrent.Remove ("announce");
+                else
+                    torrent["announce"] = new BEncodedString (Announce);
+            } else {
+                var tiers = new BEncodedList ();
+                foreach (var initialTier in Announces) {
+                    var tier = new BEncodedList ();
+                    foreach (var v in initialTier)
+                        tier.Add (new BEncodedString (v));
+                    if (tier.Count > 0)
+                        tiers.Add (tier);
+                }
+                if (tiers.Count > 0)
+                    torrent["announce-list"] = tiers;
+                else
+                    torrent.Remove ("announce-list");
+                torrent.Remove ("announce");
+            }
 
             if (GetrightHttpSeeds.Count > 0) {
                 var seedlist = new BEncodedList ();
@@ -321,8 +337,8 @@ namespace MonoTorrent
                     toRead = (int) Math.Min (totalBytesToRead, toRead);
 
                     int read;
-                    lock (writer)
-                        read = writer.Read (file, fileRead, buffer, 0, toRead);
+                    // FIXME: thread safety
+                    read = await writer.ReadAsync (file, fileRead, buffer, 0, toRead);
                     if (read != toRead)
                         throw new InvalidOperationException ("The required data could not be read from the file.");
                     fileRead += read;
@@ -349,8 +365,8 @@ namespace MonoTorrent
         {
             await MainLoop.SwitchToThreadpool ();
 
-            using MD5 md5Hasher = StoreMD5 ? HashAlgoFactory.Create<MD5> () : null;
-            using SHA1 shaHasher = HashAlgoFactory.Create<SHA1> ();
+            using MD5 md5Hasher = StoreMD5 ? HashAlgoFactory.MD5 () : null;
+            using SHA1 shaHasher = HashAlgoFactory.SHA1 ();
 
             md5Hasher?.Initialize ();
             shaHasher?.Initialize ();

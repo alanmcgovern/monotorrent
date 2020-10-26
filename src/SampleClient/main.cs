@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -10,6 +11,7 @@ using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Dht;
+using MonoTorrent.Logging;
 
 namespace SampleClient
 {
@@ -26,6 +28,11 @@ namespace SampleClient
 
         static void Main (string[] args)
         {
+            // Uncomment this to run the stress test
+            //
+            //var tester = new StressTest ();
+            //tester.RunAsync ().Wait ();
+
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine (basePath, "Torrents");				// This is the directory we will save .torrents to
@@ -47,6 +54,8 @@ namespace SampleClient
 
         private static async Task StartEngine ()
         {
+            Logger.Factory = (string className) => new TextLogger (Console.Out, className);
+
             int port;
             Torrent torrent = null;
             // Ask the user what port they want to use for incoming connections
@@ -210,7 +219,7 @@ namespace SampleClient
                         AppendFormat (sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
                         AppendFormat(sb, "Tracker Status");
                         foreach (var tier in manager.TrackerManager.Tiers)
-                            AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapSucceeded}.");
+                            AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapeSucceeded}.");
                         if (manager.PieceManager != null)
                             AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 

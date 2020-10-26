@@ -774,7 +774,7 @@ namespace MonoTorrent
                         break;
 
                     case ("info"):
-                        using (SHA1 s = HashAlgoFactory.Create<SHA1> ())
+                        using (SHA1 s = HashAlgoFactory.SHA1 ())
                             InfoHash = new InfoHash (s.ComputeHash (keypair.Value.Encode ()));
                         ProcessInfo (((BEncodedDictionary) keypair.Value));
                         break;

@@ -29,12 +29,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
 
 using NUnit.Framework;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
@@ -46,14 +50,14 @@ namespace MonoTorrent.Client
 
         }
 
-        protected override Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
-            return Task.FromResult (new List<Peer> ());
+            return ReusableTask.FromResult (new AnnounceResponse (new List<Peer> (), null, null));
         }
 
-        protected override Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
-            return Task.CompletedTask;
+            return ReusableTask.FromResult (new ScrapeResponse (0, 0, 0));
         }
     }
 
@@ -99,23 +103,57 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             TrackerFactory.Register ("custom", uri => new CustomTracker (uri));
-            trackerManager = new TrackerManager (new RequestFactory (), trackerUrls.Select (t => new RawTrackerTier (t)));
+            trackerManager = new TrackerManager (new RequestFactory (), trackerUrls.Select (t => new RawTrackerTier (t)), true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
+        [Test]
+        public async Task Announce_EmitEvent ()
+        {
+            foreach (var tier in trackers)
+                foreach (var tracker in tier)
+                    tracker.AddPeer (new Peer ("peerid", new Uri ("ipv4://127.123.123.123:12312")));
+
+            var tcs = new TaskCompletionSource<AnnounceResponseEventArgs> ();
+            trackerManager.AnnounceComplete += (o, e) => tcs.TrySetResult (e);
+
+            await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout ();
+
+            var result = await tcs.Task.WithTimeout ();
+            Assert.AreEqual (1, result.Peers.Count);
+        }
 
         [Test]
-        public async Task Announce ()
+        public async Task Announce_NoEvent_SkipSecond ()
         {
-            await trackerManager.Announce ();
+            await trackerManager.AnnounceAsync (CancellationToken.None);
             Assert.AreEqual (1, trackers[0][0].AnnouncedAt.Count, "#2");
             Assert.That ((DateTime.Now - trackers[0][0].AnnouncedAt[0]) < TimeSpan.FromSeconds (1), "#3");
             for (int i = 1; i < trackers.Count; i++)
                 Assert.AreEqual (0, trackers[0][i].AnnouncedAt.Count, "#4." + i);
 
-            await trackerManager.Announce (trackers[0][1]);
+            await trackerManager.AnnounceAsync (trackers[0][1], CancellationToken.None);
             Assert.AreEqual (1, trackers[0][1].AnnouncedAt.Count, "#6");
             Assert.That ((DateTime.Now - trackers[0][1].AnnouncedAt[0]) < TimeSpan.FromSeconds (1), "#7");
+        }
+
+        [Test]
+        public async Task Announce_SpecialEvent_DoNotSkipSecond (
+            [Values (TorrentEvent.Started, TorrentEvent.Stopped, TorrentEvent.Completed)]
+            TorrentEvent clientEvent)
+        {
+            await trackerManager.AnnounceAsync (clientEvent, CancellationToken.None);
+            Assert.AreEqual (1, trackers[0][0].AnnouncedAt.Count, "#1a");
+            Assert.AreEqual (1, trackers[1][0].AnnouncedAt.Count, "#1b");
+
+            await trackerManager.AnnounceAsync (clientEvent, CancellationToken.None);
+            Assert.AreEqual (2, trackers[0][0].AnnouncedAt.Count, "#2a");
+            Assert.AreEqual (2, trackers[1][0].AnnouncedAt.Count, "#2b");
+
+            for (int i = 1; i < trackers[0].Count; i++)
+                Assert.AreEqual (0, trackers[0][i].AnnouncedAt.Count, "#3." + i);
+            for (int i = 1; i < trackers[1].Count; i++)
+                Assert.AreEqual (0, trackers[1][i].AnnouncedAt.Count, "#4." + i);
         }
 
         [Test]
@@ -128,7 +166,7 @@ namespace MonoTorrent.Client
                 foreach (var tracker in tier)
                     tracker.FailAnnounce = true;
 
-            await trackerManager.Announce ();
+            await trackerManager.AnnounceAsync (CancellationToken.None);
 
             var args = await argsTask.Task.WithTimeout ("The announce never completed");
             foreach (var tier in trackers)
@@ -154,11 +192,11 @@ namespace MonoTorrent.Client
             trackers[0][0].FailAnnounce = true;
             trackers[0][1].FailAnnounce = true;
 
-            await trackerManager.Announce ().WithTimeout ();
+            await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout ();
             await tcs.Task.WithTimeout ();
             Assert.AreEqual (4, announces.Count);
 
-            Assert.AreEqual (2, trackerManager.Tiers [0].ActiveTrackerIndex, "#1");
+            Assert.AreEqual (trackerManager.Tiers[0].Trackers[2], trackerManager.Tiers [0].ActiveTracker, "#1");
             Assert.AreEqual (1, trackers[0][0].AnnouncedAt.Count, "#2a");
             Assert.IsFalse (announces.Single (args => args.Tracker == trackers[0][0]).Successful, "#2b");
 
@@ -170,7 +208,7 @@ namespace MonoTorrent.Client
 
             Assert.AreEqual (0, trackers[0][3].AnnouncedAt.Count, "#5");
 
-            Assert.AreEqual (0, trackerManager.Tiers[1].ActiveTrackerIndex, "#6");
+            Assert.AreEqual (trackerManager.Tiers[1].Trackers [0], trackerManager.Tiers[1].ActiveTracker, "#6");
             Assert.AreEqual (1, trackers[1][0].AnnouncedAt.Count, "#7a");
             Assert.IsTrue (announces.Single (args => args.Tracker == trackers[1][0]).Successful, "#7b");
 
@@ -185,19 +223,35 @@ namespace MonoTorrent.Client
 
             foreach (var tier in trackerManager.Tiers) {
                 Assert.IsFalse (tier.LastAnnounceSucceeded);
-                Assert.IsFalse (tier.SentStartedEvent);
                 Assert.AreEqual (TimeSpan.MaxValue, tier.TimeSinceLastAnnounce);
-                Assert.AreEqual (0, tier.ActiveTrackerIndex);
+                Assert.AreEqual (tier.Trackers [0], tier.ActiveTracker);
             }
 
-            await trackerManager.Announce ();
+            await trackerManager.AnnounceAsync (CancellationToken.None);
 
             foreach (var tier in trackerManager.Tiers) {
                 Assert.IsTrue (tier.LastAnnounceSucceeded);
-                Assert.IsTrue (tier.SentStartedEvent);
-                Assert.IsTrue (tier.TimeSinceLastAnnounce < TimeSpan.FromSeconds (5));
-                Assert.AreEqual (1, tier.ActiveTrackerIndex);
+                Assert.IsTrue (tier.TimeSinceLastAnnounce < (Debugger.IsAttached ? TimeSpan.MaxValue : TimeSpan.FromSeconds (5)));
+                Assert.AreEqual (tier.Trackers[1], tier.ActiveTracker);
             }
+            Assert.AreEqual (TorrentEvent.Started, trackers[0][1].AnnounceParameters.Single ().ClientEvent);
+            Assert.AreEqual (TorrentEvent.Started, trackers[1][1].AnnounceParameters.Single ().ClientEvent);
+        }
+
+        [Test]
+        public async Task AnnounceTwice_SendStartedOnce ()
+        {
+            await trackerManager.AnnounceAsync (CancellationToken.None);
+
+            Assert.AreEqual (TorrentEvent.Started, trackers[0][0].AnnounceParameters.Single ().ClientEvent);
+            Assert.AreEqual (TorrentEvent.Started, trackers[1][0].AnnounceParameters.Single ().ClientEvent);
+
+            trackerManager.Tiers[0].TimeSinceLastAnnounce = TimeSpan.FromHours (1);
+            await trackerManager.AnnounceAsync (CancellationToken.None);
+
+            Assert.AreEqual (TorrentEvent.None, trackers[0][0].AnnounceParameters.Last ().ClientEvent);
+            Assert.AreEqual (2, trackers[0][0].AnnounceParameters.Count);
+            Assert.AreEqual (1, trackers[1][0].AnnounceParameters.Count);
         }
 
         [Test]
@@ -216,7 +270,7 @@ namespace MonoTorrent.Client
             var argsTask = new TaskCompletionSource<ScrapeResponseEventArgs> ();
             trackerManager.ScrapeComplete += (o, e) => argsTask.SetResult (e);
 
-            await trackerManager.Scrape (trackers[0][0]);
+            await trackerManager.ScrapeAsync (trackers[0][0], CancellationToken.None);
 
             var args = await argsTask.Task.WithTimeout ("The scrape never completed");
             Assert.IsTrue (args.Successful);
@@ -234,7 +288,7 @@ namespace MonoTorrent.Client
             trackers[0][0].FailScrape = true;
             trackerManager.ScrapeComplete += (o, e) => argsTask.SetResult (e);
 
-            await trackerManager.Scrape (trackers[0][0]);
+            await trackerManager.ScrapeAsync (trackers[0][0], CancellationToken.None);
 
             var args = await argsTask.Task.WithTimeout ("The scrape never completed");
             Assert.AreEqual (1, trackers[0][0].ScrapedAt.Count, "#1");
@@ -248,7 +302,7 @@ namespace MonoTorrent.Client
             var argsTask = new TaskCompletionSource<ScrapeResponseEventArgs> ();
             trackerManager.ScrapeComplete += (o, e) => argsTask.SetResult (e);
 
-            await trackerManager.Scrape (trackers[0][1]);
+            await trackerManager.ScrapeAsync (trackers[0][1], CancellationToken.None);
 
             var args = await argsTask.Task.WithTimeout ("The scrape never completed");
             Assert.IsTrue (args.Successful);
@@ -268,7 +322,7 @@ namespace MonoTorrent.Client
                 new RawTrackerTier { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
             };
 
-            var manager = new TrackerManager (new RequestFactory (), tiers);
+            var manager = new TrackerManager (new RequestFactory (), tiers, false);
             Assert.AreEqual (0, manager.Tiers.Count, "#1");
         }
     }

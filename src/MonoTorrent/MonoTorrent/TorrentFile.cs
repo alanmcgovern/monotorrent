@@ -34,6 +34,8 @@ namespace MonoTorrent
 {
     public sealed class TorrentFile : IEquatable<TorrentFile>
     {
+        internal readonly System.Threading.SemaphoreSlim Locker = new System.Threading.SemaphoreSlim (1, 1);
+
         #region Member Variables
 
         /// <summary>

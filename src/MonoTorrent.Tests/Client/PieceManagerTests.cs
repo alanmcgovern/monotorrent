@@ -117,7 +117,7 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.IsNull (manager.Picker.PickPiece (peer, peer.BitField, peers), "#1");
             manager.AddPieceRequests (peer);
             Assert.AreEqual (0, peer.AmRequestingPiecesCount, "#2");
-            Assert.AreEqual (0, peer.QueueLength, "#3");
+            Assert.AreEqual (0, peer.MessageQueue.QueueLength, "#3");
         }
 
         [Test]
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             manager.AddPieceRequests (peers[0]);
             Assert.AreEqual (0, peers[0].AmRequestingPiecesCount, "#1");
-            Assert.AreEqual (0, peers[0].QueueLength, "#2");
+            Assert.AreEqual (0, peers[0].MessageQueue.QueueLength, "#2");
         }
 
         [Test]
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             manager.AddPieceRequests (peers[0]);
             Assert.AreEqual (0, peers[0].AmRequestingPiecesCount, "#1");
-            Assert.AreEqual (0, peers[0].QueueLength, "#2");
+            Assert.AreEqual (0, peers[0].MessageQueue.QueueLength, "#2");
         }
     }
 }

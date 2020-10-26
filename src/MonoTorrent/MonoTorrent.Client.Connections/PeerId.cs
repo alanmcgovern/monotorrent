@@ -41,8 +41,8 @@ namespace MonoTorrent.Client
     public partial class PeerId
     {
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
-        /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
+        /// The peer will have <see cref="MessageQueue.ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
         /// <param name="bitfieldLength"></param>
@@ -51,8 +51,8 @@ namespace MonoTorrent.Client
             => CreateNull (bitfieldLength);
 
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
-        /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
+        /// The peer will have <see cref="MessageQueue.ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
         /// <param name="bitfieldLength"></param>
@@ -63,8 +63,8 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
-        /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
+        /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
+        /// The peer will have <see cref="MessageQueue.ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
         /// <param name="bitfieldLength"></param>
@@ -74,13 +74,15 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested)
         {
-            return new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345"))) {
+            var peer = new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345"))) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
                 BitField = new BitField (bitfieldLength).SetAll (seeder),
-                ProcessingQueue = true
             };
+            peer.MessageQueue.SetReady ();
+            peer.MessageQueue.BeginProcessing (force: true);
+            return peer;
         }
 
         internal static PeerId CreateInterested (int bitfieldLength)
@@ -94,7 +96,7 @@ namespace MonoTorrent.Client
 
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        internal IConnection2 Connection { get; }
+        internal IConnection Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
@@ -125,11 +127,13 @@ namespace MonoTorrent.Client
         public bool IsChoking { get; internal set; }
         public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }
-        public int IsRequestingPiecesCount { get; internal set; }
+        internal int isRequestingPiecesCount;
+        public int IsRequestingPiecesCount => isRequestingPiecesCount;
         public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public ConnectionMonitor Monitor { get; }
         public BEncodedString PeerID => Peer.PeerId;
-        public int PiecesSent { get; internal set; }
+        internal int piecesSent;
+        public int PiecesSent => piecesSent;
         public int PiecesReceived { get; internal set; }
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
@@ -154,14 +158,11 @@ namespace MonoTorrent.Client
         internal ValueStopwatch WhenConnected;
         internal int MaxPendingRequests { get; set; }
         internal int MaxSupportedPendingRequests { get; set; }
+        internal MessageQueue MessageQueue { get; set; }
         internal Peer Peer { get; }
         internal PeerExchangeManager PeerExchangeManager { get; set; }
         internal ushort Port { get; set; }
-        internal bool ProcessingQueue { get; set; }
-        internal int QueueLength => SendQueue.Count;
         internal List<int> SuggestedPieces { get; }
-
-        List<PeerMessage> SendQueue { get; }
 
         #endregion Properties
 
@@ -184,10 +185,9 @@ namespace MonoTorrent.Client
 
             MaxPendingRequests = PieceManager.NormalRequestAmount;
             MaxSupportedPendingRequests = ClientEngine.DefaultMaxPendingRequests;
-
+            MessageQueue = new MessageQueue ();
             ExtensionSupports = new ExtensionSupports ();
             Monitor = new ConnectionMonitor ();
-            SendQueue = new List<PeerMessage> (12);
 
             InitializeTyrant ();
         }
@@ -197,7 +197,7 @@ namespace MonoTorrent.Client
         {
             if (connection == null)
                 throw new ArgumentNullException (nameof (connection));
-            Connection = ConnectionConverter.Convert (connection);
+            Connection = connection;
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
             BitField = bitfield;
         }
@@ -212,28 +212,7 @@ namespace MonoTorrent.Client
                 return;
 
             Disposed = true;
-            SendQueue.Clear ();
             Connection.SafeDispose ();
-        }
-
-        internal PeerMessage Dequeue ()
-        {
-            PeerMessage message = SendQueue[0];
-            SendQueue.RemoveAt (0);
-            return message;
-        }
-
-        internal void Enqueue (PeerMessage message)
-        {
-            EnqueueAt (message, SendQueue.Count);
-        }
-
-        internal void EnqueueAt (PeerMessage message, int index)
-        {
-            if (SendQueue.Count == 0 || index >= SendQueue.Count)
-                SendQueue.Add (message);
-            else
-                SendQueue.Insert (index, message);
         }
 
         public override string ToString ()

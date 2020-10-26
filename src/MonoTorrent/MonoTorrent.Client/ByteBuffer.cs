@@ -1,10 +1,10 @@
-//
-// IPieceWriter.cs
+﻿//
+// ByteBuffer.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,18 +27,19 @@
 //
 
 
-using System;
-using ReusableTasks;
+using System.Net.Sockets;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.Client
 {
-    public interface IPieceWriter : IDisposable
+    public sealed class ByteBuffer
     {
-        ReusableTask CloseAsync (TorrentFile file);
-        ReusableTask<bool> ExistsAsync (TorrentFile file);
-        ReusableTask FlushAsync (TorrentFile file);
-        ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+        public byte[] Data { get; }
+
+        internal SocketAsyncEventArgs Args { get; set; }
+
+        public ByteBuffer (int size)
+        {
+            Data = new byte[size];
+        }
     }
 }

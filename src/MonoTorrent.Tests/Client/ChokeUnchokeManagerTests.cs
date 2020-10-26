@@ -85,8 +85,8 @@ namespace MonoTorrent.Client.Unchoking
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);
             foreach (var peer in unchokeable.Peers.Where (t => t.AmChoking)) {
-                Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
-                Assert.AreEqual (0, peer.QueueLength);
+                Assert.IsInstanceOf<ChokeMessage> (peer.MessageQueue.TryDequeue ());
+                Assert.AreEqual (0, peer.MessageQueue.QueueLength);
             }
         }
 
@@ -105,15 +105,15 @@ namespace MonoTorrent.Client.Unchoking
                 unchokeable.UploadingTo++;
                 p.AmAllowedFastPieces.Add (1);
                 p.SupportsFastPeer = true;
-                p.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
             });
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);
             foreach (var peer in unchokeable.Peers) {
                 if (peer.AmChoking)
-                    Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
-                Assert.IsInstanceOf<PieceMessage> (peer.Dequeue ());
-                Assert.AreEqual (0, peer.QueueLength);
+                    Assert.IsInstanceOf<ChokeMessage> (peer.MessageQueue.TryDequeue ());
+                Assert.IsInstanceOf<PieceMessage> (peer.MessageQueue.TryDequeue ());
+                Assert.AreEqual (0, peer.MessageQueue.QueueLength);
             }
         }
 
@@ -131,18 +131,18 @@ namespace MonoTorrent.Client.Unchoking
                 p.AmChoking = false;
                 unchokeable.UploadingTo++;
                 p.SupportsFastPeer = true;
-                p.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
             });
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);
             foreach (var peer in unchokeable.Peers) {
                 if (peer.AmChoking) {
-                    Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
-                    Assert.IsInstanceOf<RejectRequestMessage> (peer.Dequeue ());
+                    Assert.IsInstanceOf<ChokeMessage> (peer.MessageQueue.TryDequeue ());
+                    Assert.IsInstanceOf<RejectRequestMessage> (peer.MessageQueue.TryDequeue ());
                 } else {
-                    Assert.IsInstanceOf<PieceMessage> (peer.Dequeue ());
+                    Assert.IsInstanceOf<PieceMessage> (peer.MessageQueue.TryDequeue ());
                 }
-                Assert.AreEqual (0, peer.QueueLength);
+                Assert.AreEqual (0, peer.MessageQueue.QueueLength);
             }
         }
 
@@ -167,8 +167,8 @@ namespace MonoTorrent.Client.Unchoking
             Assert.AreEqual (0, unchokeable.UploadingTo);
             foreach (var peer in unchokeable.Peers) {
                 Assert.IsTrue (peer.AmChoking);
-                Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
-                Assert.AreEqual (0, peer.QueueLength);
+                Assert.IsInstanceOf<ChokeMessage> (peer.MessageQueue.TryDequeue ());
+                Assert.AreEqual (0, peer.MessageQueue.QueueLength);
             }
         }
 
@@ -215,17 +215,17 @@ namespace MonoTorrent.Client.Unchoking
                 // This will always be empty during normal downloading.
                 p.AmAllowedFastPieces.Add (1);
                 p.SupportsFastPeer = false;
-                p.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
             });
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);
             foreach (var peer in unchokeable.Peers) {
                 if (peer.AmChoking) {
-                    Assert.IsInstanceOf<ChokeMessage> (peer.Dequeue ());
+                    Assert.IsInstanceOf<ChokeMessage> (peer.MessageQueue.TryDequeue ());
                 } else {
-                    Assert.IsInstanceOf<PieceMessage> (peer.Dequeue ());
+                    Assert.IsInstanceOf<PieceMessage> (peer.MessageQueue.TryDequeue ());
                 }
-                Assert.AreEqual (0, peer.QueueLength);
+                Assert.AreEqual (0, peer.MessageQueue.QueueLength);
             }
         }
 

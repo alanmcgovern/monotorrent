@@ -38,7 +38,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    class SocketConnection : IConnection2
+    class SocketConnection : IConnection
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
@@ -61,26 +61,24 @@ namespace MonoTorrent.Client.Connections
         /// </summary>
         /// <param name="buffer">The buffer we wish to get the reusuable 'SocketAsyncEventArgs' for</param>
         /// <returns></returns>
-        static SocketAsyncEventArgs GetSocketAsyncEventArgs (byte[] buffer)
+        static SocketAsyncEventArgs GetSocketAsyncEventArgs (ByteBuffer buffer)
         {
-            SocketAsyncEventArgs args;
-            lock (bufferCache) {
-                if (buffer != null && ClientEngine.BufferPool.Owns (buffer)) {
-                    if (!bufferCache.TryGetValue (buffer, out args)) {
-                        bufferCache[buffer] = args = new SocketAsyncEventArgs ();
-                        args.SetBuffer (buffer, 0, buffer.Length);
-                        args.Completed += Handler;
-                    }
-                } else {
+            if (buffer != null) {
+                if (buffer.Args == null) {
+                    buffer.Args = new SocketAsyncEventArgs ();
+                    buffer.Args.SetBuffer (buffer.Data, 0, buffer.Data.Length);
+                    buffer.Args.Completed += Handler;
+                }
+                return buffer.Args;
+            } else {
+                SocketAsyncEventArgs args;
+                lock (bufferCache) {
                     if (otherCache.Count == 0) {
                         args = new SocketAsyncEventArgs ();
                         args.Completed += Handler;
                     } else {
                         args = otherCache.Dequeue ();
                     }
-
-                    if (buffer != null)
-                        args.SetBuffer (buffer, 0, buffer.Length);
                 }
                 return args;
             }
@@ -148,7 +146,7 @@ namespace MonoTorrent.Client.Connections
 
             // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
             // *not* managed by our BufferPool, then we should put it back in the 'other' cache.
-            if (e.Buffer == null || !ClientEngine.BufferPool.Owns (e.Buffer)) {
+            if (e.Buffer == null) {
                 lock (bufferCache) {
                     if (e.Buffer != null)
                         e.SetBuffer (null, 0, 0);
@@ -167,11 +165,6 @@ namespace MonoTorrent.Client.Connections
 
         #region Async Methods
 
-        async Task IConnection.ConnectAsync ()
-        {
-            await ConnectAsync ();
-        }
-
         public async ReusableTask ConnectAsync ()
         {
             var tcs = new ReusableTaskCompletionSource<int> ();
@@ -185,12 +178,7 @@ namespace MonoTorrent.Client.Connections
             await tcs.Task;
         }
 
-        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-        {
-            return await ReceiveAsync (buffer, offset, count);
-        }
-
-        public ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+        public ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
             if (Socket == null) {
@@ -220,12 +208,7 @@ namespace MonoTorrent.Client.Connections
             return ReceiveTcs.Task;
         }
 
-        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-        {
-            return await SendAsync (buffer, offset, count);
-        }
-
-        public ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
+        public ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
         {
             // If this has been disposed, then bail out
             if (Socket == null) {

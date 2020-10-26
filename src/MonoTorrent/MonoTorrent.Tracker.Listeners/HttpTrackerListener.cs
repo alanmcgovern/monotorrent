@@ -72,6 +72,8 @@ namespace MonoTorrent.Tracker.Listeners
             token.Register (() => listener.Close ());
 
             listener.Prefixes.Add (Prefix);
+            if (Prefix.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
+                listener.Prefixes.Add (Prefix.Remove (Prefix.Length - "/announce/".Length) + "/scrape/");
             listener.Start ();
             GetContextAsync (listener, token);
         }

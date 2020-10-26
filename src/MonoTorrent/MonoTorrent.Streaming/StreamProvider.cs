@@ -236,6 +236,8 @@ namespace MonoTorrent.Streaming
         {
             if (file == null)
                 throw new ArgumentNullException (nameof (file));
+            if (Files == null)
+                throw new InvalidOperationException ("The metadata for this torrent has not been downloaded. You must call WaitForMetadataAsync before creating a stream.");
             if (!Manager.Torrent.Files.Contains (file))
                 throw new ArgumentException ("The TorrentFile is not from this TorrentManager", nameof (file));
             if (!Active)

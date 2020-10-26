@@ -32,14 +32,14 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
-    class BufferPool
+    public class ByteBufferPool
     {
         internal struct Releaser : IDisposable
         {
-            internal byte[] Buffer;
-            BufferPool Pool;
+            internal ByteBuffer Buffer;
+            Queue<ByteBuffer> Pool;
 
-            internal Releaser (BufferPool pool, byte[] buffer)
+            internal Releaser (Queue<ByteBuffer> pool, ByteBuffer buffer)
             {
                 Pool = pool;
                 Buffer = buffer;
@@ -47,7 +47,8 @@ namespace MonoTorrent.Client
 
             public void Dispose ()
             {
-                Pool.Return (Buffer);
+                lock (Pool)
+                    Pool.Enqueue (Buffer);
                 Pool = null;
                 Buffer = null;
             }
@@ -59,22 +60,20 @@ namespace MonoTorrent.Client
         const int MediumMessageBufferSize = 2048;
         const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
-        HashSet<byte[]> AllocatedBuffers { get; }
-        Queue<byte[]> LargeMessageBuffers { get; }
-        Queue<byte[]> MassiveBuffers { get; }
-        Queue<byte[]> MediumMessageBuffers { get; }
-        Queue<byte[]> SmallMessageBuffers { get; }
+        Queue<ByteBuffer> LargeMessageBuffers { get; }
+        Queue<ByteBuffer> MassiveBuffers { get; }
+        Queue<ByteBuffer> MediumMessageBuffers { get; }
+        Queue<ByteBuffer> SmallMessageBuffers { get; }
 
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
-        public BufferPool ()
+        public ByteBufferPool ()
         {
-            AllocatedBuffers = new HashSet<byte[]> ();
-            LargeMessageBuffers = new Queue<byte[]> ();
-            MassiveBuffers = new Queue<byte[]> ();
-            MediumMessageBuffers = new Queue<byte[]> ();
-            SmallMessageBuffers = new Queue<byte[]> ();
+            LargeMessageBuffers = new Queue<ByteBuffer> ();
+            MassiveBuffers = new Queue<ByteBuffer> ();
+            MediumMessageBuffers = new Queue<ByteBuffer> ();
+            SmallMessageBuffers = new Queue<ByteBuffer> ();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
             AllocateBuffers (AllocateDelta, LargeMessageBuffers, LargeMessageBufferSize);
@@ -82,34 +81,14 @@ namespace MonoTorrent.Client
             AllocateBuffers (AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
-        void Return (byte[] buffer)
+        internal Releaser Rent (int minCapacity, out byte[] buffer)
         {
-            if (buffer == null)
-                return;
-
-            // All buffers should be allocated in this class, so if something else is passed in that isn't the right size
-            // We just throw an exception as someone has done something wrong.
-            if (!Owns (buffer))
-                throw new TorrentException ("That buffer wasn't created by this manager");
-
-            if (buffer.Length == SmallMessageBufferSize)
-                lock (SmallMessageBuffers)
-                    SmallMessageBuffers.Enqueue (buffer);
-
-            else if (buffer.Length == MediumMessageBufferSize)
-                lock (MediumMessageBuffers)
-                    MediumMessageBuffers.Enqueue (buffer);
-
-            else if (buffer.Length == LargeMessageBufferSize)
-                lock (LargeMessageBuffers)
-                    LargeMessageBuffers.Enqueue (buffer);
-
-            else if (buffer.Length > LargeMessageBufferSize)
-                lock (MassiveBuffers)
-                    MassiveBuffers.Enqueue (buffer);
+            var result = Rent (minCapacity, out ByteBuffer dataBuffer);
+            buffer = dataBuffer.Data;
+            return result;
         }
 
-        public Releaser Rent (int minCapacity, out byte[] buffer)
+        internal Releaser Rent (int minCapacity, out ByteBuffer buffer)
         {
             if (minCapacity <= SmallMessageBufferSize)
                 return Rent (SmallMessageBuffers, SmallMessageBufferSize, out buffer);
@@ -122,42 +101,30 @@ namespace MonoTorrent.Client
 
             lock (MassiveBuffers) {
                 for (int i = 0; i < MassiveBuffers.Count; i++)
-                    if ((buffer = MassiveBuffers.Dequeue ()).Length >= minCapacity)
-                        return new Releaser (this, buffer);
+                    if ((buffer = MassiveBuffers.Dequeue ()).Data.Length >= minCapacity)
+                        return new Releaser (MassiveBuffers, buffer);
                     else
                         MassiveBuffers.Enqueue (buffer);
 
-                buffer = new byte[minCapacity];
-                lock (AllocatedBuffers)
-                    AllocatedBuffers.Add (buffer);
-                return new Releaser (this, buffer);
+                buffer = new ByteBuffer(minCapacity);
+                return new Releaser (MassiveBuffers, buffer);
             }
         }
 
-        Releaser Rent (Queue<byte[]> buffers, int bufferSize, out byte[] buffer)
+        Releaser Rent (Queue<ByteBuffer> buffers, int bufferSize, out ByteBuffer buffer)
         {
             lock (buffers) {
                 if (buffers.Count == 0)
                     AllocateBuffers (AllocateDelta, buffers, bufferSize);
                 buffer = buffers.Dequeue ();
-                return new Releaser (this, buffer);
+                return new Releaser (buffers, buffer);
             }
         }
 
-        public bool Owns (byte[] buffer)
+        void AllocateBuffers (int count, Queue<ByteBuffer> bufferQueue, int bufferSize)
         {
-            lock (AllocatedBuffers)
-                return AllocatedBuffers.Contains (buffer);
-        }
-
-        void AllocateBuffers (int count, Queue<byte[]> bufferQueue, int bufferSize)
-        {
-            while (count-- > 0) {
-                byte[] buffer = new byte[bufferSize];
-                bufferQueue.Enqueue (buffer);
-                lock (AllocatedBuffers)
-                    AllocatedBuffers.Add (buffer);
-            }
+            while (count-- > 0)
+                bufferQueue.Enqueue (new ByteBuffer (bufferSize));
         }
     }
 }

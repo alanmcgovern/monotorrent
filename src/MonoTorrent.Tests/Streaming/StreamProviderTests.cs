@@ -28,7 +28,7 @@ namespace MonoTorrent.Streaming
         [TearDown]
         public async Task Teardown ()
         {
-            await Engine.StopAll ();
+            await Engine.StopAllAsync ();
             Engine.Dispose ();
         }
 

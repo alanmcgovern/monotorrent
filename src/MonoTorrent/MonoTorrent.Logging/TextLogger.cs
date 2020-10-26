@@ -1,10 +1,10 @@
-//
-// IPieceWriter.cs
+﻿//
+// TextLogger.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -27,18 +27,34 @@
 //
 
 
-using System;
-using ReusableTasks;
+using System.IO;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.Logging
 {
-    public interface IPieceWriter : IDisposable
+    public class TextLogger : ILogger
     {
-        ReusableTask CloseAsync (TorrentFile file);
-        ReusableTask<bool> ExistsAsync (TorrentFile file);
-        ReusableTask FlushAsync (TorrentFile file);
-        ReusableTask MoveAsync (TorrentFile file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+        string Prefix { get; }
+        TextWriter Writer { get; }
+
+        public TextLogger (TextWriter writer, string prefix)
+        {
+            Writer = writer;
+            Prefix = prefix;
+        }
+
+        public void Debug (string message)
+        {
+            Writer?.WriteLine ($"DEBUG:{Prefix}:{message}");
+        }
+
+        public void Error (string message)
+        {
+            Writer?.WriteLine ($"ERROR:{Prefix}:{message}");
+        }
+
+        public void Info (string message)
+        {
+            Writer?.WriteLine ($"INFO: {Prefix}:{message}");
+        }
     }
 }

@@ -34,6 +34,7 @@ using System.Linq;
 using MonoTorrent.Client.PieceWriters;
 
 using NUnit.Framework;
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
@@ -46,17 +47,18 @@ namespace MonoTorrent.Client
 
             public List<TorrentFile> FlushedFiles = new List<TorrentFile> ();
 
-            public void Close (TorrentFile file)
+            public ReusableTask CloseAsync (TorrentFile file)
             {
                 if (close)
                     throw new Exception ("close");
+                return ReusableTask.CompletedTask;
             }
 
-            public bool Exists (TorrentFile file)
+            public ReusableTask<bool> ExistsAsync (TorrentFile file)
             {
                 if (exist)
                     throw new Exception ("exists");
-                return true;
+                return ReusableTask.FromResult (true);
             }
 
             public void Dispose ()
@@ -64,30 +66,33 @@ namespace MonoTorrent.Client
 
             }
 
-            public void Flush (TorrentFile file)
+            public ReusableTask FlushAsync (TorrentFile file)
             {
                 if (flush)
                     throw new Exception ("flush");
                 FlushedFiles.Add (file);
+                return ReusableTask.CompletedTask;
             }
 
-            public void Move (TorrentFile file, string newPath, bool overwrite)
+            public ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
             {
                 if (move)
                     throw new Exception ("move");
+                return ReusableTask.CompletedTask;
             }
 
-            public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 if (read)
                     throw new Exception ("read");
-                return count;
+                return ReusableTask.FromResult (count);
             }
 
-            public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 if (write)
                     throw new Exception ("write");
+                return ReusableTask.CompletedTask;
             }
         }
 

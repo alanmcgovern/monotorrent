@@ -1,5 +1,5 @@
 ﻿//
-// ThreadPoolAwaitable.cs
+// ThreadSwitcher.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com

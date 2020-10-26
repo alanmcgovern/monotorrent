@@ -29,7 +29,8 @@
 
 using System;
 using System.Net;
-using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
@@ -45,11 +46,11 @@ namespace MonoTorrent.Client.Connections
 
         EndPoint EndPoint { get; }
 
-        Task ConnectAsync ();
+        ReusableTask ConnectAsync ();
 
-        Task<int> ReceiveAsync (byte[] buffer, int offset, int count);
+        ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count);
 
-        Task<int> SendAsync (byte[] buffer, int offset, int count);
+        ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count);
 
         Uri Uri { get; }
     }

@@ -30,8 +30,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -39,11 +39,14 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {
+        static readonly Logger logger = Logger.Create ();
+
         BitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
         PeerId currentId;
@@ -90,7 +93,7 @@ namespace MonoTorrent.Client.Modes
             try {
                 Manager.DhtAnnounce ();
                 await Task.WhenAll (
-                    Manager.TrackerManager.Announce (),
+                    Manager.TrackerManager.AnnounceAsync(CancellationToken.None).AsTask (),
                     Manager.LocalPeerAnnounceAsync ()
                 );
             } catch {
@@ -147,7 +150,7 @@ namespace MonoTorrent.Client.Modes
                     if (bitField.AllTrue) {
                         byte[] hash;
                         Stream.Position = 0;
-                        using (SHA1 hasher = HashAlgoFactory.Create<SHA1> ())
+                        using (SHA1 hasher = HashAlgoFactory.SHA1 ())
                             hash = hasher.ComputeHash (Stream);
 
                         if (!Manager.InfoHash.Equals (hash)) {
@@ -182,7 +185,7 @@ namespace MonoTorrent.Client.Modes
                                     File.Delete (savePath);
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {
-                                    Logger.Log (null, "*METADATA EXCEPTION* - Can not write in {0} : {1}", savePath, ex);
+                                    logger.ExceptionFormated (ex, "Cannot write metadata to path '{0}'", savePath);
                                     Manager.TrySetError (Reason.WriteFailure, ex);
                                     return;
                                 }
@@ -264,14 +267,14 @@ namespace MonoTorrent.Client.Modes
                 return;//throw exception or switch to regular?
 
             var m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
-            id.Enqueue (m);
+            id.MessageQueue.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
         }
 
         internal Torrent GetTorrent ()
         {
             byte[] calculatedInfoHash;
-            using (SHA1 sha = HashAlgoFactory.Create<SHA1> ())
+            using (SHA1 sha = HashAlgoFactory.SHA1 ())
                 calculatedInfoHash = sha.ComputeHash (Stream.ToArray ());
             if (!Manager.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception ("invalid metadata");//restart ?

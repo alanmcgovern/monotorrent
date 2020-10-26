@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -57,10 +58,10 @@ namespace MonoTorrent.Client
         /// </summary>
         public List<string> Paths = new List<string> ();
 
-        public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (DoNotReadFrom.Contains (file))
-                return 0;
+                return ReusableTask.FromResult (0);
 
             if (!Paths.Contains (file.FullPath))
                 Paths.Add (file.FullPath);
@@ -70,43 +71,44 @@ namespace MonoTorrent.Client
             if (!DontWrite)
                 for (int i = 0; i < count; i++)
                     buffer[bufferOffset + i] = (byte) (bufferOffset + i);
-            return count;
+            return ReusableTask.FromResult (count);
         }
 
-        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-
+            return ReusableTask.CompletedTask;
         }
 
-        public void Close (TorrentFile file)
+        public ReusableTask CloseAsync (TorrentFile file)
         {
-
+            return ReusableTask.CompletedTask;
         }
 
         public void Dispose ()
         {
-
+            // Nothing
         }
 
-        public void Flush (TorrentFile file)
+        public ReusableTask FlushAsync (TorrentFile file)
         {
-
+            return ReusableTask.CompletedTask;
         }
 
-        public bool Exists (TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (TorrentFile file)
         {
-            return FilesThatExist.Contains (file);
+            return ReusableTask.FromResult (FilesThatExist.Contains (file));
         }
 
-        public void Move (TorrentFile file, string newPath, bool overwrite)
+        public ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
         {
-
+            return ReusableTask.CompletedTask;
         }
     }
 
     class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
         public List<DateTime> AnnouncedAt = new List<DateTime> ();
+        public List<AnnounceParameters> AnnounceParameters = new List<AnnounceParameters> ();
         public List<DateTime> ScrapedAt = new List<DateTime> ();
 
         public bool FailAnnounce;
@@ -121,22 +123,23 @@ namespace MonoTorrent.Client
             CanScrape = true;
         }
 
-        protected override Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
             AnnouncedAt.Add (DateTime.Now);
             if (FailAnnounce)
                 throw new TrackerException ("Deliberately failing announce request", null);
 
-            return Task.FromResult (peers);
+            AnnounceParameters.Add (parameters);
+            return ReusableTask.FromResult (new AnnounceResponse (peers, null, null));
         }
 
-        protected override Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
             ScrapedAt.Add (DateTime.Now);
             if (FailScrape)
                 throw new TrackerException ("Deliberately failing scrape request", null);
 
-            return Task.CompletedTask;
+            return ReusableTask.FromResult (new ScrapeResponse (0, 0, 0));
         }
 
         public void AddPeer (Peer peer)
@@ -150,7 +153,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class CustomConnection : IConnection2
+    public class CustomConnection : IConnection
     {
         public byte[] AddressBytes => ((IPEndPoint) EndPoint).Address.GetAddressBytes ();
         public bool CanReconnect => false;
@@ -186,9 +189,6 @@ namespace MonoTorrent.Client
             IsIncoming = isIncoming;
         }
 
-        Task IConnection.ConnectAsync ()
-            => throw new InvalidOperationException ();
-
         public ReusableTask ConnectAsync ()
             => throw new InvalidOperationException ();
 
@@ -199,28 +199,22 @@ namespace MonoTorrent.Client
             Connected = false;
         }
 
-        async Task<int> IConnection.ReceiveAsync (byte[] buffer, int offset, int count)
-            => await ReceiveAsync (buffer, offset, count);
-
-        public async ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count)
+        public async ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min (88, count);
 
-            var result = await ReadStream.ReadAsync (buffer, offset, count, CancellationToken.None);
+            var result = await ReadStream.ReadAsync (buffer.Data, offset, count, CancellationToken.None);
             Receives.Add (result);
             return ManualBytesReceived ?? result;
         }
 
-        async Task<int> IConnection.SendAsync (byte[] buffer, int offset, int count)
-            => await SendAsync (buffer, offset, count);
-
-        public async ReusableTask<int> SendAsync (byte[] buffer, int offset, int count)
+        public async ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
         {
             if (SlowConnection)
                 count = Math.Min (88, count);
 
-            await WriteStream.WriteAsync (buffer, offset, count, CancellationToken.None);
+            await WriteStream.WriteAsync (buffer.Data, offset, count, CancellationToken.None);
             Sends.Add (count);
             return ManualBytesSent ?? count;
         }
@@ -355,7 +349,9 @@ namespace MonoTorrent.Client
             Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
             PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
-            id.ProcessingQueue = processingQueue;
+            id.MessageQueue.SetReady ();
+            if (processingQueue)
+                id.MessageQueue.BeginProcessing (force: true);
             return id;
         }
 

@@ -39,8 +39,8 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The data associated with this block
         /// </summary>
-        internal byte[] Data => DataReleaser.Buffer;
-        internal BufferPool.Releaser DataReleaser;
+        internal byte[] Data => DataReleaser.Buffer.Data;
+        internal ByteBufferPool.Releaser DataReleaser;
 
         /// <summary>
         /// The index of the block from the piece which was requested.
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.Messages.Standard
             RequestLength = length - 8;
 
             // This buffer will be freed after the PieceWriter has finished with it
-            DataReleaser = ClientEngine.BufferPool.Rent (RequestLength, out _);
+            DataReleaser = DiskManager.BufferPool.Rent (RequestLength, out ByteBuffer _);
             Buffer.BlockCopy (buffer, offset, Data, 0, RequestLength);
         }
 

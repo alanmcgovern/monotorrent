@@ -30,10 +30,14 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Logging;
+
 namespace MonoTorrent.Client.PiecePicking
 {
     public class StandardPicker : PiecePicker
     {
+        static readonly Logger logger = Logger.Create ();
+
         static readonly Predicate<Block> TimedOut = b => b.RequestTimedOut;
 
         readonly SortList<Piece> requests;
@@ -173,26 +177,22 @@ namespace MonoTorrent.Client.PiecePicking
 
             if (pIndex < 0) {
                 piece = null;
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "No piece");
+                logger.InfoFormatted ("Piece validation failed: {0} - {1}. No piece.", pieceIndex, startOffset);
                 return false;
             }
             piece = requests[pIndex];
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf (piece.Blocks, startOffset, length);
             if (blockIndex == -1 || !peer.Equals (piece.Blocks[blockIndex].RequestedOff)) {
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "no block");
+                logger.InfoFormatted ("Piece validation failed: {0} - {1}. No block ", pieceIndex, startOffset);
                 return false;
             }
             if (piece.Blocks[blockIndex].Received) {
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "received");
+                logger.InfoFormatted ("Piece validation failed: {0} - {1}. Already received.", pieceIndex, startOffset);
                 return false;
             }
             if (!piece.Blocks[blockIndex].Requested) {
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "not requested");
+                logger.InfoFormatted ("Piece validation failed: {0} - {1}. Not requested.", pieceIndex, startOffset);
                 return false;
             }
             peer.AmRequestingPiecesCount--;

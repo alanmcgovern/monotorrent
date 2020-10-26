@@ -29,13 +29,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Logging;
 
 using ReusableTasks;
 
@@ -46,6 +47,8 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionManager
     {
+        static readonly Logger logger = Logger.Create ();
+
         struct AsyncConnectState
         {
             public AsyncConnectState (TorrentManager manager, IConnection connection, ValueStopwatch timer)
@@ -121,7 +124,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            IConnection2 connection = ConnectionConverter.Convert (ConnectionFactory.Create (peer.ConnectionUri));
+            IConnection connection = ConnectionFactory.Create (peer.ConnectionUri);
             if (connection == null)
                 return;
 
@@ -155,7 +158,7 @@ namespace MonoTorrent.Client
                     id.LastMessageReceived.Restart ();
                     id.LastMessageSent.Restart ();
 
-                    Logger.Log (id.Connection, "ConnectionManager - Connection opened");
+                    logger.Info (id.Connection, "Connection opened");
 
                     ProcessNewOutgoingConnection (manager, id);
                 }
@@ -180,7 +183,6 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            id.ProcessingQueue = true;
             manager.Peers.ActivePeers.Add (id.Peer);
             manager.Peers.ConnectedPeers.Add (id);
 
@@ -228,14 +230,10 @@ namespace MonoTorrent.Client
             try {
                 if (id.BitField.Length != manager.Bitfield.Length)
                     throw new TorrentException ($"The peer's bitfield was of length {id.BitField.Length} but the TorrentManager's bitfield was of length {manager.Bitfield.Length}.");
-                manager.HandlePeerConnected (id);
 
-                // If there are any pending messages, send them otherwise set the queue
-                // processing as finished.
-                if (id.QueueLength > 0)
-                    ProcessQueue (manager, id);
-                else
-                    id.ProcessingQueue = false;
+                manager.HandlePeerConnected (id);
+                id.MessageQueue.SetReady ();
+                TryProcessQueue (manager, id);
 
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
 
@@ -248,22 +246,30 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async void ReceiveMessagesAsync (IConnection2 connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
+        internal async void ReceiveMessagesAsync (IConnection connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
         {
+            await MainLoop.SwitchToThreadpool ();
             try {
                 while (true) {
-                    Messages.PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent);
-                    if (id.Disposed) {
-                        if (message is PieceMessage msg)
-                            msg.DataReleaser.Dispose ();
-                        break;
-                    } else {
-                        id.LastMessageReceived.Restart ();
-                        torrentManager.Mode.HandleMessage (id, message);
-                    }
+                    PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager.Torrent).ConfigureAwait (false);
+                    HandleReceivedMessage (id, torrentManager, message);
                 }
             } catch {
+                await ClientEngine.MainLoop;
                 CleanupSocket (torrentManager, id);
+            }
+        }
+
+        static async void HandleReceivedMessage (PeerId id, TorrentManager torrentManager, PeerMessage message)
+        {
+            await ClientEngine.MainLoop;
+
+            if (id.Disposed) {
+                if (message is PieceMessage msg)
+                    msg.DataReleaser.Dispose ();
+            } else {
+                id.LastMessageReceived.Restart ();
+                torrentManager.Mode.HandleMessage (id, message);
             }
         }
 
@@ -276,7 +282,8 @@ namespace MonoTorrent.Client
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 bool canReuse = (id.Connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
-                    && id.Peer.AllowedEncryption != EncryptionTypes.None;
+                    && id.Peer.AllowedEncryption != EncryptionTypes.None
+                    && !manager.Engine.PeerId.Equals (id.PeerID);
 
                 manager.PieceManager.Picker.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
@@ -297,7 +304,7 @@ namespace MonoTorrent.Client
                         manager.Peers.BannedPeers.Add (id.Peer);
                 }
             } catch (Exception ex) {
-                Logger.Log (null, $"CleanupSocket Error {ex.Message}");
+                logger.Exception (ex, "An unexpected error occured cleaning up a connection");
             } finally {
                 manager.RaisePeerDisconnected (new PeerDisconnectedEventArgs (manager, id));
             }
@@ -333,19 +340,20 @@ namespace MonoTorrent.Client
             try {
                 bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
                 if (LocalPeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen) {
+                    logger.Info ("Connected to self - disconnecting");
                     CleanupSocket (manager, id);
                     return false;
                 }
 
                 if (manager.Peers.ActivePeers.Contains (id.Peer)) {
-                    Logger.Log (id.Connection, "ConnectionManager - Already connected to peer");
+                    logger.Info (id.Connection, "Already connected to peer");
                     id.Connection.Dispose ();
                     return false;
                 }
 
                 // Add the PeerId to the lists *before* doing anything asynchronous. This ensures that
                 // all PeerIds are tracked in 'ConnectedPeers' as soon as they're created.
-                Logger.Log (id.Connection, "ConnectionManager - Incoming connection fully accepted");
+                logger.Info (id.Connection, "Incoming connection fully accepted");
                 manager.Peers.AvailablePeers.Remove (id.Peer);
                 manager.Peers.ActivePeers.Add (id.Peer);
                 manager.Peers.ConnectedPeers.Add (id);
@@ -359,11 +367,15 @@ namespace MonoTorrent.Client
                 await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
 
                 manager.HandlePeerConnected (id);
+                id.MessageQueue.SetReady ();
+                TryProcessQueue (manager, id);
 
                 // We've sent our handshake so begin our looping to receive incoming message
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
+                logger.InfoFormatted ("Incoming connection fully accepted", id.Uri);
                 return true;
-            } catch {
+            } catch (Exception ex) {
+                logger.Exception (ex, "Error handling incoming connection");
                 CleanupSocket (manager, id);
                 return false;
             }
@@ -374,39 +386,44 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The torrent which the peer is associated with.</param>
         /// <param name="id">The peer whose message queue you want to start processing</param>
-        internal async void ProcessQueue (TorrentManager manager, PeerId id)
+        internal async void TryProcessQueue (TorrentManager manager, PeerId id)
         {
-            while (id.QueueLength > 0) {
-                Messages.PeerMessage msg = id.Dequeue ();
+            if (!id.MessageQueue.BeginProcessing ())
+                return;
+
+            await MainLoop.SwitchToThreadpool ();
+
+            PeerMessage msg;
+            while ((msg = id.MessageQueue.TryDequeue ()) != null) {
                 var pm = msg as PieceMessage;
 
                 try {
                     if (pm != null) {
-                        pm.DataReleaser = ClientEngine.BufferPool.Rent (pm.ByteLength, out _);
+                        pm.DataReleaser = DiskManager.BufferPool.Rent (pm.ByteLength, out ByteBuffer _);
                         try {
-                            await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength);
+                            await DiskManager.ReadAsync (manager.Torrent, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength).ConfigureAwait (false);
                         } catch (Exception ex) {
+                            await ClientEngine.MainLoop;
                             manager.TrySetError (Reason.ReadFailure, ex);
                             return;
                         }
-                        id.PiecesSent++;
+                        System.Threading.Interlocked.Increment (ref id.piecesSent);
                     }
 
-                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor);
+                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor).ConfigureAwait (false);
                     if (msg is PieceMessage)
-                        id.IsRequestingPiecesCount--;
+                        System.Threading.Interlocked.Decrement (ref id.isRequestingPiecesCount);
 
                     id.LastMessageSent.Restart ();
                 } catch {
+                    await ClientEngine.MainLoop;
                     CleanupSocket (manager, id);
                     break;
                 } finally {
                     if (pm?.Data != null)
                         pm.DataReleaser.Dispose ();
                 }
-            }
-
-            id.ProcessingQueue = false;
+            } 
         }
 
         internal bool ShouldBanPeer (Peer peer)
@@ -475,6 +492,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // Connect to the peer
+            logger.InfoFormatted ("Trying to connect to {0}", peer.ConnectionUri);
             ConnectToPeer (manager, peer);
             return true;
         }

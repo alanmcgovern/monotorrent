@@ -30,40 +30,35 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
     /// <summary>
     /// Represents the connection to a tracker that an TorrentManager has
     /// </summary>
-    public class TrackerManager : ITrackerManager
+    class TrackerManager : ITrackerManager
     {
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
-        #region Member Variables
+        public SemaphoreSlim  AnnounceLimiter { get; }
 
         /// <summary>
-        /// Returns the tracker which will be used, by default, for Announce or Scrape requests.
+        /// If this is set to 'true' then <see cref="AddTrackerAsync(ITracker)"/>,
+        /// <see cref="AddTrackerAsync(Uri)"/> and <see cref="RemoveTrackerAsync(ITracker)"/> will throw an
+        /// <see cref="InvalidOperationException"/> when they are invoked.
         /// </summary>
-        [Obsolete("This is now a per-Tier value and should be accessed using TrackerTier.ActiveTracker.")]
-        public ITracker CurrentTracker => Tiers.SelectMany (t => t.Trackers).OrderBy (t => t.TimeSinceLastAnnounce).FirstOrDefault ();
-
-#pragma warning disable CS0618 // Type or member is obsolete
-        TrackerTier CurrentTier => Tiers.FirstOrDefault (t => t.Trackers.Contains (CurrentTracker));
-#pragma warning restore CS0618 // Type or member is obsolete
+        public bool Private { get; }
 
         /// <summary>
-        /// True if the most recent Announce request was successful.
+        /// Returns an immutable copy of the current list of trackers.
         /// </summary>
-        [Obsolete ("This is now a per-Tier value and should be accessed using TrackerTier.LastAnnounceSucceeded.")]
-        public bool LastAnnounceSucceeded => CurrentTier?.LastAnnounceSucceeded ?? false;
-
-        /// <summary>
-        /// The time, in UTC, when the most recent Announce request was sent
-        /// </summary>
-        public DateTime LastUpdated => CurrentTier?.LastUpdated ?? DateTime.MaxValue;
+        public IList<TrackerTier> Tiers { get; private set; }
 
         /// <summary>
         /// The TorrentManager associated with this tracker
@@ -71,154 +66,151 @@ namespace MonoTorrent.Client.Tracker
         ITrackerRequestFactory RequestFactory { get; }
 
         /// <summary>
-        /// The available trackers.
-        /// </summary>
-        public IList<TrackerTier> Tiers { get; }
-
-        /// <summary>
-        /// The amount of time since the most recent Announce request was issued.
-        /// </summary>
-        public TimeSpan TimeSinceLastAnnounce => CurrentTier?.TimeSinceLastAnnounce ?? TimeSpan.Zero;
-
-        #endregion
-
-
-        #region Constructors
-
-        /// <summary>
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="requestFactory">The factory used to create tracker requests. Typically a <see cref="TorrentManager"/> instance.</param>
         /// <param name="announces">The list of tracker tiers</param>
-        internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces)
+        /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
+        internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<RawTrackerTier> announces, bool isPrivate)
         {
-            RequestFactory = requestFactory;
+            AnnounceLimiter = new SemaphoreSlim (10);
 
-            // Check if this tracker supports scraping
+            RequestFactory = requestFactory;
+            Private = isPrivate;
+
             var trackerTiers = new List<TrackerTier> ();
-            foreach (RawTrackerTier tier in announces)
-                trackerTiers.Add (new TrackerTier (tier));
-            trackerTiers.RemoveAll (tier => tier.Trackers.Count == 0);
+            foreach (var announceTier in announces) {
+                var tier = new TrackerTier (announceTier);
+                if (tier.Trackers.Count > 0) {
+                    tier.AnnounceComplete += RaiseAnnounceComplete;
+                    tier.ScrapeComplete += RaiseScrapeComplete;
+                    trackerTiers.Add (tier);
+                }
+            }
             Tiers = trackerTiers.AsReadOnly ();
         }
 
-        #endregion
+        public async ReusableTask AddTrackerAsync (ITracker tracker)
+        {
+            if (tracker == null)
+                throw new ArgumentNullException (nameof (tracker));
+            if (Private)
+                throw new InvalidOperationException ("Cannot add trackers to a private torrent.");
 
+            await ClientEngine.MainLoop;
 
-        #region Methods
+            var tier = new TrackerTier (tracker);
+            tier.AnnounceComplete += RaiseAnnounceComplete;
+            tier.ScrapeComplete += RaiseScrapeComplete;
 
-        public async Task Announce ()
-            => await Announce (TorrentEvent.None);
+            var newTrackers = new List<TrackerTier> (Tiers.Count + 1);
+            newTrackers.AddRange (Tiers);
+            newTrackers.Add (tier);
+            Tiers = newTrackers.AsReadOnly ();
+        }
 
-        public async Task Announce (TorrentEvent clientEvent)
+        public ReusableTask AddTrackerAsync (Uri trackerUri)
+        {
+            if (Private)
+                throw new InvalidOperationException ("Cannot add trackers to a private Torrent");
+
+            var tracker = TrackerFactory.Create (trackerUri);
+            if (tracker != null)
+                return AddTrackerAsync (tracker);
+            else
+                throw new NotSupportedException ($"TrackerFactory.Create could not create an ITracker for this {trackerUri}.");
+        }
+
+        public async ReusableTask<bool> RemoveTrackerAsync (ITracker tracker)
+        {
+            if (tracker == null)
+                throw new ArgumentNullException (nameof (tracker));
+            if (Private)
+                throw new InvalidOperationException ("Cannot remove trackers from a private torrent.");
+
+            await ClientEngine.MainLoop;
+
+            var clone = new List<TrackerTier> (Tiers);
+            var tier = Tiers.FirstOrDefault (t => t.Trackers.Contains (tracker));
+            if (tier == null)
+                return false;
+
+            tier.AnnounceComplete -= AnnounceComplete;
+            tier.ScrapeComplete -= ScrapeComplete;
+            var index = clone.IndexOf (tier);
+            if (tier.Trackers.Count == 1)
+                clone.RemoveAt (index);
+            else
+                clone[index] = tier.Without (tracker);
+            Tiers = clone.AsReadOnly ();
+            return true;
+        }
+
+        public ReusableTask AnnounceAsync (CancellationToken token)
+            => AnnounceAsync (TorrentEvent.None, token);
+
+        public async ReusableTask AnnounceAsync (TorrentEvent clientEvent, CancellationToken token)
         {
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
+            var args = RequestFactory.CreateAnnounce (clientEvent);
             var announces = new List<Task> ();
             for (int i = 0; i < Tiers.Count; i++) {
-                var tier = Tiers[i];
-                var tracker = tier.ActiveTracker;
-                var interval = tier.LastAnnounceSucceeded ? tracker.UpdateInterval : tracker.MinUpdateInterval;
-                if (tier.TimeSinceLastAnnounce > interval && (clientEvent != TorrentEvent.Stopped || tier.LastAnnounceSucceeded))
-                    announces.Add (AnnounceToTier (clientEvent, tier));
+                var task = AnnounceTierAsync (Tiers[i], args, token);
+                if (task.IsCompleted)
+                    await task;
+                else
+                    announces.Add (task.AsTask ());
             }
-            await Task.WhenAll (announces);
-        }
 
-        
-        async Task AnnounceToTier (TorrentEvent clientEvent, TrackerTier tier)
+            if (announces.Count > 0)
+                await Task.WhenAll (announces);
+        }
+        async ReusableTask AnnounceTierAsync (TrackerTier tier, AnnounceParameters args, CancellationToken token)
         {
-            for (int i = 0; i < tier.Trackers.Count; i++) {
-                int trackerIndex = (i + tier.ActiveTrackerIndex) % tier.Trackers.Count;
-                var tracker = tier.Trackers[trackerIndex];
-
-                // We should really wait til after the announce to reset the timer. However
-                // there is no way to prevent us from announcing multiple times concurrently
-                // to the same tracker without resetting this timer. Our logic is completely
-                // dependent on 'time since last announce'
-                tier.LastAnnounce = ValueStopwatch.StartNew ();
-                var result = await Announce (clientEvent, tracker);
-                if (result) {
-                    tier.ActiveTrackerIndex = trackerIndex;
-                    tier.LastAnnounceSucceeded = true;
-                    return;
-                }
-            }
-
-            // All trackers failed to respond.
-            tier.LastAnnounceSucceeded = false;
+            using (await AnnounceLimiter.EnterAsync ())
+                await tier.AnnounceAsync (args, token);
         }
 
-        public async Task Announce (ITracker tracker)
+        public async ReusableTask AnnounceAsync (ITracker tracker, CancellationToken token)
         {
             Check.Tracker (tracker);
 
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
-            await Announce (TorrentEvent.None, tracker);
-        }
 
-        async Task<bool> Announce (TorrentEvent clientEvent, ITracker tracker)
-        {
-            var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
             try {
-                // If we have not announced to this Tracker tier yet then we should replace the ClientEvent.
-                // But if we end up announcing to a different Tracker tier we may want to send the
-                // original/unmodified args.
-                AnnounceParameters actualArgs = RequestFactory.CreateAnnounce (clientEvent);
-                if (!trackerTier.SentStartedEvent)
-                    actualArgs = actualArgs.WithClientEvent (TorrentEvent.Started);
-
-                List<Peer> peers = await tracker.AnnounceAsync (actualArgs);
-                trackerTier.LastAnnounceSucceeded = true;
-
-                trackerTier.ActiveTrackerIndex = trackerTier.Trackers.IndexOf (tracker);
-                trackerTier.SentStartedEvent |= actualArgs.ClientEvent == TorrentEvent.Started;
-                trackerTier.LastAnnounce = ValueStopwatch.StartNew ();
-                AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, true, peers.AsReadOnly ()));
-                return true;
+                var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
+                AnnounceParameters args = RequestFactory.CreateAnnounce (TorrentEvent.None);
+                await AnnounceTrackerAsync (trackerTier, args, tracker, token);
             } catch {
             }
-
-            trackerTier.LastAnnounceSucceeded = false;
-            AnnounceComplete?.InvokeAsync (this, new AnnounceResponseEventArgs (tracker, false));
-            return false;
+        }
+        async ReusableTask AnnounceTrackerAsync (TrackerTier tier, AnnounceParameters args, ITracker tracker, CancellationToken token)
+        {
+            using (await AnnounceLimiter.EnterAsync ())
+                await tier.AnnounceAsync (args, tracker, token);
         }
 
-        public async Task Scrape ()
+        public async ReusableTask ScrapeAsync (CancellationToken token)
         {
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
+            var args = RequestFactory.CreateScrape ();
             var scrapes = new List<Task> ();
             for (int i = 0; i < Tiers.Count; i++) {
-                var tier = Tiers[i];
-                var tracker = tier.ActiveTracker;
-                if (tier.TimeSinceLastScrape > tracker.UpdateInterval)
-                    scrapes.Add (ScrapeTier (tier));
+                var scrape = Tiers[i].ScrapeAsync (args, token);
+                if (!scrape.IsCompleted)
+                    scrapes.Add (scrape.AsTask ());
             }
-            await Task.WhenAll (scrapes);
 
+            if (scrapes.Count > 0)
+                await Task.WhenAll (scrapes);
         }
 
-        async Task ScrapeTier (TrackerTier tier)
-        {
-            for (int i = 0; i < tier.Trackers.Count; i++) {
-                int trackerIndex = (i + tier.ActiveTrackerIndex) % tier.Trackers.Count;
-                var tracker = tier.Trackers[trackerIndex];
-
-                tier.LastScrape = ValueStopwatch.StartNew ();
-                if (tracker.CanScrape)
-                    await Scrape (tracker);
-
-                if (tier.LastScrapSucceeded)
-                    break;
-            }
-            // All trackers failed to respond.
-        }
-
-        public async Task Scrape (ITracker tracker)
+        public async ReusableTask ScrapeAsync (ITracker tracker, CancellationToken token)
         {
             if (!tracker.CanScrape)
                 throw new TorrentException ("This tracker does not support scraping");
@@ -226,20 +218,15 @@ namespace MonoTorrent.Client.Tracker
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
-            trackerTier.LastScrape = ValueStopwatch.StartNew ();
-
-            try {
-                ScrapeParameters parameters = RequestFactory.CreateScrape ();
-                await tracker.ScrapeAsync (parameters);
-                trackerTier.LastScrapSucceeded = true;
-                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tracker, true));
-            } catch {
-                trackerTier.LastScrapSucceeded = false;
-                ScrapeComplete?.InvokeAsync (this, new ScrapeResponseEventArgs (tracker, false));
-            }
+            ScrapeParameters args = RequestFactory.CreateScrape ();
+            var trackerTier = Tiers.Single (t => t.Trackers.Contains (tracker));
+            await trackerTier.ScrapeAsync (args, tracker, token);
         }
 
-        #endregion
+        void RaiseAnnounceComplete (object sender, AnnounceResponseEventArgs args)
+            => AnnounceComplete?.InvokeAsync (this, args);
+
+        void RaiseScrapeComplete (object sender, ScrapeResponseEventArgs args)
+            => ScrapeComplete?.InvokeAsync (this, args);
     }
 }

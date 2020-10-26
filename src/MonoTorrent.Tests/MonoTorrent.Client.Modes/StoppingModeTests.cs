@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.PieceWriters;
@@ -64,9 +65,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:5555"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
-                ProcessingQueue = true
-            };
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:5555"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false));
         }
 
         [TearDown]
@@ -90,21 +89,21 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task Announce_StoppedEvent ()
         {
-            TrackerManager.AddTracker ("http://1.1.1.1");
+            await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
 
             var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
             await mode.WaitForStoppingToComplete ();
 
             Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
-            Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
+            Assert.AreEqual (null, TrackerManager.Announces[0].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Stopped, TrackerManager.Announces[0].Item2, "#3");
         }
 
         [Test]
         public async Task Announce_StoppedEvent_Timeout ()
         {
-            TrackerManager.AddTracker ("http://1.1.1.1");
+            await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
             TrackerManager.ResponseDelay = TimeSpan.FromMinutes (1);
 
             var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);

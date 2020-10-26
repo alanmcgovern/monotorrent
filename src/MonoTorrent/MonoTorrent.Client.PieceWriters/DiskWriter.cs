@@ -29,50 +29,76 @@
 
 using System;
 using System.IO;
+using System.Threading;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : IPieceWriter
     {
-        readonly FileStreamBuffer streamsBuffer;
+        static readonly int DefaultMaxOpenFiles = 196;
 
-        public int OpenFiles => streamsBuffer.Count;
+        static readonly Func<TorrentFile, FileAccess, ITorrentFileStream> DefaultStreamCreator =
+            (file, access) => new TorrentFileStream (file.FullPath, access);
+
+        readonly SemaphoreSlim Limiter;
+
+        public int OpenFiles => StreamCache.Count;
+
+        readonly FileStreamBuffer StreamCache;
 
         public DiskWriter ()
-            : this (10)
+            : this (DefaultStreamCreator, DefaultMaxOpenFiles)
+        {
+
+        }
+
+        internal DiskWriter (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator)
+            : this (streamCreator, DefaultMaxOpenFiles)
         {
 
         }
 
         public DiskWriter (int maxOpenFiles)
+            : this (DefaultStreamCreator, maxOpenFiles)
         {
-            streamsBuffer = new FileStreamBuffer (maxOpenFiles);
+
         }
 
-        public void Close (TorrentFile file)
+        internal DiskWriter (Func<TorrentFile, FileAccess, ITorrentFileStream> streamCreator, int maxOpenFiles)
         {
-            streamsBuffer.CloseStream (file.FullPath);
+            StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
+            Limiter = new SemaphoreSlim (maxOpenFiles);
         }
 
         public void Dispose ()
         {
-            streamsBuffer.Dispose ();
+            StreamCache.Dispose ();
         }
 
-        TorrentFileStream GetStream (TorrentFile file, FileAccess access)
+        public async ReusableTask CloseAsync (TorrentFile file)
         {
-            return streamsBuffer.GetStream (file, access);
+            await StreamCache.CloseStreamAsync (file);
         }
 
-        public void Move (TorrentFile file, string newPath, bool overwrite)
+        public ReusableTask<bool> ExistsAsync (TorrentFile file)
         {
-            streamsBuffer.CloseStream (file.FullPath);
+            return ReusableTask.FromResult (File.Exists (file.FullPath));
+        }
+
+        public async ReusableTask FlushAsync (TorrentFile file)
+            => await StreamCache.FlushAsync (file);
+
+        public async ReusableTask MoveAsync (TorrentFile file, string newPath, bool overwrite)
+        {
+            await StreamCache.CloseStreamAsync (file);
+
             if (overwrite)
                 File.Delete (newPath);
             File.Move (file.FullPath, newPath);
         }
 
-        public int Read (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File (file);
             Check.Buffer (buffer);
@@ -80,16 +106,20 @@ namespace MonoTorrent.Client.PieceWriters
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            Stream s = GetStream (file, FileAccess.Read);
-            if (s.Length < offset + count)
-                return 0;
+            using (await Limiter.EnterAsync ()) {
+                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
-            if (s.Position != offset)
-                s.Seek (offset, SeekOrigin.Begin);
-            return s.Read (buffer, bufferOffset, count);
+                await MainLoop.SwitchToThreadpool ();
+                if (rented.Stream.Length < offset + count)
+                    return 0;
+
+                if (rented.Stream.Position != offset)
+                    await rented.Stream.SeekAsync (offset);
+                return await rented.Stream.ReadAsync (buffer, bufferOffset, count);
+            }
         }
 
-        public void Write (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync (TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Check.File (file);
             Check.Buffer (buffer);
@@ -97,20 +127,18 @@ namespace MonoTorrent.Client.PieceWriters
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            TorrentFileStream stream = GetStream (file, FileAccess.ReadWrite);
-            stream.Seek (offset, SeekOrigin.Begin);
-            stream.Write (buffer, bufferOffset, count);
-        }
+            using (await Limiter.EnterAsync ()) {
+                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.ReadWrite);
 
-        public bool Exists (TorrentFile file)
-        {
-            return File.Exists (file.FullPath);
-        }
-
-        public void Flush (TorrentFile file)
-        {
-            Stream s = streamsBuffer.FindStream (file.FullPath);
-            s?.Flush ();
+                // FileStream.WriteAsync does some work synchronously, according to the profiler.
+                // It looks like if the file is too small it is expanded (SetLength is called)
+                // synchronously before the asynchronous Write is performed.
+                //
+                // We also want the Seek operation to execute on the threadpool.
+                await MainLoop.SwitchToThreadpool ();
+                await rented.Stream.SeekAsync (offset);
+                await rented.Stream.WriteAsync (buffer, bufferOffset, count).ConfigureAwait (false);
+            }
         }
     }
 }

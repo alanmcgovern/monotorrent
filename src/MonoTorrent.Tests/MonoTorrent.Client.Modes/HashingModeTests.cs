@@ -70,7 +70,6 @@ namespace MonoTorrent.Client.Modes
             ConnectionManager = Manager.Engine.ConnectionManager;
 
             Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (true)) {
-                ProcessingQueue = true,
                 IsChoking = false,
                 AmInterested = true,
             };

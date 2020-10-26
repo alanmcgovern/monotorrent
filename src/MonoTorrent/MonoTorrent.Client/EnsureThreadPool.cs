@@ -1,5 +1,5 @@
-//
-// IConnection2.cs
+﻿//
+// EnsureThreadPool.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,16 +27,36 @@
 //
 
 
-using ReusableTasks;
+using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
-namespace MonoTorrent.Client.Connections
+namespace MonoTorrent.Client
 {
-    public interface IConnection2 : IConnection
+    struct EnsureThreadPool : INotifyCompletion
     {
-        new ReusableTask ConnectAsync ();
+        static readonly WaitCallback Callback = (state) => ((Action) state).Invoke ();
 
-        new ReusableTask<int> ReceiveAsync (byte[] buffer, int offset, int count);
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public EnsureThreadPool GetAwaiter ()
+        {
+            return this;
+        }
 
-        new ReusableTask<int> SendAsync (byte[] buffer, int offset, int count);
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public bool IsCompleted => Thread.CurrentThread.IsThreadPoolThread;
+
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public void GetResult ()
+        {
+
+        }
+
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public void OnCompleted (Action continuation)
+        {
+            ThreadPool.UnsafeQueueUserWorkItem (Callback, continuation);
+        }
     }
 }

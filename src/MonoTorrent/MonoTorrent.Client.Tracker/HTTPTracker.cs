@@ -37,11 +37,16 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Logging;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
     class HTTPTracker : Tracker
     {
+        static readonly Logger logger = Logger.Create ();
+
         static readonly Random random = new Random ();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds (10);
 
@@ -71,7 +76,7 @@ namespace MonoTorrent.Client.Tracker
                 Key = new BEncodedString ($"{VersionInfo.ClientVersion}-{random.Next (1, int.MaxValue)}");
         }
 
-        protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
             // WebRequest.Create can be a comparatively slow operation as reported
             // by profiling. Switch this to the threadpool so the querying of default
@@ -88,7 +93,11 @@ namespace MonoTorrent.Client.Tracker
             client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
             HttpResponseMessage response;
+
+            // Ensure the supplied 'token' causes the request to be cancelled too.
             using var cts = new CancellationTokenSource (RequestTimeout);
+            using var registration = token.Register (cts.Cancel);
+
             try {
                 Status = TrackerState.Connecting;
                 response = await client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead,  cts.Token);
@@ -102,8 +111,9 @@ namespace MonoTorrent.Client.Tracker
                 using var responseRegistration = cts.Token.Register (() => response.Dispose ());
                 using (response) {
                     peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
+                    logger.InfoFormatted ("Tracker {0} sent {1} peers", Uri, peers.Count);
                     Status = TrackerState.Ok;
-                    return peers;
+                    return new AnnounceResponse (peers, WarningMessage, FailureMessage);
                 }
             } catch (Exception ex) {
                 Status = TrackerState.InvalidResponse;
@@ -112,7 +122,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        protected override async Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override async ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
             // WebRequest.Create can be a comparatively slow operation as reported
             // by profiling. Switch this to the threadpool so the querying of default
@@ -130,7 +140,10 @@ namespace MonoTorrent.Client.Tracker
             client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
             HttpResponseMessage response;
+
+            // Ensure the supplied 'token' causes the request to be cancelled too.
             using var cts = new CancellationTokenSource (RequestTimeout);
+            using var registration = token.Register (cts.Cancel);
             try {
                 response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
             } catch (Exception ex) {
@@ -149,6 +162,7 @@ namespace MonoTorrent.Client.Tracker
                 FailureMessage = "The tracker returned an invalid or incomplete response";
                 throw new TrackerException (FailureMessage, ex);
             }
+            return new ScrapeResponse (Complete, Downloaded, Incomplete);
         }
 
         Uri CreateAnnounceString (AnnounceParameters parameters)
@@ -284,7 +298,7 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     default:
-                        Logger.Log (null, "HttpTracker - Unknown announce tag received: Key {0}  Value: {1}", keypair.Key.ToString (), keypair.Value.ToString ());
+                        logger.InfoFormatted ("Unknown announce tag received: Key {0}  Value: {1}", keypair.Key, keypair.Value);
                         break;
                 }
             }
@@ -320,7 +334,7 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     default:
-                        Logger.Log (null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString (), kp.Value.ToString ());
+                        logger.InfoFormatted ("Unknown scrape tag received: Key {0}  Value {1}", kp.Key, kp.Value);
                         break;
                 }
             }

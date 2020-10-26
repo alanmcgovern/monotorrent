@@ -68,9 +68,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false)) {
-                ProcessingQueue = true
-            };
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false));
         }
 
         [TearDown]
@@ -161,8 +159,8 @@ namespace MonoTorrent.Client.Modes
                     peersTask.TrySetResult (args);
             };
 
-            TrackerManager.AddTracker ("http://test.tracker");
-            TrackerManager.RaiseAnnounceComplete (TrackerManager.CurrentTracker, true, new[] { new Peer ("One", new Uri ("ipv4://1.1.1.1:1111")), new Peer ("Two", new Uri ("ipv4://2.2.2.2:2222")) });
+            await TrackerManager.AddTrackerAsync (new Uri ("http://test.tracker"));
+            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new[] { new Peer ("One", new Uri ("ipv4://1.1.1.1:1111")), new Peer ("Two", new Uri ("ipv4://2.2.2.2:2222")) });
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (2, addedArgs.NewPeers, "#1");
@@ -184,9 +182,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void AnnounceWhenComplete ()
+        public async Task AnnounceWhenComplete ()
         {
-            TrackerManager.AddTracker ("http://1.1.1.1");
+            await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
             Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
 
             Manager.Bitfield[0] = false;
@@ -203,8 +201,9 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#0c");
 
             Assert.AreEqual (2, TrackerManager.Announces.Count, "#1");
-            Assert.AreEqual (TrackerManager.CurrentTracker, TrackerManager.Announces[0].Item1, "#2");
+            Assert.AreEqual (null, TrackerManager.Announces[0].Item1, "#2");
             Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#3");
+            Assert.AreEqual (null, TrackerManager.Announces[1].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[1].Item2, "#4");
         }
 
