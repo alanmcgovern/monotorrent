@@ -609,6 +609,8 @@ namespace MonoTorrent.Client.Modes
                     id.IsChoking = false;
                     id.AmInterested = !Manager.Complete;
                     id.ClientApp = new Software (id.PeerID);
+                    id.MessageQueue.SetReady ();
+
                     Manager.Peers.ConnectedPeers.Add (id);
                     Manager.RaisePeerConnected (new PeerConnectedEventArgs (Manager, id));
                     // Try to queue up some piece requests off the peer
