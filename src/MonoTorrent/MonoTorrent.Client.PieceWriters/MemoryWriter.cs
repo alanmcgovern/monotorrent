@@ -40,6 +40,7 @@ namespace MonoTorrent.Client.PieceWriters
             public TorrentFile File;
             public long Offset;
             public byte[] Buffer;
+            public BufferPool.Releaser BufferReleaser;
             public int Count;
         }
 
@@ -122,11 +123,12 @@ namespace MonoTorrent.Client.PieceWriters
                 if (CacheUsed > (Capacity - count))
                     Flush (0);
 
-                byte[] cacheBuffer = ClientEngine.BufferPool.Rent (count);
+                var releaser = ClientEngine.BufferPool.Rent (count, out byte[] cacheBuffer);
                 Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
 
                 var block = new CachedBlock {
                     Buffer = cacheBuffer,
+                    BufferReleaser = releaser,
                     Count = count,
                     Offset = offset,
                     File = file
@@ -154,8 +156,8 @@ namespace MonoTorrent.Client.PieceWriters
                     return false;
 
                 Interlocked.Add (ref cacheUsed, -b.Count);
-                Writer.Write (b.File, b.Offset, b.Buffer, 0, b.Count);
-                ClientEngine.BufferPool.Return (b.Buffer);
+                using (b.BufferReleaser)
+                    Writer.Write (b.File, b.Offset, b.Buffer, 0, b.Count);
                 return true;
             });
         }
@@ -165,8 +167,8 @@ namespace MonoTorrent.Client.PieceWriters
             CachedBlock b = CachedBlocks[index];
             CachedBlocks.RemoveAt (index);
             Interlocked.Add (ref cacheUsed, -b.Count);
-            Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);
-            ClientEngine.BufferPool.Return (b.Buffer);
+            using (b.BufferReleaser)
+                Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);
         }
 
         public void Move (TorrentFile file, string newPath, bool overwrite)

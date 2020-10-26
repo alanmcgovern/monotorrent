@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         HttpConnection connection;
         HttpListener listener;
         //private RequestMessage m;
-        public const string ListenerURL = "http://127.0.0.1:51423/announce/";
+        public string ListenerURL;
 
         PeerId id;
         RequestBundle requests;
@@ -66,6 +66,7 @@ namespace MonoTorrent.Client
         public void FixtureSetup ()
         {
             listener = new HttpListener ();
+            ListenerURL = $"http://127.0.0.1:{new Random ().Next (10000, 50000)}/announce/";
             listener.Prefixes.Add (ListenerURL);
             listener.Start ();
 

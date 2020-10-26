@@ -28,8 +28,11 @@
 
 
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.RateLimiters;
 
 using NUnit.Framework;
@@ -55,6 +58,22 @@ namespace MonoTorrent.Client
         public void Teardown ()
         {
             pair.Dispose ();
+        }
+
+        [Test]
+        public async Task ConnectAsync ()
+        {
+            var listener = new TcpListener (IPAddress.Loopback, 0);
+            listener.Start ();
+            try {
+                using var c = new IPV4Connection (new Uri ($"ipv4://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
+                var connectTask = NetworkIO.ConnectAsync (c);
+
+                var receivingSocket = await listener.AcceptSocketAsync ().WithTimeout ();
+                await connectTask.WithTimeout ();
+            } finally {
+                listener.Stop ();
+            }
         }
 
         [Test]

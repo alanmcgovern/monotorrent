@@ -179,7 +179,7 @@ namespace MonoTorrent.Client.Tracker
             listener.AnnounceReceived += (o, e) => s.Task.Wait ();
             tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try {
-                Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceParams));
+                Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceParams).WithTimeout ());
             } finally {
                 s.SetResult (true);
             }
@@ -262,7 +262,7 @@ namespace MonoTorrent.Client.Tracker
             listener.ScrapeReceived += (o, e) => tcs.Task.Wait ();
             tracker.RequestTimeout = TimeSpan.FromMilliseconds (0);
             try {
-                Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
+                Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams).WithTimeout ());
             } finally {
                 tcs.SetResult (true);
             }

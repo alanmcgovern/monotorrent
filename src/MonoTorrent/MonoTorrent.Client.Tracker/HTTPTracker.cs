@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -83,17 +84,14 @@ namespace MonoTorrent.Client.Tracker
             var peers = new List<Peer> ();
 
             Uri announceString = CreateAnnounceString (parameters);
-            var request = (HttpWebRequest) WebRequest.Create (announceString);
-            request.UserAgent = VersionInfo.ClientVersion;
-            request.Proxy = new WebProxy ();   // If i don't do this, i can't run the webrequest. It's wierd.
+            using var client = new HttpClient ();
+            client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
-            WebResponse response;
+            HttpResponseMessage response;
             using var cts = new CancellationTokenSource (RequestTimeout);
-            using CancellationTokenRegistration registration = cts.Token.Register (() => request.Abort ());
-
             try {
                 Status = TrackerState.Connecting;
-                response = await request.GetResponseAsync ().ConfigureAwait (false);
+                response = await client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead,  cts.Token);
             } catch (Exception ex) {
                 Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
@@ -101,7 +99,7 @@ namespace MonoTorrent.Client.Tracker
             }
 
             try {
-                using CancellationTokenRegistration responseRegistration = cts.Token.Register (() => response.Close ());
+                using var responseRegistration = cts.Token.Register (() => response.Dispose ());
                 using (response) {
                     peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
                     Status = TrackerState.Ok;
@@ -128,16 +126,13 @@ namespace MonoTorrent.Client.Tracker
             else
                 url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
 
-            var request = (HttpWebRequest) WebRequest.Create (url);
-            request.UserAgent = VersionInfo.ClientVersion;
-            request.Proxy = new WebProxy ();
+            using var client = new HttpClient ();
+            client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
+            HttpResponseMessage response;
             using var cts = new CancellationTokenSource (RequestTimeout);
-            using CancellationTokenRegistration registration = cts.Token.Register (() => request.Abort ());
-
-            WebResponse response;
             try {
-                response = await request.GetResponseAsync ().ConfigureAwait (false);
+                response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
             } catch (Exception ex) {
                 Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
@@ -145,7 +140,7 @@ namespace MonoTorrent.Client.Tracker
             }
 
             try {
-                using CancellationTokenRegistration responseRegistration = cts.Token.Register (() => response.Close ());
+                using var responseRegistration = cts.Token.Register (() => response.Dispose ());
                 using (response)
                     await ScrapeReceivedAsync (parameters.InfoHash, response).ConfigureAwait (false);
                 Status = TrackerState.Ok;
@@ -193,20 +188,21 @@ namespace MonoTorrent.Client.Tracker
             return b.ToUri ();
         }
 
-        static async Task<BEncodedDictionary> DecodeResponseAsync (WebResponse response)
+        static async Task<BEncodedDictionary> DecodeResponseAsync (HttpResponseMessage response)
         {
             int bytesRead = 0;
             int totalRead = 0;
             byte[] buffer = new byte[2048];
 
-            using var dataStream = new MemoryStream (response.ContentLength > 0 ? (int) response.ContentLength : 256);
-            using (Stream reader = response.GetResponseStream ()) {
+            long contentLength = response.Content.Headers.ContentLength ?? -1;
+            using var dataStream = new MemoryStream (contentLength > 0 ? (int) contentLength : 256);
+            using (Stream reader = await response.Content.ReadAsStreamAsync ()) {
                 // If there is a ContentLength, use that to decide how much we read.
-                if (response.ContentLength > 0) {
-                    while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (response.ContentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
+                if (contentLength > 0) {
+                    while ((bytesRead = await reader.ReadAsync (buffer, 0, (int) Math.Min (contentLength - totalRead, buffer.Length)).ConfigureAwait (false)) > 0) {
                         dataStream.Write (buffer, 0, bytesRead);
                         totalRead += bytesRead;
-                        if (totalRead == response.ContentLength)
+                        if (totalRead == contentLength)
                             break;
                     }
                 } else    // A compact response doesn't always have a content length, so we
@@ -233,7 +229,7 @@ namespace MonoTorrent.Client.Tracker
             return Uri.GetHashCode ();
         }
 
-        async Task<List<Peer>> AnnounceReceivedAsync (WebResponse response)
+        async Task<List<Peer>> AnnounceReceivedAsync (HttpResponseMessage response)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -294,7 +290,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        async Task ScrapeReceivedAsync (InfoHash infoHash, WebResponse response)
+        async Task ScrapeReceivedAsync (InfoHash infoHash, HttpResponseMessage response)
         {
             await MainLoop.SwitchToThreadpool ();
 

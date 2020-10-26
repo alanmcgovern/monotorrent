@@ -30,6 +30,7 @@
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
@@ -51,7 +52,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 // The length of the payload, 4 byte length prefix, 1 byte BT message id, 1 byte LT message id
                 Create ().LengthInBytes () + 4 + 1 + 1;
 
-        public int MaxRequests { get; set; }
+        /// <summary>
+        /// The maximum number of concurrent 16kB <see cref="RequestMessage"/>s which can be sent to this peer. Defaults to <see cref="ClientEngine.DefaultMaxPendingRequests"/> requests.
+        /// </summary>
+        public int MaxRequests { get; set; } = ClientEngine.DefaultMaxPendingRequests;
 
         public int LocalPort {
             get; private set;

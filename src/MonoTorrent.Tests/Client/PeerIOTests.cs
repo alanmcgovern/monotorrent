@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
         {
             var blockSize = Piece.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
-                Data = new byte[blockSize]
+                DataReleaser = new BufferPool.Releaser (null, new byte[blockSize])
             };
 
             Assert.DoesNotThrowAsync (() => {
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
         {
             var blockSize = Piece.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
-                Data = new byte[blockSize]
+                DataReleaser = new BufferPool.Releaser (null, new byte[blockSize])
             };
 
             var protocolSize = msg.ByteLength - blockSize;

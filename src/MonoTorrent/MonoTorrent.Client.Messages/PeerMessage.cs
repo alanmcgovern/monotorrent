@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Messages
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
             //      - Handshake messages aren't registered as they are always the first message sent/received
             Register (AllowedFastMessage.MessageId, data => new AllowedFastMessage ());
-            Register (BitfieldMessage.MessageId, data => new BitfieldMessage ((int) Math.Ceiling ((double) data.Size / data.PieceLength)));
+            Register (BitfieldMessage.MessageId, data => data == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.PieceCount ()));
             Register (CancelMessage.MessageId, data => new CancelMessage ());
             Register (ChokeMessage.MessageId, data => new ChokeMessage ());
             Register (HaveAllMessage.MessageId, data => new HaveAllMessage ());
@@ -99,11 +99,6 @@ namespace MonoTorrent.Client.Messages
             PeerMessage message = creator (manager);
             message.Decode (buffer, offset + 4 + 1, count - 4 - 1);
             return message;
-        }
-
-        internal void Handle (TorrentManager manager, PeerId id)
-        {
-            manager.Mode.HandleMessage (id, this);
         }
     }
 }

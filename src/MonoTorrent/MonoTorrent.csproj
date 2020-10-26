@@ -75,7 +75,7 @@ Notable features include:
       <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
       <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
       <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
-      <PackageTags>bittorrent;torrent</PackageTags>
+      <PackageTags>bittorrent;torrent;library;tracker;dht;c#;csharp;dotnet;.NET;p2p</PackageTags>
 
       <IncludeSource>true</IncludeSource>
       <IncludeSymbols>true</IncludeSymbols>
@@ -92,7 +92,8 @@ Notable features include:
 
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.26" PrivateAssets="all" />
-    <PackageReference Include="ReusableTasks" Version="1.0.6" />
+    <PackageReference Include="Mono.Nat" Version="2.0.1" />
+    <PackageReference Include="ReusableTasks" Version="1.0.7" />
   </ItemGroup>
 
   <ItemGroup>

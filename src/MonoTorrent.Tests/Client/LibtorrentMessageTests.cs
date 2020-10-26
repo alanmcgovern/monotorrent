@@ -47,6 +47,7 @@ namespace MonoTorrent.Client.Messages
             Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
             Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
             Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
+            Assert.AreEqual (ClientEngine.DefaultMaxPendingRequests, m.MaxRequests, "#5");
         }
 
         [Test]

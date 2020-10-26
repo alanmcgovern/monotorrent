@@ -205,13 +205,10 @@ namespace MonoTorrent.Client.Encryption
         protected async ReusableTask SendY ()
         {
             int length = 96 + RandomNumber (512);
-            byte[] toSend = ClientEngine.BufferPool.Rent (length);
-            Buffer.BlockCopy (Y, 0, toSend, 0, 96);
-            random.GetBytes (toSend, 96, length - 96);
-            try {
+            using (ClientEngine.BufferPool.Rent (length, out byte[] toSend)) {
+                Buffer.BlockCopy (Y, 0, toSend, 0, 96);
+                random.GetBytes (toSend, 96, length - 96);
                 await NetworkIO.SendAsync (socket, toSend, 0, length, null, null, null).ConfigureAwait (false);
-            } finally {
-                ClientEngine.BufferPool.Return (toSend);
             }
         }
 
@@ -243,47 +240,44 @@ namespace MonoTorrent.Client.Encryption
         {
             // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
             int filled = 0;
-            byte[] synchronizeWindow = ClientEngine.BufferPool.Rent (syncData.Length);
+            using (ClientEngine.BufferPool.Rent (syncData.Length, out byte[] synchronizeWindow)) {
+                while (bytesReceived < syncStopPoint) {
+                    int received = syncData.Length - filled;
+                    await NetworkIO.ReceiveAsync (socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
 
-            while (bytesReceived < syncStopPoint) {
-                int received = syncData.Length - filled;
-                await NetworkIO.ReceiveAsync (socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
+                    bytesReceived += received;
+                    bool matched = true;
+                    for (int i = 0; i < syncData.Length && matched; i++)
+                        matched &= syncData[i] == synchronizeWindow[i];
 
-                bytesReceived += received;
-                bool matched = true;
-                for (int i = 0; i < syncData.Length && matched; i++)
-                    matched &= syncData[i] == synchronizeWindow[i];
-
-                if (matched) // the match started in the beginning of the window, so it must be a full match
-                {
-                    await DoneSynchronize ().ConfigureAwait (false);
-                    return;
-                } else {
-                    // See if the current window contains the first byte of the expected synchronize data
-                    // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
-                    int shift = -1;
-                    for (int i = 1; i < syncData.Length && shift == -1; i++)
-                        if (synchronizeWindow[i] == syncData[0])
-                            shift = i;
-
-                    // The current data is all useless, so read an entire new window of data
-                    if (shift > 0) {
-                        filled = syncData.Length - shift;
-                        // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
-                        Buffer.BlockCopy (synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
+                    if (matched) // the match started in the beginning of the window, so it must be a full match
+                    {
+                        await DoneSynchronize ().ConfigureAwait (false);
+                        return;
                     } else {
-                        // The start point we thought we had is actually garbage, so throw away all the data we have
-                        filled = 0;
+                        // See if the current window contains the first byte of the expected synchronize data
+                        // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
+                        int shift = -1;
+                        for (int i = 1; i < syncData.Length && shift == -1; i++)
+                            if (synchronizeWindow[i] == syncData[0])
+                                shift = i;
+
+                        // The current data is all useless, so read an entire new window of data
+                        if (shift > 0) {
+                            filled = syncData.Length - shift;
+                            // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
+                            Buffer.BlockCopy (synchronizeWindow, shift, synchronizeWindow, 0, syncData.Length - shift);
+                        } else {
+                            // The start point we thought we had is actually garbage, so throw away all the data we have
+                            filled = 0;
+                        }
                     }
                 }
             }
             throw new EncryptionException ("Couldn't synchronise 1");
         }
 
-        protected virtual ReusableTask DoneSynchronize ()
-        {
-            return ReusableTask.CompletedTask;
-        }
+        protected abstract ReusableTask DoneSynchronize ();
         #endregion
 
         #region I/O Functions

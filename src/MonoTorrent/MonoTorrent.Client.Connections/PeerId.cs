@@ -47,6 +47,16 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="bitfieldLength"></param>
         /// <returns></returns>
+        internal static PeerId Create (int bitfieldLength)
+            => CreateNull (bitfieldLength);
+
+        /// <summary>
+        /// Creates a PeerID with a null TorrentManager and IConnection2. This is used for unit testing purposes.
+        /// The peer will have <see cref="ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
+        /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
+        /// </summary>
+        /// <param name="bitfieldLength"></param>
+        /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength)
         {
             return CreateNull (bitfieldLength, false, true, false);
@@ -71,6 +81,13 @@ namespace MonoTorrent.Client
                 BitField = new BitField (bitfieldLength).SetAll (seeder),
                 ProcessingQueue = true
             };
+        }
+
+        internal static PeerId CreateInterested (int bitfieldLength)
+        {
+            var peer = CreateNull (bitfieldLength);
+            peer.IsInterested = true;
+            return peer;
         }
 
         #region Choke/Unchoke
@@ -128,6 +145,9 @@ namespace MonoTorrent.Client
         internal bool Disposed { get; private set; }
         internal IEncryption Encryptor { get; set; }
         internal ExtensionSupports ExtensionSupports { get; set; }
+        /// <summary>
+        /// This is the set of pieces we can request while choked.
+        /// </summary>
         internal List<int> IsAllowedFastPieces { get; set; }
         internal ValueStopwatch LastMessageReceived;
         internal ValueStopwatch LastMessageSent;
@@ -162,8 +182,8 @@ namespace MonoTorrent.Client
             IsAllowedFastPieces = new List<int> ();
             SuggestedPieces = new List<int> ();
 
-            MaxPendingRequests = 2;
-            MaxSupportedPendingRequests = 50;
+            MaxPendingRequests = PieceManager.NormalRequestAmount;
+            MaxSupportedPendingRequests = ClientEngine.DefaultMaxPendingRequests;
 
             ExtensionSupports = new ExtensionSupports ();
             Monitor = new ConnectionMonitor ();

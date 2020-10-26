@@ -39,6 +39,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -67,7 +68,7 @@ namespace MonoTorrent.Client.Modes
             Manager = manager;
             Settings = settings;
 
-            manager.chokeUnchoker = new ChokeUnchokeManager (manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
+            manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
         }
 
         public void HandleMessage (PeerId id, PeerMessage message)
@@ -308,7 +309,17 @@ namespace MonoTorrent.Client.Modes
             // FIXME: Recreate the uri? Give warning?
             if (message.LocalPort > 0)
                 id.Peer.LocalPort = message.LocalPort;
-            id.MaxSupportedPendingRequests = Math.Max (1, message.MaxRequests);
+
+            // If MaxRequests is zero, or negative, ignore it.
+            if (message.MaxRequests > 0)
+                id.MaxSupportedPendingRequests = message.MaxRequests;
+            else
+                Logger.Log (id.Connection, "Invalid value for libtorrent extension handshake 'MaxRequests'.");
+
+            // Bugfix for MonoTorrent older than 1.0.19
+            if (id.ClientApp.Client == ClientApp.MonoTorrent)
+                id.MaxSupportedPendingRequests = Math.Max (id.MaxSupportedPendingRequests, 192);
+
             id.ExtensionSupports = message.Supports;
 
             if (id.ExtensionSupports.Supports (PeerExchangeMessage.Support.Name)) {
@@ -334,7 +345,7 @@ namespace MonoTorrent.Client.Modes
             if (piece != null)
                 WritePieceAsync (message, piece);
             else
-                ClientEngine.BufferPool.Return (message.Data);
+                message.DataReleaser.Dispose ();
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests (id);
         }
@@ -352,7 +363,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.TrySetError (Reason.WriteFailure, ex);
                 return;
             } finally {
-                ClientEngine.BufferPool.Return (message.Data);
+                message.DataReleaser.Dispose ();
             }
 
             piece.TotalWritten++;
@@ -374,7 +385,7 @@ namespace MonoTorrent.Client.Modes
 
             bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, piece.Index);
             Manager.OnPieceHashed (piece.Index, result, 1, 1);
-            Manager.PieceManager.UnhashedPieces[piece.Index] = false;
+            Manager.PieceManager.PendingHashCheckPieces[piece.Index] = false;
             if (!result)
                 Manager.HashFails++;
 
@@ -453,10 +464,6 @@ namespace MonoTorrent.Client.Modes
                 AppendFastPieces (id, bundle);
 
                 id.Enqueue (bundle);
-                if (!id.ProcessingQueue) {
-                    id.ProcessingQueue = true;
-                    ConnectionManager.ProcessQueue (Manager, id);
-                }
             } else {
                 ConnectionManager.CleanupSocket (Manager, id);
             }
@@ -638,7 +645,7 @@ namespace MonoTorrent.Client.Modes
 
             // Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
             if (Manager.chokeUnchoker == null)
-                Manager.chokeUnchoker = new ChokeUnchokeManager (Manager, Manager.Settings.MinimumTimeBetweenReviews, Manager.Settings.PercentOfMaxRateToSkipReview);
+                Manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (Manager));
             Manager.chokeUnchoker.UnchokeReview ();
         }
 
@@ -646,7 +653,7 @@ namespace MonoTorrent.Client.Modes
         {
             //Choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
             if (Manager.chokeUnchoker == null)
-                Manager.chokeUnchoker = new ChokeUnchokeManager (Manager, Manager.Settings.MinimumTimeBetweenReviews, Manager.Settings.PercentOfMaxRateToSkipReview);
+                Manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (Manager));
 
             Manager.chokeUnchoker.UnchokeReview ();
         }
@@ -665,7 +672,7 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        internal async Task TryHashPendingFilesAsync ()
+        internal async ReusableTask TryHashPendingFilesAsync ()
         {
             // If we cannot handle peer messages then we should not try to async hash.
             // This adds a little bit of a double meaning to the property (for now).

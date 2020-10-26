@@ -1,10 +1,10 @@
 ﻿//
-// DiskWriter.cs
+// Protocol.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,36 +26,11 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-namespace MonoTorrent
+namespace MonoTorrent.Client.PortForwarding
 {
-    public interface ITorrentData
+    public enum Protocol
     {
-        // FIXME: Make all instances of TorrentFile[] be a readonly IList<T>
-        /// <summary>
-        /// The files contained within the Torrent
-        /// </summary>
-        TorrentFile[] Files { get; }
-
-        /// <summary>
-        /// The size, in bytes, of each piece
-        /// </summary>
-        int PieceLength { get; }
-
-        /// <summary>
-        /// The size, in bytes, of the torrent.
-        /// </summary>
-        long Size { get; }
-    }
-
-    static class ITorrentDataExtensions
-    {
-        /// <summary>
-        /// The number of pieces in the torrent
-        /// </summary>
-        /// <param name="self"></param>
-        /// <returns></returns>
-        public static int PieceCount (this ITorrentData self)
-            => (int) (self.Size / self.PieceLength) + (self.Size % self.PieceLength != 0 ? 1 : 0);
+        Tcp,
+        Udp
     }
 }

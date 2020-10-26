@@ -36,7 +36,9 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -152,10 +154,23 @@ namespace MonoTorrent.Client.Modes
                             bitField.SetAll (false);
                         } else {
                             Stream.Position = 0;
-                            var dict = new BEncodedDictionary {
-                                { "info", BEncodedValue.Decode (Stream) }
-                            };
-                            // FIXME: Add the trackers too
+                            BEncodedDictionary dict = new BEncodedDictionary ();
+                            dict.Add ("info", BEncodedValue.Decode (Stream));
+
+                            if (Manager.TrackerManager.Tiers != null && Manager.TrackerManager.Tiers.Count > 0) {
+                                BEncodedList announceTrackers = new BEncodedList ();
+                                foreach (var tier in Manager.TrackerManager.Tiers) {
+                                    BEncodedList announceUrls = new BEncodedList ();
+
+                                    foreach (var tracker in tier.Trackers) {
+                                        announceUrls.Add (new BEncodedString (tracker.Uri.OriginalString));
+                                    }
+
+                                    announceTrackers.Add (announceUrls);
+                                }
+
+                                dict.Add ("announce-list", announceTrackers);
+                            }
                             if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
                                 Manager.RaiseMetadataReceived (t, dict);
                                 if (stopWhenDone)
@@ -271,8 +286,20 @@ namespace MonoTorrent.Client.Modes
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
-            // We can't send a bitfield message in metadata mode as
-            // we don't know what size the bitfield is
+            if (ClientEngine.SupportsFastPeer && id.SupportsFastPeer)
+                bundle.Messages.Add (new HaveNoneMessage ());
+            // If the fast peer extensions are not supported we must not send a
+            // bitfield message because we don't know how many pieces the torrent
+            // has. We could probably send an invalid one and force the connection
+            // to close.
+        }
+
+        protected override void HandleBitfieldMessage (PeerId id, BitfieldMessage message)
+        {
+            // If we receive a bitfield message we should ignore it. We don't know how many
+            // pieces the torrent has so we can't actually safely decode the bitfield.
+            if (message != BitfieldMessage.UnknownLength)
+                throw new InvalidOperationException ("BitfieldMessages should not be decoded normally while in metadata mode.");
         }
 
         protected override void HandleExtendedHandshakeMessage (PeerId id, ExtendedHandshakeMessage message)

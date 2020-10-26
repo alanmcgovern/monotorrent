@@ -60,8 +60,6 @@ namespace MonoTorrent.Client.Encryption
 
         protected override async ReusableTask DoneSynchronize ()
         {
-            await base.DoneSynchronize ().ConfigureAwait (false);
-
             byte[] verifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
             await ReceiveMessage (verifyBytes, verifyBytes.Length).ConfigureAwait (false);
@@ -92,14 +90,10 @@ namespace MonoTorrent.Client.Encryption
             // encryption will be used on the response
             int lenInitialPayload;
             int lenPadC = Message.ReadShort (verifyBytes, 32) + 2;
-            byte[] padC = ClientEngine.BufferPool.Rent (lenPadC);
-            try {
+            using (ClientEngine.BufferPool.Rent (lenPadC, out byte[] padC)) {
                 await ReceiveMessage (padC, lenPadC).ConfigureAwait (false); // padC
-
                 DoDecrypt (padC, 0, lenPadC);
                 lenInitialPayload = Message.ReadShort (padC, lenPadC - 2);
-            } finally {
-                ClientEngine.BufferPool.Return (padC);
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
@@ -112,19 +106,15 @@ namespace MonoTorrent.Client.Encryption
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             int finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
-            byte[] buffer = ClientEngine.BufferPool.Rent (finalBufferLength);
+            using (ClientEngine.BufferPool.Rent (finalBufferLength, out byte[] buffer)) {
+                int offset = 0;
+                offset += Message.Write (buffer, offset, VerificationConstant);
+                offset += Message.Write (buffer, offset, CryptoSelect);
+                offset += Message.Write (buffer, offset, Len (padD));
+                offset += Message.Write (buffer, offset, padD);
 
-            int offset = 0;
-            offset += Message.Write (buffer, offset, VerificationConstant);
-            offset += Message.Write (buffer, offset, CryptoSelect);
-            offset += Message.Write (buffer, offset, Len (padD));
-            offset += Message.Write (buffer, offset, padD);
-
-            DoEncrypt (buffer, 0, finalBufferLength);
-            try {
+                DoEncrypt (buffer, 0, finalBufferLength);
                 await NetworkIO.SendAsync (socket, buffer, 0, finalBufferLength).ConfigureAwait (false);
-            } finally {
-                ClientEngine.BufferPool.Return (buffer);
             }
 
             SelectCrypto (myCP, true);

@@ -276,7 +276,7 @@ namespace MonoTorrent.Client.Modes
             foreach (var file in Manager.Torrent.Files)
                 file.Priority = Priority.Normal;
 
-            Assert.ThrowsAsync<OperationCanceledException> (() => Manager.Mode.TryHashPendingFilesAsync (), "#1");
+            Assert.ThrowsAsync<OperationCanceledException> (async () => await Manager.Mode.TryHashPendingFilesAsync (), "#1");
             Assert.AreEqual (3, pieceHashCount, "#2");
         }
 

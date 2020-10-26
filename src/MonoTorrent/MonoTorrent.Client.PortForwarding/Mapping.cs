@@ -1,10 +1,10 @@
 ﻿//
-// PeerId.PieceRequester.cs
+// Mapping.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,29 +26,38 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
 using System;
-using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.PiecePicking;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PortForwarding
 {
-    public partial class PeerId : IPieceRequester
+    public sealed class Mapping : IEquatable<Mapping>
     {
-        int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
-        List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool IPieceRequester.IsChoking => IsChoking;
-        TimeSpan IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
-        int IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
-        List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
-        bool IPieceRequester.SupportsFastPeer => SupportsFastPeer;
-        int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
+        public int PublicPort { get; }
+        public int PrivatePort { get; }
+        public Protocol Protocol { get; }
 
-        void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
+        internal Mapping (Protocol protocol, int port)
+            : this (protocol, port, port)
         {
-            Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
         }
+
+        internal Mapping (Protocol protocol, int privatePort, int publicPort)
+        {
+            Protocol = protocol;
+            PrivatePort = privatePort;
+            PublicPort = publicPort;
+        }
+
+        public override bool Equals (object obj)
+            => Equals (obj as Mapping);
+
+        public bool Equals (Mapping mapping)
+            => mapping != null
+                && mapping.PrivatePort == PrivatePort
+                && mapping.PublicPort == PublicPort
+                && mapping.Protocol == Protocol;
+
+        public override int GetHashCode ()
+            => PrivatePort;
     }
 }

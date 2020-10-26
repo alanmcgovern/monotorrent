@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
         public async Task AnnounceAllFailed ()
         {
             var argsTask = new TaskCompletionSource<AnnounceResponseEventArgs> ();
-            trackerManager.AnnounceComplete += (o, e) => argsTask.SetResult (e);
+            trackerManager.AnnounceComplete += (o, e) => argsTask.TrySetResult (e);
 
             foreach (var tier in trackers)
                 foreach (var tracker in tier)

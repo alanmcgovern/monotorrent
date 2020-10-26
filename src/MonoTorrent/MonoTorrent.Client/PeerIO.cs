@@ -46,8 +46,7 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IConnection2 connection, IEncryption decryptor)
         {
-            byte[] buffer = ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength);
-            try {
+            using (ClientEngine.BufferPool.Rent (HandshakeMessage.HandshakeLength, out byte[] buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
 
                 decryptor.Decrypt (buffer, 0, HandshakeMessage.HandshakeLength);
@@ -55,8 +54,6 @@ namespace MonoTorrent.Client
                 var message = new HandshakeMessage ();
                 message.Decode (buffer, 0, HandshakeMessage.HandshakeLength);
                 return message;
-            } finally {
-                ClientEngine.BufferPool.Return (buffer);
             }
         }
 
@@ -67,39 +64,36 @@ namespace MonoTorrent.Client
 
         public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection2 connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
-            byte[] messageLengthBuffer = null;
-            byte[] messageBuffer = null;
+            int messageHeaderLength = 4;
+            int messageBodyLength;
+            byte[] messageBuffer;
+            BufferPool.Releaser messageBufferReleaser;
 
-            int messageLength = 4;
-            int messageBody;
-            try {
-                messageLengthBuffer = ClientEngine.BufferPool.Rent (messageLength);
-                await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
+            using (ClientEngine.BufferPool.Rent (messageHeaderLength, out byte[] messageLengthBuffer)) {
+                await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageHeaderLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
-                decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
+                decryptor.Decrypt (messageLengthBuffer, 0, messageHeaderLength);
 
-                messageBody = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0));
-                if (messageBody < 0 || messageBody > MaxMessageLength) {
+                messageBodyLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageLengthBuffer, 0));
+                if (messageBodyLength < 0 || messageBodyLength > MaxMessageLength) {
                     connection.Dispose ();
-                    throw new ProtocolException ($"Invalid message length received. Value was '{messageBody}'");
+                    throw new ProtocolException ($"Invalid message length received. Value was '{messageBodyLength}'");
                 }
 
-                if (messageBody == 0)
+                if (messageBodyLength == 0)
                     return new KeepAliveMessage ();
 
-                messageBuffer = ClientEngine.BufferPool.Rent (messageBody + messageLength);
-                Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageLength);
-            } finally {
-                ClientEngine.BufferPool.Return (messageLengthBuffer);
+                messageBufferReleaser = ClientEngine.BufferPool.Rent (messageBodyLength + messageHeaderLength, out messageBuffer);
+                Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageHeaderLength);
             }
 
-            try {
+            using (messageBufferReleaser) {
                 // Always assume protocol first, then convert to data when we what message it is!
-                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageHeaderLength, messageBodyLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
-                decryptor.Decrypt (messageBuffer, messageLength, messageBody);
+                decryptor.Decrypt (messageBuffer, messageHeaderLength, messageBodyLength);
                 // FIXME: manager should never be null, except some of the unit tests do that.
-                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, torrentData);
+                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageHeaderLength + messageBodyLength, torrentData);
                 if (data is PieceMessage msg) {
                     peerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
                     managerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
@@ -108,8 +102,6 @@ namespace MonoTorrent.Client
                     managerMonitor?.DataDown.AddDelta (msg.RequestLength);
                 }
                 return data;
-            } finally {
-                ClientEngine.BufferPool.Return (messageBuffer);
             }
         }
 
@@ -121,9 +113,7 @@ namespace MonoTorrent.Client
         public static async ReusableTask SendMessageAsync (IConnection2 connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
             int count = message.ByteLength;
-            byte[] buffer = ClientEngine.BufferPool.Rent (count);
-
-            try {
+            using (ClientEngine.BufferPool.Rent (count, out byte[] buffer)) {
                 var pieceMessage = message as PieceMessage;
                 message.Encode (buffer, 0);
                 encryptor.Encrypt (buffer, 0, count);
@@ -137,8 +127,6 @@ namespace MonoTorrent.Client
                     peerMonitor?.DataUp.AddDelta (pieceMessage.RequestLength);
                     managerMonitor?.DataUp.AddDelta (pieceMessage.RequestLength);
                 }
-            } finally {
-                ClientEngine.BufferPool.Return (buffer);
             }
         }
     }

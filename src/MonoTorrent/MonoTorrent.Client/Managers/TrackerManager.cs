@@ -209,7 +209,9 @@ namespace MonoTorrent.Client.Tracker
                 var tracker = tier.Trackers[trackerIndex];
 
                 tier.LastScrape = ValueStopwatch.StartNew ();
-                await Scrape (tracker);
+                if (tracker.CanScrape)
+                    await Scrape (tracker);
+
                 if (tier.LastScrapSucceeded)
                     break;
             }

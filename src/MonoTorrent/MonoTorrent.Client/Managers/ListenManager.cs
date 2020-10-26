@@ -36,17 +36,38 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Messages.Standard;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     class ListenManager : IDisposable
     {
         ClientEngine Engine { get; set; }
         List<IPeerListener> Listeners { get; }
+        InfoHash[] SKeys { get; set; }
 
         internal ListenManager (ClientEngine engine)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
             Listeners = new List<IPeerListener> ();
+            SKeys = Array.Empty<InfoHash> ();
+        }
+
+        public void Add (InfoHash skey)
+        {
+            var clone = new InfoHash[SKeys.Length + 1];
+            Array.Copy (SKeys, clone, SKeys.Length);
+            clone[clone.Length - 1] = skey;
+            SKeys = clone;
+        }
+
+        public void Remove (InfoHash skey)
+        {
+            var clone = new InfoHash[SKeys.Length - 1];
+            var index = Array.IndexOf (SKeys, skey);
+            Array.Copy (SKeys, clone, index);
+            Array.Copy (SKeys, index + 1, clone, index, clone.Length - index);
+            SKeys = clone;
         }
 
         public void Dispose ()
@@ -88,12 +109,8 @@ namespace MonoTorrent.Client
 
                 Logger.Log (e.Connection, "ListenManager - ConnectionReceived");
 
-                var skeys = new List<InfoHash> ();
-                for (int i = 0; i < Engine.Torrents.Count; i++)
-                    skeys.Add (Engine.Torrents[i].InfoHash);
-
                 IConnection2 connection = ConnectionConverter.Convert (e.Connection);
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, skeys.ToArray ());
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
                 if (!await HandleHandshake (e.Peer, connection, result.Handshake, result.Decryptor, result.Encryptor))
                     connection.Dispose ();
             } catch {
@@ -101,7 +118,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
+        async ReusableTask<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager man = null;
             if (message.ProtocolString != VersionInfo.ProtocolStringV100)
@@ -131,15 +148,12 @@ namespace MonoTorrent.Client
                 Encryptor = encryptor
             };
 
-            message.Handle (man, id);
+            man.Mode.HandleMessage (id, message);
             Logger.Log (id.Connection, "ListenManager - Handshake successful handled");
 
             id.ClientApp = new Software (message.PeerId);
 
-            message = new HandshakeMessage (man.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
-            await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, man.UploadLimiters, id.Monitor, man.Monitor);
-            Engine.ConnectionManager.IncomingConnectionAccepted (man, id);
-            return true;
+            return await Engine.ConnectionManager.IncomingConnectionAcceptedAsync (man, id);
         }
     }
 }

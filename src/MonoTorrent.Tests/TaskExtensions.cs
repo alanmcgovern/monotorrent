@@ -61,8 +61,7 @@ namespace MonoTorrent
             if (result == task) {
                 await task;
             } else {
-                Assert.Fail (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
-                throw new TimeoutException ("This is just to keep the compiler happy :p");
+                throw new TimeoutException (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
             }
         }
 
@@ -84,8 +83,7 @@ namespace MonoTorrent
             if (result == task)
                 return await task;
 
-            Assert.Fail (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
-            throw new TimeoutException ("This is just to keep the compiler happy :p");
+            throw new TimeoutException (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
         }
     }
 }
