@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.Messages
             for (int i = 0; i < Messages.Count; i++)
                 written += Messages[i].Encode (buffer, written);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
     }
 }

@@ -125,7 +125,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write (buffer, written, Support.MessageId);
             written += dict.Encode (buffer, written);
 
-            CheckWritten (written - offset);
             return written - offset;
         }
 

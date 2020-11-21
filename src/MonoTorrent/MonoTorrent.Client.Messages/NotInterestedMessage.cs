@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Messages.Standard
             written += Write (buffer, written, messageLength);
             written += Write (buffer, written, MessageId);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
 

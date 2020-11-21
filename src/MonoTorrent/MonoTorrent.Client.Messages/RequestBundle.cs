@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Messages
                 written += Message.Encode (buffer, written);
             }
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
         public IEnumerable<RequestMessage> ToRequestMessages ()
