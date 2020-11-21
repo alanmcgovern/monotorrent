@@ -279,11 +279,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTask WaitForPendingWrites ()
+        ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
             WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
-            await tcs.Task;
+            return tcs.Task;
         }
 
         internal async Task CloseFilesAsync (ITorrentData manager)
