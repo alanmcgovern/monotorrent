@@ -37,6 +37,10 @@ namespace MonoTorrent.Dht.Tasks
 {
     class GetPeersTask
     {
+        const int MaxPeers = 128;
+
+        HashSet<Peer> FoundPeers { get; }
+
         DhtEngine Engine { get; }
         NodeId InfoHash { get; }
 
@@ -50,6 +54,7 @@ namespace MonoTorrent.Dht.Tasks
         {
             Engine = engine;
             InfoHash = infohash;
+            FoundPeers = new HashSet<Peer> ();
         }
 
         public async Task<IEnumerable<Node>> ExecuteAsync ()
@@ -76,12 +81,15 @@ namespace MonoTorrent.Dht.Tasks
                 // The response had some actual peers
                 if (response.Values != null) {
                     // We have actual peers!
-                    Engine.RaisePeersFound (InfoHash, Peer.Decode (response.Values));
+                    var peers = Peer.Decode (response.Values);
+                    Engine.RaisePeersFound (InfoHash, peers);
+                    foreach (var peer in peers)
+                        FoundPeers.Add (peer);
                 }
 
                 // The response contains nodes which should be closer to our target. If they are closer than nodes
                 // we've already checked, then let's query them!
-                if (response.Nodes != null) {
+                if (response.Nodes != null && FoundPeers.Count < MaxPeers) {
                     foreach (Node node in Node.FromCompactNode (response.Nodes))
                         if (closestNodes.Add (node))
                             activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
