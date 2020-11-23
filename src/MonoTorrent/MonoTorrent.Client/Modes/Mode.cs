@@ -623,11 +623,15 @@ namespace MonoTorrent.Client.Modes
                     id.Encryptor = PlainTextEncryption.Instance;
                     id.Decryptor = PlainTextEncryption.Instance;
                     id.IsChoking = false;
-                    id.AmInterested = !Manager.Complete;
                     id.ClientApp = new Software (id.PeerID);
                     Manager.Peers.ConnectedPeers.Add (id);
                     Manager.RaisePeerConnected (new PeerConnectedEventArgs (Manager, id));
                     ConnectionManager.ReceiveMessagesAsync (id.Connection, id.Decryptor, Manager.DownloadLimiters, id.Monitor, Manager, id);
+                    if (!Manager.Complete) {
+                        id.ProcessingQueue = true;
+                        SetAmInterestedStatus (id, true);
+                        ConnectionManager.ProcessQueue (Manager, id);
+                    }
                 }
 
                 // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
