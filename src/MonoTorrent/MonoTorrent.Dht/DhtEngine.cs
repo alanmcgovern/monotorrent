@@ -209,8 +209,10 @@ namespace MonoTorrent.Dht
 
         void RaiseStateChanged (DhtState newState)
         {
-            State = newState;
-            StateChanged?.Invoke (this, EventArgs.Empty);
+            if (State != newState) {
+                State = newState;
+                StateChanged?.Invoke (this, EventArgs.Empty);
+            }
         }
 
         internal async Task RefreshBuckets ()
