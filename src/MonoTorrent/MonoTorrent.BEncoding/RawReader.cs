@@ -37,10 +37,12 @@ namespace MonoTorrent.BEncoding
         readonly Stream input;
         readonly byte[] peeked;
 
+        MemoryStream CapturedData { get; set; }
+
         public bool StrictDecoding { get; }
 
         public RawReader (Stream input)
-            : this (input, true)
+            : this (input, false)
         {
 
         }
@@ -50,6 +52,16 @@ namespace MonoTorrent.BEncoding
             this.input = input;
             peeked = new byte[1];
             StrictDecoding = strictDecoding;
+        }
+
+        internal void BeginCaptureData (MemoryStream stream)
+        {
+            CapturedData = stream;
+        }
+
+        internal void EndCaptureData ()
+        {
+            CapturedData = null;
         }
 
         public override bool CanRead => input.CanRead;
@@ -64,7 +76,7 @@ namespace MonoTorrent.BEncoding
             get => input.Position;
             set {
                 if (value != Position)
-                    input.Position = value;
+                    Seek (value, SeekOrigin.Begin);
             }
         }
 
@@ -75,11 +87,19 @@ namespace MonoTorrent.BEncoding
             => Read (peeked, 0, 1) == 1 ? peeked[0] : -1;
 
         public override int Read (byte[] buffer, int offset, int count)
-            => input.Read (buffer, offset, count);
+        {
+            var read = input.Read (buffer, offset, count);
+            if (read > 0)
+                CapturedData?.Write (buffer, offset, read);
+            return read;
+        }
 
         public override long Seek (long offset, SeekOrigin origin)
-            => input.Seek (offset, origin);
-
+        {
+            if (CapturedData != null)
+                throw new NotSupportedException ("Cannot seek while capturing data");
+            return input.Seek (offset, origin);
+        }
         public override void SetLength (long value)
             =>  throw new NotSupportedException ();
 
