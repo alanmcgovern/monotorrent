@@ -268,22 +268,6 @@ namespace MonoTorrent.Client.Modes
             requestTimeout = DateTime.Now.Add (timeout);
         }
 
-        internal Torrent GetTorrent ()
-        {
-            byte[] calculatedInfoHash;
-            using (SHA1 sha = HashAlgoFactory.Create<SHA1> ())
-                calculatedInfoHash = sha.ComputeHash (Stream.ToArray ());
-            if (!Manager.InfoHash.Equals (calculatedInfoHash))
-                throw new Exception ("invalid metadata");//restart ?
-
-            var d = BEncodedValue.Decode (Stream);
-            var dict = new BEncodedDictionary {
-                { "info", d }
-            };
-
-            return Torrent.LoadCore (dict);
-        }
-
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
             if (ClientEngine.SupportsFastPeer && id.SupportsFastPeer)

@@ -420,6 +420,15 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void DecodeDictionary_OutOfOrder_DefaultIsNotStrict()
+        {
+            string benString = "d1:b1:b1:a1:ae";
+            var dict = (BEncodedDictionary) BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString));
+            Assert.IsTrue (dict.ContainsKey ("a"));
+            Assert.IsTrue (dict.ContainsKey ("b"));
+        }
+
+        [Test]
         public void DecodeDictionary_OutOfOrder_NotStrict ()
         {
             string benString = "d1:b1:b1:a1:ae";
@@ -525,14 +534,15 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void DecodeTorrentWithDict ()
+        public void DecodeTorrentWithOutOfOrderKeys ()
         {
-            var dict = new BEncodedDictionary {
-                { "other", new BEncodedDictionary   { { "test", new BEncodedString ("value") } } }
-            };
+            var good = "d4:infod5:key_a7:value_a5:key_b7:value_bee";
+            var bad = "d4:infod5:key_b7:value_b5:key_a7:value_aee";
 
-            var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
-            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
+            var good_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (good));
+            var bad_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (bad));
+            Assert.IsTrue (Toolbox.ByteMatch (good_result.torrent.Encode (), bad_result.torrent.Encode ()));
+            Assert.AreNotEqual (good_result.infohash, bad_result.infohash);
         }
 
         [Test]
@@ -546,7 +556,7 @@ namespace MonoTorrent.Common
             };
 
             var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
-            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
+            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.torrent.Encode ()));
         }
 
 
@@ -558,7 +568,7 @@ namespace MonoTorrent.Common
             };
 
             var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
-            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.Encode ()));
+            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.torrent.Encode ()));
         }
 
     }
