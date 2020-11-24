@@ -340,7 +340,7 @@ namespace MonoTorrent.Client
 
             InfoHash = infoHash;
             Settings = settings;
-            this.torrentSave = torrentSave;
+            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
 
             Initialise (savePath, announces);
         }
@@ -355,7 +355,7 @@ namespace MonoTorrent.Client
 
             InfoHash = magnetLink.InfoHash;
             Settings = settings;
-            this.torrentSave = torrentSave;
+            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
             var announces = new List<IList<string>> ();
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
