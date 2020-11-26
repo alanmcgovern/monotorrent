@@ -64,16 +64,16 @@ namespace SampleClient
             var seederWriter = new MemoryWriter (new NullWriter (), DataSize);
             int port = 37827;
             var seeder = new ClientEngine (
-                new EngineSettings {
+                new EngineSettingsBuilder {
                     AllowedEncryption = EncryptionTypes.PlainText,
                     ListenPort = port++
-                },
+                }.ToSettings (),
                 seederWriter
             );
 
             var downloaders = Enumerable.Range (port, 16).Select (p => {
                 return new ClientEngine (
-                    new EngineSettings { ListenPort = p, AllowedEncryption = EncryptionTypes.PlainText },
+                    new EngineSettingsBuilder { ListenPort = p, AllowedEncryption = EncryptionTypes.PlainText }.ToSettings (),
                     new MemoryWriter (new NullWriter (), DataSize)
                 );
             }).ToArray ();
@@ -102,7 +102,7 @@ namespace SampleClient
             var metadata = await creator.CreateAsync (new TorrentFileSource (DataDir));
 
             // Set up the seeder
-            await seeder.Register (new TorrentManager (Torrent.Load (metadata), DataDir, new TorrentSettings { UploadSlots = 20 }));
+            await seeder.Register (new TorrentManager (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = 20 }.ToSettings ()));
             using (var fileStream = File.OpenRead (Path.Combine (DataDir, "file.data"))) {
                 while (fileStream.Position < fileStream.Length) {
                     var dataRead = new byte[16 * 1024];

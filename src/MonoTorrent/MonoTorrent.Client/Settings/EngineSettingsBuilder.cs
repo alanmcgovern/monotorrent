@@ -211,8 +211,8 @@ namespace MonoTorrent.Client
         }
         static int CheckPort (int value)
         {
-            if (value < 0 || value > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException (nameof (value), "Value should be a valid port number between 1 and 65535");
+            if (value < -1 || value > ushort.MaxValue)
+                throw new ArgumentOutOfRangeException (nameof (value), "Value should be a valid port number between 0 and 65535 inclusive, or -1 to disable listening for connections.");
             return value;
         }
 
