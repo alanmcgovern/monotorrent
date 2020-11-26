@@ -127,7 +127,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool PortForwardingEnabled => PortForwarder.Active;
 
-        PeerListener Listener { get; set; }
+        IPeerListener Listener { get; set; }
 
         public ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
             GC.KeepAlive (ReusableTasks.ReusableTask.CompletedTask);
 
             PeerId = GeneratePeerId ();
-            Listener = new PeerListener (new IPEndPoint (IPAddress.Any, settings.ListenPort));
+            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             allTorrents = new List<TorrentManager> ();
@@ -608,7 +608,7 @@ namespace MonoTorrent.Client
                 Listener.Stop ();
                 listenManager.Unregister (Listener);
 
-                Listener = new PeerListener (new IPEndPoint (IPAddress.Any, settings.ListenPort));
+                Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
                 listenManager.Register (Listener);
 
                 if (IsRunning) {
