@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
         public async Task ExceedReadRate ()
         {
             // Ensure the read rate is smaller than a block
-            settings.MaximumDiskReadRate = 1;
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskReadRate = 1 }.ToSettings ();
             await diskManager.Tick (1000);
 
             // Queue up 6 reads, none should process.
@@ -187,7 +187,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#2");
 
             // Give a proper max read rate.
-            settings.MaximumDiskReadRate = Piece.BlockSize * 2;
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize * 2 }.ToSettings ();
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
                 count -= 2;
@@ -215,7 +215,7 @@ namespace MonoTorrent.Client
         public async Task ExceedWriteRate ()
         {
             // Ensure the read rate is smaller than a block
-            settings.MaximumDiskWriteRate = 1;
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskWriteRate = 1 }.ToSettings ();
             await diskManager.Tick (1000);
 
             // Queue up 6 reads, none should process.
@@ -232,7 +232,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#2");
 
             // Give a proper max read rate.
-            settings.MaximumDiskWriteRate = Piece.BlockSize * 2;
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskWriteRate = Piece.BlockSize * 2 }.ToSettings ();
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
                 count -= 2;
@@ -336,7 +336,7 @@ namespace MonoTorrent.Client
         public async Task ReadRate ()
         {
             var buffer = new byte[Piece.BlockSize];
-            settings.MaximumDiskReadRate = Piece.BlockSize;
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize }.ToSettings ();
             await diskManager.Tick (1000);
 
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
@@ -524,7 +524,7 @@ namespace MonoTorrent.Client
         public async Task WriteRate ()
         {
             var buffer = new byte[Piece.BlockSize];
-            settings.MaximumDiskWriteRate = Piece.BlockSize;
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize }.ToSettings ();
             await diskManager.Tick (1000);
 
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)

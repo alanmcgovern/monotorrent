@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The settings for with this TorrentManager
         /// </summary>
-        public TorrentSettings Settings { get; }
+        public TorrentSettings Settings { get; set; }
 
         /// <summary>
         /// The current state of the TorrentManager

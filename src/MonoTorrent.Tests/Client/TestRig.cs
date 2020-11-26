@@ -393,7 +393,9 @@ namespace MonoTorrent.Client
             MetadataMode = metadataMode;
             MetadataPath = "metadataSave.torrent";
             Listener = new CustomListener ();
-            Engine = new ClientEngine (new EngineSettings (), Listener, writer);
+            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = -1  }.ToSettings (), writer);
+            // FIXME: Make this a better public API?
+            Engine.listenManager.Register (Listener);
             Engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
             Writer = writer;
 

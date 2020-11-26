@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
         /// </summary>
-        EngineSettings Settings { get; }
+        internal EngineSettings Settings { get; set; }
 
         /// <summary>
         /// Limits how fast data is written to the disk.

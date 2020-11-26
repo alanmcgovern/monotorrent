@@ -44,6 +44,7 @@ using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client
 {
@@ -53,6 +54,7 @@ namespace MonoTorrent.Client
     public class ClientEngine : IDisposable
     {
         internal static readonly MainLoop MainLoop = new MainLoop ("Client Engine Loop");
+        static readonly Logger Log = Logger.Create ();
 
         /// <summary>
         /// An un-seeded random number generator which will not generate the same
@@ -86,7 +88,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        readonly internal ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         int tickCount;
         /// <summary>
         /// The <see cref="TorrentManager"/> instances registered by the user.
@@ -103,6 +105,8 @@ namespace MonoTorrent.Client
         readonly RateLimiterGroup uploadLimiters;
         readonly RateLimiter downloadLimiter;
         readonly RateLimiterGroup downloadLimiters;
+
+        EngineSettings settings;
 
         #endregion
 
@@ -123,7 +127,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool PortForwardingEnabled => PortForwarder.Active;
 
-        public IPeerListener Listener { get; }
+        PeerListener Listener { get; set; }
 
         public ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -139,7 +143,16 @@ namespace MonoTorrent.Client
 
         internal IPortForwarder PortForwarder { get; }
 
-        public EngineSettings Settings { get; }
+        public EngineSettings Settings {
+            get => settings;
+            set {
+                if (value == null)
+                    throw new ArgumentNullException (nameof (value));
+
+                UpdateSettings (settings, value);
+                settings = value;
+            }
+        }
 
         public IList<TorrentManager> Torrents { get; }
 
@@ -179,22 +192,8 @@ namespace MonoTorrent.Client
         }
 
         public ClientEngine (EngineSettings settings, IPieceWriter writer)
-            : this (settings, new PeerListener (new IPEndPoint (IPAddress.Any, settings.ListenPort)), writer)
-
-        {
-
-        }
-
-        public ClientEngine (EngineSettings settings, IPeerListener listener)
-            : this (settings, listener, new DiskWriter ())
-        {
-
-        }
-
-        public ClientEngine (EngineSettings settings, IPeerListener listener, IPieceWriter writer)
         {
             Check.Settings (settings);
-            Check.Listener (listener);
             Check.Writer (writer);
 
             // This is just a sanity check to make sure the ReusableTasks.dll assembly is
@@ -202,7 +201,7 @@ namespace MonoTorrent.Client
             GC.KeepAlive (ReusableTasks.ReusableTask.CompletedTask);
 
             PeerId = GeneratePeerId ();
-            Listener = listener ?? throw new ArgumentNullException (nameof (listener));
+            Listener = new PeerListener (new IPEndPoint (IPAddress.Any, settings.ListenPort));
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             allTorrents = new List<TorrentManager> ();
@@ -232,7 +231,7 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            listenManager.Register (listener);
+            listenManager.Register (Listener);
 
             if (SupportsLocalPeerDiscovery)
                 RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
@@ -449,10 +448,7 @@ namespace MonoTorrent.Client
                 if (!manager.CanUseDht)
                     continue;
 
-                if (Listener is ISocketListener listener)
-                    DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
-                else
-                    DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
+                DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
                 DhtEngine.GetPeers (manager.InfoHash);
             }
         }
@@ -557,10 +553,8 @@ namespace MonoTorrent.Client
             CheckDisposed ();
             if (!IsRunning) {
                 IsRunning = true;
-                if (Listener.Status == ListenerStatus.NotListening)
-                    Listener.Start ();
-                if (LocalPeerDiscovery.Status == ListenerStatus.NotListening)
-                    LocalPeerDiscovery.Start ();
+                Listener.Start ();
+                LocalPeerDiscovery.Start ();
                 await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
             }
         }
@@ -600,6 +594,36 @@ namespace MonoTorrent.Client
                 Listener.Stop ();
                 LocalPeerDiscovery.Stop ();
                 await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort), CancellationToken.None);
+            }
+        }
+
+        async void UpdateSettings (EngineSettings oldSettings, EngineSettings newSettings)
+        {
+            var tasks = new List<Task> ();
+            DiskManager.Settings = newSettings;
+            ConnectionManager.Settings = newSettings;
+            RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
+
+            if (oldSettings.ListenPort != newSettings.ListenPort) {
+                Listener.Stop ();
+                listenManager.Unregister (Listener);
+
+                Listener = new PeerListener (new IPEndPoint (IPAddress.Any, settings.ListenPort));
+                listenManager.Register (Listener);
+
+                if (IsRunning) {
+                    tasks.Add (PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None));
+                    tasks.Add (PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.ListenPort)));
+                    Listener.Start ();
+                }
+            }
+
+            try {
+                await Task.WhenAll (tasks);
+            } catch (AggregateException ex) {
+                Log.Exception (ex.Flatten (), "Could not update settings");
+            } catch (Exception ex) {
+                Log.Exception (ex, "Could not update settings");
             }
         }
 

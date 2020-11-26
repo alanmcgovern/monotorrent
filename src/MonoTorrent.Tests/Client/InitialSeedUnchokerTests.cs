@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             rig.Manager.UploadingTo = 0;
-            rig.Manager.Settings.UploadSlots = 4;
+            rig.Manager.Settings = new TorrentSettingsBuilder (rig.Manager.Settings) { UploadSlots = 4 }.ToSettings ();
             peer = rig.CreatePeer (true);
             unchoker = new InitialSeedUnchoker (rig.Manager);
             unchoker.PeerConnected (peer);
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client
         {
             PeerId other = rig.CreatePeer (true);
             // Check that peers which don't share only get a small number of pieces to share
-            rig.Manager.Settings.UploadSlots = 1;
+            rig.Manager.Settings = new TorrentSettingsBuilder (rig.Manager.Settings) { UploadSlots = 1 }.ToSettings ();
             unchoker.PeerDisconnected (peer);
             List<PeerId> peers = new List<PeerId> (new[] { peer, rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
 
             // More peers than slots
             unchoker.PeerDisconnected (this.peer);
-            rig.Manager.Settings.UploadSlots = 1;
+            rig.Manager.Settings = new TorrentSettingsBuilder (rig.Manager.Settings) { UploadSlots = 1 }.ToSettings ();
 
             List<PeerId> peers = new List<PeerId> (new[] { this.peer, rig.CreatePeer (true), rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);

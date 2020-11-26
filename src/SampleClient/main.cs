@@ -66,10 +66,10 @@ namespace SampleClient
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
-            EngineSettings engineSettings = new EngineSettings {
+            EngineSettings engineSettings = new EngineSettingsBuilder {
                 SavePath = downloadsPath,
                 ListenPort = port
-            };
+            }.ToSettings ();
 
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
