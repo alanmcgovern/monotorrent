@@ -27,12 +27,14 @@
 //
 
 
+using System;
 using System.Net;
 
 namespace MonoTorrent.Client.Listeners
 {
     public static class PeerListenerFactory
     {
+        internal static Func<IPEndPoint, IPeerListener> Creator = endpoint => new PeerListener (endpoint);
         /// <summary>
         /// Creates a listener which binds to IPAddress.Any and listens for incoming TCP requests on the given local port.
         /// </summary>
@@ -63,7 +65,7 @@ namespace MonoTorrent.Client.Listeners
         /// <returns></returns>
         public static IPeerListener CreateTcp (IPEndPoint endpoint)
         {
-            return new PeerListener (endpoint);
+            return Creator (endpoint);
         }
     }
 }

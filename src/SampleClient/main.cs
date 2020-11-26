@@ -68,7 +68,8 @@ namespace SampleClient
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettingsBuilder {
                 SavePath = downloadsPath,
-                ListenPort = port
+                ListenPort = port,
+                DhtPort = port,
             }.ToSettings ();
 
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
@@ -89,8 +90,6 @@ namespace SampleClient
                 Console.WriteLine ("No existing dht nodes could be loaded");
             }
 
-            DhtEngine dht = new DhtEngine (new IPEndPoint (IPAddress.Any, port));
-            await engine.RegisterDhtAsync (dht);
 
             // This starts the Dht engine but does not wait for the full initialization to
             // complete. This is because it can take up to 2 minutes to bootstrap, depending
@@ -180,10 +179,6 @@ namespace SampleClient
                 await manager.StartAsync ();
             }
 
-            // Enable automatic port forwarding. The engine will use Mono.Nat to search for
-            // uPnP or NAT-PMP compatible devices and then issue port forwarding requests to it.
-            await engine.EnablePortForwardingAsync (CancellationToken.None);
-
             // This is how to access the list of port mappings, and to see if they were
             // successful, pending or failed. If they failed it could be because the public port
             // is already in use by another computer on your network.
@@ -242,10 +237,6 @@ namespace SampleClient
 
                 Thread.Sleep (500);
             }
-
-            // Stop searching for uPnP or NAT-PMP compatible devices and delete
-            // all mapppings which had been created.
-            await engine.DisablePortForwardingAsync (CancellationToken.None);
         }
 
         static void Manager_PeersFound (object sender, PeersAddedEventArgs e)

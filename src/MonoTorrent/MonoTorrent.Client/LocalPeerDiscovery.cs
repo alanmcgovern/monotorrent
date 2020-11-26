@@ -70,6 +70,8 @@ namespace MonoTorrent.Client
         /// </summary>
         string Cookie { get; }
 
+        int ListenPort { get; }
+
         /// <summary>
         /// We glob together announces so that we don't iterate the network interfaces too frequently.
         /// </summary>
@@ -81,20 +83,16 @@ namespace MonoTorrent.Client
         bool ProcessingAnnounces { get; set; }
 
         Task RateLimiterTask { get; set; }
-        /// <summary>
-        /// The settings object used by the associated <see cref="ClientEngine"/>.
-        /// </summary>
-        EngineSettings Settings { get; }
 
         /// <summary>
         /// The UdpClient joined to the multicast group, which is used to receive the broadcasts
         /// </summary>
         UdpClient UdpClient { get; set; }
 
-        internal LocalPeerDiscovery (EngineSettings settings)
+        internal LocalPeerDiscovery (int listenPort)
             : base (new IPEndPoint (IPAddress.Any, MulticastAddressV4.Port))
         {
-            Settings = settings;
+            ListenPort = listenPort;
 
             lock (Random)
                 Cookie = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
@@ -144,7 +142,7 @@ namespace MonoTorrent.Client
                     infoHash = PendingAnnounces.Dequeue ();
                 }
 
-                string message = string.Format (BaseSearchString, Settings.ListenPort, infoHash.ToHex ());
+                string message = string.Format (BaseSearchString, ListenPort, infoHash.ToHex ());
                 byte[] data = Encoding.ASCII.GetBytes (message);
 
                 foreach (var nic in nics) {

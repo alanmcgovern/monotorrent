@@ -51,8 +51,8 @@ namespace MonoTorrent.Streaming
         [SetUp]
         public void Setup ()
         {
+            LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
             Engine = new ClientEngine ();
-            Engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
             Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Piece.BlockSize * 1024) }, Piece.BlockSize * 8, out torrentInfo);
             MagnetLink = new MagnetLink (Torrent.InfoHash, "MagnetDownload");
         }

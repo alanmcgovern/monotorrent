@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The settings for with this TorrentManager
         /// </summary>
-        public TorrentSettings Settings { get; set; }
+        public TorrentSettings Settings { get; private set; }
 
         /// <summary>
         /// The current state of the TorrentManager
@@ -695,6 +695,12 @@ namespace MonoTorrent.Client
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 await Engine.StopAsync ();
             }
+        }
+
+        public async Task UpdateSettings (TorrentSettings settings)
+        {
+            await ClientEngine.MainLoop;
+            Settings = settings;
         }
 
         #endregion

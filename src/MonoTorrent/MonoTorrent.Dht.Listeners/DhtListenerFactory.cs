@@ -51,6 +51,8 @@ namespace MonoTorrent.Dht.Listeners
         /// <returns></returns>
         public static IDhtListener CreateUdp (IPAddress address, int port)
         {
+            if (port == -1)
+                return new NullDhtListener ();
             return CreateUdp (new IPEndPoint (address, port));
         }
 

@@ -317,6 +317,10 @@ namespace MonoTorrent.Dht
             StateChanged += handler;
             await tcs.Task;
         }
+
+        public void SetListener (IDhtListener listener)
+            =>  MessageLoop.SetListener (listener);
+
         #endregion Methods
     }
 }

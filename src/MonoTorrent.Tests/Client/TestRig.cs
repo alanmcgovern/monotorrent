@@ -312,7 +312,7 @@ namespace MonoTorrent.Client
 
         public ClientEngine Engine { get; }
 
-        public CustomListener Listener { get; }
+        public CustomListener Listener => (CustomListener) Engine.Listener;
 
         public TorrentManager Manager { get; set; }
 
@@ -392,11 +392,9 @@ namespace MonoTorrent.Client
             this.tier = trackers;
             MetadataMode = metadataMode;
             MetadataPath = "metadataSave.torrent";
-            Listener = new CustomListener ();
-            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = -1  }.ToSettings (), writer);
-            // FIXME: Make this a better public API?
-            Engine.listenManager.Register (Listener);
-            Engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
+            PeerListenerFactory.Creator = endpoint => new CustomListener ();
+            LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
+            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = 12345  }.ToSettings (), writer);
             Writer = writer;
 
             RecreateManager ().Wait ();

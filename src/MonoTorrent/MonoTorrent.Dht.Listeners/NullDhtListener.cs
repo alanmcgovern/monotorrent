@@ -1,8 +1,8 @@
 ﻿//
-// NullPeerListener.cs
+// NullDhtListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2020 Alan McGovern
 //
@@ -28,26 +28,36 @@
 
 
 using System;
+using System.Net;
+using System.Threading.Tasks;
 
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Dht.Listeners
 {
-    class NullPeerListener : IPeerListener
+    class NullDhtListener : IDhtListener
     {
-#pragma warning disable 0067
-        public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
-#pragma warning restore 0067
 
-        public ListenerStatus Status => ListenerStatus.NotListening;
+        public NullDhtListener ()
+        {
+
+        }
+
+        public IPEndPoint EndPoint { get; }
+
+        public ListenerStatus Status { get; } = ListenerStatus.NotListening;
+
+        public Task SendAsync (byte[] buffer, IPEndPoint endpoint)
+        {
+            return Task.CompletedTask;
+        }
 
         public void Start ()
         {
-            
         }
 
         public void Stop ()
         {
-            
         }
     }
 }

@@ -38,6 +38,7 @@ namespace MonoTorrent.Client
     public class EngineSettingsBuilder
     {
         TimeSpan connectionTimeout;
+        int dhtPort;
         int listenPort;
         int maximumConnections;
         int maximumDiskReadRate;
@@ -62,6 +63,17 @@ namespace MonoTorrent.Client
         public bool AllowHaveSuppression { get; set; }
 
         /// <summary>
+        /// True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to true.
+        /// </summary>
+        public bool AllowLocalPeerDiscovery { get; }
+
+        /// <summary>
+        /// True if the engine should automatically forward ports using any compatible UPnP or NAT-PMP device.
+        /// Defaults to true.
+        /// </summary>
+        public bool AllowPortForwarding { get; }
+
+        /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
         /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
         /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
@@ -74,6 +86,16 @@ namespace MonoTorrent.Client
                 connectionTimeout = value;
             }
         }
+
+        /// <summary>
+        /// The UDP port used for DHT communications. Use 0 to choose a random available port.
+        /// Choose -1 to disable DHT. Defaults to 52139.
+        /// </summary>
+        public int DhtPort {
+            get => dhtPort;
+            set => dhtPort = CheckPort (value);
+        }
+
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Defaults to 52138.
         /// </summary>
@@ -176,7 +198,10 @@ namespace MonoTorrent.Client
         {
             AllowedEncryption = settings.AllowedEncryption;
             AllowHaveSuppression = settings.AllowHaveSuppression;
+            AllowLocalPeerDiscovery = settings.AllowLocalPeerDiscovery;
+            AllowPortForwarding = settings.AllowPortForwarding;
             ConnectionTimeout = settings.ConnectionTimeout;
+            DhtPort = settings.DhtPort;
             ListenPort = settings.ListenPort;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
@@ -195,7 +220,10 @@ namespace MonoTorrent.Client
             return new EngineSettings (
                 AllowedEncryption,
                 AllowHaveSuppression,
+                AllowLocalPeerDiscovery,
+                AllowPortForwarding,
                 ConnectionTimeout,
+                DhtPort,
                 ListenPort,
                 MaximumConnections,
                 MaximumDiskReadRate,

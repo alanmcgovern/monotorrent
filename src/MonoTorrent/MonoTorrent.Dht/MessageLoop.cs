@@ -68,7 +68,7 @@ namespace MonoTorrent.Dht
         /// <summary>
         /// The listener instance which is used to send/receive messages.
         /// </summary>
-        IDhtListener Listener { get; }
+        IDhtListener Listener { get; set; }
 
         /// <summary>
         /// The number of DHT messages which have been sent and no response has been received.
@@ -105,14 +105,14 @@ namespace MonoTorrent.Dht
         public MessageLoop (DhtEngine engine, IDhtListener listener)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
-            Listener = listener ?? throw new ArgumentNullException (nameof (engine));
+            Listener = new NullDhtListener ();
             ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>> ();
             SendQueue = new Queue<SendDetails> ();
             Timeout = TimeSpan.FromSeconds (15);
             WaitingResponse = new Dictionary<BEncodedValue, SendDetails> ();
             WaitingResponseTimedOut = new List<SendDetails> ();
 
-            listener.MessageReceived += MessageReceived;
+            SetListener (listener);
             Task sendTask = null;
             DhtEngine.MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (5), () => {
                 if (engine.Disposed)
@@ -251,6 +251,13 @@ namespace MonoTorrent.Dht
                 query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage) query.Message, error));
                 EnqueueSend (error, null, source);
             }
+        }
+
+        internal void SetListener (IDhtListener listener)
+        {
+            Listener.MessageReceived -= MessageReceived;
+            Listener = listener ?? new NullDhtListener ();
+            Listener.MessageReceived += MessageReceived;
         }
 
         internal void EnqueueSend (DhtMessage message, Node node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs> tcs = null)
