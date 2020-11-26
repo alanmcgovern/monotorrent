@@ -53,6 +53,11 @@ namespace MonoTorrent.Client
         public bool AllowHaveSuppression { get; }
 
         /// <summary>
+        /// True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to true.
+        /// </summary>
+        public bool AllowLocalPeerDiscovery { get; } = true;
+
+        /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
         /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
         /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
@@ -133,10 +138,11 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (EncryptionTypes allowedEncryption, bool allowHaveSuppression, TimeSpan connectionTimeout, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, bool preferEncryption, IPEndPoint reportedAddress, string savePath)
+        internal EngineSettings (EncryptionTypes allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, TimeSpan connectionTimeout, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, bool preferEncryption, IPEndPoint reportedAddress, string savePath)
         {
             AllowedEncryption = allowedEncryption;
             AllowHaveSuppression = allowHaveSuppression;
+            AllowLocalPeerDiscovery = allowLocalPeerDiscovery;
             ConnectionTimeout = connectionTimeout;
             ListenPort = listenPort;
             MaximumConnections = maximumConnections;

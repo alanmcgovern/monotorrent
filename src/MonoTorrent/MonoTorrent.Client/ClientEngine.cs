@@ -106,8 +106,6 @@ namespace MonoTorrent.Client
         readonly RateLimiter downloadLimiter;
         readonly RateLimiterGroup downloadLimiters;
 
-        EngineSettings settings;
-
         #endregion
 
 
@@ -143,16 +141,7 @@ namespace MonoTorrent.Client
 
         internal IPortForwarder PortForwarder { get; }
 
-        public EngineSettings Settings {
-            get => settings;
-            set {
-                if (value == null)
-                    throw new ArgumentNullException (nameof (value));
-
-                UpdateSettings (settings, value);
-                settings = value;
-            }
-        }
+        public EngineSettings Settings { get; private set; }
 
         public IList<TorrentManager> Torrents { get; }
 
@@ -232,9 +221,7 @@ namespace MonoTorrent.Client
             };
 
             listenManager.Register (Listener);
-
-            if (SupportsLocalPeerDiscovery)
-                RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
+            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery ? new LocalPeerDiscovery (Settings) : null);
         }
 
         #endregion
@@ -397,9 +384,9 @@ namespace MonoTorrent.Client
             DhtEngine.PeersFound += DhtEnginePeersFound;
         }
 
-        public async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
+        internal async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
         {
-            await MainLoop;
+            await ClientEngine.MainLoop;
             RegisterLocalPeerDiscovery (localPeerDiscovery);
         }
 
@@ -409,6 +396,9 @@ namespace MonoTorrent.Client
                 LocalPeerDiscovery.PeerFound -= HandleLocalPeerFound;
                 LocalPeerDiscovery.Stop ();
             }
+
+            if (!SupportsLocalPeerDiscovery)
+                localPeerDiscovery = new NullLocalPeerDiscovery ();
 
             LocalPeerDiscovery = localPeerDiscovery ?? new NullLocalPeerDiscovery ();
 
@@ -597,24 +587,41 @@ namespace MonoTorrent.Client
             }
         }
 
-        async void UpdateSettings (EngineSettings oldSettings, EngineSettings newSettings)
+        public async Task UpdateSettingsAsync (EngineSettings settings)
+        {
+            await MainLoop;
+
+            var oldSettings = Settings;
+            Settings = settings;
+            await UpdateSettingsAsync (oldSettings, settings);
+        }
+
+        async Task UpdateSettingsAsync (EngineSettings oldSettings, EngineSettings newSettings)
         {
             var tasks = new List<Task> ();
             DiskManager.Settings = newSettings;
             ConnectionManager.Settings = newSettings;
-            RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
+
+            if (oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) {
+                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery ? new LocalPeerDiscovery (Settings) : null);
+            }
 
             if (oldSettings.ListenPort != newSettings.ListenPort) {
                 Listener.Stop ();
                 listenManager.Unregister (Listener);
 
-                Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
+                Listener = PeerListenerFactory.CreateTcp (newSettings.ListenPort);
                 listenManager.Register (Listener);
 
                 if (IsRunning) {
                     tasks.Add (PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None));
-                    tasks.Add (PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.ListenPort)));
+
                     Listener.Start ();
+                    // The settings could say to listen at port 0, which means 'choose one dynamically'
+                    if (Listener is ISocketListener socketListener)
+                        tasks.Add (PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, socketListener.EndPoint.Port)));
+                    else
+                        tasks.Add (PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.ListenPort)));
                 }
             }
 
