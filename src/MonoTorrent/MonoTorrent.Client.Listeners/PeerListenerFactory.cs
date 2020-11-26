@@ -51,6 +51,8 @@ namespace MonoTorrent.Client.Listeners
         /// <returns></returns>
         public static IPeerListener CreateTcp (IPAddress address, int port)
         {
+            if (port == -1)
+                return new NullPeerListener ();
             return CreateTcp (new IPEndPoint (address, port));
         }
 
