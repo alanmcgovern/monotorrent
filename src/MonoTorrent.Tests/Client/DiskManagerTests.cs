@@ -524,7 +524,7 @@ namespace MonoTorrent.Client
         public async Task WriteRate ()
         {
             var buffer = new byte[Piece.BlockSize];
-            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize }.ToSettings ();
+            diskManager.Settings = new EngineSettingsBuilder { MaximumDiskWriteRate = Piece.BlockSize }.ToSettings ();
             await diskManager.Tick (1000);
 
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
