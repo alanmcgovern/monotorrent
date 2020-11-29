@@ -142,6 +142,10 @@ namespace MonoTorrent.Client.Modes
 
             switch (message.MetadataMessageType) {
                 case LTMetadata.eMessageType.Data:
+                    // If we've already received everything successfully, do nothing!
+                    if (bitField.AllTrue)
+                        return;
+
                     if (Stream == null)
                         throw new Exception ("Need extention handshake before ut_metadata message.");
 
@@ -175,14 +179,16 @@ namespace MonoTorrent.Client.Modes
 
                                 dict.Add ("announce-list", announceTrackers);
                             }
-                            if (Torrent.TryLoad (dict.Encode (), out Torrent t)) {
-                                Manager.RaiseMetadataReceived (t, dict);
-                                if (stopWhenDone)
+                            var rawData = dict.Encode ();
+                            if (Torrent.TryLoad (rawData, out Torrent t)) {
+                                if (stopWhenDone) {
+                                    Manager.RaiseMetadataReceived (rawData);
                                     return;
+                                }
 
                                 try {
-                                    if (Directory.Exists (savePath))
-                                        savePath = Path.Combine (savePath, $"{Manager.InfoHash.ToHex ()}.torrent");
+                                    if (!Directory.Exists (Path.GetDirectoryName (savePath)))
+                                        Directory.CreateDirectory (Path.GetDirectoryName (savePath));
                                     File.Delete (savePath);
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {
@@ -192,15 +198,13 @@ namespace MonoTorrent.Client.Modes
                                 }
                                 Manager.SetMetadata (t);
                                 _ = Manager.StartAsync ();
+                                Manager.RaiseMetadataReceived (rawData);
                             } else {
                                 bitField.SetAll (false);
                             }
                         }
                     }
-                    //Double test because we can change the bitfield in the other block
-                    if (!bitField.AllTrue) {
-                        RequestNextNeededPiece (id);
-                    }
+                    RequestNextNeededPiece (id);
                     break;
                 case LTMetadata.eMessageType.Reject:
                     //TODO
@@ -241,31 +245,19 @@ namespace MonoTorrent.Client.Modes
             // Nothing
         }
 
+        int pieceToRequest;
         void RequestNextNeededPiece (PeerId id)
         {
-            int index = bitField.FirstFalse ();
-            if (index == -1)
-                return;//throw exception or switch to regular?
+            if (bitField.AllTrue)
+                return;
 
-            var m = new LTMetadata (id, LTMetadata.eMessageType.Request, index);
+            while (bitField[pieceToRequest % bitField.Length])
+                pieceToRequest++;
+
+            pieceToRequest = pieceToRequest % bitField.Length;
+            var m = new LTMetadata (id, LTMetadata.eMessageType.Request, pieceToRequest++);
             id.MessageQueue.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
-        }
-
-        internal Torrent GetTorrent ()
-        {
-            byte[] calculatedInfoHash;
-            using (SHA1 sha = HashAlgoFactory.SHA1 ())
-                calculatedInfoHash = sha.ComputeHash (Stream.ToArray ());
-            if (!Manager.InfoHash.Equals (calculatedInfoHash))
-                throw new Exception ("invalid metadata");//restart ?
-
-            var d = BEncodedValue.Decode (Stream);
-            var dict = new BEncodedDictionary {
-                { "info", d }
-            };
-
-            return Torrent.LoadCore (dict);
         }
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
@@ -291,12 +283,14 @@ namespace MonoTorrent.Client.Modes
             base.HandleExtendedHandshakeMessage (id, message);
 
             if (id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
-                Stream = new MemoryStream (new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
-                int size = message.MetadataSize % LTMetadata.BlockSize;
-                if (size > 0)
-                    size = 1;
-                size += message.MetadataSize / LTMetadata.BlockSize;
-                bitField = new BitField (size);
+                if (Stream == null) {
+                    Stream = new MemoryStream (new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
+                    int size = message.MetadataSize % LTMetadata.BlockSize;
+                    if (size > 0)
+                        size = 1;
+                    size += message.MetadataSize / LTMetadata.BlockSize;
+                    bitField = new BitField (size);
+                }
                 RequestNextNeededPiece (id);
             }
         }

@@ -106,7 +106,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write (buffer, written, ExtensionId);
             written += peerDict.Encode (buffer, written);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
         public override string ToString ()

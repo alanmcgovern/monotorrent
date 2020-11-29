@@ -302,7 +302,7 @@ namespace MonoTorrent.Client
             var manager = new TorrentManager (magnetLink);
             var metadataCompleted = new TaskCompletionSource<byte[]> ();
             using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
-            manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e.dict);
+            manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e);
 
             await Register (manager, isPublic: false);
             await manager.StartAsync (metadataOnly: true);
@@ -415,7 +415,8 @@ namespace MonoTorrent.Client
 
             if (LocalPeerDiscovery != null) {
                 LocalPeerDiscovery.PeerFound += HandleLocalPeerFound;
-                LocalPeerDiscovery.Start ();
+                if (IsRunning)
+                    LocalPeerDiscovery.Start ();
             }
         }
 
@@ -558,6 +559,8 @@ namespace MonoTorrent.Client
                 IsRunning = true;
                 if (Listener.Status == ListenerStatus.NotListening)
                     Listener.Start ();
+                if (LocalPeerDiscovery.Status == ListenerStatus.NotListening)
+                    LocalPeerDiscovery.Start ();
                 await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
             }
         }
@@ -595,6 +598,7 @@ namespace MonoTorrent.Client
             IsRunning = allTorrents.Exists (m => m.State != TorrentState.Stopped);
             if (!IsRunning) {
                 Listener.Stop ();
+                LocalPeerDiscovery.Stop ();
                 await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort), CancellationToken.None);
             }
         }

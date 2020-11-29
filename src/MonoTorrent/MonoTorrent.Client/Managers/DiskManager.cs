@@ -279,11 +279,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTask WaitForPendingWrites ()
+        ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
             WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
-            await tcs.Task;
+            return tcs.Task;
         }
 
         internal async Task CloseFilesAsync (ITorrentData manager)
@@ -343,7 +343,9 @@ namespace MonoTorrent.Client
 
             foreach (TorrentFileInfo file in manager.Files) {
                 string newPath = Path.Combine (newRoot, file.Path);
-                await Writer.MoveAsync (file, newPath, overwrite);
+                if (await Writer.ExistsAsync (file)) {
+                    await Writer.MoveAsync (file, newPath, overwrite);
+                }
                 file.FullPath = newPath;
             }
         }

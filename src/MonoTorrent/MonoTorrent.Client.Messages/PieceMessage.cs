@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.Messages.Standard
             written += Write (buffer, written, StartOffset);
             written += Write (buffer, written, Data, 0, RequestLength);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
         public override bool Equals (object obj)

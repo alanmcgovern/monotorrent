@@ -560,7 +560,8 @@ namespace MonoTorrent
             Check.Path (path);
 
             try {
-                return LoadCore ((BEncodedDictionary) BEncodedValue.Decode (stream));
+                var decoded = BEncodedDictionary.DecodeTorrent (stream);
+                return LoadCore (decoded.torrent, decoded.infohash);
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
             }
@@ -568,20 +569,20 @@ namespace MonoTorrent
 
         public static Torrent Load (BEncodedDictionary torrentInformation)
         {
-            return LoadCore ((BEncodedDictionary) BEncodedValue.Decode (torrentInformation.Encode ()));
+            return Load (torrentInformation.Encode ());
         }
 
-        internal static Torrent LoadCore (BEncodedDictionary torrentInformation)
+        internal static Torrent LoadCore (BEncodedDictionary torrentInformation, InfoHash infoHash)
         {
             Check.TorrentInformation (torrentInformation);
 
             var t = new Torrent ();
-            t.LoadInternal (torrentInformation);
+            t.LoadInternal (torrentInformation, infoHash);
 
             return t;
         }
 
-        void LoadInternal (BEncodedDictionary torrentInformation)
+        void LoadInternal (BEncodedDictionary torrentInformation, InfoHash infoHash)
         {
             Check.TorrentInformation (torrentInformation);
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
@@ -650,8 +651,7 @@ namespace MonoTorrent
                         break;
 
                     case ("info"):
-                        using (SHA1 s = HashAlgoFactory.SHA1 ())
-                            InfoHash = new InfoHash (s.ComputeHash (keypair.Value.Encode ()));
+                        InfoHash = infoHash;
                         ProcessInfo (((BEncodedDictionary) keypair.Value));
                         break;
 

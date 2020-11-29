@@ -97,7 +97,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             written += Write (buffer, written, StartOffset);
             written += Write (buffer, written, RequestLength);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
 

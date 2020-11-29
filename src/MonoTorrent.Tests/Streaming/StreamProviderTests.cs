@@ -48,11 +48,11 @@ namespace MonoTorrent.Streaming
         BEncodedDictionary torrentInfo;
         Torrent Torrent { get; set; }
 
-
         [SetUp]
         public void Setup ()
         {
             Engine = new ClientEngine ();
+            Engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
             Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Piece.BlockSize * 1024) }, Piece.BlockSize * 8, out torrentInfo);
             MagnetLink = new MagnetLink (Torrent.InfoHash, "MagnetDownload");
         }

@@ -202,7 +202,29 @@ namespace MonoTorrent.Client
 
             token.Register (() => UdpClient.SafeDispose ());
 
-            UdpClient.JoinMulticastGroup (MulticastAddressV4.Address);
+            // enumerating all active IP interfaces and joining their multicast group, so we can reliably listen
+            // on systems with multiple NIC
+            var nics = NetworkInterface.GetAllNetworkInterfaces ();
+
+            foreach (var nic in nics) {
+
+                if ((!nic.Supports (NetworkInterfaceComponent.IPv4)) || (nic.OperationalStatus != OperationalStatus.Up))
+                    continue;
+
+                IPAddress ip = null;
+                foreach (var uni in nic.GetIPProperties ().UnicastAddresses) {
+                    if (uni.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+
+                    ip = uni.Address;
+                }
+
+                if (ip == null)
+                    continue;
+
+                UdpClient.JoinMulticastGroup (MulticastAddressV4.Address, ip);
+            }
+
             ReceiveAsync (UdpClient, token);
         }
     }

@@ -138,7 +138,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (MetadataMessageType == eMessageType.Data)
                 written += Write (buffer, written, MetadataPiece, Piece * BlockSize, Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize));
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
     }
 }

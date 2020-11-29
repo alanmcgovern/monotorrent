@@ -28,8 +28,12 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
@@ -51,7 +55,7 @@ namespace MonoTorrent.Client.Modes
         private ConnectionPair pair;
         private TestRig rig;
 
-        public async Task Setup (bool metadataMode, string metadataPath, bool multiFile = false)
+        public async Task Setup (bool metadataMode, string metadataPath, bool multiFile = false, bool metadataOnly = false)
         {
             pair = new ConnectionPair ().WithTimeout ();
             rig = multiFile ? TestRig.CreateMultiFile (32768, metadataMode) : TestRig.CreateSingleFile (1024 * 1024 * 1024, 32768, metadataMode);
@@ -59,7 +63,7 @@ namespace MonoTorrent.Client.Modes
             rig.RecreateManager ().Wait ();
 
             rig.Manager.HashChecked = true;
-            await rig.Manager.StartAsync ();
+            await rig.Manager.StartAsync (metadataOnly);
             rig.AddConnection (pair.Outgoing);
 
             var connection = pair.Incoming;
@@ -122,6 +126,22 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task MetadataOnly_True ()
+        {
+            var tcs = new TaskCompletionSource<byte[]> ();
+            new CancellationTokenSource (Debugger.IsAttached ? 100000 : 10000)
+                .Token
+                .Register (() => tcs.TrySetCanceled ());
+
+            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
+            await Setup (true, torrent, metadataOnly: true);
+
+            rig.Manager.MetadataReceived += (o, e) => tcs.TrySetResult (e);
+            await SendMetadataCore (torrent, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            Assert.IsNotNull (await tcs.Task);
+        }
+
+        [Test]
         public async Task AfterHandshake_SendHaveAllMessage()
         {
             var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
@@ -167,9 +187,8 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task SendMetadata_ToFolder ()
         {
-            await Setup (true, AppDomain.CurrentDomain.BaseDirectory);
-            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory,
-                $"{rig.Torrent.InfoHash.ToHex ()}.torrent")
+            await Setup (true, Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "test"));
+            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "test")
                 , new HaveNoneMessage ());
         }
 
@@ -212,9 +231,11 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "test.files", "File4"), torrentFiles[3].FullPath);
         }
 
-        internal async Task SendMetadataCore (string expectedPath, PeerMessage sendAfterHandshakeMessage)
+        internal async Task SendMetadataCore (string expectedPath, PeerMessage sendAfterHandshakeMessage, bool metadataOnly = false)
         {
             CustomConnection connection = pair.Incoming;
+            var metadataTcs = new TaskCompletionSource<byte[]> ();
+            rig.Manager.MetadataReceived += (o, e) => metadataTcs.TrySetResult (e);
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
@@ -229,9 +250,9 @@ namespace MonoTorrent.Client.Modes
             bool receivedHaveNone = false;
             // 2) Receive the metadata requests from the other peer and fulfill them
             byte[] buffer = rig.Torrent.InfoMetadata;
-            int length = (buffer.Length + 16383) / 16384;
+            var unrequestedPieces = new HashSet<int> (Enumerable.Range (0, (buffer.Length + 16383) / 16384));
             PeerMessage m;
-            while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
+            while (unrequestedPieces.Count > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is ExtendedHandshakeMessage ex) {
                     Assert.AreEqual (ClientEngine.DefaultMaxPendingRequests, ex.MaxRequests);
                 } else if (m is HaveNoneMessage) {
@@ -240,24 +261,46 @@ namespace MonoTorrent.Client.Modes
                     if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request) {
                         metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, metadata.Piece, buffer);
                         await PeerIO.SendMessageAsync (connection, encryptor, metadata);
-                        length--;
+                        unrequestedPieces.Remove (metadata.Piece);
+
+                        // Hack this in because testing is... awkward... for most of this library.
+                        // The purpose here is to ensure that duplicate pieces don't reset our data or cause the event
+                        // to be emitted multiple times.
+                        if (unrequestedPieces.Count > 0) {
+                            metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, 0, buffer);
+                            await PeerIO.SendMessageAsync (connection, encryptor, metadata);
+                        }
+
+                        // And let's receive many handshake messages from other peers. Ensure we process this on the correct
+                        // thread. It needs to be on the main loop as it's run in the context of the ClientEngine loop.
+                        if (rig.Manager.Mode is MetadataMode mode)
+                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389), exHand), null);
+                            
                     }
                 }
             }
 
             // We've sent all the pieces. Now we just wait for the torrentmanager to process them all.
-            await rig.Manager.WaitForState (TorrentState.Downloading).WithTimeout ();
+            Torrent torrent;
+            if (metadataOnly) {
+                torrent = Torrent.Load (await metadataTcs.Task.WithTimeout ());
+            } else {
+                await rig.Manager.WaitForState (TorrentState.Downloading).WithTimeout ();
+                Assert.IsTrue (File.Exists (expectedPath), "#1");
+                torrent = Torrent.Load (expectedPath);
+            }
 
-            Assert.IsTrue (File.Exists (expectedPath), "#1");
-            Torrent torrent = Torrent.Load (expectedPath);
             Assert.AreEqual (rig.Manager.InfoHash, torrent.InfoHash, "#2");
-            Assert.AreEqual (2, rig.Manager.Torrent.AnnounceUrls.Count, "#3");
-            Assert.AreEqual (2, rig.Manager.Torrent.AnnounceUrls[0].Count, "#4");
-            Assert.AreEqual (3, rig.Manager.Torrent.AnnounceUrls[1].Count, "#5");
+            Assert.AreEqual (2, torrent.AnnounceUrls.Count, "#3");
+            Assert.AreEqual (2, torrent.AnnounceUrls[0].Count, "#4");
+            Assert.AreEqual (3, torrent.AnnounceUrls[1].Count, "#5");
+
             Assert.IsTrue (receivedHaveNone, "#6");
 
-            var peer = PeerId.CreateNull (rig.Manager.Bitfield.Length, true, false, true);
-            Assert.DoesNotThrow (() => rig.Manager.PieceManager.AddPieceRequests (peer));
+            if (!metadataOnly) {
+                var peer = PeerId.CreateNull (rig.Manager.Bitfield.Length, true, false, true);
+                Assert.DoesNotThrow (() => rig.Manager.PieceManager.AddPieceRequests (peer));
+            }
         }
     }
 }

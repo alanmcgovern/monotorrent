@@ -56,8 +56,6 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             byte[] name = Encoding.ASCII.GetBytes (username);
             written += Write (buffer, offset, name, 0, name.Length);
             written += Write (buffer, offset, password, 0, password.Length);
-
-            CheckWritten (written);
             return written;
         }
     }

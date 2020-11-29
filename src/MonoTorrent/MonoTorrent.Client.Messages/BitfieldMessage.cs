@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Messages.Standard
             BitField.ToByteArray (buffer, written);
             written += BitField.LengthInBytes;
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
         /// <summary>

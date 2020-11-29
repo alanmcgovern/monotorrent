@@ -350,15 +350,19 @@ namespace MonoTorrent.Client
         {
             try {
                 bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, manager.Settings.MaximumConnections);
-                if (LocalPeerId.Equals (id.Peer.PeerId) || maxAlreadyOpen) {
+                if (LocalPeerId.Equals (id.Peer.PeerId)) {
                     logger.Info ("Connected to self - disconnecting");
                     CleanupSocket (manager, id);
                     return false;
                 }
-
                 if (manager.Peers.ActivePeers.Contains (id.Peer)) {
                     logger.Info (id.Connection, "Already connected to peer");
                     id.Connection.Dispose ();
+                    return false;
+                }
+                if (maxAlreadyOpen) {
+                    logger.Info ("Connected to too many peers - disconnecting");
+                    CleanupSocket (manager, id);
                     return false;
                 }
 
