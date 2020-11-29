@@ -27,6 +27,7 @@
 //
 
 
+using System.Diagnostics;
 using System.Threading;
 
 namespace MonoTorrent.Client.Modes
@@ -65,13 +66,24 @@ namespace MonoTorrent.Client.Modes
 
             UpdateSeedingDownloadingState ();
 
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                if (!ShouldConnect (Manager.Peers.ConnectedPeers[i])) {
-                    ConnectionManager.CleanupSocket (Manager, Manager.Peers.ConnectedPeers[i]);
-                    i--;
+            PeerId[] arrPID = Manager.Peers.ConnectedPeers.ToArray();
+
+            for (int i = 0; i < arrPID.Length; i++)
+            {
+                try
+                {
+                    if (!ShouldConnect(arrPID[i]))
+                    {
+                        ConnectionManager.CleanupSocket(Manager, arrPID[i]);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.WriteLine("Tick Error " + ex.Message);
                 }
             }
         }
+
 
         internal void UpdateSeedingDownloadingState ()
         {
@@ -81,7 +93,7 @@ namespace MonoTorrent.Client.Modes
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;
                 Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
-                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None);
+                _ = Manager.TrackerManager.AnnounceAsync(TorrentEvent.Completed, CancellationToken.None);
             } else if (Manager.PartialProgressSelector.TrueCount > 0) {
                 // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
                 // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.

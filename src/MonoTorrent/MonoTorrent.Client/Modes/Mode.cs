@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
@@ -85,50 +86,50 @@ namespace MonoTorrent.Client.Modes
             if (message is ExtensionMessage && !id.SupportsLTMessages && !(message is ExtendedHandshakeMessage))
                 throw new MessageException ("Peer shouldn't support extension messages");
 
-            if (message is HaveMessage)
-                HandleHaveMessage (id, (HaveMessage) message);
-            else if (message is RequestMessage)
-                HandleRequestMessage (id, (RequestMessage) message);
-            else if (message is PortMessage)
-                HandlePortMessage (id, (PortMessage) message);
-            else if (message is PieceMessage)
-                HandlePieceMessage (id, (PieceMessage) message);
-            else if (message is NotInterestedMessage)
-                HandleNotInterested (id, (NotInterestedMessage) message);
-            else if (message is KeepAliveMessage)
-                HandleKeepAliveMessage (id, (KeepAliveMessage) message);
-            else if (message is InterestedMessage)
-                HandleInterestedMessage (id, (InterestedMessage) message);
-            else if (message is ChokeMessage)
-                HandleChokeMessage (id, (ChokeMessage) message);
-            else if (message is CancelMessage)
-                HandleCancelMessage (id, (CancelMessage) message);
-            else if (message is BitfieldMessage)
-                HandleBitfieldMessage (id, (BitfieldMessage) message);
-            else if (message is UnchokeMessage)
-                HandleUnchokeMessage (id, (UnchokeMessage) message);
-            else if (message is HaveAllMessage)
-                HandleHaveAllMessage (id, (HaveAllMessage) message);
-            else if (message is HaveNoneMessage)
-                HandleHaveNoneMessage (id, (HaveNoneMessage) message);
-            else if (message is RejectRequestMessage)
-                HandleRejectRequestMessage (id, (RejectRequestMessage) message);
-            else if (message is SuggestPieceMessage)
-                HandleSuggestedPieceMessage (id, (SuggestPieceMessage) message);
-            else if (message is AllowedFastMessage)
-                HandleAllowedFastMessage (id, (AllowedFastMessage) message);
-            else if (message is ExtendedHandshakeMessage)
-                HandleExtendedHandshakeMessage (id, (ExtendedHandshakeMessage) message);
-            else if (message is LTMetadata)
-                HandleLtMetadataMessage (id, (LTMetadata) message);
-            else if (message is LTChat)
-                HandleLtChat (id, (LTChat) message);
-            else if (message is PeerExchangeMessage)
-                HandlePeerExchangeMessage (id, (PeerExchangeMessage) message);
-            else if (message is HandshakeMessage)
-                HandleHandshakeMessage (id, (HandshakeMessage) message);
-            else if (message is ExtensionMessage)
-                HandleGenericExtensionMessage (id, (ExtensionMessage) message);
+            if (message is HaveMessage have)
+                HandleHaveMessage (id, have);
+            else if (message is RequestMessage request)
+                HandleRequestMessage (id, request);
+            else if (message is PortMessage port)
+                HandlePortMessage (id, port);
+            else if (message is PieceMessage piece)
+                HandlePieceMessage (id, piece);
+            else if (message is NotInterestedMessage notinterested)
+                HandleNotInterested (id, notinterested);
+            else if (message is KeepAliveMessage keepalive)
+                HandleKeepAliveMessage (id, keepalive);
+            else if (message is InterestedMessage interested)
+                HandleInterestedMessage (id, interested);
+            else if (message is ChokeMessage choke)
+                HandleChokeMessage (id, choke);
+            else if (message is CancelMessage cancel)
+                HandleCancelMessage (id, cancel);
+            else if (message is BitfieldMessage bitfield)
+                HandleBitfieldMessage (id, bitfield);
+            else if (message is UnchokeMessage unchoke)
+                HandleUnchokeMessage (id, unchoke);
+            else if (message is HaveAllMessage haveall)
+                HandleHaveAllMessage (id, haveall);
+            else if (message is HaveNoneMessage havenone)
+                HandleHaveNoneMessage (id, havenone);
+            else if (message is RejectRequestMessage rejectrequest)
+                HandleRejectRequestMessage (id, rejectrequest);
+            else if (message is SuggestPieceMessage suggestpiece)
+                HandleSuggestedPieceMessage (id, suggestpiece);
+            else if (message is AllowedFastMessage allowedfast)
+                HandleAllowedFastMessage (id, allowedfast);
+            else if (message is ExtendedHandshakeMessage extendedhandshake)
+                HandleExtendedHandshakeMessage (id, extendedhandshake);
+            else if (message is LTMetadata metadata)
+                HandleLtMetadataMessage (id, metadata);
+            else if (message is LTChat chat)
+                HandleLtChat (id, chat);
+            else if (message is PeerExchangeMessage peerexchange)
+                HandlePeerExchangeMessage (id, peerexchange);
+            else if (message is HandshakeMessage handshake)
+                HandleHandshakeMessage (id, handshake);
+            else if (message is ExtensionMessage extension)
+                HandleGenericExtensionMessage (id, extension);
             else
                 throw new MessageException ($"Unsupported message found: {message.GetType ().Name}");
 
@@ -506,8 +507,6 @@ namespace MonoTorrent.Client.Modes
 
         void PreLogicTick (int counter)
         {
-            PeerId id;
-
             // If any files were changed from DoNotDownload -> Any other priority, then we should hash them if they
             // had been skipped in the original hashcheck.
             _ = TryHashPendingFilesAsync ();
@@ -532,9 +531,11 @@ namespace MonoTorrent.Client.Modes
             if (Manager.finishedPieces.Count > 0)
                 SendHaveMessagesToAll ();
 
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                id = Manager.Peers.ConnectedPeers[i];
-                if (id.Connection == null)
+            foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray())
+            {
+                try
+                {
+                    if (id.Connection == null)
                     continue;
 
                 if (!id.LastPeerExchangeReview.IsRunning || id.LastPeerExchangeReview.Elapsed > TimeSpan.FromMinutes (1)) {
@@ -550,21 +551,27 @@ namespace MonoTorrent.Client.Modes
 
                 id.Monitor.Tick ();
             }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("PreLogicTick Error " + ex.Message);
+                }
+            }
         }
 
         void PostLogicTick (int counter)
         {
-            PeerId id;
             var thirtySeconds = TimeSpan.FromSeconds (30);
             var nintySeconds = TimeSpan.FromSeconds (90);
             var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                id = Manager.Peers.ConnectedPeers[i];
-                if (id.Connection == null)
+            foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray())
+            {
+                try
+                {
+                    if (id.Connection == null)
                     continue;
 
-                ConnectionManager.TryProcessQueue (Manager, id);
+                    _ = ConnectionManager.TryProcessQueue (Manager, id);
 
                 if (id.LastMessageSent.Elapsed > nintySeconds) {
                     id.LastMessageSent.Restart ();
@@ -579,6 +586,12 @@ namespace MonoTorrent.Client.Modes
                 if (id.LastMessageReceived.Elapsed > thirtySeconds && id.AmRequestingPiecesCount > 0) {
                     ConnectionManager.CleanupSocket (Manager, id);
                     continue;
+                }
+
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("PostLogicTick Error " + ex.Message);
                 }
             }
 
@@ -716,27 +729,27 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             if (Settings.AllowHaveSuppression) {
-                for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
+                foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray()){
                     var bundle = new MessageBundle ();
                     foreach (HaveMessage haveMessage in Manager.finishedPieces) {
                         // If the peer has the piece already, we need to recalculate his "interesting" status.
-                        bool hasPiece = Manager.Peers.ConnectedPeers[i].BitField[haveMessage.PieceIndex];
+                        bool hasPiece = id.BitField[haveMessage.PieceIndex];
                         if (!hasPiece)
                             bundle.Messages.Add (haveMessage);
                     }
 
-                    Manager.Peers.ConnectedPeers[i].MessageQueue.Enqueue (bundle);
+                    id.MessageQueue.Enqueue (bundle);
                 }
             } else {
                 var bundle = new MessageBundle (Manager.finishedPieces.Count);
                 foreach (HaveMessage haveMessage in Manager.finishedPieces)
                     bundle.Messages.Add (haveMessage);
 
-                foreach (PeerId peer in Manager.Peers.ConnectedPeers)
+                foreach (PeerId peer in Manager.Peers.ConnectedPeers.ToArray())
                     peer.MessageQueue.Enqueue (bundle);
             }
 
-            foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
+            foreach (PeerId peer in Manager.Peers.ConnectedPeers.ToArray()) {
                 bool isInteresting = Manager.PieceManager.IsInteresting (peer);
                 SetAmInterestedStatus (peer, isInteresting);
             }

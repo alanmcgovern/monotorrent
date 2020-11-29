@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.Modes
         {
             bool flag = false;
 
-            foreach (PeerId id in Manager.Peers.ConnectedPeers) {
+            foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray()) {
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
                     if (id == currentId)
                         flag = true;
@@ -126,7 +126,7 @@ namespace MonoTorrent.Client.Modes
                 }
             }
             //second pass without removing the currentid and previous ones
-            foreach (PeerId id in Manager.Peers.ConnectedPeers) {
+            foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray()) {
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
                     currentId = id;
                     return;
@@ -189,7 +189,15 @@ namespace MonoTorrent.Client.Modes
                                 try {
                                     if (!Directory.Exists (Path.GetDirectoryName (savePath)))
                                         Directory.CreateDirectory (Path.GetDirectoryName (savePath));
-                                    File.Delete (savePath);
+
+                                    if(true == File.Exists(savePath))
+                                        File.Delete (savePath);
+                                    else//savePath is a directory
+                                    {
+                                        savePath += "\\" + t.Name + ".torrent";
+                                        using var fs = File.Create(savePath);
+                                    }
+
                                     File.WriteAllBytes (savePath, dict.Encode ());
                                 } catch (Exception ex) {
                                     logger.ExceptionFormated (ex, "Cannot write metadata to path '{0}'", savePath);

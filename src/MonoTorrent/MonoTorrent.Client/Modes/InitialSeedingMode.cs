@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.Modes
             if (unchoker.Complete) {
                 PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
                 PeerMessage haveAllMessage = new HaveAllMessage ();
-                foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
+                foreach (PeerId peer in Manager.Peers.ConnectedPeers.ToArray()) {
                     PeerMessage message = ClientEngine.SupportsFastPeer && peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
                     peer.MessageQueue.Enqueue (message);
                 }

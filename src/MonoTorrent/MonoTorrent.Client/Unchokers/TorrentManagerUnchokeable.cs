@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace MonoTorrent.Client
@@ -30,7 +31,7 @@ namespace MonoTorrent.Client
             set => Manager.UploadingTo = value;
         }
 
-        public List<PeerId> Peers => Manager.Peers.ConnectedPeers;
+        public List<PeerId> Peers => Manager.Peers.ConnectedPeers.ToList();
 
         public TorrentManagerUnchokeable (TorrentManager manager)
         {

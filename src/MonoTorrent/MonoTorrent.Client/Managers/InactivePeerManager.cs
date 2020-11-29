@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
@@ -61,8 +62,12 @@ namespace MonoTorrent.Client
             int candidateSecondsConnected ;
             int candidateSecondsSinceLastBlock;
             int candidateDataBytes;
-            for (int i = 0; i < TorrentManager.Peers.ConnectedPeers.Count; i++) {
-                PeerId nextPeer = TorrentManager.Peers.ConnectedPeers[i];
+            PeerId[] arr = TorrentManager.Peers.ConnectedPeers.ToArray();
+
+            for (int i = 0; i < arr.Length; i++) {
+                try
+                {
+                    PeerId nextPeer = arr[i];
                 if (nextPeer.Monitor.DataBytesDownloaded == 0 && nextPeer.WhenConnected.Elapsed > TorrentManager.Settings.TimeToWaitUntilIdle) {
                     // This one is eligible for marking as inactive
                     if (!nextPeer.AmInterested) {
@@ -103,6 +108,11 @@ namespace MonoTorrent.Client
                         }
                     }
                 }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("TimePassed Error " + ex.Message);
+                }
             }
 
             // We've finished looking for a disconnect candidate
@@ -121,8 +131,8 @@ namespace MonoTorrent.Client
 
             // We've found a peer to disconnect
             // Add it to the inactive list for this torrent and disconnect it
-            InactivePeerList.Add (TorrentManager.Peers.ConnectedPeers[peerToDisconnect].Uri);
-            ConnectionManager.CleanupSocket (TorrentManager, TorrentManager.Peers.ConnectedPeers[peerToDisconnect]);
+            InactivePeerList.Add (arr[peerToDisconnect].Uri);
+            ConnectionManager.CleanupSocket (TorrentManager, arr[peerToDisconnect]);
 
         }
 
