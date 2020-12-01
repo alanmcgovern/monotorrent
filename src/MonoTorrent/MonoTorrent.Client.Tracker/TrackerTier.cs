@@ -216,7 +216,7 @@ namespace MonoTorrent.Client.Tracker
 
             for (int i = 0; i < Trackers.Count; i++) {
                 var tracker = Trackers[(ActiveTrackerIndex + i) % Trackers.Count];
-                if (false == tracker.CanScrape)
+                if (!tracker.CanScrape)
                     continue;
                 try {
                     LastScrapeResponse = await tracker.ScrapeAsync (args, token);
