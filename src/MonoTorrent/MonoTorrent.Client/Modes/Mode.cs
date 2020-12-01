@@ -85,50 +85,50 @@ namespace MonoTorrent.Client.Modes
             if (message is ExtensionMessage && !id.SupportsLTMessages && !(message is ExtendedHandshakeMessage))
                 throw new MessageException ("Peer shouldn't support extension messages");
 
-            if (message is HaveMessage)
-                HandleHaveMessage (id, (HaveMessage) message);
-            else if (message is RequestMessage)
-                HandleRequestMessage (id, (RequestMessage) message);
-            else if (message is PortMessage)
-                HandlePortMessage (id, (PortMessage) message);
-            else if (message is PieceMessage)
-                HandlePieceMessage (id, (PieceMessage) message);
-            else if (message is NotInterestedMessage)
-                HandleNotInterested (id, (NotInterestedMessage) message);
-            else if (message is KeepAliveMessage)
-                HandleKeepAliveMessage (id, (KeepAliveMessage) message);
-            else if (message is InterestedMessage)
-                HandleInterestedMessage (id, (InterestedMessage) message);
-            else if (message is ChokeMessage)
-                HandleChokeMessage (id, (ChokeMessage) message);
-            else if (message is CancelMessage)
-                HandleCancelMessage (id, (CancelMessage) message);
-            else if (message is BitfieldMessage)
-                HandleBitfieldMessage (id, (BitfieldMessage) message);
-            else if (message is UnchokeMessage)
-                HandleUnchokeMessage (id, (UnchokeMessage) message);
-            else if (message is HaveAllMessage)
-                HandleHaveAllMessage (id, (HaveAllMessage) message);
-            else if (message is HaveNoneMessage)
-                HandleHaveNoneMessage (id, (HaveNoneMessage) message);
-            else if (message is RejectRequestMessage)
-                HandleRejectRequestMessage (id, (RejectRequestMessage) message);
-            else if (message is SuggestPieceMessage)
-                HandleSuggestedPieceMessage (id, (SuggestPieceMessage) message);
-            else if (message is AllowedFastMessage)
-                HandleAllowedFastMessage (id, (AllowedFastMessage) message);
-            else if (message is ExtendedHandshakeMessage)
-                HandleExtendedHandshakeMessage (id, (ExtendedHandshakeMessage) message);
-            else if (message is LTMetadata)
-                HandleLtMetadataMessage (id, (LTMetadata) message);
-            else if (message is LTChat)
-                HandleLtChat (id, (LTChat) message);
-            else if (message is PeerExchangeMessage)
-                HandlePeerExchangeMessage (id, (PeerExchangeMessage) message);
-            else if (message is HandshakeMessage)
-                HandleHandshakeMessage (id, (HandshakeMessage) message);
-            else if (message is ExtensionMessage)
-                HandleGenericExtensionMessage (id, (ExtensionMessage) message);
+            if (message is HaveMessage have)
+                HandleHaveMessage (id, have);
+            else if (message is RequestMessage request)
+                HandleRequestMessage (id, request);
+            else if (message is PortMessage port)
+                HandlePortMessage (id, port);
+            else if (message is PieceMessage piece)
+                HandlePieceMessage (id, piece);
+            else if (message is NotInterestedMessage notinterested)
+                HandleNotInterested (id, notinterested);
+            else if (message is KeepAliveMessage keepalive)
+                HandleKeepAliveMessage (id, keepalive);
+            else if (message is InterestedMessage interested)
+                HandleInterestedMessage (id, interested);
+            else if (message is ChokeMessage choke)
+                HandleChokeMessage (id, choke);
+            else if (message is CancelMessage cancel)
+                HandleCancelMessage (id, cancel);
+            else if (message is BitfieldMessage bitfield)
+                HandleBitfieldMessage (id, bitfield);
+            else if (message is UnchokeMessage unchoke)
+                HandleUnchokeMessage (id, unchoke);
+            else if (message is HaveAllMessage haveall)
+                HandleHaveAllMessage (id, haveall);
+            else if (message is HaveNoneMessage havenone)
+                HandleHaveNoneMessage (id, havenone);
+            else if (message is RejectRequestMessage rejectrequest)
+                HandleRejectRequestMessage (id, rejectrequest);
+            else if (message is SuggestPieceMessage suggestpiece)
+                HandleSuggestedPieceMessage (id, suggestpiece);
+            else if (message is AllowedFastMessage allowedfast)
+                HandleAllowedFastMessage (id, allowedfast);
+            else if (message is ExtendedHandshakeMessage extendedhandshake)
+                HandleExtendedHandshakeMessage (id, extendedhandshake);
+            else if (message is LTMetadata metadata)
+                HandleLtMetadataMessage (id, metadata);
+            else if (message is LTChat chat)
+                HandleLtChat (id, chat);
+            else if (message is PeerExchangeMessage peerexchange)
+                HandlePeerExchangeMessage (id, peerexchange);
+            else if (message is HandshakeMessage handshake)
+                HandleHandshakeMessage (id, handshake);
+            else if (message is ExtensionMessage extension)
+                HandleGenericExtensionMessage (id, extension);
             else
                 throw new MessageException ($"Unsupported message found: {message.GetType ().Name}");
 
