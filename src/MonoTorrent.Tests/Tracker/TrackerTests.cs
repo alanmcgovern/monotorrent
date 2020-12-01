@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Tracker;
@@ -40,46 +41,60 @@ namespace MonoTorrent.Tracker
     [TestFixture]
     public class TrackerTests
     {
-        Uri uri = new Uri("http://127.0.0.1:23456/");
+        readonly Uri uri = new Uri ("http://127.0.0.1:23456/announce/");
         HttpTrackerListener listener;
         TrackerServer server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
         [OneTimeSetUp]
-        public void FixtureSetup()
+        public void FixtureSetup ()
         {
-            listener = new HttpTrackerListener(uri.OriginalString);
-            listener.Start();
-            server = new TrackerServer();
-            server.RegisterListener(listener);
-            listener.Start();
+            listener = new HttpTrackerListener (uri.OriginalString);
+            listener.Start ();
+            server = new TrackerServer ();
+            server.RegisterListener (listener);
+            listener.Start ();
         }
 
         [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void FixtureTeardown ()
         {
-            listener.Stop();
-            server.Dispose();
+            listener.Stop ();
+            server.Dispose ();
         }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
             //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
         }
 
         [Test]
-        public async Task MultipleAnnounce()
+        public async Task MultipleAnnounce ()
         {
-            Random r = new Random();
+            Random r = new Random ();
 
-            for (int i=0; i < 20; i++)
-            {
-                InfoHash infoHash = new InfoHash(new byte[20]);
-                r.NextBytes(infoHash.Hash);
-                TrackerTier tier = new TrackerTier(new string[] { uri.ToString() });
-                var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new string('1', 20), "", 1411, false);
-                await tier.Trackers[0].AnnounceAsync(parameters);
+            for (int i = 0; i < 20; i++) {
+                InfoHash infoHash = new InfoHash (new byte[20]);
+                r.NextBytes (infoHash.Hash);
+                TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
+                var parameters = new AnnounceParameters (0, 0, 0, TorrentEvent.Started,
+                                                                       infoHash, false, new string ('1', 20), "", 1411, false);
+                Assert.IsTrue (tier.ActiveTracker.CanScrape);
+                await tier.Trackers[0].AnnounceAsync (parameters, CancellationToken.None);
+            }
+        }
+
+        [Test]
+        public async Task MultipleScrape ()
+        {
+            Random r = new Random ();
+
+            for (int i = 0; i < 20; i++) {
+                InfoHash infoHash = new InfoHash (new byte[20]);
+                r.NextBytes (infoHash.Hash);
+                TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
+                var parameters = new ScrapeParameters (infoHash);
+                await tier.Trackers[0].ScrapeAsync (parameters, CancellationToken.None);
             }
         }
     }

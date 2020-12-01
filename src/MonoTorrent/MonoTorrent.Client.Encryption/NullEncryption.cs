@@ -37,40 +37,40 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     class PlainTextEncryption : IEncryption
     {
-        public static PlainTextEncryption Instance = new PlainTextEncryption();
+        public static PlainTextEncryption Instance = new PlainTextEncryption ();
 
-        private PlainTextEncryption()
+        PlainTextEncryption ()
         {
         }
 
-        public void Decrypt(byte[] buffer)
+        public void Decrypt (byte[] buffer)
         {
             // Nothing
         }
 
-        public void Decrypt(byte[] buffer, int offset, int count)
+        public void Decrypt (byte[] buffer, int offset, int count)
         {
             // Nothing
         }
 
-        public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
+        public void Decrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            Encrypt(src, srcOffset, dest, destOffset, count);
+            Encrypt (src, srcOffset, dest, destOffset, count);
         }
 
-        public void Encrypt(byte[] buffer)
+        public void Encrypt (byte[] buffer)
         {
             // Nothing
         }
 
-        public void Encrypt(byte[] buffer, int offset, int count)
+        public void Encrypt (byte[] buffer, int offset, int count)
         {
             // Nothing
         }
 
-        public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
+        public void Encrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
+            Buffer.BlockCopy (src, srcOffset, dest, destOffset, count);
         }
     }
 }

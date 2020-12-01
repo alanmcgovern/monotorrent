@@ -38,44 +38,58 @@ namespace MonoTorrent.Dht.Tasks
 {
     class InitialiseTask
     {
+        // Choose a completely arbitrary value here. If we have at least this many
+        // nodes in the routing table we can consider it 'healthy' enough to allow
+        // the state to change to 'Ready' so torrents can begin searching for peers
+        const int MinHealthyNodes = 32;
+
         readonly List<Node> initialNodes;
         readonly DhtEngine engine;
+        readonly TaskCompletionSource<object> initializationComplete;
 
-        public InitialiseTask(DhtEngine engine)
+        public InitialiseTask (DhtEngine engine)
             : this (engine, Enumerable.Empty<Node> ())
         {
 
         }
 
-        public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
+        public InitialiseTask (DhtEngine engine, IEnumerable<Node> nodes)
         {
             this.engine = engine;
-            initialNodes = new List<Node>(nodes);
+            initialNodes = new List<Node> (nodes);
+            initializationComplete = new TaskCompletionSource<object> ();
         }
 
-        public async Task ExecuteAsync()
+        public Task ExecuteAsync ()
+        {
+            BeginAsyncInit ();
+            return initializationComplete.Task;
+        }
+
+        async void BeginAsyncInit ()
         {
             // If we were given a list of nodes to load at the start, use them
-            if (initialNodes.Count > 0)
-            {
-                foreach (Node node in initialNodes)
-                    engine.Add(node);
-                await SendFindNode(initialNodes);
-            }
-            else
-            {
-                Node utorrent = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                await SendFindNode(new Node[] { utorrent });
+            try {
+                if (initialNodes.Count > 0) {
+                    foreach (Node node in initialNodes)
+                        engine.Add (node);
+                    await SendFindNode (initialNodes);
+                } else {
+                    var utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
+                    await SendFindNode (new[] { utorrent });
+                }
+            } finally {
+                initializationComplete.TrySetResult (null);
             }
         }
 
-        async Task SendFindNode(IEnumerable<Node> newNodes)
+        async Task SendFindNode (IEnumerable<Node> newNodes)
         {
             var activeRequests = new List<Task<SendQueryEventArgs>> ();
             var nodes = new ClosestNodesCollection (engine.LocalId);
 
-            foreach (var node in newNodes) {
-                var request = new FindNode(engine.LocalId, engine.LocalId);
+            foreach (Node node in newNodes) {
+                var request = new FindNode (engine.LocalId, engine.LocalId);
                 activeRequests.Add (engine.SendQueryAsync (request, node));
                 nodes.Add (node);
             }
@@ -84,12 +98,15 @@ namespace MonoTorrent.Dht.Tasks
                 var completed = await Task.WhenAny (activeRequests);
                 activeRequests.Remove (completed);
 
-                var args = await completed;
+                SendQueryEventArgs args = await completed;
                 if (args.Response != null) {
-                    var response = (FindNodeResponse)args.Response;
-                    foreach (var node in Node.FromCompactNode (response.Nodes)) {
+                    if (engine.RoutingTable.CountNodes () >= MinHealthyNodes)
+                        initializationComplete.TrySetResult (null);
+
+                    var response = (FindNodeResponse) args.Response;
+                    foreach (Node node in Node.FromCompactNode (response.Nodes)) {
                         if (nodes.Add (node)) {
-                            var request = new FindNode(engine.LocalId, engine.LocalId);
+                            var request = new FindNode (engine.LocalId, engine.LocalId);
                             activeRequests.Add (engine.SendQueryAsync (request, node));
                         }
                     }

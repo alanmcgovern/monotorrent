@@ -40,29 +40,28 @@ namespace MonoTorrent.Dht.Tasks
         readonly DhtEngine engine;
         readonly int port;
 
-        public AnnounceTask(DhtEngine engine, InfoHash infoHash, int port)
-            : this(engine, new NodeId(infoHash), port)
+        public AnnounceTask (DhtEngine engine, InfoHash infoHash, int port)
+            : this (engine, new NodeId (infoHash), port)
         {
 
         }
 
-        public AnnounceTask(DhtEngine engine, NodeId infoHash, int port)
+        public AnnounceTask (DhtEngine engine, NodeId infoHash, int port)
         {
             this.engine = engine;
             this.infoHash = infoHash;
             this.port = port;
         }
 
-        public async Task ExecuteAsync()
+        public async Task ExecuteAsync ()
         {
-            GetPeersTask getpeers = new GetPeersTask(engine, infoHash);
-            var nodes = await getpeers.ExecuteAsync();
+            var getpeers = new GetPeersTask (engine, infoHash);
+            IEnumerable<Node> nodes = await getpeers.ExecuteAsync ();
 
             var announceTasks = new List<Task> ();
-            foreach (Node n in nodes)
-            {
+            foreach (Node n in nodes) {
                 if (n.Token != null) {
-                    var query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
+                    var query = new AnnouncePeer (engine.LocalId, infoHash, port, n.Token);
                     announceTasks.Add (engine.SendQueryAsync (query, n));
                 }
             }

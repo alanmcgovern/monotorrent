@@ -33,25 +33,25 @@ namespace MonoTorrent.Client.PiecePicking
 {
     class NullPicker : PiecePicker
     {
-        public NullPicker()
-            : base(null)
+        public NullPicker ()
+            : base (null)
         {
 
         }
 
-        public override void CancelRequest(IPieceRequester peer, int piece, int startOffset, int length)
+        public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
-            
+
         }
 
-        public override void CancelRequests(IPieceRequester peer)
+        public override void CancelRequests (IPieceRequester peer)
         {
-            
+
         }
 
-        public override void CancelTimedOutRequests()
+        public override void CancelTimedOutRequests ()
         {
-            
+
         }
 
         public override int CurrentReceivedCount ()
@@ -59,37 +59,37 @@ namespace MonoTorrent.Client.PiecePicking
             return 0;
         }
 
-        public override int CurrentRequestCount()
+        public override int CurrentRequestCount ()
         {
             return 0;
         }
 
-        public override List<Piece> ExportActiveRequests()
+        public override List<Piece> ExportActiveRequests ()
         {
-            return new List<Piece>();
+            return new List<Piece> ();
         }
 
-        public override void Initialise(BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
-            
+
         }
-        
-        public override bool IsInteresting(BitField bitfield)
+
+        public override bool IsInteresting (BitField bitfield)
         {
             return false;
         }
 
-        public override IList<PieceRequest> PickPiece(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             return null;
         }
 
-        public override void Reset()
+        public override void Reset ()
         {
-            
+
         }
 
-        public override bool ValidatePiece(IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             piece = null;
             return false;

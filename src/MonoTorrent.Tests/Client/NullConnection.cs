@@ -29,9 +29,10 @@
 
 using System;
 using System.Net;
-using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
@@ -40,7 +41,7 @@ namespace MonoTorrent.Client
         public static NullConnection Incoming = new NullConnection (true);
         public static NullConnection Outgoing = new NullConnection (false);
 
-        public byte [] AddressBytes => new byte[] { 1, 2, 3, 4 };
+        public byte[] AddressBytes => new byte[] { 1, 2, 3, 4 };
 
         public bool Connected => true;
 
@@ -57,23 +58,23 @@ namespace MonoTorrent.Client
             IsIncoming = isIncoming;
         }
 
-        public Task ConnectAsync ()
+        public ReusableTask ConnectAsync ()
         {
-            return Task.CompletedTask;
+            return ReusableTask.CompletedTask;
         }
 
         public void Dispose ()
         {
         }
 
-        public Task<int> ReceiveAsync (byte [] buffer, int offset, int count)
+        public ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
         {
-            return Task.FromResult (0);
+            return ReusableTask.FromResult (0);
         }
 
-        public Task<int> SendAsync (byte [] buffer, int offset, int count)
+        public ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
         {
-            return Task.FromResult (0);
+            return ReusableTask.FromResult (0);
         }
     }
 }

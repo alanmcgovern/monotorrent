@@ -27,7 +27,6 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 
 using NUnit.Framework;
@@ -43,10 +42,10 @@ namespace MonoTorrent.Client.PiecePicking
         int pieceCount;
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
-            checker = new TestPicker();
-            picker = new RandomisedPicker(checker);
+            checker = new TestPicker ();
+            picker = new RandomisedPicker (checker);
 
             pieceCount = 40;
             peer = PeerId.CreateNull (pieceCount);
@@ -54,9 +53,9 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void Pick()
+        public void Pick ()
         {
-            picker.PickPiece(peer, peer.BitField, new List<PeerId>());
+            picker.PickPiece (peer, peer.BitField, new List<PeerId> ());
 
             // We should pick a random midpoint and select a piece starting from there.
             // If that fails we should wrap around to 0 and scan from the beginning.
@@ -64,16 +63,16 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.IsTrue (checker.PickedIndex[0].Item2 == pieceCount, "#2");
 
             Assert.AreEqual (0, checker.PickedIndex[1].Item1, "#3");
-            Assert.AreEqual (checker.PickedIndex [0].Item1, checker.PickedIndex[1].Item2, "#4");
+            Assert.AreEqual (checker.PickedIndex[0].Item1, checker.PickedIndex[1].Item2, "#4");
 
             foreach (var bf in checker.PickPieceBitfield)
                 Assert.IsTrue (bf.AllTrue, "#5");
         }
 
         [Test]
-        public void SinglePieceBitfield()
+        public void SinglePieceBitfield ()
         {
-            picker.PickPiece(peer, new BitField (1).SetAll (true), new List<PeerId>());
+            picker.PickPiece (peer, new BitField (1).SetAll (true), new List<PeerId> ());
 
             Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
             Assert.AreEqual (0, checker.PickedIndex[0].Item1, "#2");
@@ -81,9 +80,9 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void SinglePieceRange()
+        public void SinglePieceRange ()
         {
-            picker.PickPiece(peer, peer.BitField, new List<PeerId> (), 1, 12, 13);
+            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, 12, 13);
 
             Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
             Assert.AreEqual (12, checker.PickedIndex[0].Item1, "#2");
@@ -91,9 +90,9 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void TwoPieceRange()
+        public void TwoPieceRange ()
         {
-            picker.PickPiece(peer, peer.BitField, new List<PeerId> (), 1, 12, 14);
+            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, 12, 14);
 
             Assert.AreEqual (2, checker.PickPieceBitfield.Count, "#1");
             Assert.AreEqual (13, checker.PickedIndex[0].Item1, "#2");

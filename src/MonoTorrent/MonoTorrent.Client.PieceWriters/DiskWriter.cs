@@ -29,90 +29,116 @@
 
 using System;
 using System.IO;
+using System.Threading;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : IPieceWriter
     {
-        private FileStreamBuffer streamsBuffer;
+        static readonly int DefaultMaxOpenFiles = 196;
 
-        public int OpenFiles
+        static readonly Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> DefaultStreamCreator =
+            (file, access) => new TorrentFileStream (file.FullPath, access);
+
+        readonly SemaphoreSlim Limiter;
+
+        public int OpenFiles => StreamCache.Count;
+
+        readonly FileStreamBuffer StreamCache;
+
+        public DiskWriter ()
+            : this (DefaultStreamCreator, DefaultMaxOpenFiles)
         {
-            get { return streamsBuffer.Count; }
+
         }
 
-        public DiskWriter()
-            : this(10)
+        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator)
+            : this (streamCreator, DefaultMaxOpenFiles)
         {
 
         }
 
-        public DiskWriter(int maxOpenFiles)
+        public DiskWriter (int maxOpenFiles)
+            : this (DefaultStreamCreator, maxOpenFiles)
         {
-            streamsBuffer = new FileStreamBuffer(maxOpenFiles);
+
         }
 
-        public void Close(TorrentFile file)
+        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxOpenFiles)
         {
-            streamsBuffer.CloseStream(file.FullPath);
+            StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
+            Limiter = new SemaphoreSlim (maxOpenFiles);
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
-            streamsBuffer.Dispose();
+            StreamCache.Dispose ();
         }
 
-        TorrentFileStream GetStream(TorrentFile file, FileAccess access)
+        public async ReusableTask CloseAsync (ITorrentFileInfo file)
         {
-            return streamsBuffer.GetStream(file, access);
+            await StreamCache.CloseStreamAsync (file);
         }
 
-        public void Move(TorrentFile file, string newPath, bool overwrite)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
-            streamsBuffer.CloseStream(file.FullPath);
+            return ReusableTask.FromResult (File.Exists (file.FullPath));
+        }
+
+        public async ReusableTask FlushAsync (ITorrentFileInfo file)
+            => await StreamCache.FlushAsync (file);
+
+        public async ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
+        {
+            await StreamCache.CloseStreamAsync (file);
+
             if (overwrite)
-                File.Delete(newPath);
-            File.Move(file.FullPath, newPath);
+                File.Delete (newPath);
+            File.Move (file.FullPath, newPath);
         }
 
-        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File(file);
-            Check.Buffer(buffer);
+            Check.File (file);
+            Check.Buffer (buffer);
 
             if (offset < 0 || offset + count > file.Length)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException (nameof (offset));
 
-            Stream s = GetStream(file, FileAccess.Read);
-            if (s.Length < offset + count)
-                return 0;
-            s.Seek(offset, SeekOrigin.Begin);
-            return s.Read(buffer, bufferOffset, count);
+            using (await Limiter.EnterAsync ()) {
+                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+
+                await MainLoop.SwitchToThreadpool ();
+                if (rented.Stream.Length < offset + count)
+                    return 0;
+
+                if (rented.Stream.Position != offset)
+                    await rented.Stream.SeekAsync (offset);
+                return await rented.Stream.ReadAsync (buffer, bufferOffset, count);
+            }
         }
 
-        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File(file);
-            Check.Buffer(buffer);
+            Check.File (file);
+            Check.Buffer (buffer);
 
             if (offset < 0 || offset + count > file.Length)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException (nameof (offset));
 
-            TorrentFileStream stream = GetStream(file, FileAccess.ReadWrite);
-            stream.Seek(offset, SeekOrigin.Begin);
-            stream.Write(buffer, bufferOffset, count);
-        }
+            using (await Limiter.EnterAsync ()) {
+                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.ReadWrite);
 
-        public bool Exists(TorrentFile file)
-        {
-            return File.Exists(file.FullPath);
-        }
-
-        public void Flush(TorrentFile file)
-        {
-            Stream s = streamsBuffer.FindStream(file.FullPath);
-            if (s != null)
-                s.Flush();
+                // FileStream.WriteAsync does some work synchronously, according to the profiler.
+                // It looks like if the file is too small it is expanded (SetLength is called)
+                // synchronously before the asynchronous Write is performed.
+                //
+                // We also want the Seek operation to execute on the threadpool.
+                await MainLoop.SwitchToThreadpool ();
+                await rented.Stream.SeekAsync (offset);
+                await rented.Stream.WriteAsync (buffer, bufferOffset, count).ConfigureAwait (false);
+            }
         }
     }
 }

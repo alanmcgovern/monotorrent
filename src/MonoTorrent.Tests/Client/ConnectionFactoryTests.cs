@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
-using System.Net;
-using System.Net.Sockets;
+
 using MonoTorrent.Client.Connections;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -15,7 +12,14 @@ namespace MonoTorrent.Client
         [Test]
         public void InvalidPort ()
         {
-            Assert.IsNull (ConnectionFactory.Create(new Uri ("ipv4://127.0.1.2")));
+            Assert.IsNull (ConnectionFactory.Create (new Uri ("ipv4://127.0.1.2")));
+        }
+
+        [Test]
+        public void Http ()
+        {
+            Assert.IsNotNull (ConnectionFactory.Create (new Uri ("http://127.0.1.2")));
+            Assert.IsNotNull (ConnectionFactory.Create (new Uri ("https://127.0.1.2")));
         }
     }
 }

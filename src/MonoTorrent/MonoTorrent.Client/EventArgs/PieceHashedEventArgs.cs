@@ -45,16 +45,32 @@ namespace MonoTorrent.Client
         public bool HashPassed { get; }
 
         /// <summary>
+        /// If the TorrentManager is in the hashing state then this returns a value between 0 and 1 indicating
+        /// how complete the hashing progress is. If the manager is in the Downloading state then this will
+        /// return '1' as the torrent will have been fully hashed already. If some files in the torrent were
+        /// marked as 'DoNotDownload' during the initial hash, and those files are later marked as downloadable,
+        /// then this will still return '1'.
+        /// </summary>
+        public double Progress { get; }
+
+        /// <summary>
         /// Creates a new PieceHashedEventArgs
         /// </summary>
         /// <param name="manager">The <see cref="TorrentManager"/> whose piece was hashed</param>
         /// <param name="pieceIndex">The index of the piece that was hashed</param>
         /// <param name="hashPassed">True if the piece passed the hashcheck, false otherwise</param>
-        internal PieceHashedEventArgs(TorrentManager manager, int pieceIndex, bool hashPassed)
-            : base(manager)
+        internal PieceHashedEventArgs (TorrentManager manager, int pieceIndex, bool hashPassed)
+            : this (manager, pieceIndex, hashPassed, 1, 1)
+        {
+
+        }
+
+        internal PieceHashedEventArgs (TorrentManager manager, int pieceIndex, bool hashPassed, int piecesHashed, int totalToHash)
+            : base (manager)
         {
             PieceIndex = pieceIndex;
             HashPassed = hashPassed;
+            Progress = (double) piecesHashed / totalToHash;
         }
     }
 }

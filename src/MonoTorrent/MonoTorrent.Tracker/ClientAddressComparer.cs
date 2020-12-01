@@ -39,7 +39,7 @@ namespace MonoTorrent.Tracker
         /// </summary>
         /// <param name="parameters">The data sent as part of the Announce request</param>
         /// <returns></returns>
-        public object GetKey(AnnounceRequest parameters)
+        public object GetKey (AnnounceRequest parameters)
         {
             return parameters.ClientAddress;
         }

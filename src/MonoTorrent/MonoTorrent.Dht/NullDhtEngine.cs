@@ -36,7 +36,7 @@ namespace MonoTorrent.Dht
 {
     class NullDhtEngine : IDhtEngine
     {
-        #pragma warning disable 0067
+#pragma warning disable 0067
         public event EventHandler<PeersFoundEventArgs> PeersFound {
             add { }
             remove { }
@@ -46,54 +46,48 @@ namespace MonoTorrent.Dht
             add { }
             remove { }
         }
-        #pragma warning restore 0067
+#pragma warning restore 0067
 
-        public bool Disposed
-        {
-            get { return false; }
-        }
+        public bool Disposed => false;
 
-        public DhtState State
-        {
-            get { return DhtState.NotReady; }
-        }
+        public DhtState State => DhtState.NotReady;
 
-        public void Add(BEncodedList nodes)
-        {
-            
-        }
-
-        public void Announce(InfoHash infohash, int port)
+        public void Add (BEncodedList nodes)
         {
 
         }
 
-        public void Dispose()
+        public void Announce (InfoHash infohash, int port)
         {
 
         }
 
-        public void GetPeers(InfoHash infohash)
+        public void Dispose ()
         {
 
         }
 
-        public Task<byte[]> SaveNodesAsync()
+        public void GetPeers (InfoHash infohash)
+        {
+
+        }
+
+        public Task<byte[]> SaveNodesAsync ()
         {
             return Task.FromResult (new byte[0]);
         }
 
-        public Task StartAsync()
+        public Task StartAsync ()
         {
             return Task.CompletedTask;
         }
 
-        public Task StartAsync(byte[] initialNodes)
+        public Task StartAsync (byte[] initialNodes)
         {
             return Task.CompletedTask;
         }
 
-        public Task StopAsync()
+        public Task StopAsync ()
         {
             return Task.CompletedTask;
         }

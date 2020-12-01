@@ -35,46 +35,42 @@ namespace MonoTorrent.Dht.Messages
     {
         static readonly BEncodedString InfoHashKey = "info_hash";
         static readonly BEncodedString QueryName = "get_peers";
-        
-        public NodeId InfoHash
+
+        public NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
+
+        public GetPeers (NodeId id, NodeId infohash)
+            : base (id, QueryName)
         {
-            get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
+            Parameters.Add (InfoHashKey, infohash.BencodedString ());
         }
-        
-        public GetPeers(NodeId id, NodeId infohash)
-            : base(id, QueryName)
+
+        public GetPeers (BEncodedDictionary d)
+            : base (d)
         {
-            Parameters.Add(InfoHashKey, infohash.BencodedString());
-        }
-        
-        public GetPeers(BEncodedDictionary d)
-            : base(d)
-        {
-            
+
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
-            => new GetPeersResponse (parameters);
-
-        public override void Handle(DhtEngine engine, Node node)
         {
-            base.Handle(engine, node);
+            return new GetPeersResponse (parameters);
+        }
 
-            BEncodedString token = engine.TokenManager.GenerateToken(node);
-            GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, TransactionId, token);
-            if (engine.Torrents.ContainsKey(InfoHash))
-            {
-                BEncodedList list = new BEncodedList();
+        public override void Handle (DhtEngine engine, Node node)
+        {
+            base.Handle (engine, node);
+
+            BEncodedString token = engine.TokenManager.GenerateToken (node);
+            var response = new GetPeersResponse (engine.RoutingTable.LocalNode.Id, TransactionId, token);
+            if (engine.Torrents.ContainsKey (InfoHash)) {
+                var list = new BEncodedList ();
                 foreach (Node n in engine.Torrents[InfoHash])
-                    list.Add(n.CompactPort());
+                    list.Add (n.CompactPort ());
                 response.Values = list;
+            } else {
+                response.Nodes = Node.CompactNode (engine.RoutingTable.GetClosest (InfoHash));
             }
-            else
-            {
-                response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(InfoHash));
-            }
-            
-            engine.MessageLoop.EnqueueSend(response, node, node.EndPoint);
+
+            engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
         }
     }
 }

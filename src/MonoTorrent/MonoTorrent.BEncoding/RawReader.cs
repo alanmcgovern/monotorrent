@@ -34,123 +34,76 @@ namespace MonoTorrent.BEncoding
 {
     public class RawReader : Stream
     {
-        bool hasPeek;
-        Stream input;
-        byte[] peeked;
-        bool strictDecoding;
+        readonly Stream input;
+        readonly byte[] peeked;
 
-        public bool StrictDecoding
-        {
-            get { return strictDecoding; }
-        }
+        MemoryStream CapturedData { get; set; }
 
-        public RawReader(Stream input)
-            : this(input, true)
+        public bool StrictDecoding { get; }
+
+        public RawReader (Stream input)
+            : this (input, false)
         {
 
         }
 
-        public RawReader(Stream input, bool strictDecoding)
+        public RawReader (Stream input, bool strictDecoding)
         {
             this.input = input;
-            this.peeked = new byte[1];
-            this.strictDecoding = strictDecoding;
+            peeked = new byte[1];
+            StrictDecoding = strictDecoding;
         }
 
-        public override bool CanRead
+        internal void BeginCaptureData (MemoryStream stream)
         {
-            get { return input.CanRead; }
+            CapturedData = stream;
         }
 
-        public override bool CanSeek
+        internal void EndCaptureData ()
         {
-            get { return input.CanSeek; }
+            CapturedData = null;
         }
 
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
+        public override bool CanRead => input.CanRead;
 
-        public override void Flush()
-        {
-            throw new NotSupportedException();
-        }
+        public override bool CanSeek => input.CanSeek;
 
-        public override long Length
-        {
-            get { return input.Length; }
-        }
+        public override bool CanWrite => false;
 
-        public int PeekByte()
-        {
-            if (!hasPeek)
-                hasPeek = Read(peeked, 0, 1) == 1;
-            return hasPeek ? peeked[0] : -1;
-        }
+        public override long Length => input.Length;
 
-        public override int ReadByte()
-        {
-            if (hasPeek)
-            {
-                hasPeek = false;
-                return peeked[0];
-            }
-            return base.ReadByte();
-        }
-
-        public override long Position
-        {
-            get
-            {
-                if (hasPeek)
-                    return input.Position - 1;
-                return input.Position;
-            }
-            set
-            {
+        public override long Position {
+            get => input.Position;
+            set {
                 if (value != Position)
-                {
-                    hasPeek = false;
-                    input.Position = value;
-                }
+                    Seek (value, SeekOrigin.Begin);
             }
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override void Flush ()
+            => throw new NotSupportedException ();
+
+        public override int ReadByte ()
+            => Read (peeked, 0, 1) == 1 ? peeked[0] : -1;
+
+        public override int Read (byte[] buffer, int offset, int count)
         {
-            int read = 0;
-            if (hasPeek && count > 0)
-            {
-                hasPeek = false;
-                buffer[offset] = peeked[0];
-                offset++;
-                count--;
-                read++;
-            }
-            read += input.Read(buffer, offset, count);
+            var read = input.Read (buffer, offset, count);
+            if (read > 0)
+                CapturedData?.Write (buffer, offset, read);
             return read;
         }
 
-        public override long Seek(long offset, SeekOrigin origin)
+        public override long Seek (long offset, SeekOrigin origin)
         {
-            long val;
-            if (hasPeek && origin == SeekOrigin.Current)
-                val = input.Seek(offset - 1, origin);
-            else
-                val = input.Seek(offset, origin);
-            hasPeek = false;
-            return val;
+            if (CapturedData != null)
+                throw new NotSupportedException ("Cannot seek while capturing data");
+            return input.Seek (offset, origin);
         }
+        public override void SetLength (long value)
+            =>  throw new NotSupportedException ();
 
-        public override void SetLength(long value)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException();
-        }
+        public override void Write (byte[] buffer, int offset, int count)
+            => throw new NotSupportedException ();
     }
 }

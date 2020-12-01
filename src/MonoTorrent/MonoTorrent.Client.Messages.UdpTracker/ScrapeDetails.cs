@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public int Leeches { get; }
         public int Seeds { get; }
 
-        public ScrapeDetails(int seeds, int leeches, int complete)
+        public ScrapeDetails (int seeds, int leeches, int complete)
         {
             Complete = complete;
             Leeches = leeches;

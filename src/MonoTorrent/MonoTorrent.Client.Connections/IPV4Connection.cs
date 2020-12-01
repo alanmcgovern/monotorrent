@@ -35,17 +35,17 @@ namespace MonoTorrent.Client.Connections
 {
     sealed class IPV4Connection : SocketConnection
     {
-        public IPV4Connection(Uri uri)
-            : base(uri)
+        public IPV4Connection (Uri uri)
+            : base (uri)
         {
-            
+
         }
 
-        public IPV4Connection(Socket socket, bool incoming)
-            : base(socket, incoming)
+        public IPV4Connection (Socket socket, bool incoming)
+            : base (socket, incoming)
         {
-            var endpoint = (IPEndPoint)socket.RemoteEndPoint;
-            Uri = new Uri("ipv4://" + endpoint.Address + ':' + endpoint.Port);
+            var endpoint = (IPEndPoint) socket.RemoteEndPoint;
+            Uri = new Uri ($"ipv4://{endpoint.Address}{':'}{endpoint.Port}");
         }
     }
 }

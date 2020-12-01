@@ -29,6 +29,7 @@
 
 using System;
 using System.Threading.Tasks;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
@@ -41,12 +42,12 @@ namespace MonoTorrent.Dht
         bool Disposed { get; }
         DhtState State { get; }
 
-        void Add(BEncodedList nodes);
-        void Announce(InfoHash infohash, int port);
-        void GetPeers(InfoHash infohash);
-        Task<byte[]> SaveNodesAsync();
-        Task StartAsync();
-        Task StartAsync(byte[] initialNodes);
-        Task StopAsync();
+        void Add (BEncodedList nodes);
+        void Announce (InfoHash infohash, int port);
+        void GetPeers (InfoHash infohash);
+        Task<byte[]> SaveNodesAsync ();
+        Task StartAsync ();
+        Task StartAsync (byte[] initialNodes);
+        Task StopAsync ();
     }
 }

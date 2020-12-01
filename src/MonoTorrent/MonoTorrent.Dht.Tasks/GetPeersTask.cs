@@ -37,34 +37,39 @@ namespace MonoTorrent.Dht.Tasks
 {
     class GetPeersTask
     {
+        const int MaxPeers = 128;
+
+        HashSet<Peer> FoundPeers { get; }
+
         DhtEngine Engine { get; }
         NodeId InfoHash { get; }
 
-        public GetPeersTask(DhtEngine engine, InfoHash infohash)
-            : this(engine, new NodeId(infohash))
+        public GetPeersTask (DhtEngine engine, InfoHash infohash)
+            : this (engine, new NodeId (infohash))
         {
 
         }
 
-        public GetPeersTask(DhtEngine engine, NodeId infohash)
+        public GetPeersTask (DhtEngine engine, NodeId infohash)
         {
             Engine = engine;
             InfoHash = infohash;
+            FoundPeers = new HashSet<Peer> ();
         }
 
-        public async Task<IEnumerable<Node>> ExecuteAsync()
+        public async Task<IEnumerable<Node>> ExecuteAsync ()
         {
             var activeQueries = new List<Task<SendQueryEventArgs>> ();
-            var closestNodes = new ClosestNodesCollection(InfoHash);
-            var closestActiveNodes = new ClosestNodesCollection(InfoHash);
+            var closestNodes = new ClosestNodesCollection (InfoHash);
+            var closestActiveNodes = new ClosestNodesCollection (InfoHash);
 
-            foreach (var node in Engine.RoutingTable.GetClosest (InfoHash)) {
+            foreach (Node node in Engine.RoutingTable.GetClosest (InfoHash)) {
                 if (closestNodes.Add (node))
                     activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
             }
 
             while (activeQueries.Count > 0) {
-                Task<SendQueryEventArgs> completed = await Task.WhenAny (activeQueries);
+                var completed = await Task.WhenAny (activeQueries);
                 activeQueries.Remove (completed);
 
                 // If it timed out or failed just move to the next query.
@@ -76,13 +81,16 @@ namespace MonoTorrent.Dht.Tasks
                 // The response had some actual peers
                 if (response.Values != null) {
                     // We have actual peers!
-                    Engine.RaisePeersFound (InfoHash, Peer.Decode (response.Values));
+                    var peers = Peer.Decode (response.Values);
+                    Engine.RaisePeersFound (InfoHash, peers);
+                    foreach (var peer in peers)
+                        FoundPeers.Add (peer);
                 }
 
                 // The response contains nodes which should be closer to our target. If they are closer than nodes
                 // we've already checked, then let's query them!
-                if (response.Nodes != null) {
-                    foreach (var node in Node.FromCompactNode (response.Nodes))
+                if (response.Nodes != null && FoundPeers.Count < MaxPeers) {
+                    foreach (Node node in Node.FromCompactNode (response.Nodes))
                         if (closestNodes.Add (node))
                             activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
                 }

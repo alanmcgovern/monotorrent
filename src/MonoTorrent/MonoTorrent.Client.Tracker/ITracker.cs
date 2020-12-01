@@ -28,27 +28,68 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
     public interface ITracker
     {
-        bool CanAnnounce { get; }
+        /// <summary>
+        /// True if the tracker supports Scrape requests.
+        /// </summary>
         bool CanScrape { get; }
-        int Complete { get; }
-        int Downloaded { get;}
-        string FailureMessage { get; }
-        int Incomplete { get; }
+
+        /// <summary>
+        /// The minimum interval between announce requests.
+        /// </summary>
         TimeSpan MinUpdateInterval { get; }
-        TrackerState Status { get; }
-        TimeSpan TimeSinceLastAnnounce { get; }
+
+        /// <summary>
+        /// The recommended interval between announce requests.
+        /// </summary>
         TimeSpan UpdateInterval { get; }
+
+        /// <summary>
+        /// The time since the last announce request was sent.
+        /// </summary>
+        TimeSpan TimeSinceLastAnnounce { get; }
+
+        /// <summary>
+        /// The status of the tracker after the most recent announce request.
+        /// </summary>
+        TrackerState Status { get; }
+
+        /// <summary>
+        /// The uri for the tracker
+        /// </summary>
         Uri Uri { get; }
+
+        /// <summary>
+        /// The warning message sent with the most recent announce request.
+        /// </summary>
         string WarningMessage { get; }
 
-        Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters);
-        Task ScrapeAsync(ScrapeParameters parameters);
+        /// <summary>
+        /// The failure message sent with the most recent announce request.
+        /// </summary>
+        string FailureMessage { get; }
+
+        /// <summary>
+        /// Send an announce request to the tracker.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="token">The token used to cancel the request.</param>
+        /// <returns></returns>
+        ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters parameters, CancellationToken token);
+
+        /// <summary>
+        /// Send a scrape request to the tracker.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="token">The token used to cancel the request.</param>
+        /// <returns></returns>
+        ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeParameters parameters, CancellationToken token);
     }
 }

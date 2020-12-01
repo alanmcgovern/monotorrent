@@ -29,11 +29,11 @@
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class ScrapeParameters
+    public sealed class ScrapeParameters
     {
         public InfoHash InfoHash { get; }
 
-        public ScrapeParameters(InfoHash infoHash)
+        internal ScrapeParameters (InfoHash infoHash)
         {
             InfoHash = infoHash;
         }

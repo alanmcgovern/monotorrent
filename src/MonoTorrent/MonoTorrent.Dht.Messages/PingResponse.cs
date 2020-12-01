@@ -33,13 +33,13 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class PingResponse : ResponseMessage
     {
-        public PingResponse(NodeId id, BEncodedValue transactionId)
-            : base(id, transactionId)
+        public PingResponse (NodeId id, BEncodedValue transactionId)
+            : base (id, transactionId)
         {
         }
 
-        public PingResponse(BEncodedDictionary d)
-            :base(d)
+        public PingResponse (BEncodedDictionary d)
+            : base (d)
         {
         }
     }

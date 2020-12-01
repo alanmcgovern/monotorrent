@@ -33,9 +33,7 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private Block block;
-        private PeerId id;
-        private Piece piece;
+        Block block;
 
         #endregion
 
@@ -45,28 +43,19 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The block whose state changed
         /// </summary>
-        public Block Block
-        {
-            get { return this.block; }
-        }
+        public Block Block => block;
 
 
         /// <summary>
         /// The piece that the block belongs too
         /// </summary>
-        public Piece Piece
-        {
-            get { return this.piece; }
-        }
+        public Piece Piece { get; set; }
 
 
         /// <summary>
         /// The peer who the block has been requested off
         /// </summary>
-        public PeerId ID
-        {
-            get { return this.id; }
-        }
+        public PeerId ID { get; set; }
 
         #endregion
 
@@ -76,17 +65,17 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Creates a new BlockEventArgs
         /// </summary>
-        internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerId id)
-            : base(manager)
+        internal BlockEventArgs (TorrentManager manager, Block block, Piece piece, PeerId id)
+            : base (manager)
         {
-            Init(block, piece, id);
+            Init (block, piece, id);
         }
 
-        private void Init(Block block, Piece piece, PeerId id)
+        void Init (Block block, Piece piece, PeerId id)
         {
             this.block = block;
-            this.id = id;
-            this.piece = piece;
+            ID = id;
+            Piece = piece;
         }
 
         #endregion
@@ -94,17 +83,16 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
-            BlockEventArgs args = obj as BlockEventArgs;
-            return (args == null) ? false : this.piece.Equals(args.piece)
-                                         && this.id.Equals(args.id)
-                                         && this.block.Equals(args.block);
+            return (!(obj is BlockEventArgs args)) ? false : Piece.Equals (args.Piece)
+                                                             && ID.Equals (args.ID)
+                                                             && block.Equals (args.block);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return this.block.GetHashCode();
+            return block.GetHashCode ();
         }
 
         #endregion Methods

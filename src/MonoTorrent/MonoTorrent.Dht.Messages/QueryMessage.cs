@@ -37,33 +37,27 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
 
-        internal override NodeId Id
-        {
-            get { return new NodeId((BEncodedString)Parameters[IdKey]); }
-        }
+        internal override NodeId Id => new NodeId ((BEncodedString) Parameters[IdKey]);
 
-        protected BEncodedDictionary Parameters
-        {
-            get { return (BEncodedDictionary)properties[QueryArgumentsKey]; }
-        }
+        protected BEncodedDictionary Parameters => (BEncodedDictionary) properties[QueryArgumentsKey];
 
-        protected QueryMessage(NodeId id, BEncodedString queryName)
-            : this(id, queryName, new BEncodedDictionary())
+        protected QueryMessage (NodeId id, BEncodedString queryName)
+            : this (id, queryName, new BEncodedDictionary ())
         {
 
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments)
-            : base(QueryType)
+        protected QueryMessage (NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments)
+            : base (QueryType)
         {
-            properties.Add(QueryNameKey, queryName);
-            properties.Add(QueryArgumentsKey, queryArguments);
+            properties.Add (QueryNameKey, queryName);
+            properties.Add (QueryArgumentsKey, queryArguments);
 
-            Parameters.Add(IdKey, id.BencodedString());
+            Parameters.Add (IdKey, id.BencodedString ());
         }
 
-        protected QueryMessage(BEncodedDictionary d)
-            : base(d)
+        protected QueryMessage (BEncodedDictionary d)
+            : base (d)
         {
         }
 

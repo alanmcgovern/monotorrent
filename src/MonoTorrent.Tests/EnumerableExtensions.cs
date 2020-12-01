@@ -38,7 +38,7 @@ namespace MonoTorrent
         public static IEnumerable<T[]> Partition<T> (this IEnumerable<T> enumerable, int partitionSize)
         {
             var array = enumerable.ToArray ();
-            for (int i = 0; i < array.Length; i+= partitionSize) {
+            for (int i = 0; i < array.Length; i += partitionSize) {
                 var partition = new T[Math.Min (partitionSize, array.Length - i)];
                 Array.Copy (array, i, partition, 0, partition.Length);
                 yield return partition;

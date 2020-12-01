@@ -40,14 +40,14 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public List<Peer> Peers { get; private set; }
         public int Seeders { get; private set; }
 
-        public AnnounceResponseMessage()
-            : this(0, TimeSpan.Zero, 0, 0, new List<Peer>())
+        public AnnounceResponseMessage ()
+            : this (0, TimeSpan.Zero, 0, 0, new List<Peer> ())
         {
-            
+
         }
 
-        public AnnounceResponseMessage(int transactionId, TimeSpan interval, int leechers, int seeders, List<Peer> peers)
-            :base(1, transactionId)
+        public AnnounceResponseMessage (int transactionId, TimeSpan interval, int leechers, int seeders, List<Peer> peers)
+            : base (1, transactionId)
         {
             Interval = interval;
             Leechers = leechers;
@@ -55,31 +55,31 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             Seeders = seeders;
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            if (Action != ReadInt(buffer, offset))
-                ThrowInvalidActionException();
-            TransactionId = ReadInt(buffer, offset + 4);
-            Interval = TimeSpan.FromSeconds(ReadInt(buffer, offset + 8));
-            Leechers = ReadInt(buffer, offset + 12);
-            Seeders = ReadInt(buffer, offset + 16);
+            if (Action != ReadInt (buffer, offset))
+                ThrowInvalidActionException ();
+            TransactionId = ReadInt (buffer, offset + 4);
+            Interval = TimeSpan.FromSeconds (ReadInt (buffer, offset + 8));
+            Leechers = ReadInt (buffer, offset + 12);
+            Seeders = ReadInt (buffer, offset + 16);
 
-            var peers = Peer.FromCompact (buffer, 20);
+            IList<Peer> peers = Peer.FromCompact (buffer, 20);
             Peers.AddRange (peers);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, Action);
-            written += Write(buffer, written, TransactionId);
-            written += Write(buffer, written, (int)Interval.TotalSeconds);
-            written += Write(buffer, written, Leechers);
-            written += Write(buffer, written, Seeders);
+            written += Write (buffer, written, Action);
+            written += Write (buffer, written, TransactionId);
+            written += Write (buffer, written, (int) Interval.TotalSeconds);
+            written += Write (buffer, written, Leechers);
+            written += Write (buffer, written, Seeders);
 
-            for (int i=0; i < Peers.Count; i++)
-                Peers[i].CompactPeer(buffer, written + (i * 6));
+            for (int i = 0; i < Peers.Count; i++)
+                Peers[i].CompactPeer (buffer, written + (i * 6));
 
             return written - offset;
         }

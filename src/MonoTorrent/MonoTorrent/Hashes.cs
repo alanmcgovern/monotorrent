@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -43,8 +43,7 @@ namespace MonoTorrent
 
         #region Private Fields
 
-        private int count;
-        private byte[] hashData;
+        readonly byte[] hashData;
 
         #endregion Private Fields
 
@@ -54,20 +53,17 @@ namespace MonoTorrent
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>
-        public int Count
-        {
-            get { return this.count; }
-        }
+        public int Count { get; }
 
         #endregion Properties
 
 
         #region Constructors
 
-        internal Hashes(byte[] hashData, int count)
+        internal Hashes (byte[] hashData, int count)
         {
             this.hashData = hashData;
-            this.count = count;
+            Count = count;
         }
 
         #endregion Constructors
@@ -81,20 +77,20 @@ namespace MonoTorrent
         /// <param name="hash">Hash code to check</param>
         /// <param name="hashIndex">Index of hash/piece to verify against</param>
         /// <returns>true iff hash is equal to our stored hash, false otherwise</returns>
-        public bool IsValid(byte[] hash, int hashIndex)
+        public bool IsValid (byte[] hash, int hashIndex)
         {
             if (hash == null)
-                throw new ArgumentNullException("hash");
+                throw new ArgumentNullException (nameof (hash));
 
             if (hash.Length != HashCodeLength)
-                throw new ArgumentException(string.Format("Hash must be {0} bytes in length", HashCodeLength), "hash");
+                throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
 
-            if (hashIndex < 0 || hashIndex > count)
-                throw new ArgumentOutOfRangeException("hashIndex", string.Format("hashIndex must be between 0 and {0}", count)); 
+            if (hashIndex < 0 || hashIndex >= Count)
+                throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
 
             int start = hashIndex * HashCodeLength;
             for (int i = 0; i < HashCodeLength; i++)
-                if (hash[i] != this.hashData[i + start])
+                if (hash[i] != hashData[i + start])
                     return false;
 
             return true;
@@ -105,14 +101,14 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
-        public byte[] ReadHash(int hashIndex)
+        public byte[] ReadHash (int hashIndex)
         {
-            if (hashIndex < 0 || hashIndex >= count)
-                throw new ArgumentOutOfRangeException("hashIndex");
+            if (hashIndex < 0 || hashIndex >= Count)
+                throw new ArgumentOutOfRangeException (nameof (hashIndex));
 
             // Read out our specified piece's hash data
             byte[] hash = new byte[HashCodeLength];
-            Buffer.BlockCopy(this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
+            Buffer.BlockCopy (hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;
         }

@@ -29,7 +29,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -37,9 +39,10 @@ namespace MonoTorrent.Client.PieceWriters
     {
         struct CachedBlock
         {
-            public TorrentFile File;
+            public ITorrentFileInfo File;
             public long Offset;
             public byte[] Buffer;
+            public ByteBufferPool.Releaser BufferReleaser;
             public int Count;
         }
 
@@ -74,115 +77,115 @@ namespace MonoTorrent.Client.PieceWriters
 
         IPieceWriter Writer { get; }
 
-        public MemoryWriter(IPieceWriter writer)
-            : this(writer, 2 * 1024 * 1024)
+        public MemoryWriter (IPieceWriter writer)
+            : this (writer, 2 * 1024 * 1024)
         {
 
         }
 
-        public MemoryWriter(IPieceWriter writer, int capacity)
+        public MemoryWriter (IPieceWriter writer, int capacity)
         {
             if (capacity < 0)
-                throw new ArgumentOutOfRangeException(nameof (capacity));
+                throw new ArgumentOutOfRangeException (nameof (capacity));
 
-            CachedBlocks = new List<CachedBlock>();
+            CachedBlocks = new List<CachedBlock> ();
             Capacity = capacity;
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));
         }
 
-        public int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File(file);
-            Check.Buffer(buffer);
+            Check.File (file);
+            Check.Buffer (buffer);
 
-            for (int i = 0; i < CachedBlocks.Count; i++)
-            {
+            for (int i = 0; i < CachedBlocks.Count; i++) {
                 if (CachedBlocks[i].File != file)
                     continue;
                 if (CachedBlocks[i].Offset != offset || CachedBlocks[i].File != file || CachedBlocks[i].Count != count)
                     continue;
-                Buffer.BlockCopy(CachedBlocks[i].Buffer, 0, buffer, bufferOffset, count);
+                Buffer.BlockCopy (CachedBlocks[i].Buffer, 0, buffer, bufferOffset, count);
                 Interlocked.Add (ref cacheHits, count);
                 return count;
             }
 
             Interlocked.Add (ref cacheMisses, count);
-            return Writer.Read(file, offset, buffer, bufferOffset, count);
+            return await Writer.ReadAsync (file, offset, buffer, bufferOffset, count);
         }
 
-        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync  (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Write(file, offset, buffer, bufferOffset, count, false);
+            await WriteAsync (file, offset, buffer, bufferOffset, count, false);
         }
 
-        public void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
         {
-            if (forceWrite)
-            {
-                Writer.Write(file, offset, buffer, bufferOffset, count);
-            }
-            else
-            {
+            if (forceWrite) {
+                await Writer.WriteAsync (file, offset, buffer, bufferOffset, count);
+            } else {
                 if (CacheUsed > (Capacity - count))
-                    Flush(0);
+                    await FlushAsync (0);
 
-                byte[] cacheBuffer = ClientEngine.BufferManager.GetBuffer(count);
-                Buffer.BlockCopy(buffer, bufferOffset, cacheBuffer, 0, count);
+                var releaser = DiskManager.BufferPool.Rent (count, out byte[] cacheBuffer);
+                Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
 
-                CachedBlock block = new CachedBlock();
-                block.Buffer = cacheBuffer;
-                block.Count = count;
-                block.Offset = offset;
-                block.File = file;
-                CachedBlocks.Add(block);
-                Interlocked.Add(ref cacheUsed, block.Count);
+                var block = new CachedBlock {
+                    Buffer = cacheBuffer,
+                    BufferReleaser = releaser,
+                    Count = count,
+                    Offset = offset,
+                    File = file
+                };
+                CachedBlocks.Add (block);
+                Interlocked.Add (ref cacheUsed, block.Count);
             }
         }
-        
-        public void Close(TorrentFile file)
+
+        public async ReusableTask CloseAsync (ITorrentFileInfo file)
         {
-            Flush(file);
-            Writer.Close(file);
+            await FlushAsync (file);
+            await Writer.CloseAsync (file);
         }
 
-        public bool Exists(TorrentFile file)
-            => Writer.Exists(file);
-
-        public void Flush(TorrentFile file)
+        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
         {
-            CachedBlocks.RemoveAll(delegate(CachedBlock b) {
-                if (b.File != file)
-                    return false;
+            foreach (var item in CachedBlocks)
+                if (item.File == file)
+                    return ReusableTask.FromResult (true);
 
-                Interlocked.Add (ref cacheUsed, -b.Count);
-                Writer.Write(b.File, b.Offset, b.Buffer, 0, b.Count);
-                ClientEngine.BufferManager.FreeBuffer(b.Buffer);
-                return true;
-            });
+            return Writer.ExistsAsync (file);
         }
 
-        void Flush(int index)
+        public async ReusableTask FlushAsync (ITorrentFileInfo file)
+        {
+            foreach (var block in CachedBlocks) {
+                if (block.File != file)
+                    continue;
+                Interlocked.Add (ref cacheUsed, -block.Count);
+                using (block.BufferReleaser)
+                    await Writer.WriteAsync (block.File, block.Offset, block.Buffer, 0, block.Count);
+            }
+            CachedBlocks.RemoveAll (b => b.File == file);
+        }
+
+        async ReusableTask FlushAsync (int index)
         {
             CachedBlock b = CachedBlocks[index];
             CachedBlocks.RemoveAt (index);
             Interlocked.Add (ref cacheUsed, -b.Count);
-            Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);
-            ClientEngine.BufferManager.FreeBuffer(b.Buffer);
+
+            using (b.BufferReleaser)
+                await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, true);
         }
 
-        public void Move(TorrentFile file, string newPath, bool overwrite)
+        public async ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
         {
-            Writer.Move(file, newPath, overwrite);
+            await Writer.MoveAsync (file, newPath, overwrite);
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
-            // Flush everything currently held in memory
-            while (CachedBlocks.Count > 0)
-                Flush(CachedBlocks.Count - 1);
-
-            // Dispose the held writer
-            Writer.Dispose();
+            Debug.Assert (CachedBlocks.Count == 0, "MemoryWriter should have been flushed before being disposed");
+            Writer.Dispose ();
         }
     }
 }

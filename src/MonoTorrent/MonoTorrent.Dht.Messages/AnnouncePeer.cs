@@ -40,55 +40,46 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString PortKey = "port";
         static readonly BEncodedString TokenKey = "token";
 
-        internal NodeId InfoHash
+        internal NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
+
+        internal BEncodedNumber Port => (BEncodedNumber) Parameters[PortKey];
+
+        internal BEncodedString Token => (BEncodedString) Parameters[TokenKey];
+
+        public AnnouncePeer (NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
+            : base (id, QueryName)
         {
-            get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
+            Parameters.Add (InfoHashKey, infoHash.BencodedString ());
+            Parameters.Add (PortKey, port);
+            Parameters.Add (TokenKey, token);
         }
 
-        internal BEncodedNumber Port
-        {
-            get { return (BEncodedNumber)Parameters[PortKey]; }
-        }
-
-        internal BEncodedString Token
-        {
-            get { return (BEncodedString)Parameters[TokenKey]; }
-        }
-
-        public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
-            : base(id, QueryName)
-        {
-            Parameters.Add(InfoHashKey, infoHash.BencodedString());
-            Parameters.Add(PortKey, port);
-            Parameters.Add(TokenKey, token);
-        }
-
-        public AnnouncePeer(BEncodedDictionary d)
-            : base(d)
+        public AnnouncePeer (BEncodedDictionary d)
+            : base (d)
         {
 
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
-            => new AnnouncePeerResponse(parameters);
-
-        public override void Handle(DhtEngine engine, Node node)
         {
-            base.Handle(engine, node);
+            return new AnnouncePeerResponse (parameters);
+        }
 
-            if (!engine.Torrents.ContainsKey(InfoHash))
-                engine.Torrents.Add(InfoHash, new List<Node>());
+        public override void Handle (DhtEngine engine, Node node)
+        {
+            base.Handle (engine, node);
+
+            if (!engine.Torrents.ContainsKey (InfoHash))
+                engine.Torrents.Add (InfoHash, new List<Node> ());
 
             DhtMessage response;
-            if (engine.TokenManager.VerifyToken(node, Token))
-			{
-                engine.Torrents[InfoHash].Add(node);
-				response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
-		    }
-			else
-			    response = new ErrorMessage(TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
-				
-			engine.MessageLoop.EnqueueSend(response, node, node.EndPoint);
+            if (engine.TokenManager.VerifyToken (node, Token)) {
+                engine.Torrents[InfoHash].Add (node);
+                response = new AnnouncePeerResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+            } else
+                response = new ErrorMessage (TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
+
+            engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
         }
     }
 }

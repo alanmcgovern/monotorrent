@@ -39,52 +39,45 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString TokenKey = "token";
         static readonly BEncodedString ValuesKey = "values";
 
-        public BEncodedValue Token
-        {
-            get => Parameters.GetValueOrDefault(TokenKey);
+        public BEncodedValue Token {
+            get => Parameters.GetValueOrDefault (TokenKey);
             set => Parameters[TokenKey] = value;
         }
 
-        public BEncodedString Nodes
-        {
+        public BEncodedString Nodes {
             get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey);
-            set
-            {
-                if (Parameters.ContainsKey(ValuesKey))
-                    throw new InvalidOperationException("Already contains the values key");
+            set {
+                if (Parameters.ContainsKey (ValuesKey))
+                    throw new InvalidOperationException ("Already contains the values key");
                 Parameters[NodesKey] = value;
             }
         }
 
-        public BEncodedList Values
-        {
-            get => (BEncodedList) Parameters.GetValueOrDefault(ValuesKey);
-            set
-            {
-                if (Parameters.ContainsKey(NodesKey))
-                    throw new InvalidOperationException("Already contains the nodes key");
+        public BEncodedList Values {
+            get => (BEncodedList) Parameters.GetValueOrDefault (ValuesKey);
+            set {
+                if (Parameters.ContainsKey (NodesKey))
+                    throw new InvalidOperationException ("Already contains the nodes key");
                 Parameters[ValuesKey] = value;
             }
         }
 
-        public GetPeersResponse(NodeId id, BEncodedValue transactionId, BEncodedString token)
-            : base(id, transactionId)
+        public GetPeersResponse (NodeId id, BEncodedValue transactionId, BEncodedString token)
+            : base (id, transactionId)
         {
-            Parameters.Add(TokenKey, token);
+            Parameters.Add (TokenKey, token);
         }
 
-        public GetPeersResponse(BEncodedDictionary d)
-            : base(d)
+        public GetPeersResponse (BEncodedDictionary d)
+            : base (d)
         {
 
         }
 
-        public override void Handle(DhtEngine engine, Node node)
+        public override void Handle (DhtEngine engine, Node node)
         {
-            base.Handle(engine, node);
+            base.Handle (engine, node);
             node.Token = Token;
-            if (Nodes != null)
-                engine.Add(Node.FromCompactNode(Nodes));
         }
     }
 }

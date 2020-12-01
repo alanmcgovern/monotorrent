@@ -29,8 +29,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -40,65 +42,86 @@ namespace MonoTorrent.Client.Tracker
         event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         /// <summary>
-        /// Returns the tracker which will be used, by default, for Announce or Scrape requests.
+        /// If this is set to 'true' then <see cref="AddTrackerAsync(ITracker)"/>,
+        /// <see cref="AddTrackerAsync(Uri)"/> and <see cref="RemoveTrackerAsync(ITracker)"/> will throw an
+        /// <see cref="InvalidOperationException"/> when they are invoked.
         /// </summary>
-        ITracker CurrentTracker { get; }
+        bool Private { get; }
 
         /// <summary>
-        /// True if the most recent Announce request was successful.
-        /// </summary>
-        bool LastAnnounceSucceeded { get; }
-
-        /// <summary>
-        /// The time, in UTC, when the most recent Announce request was sent
-        /// </summary>
-        DateTime LastUpdated { get; }
-
-        /// <summary>
-        /// The available trackers.
+        /// The list of TrackerTiers
         /// </summary>
         IList<TrackerTier> Tiers { get; }
 
         /// <summary>
-        /// The amount of time which has passed since the most recent Announce request was sent.
+        /// Adds the tracker to a new TrackerTier.
         /// </summary>
-        TimeSpan TimeSinceLastAnnounce { get; }
+        /// <param name="tracker">The tracker to add</param>
+        ReusableTask AddTrackerAsync (ITracker tracker);
 
         /// <summary>
-        /// Send an Announce request to the <see cref="CurrentTracker"/>.
+        /// Creates an ITracker instance for the given url and adds it to a
+        /// new TrackerTier.
         /// </summary>
-        /// <returns></returns>
-        Task Announce();
+        /// <param name="trackerUri"></param>
+        ReusableTask AddTrackerAsync (Uri trackerUri);
 
         /// <summary>
-        /// Send an Announce request to the <see cref="CurrentTracker"/>, with the
-        /// specified <see cref="TorrentEvent"/>.
+        /// Removes the <see cref="ITracker"/> from the manager. If the <see cref="TrackerTier"/> it was part of is now empty
+        /// it will also be removed.
         /// </summary>
-        /// <param name="clientEvent">The event, if any, associated with this Announce request. If the torrent has just started
-        /// then <see cref="TorrentEvent.Started"/>) is sent. If it was just stopped then (<see cref="TorrentEvent.Stopped"/> is sent.
-        /// If it just reached 100% completion then <see cref="TorrentEvent.Completed"/> is sent, otherwise
-        /// <see cref="TorrentEvent.None"/> should be sent.</param>
+        /// <param name="tracker"></param>
         /// <returns></returns>
-        Task Announce(TorrentEvent clientEvent);
+        ReusableTask<bool> RemoveTrackerAsync (ITracker tracker);
 
         /// <summary>
-        /// Send an Announce request to the specified tracker.
+        /// Sends an Announce to each tier in <see cref="Tiers"/> to fetch additional peers.
+        /// This will respect the Tracker's <see cref="ITracker.MinUpdateInterval"/> and
+        /// <see cref="ITracker.UpdateInterval"/> to avoid announcing too frequently.
         /// </summary>
-        /// <param name="tracker">The tracker to query</param>
+        /// <param name="token">The token used to cancel the request</param>
         /// <returns></returns>
-        Task Announce(ITracker tracker);
+        ReusableTask AnnounceAsync (CancellationToken token);
 
         /// <summary>
-        /// Send a Scrape request to the <see cref="CurrentTracker"/>
+        /// Sends an Announce to the specified tracker using <see cref="TorrentEvent.None"/>
+        /// in order to fetch more peers. This will respect the Tracker's
+        /// <see cref="ITracker.MinUpdateInterval"/> and <see cref="ITracker.UpdateInterval"/>
+        /// to avoid announcing to frequently.
         /// </summary>
+        /// <param name="tracker">The tracker to send the Announce to.</param>
+        /// <param name="token">The token used to cancel the request</param>
         /// <returns></returns>
-        Task Scrape();
+        ReusableTask AnnounceAsync (ITracker tracker, CancellationToken token);
 
         /// <summary>
-        /// Send a Scrape request to the specified tracker.
+        /// Sends an announce with the specified event to each tier in <see cref="Tiers"/>.
+        /// If <see cref="TorrentEvent.None"/> is specified then the Tracker's
+        /// <see cref="ITracker.MinUpdateInterval"/> and <see cref="ITracker.UpdateInterval"/>
+        /// will be respected to avoid announcing too frequently. Otherwise this
+        /// is a special announce which will be sent regardless of the
+        /// usual update interval.
         /// </summary>
-        /// <param name="tracker">The tracker to query</param>
+        /// <param name="clientEvent">The event to send with the announce.</param>
+        /// <param name="token">The token used to cancel the request.</param>
         /// <returns></returns>
-        Task Scrape(ITracker tracker);
+        ReusableTask AnnounceAsync (TorrentEvent clientEvent, CancellationToken token);
+
+        /// <summary>
+        /// Sends a Scrape to each TrackerTier. This will respect the <see cref="ITracker.MinUpdateInterval"/>
+        /// for the Tracker to avoid scraping too frequently
+        /// </summary>
+        /// <param name="token">The token used to cancel the request</param>
+        /// <returns></returns>
+        ReusableTask ScrapeAsync (CancellationToken token);
+
+        /// <summary>
+        /// Sends a Scrape to each TrackerTier. This will respect the <see cref="ITracker.MinUpdateInterval"/>
+        /// for the Tracker to avoid scraping too frequently.
+        /// </summary>
+        /// <param name="tracker">Tje tracker to send the Scrape to.</param>
+        /// <param name="token">The token used to cancel the request</param>
+        /// <returns></returns>
+        ReusableTask ScrapeAsync (ITracker tracker, CancellationToken token);
     }
 }

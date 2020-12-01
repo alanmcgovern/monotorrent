@@ -34,31 +34,31 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     class ChokeMessage : PeerMessage
     {
-        private const int messageLength = 1;
+        const int messageLength = 1;
         internal static readonly byte MessageId = 0;
 
         #region Constructors
         /// <summary>
         /// Creates a new ChokeMessage
         /// </summary>
-        public ChokeMessage()
+        public ChokeMessage ()
         {
         }
         #endregion
 
 
         #region Methods
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
 
-            return CheckWritten(written - offset);
+            return written - offset;
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
             // No decoding needed
         }
@@ -66,10 +66,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength
-        {
-            get { return (messageLength + 4); }
-        }
+        public override int ByteLength => (messageLength + 4);
         #endregion
 
 
@@ -78,19 +75,19 @@ namespace MonoTorrent.Client.Messages.Standard
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public override string ToString ()
         {
             return "ChokeMessage";
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
             return (obj is ChokeMessage);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return this.ToString().GetHashCode();
+            return ToString ().GetHashCode ();
         }
         #endregion
     }

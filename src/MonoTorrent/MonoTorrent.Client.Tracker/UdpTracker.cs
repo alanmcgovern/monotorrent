@@ -35,8 +35,11 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.UdpTracker;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client.Tracker
 {
+    [DebuggerDisplay("{" + nameof(Uri)+ "}")]
     class UdpTracker : Tracker
     {
         Task<long> ConnectionIdTask { get; set; }
@@ -49,32 +52,40 @@ namespace MonoTorrent.Client.Tracker
         {
             CanScrape = true;
             CanAnnounce = true;
+            Status = TrackerState.Unknown;
         }
 
-        protected override async Task<List<Peer>> DoAnnounceAsync (AnnounceParameters parameters)
+        protected override async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
-                var connectionId = await ConnectionIdTask;
+                long connectionId = await ConnectionIdTask;
 
+                Status = TrackerState.Connecting;
                 var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters);
                 var announce = (AnnounceResponseMessage) await SendAndReceiveAsync (message);
                 MinUpdateInterval = announce.Interval;
 
-                return announce.Peers;
+                Status = TrackerState.Ok;
+                return new AnnounceResponse (announce.Peers, null, null);
+            } catch (OperationCanceledException e) {
+                Status = TrackerState.Offline;
+                ConnectionIdTask = null;
+                throw new TrackerException ("Announce could not be completed", e);
             } catch (Exception e) {
+                Status = TrackerState.InvalidResponse;
                 ConnectionIdTask = null;
                 throw new TrackerException ("Announce could not be completed", e);
             }
         }
 
-        protected override async Task DoScrapeAsync (ScrapeParameters parameters)
+        protected override async ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
         {
             try {
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
-                var connectionId = await ConnectionIdTask;
+                long connectionId = await ConnectionIdTask;
 
                 var infohashes = new List<byte[]> { parameters.InfoHash.Hash };
                 var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
@@ -85,7 +96,14 @@ namespace MonoTorrent.Client.Tracker
                     Downloaded = response.Scrapes[0].Complete;
                     Incomplete = response.Scrapes[0].Leeches;
                 }
+                Status = TrackerState.Ok;
+                return new ScrapeResponse (Complete, Downloaded, Incomplete);
+            } catch (OperationCanceledException e) {
+                Status = TrackerState.Offline;
+                ConnectionIdTask = null;
+                throw new TrackerException ("Scrape could not be completed", e);
             } catch (Exception e) {
+                Status = TrackerState.InvalidResponse;
                 ConnectionIdTask = null;
                 throw new TrackerException ("Scrape could not be completed", e);
             }
@@ -111,19 +129,28 @@ namespace MonoTorrent.Client.Tracker
         {
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (RetryDelay.TotalSeconds * MaxRetries));
 
-            using (var udpClient = new UdpClient (Uri.Host, Uri.Port))
-            using (cts.Token.Register (() => udpClient.Dispose ())) {
-                SendAsync (udpClient, msg, cts.Token);
-                return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token);
+            try {
+                // Calling the UdpClient ctor which takes a hostname, or calling the Connect method,
+                // results in a synchronous DNS resolve. Ensure we're on a threadpool thread to avoid
+                // blocking.
+                await MainLoop.SwitchToThreadpool ();
+                using var udpClient = new UdpClient (Uri.Host, Uri.Port);
+                using (cts.Token.Register (() => udpClient.Dispose ())) {
+                    SendAsync (udpClient, msg, cts.Token);
+                    return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token).ConfigureAwait (false);
+                }
+            } catch {
+                cts.Token.ThrowIfCancellationRequested ();
+                throw;
             }
         }
 
         async Task<UdpTrackerMessage> ReceiveAsync (UdpClient client, int transactionId, CancellationToken token)
         {
             while (!token.IsCancellationRequested) {
-                var received = await client.ReceiveAsync ();
-                UdpTrackerMessage rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
-                
+                UdpReceiveResult received = await client.ReceiveAsync ();
+                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
+
                 if (transactionId == rsp.TransactionId) {
                     if (rsp is ErrorMessage error) {
                         FailureMessage = error.Error;
@@ -133,14 +160,17 @@ namespace MonoTorrent.Client.Tracker
                     }
                 }
             }
-            throw new Exception ("The tracker did not respond.");
+            // If we get here then the token will have been cancelled. We need the additional
+            // 'throw' statement to keep the compiler happy.
+            token.ThrowIfCancellationRequested ();
+            throw new OperationCanceledException ("The tracker did not respond.");
         }
 
         void SendAsync (UdpClient client, UdpTrackerMessage msg, CancellationToken token)
         {
-            var buffer = msg.Encode ();
-
+            byte[] buffer = msg.Encode ();
             client.Send (buffer, buffer.Length);
+
             ClientEngine.MainLoop.QueueTimeout (RetryDelay, () => {
                 try {
                     if (!token.IsCancellationRequested)
@@ -150,11 +180,6 @@ namespace MonoTorrent.Client.Tracker
                     return false;
                 }
             });
-        }
-
-        public override string ToString ()
-        {
-            return Uri.ToString ();
         }
     }
 }

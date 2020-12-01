@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.Net;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Dht
@@ -10,7 +9,7 @@ namespace MonoTorrent.Dht
     public class ClosestNodesCollectionTests
     {
         [Test]
-        public void AddSameElementTwice()
+        public void AddSameElementTwice ()
         {
             var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
@@ -23,16 +22,16 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void CloserNodes()
+        public void CloserNodes ()
         {
             var value = new BigEndianBigInteger (1);
 
             var closeNodes = new List<Node> ();
             var farNodes = new List<Node> ();
 
-            for (int i = 0; i < Bucket.MaxCapacity; i ++) {
+            for (int i = 0; i < Bucket.MaxCapacity; i++) {
                 closeNodes.Add (new Node (new NodeId (value << i), new IPEndPoint (IPAddress.Any, i)));
-                farNodes.Add   (new Node (new NodeId (value << (i + Bucket.MaxCapacity)), new IPEndPoint (IPAddress.Any, i + Bucket.MaxCapacity)));
+                farNodes.Add (new Node (new NodeId (value << (i + Bucket.MaxCapacity)), new IPEndPoint (IPAddress.Any, i + Bucket.MaxCapacity)));
             }
 
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
@@ -51,7 +50,7 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void ContainsTest()
+        public void ContainsTest ()
         {
             var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
@@ -61,7 +60,7 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void RemoveOnlyElement()
+        public void RemoveOnlyElement ()
         {
             var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
             var otherNode = new Node (NodeId.Maximum, new IPEndPoint (IPAddress.Any, 2));

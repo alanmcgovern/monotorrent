@@ -40,36 +40,40 @@ namespace MonoTorrent.Dht
         readonly RandomNumberGenerator random;
         readonly SHA1 sha1;
 
-        public TokenManager()
+        public TokenManager ()
         {
-            sha1 = HashAlgoFactory.Create<SHA1>();
+            sha1 = HashAlgoFactory.SHA1 ();
             random = new RNGCryptoServiceProvider ();
             currentSecret = new byte[10];
             previousSecret = new byte[10];
-            random.GetNonZeroBytes(currentSecret);
-            random.GetNonZeroBytes(previousSecret);
+            random.GetNonZeroBytes (currentSecret);
+            random.GetNonZeroBytes (previousSecret);
         }
 
-        public BEncodedString GenerateToken(Node node)
-            => GenerateToken (node, currentSecret);
-
-        BEncodedString GenerateToken(Node node, byte[] secret)
+        public BEncodedString GenerateToken (Node node)
         {
-            byte[] n = node.CompactPort().TextBytes;
-            sha1.Initialize();
-            sha1.TransformBlock(n, 0, n.Length, n, 0);
-            sha1.TransformFinalBlock(secret, 0, secret.Length);
+            return GenerateToken (node, currentSecret);
+        }
+
+        BEncodedString GenerateToken (Node node, byte[] secret)
+        {
+            byte[] n = node.CompactPort ().TextBytes;
+            sha1.Initialize ();
+            sha1.TransformBlock (n, 0, n.Length, n, 0);
+            sha1.TransformFinalBlock (secret, 0, secret.Length);
 
             return sha1.Hash;
         }
 
         public void RefreshTokens ()
         {
-            currentSecret.CopyTo(previousSecret, 0);
-            random.GetNonZeroBytes(currentSecret);
+            currentSecret.CopyTo (previousSecret, 0);
+            random.GetNonZeroBytes (currentSecret);
         }
 
-        public bool VerifyToken(Node node, BEncodedString token)
-            => token.Equals(GenerateToken(node, currentSecret)) || token.Equals(GenerateToken(node, previousSecret));
+        public bool VerifyToken (Node node, BEncodedString token)
+        {
+            return token.Equals (GenerateToken (node, currentSecret)) || token.Equals (GenerateToken (node, previousSecret));
+        }
     }
 }

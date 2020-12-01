@@ -32,7 +32,7 @@ namespace MonoTorrent.Client.Messages.Standard
     class RequestMessage : PeerMessage
     {
         internal static readonly byte MessageId = 6;
-        private const int messageLength = 13;
+        const int messageLength = 13;
 
         internal const int MaxSize = 65536 + 64;
         internal const int MinSize = 4096;
@@ -50,11 +50,11 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Constructors
 
-        public RequestMessage()
+        public RequestMessage ()
         {
         }
 
-        public RequestMessage(int pieceIndex, int startOffset, int requestLength)
+        public RequestMessage (int pieceIndex, int startOffset, int requestLength)
         {
             PieceIndex = pieceIndex;
             StartOffset = startOffset;
@@ -66,51 +66,50 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Methods
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            PieceIndex = ReadInt(buffer, ref offset);
-            StartOffset = ReadInt(buffer, ref offset);
-            RequestLength = ReadInt(buffer, ref offset);
+            PieceIndex = ReadInt (buffer, ref offset);
+            StartOffset = ReadInt (buffer, ref offset);
+            RequestLength = ReadInt (buffer, ref offset);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, messageLength);
-            written += Write(buffer, written, MessageId);
-            written += Write(buffer, written, PieceIndex);
-            written += Write(buffer, written, StartOffset);
-            written += Write(buffer, written, RequestLength);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
+            written += Write (buffer, written, PieceIndex);
+            written += Write (buffer, written, StartOffset);
+            written += Write (buffer, written, RequestLength);
 
-            return CheckWritten(written - offset);
+            return written - offset;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
-            RequestMessage msg = obj as RequestMessage;
-            return (msg == null) ? false : (PieceIndex == msg.PieceIndex
-                                            && StartOffset == msg.StartOffset
-                                            && RequestLength == msg.RequestLength);
+            return (!(obj is RequestMessage msg)) ? false : (PieceIndex == msg.PieceIndex
+                                                             && StartOffset == msg.StartOffset
+                                                             && RequestLength == msg.RequestLength);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return (PieceIndex.GetHashCode() ^ RequestLength.GetHashCode() ^ StartOffset.GetHashCode());
+            return (PieceIndex.GetHashCode () ^ RequestLength.GetHashCode () ^ StartOffset.GetHashCode ());
         }
 
-        public override string ToString()
+        public override string ToString ()
         {
 
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append("RequestMessage ");
-            sb.Append(" Index ");
-            sb.Append(PieceIndex);
-            sb.Append(" Offset ");
-            sb.Append(StartOffset);
-            sb.Append(" Length ");
-            sb.Append(RequestLength);
-            return sb.ToString();
+            var sb = new System.Text.StringBuilder ();
+            sb.Append ("RequestMessage ");
+            sb.Append (" Index ");
+            sb.Append (PieceIndex);
+            sb.Append (" Offset ");
+            sb.Append (StartOffset);
+            sb.Append (" Length ");
+            sb.Append (RequestLength);
+            return sb.ToString ();
         }
 
         #endregion

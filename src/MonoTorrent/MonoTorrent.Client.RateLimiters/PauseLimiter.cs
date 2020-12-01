@@ -31,26 +31,18 @@ namespace MonoTorrent.Client.RateLimiters
 {
     sealed class PauseLimiter : IRateLimiter
     {
-        TorrentManager manager;
+        readonly TorrentManager manager;
 
-        public bool Unlimited
-        {
-            get { return manager.State != TorrentState.Paused; }
-        }
+        public bool Unlimited => manager.State != TorrentState.Paused;
 
-        public PauseLimiter(TorrentManager manager)
+        public PauseLimiter (TorrentManager manager)
         {
             this.manager = manager;
         }
 
-        public bool TryProcess(long amount)
+        public bool TryProcess (long amount)
         {
             return Unlimited;
-        }
-
-        public void UpdateChunks (long maxRate, long actualRate)
-        {
-            // This is a simple on/off limiter
         }
     }
 }

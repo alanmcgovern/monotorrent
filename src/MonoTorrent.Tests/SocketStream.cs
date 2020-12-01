@@ -69,10 +69,10 @@ namespace MonoTorrent
         public override void Flush ()
             => throw new NotSupportedException ();
 
-        public override int Read (byte [] buffer, int offset, int count)
+        public override int Read (byte[] buffer, int offset, int count)
             => throw new NotSupportedException ();
 
-        public override async Task<int> ReadAsync (byte [] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override async Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             Tuple<TaskCompletionSource<Data>, IDisposable> tcsPair;
             lock (Writes) {
@@ -108,10 +108,10 @@ namespace MonoTorrent
         public override void SetLength (long value)
             => throw new NotSupportedException ();
 
-        public override void Write (byte [] buffer, int offset, int count)
+        public override void Write (byte[] buffer, int offset, int count)
             => throw new NotSupportedException ();
 
-        public override Task WriteAsync (byte [] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override Task WriteAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             Tuple<TaskCompletionSource<Data>, IDisposable> tcsPair;
             lock (Writes) {

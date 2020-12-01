@@ -37,177 +37,133 @@ namespace MonoTorrent.Tracker
     ///<summary>This class holds informations about Peers downloading Files</summary>
     public class Peer : IEquatable<Peer>
     {
-        private IPEndPoint clientAddress;
-        private object dictionaryKey;
-        private long downloaded;
-        private long uploaded;
-        private long left;
-        private int downloadSpeed;
-        private int uploadSpeed;
-        private DateTime lastAnnounceTime;
-        private BEncodedString peerId;
-
-
         internal Peer (IPEndPoint endPoint, object dictionaryKey)
         {
             ClientAddress = endPoint;
-            this.dictionaryKey = dictionaryKey;
+            DictionaryKey = dictionaryKey;
         }
 
-        internal Peer(AnnounceRequest par, object dictionaryKey)
+        internal Peer (AnnounceRequest par, object dictionaryKey)
         {
-            this.dictionaryKey = dictionaryKey;
-            Update(par);
+            DictionaryKey = dictionaryKey;
+            Update (par);
         }
 
 
         /// <summary>
         /// The IPEndpoint at which the client is listening for connections at
         /// </summary>
-        public IPEndPoint ClientAddress
-        {
-            get { return clientAddress; }
-            private set { clientAddress = value; }
-        }
+        public IPEndPoint ClientAddress { get; private set; }
+
+        public Software ClientApp { get; private set; }
 
         ///<summary>
         /// A byte[] containing the peer's IPEndpoint in compact form
         ///</summary>
-        internal byte[] CompactEntry
-        {
-            get { return GenerateCompactPeersEntry(); }
-        }
+        internal byte[] CompactEntry => GenerateCompactPeersEntry ();
 
-        internal object DictionaryKey
-        {
-            get { return dictionaryKey; }
-        }
+        internal object DictionaryKey { get; }
 
         /// <summary>
         /// The amount of data (in bytes) which the peer has downloaded this session
         /// </summary>
-        public long Downloaded
-        {
-            get { return downloaded; }
-        }
+        public long Downloaded { get; set; }
 
         /// <summary>
         /// The estimated download speed of the peer in bytes/second
         /// </summary>
-        public int DownloadSpeed
-        {
-            get { return downloadSpeed; }
-        }
+        public int DownloadSpeed { get; set; }
 
         ///<summary>
         /// True if the peer has completed the torrent
         /// </summary>
-        public bool HasCompleted
-        {
-            get { return Remaining == 0; }
-        }
+        public bool HasCompleted => Remaining == 0;
 
         /// <summary>
         /// The time when the peer last announced at
         /// </summary>
-        public DateTime LastAnnounceTime
-        {
-            get { return lastAnnounceTime; }
-        }
+        public DateTime LastAnnounceTime { get; set; }
 
         ///<summary>The peer entry in non compact format.</summary> 
-        internal BEncodedDictionary NonCompactEntry
-        {
-            get { return GeneratePeersEntry(); }
-        }
+        internal BEncodedDictionary NonCompactEntry => GeneratePeersEntry ();
 
         ///<summary>
         ///The Id of the client software
         ///</summary>
-        public BEncodedString PeerId
-        {
-            get { return peerId; }
-        }
+        public BEncodedString PeerId { get; set; }
 
         /// <summary>
         /// The amount of data (in bytes) which the peer has to download to complete the torrent
         /// </summary>
-        public long Remaining
-        {
-            get { return left; }
-        }
+        public long Remaining { get; set; }
 
         /// <summary>
         /// The amount of data the peer has uploaded this session
         /// </summary>
-        public long Uploaded
-        {
-            get { return uploaded; }
-        }
+        public long Uploaded { get; set; }
 
         /// <summary>
         /// The estimated upload speed of the peer in bytes/second
         /// </summary>
-        public int UploadSpeed
+        public int UploadSpeed { get; set; }
+
+        public override bool Equals (object obj)
         {
-            get { return uploadSpeed; }
+            return Equals (obj as Peer);
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as Peer);
-        }
-
-        public bool Equals(Peer other)
+        public bool Equals (Peer other)
         {
             if (other == null)
                 return false;
-            return dictionaryKey.Equals(other.dictionaryKey);
+            return DictionaryKey.Equals (other.DictionaryKey);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return dictionaryKey.GetHashCode();
+            return DictionaryKey.GetHashCode ();
         }
 
-        internal void Update(AnnounceRequest parameters)
+        internal void Update (AnnounceRequest parameters)
         {
             DateTime now = DateTime.Now;
-            double elapsedTime = (now - lastAnnounceTime).TotalSeconds;
+            double elapsedTime = (now - LastAnnounceTime).TotalSeconds;
             if (elapsedTime < 1)
                 elapsedTime = 1;
 
-            clientAddress = parameters.ClientAddress;
-            downloadSpeed = (int)((parameters.Downloaded - downloaded) / elapsedTime);
-            uploadSpeed = (int)((parameters.Uploaded - uploaded) / elapsedTime);
-            downloaded = parameters.Downloaded;
-            uploaded = parameters.Uploaded;
-            left = parameters.Left;
-            peerId = parameters.PeerId;
-            lastAnnounceTime = now;
+            ClientAddress = parameters.ClientAddress;
+            DownloadSpeed = (int) ((parameters.Downloaded - Downloaded) / elapsedTime);
+            UploadSpeed = (int) ((parameters.Uploaded - Uploaded) / elapsedTime);
+            Downloaded = parameters.Downloaded;
+            Uploaded = parameters.Uploaded;
+            Remaining = parameters.Left;
+            PeerId = parameters.PeerId;
+            ClientApp = new Software (parameters.PeerId);
+            LastAnnounceTime = now;
         }
 
 
-        private BEncodedDictionary GeneratePeersEntry()
+        BEncodedDictionary GeneratePeersEntry ()
         {
             BEncodedString encPeerId = PeerId;
-            BEncodedString encAddress = new BEncodedString(ClientAddress.Address.ToString());
-            BEncodedNumber encPort = new BEncodedNumber(ClientAddress.Port);
+            var encAddress = new BEncodedString (ClientAddress.Address.ToString ());
+            var encPort = new BEncodedNumber (ClientAddress.Port);
 
-            BEncodedDictionary dictionary = new BEncodedDictionary();
-            dictionary.Add(TrackerServer.PeerIdKey, encPeerId);
-            dictionary.Add(TrackerServer.Ip, encAddress);
-            dictionary.Add(TrackerServer.Port, encPort);
+            var dictionary = new BEncodedDictionary {
+                { TrackerServer.PeerIdKey, encPeerId },
+                { TrackerServer.Ip, encAddress },
+                { TrackerServer.Port, encPort }
+            };
             return dictionary;
         }
-        private byte[] GenerateCompactPeersEntry()
+        byte[] GenerateCompactPeersEntry ()
         {
-            byte[] port = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)ClientAddress.Port));
-            byte[] addr = ClientAddress.Address.GetAddressBytes();
+            byte[] port = BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short) ClientAddress.Port));
+            byte[] addr = ClientAddress.Address.GetAddressBytes ();
             byte[] entry = new byte[addr.Length + port.Length];
 
-            Array.Copy(addr, entry, addr.Length);
-            Array.Copy(port, 0, entry, addr.Length, port.Length);
+            Array.Copy (addr, entry, addr.Length);
+            Array.Copy (port, 0, entry, addr.Length, port.Length);
             return entry;
         }
     }

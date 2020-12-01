@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
 using System.Threading;
+
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -14,68 +12,66 @@ namespace MonoTorrent.Client
         MainLoop loop;
 
         [OneTimeSetUp]
-        public void FixtureSetup()
+        public void FixtureSetup ()
         {
-            loop = new MainLoop("Test Loop");
+            loop = new MainLoop ("Test Loop");
         }
 
         [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void FixtureTeardown ()
         {
             //loop.Dispose();
         }
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
             count = 0;
         }
 
         [Test]
-        public void TaskTest()
+        public void TaskTest ()
         {
-            Assert.AreEqual(5, loop.QueueWait(delegate { return 5; }), "#1");
+            Assert.AreEqual (5, loop.QueueWait (() => 5), "#1");
 
-            ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueWait((Action)delegate { handle.Set(); });
-            Assert.IsTrue(handle.WaitOne(5000, true), "#2");
+            ManualResetEvent handle = new ManualResetEvent (false);
+            loop.QueueWait (() => handle.Set());
+            Assert.IsTrue (handle.WaitOne (5000, true), "#2");
         }
 
         [Test]
-        public void RepeatedTask()
+        public void RepeatedTask ()
         {
             //Console.WriteLine("Starting");
-            ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate {
+            ManualResetEvent handle = new ManualResetEvent (false);
+            loop.QueueTimeout (TimeSpan.FromMilliseconds (0), delegate {
                 this.count++;
-                if (count == 3)
-                {
-                    handle.Set();
+                if (count == 3) {
+                    handle.Set ();
                     return false;
                 }
 
                 return true;
             });
-            Assert.IsTrue(handle.WaitOne(5000, true), "#1: Executed {0} times", count);
-            Assert.AreEqual(3, count, "#2");
+            Assert.IsTrue (handle.WaitOne (5000, true), "#1: Executed {0} times", count);
+            Assert.AreEqual (3, count, "#2");
         }
 
         [Test]
-        public void LongRunningTask()
+        public void LongRunningTask ()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
-                System.Threading.Thread.Sleep(50);
-                if (++count == 3)
-                {
-                    handle.Set();
+            ManualResetEvent handle = new ManualResetEvent (false);
+            loop.QueueTimeout (TimeSpan.FromMilliseconds (10), delegate {
+                Thread.Sleep (50);
+                if (++count == 3) {
+                    handle.Set ();
                     return false;
                 }
 
                 return true;
             });
-            Assert.IsTrue(handle.WaitOne(5000, false), "#1: Executed {0} times", count);
-            Assert.AreEqual(3, count, "#2");
+            Assert.IsTrue (handle.WaitOne (5000, false), "#1: Executed {0} times", count);
+            Assert.AreEqual (3, count, "#2");
         }
     }
 }

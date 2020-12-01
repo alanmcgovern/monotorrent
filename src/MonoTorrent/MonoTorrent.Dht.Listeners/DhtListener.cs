@@ -33,8 +33,8 @@ namespace MonoTorrent.Dht.Listeners
 {
     class DhtListener : UdpListener, IDhtListener
     {
-        public DhtListener(IPEndPoint endpoint)
-            : base(endpoint)
+        public DhtListener (IPEndPoint endpoint)
+            : base (endpoint)
         {
 
         }

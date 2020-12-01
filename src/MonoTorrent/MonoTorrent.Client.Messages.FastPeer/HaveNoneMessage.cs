@@ -36,32 +36,38 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
         public override int ByteLength => messageLength + 4;
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
-                throw new ProtocolException("Message encoding not supported");
+                throw new ProtocolException ("Message encoding not supported");
 
             int written = offset;
 
-            written += Write(buffer, written, messageLength);
-            written += Write(buffer, written, MessageId);
+            written += Write (buffer, written, messageLength);
+            written += Write (buffer, written, MessageId);
 
-            return CheckWritten(written - offset);
+            return written - offset;
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
             if (!ClientEngine.SupportsFastPeer)
-                throw new ProtocolException("Message decoding not supported");
+                throw new ProtocolException ("Message decoding not supported");
         }
 
-        public override bool Equals(object obj)
-            => obj is HaveNoneMessage;
+        public override bool Equals (object obj)
+        {
+            return obj is HaveNoneMessage;
+        }
 
-        public override int GetHashCode()
-            => 1;
+        public override int GetHashCode ()
+        {
+            return 1;
+        }
 
-        public override string ToString()
-            => "HaveNoneMessage";
+        public override string ToString ()
+        {
+            return "HaveNoneMessage";
+        }
     }
 }

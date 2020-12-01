@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -32,6 +32,7 @@ using System.IO;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Common
@@ -39,37 +40,38 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentTest
     {
+        BEncodedDictionary torrentInfo;
         private Torrent torrent;
         private long creationTime;
-        readonly System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();
+        readonly System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create ();
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [SetUp]
-        public void StartUp()
+        public void StartUp ()
         {
-            DateTime current = new DateTime(2006, 7, 1, 5, 5, 5);
-            DateTime epochStart = new DateTime(1970, 1, 1, 0, 0, 0);
+            DateTime current = new DateTime (2006, 7, 1, 5, 5, 5);
+            DateTime epochStart = new DateTime (1970, 1, 1, 0, 0, 0);
             TimeSpan span = current - epochStart;
-            creationTime = (long)span.TotalSeconds;
-            Console.WriteLine(creationTime.ToString() + "Creation seconds");
+            creationTime = (long) span.TotalSeconds;
+            Console.WriteLine ($"{creationTime}Creation seconds");
 
-            BEncodedDictionary torrentInfo = new BEncodedDictionary {
+            torrentInfo = new BEncodedDictionary {
                 { "announce", new BEncodedString ("http://myannouceurl/announce") },
                 { "creation date", new BEncodedNumber (creationTime) },
                 { "nodes", new BEncodedList () },                    //FIXME: What is this?
                 { "comment.utf-8", new BEncodedString ("my big long comment") },
                 { "comment", new BEncodedString ("my big long comment") },
                 { "azureus_properties", new BEncodedDictionary () }, //FIXME: What is this?
-                { "created by", new BEncodedString ("MonoTorrent/" + VersionInfo.ClientVersion) },
+                { "created by", new BEncodedString ($"MonoTorrent/{VersionInfo.ClientVersion}") },
                 { "encoding", new BEncodedString ("UTF-8") },
                 { "info", CreateInfoDict () },
                 { "private", new BEncodedString ("1") }
             };
-            torrent = Torrent.Load(torrentInfo);
+            torrent = Torrent.Load (torrentInfo);
         }
-        private BEncodedDictionary CreateInfoDict()
+        private BEncodedDictionary CreateInfoDict ()
         {
             BEncodedDictionary dict = new BEncodedDictionary {
                 { "source", new BEncodedString ("http://www.thisiswhohostedit.com") },
@@ -88,17 +90,15 @@ namespace MonoTorrent.Common
             };
             return dict;
         }
-        private BEncodedList CreateFiles()
+        private BEncodedList CreateFiles ()
         {
-            BEncodedList files = new BEncodedList();
-            BEncodedDictionary file;
-            BEncodedList path;
+            BEncodedList files = new BEncodedList ();
 
-            path = new BEncodedList {
+            BEncodedList path = new BEncodedList {
                 new BEncodedString ("file1.txt")
             };
 
-            file = new BEncodedDictionary {
+            BEncodedDictionary file = new BEncodedDictionary {
                 { "sha1", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash1"))) },
                 { "ed2k", new BEncodedString (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("file1 hash2"))) },
                 { "length", new BEncodedNumber (50000) },
@@ -107,7 +107,7 @@ namespace MonoTorrent.Common
                 { "path", path }
             };
 
-            files.Add(file);
+            files.Add (file);
 
 
             path = new BEncodedList {
@@ -124,7 +124,7 @@ namespace MonoTorrent.Common
                 { "path", path }
             };
 
-            files.Add(file);
+            files.Add (file);
 
 
             path = new BEncodedList {
@@ -142,7 +142,7 @@ namespace MonoTorrent.Common
                 { "path", path }
             };
 
-            files.Add(file);
+            files.Add (file);
 
 
             path = new BEncodedList {
@@ -160,150 +160,172 @@ namespace MonoTorrent.Common
                 { "path", path }
             };
 
-            files.Add(file);
+            files.Add (file);
 
             return files;
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void AnnounceUrl()
+        public void AnnounceUrl ()
         {
-            Assert.IsTrue(torrent.AnnounceUrls.Count == 1);
-			Assert.IsTrue(torrent.AnnounceUrls[0].Count == 1);
-            Assert.IsTrue(torrent.AnnounceUrls[0][0] == "http://myannouceurl/announce");
+            Assert.IsTrue (torrent.AnnounceUrls.Count == 1);
+            Assert.IsTrue (torrent.AnnounceUrls[0].Count == 1);
+            Assert.IsTrue (torrent.AnnounceUrls[0][0] == "http://myannouceurl/announce");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void CreationDate()
+        public void CreationDate ()
         {
-            Assert.AreEqual(2006, torrent.CreationDate.Year, "Year wrong");
-            Assert.AreEqual(7, torrent.CreationDate.Month, "Month Wrong");
-            Assert.AreEqual(1, torrent.CreationDate.Day, "Day Wrong");
-            Assert.AreEqual(5, torrent.CreationDate.Hour, "Hour Wrong");
-            Assert.AreEqual(5, torrent.CreationDate.Minute, "Minute Wrong");
-            Assert.AreEqual(5, torrent.CreationDate.Second, "Second Wrong");
-            Assert.AreEqual(new DateTime(2006, 7, 1, 5, 5, 5), torrent.CreationDate);
+            Assert.AreEqual (2006, torrent.CreationDate.Year, "Year wrong");
+            Assert.AreEqual (7, torrent.CreationDate.Month, "Month Wrong");
+            Assert.AreEqual (1, torrent.CreationDate.Day, "Day Wrong");
+            Assert.AreEqual (5, torrent.CreationDate.Hour, "Hour Wrong");
+            Assert.AreEqual (5, torrent.CreationDate.Minute, "Minute Wrong");
+            Assert.AreEqual (5, torrent.CreationDate.Second, "Second Wrong");
+            Assert.AreEqual (new DateTime (2006, 7, 1, 5, 5, 5), torrent.CreationDate);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Comment()
+        public void Comment ()
         {
-            Assert.AreEqual(torrent.Comment, "my big long comment");
+            Assert.AreEqual (torrent.Comment, "my big long comment");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void CreatedBy()
+        public void CreatedBy ()
         {
-            Assert.AreEqual(torrent.CreatedBy, "MonoTorrent/" + VersionInfo.ClientVersion);
+            Assert.AreEqual (torrent.CreatedBy, $"MonoTorrent/{VersionInfo.ClientVersion}");
+        }
+
+        [Test]
+        public void NodesIsNotAList ()
+        {
+            torrentInfo["nodes"] = new BEncodedString ("192.168.0.1:12345");
+            torrent = Torrent.Load (torrentInfo);
+            Assert.IsNull (torrent.Nodes, "#1");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void ED2K()
+        public void ED2K ()
         {
-            Assert.IsTrue(Toolbox.ByteMatch(torrent.ED2K, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
+            Assert.IsTrue (Toolbox.ByteMatch (torrent.ED2K, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("ed2k isn't a sha, but who cares"))));
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Encoding()
+        public void Encoding ()
         {
-            Assert.IsTrue(torrent.Encoding == "UTF-8");
+            Assert.IsTrue (torrent.Encoding == "UTF-8");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Files()
+        public void Files ()
         {
-            Assert.AreEqual(4, torrent.Files.Length);
+            Assert.AreEqual (4, torrent.Files.Count);
 
-            Assert.AreEqual("file1.txt", torrent.Files[0].Path);
-            Assert.AreEqual(50000, torrent.Files[0].Length);
+            Assert.AreEqual ("file1.txt", torrent.Files[0].Path);
+            Assert.AreEqual (50000, torrent.Files[0].Length);
 
-            Assert.AreEqual(Path.Combine("subfolder1", "file2.txt"), torrent.Files[1].Path);
-            Assert.AreEqual(60000, torrent.Files[1].Length);
+            Assert.AreEqual (Path.Combine ("subfolder1", "file2.txt"), torrent.Files[1].Path);
+            Assert.AreEqual (60000, torrent.Files[1].Length);
 
-            Assert.AreEqual(Path.Combine(Path.Combine("subfolder1", "subfolder2"), "file3.txt"), torrent.Files[2].Path);
-            Assert.AreEqual(70000, torrent.Files[2].Length);
+            Assert.AreEqual (Path.Combine (Path.Combine ("subfolder1", "subfolder2"), "file3.txt"), torrent.Files[2].Path);
+            Assert.AreEqual (70000, torrent.Files[2].Length);
 
-            Assert.AreEqual(Path.Combine(Path.Combine("subfolder1", "subfolder2"), "file4.txt"), torrent.Files[3].Path);
-            Assert.AreEqual(80000, torrent.Files[3].Length);
+            Assert.AreEqual (Path.Combine (Path.Combine ("subfolder1", "subfolder2"), "file4.txt"), torrent.Files[3].Path);
+            Assert.AreEqual (80000, torrent.Files[3].Length);
+        }
+
+        [Test]
+        public void InvalidPath ()
+        {
+            var files = ((BEncodedDictionary) torrentInfo["info"])["files"] as BEncodedList;
+
+            var newFile = new BEncodedDictionary ();
+            var path = new BEncodedList (new BEncodedString[] { "test", "..", "bar" });
+            newFile["path"] = path;
+            newFile["length"] = (BEncodedNumber) 15251;
+            files.Add (newFile);
+
+            Assert.Throws<ArgumentException> (() => Torrent.Load (torrentInfo));
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Name()
+        public void Name ()
         {
-            Assert.IsTrue(torrent.Name == "MyBaseFolder");
+            Assert.IsTrue (torrent.Name == "MyBaseFolder");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Private()
+        public void Private ()
         {
-            Assert.AreEqual(true, torrent.IsPrivate);
+            Assert.AreEqual (true, torrent.IsPrivate);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void PublisherUrl()
+        public void PublisherUrl ()
         {
-            Assert.AreEqual("http://www.iamthepublisher.com", torrent.PublisherUrl);
+            Assert.AreEqual ("http://www.iamthepublisher.com", torrent.PublisherUrl);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void PieceLength()
+        public void PieceLength ()
         {
-            Assert.IsTrue(torrent.PieceLength == 512);
+            Assert.IsTrue (torrent.PieceLength == 512);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Publisher()
+        public void Publisher ()
         {
-            Assert.IsTrue(torrent.Publisher == "MonoTorrent Inc.");
+            Assert.IsTrue (torrent.Publisher == "MonoTorrent Inc.");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Size()
+        public void Size ()
         {
-            Assert.AreEqual((50000 + 60000 + 70000 + 80000), torrent.Size);
+            Assert.AreEqual ((50000 + 60000 + 70000 + 80000), torrent.Size);
         }
 
         [Test]
-        public void StartEndIndices()
+        public void StartEndIndices ()
         {
             int pieceLength = 32 * 32;
             TorrentFile[] files = {
@@ -315,83 +337,83 @@ namespace MonoTorrent.Common
                 new TorrentFile ("File5", 236),
                 new TorrentFile ("File6", pieceLength * 7)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
+            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
-            Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#0a");
-            Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#0b");
+            Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#0a");
+            Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#0b");
 
-            Assert.AreEqual(0, t.Files[1].StartPieceIndex, "#1");
-            Assert.AreEqual(0, t.Files[1].EndPieceIndex, "#2");
+            Assert.AreEqual (0, t.Files[1].StartPieceIndex, "#1");
+            Assert.AreEqual (0, t.Files[1].EndPieceIndex, "#2");
 
-            Assert.AreEqual(0, t.Files[2].StartPieceIndex, "#3");
-            Assert.AreEqual(0, t.Files[2].EndPieceIndex, "#4");
+            Assert.AreEqual (0, t.Files[2].StartPieceIndex, "#3");
+            Assert.AreEqual (0, t.Files[2].EndPieceIndex, "#4");
 
-            Assert.AreEqual(1, t.Files[3].StartPieceIndex, "#5");
-            Assert.AreEqual(1, t.Files[3].EndPieceIndex, "#6");
+            Assert.AreEqual (1, t.Files[3].StartPieceIndex, "#5");
+            Assert.AreEqual (1, t.Files[3].EndPieceIndex, "#6");
 
-            Assert.AreEqual(1, t.Files[4].StartPieceIndex, "#7");
-            Assert.AreEqual(1, t.Files[4].EndPieceIndex, "#8");
+            Assert.AreEqual (1, t.Files[4].StartPieceIndex, "#7");
+            Assert.AreEqual (1, t.Files[4].EndPieceIndex, "#8");
 
-            Assert.AreEqual(2, t.Files[5].StartPieceIndex, "#9");
-            Assert.AreEqual(2, t.Files[5].EndPieceIndex, "#10");
+            Assert.AreEqual (2, t.Files[5].StartPieceIndex, "#9");
+            Assert.AreEqual (2, t.Files[5].EndPieceIndex, "#10");
 
-            Assert.AreEqual(2, t.Files[6].StartPieceIndex, "#11");
-            Assert.AreEqual(9, t.Files[6].EndPieceIndex, "#12");
+            Assert.AreEqual (2, t.Files[6].StartPieceIndex, "#11");
+            Assert.AreEqual (9, t.Files[6].EndPieceIndex, "#12");
         }
 
         [Test]
-        public void StartEndIndices2()
+        public void StartEndIndices2 ()
         {
             int pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength),
                 new TorrentFile ("File1", 0)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
+            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
-            Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
+            Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
 
-            Assert.AreEqual(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.AreEqual(0, t.Files[1].EndPieceIndex, "#4");
+            Assert.AreEqual (0, t.Files[1].StartPieceIndex, "#3");
+            Assert.AreEqual (0, t.Files[1].EndPieceIndex, "#4");
         }
 
         [Test]
-        public void StartEndIndices3()
+        public void StartEndIndices3 ()
         {
             int pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 10)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
+            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
-            Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
+            Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
 
-            Assert.AreEqual(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.AreEqual(0, t.Files[1].EndPieceIndex, "#4");
+            Assert.AreEqual (0, t.Files[1].StartPieceIndex, "#3");
+            Assert.AreEqual (0, t.Files[1].EndPieceIndex, "#4");
         }
 
         [Test]
-        public void StartEndIndices4()
+        public void StartEndIndices4 ()
         {
             int pieceLength = 32 * 32;
             TorrentFile[] files = {
                 new TorrentFile ("File0", pieceLength- 10),
                 new TorrentFile ("File1", 11)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
+            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
-            Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
+            Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
 
-            Assert.AreEqual(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.AreEqual(1, t.Files[1].EndPieceIndex, "#4");
+            Assert.AreEqual (0, t.Files[1].StartPieceIndex, "#3");
+            Assert.AreEqual (1, t.Files[1].EndPieceIndex, "#4");
         }
 
         [Test]
-        public void StartEndIndices5()
+        public void StartEndIndices5 ()
         {
             int pieceLength = 32 * 32;
             TorrentFile[] files = {
@@ -399,34 +421,34 @@ namespace MonoTorrent.Common
                 new TorrentFile ("File1", 10),
                 new TorrentFile ("File1", 1)
             };
-            Torrent t = TestRig.CreateMultiFileTorrent(files, pieceLength);
+            Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
-            Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
+            Assert.AreEqual (0, t.Files[0].EndPieceIndex, "#2");
 
-            Assert.AreEqual(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.AreEqual(0, t.Files[1].EndPieceIndex, "#4");
+            Assert.AreEqual (0, t.Files[1].StartPieceIndex, "#3");
+            Assert.AreEqual (0, t.Files[1].EndPieceIndex, "#4");
 
-            Assert.AreEqual(1, t.Files[2].StartPieceIndex, "#5");
-            Assert.AreEqual(1, t.Files[2].EndPieceIndex, "#6");
+            Assert.AreEqual (1, t.Files[2].StartPieceIndex, "#5");
+            Assert.AreEqual (1, t.Files[2].EndPieceIndex, "#6");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void Source()
+        public void Source ()
         {
-            Assert.IsTrue(torrent.Source == "http://www.thisiswhohostedit.com");
+            Assert.IsTrue (torrent.Source == "http://www.thisiswhohostedit.com");
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         [Test]
-        public void SHA1()
+        public void SHA1 ()
         {
-            Assert.IsTrue(Toolbox.ByteMatch(torrent.SHA1, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
+            Assert.IsTrue (Toolbox.ByteMatch (torrent.SHA1, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))));
         }
     }
 }

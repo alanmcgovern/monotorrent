@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,24 +37,28 @@ namespace MonoTorrent.Tracker.Listeners
 {
     class HttpTrackerListener : TrackerListener
     {
+        public bool IncompleteAnnounce { get; set; }
+
+        public bool IncompleteScrape { get; set; }
+
         string Prefix { get; }
 
-        public HttpTrackerListener(IPAddress address, int port)
-            : this(string.Format("http://{0}:{1}/announce/", address, port))
+        public HttpTrackerListener (IPAddress address, int port)
+            : this ($"http://{address}:{port}/announce/")
         {
 
         }
 
-        public HttpTrackerListener(IPEndPoint endpoint)
-            : this(endpoint.Address, endpoint.Port)
+        public HttpTrackerListener (IPEndPoint endpoint)
+            : this (endpoint.Address, endpoint.Port)
         {
 
         }
 
-        public HttpTrackerListener(string httpPrefix)
+        public HttpTrackerListener (string httpPrefix)
         {
-            if (string.IsNullOrEmpty(httpPrefix))
-                throw new ArgumentNullException("httpPrefix");
+            if (string.IsNullOrEmpty (httpPrefix))
+                throw new ArgumentNullException (nameof (httpPrefix));
 
             Prefix = httpPrefix;
         }
@@ -62,13 +66,15 @@ namespace MonoTorrent.Tracker.Listeners
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
-        protected override void Start(CancellationToken token)
+        protected override void Start (CancellationToken token)
         {
-			var listener = new HttpListener();
+            var listener = new HttpListener ();
             token.Register (() => listener.Close ());
 
-            listener.Prefixes.Add(Prefix);
-            listener.Start();
+            listener.Prefixes.Add (Prefix);
+            if (Prefix.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
+                listener.Prefixes.Add (Prefix.Remove (Prefix.Length - "/announce/".Length) + "/scrape/");
+            listener.Start ();
             GetContextAsync (listener, token);
         }
 
@@ -76,7 +82,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             while (!token.IsCancellationRequested) {
                 try {
-                    var context = await listener.GetContextAsync ().ConfigureAwait (false);
+                    HttpListenerContext context = await listener.GetContextAsync ().ConfigureAwait (false);
                     ProcessContextAsync (context, token);
                 } catch {
                 }
@@ -86,11 +92,16 @@ namespace MonoTorrent.Tracker.Listeners
         async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
         {
             using (context.Response) {
-                bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
+                bool isScrape = context.Request.RawUrl.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
 
-                BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
+                if (IncompleteAnnounce || IncompleteScrape) {
+                    await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024, token);
+                    return;
+                }
 
-                byte[] response = responseData.Encode();
+                BEncodedValue responseData = Handle (context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
+
+                byte[] response = responseData.Encode ();
                 context.Response.ContentType = "text/plain";
                 context.Response.StatusCode = 200;
                 context.Response.ContentLength64 = response.LongLength;

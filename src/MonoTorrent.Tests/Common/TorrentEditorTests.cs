@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
+
+using MonoTorrent.BEncoding;
 
 using NUnit.Framework;
-using MonoTorrent.BEncoding;
-using System.Collections.Generic;
 
 namespace MonoTorrent.Common
 {
@@ -21,7 +22,7 @@ namespace MonoTorrent.Common
         [Test]
         public void Announces_OneTier ()
         {
-            var tier = new RawTrackerTier { "http://test.com/announce" };
+            var tier = new List<string> { "http://test.com/announce" };
             var editor = new TorrentEditor (new BEncodedDictionary ());
             editor.Announces.Add (tier);
 
@@ -33,7 +34,7 @@ namespace MonoTorrent.Common
         [Test]
         public void Announces_OneTierThenRemove ()
         {
-            var tier = new RawTrackerTier { "http://test.com/announce" };
+            var tier = new List<string> { "http://test.com/announce" };
             var editor = new TorrentEditor (new BEncodedDictionary ());
             editor.Announces.Add (tier);
 
@@ -62,7 +63,7 @@ namespace MonoTorrent.Common
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
-            Assert.AreEqual ("a", d ["comment"].ToString (), "#1");
+            Assert.AreEqual ("a", d["comment"].ToString (), "#1");
         }
 
         [Test]
@@ -72,11 +73,11 @@ namespace MonoTorrent.Common
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
             d = editor.ToDictionary ();
-            Assert.AreEqual ("b", d ["comment"].ToString (), "#1");
+            Assert.AreEqual ("b", d["comment"].ToString (), "#1");
         }
 
         [Test]
-        public void EditComment_null()
+        public void EditComment_null ()
         {
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d) {
@@ -90,21 +91,17 @@ namespace MonoTorrent.Common
         [Test]
         public void ReplaceInfoDict ()
         {
-            Assert.Throws<InvalidOperationException>(() =>
-           {
-               var editor = new TorrentEditor(new BEncodedDictionary()) { CanEditSecureMetadata = false };
-               editor.SetCustom("info", new BEncodedDictionary());
-           });
+            var editor = new TorrentEditor (new BEncodedDictionary ());
+            Assert.IsFalse (editor.CanEditSecureMetadata);
+            Assert.Throws<InvalidOperationException> (() => editor.SetCustom ("info", new BEncodedDictionary ()));
         }
 
         [Test]
         public void EditProtectedProperty_NotAllowed ()
         {
-            Assert.Throws<InvalidOperationException>(() =>
-           {
-               var editor = new TorrentEditor(new BEncodedDictionary()) { CanEditSecureMetadata = false };
-               editor.PieceLength = 16;
-           });
+            var editor = new TorrentEditor (new BEncodedDictionary ());
+            Assert.IsFalse (editor.CanEditSecureMetadata);
+            Assert.Throws<InvalidOperationException> (() => editor.PieceLength = 16);
         }
 
         BEncodedDictionary Create (string key, string value)

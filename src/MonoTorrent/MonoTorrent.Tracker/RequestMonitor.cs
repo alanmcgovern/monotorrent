@@ -57,22 +57,26 @@ namespace MonoTorrent.Tracker
         SpeedMonitor Announces { get; }
         SpeedMonitor Scrapes { get; }
 
-        public RequestMonitor()
+        public RequestMonitor ()
         {
-            Announces = new SpeedMonitor();
-            Scrapes = new SpeedMonitor();
+            Announces = new SpeedMonitor ();
+            Scrapes = new SpeedMonitor ();
         }
 
-        internal void AnnounceReceived()
-            => Announces.AddDelta(1);
-
-        internal void ScrapeReceived()
-            => Scrapes.AddDelta(1);
-
-        internal void Tick()
+        internal void AnnounceReceived ()
         {
-            Announces.Tick();
-            Scrapes.Tick();
+            Announces.AddDelta (1);
+        }
+
+        internal void ScrapeReceived ()
+        {
+            Scrapes.AddDelta (1);
+        }
+
+        internal void Tick ()
+        {
+            Announces.Tick ();
+            Scrapes.Tick ();
         }
     }
 }

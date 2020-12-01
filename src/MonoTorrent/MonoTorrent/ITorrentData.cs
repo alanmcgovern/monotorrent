@@ -27,12 +27,36 @@
 //
 
 
-namespace MonoTorrent
+using System.Collections.Generic;
+
+namespace MonoTorrent.Client
 {
     public interface ITorrentData
     {
-        TorrentFile[] Files { get; }
+        /// <summary>
+        /// The files contained within the Torrent
+        /// </summary>
+        IList<ITorrentFileInfo> Files { get; }
+
+        /// <summary>
+        /// The size, in bytes, of each piece
+        /// </summary>
         int PieceLength { get; }
+
+        /// <summary>
+        /// The size, in bytes, of the torrent.
+        /// </summary>
         long Size { get; }
+    }
+
+    static class ITorrentDataExtensions
+    {
+        /// <summary>
+        /// The number of pieces in the torrent
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static int PieceCount (this ITorrentData self)
+            => (int) (self.Size / self.PieceLength) + (self.Size % self.PieceLength != 0 ? 1 : 0);
     }
 }

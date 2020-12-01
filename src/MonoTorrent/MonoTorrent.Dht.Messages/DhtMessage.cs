@@ -42,59 +42,51 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString MessageTypeKey = "y";
         static readonly BEncodedString DhtVersion = VersionInfo.DhtClientVersion;
 
-        protected BEncodedDictionary properties = new BEncodedDictionary();
+        protected BEncodedDictionary properties = new BEncodedDictionary ();
 
         public BEncodedString ClientVersion
-             => (BEncodedString)properties.GetValueOrDefault(VersionKey) ?? BEncodedString.Empty;
+             => (BEncodedString) properties.GetValueOrDefault (VersionKey) ?? BEncodedString.Empty;
 
-        internal abstract NodeId Id
-        {
+        internal abstract NodeId Id {
             get;
         }
 
-        public BEncodedString MessageType
-        {
-            get { return (BEncodedString)properties[MessageTypeKey]; }
-        }
+        public BEncodedString MessageType => (BEncodedString) properties[MessageTypeKey];
 
-        public BEncodedValue TransactionId
-        {
-            get { return properties[TransactionIdKey]; }
-            set { properties[TransactionIdKey] = value; }
+        public BEncodedValue TransactionId {
+            get => properties[TransactionIdKey];
+            set => properties[TransactionIdKey] = value;
         }
 
 
-        protected DhtMessage(BEncodedString messageType)
+        protected DhtMessage (BEncodedString messageType)
         {
-            properties.Add(TransactionIdKey, null);
-            properties.Add(MessageTypeKey, messageType);
+            properties.Add (TransactionIdKey, null);
+            properties.Add (MessageTypeKey, messageType);
             if (UseVersionKey)
-                properties.Add(VersionKey, DhtVersion);
+                properties.Add (VersionKey, DhtVersion);
         }
 
-        protected DhtMessage(BEncodedDictionary dictionary)
+        protected DhtMessage (BEncodedDictionary dictionary)
         {
             properties = dictionary;
         }
 
-        public override int ByteLength
+        public override int ByteLength => properties.LengthInBytes ();
+
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            get { return properties.LengthInBytes(); }
+            properties = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override int Encode (byte[] buffer, int offset)
         {
-            properties = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length, false);
+            return properties.Encode (buffer, offset);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public virtual void Handle (DhtEngine engine, Node node)
         {
-            return properties.Encode(buffer, offset);
-        }
-
-        public virtual void Handle(DhtEngine engine, Node node)
-        {
-            node.Seen();
+            node.Seen ();
         }
     }
 }

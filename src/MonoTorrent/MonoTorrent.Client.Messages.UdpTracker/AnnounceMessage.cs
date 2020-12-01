@@ -60,14 +60,14 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public long Uploaded { get; set; }
 
-        public AnnounceMessage()
-            : this(0, 0, null)
+        public AnnounceMessage ()
+            : this (0, 0, null)
         {
 
         }
 
-        public AnnounceMessage(int transactionId, long connectionId, AnnounceParameters parameters)
-            :base(1, transactionId)
+        public AnnounceMessage (int transactionId, long connectionId, AnnounceParameters parameters)
+            : base (1, transactionId)
         {
             ConnectionId = connectionId;
             if (parameters == null)
@@ -76,50 +76,50 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             Downloaded = parameters.BytesDownloaded;
             InfoHash = parameters.InfoHash;
             IP = 0;
-            Key = (uint)DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
+            Key = (uint) DateTime.Now.GetHashCode (); // FIXME: Don't do this! It should be constant
             Left = parameters.BytesLeft;
             NumWanted = 50;
             PeerId = parameters.PeerId;
-            Port = (ushort)parameters.Port;
+            Port = (ushort) parameters.Port;
             TorrentEvent = parameters.ClientEvent;
             Uploaded = parameters.BytesUploaded;
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            ConnectionId = ReadLong(buffer, ref offset);
-            if (Action != ReadInt(buffer, ref offset))
-                ThrowInvalidActionException();
-            TransactionId = ReadInt(buffer, ref offset);
-            InfoHash = new InfoHash(ReadBytes(buffer, ref offset, 20));
-            PeerId = new BEncodedString (ReadBytes(buffer, ref offset, 20));
-            Downloaded = ReadLong(buffer, ref offset);
-            Left = ReadLong(buffer, ref offset);
-            Uploaded = ReadLong(buffer, ref offset);
-            TorrentEvent = (TorrentEvent)ReadInt(buffer, ref offset);
-            IP = (uint)ReadInt(buffer, ref offset);
-            Key = (uint)ReadInt(buffer, ref offset);
-            NumWanted = ReadInt(buffer, ref offset);
-            Port = (ushort)ReadShort(buffer, ref offset);
+            ConnectionId = ReadLong (buffer, ref offset);
+            if (Action != ReadInt (buffer, ref offset))
+                ThrowInvalidActionException ();
+            TransactionId = ReadInt (buffer, ref offset);
+            InfoHash = new InfoHash (ReadBytes (buffer, ref offset, 20));
+            PeerId = new BEncodedString (ReadBytes (buffer, ref offset, 20));
+            Downloaded = ReadLong (buffer, ref offset);
+            Left = ReadLong (buffer, ref offset);
+            Uploaded = ReadLong (buffer, ref offset);
+            TorrentEvent = (TorrentEvent) ReadInt (buffer, ref offset);
+            IP = (uint) ReadInt (buffer, ref offset);
+            Key = (uint) ReadInt (buffer, ref offset);
+            NumWanted = ReadInt (buffer, ref offset);
+            Port = (ushort) ReadShort (buffer, ref offset);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, ConnectionId);
-            written += Write(buffer, written, Action);
-            written += Write(buffer, written, TransactionId);
-            written += Write(buffer, written, InfoHash.Hash, 0, InfoHash.Hash.Length);
-            written += Write(buffer, written, PeerId.TextBytes);
-            written += Write(buffer, written, Downloaded);
-            written += Write(buffer, written, Left);
-            written += Write(buffer, written, Uploaded);
-            written += Write(buffer, written, (int)TorrentEvent);
-            written += Write(buffer, written, IP);
-            written += Write(buffer, written, Key);
-            written += Write(buffer, written, NumWanted);
-            written += Write(buffer, written, Port);
+            written += Write (buffer, written, ConnectionId);
+            written += Write (buffer, written, Action);
+            written += Write (buffer, written, TransactionId);
+            written += Write (buffer, written, InfoHash.Hash, 0, InfoHash.Hash.Length);
+            written += Write (buffer, written, PeerId.TextBytes);
+            written += Write (buffer, written, Downloaded);
+            written += Write (buffer, written, Left);
+            written += Write (buffer, written, Uploaded);
+            written += Write (buffer, written, (int) TorrentEvent);
+            written += Write (buffer, written, IP);
+            written += Write (buffer, written, Key);
+            written += Write (buffer, written, NumWanted);
+            written += Write (buffer, written, Port);
 
             return written - offset;
         }

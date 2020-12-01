@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         HashingPaused,
         Stopping,
         Error,
-		Metadata
+        Metadata
     }
 }
 
@@ -58,8 +58,25 @@ namespace MonoTorrent.Client.Tracker
 {
     public enum TrackerState
     {
+        /// <summary>
+        /// A request has not been sent yet.
+        /// </summary>
+        Unknown,
+        /// <summary>
+        /// Currently sending a request.
+        /// </summary>
+        Connecting,
+        /// <summary>
+        /// The most recent request completed successfully.
+        /// </summary>
         Ok,
+        /// <summary>
+        /// The tracker was unreachable/offline.
+        /// </summary>
         Offline,
+        /// <summary>
+        /// The tracker was reachable but the response it sent was invalid.
+        /// </summary>
         InvalidResponse
     }
 }
@@ -99,10 +116,10 @@ namespace MonoTorrent
         Completed
     }
 
-	enum PeerListType
-	{
-		NascentPeers,
-		CandidatePeers,
-		OptimisticUnchokeCandidatePeers
-	}
+    enum PeerListType
+    {
+        NascentPeers,
+        CandidatePeers,
+        OptimisticUnchokeCandidatePeers
+    }
 }

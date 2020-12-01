@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
@@ -36,15 +38,14 @@ namespace MonoTorrent.Client.Messages.Standard
     {
         internal static readonly byte MessageId = 5;
 
+        internal static readonly BitfieldMessage UnknownLength = new BitfieldMessage (null);
+
         #region Member Variables
         /// <summary>
         /// The bitfield
         /// </summary>
-        public BitField BitField
-        {
-            get { return this.bitField; }
-        }
-        private BitField bitField;
+        public BitField BitField { get; }
+
         #endregion
 
 
@@ -53,9 +54,9 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Creates a new BitfieldMessage
         /// </summary>
         /// <param name="length">The length of the bitfield</param>
-        public BitfieldMessage(int length)
+        public BitfieldMessage (int length)
         {
-            this.bitField = new BitField(length);
+            BitField = new BitField (length);
         }
 
 
@@ -63,39 +64,38 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Creates a new BitfieldMessage
         /// </summary>
         /// <param name="bitfield">The bitfield to use</param>
-        public BitfieldMessage(BitField bitfield)
+        public BitfieldMessage (BitField bitfield)
         {
-            this.bitField = bitfield;
+            BitField = bitfield;
         }
         #endregion
 
 
         #region Methods
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            this.bitField.FromArray(buffer, offset, length);
+            BitField?.FromArray (buffer, offset);
         }
 
-        public override int Encode(byte[] buffer, int offset)
+        public override int Encode (byte[] buffer, int offset)
         {
-			int written = offset;
+            if (BitField == null)
+                throw new InvalidOperationException ("Cannot send a BitfieldMessage without a Bitfield. Are you trying to send a bitfield during metadata mode?");
+            int written = offset;
 
-			written += Write(buffer, written, bitField.LengthInBytes + 1);
-			written += Write(buffer, written, MessageId);
-			bitField.ToByteArray(buffer, written);
-            written += bitField.LengthInBytes;
+            written += Write (buffer, written, BitField.LengthInBytes + 1);
+            written += Write (buffer, written, MessageId);
+            BitField.ToByteArray (buffer, written);
+            written += BitField.LengthInBytes;
 
-            return CheckWritten(written - offset);
+            return written - offset;
         }
 
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength
-        {
-            get { return (this.bitField.LengthInBytes + 5); }
-        }
+        public override int ByteLength => (BitField.LengthInBytes + 5);
         #endregion
 
 
@@ -104,23 +104,22 @@ namespace MonoTorrent.Client.Messages.Standard
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public override string ToString ()
         {
             return "BitfieldMessage";
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals (object obj)
         {
-            BitfieldMessage bf = obj as BitfieldMessage;
-            if (bf == null)
+            if (!(obj is BitfieldMessage bf))
                 return false;
 
-            return this.bitField.Equals(bf.bitField);
+            return BitField.Equals (bf.BitField);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode ()
         {
-            return this.bitField.GetHashCode();
+            return BitField.GetHashCode ();
         }
         #endregion
     }

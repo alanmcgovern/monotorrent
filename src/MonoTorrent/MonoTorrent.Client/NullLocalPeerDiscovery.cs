@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
 {
     class NullLocalPeerDiscovery : ILocalPeerDiscovery
     {
-        #pragma warning disable 0067
+#pragma warning disable 0067
         public event EventHandler<LocalPeerFoundEventArgs> PeerFound {
             add { }
             remove { }
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
             add { }
             remove { }
         }
-        #pragma warning restore 0067
+#pragma warning restore 0067
 
 
         public IPEndPoint EndPoint => null;

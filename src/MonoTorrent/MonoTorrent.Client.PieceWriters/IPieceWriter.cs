@@ -28,16 +28,17 @@
 
 
 using System;
+using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     public interface IPieceWriter : IDisposable
     {
-        void Close(TorrentFile file);
-        bool Exists(TorrentFile file);
-        void Flush(TorrentFile file);
-        void Move(TorrentFile file, string fullPath, bool overwrite);
-        int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
-        void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+        ReusableTask CloseAsync (ITorrentFileInfo file);
+        ReusableTask<bool> ExistsAsync (ITorrentFileInfo file);
+        ReusableTask FlushAsync (ITorrentFileInfo file);
+        ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite);
+        ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
+        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
     }
 }

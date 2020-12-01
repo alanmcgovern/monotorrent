@@ -50,7 +50,7 @@ namespace MonoTorrent.Client.Tracker
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
             string ip = null;
-            int port = -1;
+            int port;
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
                 port = engine.Settings.ReportedAddress.Port;
@@ -62,9 +62,9 @@ namespace MonoTorrent.Client.Tracker
             // tracker optimisations might result in no peers being sent back.
             long bytesLeft = 1000;
             if (Manager.HasMetadata)
-                bytesLeft = (long)((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
+                bytesLeft = (long) ((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
 
-            return new AnnounceParameters(Manager.Monitor.DataBytesDownloaded,
+            return new AnnounceParameters (Manager.Monitor.DataBytesDownloaded,
                                           Manager.Monitor.DataBytesUploaded,
                                           bytesLeft,
                                           clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId,

@@ -28,40 +28,41 @@
 
 
 using System;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.Logging;
 
 namespace MonoTorrent
 {
     abstract class UdpListener : SocketListener, ISocketMessageListener
     {
-        public event Action<byte [], IPEndPoint> MessageReceived;
+        static readonly Logger logger = Logger.Create ();
+
+        public event Action<byte[], IPEndPoint> MessageReceived;
 
         UdpClient Client { get; set; }
 
-        protected UdpListener(IPEndPoint endpoint)
-            :base(endpoint)
+        protected UdpListener (IPEndPoint endpoint)
+            : base (endpoint)
         {
         }
 
         public async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
-            try
-            {
-               if (endpoint.Address != IPAddress.Any)
+            try {
+                if (endpoint.Address != IPAddress.Any)
                     await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
-            }
-            catch(Exception ex)
-            {
-                Logger.Log (null, "UdpListener could not send message: {0}", ex);
+            } catch (Exception ex) {
+                logger.Exception (ex, "UdpListener could not send message");
             }
         }
 
-        protected override void Start(CancellationToken token)
+        protected override void Start (CancellationToken token)
         {
-            var client = Client = new UdpClient(OriginalEndPoint);
+            UdpClient client = Client = new UdpClient (OriginalEndPoint);
             EndPoint = (IPEndPoint) client.Client.LocalEndPoint;
             token.Register (() => {
                 client.SafeDispose ();
@@ -75,8 +76,8 @@ namespace MonoTorrent
         {
             while (!token.IsCancellationRequested) {
                 try {
-                    var result = await client.ReceiveAsync ().ConfigureAwait (false);
-                    MessageReceived?.Invoke(result.Buffer, result.RemoteEndPoint);
+                    UdpReceiveResult result = await client.ReceiveAsync ().ConfigureAwait (false);
+                    MessageReceived?.Invoke (result.Buffer, result.RemoteEndPoint);
                 } catch (SocketException ex) {
                     // If the destination computer closes the connection
                     // we get error code 10054. We need to keep receiving on

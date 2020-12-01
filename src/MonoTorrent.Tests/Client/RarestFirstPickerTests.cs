@@ -29,7 +29,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.PiecePicking
@@ -40,9 +40,9 @@ namespace MonoTorrent.Client.PiecePicking
         class TestTorrentData : ITorrentData
         {
             public int BlocksPerPiece => PieceLength / Piece.BlockSize;
-            public TorrentFile [] Files { get; set; }
+            public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
-            public int Pieces => (int)Math.Ceiling ((double)Size / PieceLength);
+            public int Pieces => (int) Math.Ceiling ((double) Size / PieceLength);
             public long Size { get; set; }
         }
 
@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.PiecePicking
         TestTorrentData torrentData;
 
         [SetUp]
-        public void Setup()
+        public void Setup ()
         {
             int pieceLength = 16 * Piece.BlockSize;
             int pieces = 40;
@@ -62,29 +62,29 @@ namespace MonoTorrent.Client.PiecePicking
 
             bitfield = new BitField (pieces);
             torrentData = new TestTorrentData {
-                Files = new [] { new TorrentFile ("Test", size) },
+                Files = new[] { new TorrentFileInfo (new TorrentFile ("Test", size)) },
                 PieceLength = pieceLength,
                 Size = size
             };
 
-            checker = new TestPicker();
-            picker = new RarestFirstPicker(checker);
-            picker.Initialise(bitfield, torrentData, new List<Piece>());
+            checker = new TestPicker ();
+            picker = new RarestFirstPicker (checker);
+            picker.Initialise (bitfield, torrentData, new List<Piece> ());
 
             peer = PeerId.CreateNull (pieces);
             peer.BitField.SetAll (true);
 
-            peers = new List<PeerId>();
+            peers = new List<PeerId> ();
             for (int i = 0; i < 5; i++)
-                peers.Add(PeerId.CreateNull (pieces));
+                peers.Add (PeerId.CreateNull (pieces));
         }
 
         [Test]
-        public void RarestPieceTest()
+        public void RarestPieceTest ()
         {
-            for (int i = 0; i < 5; i ++)
+            for (int i = 0; i < 5; i++)
                 for (int j = 0; j < (i * 5) + 5; j++)
-                    peers[i].BitField [j] = true;
+                    peers[i].BitField[j] = true;
 
             // No pieces should be selected, but we can check what was requested.
             picker.PickPiece (peer, peer.BitField, peers);
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client.PiecePicking
                 .Set (8, true);
 
             // Every other peer has all pieces except for piece '2'.
-            for (int i = 0; i < 5; i ++)
+            for (int i = 0; i < 5; i++)
                 peers[i].BitField.SetAll (true).Set (i, false);
 
             // Ensure that pieces which were not in the 'available' bitfield were not offered

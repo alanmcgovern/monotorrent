@@ -37,22 +37,21 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     class RC4 : IEncryption
     {
-        static RandomNumberGenerator random = new RNGCryptoServiceProvider();
+        static readonly RandomNumberGenerator random = new RNGCryptoServiceProvider ();
 
-        byte[] S;
+        readonly byte[] S;
         int x;
         int y;
 
-        public RC4(byte[] key)
+        public RC4 (byte[] key)
         {
             S = new byte[256];
             for (int i = 0; i < S.Length; i++)
-                S[i] = (byte)i;
+                S[i] = (byte) i;
 
             byte c;
 
-            for (int i = 0; i <= 255; i++)
-            {
+            for (int i = 0; i <= 255; i++) {
                 x = (x + S[i] + key[i % key.Length]) % 256;
                 c = S[x];
                 S[x] = S[i];
@@ -62,36 +61,35 @@ namespace MonoTorrent.Client.Encryption
             x = 0;
 
             byte[] wasteBuffer = new byte[1024];
-            random.GetBytes(wasteBuffer);
-            Encrypt(wasteBuffer);
+            random.GetBytes (wasteBuffer);
+            Encrypt (wasteBuffer);
         }
 
-        public void Decrypt(byte[] buffer)
+        public void Decrypt (byte[] buffer)
         {
-            Encrypt(buffer, 0, buffer, 0, buffer.Length);
+            Encrypt (buffer, 0, buffer, 0, buffer.Length);
         }
-        public void Decrypt(byte[] buffer, int offset, int count)
+        public void Decrypt (byte[] buffer, int offset, int count)
         {
-            Decrypt(buffer, offset, buffer, offset, count);
+            Decrypt (buffer, offset, buffer, offset, count);
         }
-        public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
+        public void Decrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            Encrypt(src, srcOffset, dest, destOffset, count);
+            Encrypt (src, srcOffset, dest, destOffset, count);
         }
 
-        public void Encrypt(byte[] buffer)
+        public void Encrypt (byte[] buffer)
         {
-            Encrypt(buffer, 0, buffer, 0, buffer.Length);
+            Encrypt (buffer, 0, buffer, 0, buffer.Length);
         }
-        public void Encrypt(byte[] buffer, int offset, int count)
+        public void Encrypt (byte[] buffer, int offset, int count)
         {
-            Encrypt(buffer, offset, buffer, offset, count);
+            Encrypt (buffer, offset, buffer, offset, count);
         }
-        public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
+        public void Encrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
             byte c;
-            for (int i = 0; i < count; i++)
-            {
+            for (int i = 0; i < count; i++) {
                 x = (x + 1) & 0xFF;
                 y = (y + S[x]) & 0xFF;
 
@@ -99,7 +97,7 @@ namespace MonoTorrent.Client.Encryption
                 S[y] = S[x];
                 S[x] = c;
 
-                dest[i + destOffset] = (byte)(src[i + srcOffset] ^ (S[(S[x] + S[y]) & 0xFF]));
+                dest[i + destOffset] = (byte) (src[i + srcOffset] ^ (S[(S[x] + S[y]) & 0xFF]));
             }
         }
     }

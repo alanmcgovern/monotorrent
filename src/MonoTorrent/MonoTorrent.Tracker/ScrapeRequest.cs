@@ -28,10 +28,8 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Net;
 
 
@@ -51,21 +49,21 @@ namespace MonoTorrent.Tracker
         /// </summary>
         public override bool IsValid => true;
 
-        public TrackerScrapeRequest(NameValueCollection collection, IPAddress address)
-            : base(collection, address)
+        public TrackerScrapeRequest (NameValueCollection collection, IPAddress address)
+            : base (collection, address)
         {
-            InfoHashes = ParseHashes(Parameters["info_hash"]);
+            InfoHashes = ParseHashes (Parameters["info_hash"]);
         }
 
-        static IList<InfoHash> ParseHashes(string infoHash)
+        static IList<InfoHash> ParseHashes (string infoHash)
         {
-            if (string.IsNullOrEmpty(infoHash))
+            if (string.IsNullOrEmpty (infoHash))
                 return Array.Empty<InfoHash> ();
 
-            var split = infoHash.Split (HashSeparators, StringSplitOptions.RemoveEmptyEntries);
+            string[] split = infoHash.Split (HashSeparators, StringSplitOptions.RemoveEmptyEntries);
             var result = new InfoHash[split.Length];
-            for (int i = 0; i < split.Length; i ++)
-                result [i] = InfoHash.UrlDecode (split [i]);
+            for (int i = 0; i < split.Length; i++)
+                result[i] = InfoHash.UrlDecode (split[i]);
             return result;
         }
     }

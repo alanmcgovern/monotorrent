@@ -31,121 +31,148 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace MonoTorrent.Client
+using MonoTorrent.Logging;
+
+using ReusableTasks;
+
+namespace MonoTorrent.Client.PieceWriters
 {
     class FileStreamBuffer : IDisposable
     {
+        static readonly Logger logger = Logger.Create ();
+
+        internal readonly struct RentedStream : IDisposable
+        {
+            internal readonly ITorrentFileStream Stream;
+
+            public RentedStream (ITorrentFileStream stream)
+            {
+                Stream = stream;
+                stream?.Rent ();
+            }
+
+            public void Dispose ()
+            {
+                Stream?.Release ();
+            }
+        }
+
         // A list of currently open filestreams. Note: The least recently used is at position 0
         // The most recently used is at the last position in the array
-        private List<TorrentFileStream> list;
-        private int maxStreams;
-		
-		public int Count
-		{
-			get { return list.Count; }
-		}
-		
-		public List<TorrentFileStream> Streams
-		{
-			get { return list; }
-		}
+        readonly int MaxStreams;
 
-        public FileStreamBuffer(int maxStreams)
+        public int Count => Streams.Count;
+
+        Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> StreamCreator { get; }
+        Dictionary<ITorrentFileInfo, ITorrentFileStream> Streams { get; }
+        List<ITorrentFileInfo> UsageOrder { get; }
+
+        internal FileStreamBuffer (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxStreams)
         {
-            this.maxStreams = maxStreams;
-            list = new List<TorrentFileStream>(maxStreams);
+            StreamCreator = streamCreator;
+            MaxStreams = maxStreams;
+            Streams = new Dictionary<ITorrentFileInfo, ITorrentFileStream> (maxStreams);
+            UsageOrder = new List<ITorrentFileInfo> ();
         }
 
-        private void Add(TorrentFileStream stream)
+        internal async ReusableTask<bool> CloseStreamAsync (ITorrentFileInfo file)
         {
-            Logger.Log (null, "Opening filestream: {0}", stream.Path);
-
-            // If we have our maximum number of streams open, just dispose and dump the least recently used one
-            if (maxStreams != 0 && list.Count >= list.Capacity)
-            {
-                Logger.Log (null, "We've reached capacity: {0}", list.Count);
-                CloseAndRemove(list[0]);
+            using var rented = GetStream (file);
+            if (rented.Stream != null) {
+                await rented.Stream.FlushAsync ();
+                CloseAndRemove (file, rented.Stream);
+                return true;
             }
-            list.Add(stream);
+
+            return false;
         }
 
-        public TorrentFileStream FindStream(string path)
+        internal async ReusableTask FlushAsync (ITorrentFileInfo file)
         {
-            for (int i = 0; i < list.Count; i++)
-                if (list[i].Path == path)
-                    return list[i];
-            return null;
+            using var rented = GetStream (file);
+            if (rented.Stream != null)
+                await rented.Stream.FlushAsync ();
         }
 
-        internal TorrentFileStream GetStream(TorrentFile file, FileAccess access)
+        internal RentedStream GetStream (ITorrentFileInfo file)
         {
-            TorrentFileStream s = FindStream(file.FullPath);
+            if (Streams.TryGetValue (file, out ITorrentFileStream stream))
+                return new RentedStream (stream);
+            return new RentedStream (null);
+        }
 
-            if (s != null)
-            {
+        internal async ReusableTask<RentedStream> GetStreamAsync (ITorrentFileInfo file, FileAccess access)
+        {
+            if (!Streams.TryGetValue (file, out ITorrentFileStream s))
+                s = null;
+
+            if (s != null) {
                 // If we are requesting write access and the current stream does not have it
-                if (((access & FileAccess.Write) == FileAccess.Write) && !s.CanWrite)
-                {
-                    Logger.Log (null, "Didn't have write permission - reopening");
-                    CloseAndRemove(s);
+                if (((access & FileAccess.Write) == FileAccess.Write) && !s.CanWrite) {
+                    logger.InfoFormatted ("Didn't have write permission for {0} - reopening", file.Path);
+                    CloseAndRemove (file, s);
                     s = null;
-                }
-                else
-                {
+                } else {
                     // Place the filestream at the end so we know it's been recently used
-                    list.Remove(s);
-                    list.Add(s);
+                    Streams.Remove (file);
+                    Streams.Add (file, s);
                 }
             }
 
-            if (s == null)
-            {
-                if (!File.Exists(file.FullPath))
-                {
-                    Directory.CreateDirectory (Path.GetDirectoryName(file.FullPath));
+            if (s == null) {
+                if (!File.Exists (file.FullPath)) {
+                    if (!string.IsNullOrEmpty (Path.GetDirectoryName (file.FullPath)))
+                        Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
                     NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
                 }
-                s = new TorrentFileStream (file, FileMode.OpenOrCreate, access, FileShare.Read);
+                s = StreamCreator(file, access);
 
                 // Ensure that we truncate existing files which are too large
                 if (s.Length > file.Length) {
                     if (!s.CanWrite) {
-                        s.Close();
-                        s = new TorrentFileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+                        s.Dispose ();
+                        s = StreamCreator(file, FileAccess.ReadWrite);
                     }
-                    s.SetLength(file.Length);
+                    await s.SetLengthAsync (file.Length);
                 }
 
-                Add(s);
+                Add (file, s);
             }
 
-            return s;
+            return new RentedStream (s);
         }
 
-        #region IDisposable Members
-
-        public void Dispose()
+        void Add (ITorrentFileInfo file, ITorrentFileStream stream)
         {
-            list.ForEach(delegate (TorrentFileStream s) { s.Dispose(); }); 
-            list.Clear();
+            logger.InfoFormatted ("Opening filestream: {0}", file.FullPath);
+
+            if (MaxStreams != 0 && Streams.Count >= MaxStreams) {
+                for (int i = 0; i < UsageOrder.Count; i++) {
+                    if (!Streams[UsageOrder[i]].Rented) {
+                        CloseAndRemove (UsageOrder[i], Streams[UsageOrder[i]]);
+                        break;
+                    }
+                }
+            }
+            Streams.Add (file, stream);
+            UsageOrder.Add (file);
         }
 
-        #endregion
-
-        internal bool CloseStream(string path)
+        void CloseAndRemove (ITorrentFileInfo file, ITorrentFileStream s)
         {
-            TorrentFileStream s = FindStream(path);
-            if (s != null)
-                CloseAndRemove(s);
-
-            return s != null;
+            logger.InfoFormatted ("Closing and removing: {0}", file.Path);
+            Streams.Remove (file);
+            UsageOrder.Remove (file);
+            s.Dispose ();
         }
 
-        private void CloseAndRemove(TorrentFileStream s)
+        public void Dispose ()
         {
-            Logger.Log (null, "Closing and removing: {0}", s.Path);
-            list.Remove(s);
-            s.Dispose();
+            foreach (var stream in Streams)
+                stream.Value.Dispose ();
+
+            Streams.Clear ();
+            UsageOrder.Clear ();
         }
     }
 }

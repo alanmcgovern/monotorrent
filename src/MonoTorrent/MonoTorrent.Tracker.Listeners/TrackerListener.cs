@@ -45,26 +45,26 @@ namespace MonoTorrent.Tracker.Listeners
 
         }
 
-        public virtual BEncodedDictionary Handle(string queryString, IPAddress remoteAddress, bool isScrape)
+        public virtual BEncodedDictionary Handle (string queryString, IPAddress remoteAddress, bool isScrape)
         {
             if (queryString == null)
-                throw new ArgumentNullException(nameof (queryString));
+                throw new ArgumentNullException (nameof (queryString));
 
-            return Handle(ParseQuery(queryString), remoteAddress, isScrape);
+            return Handle (ParseQuery (queryString), remoteAddress, isScrape);
         }
 
-        public virtual BEncodedDictionary Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
+        public virtual BEncodedDictionary Handle (NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
         {
             if (collection == null)
-                throw new ArgumentNullException(nameof (collection));
+                throw new ArgumentNullException (nameof (collection));
             if (remoteAddress == null)
-                throw new ArgumentNullException(nameof (remoteAddress));
+                throw new ArgumentNullException (nameof (remoteAddress));
 
             TrackerRequest request;
             if (isScrape)
-                request = new TrackerScrapeRequest(collection, remoteAddress);
+                request = new TrackerScrapeRequest (collection, remoteAddress);
             else
-                request = new AnnounceRequest(collection, remoteAddress);
+                request = new AnnounceRequest (collection, remoteAddress);
 
             // If the parameters are invalid, the failure reason will be added to the response dictionary
             if (!request.IsValid)
@@ -72,34 +72,38 @@ namespace MonoTorrent.Tracker.Listeners
 
             // Fire the necessary event so the request will be handled and response filled in
             if (isScrape)
-                RaiseScrapeReceived((TrackerScrapeRequest)request);
+                RaiseScrapeReceived ((TrackerScrapeRequest) request);
             else
-                RaiseAnnounceReceived((AnnounceRequest)request);
+                RaiseAnnounceReceived ((AnnounceRequest) request);
 
             // Return the response now that the connection has been handled correctly.
             return request.Response;
         }
 
-        private NameValueCollection ParseQuery(string url)
+        NameValueCollection ParseQuery (string url)
         {
             // The '?' symbol will be there if we received the entire URL as opposed to
             // just the query string - we accept both therfore trim out the excess if we have the entire URL
-            if (url.IndexOf('?') != -1)
-                url = url.Substring(url.IndexOf('?') + 1);
+            if (url.IndexOf ('?') != -1)
+                url = url.Substring (url.IndexOf ('?') + 1);
 
-            string[] parts = url.Split('&', '=');
-            NameValueCollection c = new NameValueCollection(1 + parts.Length / 2);
+            string[] parts = url.Split ('&', '=');
+            var c = new NameValueCollection (1 + parts.Length / 2);
             for (int i = 0; i < parts.Length; i += 2)
                 if (parts.Length > i + 1)
-                    c.Add(parts[i], parts[i + 1]);
+                    c.Add (parts[i], parts[i + 1]);
 
             return c;
         }
 
-        protected void RaiseAnnounceReceived(AnnounceRequest e)
-            => AnnounceReceived?.Invoke (this, e);
+        protected void RaiseAnnounceReceived (AnnounceRequest e)
+        {
+            AnnounceReceived?.Invoke (this, e);
+        }
 
-        protected void RaiseScrapeReceived(TrackerScrapeRequest e)
-            => ScrapeReceived?.Invoke (this, e);
+        protected void RaiseScrapeReceived (TrackerScrapeRequest e)
+        {
+            ScrapeReceived?.Invoke (this, e);
+        }
     }
 }

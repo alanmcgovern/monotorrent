@@ -39,18 +39,18 @@ namespace MonoTorrent
         CancellationTokenSource Cancellation { get; set; }
         public ListenerStatus Status { get; private set; }
 
-        protected Listener()
+        protected Listener ()
         {
             Status = ListenerStatus.NotListening;
         }
 
-        void RaiseStatusChanged(ListenerStatus status)
+        void RaiseStatusChanged (ListenerStatus status)
         {
             Status = status;
             StatusChanged?.InvokeAsync (this, EventArgs.Empty);
         }
 
-        public void Start()
+        public void Start ()
         {
             if (Status == ListenerStatus.Listening)
                 return;

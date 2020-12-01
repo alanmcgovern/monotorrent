@@ -34,15 +34,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public byte MessageId { get; }
         public string Name { get; }
 
-        public ExtensionSupport(string name, byte messageId)
+        public ExtensionSupport (string name, byte messageId)
         {
             MessageId = messageId;
             Name = name;
         }
 
-        public override string ToString()
+        public override string ToString ()
         {
-            return string.Format("{1}: {0}", Name, MessageId);
+            return string.Format ("{1}: {0}", Name, MessageId);
         }
     }
 }
