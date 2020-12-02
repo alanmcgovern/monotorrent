@@ -106,8 +106,8 @@ namespace MonoTorrent.Streaming
                 count = (int) (Length - Position);
 
             // Take our current position into account when calculating the start/end pieces of the data we're reading.
-            var startPiece = (int) (torrentFileStartOffset + Position) / Manager.Torrent.PieceLength;
-            var endPiece = (int) (torrentFileStartOffset + Position + count) / Manager.Torrent.PieceLength;
+            var startPiece = (int) ((torrentFileStartOffset + Position) / Manager.Torrent.PieceLength);
+            var endPiece = (int) ((torrentFileStartOffset + Position + count) / Manager.Torrent.PieceLength);
             while (Manager.State != TorrentState.Stopped && Manager.State != TorrentState.Error) {
                 bool allAvailable = true;
                 for (int i = startPiece; i <= endPiece && allAvailable; i++)
