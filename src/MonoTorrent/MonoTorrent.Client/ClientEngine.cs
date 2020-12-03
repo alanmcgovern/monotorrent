@@ -397,10 +397,10 @@ namespace MonoTorrent.Client
                 LocalPeerDiscovery.Stop ();
             }
 
-            if (!SupportsLocalPeerDiscovery)
+            if (!SupportsLocalPeerDiscovery || localPeerDiscovery == null)
                 localPeerDiscovery = new NullLocalPeerDiscovery ();
 
-            LocalPeerDiscovery = localPeerDiscovery ?? new NullLocalPeerDiscovery ();
+            LocalPeerDiscovery = localPeerDiscovery;
 
             if (LocalPeerDiscovery != null) {
                 LocalPeerDiscovery.PeerFound += HandleLocalPeerFound;
