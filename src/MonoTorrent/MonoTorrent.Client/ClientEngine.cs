@@ -367,12 +367,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        void RegisterDht (IDhtEngine engine)
+        async Task RegisterDht (IDhtEngine engine)
         {
             if (DhtEngine != null) {
                 DhtEngine.StateChanged -= DhtEngineStateChanged;
                 DhtEngine.PeersFound -= DhtEnginePeersFound;
-                DhtEngine.StopAsync ();
+                await DhtEngine.StopAsync ();
                 DhtEngine.Dispose ();
             }
             DhtEngine = engine ?? new NullDhtEngine ();
@@ -380,7 +380,7 @@ namespace MonoTorrent.Client
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
             if (IsRunning)
-                DhtEngine.StartAsync ();
+                await DhtEngine.StartAsync ();
         }
 
         internal async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
@@ -545,8 +545,14 @@ namespace MonoTorrent.Client
                 Listener.Start ();
                 LocalPeerDiscovery.Start ();
                 await DhtEngine.StartAsync ();
-                await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
-                await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, Settings.DhtPort));
+
+                if (Listener is ISocketListener socketListener)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, socketListener.EndPoint.Port));
+                else
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
+
+                if (DhtListener.EndPoint != null)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.EndPoint.Port));
             }
         }
 
@@ -596,6 +602,12 @@ namespace MonoTorrent.Client
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.DhtPort), CancellationToken.None);
 
                 DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort);
+
+                if (oldSettings.DhtPort == -1)
+                    await RegisterDht (new DhtEngine (DhtListener));
+                else if (newSettings.DhtPort == -1)
+                    await RegisterDht (new NullDhtEngine ());
+
                 await DhtEngine.SetListener (DhtListener);
 
                 if (IsRunning) {
