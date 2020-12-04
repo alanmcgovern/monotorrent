@@ -180,10 +180,6 @@ namespace SampleClient
                 await manager.StartAsync ();
             }
 
-            // Enable automatic port forwarding. The engine will use Mono.Nat to search for
-            // uPnP or NAT-PMP compatible devices and then issue port forwarding requests to it.
-            await engine.EnablePortForwardingAsync (CancellationToken.None);
-
             // This is how to access the list of port mappings, and to see if they were
             // successful, pending or failed. If they failed it could be because the public port
             // is already in use by another computer on your network.
@@ -242,10 +238,6 @@ namespace SampleClient
 
                 Thread.Sleep (500);
             }
-
-            // Stop searching for uPnP or NAT-PMP compatible devices and delete
-            // all mapppings which had been created.
-            await engine.DisablePortForwardingAsync (CancellationToken.None);
         }
 
         static void Manager_PeersFound (object sender, PeersAddedEventArgs e)

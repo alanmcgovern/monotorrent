@@ -1,10 +1,10 @@
-//
-// IDhtEngine.cs
+﻿//
+// NullDhtListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,28 +28,36 @@
 
 
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Listeners;
-
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Dht.Listeners
 {
-    public interface IDhtEngine : IDisposable
+    class NullDhtListener : IDhtListener
     {
-        event EventHandler<PeersFoundEventArgs> PeersFound;
-        event EventHandler StateChanged;
+        public event Action<byte[], IPEndPoint> MessageReceived;
+        public event EventHandler<EventArgs> StatusChanged;
 
-        bool Disposed { get; }
-        DhtState State { get; }
+        public NullDhtListener ()
+        {
 
-        void Add (BEncodedList nodes);
-        void Announce (InfoHash infohash, int port);
-        void GetPeers (InfoHash infohash);
-        Task<byte[]> SaveNodesAsync ();
-        Task StartAsync ();
-        Task StartAsync (byte[] initialNodes);
-        Task StopAsync ();
-        Task SetListener (IDhtListener dhtListener);
+        }
+
+        public IPEndPoint EndPoint { get; }
+
+        public ListenerStatus Status { get; } = ListenerStatus.NotListening;
+
+        public Task SendAsync (byte[] buffer, IPEndPoint endpoint)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Start ()
+        {
+        }
+
+        public void Stop ()
+        {
+        }
     }
 }
