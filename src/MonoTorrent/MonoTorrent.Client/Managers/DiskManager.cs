@@ -324,7 +324,8 @@ namespace MonoTorrent.Client
             await WaitForPendingWrites ();
             foreach (var file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
-                    await Writer.FlushAsync (file);
+                    using (await file.Locker.EnterAsync ())
+                        await Writer.FlushAsync (file);
             }
         }
 
@@ -432,6 +433,8 @@ namespace MonoTorrent.Client
 
         async ReusableTask ProcessBufferedIOAsync (bool force = false)
         {
+            await IOLoop;
+
             BufferedIO io;
 
             while (WriteQueue.Count > 0) {
@@ -498,6 +501,8 @@ namespace MonoTorrent.Client
 
         async ReusableTask<bool> DoReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
+            IOLoop.CheckThread ();
+
             ReadMonitor.AddDelta (count);
 
             if (count < 1)
@@ -531,12 +536,8 @@ namespace MonoTorrent.Client
 
         async ReusableTask<int> ReadFromFileAsync (ITorrentFileInfo torrentFile, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            await torrentFile.Locker.WaitAsync ();
-            try {
+            using (await torrentFile.Locker.EnterAsync ())
                 return await Writer.ReadAsync (torrentFile, offset, buffer, bufferOffset, count);
-            } finally {
-                torrentFile.Locker.Release ();
-            }
         }
 
         /// <summary>
@@ -560,10 +561,7 @@ namespace MonoTorrent.Client
         /// <param name="delta">The amount of time, in milliseconds, which has passed</param>
         /// <returns></returns>
         internal async ReusableTask Tick (int delta)
-        {
-            await IOLoop;
-            await Tick (delta, true);
-        }
+            =>  await Tick (delta, true);
 
         ReusableTask Tick (int delta, bool waitForBufferedIO)
         {
@@ -581,6 +579,8 @@ namespace MonoTorrent.Client
 
         async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
+            IOLoop.CheckThread ();
+
             WriteMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)

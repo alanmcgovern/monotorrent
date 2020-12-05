@@ -96,6 +96,8 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal RentedStream GetStream (ITorrentFileInfo file)
         {
+            file.ThrowIfNotLocked ();
+
             if (Streams.TryGetValue (file, out ITorrentFileStream stream))
                 return new RentedStream (stream);
             return new RentedStream (null);
@@ -103,6 +105,8 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal async ReusableTask<RentedStream> GetStreamAsync (ITorrentFileInfo file, FileAccess access)
         {
+            file.ThrowIfNotLocked ();
+
             if (!Streams.TryGetValue (file, out ITorrentFileStream s))
                 s = null;
 
@@ -160,6 +164,8 @@ namespace MonoTorrent.Client.PieceWriters
 
         void CloseAndRemove (ITorrentFileInfo file, ITorrentFileStream s)
         {
+            file.ThrowIfNotLocked ();
+
             logger.InfoFormatted ("Closing and removing: {0}", file.Path);
             Streams.Remove (file);
             UsageOrder.Remove (file);

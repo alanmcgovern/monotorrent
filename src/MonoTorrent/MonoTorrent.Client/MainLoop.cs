@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -203,6 +204,13 @@ namespace MonoTorrent.Client
             return new ThreadSwitcher ();
         }
 
-#endregion
+        [Conditional("DEBUG")]
+        internal void CheckThread ()
+        {
+            if (Thread.CurrentThread != thread)
+                throw new InvalidOperationException ($"Missing context switch to the {thread.Name} MainLoop.");
+        }
+
+        #endregion
     }
 }
