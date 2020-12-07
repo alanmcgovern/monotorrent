@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
 
         public ConnectionManager ConnectionManager { get; }
 
-        IDhtEngine DhtEngine { get; set; }
+        public IDhtEngine DhtEngine { get; private set; }
 
         IDhtListener DhtListener { get; set; }
 
@@ -187,7 +187,6 @@ namespace MonoTorrent.Client
             GC.KeepAlive (ReusableTasks.ReusableTask.CompletedTask);
 
             PeerId = GeneratePeerId ();
-            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             allTorrents = new List<TorrentManager> ();
@@ -196,7 +195,6 @@ namespace MonoTorrent.Client
 
             DiskManager = new DiskManager (Settings, writer);
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
-            DhtEngine = new NullDhtEngine ();
             listenManager = new ListenManager (this);
             PortForwarder = new MonoNatPortForwarder ();
 
@@ -217,10 +215,13 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
+            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
             listenManager.Register (Listener);
-            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery ? new LocalPeerDiscovery (Settings) : null);
-            if (settings.DhtPort != -1)
-                RegisterDht (new DhtEngine (DhtListenerFactory.CreateUdp (settings.DhtPort)));
+
+            DhtListener = DhtListenerFactory.CreateUdp (settings.DhtPort);
+            DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
+            DhtEngine.StateChanged += DhtEngineStateChanged;
+            DhtEngine.PeersFound += DhtEnginePeersFound;
         }
 
         #endregion
@@ -531,7 +532,6 @@ namespace MonoTorrent.Client
             CriticalException?.InvokeAsync (this, e);
         }
 
-
         internal void RaiseStatsUpdate (StatsUpdateEventArgs args)
         {
             StatsUpdate?.InvokeAsync (this, args);
@@ -542,6 +542,8 @@ namespace MonoTorrent.Client
             CheckDisposed ();
             if (!IsRunning) {
                 IsRunning = true;
+                await UpdateSettingsAsync (Settings);
+
                 Listener.Start ();
                 LocalPeerDiscovery.Start ();
                 await DhtEngine.StartAsync ();
@@ -604,11 +606,11 @@ namespace MonoTorrent.Client
                 DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort);
 
                 if (oldSettings.DhtPort == -1)
-                    await RegisterDht (new DhtEngine (DhtListener));
+                    await RegisterDht (DhtEngineFactory.Create (DhtListener));
                 else if (newSettings.DhtPort == -1)
                     await RegisterDht (new NullDhtEngine ());
 
-                await DhtEngine.SetListener (DhtListener);
+                await DhtEngine.SetListenerAsync (DhtListener);
 
                 if (IsRunning) {
                     DhtListener.Start ();

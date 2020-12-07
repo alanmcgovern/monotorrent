@@ -33,6 +33,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht;
+using MonoTorrent.Dht.Listeners;
 
 namespace MonoTorrent.Client
 {
@@ -73,6 +74,11 @@ namespace MonoTorrent.Client
 
         public Task<byte[]> SaveNodesAsync ()
             => Task.FromResult (new byte[0]);
+
+        public Task SetListenerAsync (IDhtListener listener)
+        {
+            return Task.CompletedTask;
+        }
 
         public Task StartAsync ()
             => StartAsync (null);
