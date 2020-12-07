@@ -114,7 +114,6 @@ namespace MonoTorrent.Client
 
         TestTorrentData fileData;
         DiskManager diskManager;
-        EngineSettings settings;
         PieceWriter writer;
 
         [SetUp]
@@ -162,8 +161,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < files.Count; i++)
                 writer.Data.Add (files[i], fileBytes[i]);
 
-            settings = new EngineSettings ();
-            diskManager = new DiskManager (settings, writer);
+            diskManager = new DiskManager (new EngineSettings (), writer);
         }
 
         [Test]

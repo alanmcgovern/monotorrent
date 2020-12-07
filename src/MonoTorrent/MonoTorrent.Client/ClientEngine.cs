@@ -122,9 +122,9 @@ namespace MonoTorrent.Client
 
         public bool Disposed { get; private set; }
 
-        IPeerListener Listener { get; set; }
+        internal IPeerListener Listener { get; set; }
 
-        public ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
+        internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
         /// <summary>
         /// When <see cref="EngineSettings.AllowPortForwarding"/> is set to true, this will return a representation
@@ -222,6 +222,8 @@ namespace MonoTorrent.Client
             DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
+
+            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery && settings.ListenPort > 0 ? LocalPeerDiscoveryFactory.Create (settings.ListenPort) : null);
         }
 
         #endregion
@@ -384,13 +386,7 @@ namespace MonoTorrent.Client
                 await DhtEngine.StartAsync ();
         }
 
-        internal async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
-        {
-            await ClientEngine.MainLoop;
-            RegisterLocalPeerDiscovery (localPeerDiscovery);
-        }
-
-        internal void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
+        void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
         {
             if (LocalPeerDiscovery != null) {
                 LocalPeerDiscovery.PeerFound -= HandleLocalPeerFound;
@@ -585,10 +581,6 @@ namespace MonoTorrent.Client
             DiskManager.Settings = newSettings;
             ConnectionManager.Settings = newSettings;
 
-            if (oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) {
-                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery ? new LocalPeerDiscovery (Settings) : null);
-            }
-
             if (oldSettings.AllowPortForwarding != newSettings.AllowPortForwarding) {
                 if (newSettings.AllowPortForwarding)
                     await PortForwarder.StartAsync (CancellationToken.None);
@@ -635,11 +627,21 @@ namespace MonoTorrent.Client
                 if (IsRunning) {
                     Listener.Start ();
                     // The settings could say to listen at port 0, which means 'choose one dynamically'
-                    if (Listener is ISocketListener newListener)
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newListener.EndPoint.Port));
+                    if (Listener is ISocketListener peerListener)
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, peerListener.EndPoint.Port));
                     else
                         await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.ListenPort));
                 }
+            }
+
+            // This depends on the Listener binding to it's local port.
+            var localPort = newSettings.ListenPort;
+            if (Listener is ISocketListener newListener)
+                localPort = newListener.EndPoint.Port;
+
+            if ((oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) ||
+                (oldSettings.ListenPort != newSettings.ListenPort)) {
+                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery && localPort > 0 ? new LocalPeerDiscovery (localPort) : null);
             }
         }
 
