@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        readonly internal ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         int tickCount;
         /// <summary>
         /// The <see cref="TorrentManager"/> instances registered by the user.
@@ -590,9 +590,9 @@ namespace MonoTorrent.Client
 
             if (oldSettings.DhtPort != newSettings.DhtPort) {
                 if (DhtListener.EndPoint != null)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, DhtListener.EndPoint.Port), CancellationToken.None);
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.EndPoint.Port), CancellationToken.None);
                 else if (oldSettings.DhtPort > 0)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.DhtPort), CancellationToken.None);
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, oldSettings.DhtPort), CancellationToken.None);
 
                 DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort);
 
@@ -606,9 +606,9 @@ namespace MonoTorrent.Client
                 if (IsRunning) {
                     DhtListener.Start ();
                     if (Listener is ISocketListener newDhtListener)
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newDhtListener.EndPoint.Port));
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, newDhtListener.EndPoint.Port));
                     else
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.DhtPort));
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, newSettings.DhtPort));
                 }
             }
 
