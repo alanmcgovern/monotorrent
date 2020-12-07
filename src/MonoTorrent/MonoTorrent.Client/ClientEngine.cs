@@ -542,7 +542,6 @@ namespace MonoTorrent.Client
             CheckDisposed ();
             if (!IsRunning) {
                 IsRunning = true;
-                await UpdateSettingsAsync (Settings);
 
                 Listener.Start ();
                 LocalPeerDiscovery.Start ();
