@@ -44,9 +44,9 @@ namespace MonoTorrent.Client.PieceWriters
         internal readonly struct RentedStream : IDisposable
         {
             internal readonly ITorrentFileStream Stream;
-            internal readonly SemaphoreSlimExtensions.Releaser Releaser;
+            internal readonly ReusableExclusiveSemaphore.Releaser Releaser;
 
-            public RentedStream (ITorrentFileStream stream, SemaphoreSlimExtensions.Releaser releaser)
+            public RentedStream (ITorrentFileStream stream, ReusableExclusiveSemaphore.Releaser releaser)
             {
                 Stream = stream;
                 Releaser = releaser;
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.PieceWriters
         internal async ReusableTask<RentedStream> GetStream (ITorrentFileInfo file)
         {
             if (Streams.TryGetValue (file, out ITorrentFileStream stream))
-                return new RentedStream (stream, await stream.Locker.EnterAsync ());
+                return new RentedStream (stream, await stream.Locker.EnterAsync ().ConfigureAwait (false));
             return new RentedStream (null, default);
         }
 
@@ -137,22 +137,21 @@ namespace MonoTorrent.Client.PieceWriters
                     await s.SetLengthAsync (file.Length);
                 }
 
-                Add (file, s);
+                await Add (file, s);
             }
 
-            return new RentedStream (s, await s.Locker.EnterAsync ());
+            return new RentedStream (s, await s.Locker.EnterAsync ().ConfigureAwait (false));
         }
 
-        void Add (ITorrentFileInfo file, ITorrentFileStream stream)
+        async ReusableTask Add (ITorrentFileInfo file, ITorrentFileStream stream)
         {
             logger.InfoFormatted ("Opening filestream: {0}", file.FullPath);
 
             if (MaxStreams != 0 && Streams.Count >= MaxStreams) {
                 for (int i = 0; i < UsageOrder.Count; i++) {
-                    if (Streams[UsageOrder[i]].Locker.Wait (0)) {
-                        CloseAndRemove (UsageOrder[i], Streams[UsageOrder[i]]);
-                        break;
-                    }
+                    await Streams[UsageOrder[i]].Locker.EnterAsync ();
+                    CloseAndRemove (UsageOrder[i], Streams[UsageOrder[i]]);
+                    break;
                 }
             }
             Streams.Add (file, stream);

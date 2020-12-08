@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public long Position { get; private set; }
 
-        public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1);
+        public ReusableExclusiveSemaphore Locker { get; } = new ReusableExclusiveSemaphore ();
 
         public ReusableTaskCompletionSource<int> WriteTcs { get; set; }
 
