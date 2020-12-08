@@ -41,18 +41,20 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    class ListenManager : IDisposable
+    class ListenManager
     {
         static readonly Logger logger = Logger.Create ();
 
         ClientEngine Engine { get; set; }
-        List<IPeerListener> Listeners { get; }
+
+        IPeerListener Listener { get; set; }
+
         InfoHash[] SKeys { get; set; }
 
         internal ListenManager (ClientEngine engine)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
-            Listeners = new List<IPeerListener> ();
+            Listener = new NullPeerListener ();
             SKeys = Array.Empty<InfoHash> ();
         }
 
@@ -73,23 +75,11 @@ namespace MonoTorrent.Client
             SKeys = clone;
         }
 
-        public void Dispose ()
+        public void SetListener (IPeerListener listener)
         {
-            foreach (IPeerListener listener in Listeners.ToArray ())
-                Unregister (listener);
-            Listeners.Clear ();
-        }
-
-        public void Register (IPeerListener listener)
-        {
-            Listeners.Add (listener);
-            listener.ConnectionReceived += ConnectionReceived;
-        }
-
-        public void Unregister (IPeerListener listener)
-        {
-            listener.ConnectionReceived -= ConnectionReceived;
-            Listeners.Remove (listener);
+            Listener.ConnectionReceived -= ConnectionReceived;
+            Listener = listener ?? new NullPeerListener ();
+            Listener.ConnectionReceived += ConnectionReceived;
         }
 
         async void ConnectionReceived (object sender, NewConnectionEventArgs e)

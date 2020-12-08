@@ -30,10 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -216,7 +213,7 @@ namespace MonoTorrent.Client
             };
 
             Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
-            listenManager.Register (Listener);
+            listenManager.SetListener (Listener);
 
             DhtListener = DhtListenerFactory.CreateUdp (settings.DhtPort);
             DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
@@ -271,9 +268,14 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
+                Listener.Stop ();
+                listenManager.SetListener (null);
+
+                DhtListener.Stop ();
+                DhtEngine.SetListener (null);
                 DhtEngine.Dispose ();
+
                 DiskManager.Dispose ();
-                listenManager.Dispose ();
                 LocalPeerDiscovery.Stop ();
             });
         }
@@ -601,7 +603,7 @@ namespace MonoTorrent.Client
                 else if (newSettings.DhtPort == -1)
                     await RegisterDht (new NullDhtEngine ());
 
-                await DhtEngine.SetListenerAsync (DhtListener);
+                DhtEngine.SetListener (DhtListener);
 
                 if (IsRunning) {
                     DhtListener.Start ();
@@ -619,10 +621,8 @@ namespace MonoTorrent.Client
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None);
 
                 Listener.Stop ();
-                listenManager.Unregister (Listener);
-
                 Listener = PeerListenerFactory.CreateTcp (newSettings.ListenPort);
-                listenManager.Register (Listener);
+                listenManager.SetListener (Listener);
 
                 if (IsRunning) {
                     Listener.Start ();

@@ -318,12 +318,9 @@ namespace MonoTorrent.Dht
             await tcs.Task;
         }
 
-        public async Task SetListenerAsync (IDhtListener dhtListener)
-        {
-            await MainLoop;
+        public void SetListener (IDhtListener listener)
+            =>  MessageLoop.SetListener (listener);
 
-            MessageLoop.SetListener (dhtListener);
-        }
         #endregion Methods
     }
 }

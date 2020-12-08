@@ -47,7 +47,7 @@ namespace MonoTorrent.Dht
         void Announce (InfoHash infohash, int port);
         void GetPeers (InfoHash infohash);
         Task<byte[]> SaveNodesAsync ();
-        Task SetListenerAsync (IDhtListener dhtListener);
+        void SetListener (IDhtListener listener);
         Task StartAsync ();
         Task StartAsync (byte[] initialNodes);
         Task StopAsync ();

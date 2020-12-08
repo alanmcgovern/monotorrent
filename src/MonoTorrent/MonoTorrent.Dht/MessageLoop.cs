@@ -255,16 +255,9 @@ namespace MonoTorrent.Dht
 
         internal void SetListener (IDhtListener listener)
         {
-            var oldListener = Listener;
+            Listener.MessageReceived -= MessageReceived;
             Listener = listener ?? new NullDhtListener ();
-
-            oldListener.MessageReceived -= MessageReceived;
             Listener.MessageReceived += MessageReceived;
-
-            if (oldListener.Status != ListenerStatus.NotListening) {
-                oldListener.Stop ();
-                Listener.Start ();
-            }
         }
 
         internal void EnqueueSend (DhtMessage message, Node node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs> tcs = null)
