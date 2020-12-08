@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
 
         public BitField BitField { get; }
 
-        public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
+        public ReusableExclusiveSemaphore Locker { get; } = new ReusableExclusiveSemaphore ();
 
         public Priority Priority { get; set; } = Priority.Normal;
 

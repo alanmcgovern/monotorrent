@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 using ReusableTasks;
@@ -48,8 +49,53 @@ namespace MonoTorrent
         }
         internal static async ReusableTask<Releaser> EnterAsync (this SemaphoreSlim semaphore)
         {
-            await semaphore.WaitAsync ();
+            await semaphore.WaitAsync ().ConfigureAwait (false);
             return new Releaser (semaphore);
+        }
+    }
+
+
+    class ReusableExclusiveSemaphore
+    {
+        public readonly struct Releaser : IDisposable
+        {
+            readonly ReusableTaskCompletionSource<object> Task { get; }
+
+            internal Releaser (ReusableTaskCompletionSource<object> task)
+            {
+                Task = task;
+            }
+
+            public void Dispose ()
+            {
+                Task?.SetResult (null);
+            }
+        }
+
+        static readonly Queue<ReusableTaskCompletionSource<object>> Cache = new Queue<ReusableTaskCompletionSource<object>> ();
+
+        ReusableTaskCompletionSource<object> current = null;
+
+        public async ReusableTask<Releaser> EnterAsync ()
+        {
+            ReusableTaskCompletionSource<object> task;
+            ReusableTaskCompletionSource<object> existing;
+
+            lock (Cache) {
+                existing = current;
+                if (Cache.Count == 0)
+                    current = task = new ReusableTaskCompletionSource<object> ();
+                else
+                    current = task = Cache.Dequeue ();
+            }
+
+            if (existing != null) {
+                await existing.Task;
+                lock (Cache)
+                    Cache.Enqueue (existing);
+            }
+
+            return new Releaser (task);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         bool disposed;
 
         public TorrentFileStream (string path, FileAccess access)
-            : base (path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.Asynchronous | FileOptions.RandomAccess)
+            : base (path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.RandomAccess)
         {
         }
 
@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
         bool ITorrentFileStream.Disposed => disposed;
 
-        SemaphoreSlim ITorrentFileStream.Locker { get; } = new SemaphoreSlim (1);
+        ReusableExclusiveSemaphore ITorrentFileStream.Locker { get; } = new ReusableExclusiveSemaphore ();
 
         async ReusableTask ITorrentFileStream.FlushAsync ()
         {
@@ -61,7 +61,10 @@ namespace MonoTorrent.Client
 
         async ReusableTask<int> ITorrentFileStream.ReadAsync (byte[] buffer, int offset, int count)
         {
-            return await ReadAsync (buffer, offset, count);
+            // This is more memory efficient than calling Stream.ReadAsync
+            // and has no noticable impact on performance
+            await MainLoop.SwitchThread ();
+            return Read (buffer, offset, count);
         }
 
         ReusableTask ITorrentFileStream.SeekAsync (long position)
@@ -78,7 +81,10 @@ namespace MonoTorrent.Client
 
         async ReusableTask ITorrentFileStream.WriteAsync (byte[] buffer, int offset, int count)
         {
-            await WriteAsync (buffer, offset, count);
+            // This is more memory efficient than calling Stream.
+            // and has no noticable impact on performance
+            await MainLoop.SwitchThread ();
+            Write (buffer, offset, count);
         }
     }
 }
