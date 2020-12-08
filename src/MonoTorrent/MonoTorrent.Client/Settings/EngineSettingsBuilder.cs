@@ -65,13 +65,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to true.
         /// </summary>
-        public bool AllowLocalPeerDiscovery { get; }
+        public bool AllowLocalPeerDiscovery { get; set; }
 
         /// <summary>
         /// True if the engine should automatically forward ports using any compatible UPnP or NAT-PMP device.
         /// Defaults to true.
         /// </summary>
-        public bool AllowPortForwarding { get; }
+        public bool AllowPortForwarding { get; set; }
 
         /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
