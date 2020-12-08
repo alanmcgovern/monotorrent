@@ -44,16 +44,17 @@ namespace MonoTorrent.Client.PieceWriters
         internal readonly struct RentedStream : IDisposable
         {
             internal readonly ITorrentFileStream Stream;
+            internal readonly SemaphoreSlimExtensions.Releaser Releaser;
 
-            public RentedStream (ITorrentFileStream stream)
+            public RentedStream (ITorrentFileStream stream, SemaphoreSlimExtensions.Releaser releaser)
             {
                 Stream = stream;
-                stream?.Rent ();
+                Releaser = releaser;
             }
 
             public void Dispose ()
             {
-                Stream?.Release ();
+                Releaser.Dispose ();
             }
         }
 
@@ -77,7 +78,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal async ReusableTask<bool> CloseStreamAsync (ITorrentFileInfo file)
         {
-            using var rented = GetStream (file);
+            using var rented = await GetStream (file);
             if (rented.Stream != null) {
                 await rented.Stream.FlushAsync ();
                 CloseAndRemove (file, rented.Stream);
@@ -89,24 +90,20 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal async ReusableTask FlushAsync (ITorrentFileInfo file)
         {
-            using var rented = GetStream (file);
+            using var rented = await GetStream (file);
             if (rented.Stream != null)
                 await rented.Stream.FlushAsync ();
         }
 
-        internal RentedStream GetStream (ITorrentFileInfo file)
+        internal async ReusableTask<RentedStream> GetStream (ITorrentFileInfo file)
         {
-            file.ThrowIfNotLocked ();
-
             if (Streams.TryGetValue (file, out ITorrentFileStream stream))
-                return new RentedStream (stream);
-            return new RentedStream (null);
+                return new RentedStream (stream, await stream.Locker.EnterAsync ());
+            return new RentedStream (null, default);
         }
 
         internal async ReusableTask<RentedStream> GetStreamAsync (ITorrentFileInfo file, FileAccess access)
         {
-            file.ThrowIfNotLocked ();
-
             if (!Streams.TryGetValue (file, out ITorrentFileStream s))
                 s = null;
 
@@ -143,7 +140,7 @@ namespace MonoTorrent.Client.PieceWriters
                 Add (file, s);
             }
 
-            return new RentedStream (s);
+            return new RentedStream (s, await s.Locker.EnterAsync ());
         }
 
         void Add (ITorrentFileInfo file, ITorrentFileStream stream)
@@ -152,7 +149,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             if (MaxStreams != 0 && Streams.Count >= MaxStreams) {
                 for (int i = 0; i < UsageOrder.Count; i++) {
-                    if (!Streams[UsageOrder[i]].Rented) {
+                    if (Streams[UsageOrder[i]].Locker.Wait (0)) {
                         CloseAndRemove (UsageOrder[i], Streams[UsageOrder[i]]);
                         break;
                     }
@@ -164,8 +161,6 @@ namespace MonoTorrent.Client.PieceWriters
 
         void CloseAndRemove (ITorrentFileInfo file, ITorrentFileStream s)
         {
-            file.ThrowIfNotLocked ();
-
             logger.InfoFormatted ("Closing and removing: {0}", file.Path);
             Streams.Remove (file);
             UsageOrder.Remove (file);

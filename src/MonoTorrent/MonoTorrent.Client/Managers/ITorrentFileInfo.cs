@@ -40,9 +40,6 @@ namespace MonoTorrent.Client
         string FullPath { get; }
         Priority Priority { get; set; }
 
-        // FIXME: Make this internal.
-        SemaphoreSlim Locker { get; }
-
         (int startPiece, int endPiece) GetSelector ();
     }
 
@@ -50,12 +47,5 @@ namespace MonoTorrent.Client
     {
         public static long BytesDownloaded (this ITorrentFileInfo info)
             => (long) (info.BitField.PercentComplete * info.Length / 100.0);
-
-        [Conditional ("DEBUG")]
-        internal static void ThrowIfNotLocked(this ITorrentFileInfo info)
-        {
-            if (info.Locker.CurrentCount > 0)
-                throw new System.InvalidOperationException ("File should have been locked before it was accessed");
-        }
     }
 }

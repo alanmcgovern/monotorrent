@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 
 using ReusableTasks;
 
@@ -42,9 +43,9 @@ namespace MonoTorrent.Client.PieceWriters
 
         public long Length { get; private set; }
 
-        public bool Rented { get; private set; }
-
         public long Position { get; private set; }
+
+        public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1);
 
         public ReusableTaskCompletionSource<int> WriteTcs { get; set; }
 
@@ -69,24 +70,8 @@ namespace MonoTorrent.Client.PieceWriters
             throw new System.NotImplementedException ();
         }
 
-        public void Release ()
-        {
-            if (!Rented)
-                throw new InvalidOperationException ();
-            Rented = false;
-        }
-
-        public void Rent ()
-        {
-            if (Rented)
-                throw new InvalidOperationException ();
-            Rented = true;
-        }
-
         public ReusableTask SeekAsync (long position)
         {
-            if (!Rented)
-                throw new InvalidOperationException ();
             Position = position;
             return ReusableTask.CompletedTask;
         }

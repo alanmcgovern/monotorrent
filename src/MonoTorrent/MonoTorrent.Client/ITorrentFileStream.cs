@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Threading;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client
@@ -37,16 +39,14 @@ namespace MonoTorrent.Client
         bool CanWrite { get; }
         bool Disposed { get; }
         long Length { get; }
-        bool Rented { get; }
         long Position { get; }
+
+        SemaphoreSlim Locker { get; }
 
         ReusableTask FlushAsync ();
         ReusableTask<int> ReadAsync (byte[] buffer, int offset, int count);
         ReusableTask SeekAsync (long position);
         ReusableTask SetLengthAsync (long length);
         ReusableTask WriteAsync (byte[] buffer, int offset, int count);
-
-        void Rent ();
-        void Release ();
     }
 }

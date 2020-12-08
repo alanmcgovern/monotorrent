@@ -293,8 +293,7 @@ namespace MonoTorrent.Client
             // Process all pending reads/writes then close any open streams
             await ProcessBufferedIOAsync (true);
             foreach (var file in manager.Files)
-                using (await file.Locker.EnterAsync ())
-                    await Writer.CloseAsync (file);
+                await Writer.CloseAsync (file);
         }
 
         /// <summary>
@@ -324,8 +323,7 @@ namespace MonoTorrent.Client
             await WaitForPendingWrites ();
             foreach (var file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
-                    using (await file.Locker.EnterAsync ())
-                        await Writer.FlushAsync (file);
+                    await Writer.FlushAsync (file);
             }
         }
 
@@ -536,8 +534,7 @@ namespace MonoTorrent.Client
 
         async ReusableTask<int> ReadFromFileAsync (ITorrentFileInfo torrentFile, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            using (await torrentFile.Locker.EnterAsync ())
-                return await Writer.ReadAsync (torrentFile, offset, buffer, bufferOffset, count);
+            return await Writer.ReadAsync (torrentFile, offset, buffer, bufferOffset, count);
         }
 
         /// <summary>
@@ -595,12 +592,7 @@ namespace MonoTorrent.Client
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
 
-                await files[i].Locker.WaitAsync ();
-                try {
-                    await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
-                } finally {
-                    files[i].Locker.Release ();
-                }
+                await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
                 offset += fileToWrite;
                 totalWritten += fileToWrite;
                 if (offset >= files[i].Length) {

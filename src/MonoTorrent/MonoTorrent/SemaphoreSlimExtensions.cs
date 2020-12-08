@@ -44,7 +44,7 @@ namespace MonoTorrent
                 => Semaphore = semaphore;
 
             public void Dispose ()
-                => Semaphore.Release ();
+                => Semaphore?.Release ();
         }
         internal static async ReusableTask<Releaser> EnterAsync (this SemaphoreSlim semaphore)
         {

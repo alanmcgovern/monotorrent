@@ -66,7 +66,6 @@ namespace MonoTorrent.Client.PieceWriters
         public async Task CloseFileAsync_Opened ()
         {
             using var writer = new DiskWriter ();
-            using var locker = await TorrentFile.Locker.EnterAsync ();
 
             await writer.WriteAsync (TorrentFile, 0, new byte[10], 0, 10);
             Assert.IsTrue (File.Exists (TorrentFile.FullPath));
@@ -76,11 +75,10 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
-        public async Task CloseFileAsync_Unopened()
+        public void CloseFileAsync_Unopened()
         {
             using var writer = new DiskWriter ();
-            using (await TorrentFile.Locker.EnterAsync ())
-                Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
+            Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
         }
 
         [Test]
@@ -97,15 +95,12 @@ namespace MonoTorrent.Client.PieceWriters
             };
             using var writer = new DiskWriter (creator, 1);
 
-            using var locker = await TorrentFile.Locker.EnterAsync ();
-
             var writeTask = writer.WriteAsync (TorrentFile, 0, new byte[100], 0, 100);
             await streamCreated.Task.WithTimeout ();
 
             // There's a limit of 1 concurrent read/write.
             var secondStreamWaiter = streamCreated.Task.AsTask ();
 
-            using var secondLocker = await Others.First ().Locker.EnterAsync ();
             var secondStream = writer.WriteAsync (Others.First (), 0, new byte[100], 0, 100);
             Assert.ThrowsAsync<TimeoutException> (() => secondStreamWaiter.WithTimeout (100));
 
