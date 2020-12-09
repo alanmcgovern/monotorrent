@@ -408,9 +408,12 @@ namespace MonoTorrent.Client.PiecePicking
                 peer.BitField[i] = true;
 
             IList<PieceRequest> bundle;
+            PieceRequest request;
 
             while ((bundle = picker.PickPiece (peer, peer.BitField, peers, torrentData.BlocksPerPiece * 5)) != null)
                 messages.AddRange (bundle);
+            while ((request = picker.ContinueAnyExisting (peer)) != null)
+                messages.Add (request);
 
             Assert.AreEqual (torrentData.BlocksPerPiece * 7, messages.Count, "#2");
         }
