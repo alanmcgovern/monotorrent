@@ -97,8 +97,11 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal async ReusableTask<RentedStream> GetStream (ITorrentFileInfo file)
         {
-            if (Streams.TryGetValue (file, out ITorrentFileStream stream))
+            if (Streams.TryGetValue (file, out ITorrentFileStream stream)) {
+                UsageOrder.Remove (file);
+                UsageOrder.Add (file);
                 return new RentedStream (stream, await stream.Locker.EnterAsync ().ConfigureAwait (false));
+            }
             return new RentedStream (null, default);
         }
 
@@ -148,11 +151,10 @@ namespace MonoTorrent.Client.PieceWriters
             logger.InfoFormatted ("Opening filestream: {0}", file.FullPath);
 
             if (MaxStreams != 0 && Streams.Count >= MaxStreams) {
-                for (int i = 0; i < UsageOrder.Count; i++) {
-                    await Streams[UsageOrder[i]].Locker.EnterAsync ();
-                    CloseAndRemove (UsageOrder[i], Streams[UsageOrder[i]]);
-                    break;
-                }
+                var oldFile = UsageOrder[0];
+                var oldStream = Streams[oldFile];
+                using (await stream.Locker.EnterAsync ())
+                    CloseAndRemove (oldFile, oldStream);
             }
             Streams.Add (file, stream);
             UsageOrder.Add (file);
