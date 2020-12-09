@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
         /// </summary>
-        internal EngineSettings Settings { get; set; }
+        EngineSettings Settings { get; set; }
 
         /// <summary>
         /// Limits how fast data is written to the disk.
@@ -164,12 +164,16 @@ namespace MonoTorrent.Client
 
         ValueStopwatch UpdateTimer;
 
+        DiskWriter DiskWriter { get; }
+
+        MemoryWriter MemoryWriter { get; }
+
         /// <summary>
         /// The piece writer used to read/write data
         /// </summary>
         internal IPieceWriter Writer { get; set; }
 
-        internal DiskManager (EngineSettings settings, IPieceWriter writer)
+        internal DiskManager (EngineSettings settings, IPieceWriter writer = null)
         {
             ReadLimiter = new RateLimiter ();
             ReadMonitor = new SpeedMonitor ();
@@ -182,7 +186,16 @@ namespace MonoTorrent.Client
             UpdateTimer = ValueStopwatch.StartNew ();
 
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
-            Writer = writer ?? throw new ArgumentNullException (nameof (writer));
+
+            // If we pass in an IPieceWriter it should be used  *instead* of these.
+            // However we still create these so the properties are non-null.
+            DiskWriter = new DiskWriter (settings.MaximumOpenFiles) {
+                ReadMonitor = ReadMonitor,
+                WriteMonitor = WriteMonitor,
+            };
+            MemoryWriter = new MemoryWriter (DiskWriter, settings.DiskCacheBytes);
+
+            Writer = writer ?? MemoryWriter;
         }
 
         void IDisposable.Dispose ()
@@ -324,6 +337,20 @@ namespace MonoTorrent.Client
             foreach (var file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
                     await Writer.FlushAsync (file);
+            }
+        }
+
+        internal void UpdateSettings(EngineSettings settings)
+        {
+            var oldSettings = Settings;
+            Settings = settings;
+
+            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles) {
+                DiskWriter.UpdateMaximumOpenFiles (settings.MaximumOpenFiles);
+            }
+
+            if (oldSettings.DiskCacheBytes != settings.DiskCacheBytes) {
+                MemoryWriter.Capacity = settings.DiskCacheBytes;
             }
         }
 
@@ -501,7 +528,11 @@ namespace MonoTorrent.Client
         {
             IOLoop.CheckThread ();
 
-            ReadMonitor.AddDelta (count);
+            // If the user passed a custom IPieceWriter we should record the data here.
+            // Otherwise we record the data when the DiskWriter we created writes the actual data
+            // to disk.
+            if (MemoryWriter != Writer)
+                ReadMonitor.AddDelta (count);
 
             if (count < 1)
                 throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
@@ -578,7 +609,11 @@ namespace MonoTorrent.Client
         {
             IOLoop.CheckThread ();
 
-            WriteMonitor.AddDelta (count);
+            // If the user passed a custom IPieceWriter we should record the data here.
+            // Otherwise we record the data when the DiskWriter we created writes the actual data
+            // to disk.
+            if (MemoryWriter != Writer)
+                WriteMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));

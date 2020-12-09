@@ -39,6 +39,7 @@ namespace MonoTorrent.Client
     {
         TimeSpan connectionTimeout;
         int dhtPort;
+        int diskCacheBytes;
         int listenPort;
         int maximumConnections;
         int maximumDiskReadRate;
@@ -85,6 +86,15 @@ namespace MonoTorrent.Client
                     throw new ArgumentOutOfRangeException (nameof (value), "The timeout must be greater than 0");
                 connectionTimeout = value;
             }
+        }
+
+        /// <summary>
+        /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
+        /// Defaults to 5MB (5 * 1024 * 1024).
+        /// </summary>
+        public int DiskCacheBytes {
+            get => diskCacheBytes;
+            set => diskCacheBytes = CheckZeroOrPositive (5 * 1024 * 1024);
         }
 
         /// <summary>
