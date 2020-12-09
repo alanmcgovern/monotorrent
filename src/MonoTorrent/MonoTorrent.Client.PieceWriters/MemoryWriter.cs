@@ -105,6 +105,7 @@ namespace MonoTorrent.Client.PieceWriters
                     continue;
                 Buffer.BlockCopy (CachedBlocks[i].Buffer, 0, buffer, bufferOffset, count);
                 Interlocked.Add (ref cacheHits, count);
+                await FlushAsync (i);
                 return count;
             }
 
