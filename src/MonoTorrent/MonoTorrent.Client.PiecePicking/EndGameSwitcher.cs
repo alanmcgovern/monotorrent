@@ -81,7 +81,11 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
         {
-            return ActivePicker.ContinueAnyExisting (peer);
+            var bundle = ActivePicker.ContinueAnyExisting (peer);
+            if (bundle == null && TryEnableEndgame ())
+                return ActivePicker.ContinueAnyExisting (peer);
+            return bundle;
+
         }
         public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
         {
@@ -124,10 +128,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            IList<PieceRequest> bundle = ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
-            if (bundle == null && TryEnableEndgame ())
-                return ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
-            return bundle;
+            return ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
 
         bool TryEnableEndgame ()
