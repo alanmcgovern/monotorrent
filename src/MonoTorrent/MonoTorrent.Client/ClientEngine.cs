@@ -169,7 +169,7 @@ namespace MonoTorrent.Client
         }
 
         public ClientEngine (EngineSettings settings)
-            : this (settings, new DiskWriter ())
+            : this (settings, null)
         {
 
         }
@@ -177,7 +177,6 @@ namespace MonoTorrent.Client
         public ClientEngine (EngineSettings settings, IPieceWriter writer)
         {
             Check.Settings (settings);
-            Check.Writer (writer);
 
             // This is just a sanity check to make sure the ReusableTasks.dll assembly is
             // loadable.
@@ -580,7 +579,7 @@ namespace MonoTorrent.Client
 
         async Task UpdateSettingsAsync (EngineSettings oldSettings, EngineSettings newSettings)
         {
-            DiskManager.Settings = newSettings;
+            DiskManager.UpdateSettings (newSettings);
             ConnectionManager.Settings = newSettings;
 
             if (oldSettings.AllowPortForwarding != newSettings.AllowPortForwarding) {

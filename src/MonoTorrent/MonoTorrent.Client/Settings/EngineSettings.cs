@@ -71,6 +71,12 @@ namespace MonoTorrent.Client
         public TimeSpan ConnectionTimeout { get; } = TimeSpan.FromSeconds (10);
 
         /// <summary>
+        /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
+        /// Defaults to 5MB (5 * 1024 * 1024).
+        /// </summary>
+        public int DiskCacheBytes { get; } = 5 * 1024 * 1024;
+
+        /// <summary>
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
         /// Choose -1 to disable DHT. Defaults to 52139.
         /// </summary>
@@ -105,9 +111,9 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The maximum number of files which can be opened concurrently. On platforms which limit the maximum
         /// filehandles for a process it can be beneficial to limit the number of open files to prevent
-        /// running out of resources. A value of 0 means unlimited, but this is not recommended. Defaults to 20.
+        /// running out of resources. A value of 0 means unlimited, but this is not recommended. Defaults to 196.
         /// </summary>
-        public int MaximumOpenFiles { get; } = 20;
+        public int MaximumOpenFiles { get; } = 196;
 
         /// <summary>
         /// The maximum disk read speed, in bytes per second. A value of 0 means unlimited. This is
