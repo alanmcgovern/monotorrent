@@ -85,7 +85,10 @@ namespace MonoTorrent.Client.PiecePicking
         {
             CancelWhere (TimedOut, false);
         }
-
+        public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        {
+            return null;
+        }
         public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
         {
             return null;

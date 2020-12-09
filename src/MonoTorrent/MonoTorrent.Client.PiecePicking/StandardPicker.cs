@@ -137,15 +137,6 @@ namespace MonoTorrent.Client.PiecePicking
             if (peer.IsChoking)
                 return null;
 
-            // Disable this particular piece of logic to increase the likelihood we'll be able
-            // to incrementally hash a piece. If we allow peers to prefer downloading their own
-            // piece then we are much more likely to get every block in order and thus have a full
-            // and successful incremental hash.
-            //// If we are only requesting 1 piece, then we can continue any existing. Otherwise we should try
-            //// to request the full amount first, then try to continue any existing.
-            //if (count == 1 && (message = ContinueAnyExisting(id)) != null)
-            //    return new [] { message };
-
             // We see if the peer has suggested any pieces we should request
             if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null)
                 return new[] { message };
@@ -153,12 +144,6 @@ namespace MonoTorrent.Client.PiecePicking
             // Now we see what pieces the peer has that we don't have and try and request one
             if ((bundle = GetStandardRequest (peer, available, startIndex, endIndex, count)) != null)
                 return bundle;
-
-            // If all else fails we should request blocks from a piece another peer is retrieving. If we do
-            // this we should start requesting from the end of the piece to give the best chance of having a
-            // good incremental hash
-            if ((message = ContinueAnyExisting (peer)) != null)
-                return new[] { message };
 
             return null;
         }
@@ -226,7 +211,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        protected PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.

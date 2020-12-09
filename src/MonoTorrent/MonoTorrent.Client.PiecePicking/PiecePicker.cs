@@ -65,6 +65,11 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden ();
             BasePicker.CancelTimedOutRequests ();
         }
+        public virtual PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        {
+            CheckOverriden ();
+            return BasePicker.ContinueAnyExisting (peer);
+        }
         public virtual PieceRequest ContinueExistingRequest (IPieceRequester peer)
         {
             CheckOverriden ();

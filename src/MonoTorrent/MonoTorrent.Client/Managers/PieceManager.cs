@@ -142,6 +142,16 @@ namespace MonoTorrent.Client
                         break;
                 }
             }
+
+            if (!id.IsChoking && id.AmRequestingPiecesCount == 0) {
+                while (id.AmRequestingPiecesCount < maxRequests) {
+                    PieceRequest request = Picker.ContinueAnyExisting (id);
+                    if (request != null)
+                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+                    else
+                        break;
+                }
+            }
         }
 
         internal bool IsInteresting (PeerId id)
