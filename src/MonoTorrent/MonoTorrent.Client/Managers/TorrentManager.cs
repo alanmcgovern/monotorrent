@@ -697,7 +697,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task UpdateSettings (TorrentSettings settings)
+        public async Task UpdateSettingsAsync (TorrentSettings settings)
         {
             await ClientEngine.MainLoop;
             Settings = settings;
