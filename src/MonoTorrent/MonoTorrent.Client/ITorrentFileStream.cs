@@ -40,9 +40,6 @@ namespace MonoTorrent.Client
         bool Disposed { get; }
         long Length { get; }
         long Position { get; }
-
-        ReusableExclusiveSemaphore Locker { get; }
-
         ReusableTask FlushAsync ();
         ReusableTask<int> ReadAsync (byte[] buffer, int offset, int count);
         ReusableTask SeekAsync (long position);

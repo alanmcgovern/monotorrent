@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
                 await MainLoop.SwitchToThreadpool ();
                 if (rented.Stream.Length < offset + count)
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
+                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
 
                 // FileStream.WriteAsync does some work synchronously, according to the profiler.
                 // It looks like if the file is too small it is expanded (SetLength is called)

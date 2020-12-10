@@ -52,8 +52,6 @@ namespace MonoTorrent.Client
 
         bool ITorrentFileStream.Disposed => disposed;
 
-        ReusableExclusiveSemaphore ITorrentFileStream.Locker { get; } = new ReusableExclusiveSemaphore ();
-
         async ReusableTask ITorrentFileStream.FlushAsync ()
         {
             await FlushAsync ();
