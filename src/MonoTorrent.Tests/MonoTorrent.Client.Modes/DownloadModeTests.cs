@@ -309,14 +309,14 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_AllDownloaded_AllDownloadable ()
+        public async Task PartialProgress_AllDownloaded_AllDownloadable ()
         {
             for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
                 Manager.OnPieceHashed (i, true);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.AreEqual (100.0, Manager.Progress, "#3");
             Assert.AreEqual (100.0, Manager.PartialProgress, "#4");
@@ -324,7 +324,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_AllDownloaded_SomeDownloadable ()
+        public async Task PartialProgress_AllDownloaded_SomeDownloadable ()
         {
             for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
                 Manager.OnPieceHashed (i, true);
@@ -335,7 +335,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.AreNotEqual (0, Manager.Progress, "#3");
             Assert.AreEqual (100.0, Manager.PartialProgress, "#4");
@@ -343,11 +343,11 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_NoneDownloaded ()
+        public async Task PartialProgress_NoneDownloaded ()
         {
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.AreEqual (0, Manager.Progress, "#1");
             Assert.AreEqual (0, Manager.PartialProgress, "#2");
@@ -355,14 +355,14 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_NoneDownloaded_AllDoNotDownload ()
+        public async Task PartialProgress_NoneDownloaded_AllDoNotDownload ()
         {
             foreach (var file in Manager.Files)
                 file.Priority = Priority.DoNotDownload;
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.AreEqual (0, Manager.Progress, "#1");
             Assert.AreEqual (0, Manager.PartialProgress, "#2");
@@ -370,7 +370,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_RelatedDownloaded ()
+        public async Task PartialProgress_RelatedDownloaded ()
         {
             Manager.OnPieceHashed (0, true);
 
@@ -380,7 +380,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.That (Manager.Progress, Is.GreaterThan (0.0), "#3a");
             Assert.That (Manager.Progress, Is.LessThan (100.0), "#3b");
@@ -390,7 +390,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_RelatedDownloaded2 ()
+        public async Task PartialProgress_RelatedDownloaded2 ()
         {
             var lastFile = Manager.Files.Last ();
             Manager.OnPieceHashed (Manager.Torrent.Pieces.Count - 1, true);
@@ -401,7 +401,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             var totalPieces = lastFile.EndPieceIndex - lastFile.StartPieceIndex + 1;
             Assert.That (Manager.PartialProgress, Is.EqualTo (100.0 / totalPieces).Within (1).Percent, "#1");
@@ -419,17 +419,17 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#1");
 
-            Manager.Files.Skip (1).First ().Priority = Priority.Normal;
             var oldStateTask = new TaskCompletionSource<TorrentState> ();
             var newStateTask = new TaskCompletionSource<TorrentState> ();
             Manager.TorrentStateChanged += (object sender, TorrentStateChangedEventArgs e) => {
                 oldStateTask.SetResult (e.OldState);
                 newStateTask.SetResult (e.NewState);
             };
-            mode.UpdateSeedingDownloadingState ();
+            Manager.Files.Skip (1).First ().Priority = Priority.Normal;
+            await mode.UpdateSeedingDownloadingState ();
 
             var oldState = await oldStateTask.Task;
             var newState = await newStateTask.Task;
@@ -445,7 +445,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void PartialProgress_UnrelatedDownloaded_AllDoNotDownload ()
+        public async Task PartialProgress_UnrelatedDownloaded_AllDoNotDownload ()
         {
             Manager.OnPieceHashed (0, true);
 
@@ -454,14 +454,14 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.AreNotEqual (0, Manager.Progress, "#3");
             Assert.AreEqual (0, Manager.PartialProgress, "#4");
         }
 
         [Test]
-        public void PartialProgress_UnrelatedDownloaded_SomeDoNotDownload ()
+        public async Task PartialProgress_UnrelatedDownloaded_SomeDoNotDownload ()
         {
             Manager.OnPieceHashed (0, true);
 
@@ -471,7 +471,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ();
 
             Assert.AreNotEqual (0, Manager.Progress, "#3");
             Assert.AreEqual (0, Manager.PartialProgress, "#4");
