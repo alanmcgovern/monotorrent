@@ -69,8 +69,6 @@ namespace MonoTorrent.Streaming
 
         StreamingPiecePicker Picker { get; }
 
-        FileStream Stream { get; set; }
-
         public LocalStream (TorrentManager manager, ITorrentFileInfo file, StreamingPiecePicker picker)
         {
             Manager = manager;
@@ -83,9 +81,6 @@ namespace MonoTorrent.Streaming
             base.Dispose (disposing);
 
             Disposed = true;
-            if (disposing) {
-                Stream?.Dispose ();
-            }
         }
 
         public override void Flush ()
@@ -116,27 +111,18 @@ namespace MonoTorrent.Streaming
                 if (allAvailable)
                     break;
 
-                await Task.Delay (500, cancellationToken);
+                await Task.Delay (500, cancellationToken).ConfigureAwait (false);
                 ThrowIfDisposed ();
             }
 
             cancellationToken.ThrowIfCancellationRequested ();
-            if (Stream == null) {
-                // FIXME: Is it worth trying to use a stream managed by the normal internal buffer? I don't
-                // think so as those streams are supposed to be temporary, whereas the stream here is supposed
-                // to be kept open permanently so we can provide data to the user. If there's an issue in the
-                // future (highly likely :p ) then I'll have to augment the various APIs to allow a long-lived
-                // stream to be created, and then use the long-lived stream here.
-                Stream = new FileStream (File.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                Stream.Seek (Position, SeekOrigin.Begin);
-            }
-
-            var read = await Stream.ReadAsync (buffer, offset, count, cancellationToken);
+            if (!await Manager.Engine.DiskManager.ReadAsync (Manager, Position + torrentFileStartOffset, buffer, count).ConfigureAwait (false))
+                throw new InvalidOperationException ("Could not read the requested data from the torrent");
             ThrowIfDisposed ();
 
-            position += read;
+            position += count;
             Picker.ReadToPosition (File, position);
-            return read;
+            return count;
         }
 
         public override long Seek (long offset, SeekOrigin origin)
@@ -158,7 +144,6 @@ namespace MonoTorrent.Streaming
             }
 
             Picker.SeekToPosition (File, position);
-            Stream?.Seek (offset, origin);
             return position;
         }
 
