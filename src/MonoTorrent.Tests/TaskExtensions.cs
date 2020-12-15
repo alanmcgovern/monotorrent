@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
@@ -39,6 +40,17 @@ namespace MonoTorrent
     public static class TaskExtensions
     {
         static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
+
+        public static T TakeWithTimeout<T> (this BlockingCollection<T> collection, string message = null)
+        {
+            var cts = new System.Threading.CancellationTokenSource (Timeout);
+            try {
+                return collection.Take (cts.Token);
+            } catch {
+                Assert.Fail (message);
+                throw;
+            }
+        }
 
         public static Task WithTimeout (this ReusableTask task, string message = null)
             => task.AsTask ().WithTimeout (Timeout, message);
