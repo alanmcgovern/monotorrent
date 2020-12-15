@@ -158,14 +158,23 @@ namespace MonoTorrent.Client.PieceWriters
 
         public async ReusableTask FlushAsync (ITorrentFileInfo file)
         {
-            foreach (var block in CachedBlocks) {
+            // When the 'await FlushAsync' call returns it's possible the 'CachedBlocks' List
+            // will have been modified. We could have written more data to it, flushed
+            // other blocks, or anything! As such we start flushing from the last piece
+            // and slowly work our way towards the first piece. This way 'new' pieces
+            // added after we began to flush will not be flushed as part of this invocation.
+            for (int i = CachedBlocks.Count - 1; i >= 0; i --) {
+                // If something else flushes a block between iterations we may
+                // now be attempting to flush a block which no longer exists.
+                if (i >= CachedBlocks.Count)
+                    continue;
+
+                var block = CachedBlocks[i];
                 if (block.File != file)
                     continue;
-                Interlocked.Add (ref cacheUsed, -block.Count);
-                using (block.BufferReleaser)
-                    await Writer.WriteAsync (block.File, block.Offset, block.Buffer, 0, block.Count);
+
+                await FlushAsync (i);
             }
-            CachedBlocks.RemoveAll (b => b.File == file);
         }
 
         async ReusableTask FlushAsync (int index)
