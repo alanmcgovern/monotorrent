@@ -292,11 +292,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        ReusableTask<bool> WaitForPendingWrites ()
+        async ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
             WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
-            return tcs.Task;
+            await ProcessBufferedIOAsync ();
+            return await tcs.Task;
         }
 
         internal async Task CloseFilesAsync (ITorrentData manager)
@@ -333,7 +334,9 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException (nameof (manager));
             await IOLoop;
 
-            await WaitForPendingWrites ();
+            if (WriteQueue.Count > 0)
+                await WaitForPendingWrites ();
+
             foreach (var file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
                     await Writer.FlushAsync (file);
