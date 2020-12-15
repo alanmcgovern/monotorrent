@@ -73,23 +73,26 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        internal void UpdateSeedingDownloadingState ()
+        internal async void UpdateSeedingDownloadingState ()
         {
             UpdatePartialProgress ();
 
             //If download is fully complete, set state to 'Seeding' and send an announce to the tracker.
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;
-                Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
                 _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None);
+                await DiskManager.FlushAsync (Manager);
+                Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
             } else if (Manager.PartialProgressSelector.TrueCount > 0) {
                 // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
                 // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
                 if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) == Manager.PartialProgressSelector.TrueCount && state == TorrentState.Downloading) {
                     state = TorrentState.Seeding;
+                    await DiskManager.FlushAsync (Manager);
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
                 } else if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) < Manager.PartialProgressSelector.TrueCount && state == TorrentState.Seeding) {
                     state = TorrentState.Downloading;
+                    await DiskManager.FlushAsync (Manager);
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Seeding, TorrentState.Downloading));
                 }
             }
