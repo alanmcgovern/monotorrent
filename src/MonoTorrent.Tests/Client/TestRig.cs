@@ -394,7 +394,8 @@ namespace MonoTorrent.Client
             MetadataPath = "metadataSave.torrent";
             PeerListenerFactory.Creator = endpoint => new CustomListener ();
             LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
-            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = 12345  }.ToSettings (), writer);
+            Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
+            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = 12345 }.ToSettings (), writer);
             Writer = writer;
 
             RecreateManager ().Wait ();

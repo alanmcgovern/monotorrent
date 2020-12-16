@@ -134,6 +134,9 @@ namespace MonoTorrent.Client.Modes
             id.SupportsLTMessages = true;
 
             var manager = TestRig.CreatePrivate ();
+            using var engine = new ClientEngine ();
+            await engine.Register (manager);
+
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
             manager.PeersFound += (o, e) => {
@@ -152,6 +155,9 @@ namespace MonoTorrent.Client.Modes
         public async Task AddPeers_Tracker_Private ()
         {
             var manager = TestRig.CreatePrivate ();
+            using var engine = new ClientEngine ();
+            await engine.Register (manager);
+
             manager.SetTrackerManager (TrackerManager);
 
             var peersTask = new TaskCompletionSource<TrackerPeersAdded> ();
@@ -229,9 +235,12 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void EmptyPeerId_PrivateTorrent ()
+        public async Task EmptyPeerId_PrivateTorrent ()
         {
             var manager = TestRig.CreatePrivate ();
+            using var engine = new ClientEngine ();
+            await engine.Register (manager);
+
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length);
             peer.Peer.PeerId = null;
@@ -254,9 +263,12 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void MismatchedPeerId_PrivateTorrent ()
+        public async Task MismatchedPeerId_PrivateTorrent ()
         {
             var manager = TestRig.CreatePrivate ();
+            using var engine = new ClientEngine ();
+            await engine.Register (manager);
+
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length);
             var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
