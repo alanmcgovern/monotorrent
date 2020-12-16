@@ -37,8 +37,13 @@ namespace MonoTorrent.Client
     {
         static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
 
-        public static Task WaitForState (this TorrentManager manager, TorrentState state)
+        public static async Task WaitForState (this TorrentManager manager, TorrentState state)
         {
+            await ClientEngine.MainLoop;
+
+            if (manager.State == state)
+                return;
+
             var tcs = new TaskCompletionSource<object> ();
             var cancellation = new CancellationTokenSource (Timeout);
             var token = cancellation.Token.Register (() => tcs.TrySetCanceled ());
@@ -50,7 +55,7 @@ namespace MonoTorrent.Client
                 }
             };
 
-            return tcs.Task;
+            await tcs.Task;
         }
     }
 }
