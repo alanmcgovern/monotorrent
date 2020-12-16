@@ -253,6 +253,8 @@ namespace MonoTorrent.Streaming
 
                 ActiveStream.Seek (0, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
+
+                ActiveStream.Seek (0, SeekOrigin.Begin);
             }
             return ActiveStream;
         }
