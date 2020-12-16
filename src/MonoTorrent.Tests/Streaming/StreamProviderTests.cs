@@ -128,6 +128,20 @@ namespace MonoTorrent.Streaming
         }
 
         [Test]
+        public async Task CreateStream_Prebuffer ()
+        {
+            var provider = new StreamProvider (Engine, "testDir", Torrent);
+            await provider.StartAsync ();
+            await provider.Manager.WaitForState (TorrentState.Downloading);
+            provider.Manager.Bitfield.SetAll (true); // should not be allowed by public API.
+
+            using var stream = await provider.CreateStreamAsync (provider.Files[0], prebuffer: true, CancellationToken.None);
+            Assert.IsNotNull (stream);
+            Assert.AreEqual (0, stream.Position);
+            Assert.AreEqual (provider.Files[0].Length, stream.Length);
+        }
+
+        [Test]
         public async Task ReadPastEndOfStream ()
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
