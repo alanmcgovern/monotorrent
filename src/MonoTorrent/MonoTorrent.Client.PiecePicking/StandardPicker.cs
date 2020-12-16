@@ -141,6 +141,9 @@ namespace MonoTorrent.Client.PiecePicking
             if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null)
                 return new[] { message };
 
+            if ((message = ContinueExistingRequest (peer, true)) != null)
+                return new[] { message };
+
             // Now we see what pieces the peer has that we don't have and try and request one
             if ((bundle = GetStandardRequest (peer, available, startIndex, endIndex, count)) != null)
                 return bundle;
@@ -191,12 +194,15 @@ namespace MonoTorrent.Client.PiecePicking
 
 
         public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
+            => ContinueExistingRequest (peer, false);
+
+        PieceRequest ContinueExistingRequest (IPieceRequester peer, bool continueAbandonedPieces)
         {
             for (int req = 0; req < requests.Count; req++) {
                 Piece p = requests[req];
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if (peer != p.Blocks[0].RequestedOff || p.AllBlocksRequested)
+                if ((!continueAbandonedPieces || !p.Blocks[0].Abandoned) && (peer != p.Blocks[0].RequestedOff || p.AllBlocksRequested))
                     continue;
 
                 for (int i = 0; i < p.BlockCount; i++) {

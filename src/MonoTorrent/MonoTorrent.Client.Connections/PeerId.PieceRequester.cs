@@ -38,6 +38,7 @@ namespace MonoTorrent.Client
     public partial class PeerId : IPieceRequester
     {
         int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        bool IPieceRequester.Disposed => Disposed;
         List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
         bool IPieceRequester.IsChoking => IsChoking;
         TimeSpan IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
