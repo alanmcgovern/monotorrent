@@ -44,34 +44,11 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PieceManager
     {
-        #region Old
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount
         internal const int BonusRequestPerKb = 10;
+
         // Default to a minimum of 8 blocks
         internal const int NormalRequestAmount = 8;
-        // Allow 4 pending blocks per peer during end game
-        internal const int MaxEndGameRequests = 4;
-
-        public event EventHandler<BlockEventArgs> BlockReceived;
-        public event EventHandler<BlockEventArgs> BlockRequested;
-        public event EventHandler<BlockEventArgs> BlockRequestCancelled;
-
-        internal void RaiseBlockReceived (BlockEventArgs args)
-        {
-            BlockReceived?.InvokeAsync (args.TorrentManager, args);
-        }
-
-        internal void RaiseBlockRequested (BlockEventArgs args)
-        {
-            BlockRequested?.InvokeAsync (args.TorrentManager, args);
-        }
-
-        internal void RaiseBlockRequestCancelled (BlockEventArgs args)
-        {
-            BlockRequestCancelled?.InvokeAsync (args.TorrentManager, args);
-        }
-
-        #endregion Old
 
         TorrentManager Manager { get; }
         PiecePicker originalPicker;
@@ -89,11 +66,6 @@ namespace MonoTorrent.Client
         {
             if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece)) {
                 id.LastBlockReceived.Restart ();
-                Block block = piece.Blocks[message.StartOffset / Piece.BlockSize];
-
-                if (BlockReceived != null)
-                    RaiseBlockReceived (new BlockEventArgs (Manager, block, piece, id));
-
                 if (piece.AllBlocksReceived)
                     PendingHashCheckPieces[message.PieceIndex] = true;
                 return piece;
