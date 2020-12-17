@@ -424,6 +424,12 @@ namespace MonoTorrent.Client
             ChangePicker (picker);
         }
 
+        public async Task<List<Piece>> ExportActiveRequests ()
+        {
+            await ClientEngine.MainLoop;
+            return PieceManager.Picker.ExportActiveRequests ();
+        }
+
         public void Dispose ()
         {
             if (disposed)
