@@ -106,8 +106,10 @@ namespace MonoTorrent.Client.PiecePicking
         internal void SeekToPosition (ITorrentFileInfo file, long position)
         {
             // Update the high priority set, then cancel pending requests.
+            var oldPosition = HighPriorityPieceIndex;
             ReadToPosition (file, position);
-            CancelPendingRequests = true;
+            if (oldPosition != HighPriorityPieceIndex)
+                CancelPendingRequests = true;
         }
 
         /// <summary>
