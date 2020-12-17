@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void SeekDoesCancelRequests ()
+        public void SeekToDifferentPieceCancelsRequests ()
         {
             (var picker, var checker) = CreatePicker<TestPicker> ();
 
@@ -97,11 +97,29 @@ namespace MonoTorrent.Client.PiecePicking
                 PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
             };
             picker.PickPiece (peer, peer.BitField, peers);
-            picker.SeekToPosition (data.Files[0], 0);
+            picker.SeekToPosition (data.Files[0], data.PieceLength);
             picker.PickPiece (peer, peer.BitField, peers);
             Assert.IsTrue(checker.HasCancelledRequests);
             Assert.IsTrue (peers.All (p => checker.CancelledRequestsFrom.Contains (p)));
             Assert.IsTrue (checker.CancelledRequestsFrom.Contains (peer));
+        }
+
+        [Test]
+        public void SeekToSamePieceDoesNotCancelRequests ()
+        {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
+            PeerId[] peers = new[] {
+                PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
+                PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
+                PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true),
+            };
+            picker.PickPiece (peer, peer.BitField, peers);
+            picker.SeekToPosition (data.Files[0], 0);
+            picker.PickPiece (peer, peer.BitField, peers);
+            Assert.IsFalse (checker.HasCancelledRequests);
+            Assert.IsFalse (peers.All (p => checker.CancelledRequestsFrom.Contains (p)));
+            Assert.IsFalse (checker.CancelledRequestsFrom.Contains (peer));
         }
 
         [Test]
