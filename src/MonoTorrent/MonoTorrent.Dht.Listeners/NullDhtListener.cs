@@ -35,8 +35,10 @@ namespace MonoTorrent.Dht.Listeners
 {
     class NullDhtListener : IDhtListener
     {
+#pragma warning disable 0067
         public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
+#pragma warning restore 0067
 
         public NullDhtListener ()
         {
