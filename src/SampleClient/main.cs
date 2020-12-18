@@ -55,8 +55,9 @@ namespace SampleClient
 
         private static async Task StartEngine ()
         {
+#if DEBUG
             Logger.Factory = (string className) => new TextLogger (Console.Out, className);
-
+#endif
             int port;
             Torrent torrent = null;
             // Ask the user what port they want to use for incoming connections
