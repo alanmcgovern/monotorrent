@@ -228,6 +228,29 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void RepeatedHashFails_CannotContinueExisting ()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll (true);
+
+            var otherPeer = peers[1];
+            otherPeer.IsChoking = false;
+            otherPeer.BitField.SetAll (true);
+            otherPeer.Peer.RepeatedHashFails++;
+
+            // Successfully receive one block, then abandon the piece by disconnecting.
+            var request = picker.PickPiece (peer, peer.BitField, peers);
+            picker.ValidatePiece (peer, request.PieceIndex, request.StartOffset, request.RequestLength, out Piece piece);
+            request = picker.PickPiece (peer, peer.BitField, peers);
+            picker.CancelRequests (peer);
+            peer.Dispose ();
+
+            // Peers involved in repeated hash fails cannot continue incomplete pieces.
+            var otherRequest = picker.PickPiece (otherPeer, otherPeer.BitField, peers);
+            Assert.AreNotEqual (request.PieceIndex, otherRequest.PieceIndex, "#0");
+        }
+
+        [Test]
         public void PeerDisconnected_ReceivedOneBlock ()
         {
             var messages = new List<PieceRequest> ();

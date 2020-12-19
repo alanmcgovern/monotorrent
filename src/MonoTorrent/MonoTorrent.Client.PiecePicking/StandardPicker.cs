@@ -195,7 +195,7 @@ namespace MonoTorrent.Client.PiecePicking
 
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if ((allowAbandoned && p.Abandoned) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
+                if ((allowAbandoned && p.Abandoned && peer.RepeatedHashFails == 0) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
                     for (int i = 0; i < p.BlockCount; i++) {
                         if (!p.Blocks[i].Received && !p.Blocks[i].Requested)
                             return p.Blocks[i].CreateRequest (peer);
