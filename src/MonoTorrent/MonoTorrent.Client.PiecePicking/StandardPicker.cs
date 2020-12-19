@@ -38,8 +38,6 @@ namespace MonoTorrent.Client.PiecePicking
     {
         static readonly Logger logger = Logger.Create ();
 
-        static readonly Predicate<Block> TimedOut = b => b.RequestTimedOut;
-
         readonly SortList<Piece> requests;
 
         ITorrentData TorrentData { get; set; }
@@ -61,11 +59,6 @@ namespace MonoTorrent.Client.PiecePicking
         public override void CancelRequests (IPieceRequester peer)
         {
             CancelWhere (b => peer == b.RequestedOff);
-        }
-
-        public override void CancelTimedOutRequests ()
-        {
-            CancelWhere (TimedOut);
         }
 
         void CancelWhere (Predicate<Block> predicate)

@@ -37,8 +37,6 @@ namespace MonoTorrent.Client.PiecePicking
     // From this list we will make requests for all the blocks until the piece is complete.
     public class EndGamePicker : PiecePicker
     {
-        static readonly Predicate<Request> TimedOut = r => r.Block.RequestTimedOut;
-
         // Struct to link a request for a block to a peer
         // This way we can have multiple requests for the same block
         internal class Request
@@ -81,10 +79,6 @@ namespace MonoTorrent.Client.PiecePicking
             Requests.RemoveAll (predicate);
         }
 
-        public override void CancelTimedOutRequests ()
-        {
-            CancelWhere (TimedOut, false);
-        }
         public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
         {
             return null;

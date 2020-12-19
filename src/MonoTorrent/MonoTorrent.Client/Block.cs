@@ -83,10 +83,6 @@ namespace MonoTorrent.Client
 
         public int RequestLength { get; }
 
-        // If we're downloading data from a peer we should be able to get at least 1kB/sec. If they send
-        // data slower than this we should time out and allow other peers to request the block.
-        public bool RequestTimedOut => !Received && RequestedOff != null && (RequestedOff.TimeSinceLastMessageReceived > TimeSpan.FromSeconds (15));
-
         internal IPieceRequester RequestedOff { get; private set; }
 
         public int StartOffset { get; }

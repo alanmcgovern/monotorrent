@@ -526,7 +526,6 @@ namespace MonoTorrent.Client.Modes
                 Manager.UpdateLimiters ();
             }
 
-            Manager.PieceManager.Picker.CancelTimedOutRequests ();
             Manager.Peers.UpdatePeerCounts ();
 
             if (Manager.finishedPieces.Count > 0)
@@ -555,6 +554,7 @@ namespace MonoTorrent.Client.Modes
         void PostLogicTick (int counter)
         {
             PeerId id;
+            var fifteenSeconds = TimeSpan.FromSeconds (15);
             var thirtySeconds = TimeSpan.FromSeconds (30);
             var nintySeconds = TimeSpan.FromSeconds (90);
             var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
@@ -571,7 +571,7 @@ namespace MonoTorrent.Client.Modes
                     id.MessageQueue.Enqueue (new KeepAliveMessage ());
                 }
 
-                if (id.LastMessageReceived.Elapsed > onhundredAndEightySeconds) {
+                if (id.LastMessageReceived.Elapsed > onhundredAndEightySeconds || (id.LastMessageReceived.Elapsed > fifteenSeconds && id.AmRequestingPiecesCount > 0)) {
                     ConnectionManager.CleanupSocket (Manager, id);
                     continue;
                 }

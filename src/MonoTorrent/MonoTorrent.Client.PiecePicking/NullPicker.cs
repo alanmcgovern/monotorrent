@@ -49,11 +49,6 @@ namespace MonoTorrent.Client.PiecePicking
 
         }
 
-        public override void CancelTimedOutRequests ()
-        {
-
-        }
-
         public override int CurrentReceivedCount ()
         {
             return 0;

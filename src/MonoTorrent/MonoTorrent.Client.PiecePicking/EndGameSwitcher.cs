@@ -74,11 +74,6 @@ namespace MonoTorrent.Client.PiecePicking
             ActivePicker.CancelRequests (peer);
         }
 
-        public override void CancelTimedOutRequests ()
-        {
-            ActivePicker.CancelTimedOutRequests ();
-        }
-
         public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
         {
             var bundle = ActivePicker.ContinueAnyExisting (peer);
