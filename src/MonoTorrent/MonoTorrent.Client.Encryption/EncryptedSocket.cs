@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 using MonoTorrent.Client.Connections;
@@ -82,7 +83,7 @@ namespace MonoTorrent.Client.Encryption
         RC4 encryptor;
         RC4 decryptor;
 
-        EncryptionTypes allowedEncryption;
+        IList<EncryptionType> allowedEncryption;
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
@@ -112,7 +113,7 @@ namespace MonoTorrent.Client.Encryption
 
         #endregion
 
-        protected EncryptedSocket (EncryptionTypes allowedEncryption)
+        protected EncryptedSocket (IList<EncryptionType> allowedEncryption)
         {
             random = RandomNumberGenerator.Create ();
             hasher = HashAlgoFactory.SHA1 ();
@@ -338,7 +339,27 @@ namespace MonoTorrent.Client.Encryption
             CryptoSelect = new byte[remoteCryptoBytes.Length];
 
             // '2' corresponds to RC4Full
-            if ((remoteCryptoBytes[3] & 2) == 2 && allowedEncryption.HasFlag (EncryptionTypes.RC4Full)) {
+            EncryptionType selectedEncryption;
+            bool remoteSupportsFull = (remoteCryptoBytes[3] & 2) == 2;
+            bool remoteSupportsHeader = (remoteCryptoBytes[3] & 1) == 1;
+
+            if (EncryptionTypes.PreferredRC4 (allowedEncryption) == EncryptionType.RC4Full) {
+                if (remoteSupportsFull && allowedEncryption.Contains (EncryptionType.RC4Full))
+                    selectedEncryption = EncryptionType.RC4Full;
+                else if (remoteSupportsHeader && allowedEncryption.Contains (EncryptionType.RC4Header))
+                    selectedEncryption = EncryptionType.RC4Header;
+                else
+                    throw new NotSupportedException ("No supported crypto method supported");
+            } else {
+                if (remoteSupportsHeader && allowedEncryption.Contains (EncryptionType.RC4Header))
+                    selectedEncryption = EncryptionType.RC4Header;
+                else if (remoteSupportsFull && allowedEncryption.Contains (EncryptionType.RC4Full))
+                    selectedEncryption = EncryptionType.RC4Full;
+                else
+                    throw new NotSupportedException ("No supported crypto method supported");
+            }
+
+            if (selectedEncryption == EncryptionType.RC4Full) {
                 CryptoSelect[3] |= 2;
                 if (replace) {
                     Encryptor = encryptor;
@@ -348,7 +369,7 @@ namespace MonoTorrent.Client.Encryption
             }
 
             // '1' corresponds to RC4Header
-            if ((remoteCryptoBytes[3] & 1) == 1 && allowedEncryption.HasFlag (EncryptionTypes.RC4Header)) {
+            if (selectedEncryption == EncryptionType.RC4Header) {
                 CryptoSelect[3] |= 1;
                 if (replace) {
                     Encryptor = new RC4Header ();
@@ -431,7 +452,7 @@ namespace MonoTorrent.Client.Encryption
             decryptor.Decrypt (data, offset, data, offset, length);
         }
 
-        void SetMinCryptoAllowed (EncryptionTypes allowedEncryption)
+        void SetMinCryptoAllowed (IList<EncryptionType> allowedEncryption)
         {
             this.allowedEncryption = allowedEncryption;
 
@@ -439,11 +460,14 @@ namespace MonoTorrent.Client.Encryption
             // This sets all bits in CryptoProvide 0 that is to the right of minCryptoAllowed.
             CryptoProvide[0] = CryptoProvide[1] = CryptoProvide[2] = CryptoProvide[3] = 0;
 
-            if (allowedEncryption.HasFlag (EncryptionTypes.RC4Full))
+            // Ensure we advertise all methods which we support. For incoming connections we'll
+            // need to claim support for both Full and Header even if we prefer one.
+            if (allowedEncryption.Contains (EncryptionType.RC4Full))
                 CryptoProvide[3] |= 1 << 1;
-
-            if (allowedEncryption.HasFlag (EncryptionTypes.RC4Header))
+            if (allowedEncryption.Contains (EncryptionType.RC4Header))
                 CryptoProvide[3] |= 1;
+            if (CryptoProvide[3] == 0)
+                throw new NotSupportedException ("Attempting to establish an RC4 connection with no RC4 encryption methods");
         }
         #endregion
     }

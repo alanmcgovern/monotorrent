@@ -27,6 +27,8 @@
 //
 
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -76,74 +78,94 @@ namespace MonoTorrent.Client.Encryption
 
         [Test]
         public async Task PlainText_PlainText ()
-            => await Handshake (EncryptionTypes.PlainText, EncryptionTypes.PlainText, false);
+            => await Handshake (EncryptionType.PlainText, EncryptionType.PlainText, false);
         [Test]
         public async Task PlainText_PlainText_WithInitialData ()
-            => await Handshake (EncryptionTypes.PlainText, EncryptionTypes.PlainText, true);
+            => await Handshake (EncryptionType.PlainText, EncryptionType.PlainText, true);
 
         [Test]
         public void PlainText_RC4Full ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.PlainText, EncryptionTypes.RC4Full, false));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.PlainText, EncryptionType.RC4Full, false));
         [Test]
         public void PlainText_RC4Full_WithInitialData ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.PlainText, EncryptionTypes.RC4Full, true));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.PlainText, EncryptionType.RC4Full, true));
 
         [Test]
         public void PlainText_RC4Header ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.PlainText, EncryptionTypes.RC4Header, false));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.PlainText, EncryptionType.RC4Header, false));
         [Test]
         public void PlainText_RC4Header_WithInitialData ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.PlainText, EncryptionTypes.RC4Header, true));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.PlainText, EncryptionType.RC4Header, true));
 
         [Test]
         public void RC4Full_PlainText ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Full, EncryptionType.PlainText, false));
         [Test]
         public void RC4Full_PlainText_WithInitialData ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Full, EncryptionType.PlainText, true));
 
         [Test]
         public async Task RC4Full_RC4Full ()
-            => await Handshake (EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, false);
+            => await Handshake (EncryptionType.RC4Full, EncryptionType.RC4Full, false);
         [Test]
         public async Task RC4Full_RC4Full_WithInitialData ()
-            => await Handshake (EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, true);
+            => await Handshake (EncryptionType.RC4Full, EncryptionType.RC4Full, true);
 
         [Test]
         public void RC4Full_RC4Header ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Full, EncryptionType.RC4Header, false));
         [Test]
         public void RC4Full_RC4Header_WithInitialData ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, true));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Full, EncryptionType.RC4Header, true));
 
         [Test]
         public void RC4Header_PlainText ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Header, EncryptionTypes.PlainText, false));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Header, EncryptionType.PlainText, false));
         [Test]
         public void RC4Header_PlainText_WithInitialData ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Header, EncryptionTypes.PlainText, true));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Header, EncryptionType.PlainText, true));
 
         [Test]
         public void RC4Header_RC4Full ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Header, EncryptionTypes.RC4Full, false));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Header, EncryptionType.RC4Full, false));
         [Test]
         public void RC4Header_RC4Full_WithInitialData ()
-            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionTypes.RC4Header, EncryptionTypes.RC4Full, true));
+            => Assert.ThrowsAsync<EncryptionException> (() => Handshake (EncryptionType.RC4Header, EncryptionType.RC4Full, true));
 
         [Test]
         public async Task RC4Header_RC4Header ()
-            => await Handshake (EncryptionTypes.RC4Header, EncryptionTypes.RC4Header, false);
+            => await Handshake (EncryptionType.RC4Header, EncryptionType.RC4Header, false);
         [Test]
         public async Task RC4Header_RC4Header_WithInitialData ()
-            => await Handshake (EncryptionTypes.RC4Header, EncryptionTypes.RC4Header, true);
+            => await Handshake (EncryptionType.RC4Header, EncryptionType.RC4Header, true);
 
-        async Task Handshake (EncryptionTypes outgoingEncryption, EncryptionTypes incomingEncryption, bool appendInitialPayload)
+        [Test]
+        public async Task PreferHeader_AllowAny_1 ()
+            => await Handshake (new[] { EncryptionType.RC4Full, EncryptionType.RC4Header }, new[] { EncryptionType.RC4Header }, true);
+        [Test]
+        public async Task PreferHeader_AllowAny_2 ()
+            => await Handshake (new[] { EncryptionType.RC4Full, EncryptionType.RC4Header }, new[] { EncryptionType.RC4Header, EncryptionType.RC4Full }, true);
+        [Test]
+        public async Task PreferHeader_AllowAny_3 ()
+            => await Handshake (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full }, new[] { EncryptionType.RC4Header }, true);
+        [Test]
+        public async Task PreferHeader_AllowAny_4 ()
+            => await Handshake (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full }, new[] { EncryptionType.RC4Header, EncryptionType.RC4Full }, true);
+
+        [Test]
+        public async Task PreferPlainText_AllowAny ()
+            => await Handshake (new[] { EncryptionType.PlainText, EncryptionType.RC4Header, EncryptionType.RC4Full }, EncryptionTypes.All, true);
+
+        async Task Handshake (EncryptionType outgoingEncryption, EncryptionType incomingEncryption, bool appendInitialPayload)
+            => await Handshake (new[] { outgoingEncryption }, new[] { incomingEncryption }, appendInitialPayload);
+
+        async Task Handshake (IList<EncryptionType> outgoingEncryption, IList<EncryptionType> incomingEncryption, bool appendInitialPayload)
         {
             var handshakeIn = new HandshakeMessage (InfoHash, IncomingId, VersionInfo.ProtocolStringV100);
             var handshakeOut = new HandshakeMessage (InfoHash, OutgoingId, VersionInfo.ProtocolStringV100);
 
-            var incomingTask = EncryptorFactory.CheckIncomingConnectionAsync (Incoming, incomingEncryption, new EngineSettings (), SKeys);
-            var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, new EngineSettings (), InfoHash, appendInitialPayload ? handshakeOut : null);
+            var incomingTask = EncryptorFactory.CheckIncomingConnectionAsync (Incoming, incomingEncryption, SKeys);
+            var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, InfoHash, appendInitialPayload ? handshakeOut : null);
 
             // If the handshake was not part of the initial payload, send it now.
             var outgoingCrypto = await outgoingTask;
@@ -161,20 +183,34 @@ namespace MonoTorrent.Client.Encryption
             handshakeIn = await PeerIO.ReceiveHandshakeAsync (Outgoing, outgoingCrypto.Decryptor);
             Assert.AreEqual (IncomingId, handshakeIn.PeerId, "#1b");
 
-            // Make sure we got the crypto we asked for.
-            if (incomingEncryption == EncryptionTypes.PlainText)
-                Assert.IsInstanceOf<PlainTextEncryption> (incomingCrypto.Decryptor, "#2");
-            else if (incomingEncryption == EncryptionTypes.RC4Full)
-                Assert.IsInstanceOf<RC4> (incomingCrypto.Decryptor, "#3");
-            else if (incomingEncryption == EncryptionTypes.RC4Header)
-                Assert.IsInstanceOf<RC4Header> (incomingCrypto.Decryptor, "#4");
+            if (outgoingEncryption[0] == EncryptionType.PlainText) {
+                // If the outgoing encryption is plain text, then the whole thing is plain text
+                Assert.IsInstanceOf<PlainTextEncryption> (incomingCrypto.Decryptor, "#2a");
+                Assert.IsInstanceOf<PlainTextEncryption> (outgoingCrypto.Decryptor, "#2b");
+            } else {
+                EncryptionType expected;
 
-            if (outgoingEncryption == EncryptionTypes.PlainText)
-                Assert.IsInstanceOf<PlainTextEncryption> (outgoingCrypto.Decryptor, "#5");
-            else if (outgoingEncryption == EncryptionTypes.RC4Full)
-                Assert.IsInstanceOf<RC4> (outgoingCrypto.Decryptor, "#6");
-            else if (outgoingEncryption == EncryptionTypes.RC4Header)
-                Assert.IsInstanceOf<RC4Header> (outgoingCrypto.Decryptor, "#7");
+                if (outgoingEncryption.Contains (EncryptionType.RC4Full) && outgoingEncryption.Contains (EncryptionType.RC4Header)) {
+                    // If the outgoing encryption supports both RC4Full and RC4Header, the final type is determined by
+                    // the priority associated with the 'Incoming' connection as it will decide between Header or Full if
+                    // the Outgoing connection asks for both.
+                    expected = EncryptionTypes.PreferredRC4 (incomingEncryption).Value;
+                } else {
+                    // Otherwise the outgoing encryption will specify a single RC4 type, so the incoming connection
+                    // will either accept it or close the connection.
+                    expected = EncryptionTypes.PreferredRC4 (outgoingEncryption).Value;
+                }
+
+                if (expected == EncryptionType.RC4Full) {
+                    Assert.IsInstanceOf<RC4> (incomingCrypto.Decryptor, "#3a");
+                    Assert.IsInstanceOf<RC4> (outgoingCrypto.Decryptor, "#3b");
+                } else if (expected == EncryptionType.RC4Header) {
+                    Assert.IsInstanceOf<RC4Header> (incomingCrypto.Decryptor, "#4a");
+                    Assert.IsInstanceOf<RC4Header> (outgoingCrypto.Decryptor, "#4b");
+                } else {
+                    throw new NotSupportedException ();
+                }
+            }
         }
     }
 }

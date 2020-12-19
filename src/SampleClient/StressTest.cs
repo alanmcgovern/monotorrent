@@ -65,7 +65,7 @@ namespace SampleClient
             int port = 37827;
             var seeder = new ClientEngine (
                 new EngineSettingsBuilder {
-                    AllowedEncryption = EncryptionTypes.PlainText,
+                    AllowedEncryption = new[] { EncryptionType.PlainText },
                     ListenPort = port++
                 }.ToSettings (),
                 seederWriter
@@ -73,7 +73,7 @@ namespace SampleClient
 
             var downloaders = Enumerable.Range (port, 16).Select (p => {
                 return new ClientEngine (
-                    new EngineSettingsBuilder { ListenPort = p, AllowedEncryption = EncryptionTypes.PlainText }.ToSettings (),
+                    new EngineSettingsBuilder { ListenPort = p, AllowedEncryption = new[] { EncryptionType.PlainText } }.ToSettings (),
                     new MemoryWriter (new NullWriter (), DataSize)
                 );
             }).ToArray ();

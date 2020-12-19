@@ -189,12 +189,16 @@ namespace MonoTorrent.Client
             try {
                 // Create a handshake message to send to the peer
                 var handshake = new HandshakeMessage (manager.InfoHash, LocalPeerId, VersionInfo.ProtocolStringV100);
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, Settings, manager.InfoHash, handshake);
+                var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, preferredEncryption, manager.InfoHash, handshake);
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
             } catch {
                 // If an exception is thrown it's because we tried to establish an encrypted connection and something went wrong
-                id.Peer.AllowedEncryption &= ~(EncryptionTypes.RC4Full | EncryptionTypes.RC4Header);
+                if (id.Peer.AllowedEncryption.Contains (EncryptionType.PlainText))
+                    id.Peer.AllowedEncryption = EncryptionTypes.PlainText;
+                else
+                    id.Peer.AllowedEncryption = EncryptionTypes.None;
 
                 manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer, ConnectionFailureReason.EncryptionNegiotiationFailed, manager));
                 CleanupSocket (manager, id);
@@ -213,7 +217,7 @@ namespace MonoTorrent.Client
                 manager.Mode.HandleMessage (id, handshake);
             } catch {
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
-                id.Peer.AllowedEncryption &= ~id.EncryptionType;
+                id.Peer.AllowedEncryption = EncryptionTypes.Remove (id.Peer.AllowedEncryption, id.EncryptionType);
 
                 manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer, ConnectionFailureReason.HandshakeFailed, manager));
                 CleanupSocket (manager, id);
@@ -292,7 +296,7 @@ namespace MonoTorrent.Client
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 bool canReuse = (id.Connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
-                    && id.Peer.AllowedEncryption != EncryptionTypes.None
+                    && id.Peer.AllowedEncryption.Count > 0
                     && !manager.Engine.PeerId.Equals (id.PeerID);
 
                 manager.PieceManager.Picker.CancelRequests (id);

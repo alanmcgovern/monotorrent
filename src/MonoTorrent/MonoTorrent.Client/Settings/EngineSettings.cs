@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace MonoTorrent.Client
@@ -39,11 +41,11 @@ namespace MonoTorrent.Client
     public class EngineSettings : IEquatable<EngineSettings>
     {
         /// <summary>
-        /// A flags enum representing which encryption methods are allowed. Defaults to <see cref="EncryptionTypes.All"/>.
-        /// If <see cref="EncryptionTypes.None"/> is set, then encrypted and unencrypted connections will both be disallowed
-        /// and no connections will be made. Defaults to <see cref="EncryptionTypes.All"/>.
+        /// A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
+        /// Connections will be attempted in the same order as they are in the list. Defaults to <see cref="EncryptionTypes.All"/>,
+        /// which is <see cref="EncryptionType.RC4Header"/>, <see cref="EncryptionType.RC4Full"/> and <see cref="EncryptionType.PlainText"/>.
         /// </summary>
-        public EncryptionTypes AllowedEncryption { get; } = EncryptionTypes.All;
+        public IList<EncryptionType> AllowedEncryption { get; } = EncryptionTypes.All;
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
@@ -138,14 +140,6 @@ namespace MonoTorrent.Client
         public IPEndPoint ReportedAddress { get; }
 
         /// <summary>
-        /// If this is set to false and <see cref="AllowedEncryption"/> allows <see cref="EncryptionTypes.PlainText"/>, then
-        /// unencrypted connections will be used by default for new outgoing connections. Otherwise, if <see cref="AllowedEncryption"/>
-        /// allows <see cref="EncryptionTypes.RC4Full"/> or <see cref="EncryptionTypes.RC4Header"/> then an encrypted connection
-        /// will be used by default for new outgoing connections. Defaults to <see langword="true" />.
-        /// </summary>
-        public bool PreferEncryption { get; } = true;
-
-        /// <summary>
         /// This is the path where the .torrent metadata will be saved when magnet links are used to start a download.
         /// Defaults to <see langword="null" />
         /// </summary>
@@ -156,9 +150,10 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (EncryptionTypes allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, TimeSpan connectionTimeout, int dhtPort, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, bool preferEncryption, IPEndPoint reportedAddress, string savePath)
+        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, TimeSpan connectionTimeout, int dhtPort, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, string savePath)
         {
-            AllowedEncryption = allowedEncryption;
+            // Make sure this is immutable now
+            AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
             AllowHaveSuppression = allowHaveSuppression;
             AllowLocalPeerDiscovery = allowLocalPeerDiscovery;
             AllowPortForwarding = allowPortForwarding;
@@ -172,7 +167,6 @@ namespace MonoTorrent.Client
             MaximumHalfOpenConnections = maximumHalfOpenConnections;
             MaximumOpenFiles = maximumOpenFiles;
             MaximumUploadSpeed = maximumUploadSpeed;
-            PreferEncryption = preferEncryption;
             ReportedAddress = reportedAddress;
             SavePath = savePath;
         }
@@ -183,7 +177,7 @@ namespace MonoTorrent.Client
         public bool Equals (EngineSettings other)
         {
             return other != null
-                   && AllowedEncryption == other.AllowedEncryption
+                   && AllowedEncryption.SequenceEqual(other.AllowedEncryption)
                    && AllowHaveSuppression == other.AllowHaveSuppression
                    && AllowLocalPeerDiscovery == other.AllowLocalPeerDiscovery
                    && AllowPortForwarding == other.AllowPortForwarding
@@ -196,7 +190,6 @@ namespace MonoTorrent.Client
                    && MaximumHalfOpenConnections == other.MaximumHalfOpenConnections
                    && MaximumOpenFiles == other.MaximumOpenFiles
                    && MaximumUploadSpeed == other.MaximumUploadSpeed
-                   && PreferEncryption == other.PreferEncryption
                    && ReportedAddress == other.ReportedAddress
                    && SavePath == other.SavePath;
         }

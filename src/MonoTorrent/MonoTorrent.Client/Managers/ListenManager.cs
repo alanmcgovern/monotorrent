@@ -102,7 +102,8 @@ namespace MonoTorrent.Client
 
                 logger.Info (e.Connection, "ConnectionReceived");
 
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
+                var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (e.Peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys);
                 if (!await HandleHandshake (e.Peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch {
@@ -117,7 +118,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // If we're forcing encrypted connections and this is in plain-text, close it!
-            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.HasFlag (EncryptionTypes.PlainText))
+            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText))
                 return false;
 
             for (int i = 0; i < Engine.Torrents.Count; i++)
