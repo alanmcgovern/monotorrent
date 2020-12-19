@@ -37,14 +37,17 @@ namespace MonoTorrent.Client
     {
         internal const int BlockSize = (1 << 14); // 16kB
 
-        #region Member Variables
-
-        #endregion MemberVariables
-
 
         #region Fields
 
         public Block this[int index] => Blocks[index];
+
+        /// <summary>
+        /// Set to true when the original peer times out sending a piece, disconnects, or chokes us.
+        /// This allows other peers to immediately begin downloading blocks from this piece to complete
+        /// it.
+        /// </summary>
+        internal bool Abandoned { get; set; }
 
         internal Block[] Blocks { get; set; }
 

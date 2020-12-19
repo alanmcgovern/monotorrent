@@ -68,6 +68,7 @@ namespace MonoTorrent.Client.PiecePicking
                 Block[] blocks = requests[p].Blocks;
                 for (int i = 0; i < blocks.Length; i++) {
                     if (predicate (blocks[i]) && !blocks[i].Received) {
+                        requests[p].Abandoned = true;
                         cancelled = true;
                         blocks[i].CancelRequest ();
                     }
@@ -130,11 +131,11 @@ namespace MonoTorrent.Client.PiecePicking
             if (peer.IsChoking)
                 return null;
 
-            // We see if the peer has suggested any pieces we should request
-            if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null)
+            if ((message = ContinueExistingRequest (peer, true)) != null)
                 return new[] { message };
 
-            if ((message = ContinueExistingRequest (peer, true)) != null)
+            // We see if the peer has suggested any pieces we should request
+            if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null)
                 return new[] { message };
 
             // Now we see what pieces the peer has that we don't have and try and request one
@@ -184,28 +185,23 @@ namespace MonoTorrent.Client.PiecePicking
             return true;
         }
 
-
-
         public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
             => ContinueExistingRequest (peer, false);
 
-        PieceRequest ContinueExistingRequest (IPieceRequester peer, bool continueAbandonedPieces)
+        PieceRequest ContinueExistingRequest (IPieceRequester peer, bool allowAbandoned)
         {
             for (int req = 0; req < requests.Count; req++) {
                 Piece p = requests[req];
+
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if ((!continueAbandonedPieces || !p.Blocks[0].Abandoned) && (peer != p.Blocks[0].RequestedOff || p.AllBlocksRequested))
-                    continue;
-
-                for (int i = 0; i < p.BlockCount; i++) {
-                    if (p.Blocks[i].Requested || p.Blocks[i].Received)
-                        continue;
-
-                    return p.Blocks[i].CreateRequest (peer);
+                if ((allowAbandoned && p.Abandoned) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
+                    for (int i = 0; i < p.BlockCount; i++) {
+                        if (!p.Blocks[i].Received && !p.Blocks[i].Requested)
+                            return p.Blocks[i].CreateRequest (peer);
+                    }
                 }
             }
-
             // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
             return null;
         }

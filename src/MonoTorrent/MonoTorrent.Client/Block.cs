@@ -51,10 +51,6 @@ namespace MonoTorrent.Client
 
         public int PieceIndex => piece.Index;
 
-        internal bool Abandoned {
-            get => RequestedOff != null && (RequestedOff.Disposed || RequestedOff.IsChoking);
-        }
-
         public bool Received {
             get => received;
             internal set {
