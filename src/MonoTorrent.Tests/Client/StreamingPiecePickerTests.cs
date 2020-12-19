@@ -133,6 +133,31 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void LowPriority_PeersDoNotSharePieceRequests ()
+        {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
+            checker.ReturnNoPiece = false;
+            var startPiece = picker.HighPriorityPieceIndex + picker.HighPriorityCount;
+            var endPiece = bitfield.Length - 1;
+            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, startPiece, endPiece);
+            Assert.IsTrue (checker.PickedIndex.Single ().Item1 >= startPiece);
+            Assert.IsTrue (checker.PickedIndex.Single ().Item2 <= endPiece);
+            Assert.IsFalse (checker.HasContinuedAnyExisting);
+        }
+
+        [Test]
+        public void HighPriority_PeersSharePieceRequests ()
+        {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
+            checker.ReturnNoPiece = false;
+            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
+            Assert.AreEqual (checker.PickedIndex.Single (), Tuple.Create (0, picker.HighPriorityCount - 1));
+            Assert.IsTrue (checker.HasContinuedAnyExisting);
+        }
+
+        [Test]
         public void CheckPiecesPicker_Start ()
         {
             (var picker, var checker) = CreatePicker<StandardPicker> ();

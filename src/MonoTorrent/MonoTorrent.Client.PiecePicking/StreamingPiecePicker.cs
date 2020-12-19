@@ -84,12 +84,16 @@ namespace MonoTorrent.Client.PiecePicking
                 CancelPendingRequests = false;
             }
 
+            PieceRequest request;
             IList<PieceRequest> bundle;
             int start, end;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 start = HighPriorityPieceIndex;
                 end = Math.Min (endIndex, start + HighPriorityCount - 1);
+                if ((request = BasePicker.ContinueAnyExisting (peer)) != null)
+                    return new[] { request };
+
                 if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
