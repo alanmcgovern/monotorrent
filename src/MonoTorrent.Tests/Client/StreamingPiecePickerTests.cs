@@ -133,6 +133,24 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void LowPriority_AlwaysHigherThanHighPriority ()
+        {
+            (var picker, var checker) = CreatePicker<TestPicker> ();
+
+            // Only 1 piece should be downloadable.
+            picker.SeekToPosition (data.Files.Last (), data.Files.Last ().Length - 1);
+            checker.ReturnNoPiece = false;
+
+            IList<PieceRequest> req;
+            List<PieceRequest> requests = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, 0, bitfield.Length - 1)) != null)
+
+            Assert.AreEqual (1, checker.PickedPieces.Count);
+            Assert.AreEqual (39, checker.PickedPieces.Single ());
+            Assert.IsTrue (requests.All (t => t.PieceIndex == bitfield.Length - 1));
+        }
+
+        [Test]
         public void LowPriority_PeersDoNotSharePieceRequests ()
         {
             (var picker, var checker) = CreatePicker<TestPicker> ();

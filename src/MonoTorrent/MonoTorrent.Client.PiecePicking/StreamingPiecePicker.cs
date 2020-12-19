@@ -88,6 +88,8 @@ namespace MonoTorrent.Client.PiecePicking
             IList<PieceRequest> bundle;
             int start, end;
 
+            startIndex = Math.Max (startIndex, HighPriorityPieceIndex);
+
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 start = HighPriorityPieceIndex;
                 end = Math.Min (endIndex, start + HighPriorityCount - 1);

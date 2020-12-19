@@ -84,7 +84,7 @@ namespace MonoTorrent.Client.PiecePicking
             PickedIndex.Add (Tuple.Create (startIndex, endIndex));
             PickPieceCount.Add (count);
 
-            for (int i = startIndex; i < endIndex; i++) {
+            for (int i = startIndex; i <= endIndex; i++) {
                 if (PickedPieces.Contains (i))
                     continue;
                 PickedPieces.Add (i);
