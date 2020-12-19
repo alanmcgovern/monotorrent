@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace MonoTorrent.Client
@@ -50,11 +52,11 @@ namespace MonoTorrent.Client
         int maximumUploadSpeed;
 
         /// <summary>
-        /// A flags enum representing which encryption methods are allowed. Defaults to <see cref="EncryptionTypes.All"/>.
-        /// If <see cref="EncryptionTypes.None"/> is set, then encrypted and unencrypted connections will both be disallowed
-        /// and no connections will be made. Defaults to <see cref="EncryptionTypes.All"/>.
+        /// A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
+        /// Connections will be attempted in the same order as they are in the list. Defaults to <see cref="EncryptionType.RC4Header"/>,
+        /// <see cref="EncryptionType.RC4Full"/> and <see cref="EncryptionType.PlainText"/>.
         /// </summary>
-        public EncryptionTypes AllowedEncryption { get; set; }
+        public IList<EncryptionType> AllowedEncryption { get; set;  }
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
@@ -185,14 +187,6 @@ namespace MonoTorrent.Client
         public IPEndPoint ReportedAddress { get; set; }
 
         /// <summary>
-        /// If this is set to false and <see cref="AllowedEncryption"/> allows <see cref="EncryptionTypes.PlainText"/>, then
-        /// unencrypted connections will be used by default for new outgoing connections. Otherwise, if <see cref="AllowedEncryption"/>
-        /// allows <see cref="EncryptionTypes.RC4Full"/> or <see cref="EncryptionTypes.RC4Header"/> then an encrypted connection
-        /// will be used by default for new outgoing connections. Defaults to <see langword="true" />.
-        /// </summary>
-        public bool PreferEncryption { get; set; }
-
-        /// <summary>
         /// This is the path where the .torrent metadata will be saved when magnet links are used to start a download.
         /// Defaults to <see langword="null" />
         /// </summary>
@@ -206,7 +200,8 @@ namespace MonoTorrent.Client
 
         public EngineSettingsBuilder (EngineSettings settings)
         {
-            AllowedEncryption = settings.AllowedEncryption;
+            // Make sure this is a mutable list.
+            AllowedEncryption = new List<EncryptionType> (settings.AllowedEncryption);
             AllowHaveSuppression = settings.AllowHaveSuppression;
             AllowLocalPeerDiscovery = settings.AllowLocalPeerDiscovery;
             AllowPortForwarding = settings.AllowPortForwarding;
@@ -220,13 +215,19 @@ namespace MonoTorrent.Client
             MaximumHalfOpenConnections = settings.MaximumHalfOpenConnections;
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadSpeed = settings.MaximumUploadSpeed;
-            PreferEncryption = settings.PreferEncryption;
             ReportedAddress = settings.ReportedAddress;
             SavePath = settings.SavePath;
         }
 
         public EngineSettings ToSettings ()
         {
+            if (AllowedEncryption == null)
+                throw new ArgumentNullException ("AllowedEncryption", "Cannot be null");
+            if (AllowedEncryption.Count == 0)
+                throw new ArgumentException ("At least one encryption type must be specified");
+            if (AllowedEncryption.Distinct ().Count () != AllowedEncryption.Count)
+                throw new ArgumentException ("Each encryption type can be specified at most once. Please verify the AllowedEncryption list contains no duplicates", "AllowedEncryption");
+
             return new EngineSettings (
                 allowedEncryption: AllowedEncryption,
                 allowHaveSuppression: AllowHaveSuppression,
@@ -242,7 +243,6 @@ namespace MonoTorrent.Client
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadSpeed: MaximumUploadSpeed,
-                preferEncryption: PreferEncryption,
                 reportedAddress: ReportedAddress,
                 savePath: SavePath
             );

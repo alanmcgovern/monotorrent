@@ -42,9 +42,8 @@ namespace MonoTorrent.Client.Tracker
         {
             ClientEngine engine = Manager.Engine;
 
-            EncryptionTypes e = engine.Settings.AllowedEncryption;
-            bool requireEncryption = !e.HasFlag (EncryptionTypes.PlainText);
-            bool supportsEncryption = e.HasFlag (EncryptionTypes.RC4Full) || e.HasFlag (EncryptionTypes.RC4Header);
+            bool requireEncryption = !engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText);
+            bool supportsEncryption = EncryptionTypes.SupportsRC4 (engine.Settings.AllowedEncryption);
 
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;

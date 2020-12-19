@@ -157,7 +157,7 @@ namespace SampleClient
                 manager.ConnectionAttemptFailed += (o, e) => {
                     lock (listener)
                         listener.WriteLine (
-                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason} - {e.Peer.AllowedEncryption}");
+                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason}");
                 };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
@@ -220,11 +220,26 @@ namespace SampleClient
                         if (manager.PieceManager != null)
                             AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 
-                        foreach (PeerId p in await manager.GetPeersAsync ())
-                            AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Uri,
+                        var peers = await manager.GetPeersAsync ();
+                        AppendFormat (sb, "Outgoing:");
+                        foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Outgoing)) {
+                            AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
                                                                                       p.Monitor.DownloadSpeed / 1024.0,
                                                                                       p.AmRequestingPiecesCount,
-                                                                                      p.Monitor.UploadSpeed / 1024.0);
+                                                                                      p.Monitor.UploadSpeed / 1024.0,
+                                                                                      p.EncryptionType,
+                                                                                      string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
+                        }
+                        AppendFormat (sb, "");
+                        AppendFormat (sb, "Incoming:");
+                        foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Incoming)) {
+                            AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
+                                                                                      p.Monitor.DownloadSpeed / 1024.0,
+                                                                                      p.AmRequestingPiecesCount,
+                                                                                      p.Monitor.UploadSpeed / 1024.0,
+                                                                                      p.EncryptionType,
+                                                                                      string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
+                        }
 
                         AppendFormat (sb, "", null);
                         if (manager.Torrent != null)

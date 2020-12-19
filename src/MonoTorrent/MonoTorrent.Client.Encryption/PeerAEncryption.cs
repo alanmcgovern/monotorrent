@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Collections.Generic;
 
 using MonoTorrent.Client.Messages;
 
@@ -43,15 +44,18 @@ namespace MonoTorrent.Client.Encryption
     {
         public byte[] InitialPayload { get; }
 
-        public PeerAEncryption (InfoHash InfoHash, EncryptionTypes allowedEncryption)
+        public PeerAEncryption (InfoHash InfoHash, IList<EncryptionType> allowedEncryption)
             : this (InfoHash, allowedEncryption, null)
         {
 
         }
 
-        public PeerAEncryption (InfoHash InfoHash, EncryptionTypes allowedEncryption, byte[] initialPayload)
+        public PeerAEncryption (InfoHash InfoHash, IList<EncryptionType> allowedEncryption, byte[] initialPayload)
             : base (allowedEncryption)
         {
+            if (allowedEncryption.Contains (EncryptionType.PlainText))
+                throw new NotSupportedException ("'PlainText' is an unsupported RC4 encryption type.");
+
             InitialPayload = initialPayload ?? Array.Empty<byte> ();
             SKEY = InfoHash;
         }
