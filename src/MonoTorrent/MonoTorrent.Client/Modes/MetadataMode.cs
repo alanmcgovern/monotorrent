@@ -84,7 +84,11 @@ namespace MonoTorrent.Client.Modes
             //if one request have been sent and we have wait more than timeout
             // request the next peer
             if (requestTimeout < DateTime.Now) {
-                SendRequestToNextPeer ();
+                NextPeer ();
+
+                if (currentId != null && Stream != null) {
+                    RequestNextNeededPiece (currentId);
+                }
             }
 
         }
@@ -99,15 +103,6 @@ namespace MonoTorrent.Client.Modes
                 );
             } catch {
                 // Nothing.
-            }
-        }
-
-        void SendRequestToNextPeer ()
-        {
-            NextPeer ();
-
-            if (currentId != null) {
-                RequestNextNeededPiece (currentId);
             }
         }
 
@@ -283,15 +278,21 @@ namespace MonoTorrent.Client.Modes
             base.HandleExtendedHandshakeMessage (id, message);
 
             if (id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
-                if (Stream == null) {
-                    Stream = new MemoryStream (new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
-                    int size = message.MetadataSize % LTMetadata.BlockSize;
+                var metadataSize = message.MetadataSize.GetValueOrDefault (0);
+                if (Stream == null && metadataSize > 0) {
+                    Stream = new MemoryStream (new byte[metadataSize], 0, metadataSize, true, true);
+                    int size = metadataSize % LTMetadata.BlockSize;
                     if (size > 0)
                         size = 1;
-                    size += message.MetadataSize / LTMetadata.BlockSize;
+                    size += metadataSize / LTMetadata.BlockSize;
                     bitField = new BitField (size);
                 }
-                RequestNextNeededPiece (id);
+
+                // We only create the Stream if the remote peer has sent the metadata size key in their handshake.
+                // There's no guarantee the remote peer has the metadata yet, so even though they support metadata
+                // mode they might not be able to share the data.
+                if (Stream != null)
+                    RequestNextNeededPiece (id);
             }
         }
 

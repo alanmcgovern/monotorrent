@@ -83,6 +83,16 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task UnknownMetadataLength ()
+        {
+            await Setup (true, "path.torrent");
+
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, null, 5555);
+            exHand.Supports.Add (LTMetadata.Support);
+            Assert.DoesNotThrow (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1), exHand));
+        }
+
+        [Test]
         public async Task RequestMetadata ()
         {
             await Setup (false, "path.torrent");
@@ -254,6 +264,7 @@ namespace MonoTorrent.Client.Modes
             PeerMessage m;
             while (unrequestedPieces.Count > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is ExtendedHandshakeMessage ex) {
+                    Assert.IsNull (ex.MetadataSize);
                     Assert.AreEqual (ClientEngine.DefaultMaxPendingRequests, ex.MaxRequests);
                 } else if (m is HaveNoneMessage) {
                     receivedHaveNone = true;

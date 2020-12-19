@@ -464,7 +464,7 @@ namespace MonoTorrent.Client.Modes
         protected virtual void AppendExtendedHandshake (PeerId id, MessageBundle bundle)
         {
             if (id.SupportsLTMessages && ClientEngine.SupportsExtended)
-                bundle.Messages.Add (new ExtendedHandshakeMessage (Manager.Torrent?.IsPrivate ?? false, Manager.HasMetadata ? Manager.Torrent.InfoMetadata.Length : 0, Settings.ListenPort));
+                bundle.Messages.Add (new ExtendedHandshakeMessage (Manager.Torrent?.IsPrivate ?? false, Manager.HasMetadata ? Manager.Torrent.InfoMetadata.Length : (int?) null, Settings.ListenPort));
         }
 
         protected virtual void AppendFastPieces (PeerId id, MessageBundle bundle)
