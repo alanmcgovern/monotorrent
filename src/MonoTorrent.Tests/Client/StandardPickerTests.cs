@@ -194,7 +194,41 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
-        public void CancelRequests_ReceivedOneBlock ()
+        public void PeerChoked_ReceivedOneBlock ()
+        {
+            var messages = new List<PieceRequest> ();
+            peer.IsChoking = false;
+            peer.BitField.SetAll (true);
+
+            var otherPeer = peers[1];
+            otherPeer.BitField.SetAll (true);
+
+            PieceRequest m;
+            while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)
+                messages.Add (m);
+
+            picker.PickPiece (peer, peer.BitField, peers);
+            Assert.AreEqual (torrentData.TotalBlocks, messages.Count, "#0");
+            picker.ValidatePiece (peer, messages[0].PieceIndex, messages[0].StartOffset, messages[0].RequestLength, out Piece piece);
+            messages.RemoveAt (0);
+            picker.CancelRequests (peer);
+            peer.IsChoking = true;
+
+            otherPeer.IsChoking = true;
+            Assert.IsNull (picker.PickPiece (otherPeer, otherPeer.BitField, peers));
+
+            otherPeer.IsChoking = false;
+            var messages2 = new List<PieceRequest> ();
+            while ((m = picker.PickPiece (otherPeer, otherPeer.BitField, peers)) != null)
+                messages2.Add (m);
+
+            Assert.AreEqual (messages.Count, messages2.Count, "#1");
+            for (int i = 0; i < messages.Count; i++)
+                Assert.IsTrue (messages2.Contains (messages[i]));
+        }
+
+        [Test]
+        public void PeerDisconnected_ReceivedOneBlock ()
         {
             var messages = new List<PieceRequest> ();
             peer.IsChoking = false;
