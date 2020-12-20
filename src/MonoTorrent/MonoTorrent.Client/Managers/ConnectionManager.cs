@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
         {
             // Connect to the peer.
             IConnection connection = ConnectionFactory.Create (peer.ConnectionUri);
-            if (connection == null)
+            if (connection == null || peer.AllowedEncryption.Count == 0)
                 return;
 
             var state = new AsyncConnectState (manager, connection, ValueStopwatch.StartNew ());
