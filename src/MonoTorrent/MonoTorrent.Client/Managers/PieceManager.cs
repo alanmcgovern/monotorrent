@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking || id.SupportsFastPeer) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueExistingRequest (id);
+                    PieceRequest request = Picker.ContinueExistingRequest (id, 0, id.BitField.Length - 1);
                     if (request != null)
                         id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
                     else
@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking && id.AmRequestingPiecesCount == 0) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueAnyExisting (id);
+                    PieceRequest request = Picker.ContinueAnyExisting (id, 0, Manager.Bitfield.Length - 1);
                     if (request != null)
                         id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
                     else

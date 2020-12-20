@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// The number of pieces which will be kept buffered to avoid stuttering while streaming media.
         /// </summary>
-        internal int HighPriorityCount => 30;
+        internal int HighPriorityCount { get; set; } = 30;
 
         ITorrentData TorrentData { get; set; }
 
@@ -86,21 +86,21 @@ namespace MonoTorrent.Client.PiecePicking
 
             PieceRequest request;
             IList<PieceRequest> bundle;
-            int start, end;
-
-            startIndex = Math.Max (startIndex, HighPriorityPieceIndex);
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
-                start = HighPriorityPieceIndex;
-                end = Math.Min (endIndex, start + HighPriorityCount - 1);
-                if ((request = BasePicker.ContinueAnyExisting (peer)) != null)
+                var start = HighPriorityPieceIndex;
+                var end = Math.Min (endIndex, HighPriorityPieceIndex + HighPriorityCount - 1);
+                if ((request = BasePicker.ContinueAnyExisting (peer, start, end)) != null)
                     return new[] { request };
 
                 if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
-            return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+            if (endIndex < HighPriorityPieceIndex)
+                return null;
+
+            return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, endIndex);
         }
 
         /// <summary>

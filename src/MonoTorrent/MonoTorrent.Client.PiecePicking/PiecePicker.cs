@@ -60,15 +60,15 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden ();
             BasePicker.CancelRequests (peer);
         }
-        public virtual PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        public virtual PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             CheckOverriden ();
-            return BasePicker.ContinueAnyExisting (peer);
+            return BasePicker.ContinueAnyExisting (peer, startIndex, endIndex);
         }
-        public virtual PieceRequest ContinueExistingRequest (IPieceRequester peer)
+        public virtual PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             CheckOverriden ();
-            return BasePicker.ContinueExistingRequest (peer);
+            return BasePicker.ContinueExistingRequest (peer, startIndex, endIndex);
         }
         public virtual int CurrentReceivedCount ()
         {

@@ -74,17 +74,17 @@ namespace MonoTorrent.Client.PiecePicking
             ActivePicker.CancelRequests (peer);
         }
 
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
-            var bundle = ActivePicker.ContinueAnyExisting (peer);
+            var bundle = ActivePicker.ContinueAnyExisting (peer, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame ())
-                return ActivePicker.ContinueAnyExisting (peer);
+                return ActivePicker.ContinueAnyExisting (peer, startIndex, endIndex);
             return bundle;
 
         }
-        public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
+        public override PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
-            return ActivePicker.ContinueExistingRequest (peer);
+            return ActivePicker.ContinueExistingRequest (peer, startIndex, endIndex);
         }
 
         public override int CurrentReceivedCount ()

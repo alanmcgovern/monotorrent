@@ -251,6 +251,29 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void DoesNotHavePiece_CannotContinueExisting ()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll (true);
+
+            var otherPeer = peers[1];
+            otherPeer.IsChoking = false;
+            otherPeer.BitField.SetAll (true);
+
+            // Successfully receive one block, then abandon the piece by disconnecting.
+            var request = picker.PickPiece (peer, peer.BitField, peers);
+            picker.ValidatePiece (peer, request.PieceIndex, request.StartOffset, request.RequestLength, out Piece piece);
+            request = picker.PickPiece (peer, peer.BitField, peers);
+            picker.CancelRequests (peer);
+            peer.Dispose ();
+            otherPeer.BitField[request.PieceIndex] = false;
+
+            // We cannot request a block if the peer doesn't have it.
+            var otherRequest = picker.PickPiece (otherPeer, otherPeer.BitField, peers);
+            Assert.AreNotEqual (request.PieceIndex, otherRequest.PieceIndex, "#0");
+        }
+
+        [Test]
         public void PeerDisconnected_ReceivedOneBlock ()
         {
             var messages = new List<PieceRequest> ();
@@ -503,7 +526,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             while ((bundle = picker.PickPiece (peer, peer.BitField, peers, torrentData.BlocksPerPiece * 5)) != null)
                 messages.AddRange (bundle);
-            while ((request = picker.ContinueAnyExisting (peer)) != null)
+            while ((request = picker.ContinueAnyExisting (peer, 0, bitfield.Length - 1)) != null)
                 messages.Add (request);
 
             Assert.AreEqual (torrentData.BlocksPerPiece * 7, messages.Count, "#2");

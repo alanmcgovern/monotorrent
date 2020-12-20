@@ -79,11 +79,11 @@ namespace MonoTorrent.Client.PiecePicking
             Requests.RemoveAll (predicate);
         }
 
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }
-        public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
+        public override PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }

@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.PiecePicking
             CancelledRequestsFrom.Add (peer);
         }
 
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             HasContinuedAnyExisting = true;
             return null;

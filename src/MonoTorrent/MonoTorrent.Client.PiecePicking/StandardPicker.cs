@@ -120,7 +120,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
             // requests that could be continued would be existing "Fast" pieces.
-            if ((message = ContinueExistingRequest (peer)) != null)
+            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, false, false)) != null)
                 return new[] { message };
 
             // Then we check if there are any allowed "Fast" pieces to download
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.PiecePicking
             if (peer.IsChoking)
                 return null;
 
-            if ((message = ContinueExistingRequest (peer, true)) != null)
+            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, true, false)) != null)
                 return new[] { message };
 
             // We see if the peer has suggested any pieces we should request
@@ -185,50 +185,38 @@ namespace MonoTorrent.Client.PiecePicking
             return true;
         }
 
-        public override PieceRequest ContinueExistingRequest (IPieceRequester peer)
-            => ContinueExistingRequest (peer, false);
+        public override PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => ContinueExistingRequest (peer, startIndex, endIndex, false, false);
 
-        PieceRequest ContinueExistingRequest (IPieceRequester peer, bool allowAbandoned)
+        PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex, bool allowAbandoned, bool allowAny)
         {
             for (int req = 0; req < requests.Count; req++) {
                 Piece p = requests[req];
+                if (p.Index < startIndex || p.Index > endIndex || !peer.BitField[p.Index])
+                    continue;
 
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if ((allowAbandoned && p.Abandoned && peer.RepeatedHashFails == 0) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
+                if (allowAny || (allowAbandoned && p.Abandoned && peer.RepeatedHashFails == 0) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
                     for (int i = 0; i < p.BlockCount; i++) {
                         if (!p.Blocks[i].Received && !p.Blocks[i].Requested)
                             return p.Blocks[i].CreateRequest (peer);
                     }
                 }
             }
+
             // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
             return null;
         }
 
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer)
+        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
             if (peer.RepeatedHashFails != 0)
                 return null;
 
-            // Otherwise, if this peer has any of the pieces that are currently being requested, try to
-            // request a block from one of those pieces
-            for (int pIndex = 0; pIndex < requests.Count; pIndex++) {
-                Piece p = requests[pIndex];
-                // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
-                // the peer doesn't have this piece, we don't want to help download the piece.
-                if (p.AllBlocksRequested || p.AllBlocksReceived || !peer.BitField[p.Index] ||
-                    (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.RepeatedHashFails != 0))
-                    continue;
-
-                for (int i = p.Blocks.Length - 1; i >= 0; i--)
-                    if (!p.Blocks[i].Requested && !p.Blocks[i].Received)
-                        return p.Blocks[i].CreateRequest (peer);
-            }
-
-            return null;
+            return ContinueExistingRequest (peer, startIndex, endIndex, true, true);
         }
 
         protected PieceRequest GetFromList (IPieceRequester peer, BitField bitfield, IList<int> pieces)

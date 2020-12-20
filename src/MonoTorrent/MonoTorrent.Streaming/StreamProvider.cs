@@ -243,7 +243,6 @@ namespace MonoTorrent.Streaming
             if (ActiveStream != null && !ActiveStream.Disposed)
                 throw new InvalidOperationException ("You must Dispose the previous stream before creating a new one.");
 
-            Picker.SeekToPosition (file, 0);
             ActiveStream = new LocalStream (Manager, file, Picker);
 
             var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
@@ -253,9 +252,9 @@ namespace MonoTorrent.Streaming
 
                 ActiveStream.Seek (0, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
-
-                ActiveStream.Seek (0, SeekOrigin.Begin);
             }
+
+            ActiveStream.Seek (0, SeekOrigin.Begin);
             return ActiveStream;
         }
 

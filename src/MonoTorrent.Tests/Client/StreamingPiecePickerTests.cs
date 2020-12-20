@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         BitField bitfield;
         TorrentData data;
-        PeerId peer;
+        PeerId peer, otherPeer;
         int blocksPerPiece;
         int pieceCount;
 
@@ -64,6 +64,7 @@ namespace MonoTorrent.Client.PiecePicking
             };
 
             peer = PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true);
+            otherPeer = PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true);
         }
 
         (StreamingPiecePicker picker, T basePicker) CreatePicker<T> ()
@@ -135,33 +136,38 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void LowPriority_AlwaysHigherThanHighPriority ()
         {
-            (var picker, var checker) = CreatePicker<TestPicker> ();
+            (var picker, _) = CreatePicker<StandardPicker> ();
+            picker.SeekToPosition (data.Files[0], data.PieceLength * 5);
+            picker.HighPriorityCount = 20;
 
-            // Only 1 piece should be downloadable.
-            picker.SeekToPosition (data.Files.Last (), data.Files.Last ().Length - 1);
-            checker.ReturnNoPiece = false;
+            var remainingToDownload = bitfield
+                .Clone ()
+                .SetTrue ((picker.HighPriorityPieceIndex, picker.HighPriorityPieceIndex + picker.HighPriorityCount - 1))
+                .Not ();
 
             IList<PieceRequest> req;
             List<PieceRequest> requests = new List<PieceRequest> ();
-            while ((req = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, 0, bitfield.Length - 1)) != null)
+            peer.MaxPendingRequests = peer.MaxSupportedPendingRequests = 100000;
+            while ((req = picker.PickPiece (peer, remainingToDownload, new List<PeerId> (), 1, 0, bitfield.Length - 1)) != null)
+                requests.Add (req.Single ());
 
-            Assert.AreEqual (1, checker.PickedPieces.Count);
-            Assert.AreEqual (39, checker.PickedPieces.Single ());
-            Assert.IsTrue (requests.All (t => t.PieceIndex == bitfield.Length - 1));
+            Assert.IsTrue (requests.All (t => t.PieceIndex > picker.HighPriorityPieceIndex));
         }
 
         [Test]
         public void LowPriority_PeersDoNotSharePieceRequests ()
         {
-            (var picker, var checker) = CreatePicker<TestPicker> ();
+            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            var alreadyDownloaded = bitfield
+                .Clone ()
+                .SetTrue ((picker.HighPriorityPieceIndex, picker.HighPriorityPieceIndex + picker.HighPriorityCount - 1))
+                .Not ();
 
-            checker.ReturnNoPiece = false;
             var startPiece = picker.HighPriorityPieceIndex + picker.HighPriorityCount;
             var endPiece = bitfield.Length - 1;
-            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, startPiece, endPiece);
-            Assert.IsTrue (checker.PickedIndex.Single ().Item1 >= startPiece);
-            Assert.IsTrue (checker.PickedIndex.Single ().Item2 <= endPiece);
-            Assert.IsFalse (checker.HasContinuedAnyExisting);
+            var pieces = picker.PickPiece (peer, alreadyDownloaded, new List<PeerId> (), 1, startPiece, endPiece);
+            var otherPieces = picker.PickPiece (otherPeer, alreadyDownloaded, new List<PeerId> (), 1, startPiece, endPiece);
+            Assert.AreNotEqual (pieces.Single ().PieceIndex, otherPieces.Single ().PieceIndex);
         }
 
         [Test]
