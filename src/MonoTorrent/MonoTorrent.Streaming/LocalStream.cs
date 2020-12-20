@@ -118,7 +118,7 @@ namespace MonoTorrent.Streaming
                 if (allAvailable)
                     break;
 
-                await Task.Delay (500, cancellationToken).ConfigureAwait (false);
+                await Task.Delay (100, cancellationToken).ConfigureAwait (false);
                 ThrowIfDisposed ();
             }
 
