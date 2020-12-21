@@ -38,16 +38,8 @@ namespace MonoTorrent.Client
     /// </summary>
     public struct Block
     {
-        #region Private Fields
-
         readonly Piece piece;
-        bool requested;
         bool received;
-
-        #endregion Private Fields
-
-
-        #region Properties
 
         public int PieceIndex => piece.Index;
 
@@ -64,18 +56,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public bool Requested {
-            get => requested;
-            private set {
-                if (value && !requested)
-                    piece.TotalRequested++;
-
-                else if (!value && requested)
-                    piece.TotalRequested--;
-
-                requested = value;
-            }
-        }
+        public bool Requested => RequestedOff != null;
 
         public int RequestLength { get; }
 
@@ -83,29 +64,21 @@ namespace MonoTorrent.Client
 
         public int StartOffset { get; }
 
-        #endregion Properties
-
-
-        #region Constructors
 
         internal Block (Piece piece, int startOffset, int requestLength)
         {
             RequestedOff = null;
             this.piece = piece;
             received = false;
-            requested = false;
             RequestLength = requestLength;
             StartOffset = startOffset;
         }
 
-        #endregion
-
-
-        #region Methods
-
         internal PieceRequest CreateRequest (IPieceRequester peer)
         {
-            Requested = true;
+            if (RequestedOff == null)
+                piece.TotalRequested++;
+
             RequestedOff = peer;
             RequestedOff.AmRequestingPiecesCount++;
             return new PieceRequest (PieceIndex, StartOffset, RequestLength);
@@ -113,9 +86,11 @@ namespace MonoTorrent.Client
 
         internal void CancelRequest ()
         {
-            Requested = false;
-            RequestedOff.AmRequestingPiecesCount--;
-            RequestedOff = null;
+            if (RequestedOff != null) {
+                piece.TotalRequested--;
+                RequestedOff.AmRequestingPiecesCount--;
+                RequestedOff = null;
+            }
         }
 
         public override bool Equals (object obj)
@@ -138,7 +113,5 @@ namespace MonoTorrent.Client
                 return -1;
             return index;
         }
-
-        #endregion
     }
 }
