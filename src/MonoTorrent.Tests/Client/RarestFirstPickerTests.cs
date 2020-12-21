@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             checker = new TestPicker ();
             picker = new RarestFirstPicker (checker);
-            picker.Initialise (bitfield, torrentData, new List<Piece> ());
+            picker.Initialise (bitfield, torrentData, new List<PieceRequest> ());
 
             peer = PeerId.CreateNull (pieces);
             peer.BitField.SetAll (true);
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.PiecePicking
                     peers[i].BitField[j] = true;
 
             // No pieces should be selected, but we can check what was requested.
-            picker.PickPiece (peer, peer.BitField, peers);
+            picker.PickPiece (peer, peer.BitField, peers, 1, 0, peer.BitField.Length - 1);
             Assert.AreEqual (6, checker.PickPieceBitfield.Count);
 
             // Two peers have piece 25
