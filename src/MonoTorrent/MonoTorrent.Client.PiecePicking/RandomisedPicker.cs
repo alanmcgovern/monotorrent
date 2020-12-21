@@ -32,30 +32,65 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class RandomisedPicker : PiecePicker
+    public class RandomisedPicker : IPiecePicker
     {
-        readonly Random random = new Random ();
+        Random Random { get; }
 
-        public RandomisedPicker (PiecePicker picker)
-            : base (picker)
+        IPiecePicker NextPicker { get; }
+
+        public RandomisedPicker (IPiecePicker picker)
         {
-
+            NextPicker = picker;
+            Random = new Random ();
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
                 return null;
 
             // If there's only one piece to choose then there isn't any midpoint.
             if (endIndex - startIndex < 2)
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return NextPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             // If there are two or more pieces to choose, ensure we always start *at least* one
             // piece beyond the start index.
-            int midpoint = random.Next (startIndex + 1, endIndex);
-            return base.PickPiece (peer, available, otherPeers, count, midpoint, endIndex) ??
-                   base.PickPiece (peer, available, otherPeers, count, startIndex, midpoint);
+            int midpoint = Random.Next (startIndex + 1, endIndex);
+            return NextPicker.PickPiece (peer, available, otherPeers, count, midpoint, endIndex) ??
+                   NextPicker.PickPiece (peer, available, otherPeers, count, startIndex, midpoint);
         }
+
+        public int AbortRequests (IPieceRequester peer)
+            => NextPicker.AbortRequests (peer);
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.CancelRequests (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueExistingRequest (peer, startIndex, endIndex);
+
+        public int CurrentReceivedCount ()
+            => NextPicker.CurrentReceivedCount ();
+
+        public int CurrentRequestCount ()
+            => CurrentRequestCount ();
+
+        public IList<PieceRequest> ExportActiveRequests ()
+            => NextPicker.ExportActiveRequests ();
+
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+            => NextPicker.Initialise (bitfield, torrentData, requests);
+
+        public bool IsInteresting (BitField bitfield)
+            => NextPicker.IsInteresting (bitfield);
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (peer, rejectedRequest);
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
     }
 }

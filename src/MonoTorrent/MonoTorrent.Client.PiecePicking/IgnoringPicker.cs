@@ -31,36 +31,67 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class IgnoringPicker : PiecePicker
+    public class IgnoringPicker : IPiecePicker
     {
         readonly BitField Bitfield;
         readonly BitField Temp;
+        readonly IPiecePicker NextPicker;
 
-        public IgnoringPicker (BitField bitfield, PiecePicker picker)
-            : base (picker)
+        public IgnoringPicker (BitField bitfield, IPiecePicker picker)
         {
             Bitfield = bitfield;
+            NextPicker = picker;
             Temp = new BitField (bitfield.Length);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public int AbortRequests (IPieceRequester peer)
+            => NextPicker.AbortRequests (peer);
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.CancelRequests (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueExistingRequest(peer, startIndex, endIndex);
+
+        public int CurrentReceivedCount ()
+            => NextPicker.CurrentReceivedCount ();
+
+        public int CurrentRequestCount ()
+            => NextPicker.CurrentRequestCount ();
+
+        public IList<PieceRequest> ExportActiveRequests ()
+            => NextPicker.ExportActiveRequests ();
+
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+            => NextPicker.Initialise (bitfield, torrentData, requests);
+
+        public bool IsInteresting (BitField bitfield)
+        {
+            Temp.From (bitfield).NAnd (Bitfield);
+            return !Temp.AllFalse && NextPicker.IsInteresting (Temp);
+        }
+
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
             if (Bitfield.AllFalse)
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return NextPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             Temp.From (available).NAnd (Bitfield);
             if (Temp.AllFalse)
                 return null;
 
-            return base.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
+            return NextPicker.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
         }
 
-        public override bool IsInteresting (BitField bitfield)
-        {
-            Temp.From (bitfield).NAnd (Bitfield);
-            return !Temp.AllFalse && base.IsInteresting (Temp);
-        }
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (peer, rejectedRequest);
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
     }
 }

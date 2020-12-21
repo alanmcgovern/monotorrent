@@ -404,10 +404,10 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        internal void ChangePicker (PiecePicker picker)
+        internal void ChangePicker (IPiecePicker picker)
         {
             Check.Picker (picker);
-            IEnumerable<Piece> pieces = PieceManager.Picker?.ExportActiveRequests () ?? new List<Piece> ();
+            var pieces = PieceManager.Picker?.ExportActiveRequests () ?? Array.Empty<PieceRequest> ();
             PieceManager.ChangePicker (picker, Bitfield);
             if (Torrent != null)
                 PieceManager.Picker.Initialise (Bitfield, this, pieces);
@@ -418,7 +418,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="picker">The new picker to use.</param>
         /// <returns></returns>
-        public async Task ChangePickerAsync (PiecePicker picker)
+        public async Task ChangePickerAsync (IPiecePicker picker)
         {
             await ClientEngine.MainLoop;
             ChangePicker (picker);
@@ -592,7 +592,7 @@ namespace MonoTorrent.Client
             Files = Torrent.Files.Select (file =>
                 new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
-
+            
             PieceManager.RefreshPickerWithMetadata (Bitfield, this);
         }
 
@@ -861,9 +861,9 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
-        internal PiecePicker CreateStandardPicker ()
+        internal IPiecePicker CreateStandardPicker ()
         {
-            PiecePicker picker = new StandardPicker ();
+            IPiecePicker picker = new StandardPicker ();
             picker = new RandomisedPicker (picker);
             picker = new RarestFirstPicker (picker);
 

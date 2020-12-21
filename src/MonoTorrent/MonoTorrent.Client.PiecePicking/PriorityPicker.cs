@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class PriorityPicker : PiecePicker
+    public class PriorityPicker : IPiecePicker
     {
         Predicate<Files> AllSamePriority;
 
@@ -66,15 +66,16 @@ namespace MonoTorrent.Client.PiecePicking
         BitField allPrioritisedPieces;
         BitField temp;
 
-        public PriorityPicker (PiecePicker picker)
-            : base (picker)
-        {
+        IPiecePicker NextPicker { get; }
 
+        public PriorityPicker (IPiecePicker picker)
+        {
+            NextPicker = picker;
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
         {
-            base.Initialise (bitfield, torrentData, requests);
+            NextPicker.Initialise (bitfield, torrentData, requests);
             AllSamePriority = file => file.Priority == files[0].Priority;
 
             allPrioritisedPieces = new BitField (bitfield.Length);
@@ -86,7 +87,7 @@ namespace MonoTorrent.Client.PiecePicking
             BuildSelectors ();
         }
 
-        public override bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (BitField bitfield)
         {
             if (ShouldRebuildSelectors ())
                 BuildSelectors ();
@@ -94,16 +95,16 @@ namespace MonoTorrent.Client.PiecePicking
             if (files.Count == 1 || files.TrueForAll (AllSamePriority)) {
                 if (files[0].Priority == Priority.DoNotDownload)
                     return false;
-                return base.IsInteresting (bitfield);
+                return NextPicker.IsInteresting (bitfield);
             } else {
                 temp.From (allPrioritisedPieces).And (bitfield);
                 if (temp.AllFalse)
                     return false;
-                return base.IsInteresting (temp);
+                return NextPicker.IsInteresting (temp);
             }
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse)
@@ -121,13 +122,13 @@ namespace MonoTorrent.Client.PiecePicking
             // Fast Path - If it's a single file, or if all the priorities are the same,
             // then we can just pick normally. No prioritisation is needed.
             if (files.Count == 1 || files.TrueForAll (AllSamePriority))
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return NextPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             // Start with the highest priority and work our way down.
             for (int i = 0; i < prioritised.Count; i++) {
                 temp.From (prioritised[i]).And (available);
                 if (!temp.AllFalse) {
-                    IList<PieceRequest> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
+                    IList<PieceRequest> result = NextPicker.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
                     if (result != null)
                         return result;
                 }
@@ -180,5 +181,32 @@ namespace MonoTorrent.Client.PiecePicking
                 needsUpdate |= files[i].TryRefreshPriority ();
             return needsUpdate;
         }
+
+        public int AbortRequests (IPieceRequester peer)
+            => NextPicker.AbortRequests (peer);
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.CancelRequests (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueExistingRequest (peer, startIndex, endIndex);
+
+        public int CurrentReceivedCount ()
+            => NextPicker.CurrentReceivedCount ();
+
+        public int CurrentRequestCount ()
+            => NextPicker.CurrentRequestCount ();
+
+        public IList<PieceRequest> ExportActiveRequests ()
+            => NextPicker.ExportActiveRequests ();
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (peer, rejectedRequest);
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
     }
 }

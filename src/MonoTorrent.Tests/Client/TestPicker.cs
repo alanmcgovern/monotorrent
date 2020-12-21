@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    class TestPicker : PiecePicker
+    class TestPicker : IPiecePicker
     {
         public List<BitField> IsInterestingBitfield = new List<BitField> ();
         public List<IPieceRequester> PickPieceId = new List<IPieceRequester> ();
@@ -45,6 +45,9 @@ namespace MonoTorrent.Client.PiecePicking
 
         public bool ReturnNoPiece = true;
 
+        public bool HasAbortedRequests = true;
+        public List<IPieceRequester> AbortedRequests = new List<IPieceRequester> ();
+
         public bool HasCancelledRequests { get; set; }
 
         public bool HasContinuedAnyExisting { get; set; }
@@ -52,29 +55,29 @@ namespace MonoTorrent.Client.PiecePicking
         public List<IPieceRequester> CancelledRequestsFrom { get; } = new List<IPieceRequester> ();
 
         public TestPicker ()
-            : base (null)
         {
         }
 
-        public override void CancelRequests (IPieceRequester peer)
+        public int AbortRequests (IPieceRequester peer)
+        {
+            HasAbortedRequests = true;
+            AbortedRequests.Add (peer);
+            return 0;
+        }
+
+        public void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
             HasCancelledRequests = true;
             CancelledRequestsFrom.Add (peer);
         }
 
-        public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
-        {
-            HasCancelledRequests = true;
-            CancelledRequestsFrom.Add (peer);
-        }
-
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             HasContinuedAnyExisting = true;
             return null;
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             PickPieceId.Add (peer);
             BitField clone = new BitField (available.Length);
@@ -96,15 +99,50 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
         {
 
         }
 
-        public override bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (BitField bitfield)
         {
             IsInterestingBitfield.Add (bitfield);
             return !bitfield.AllFalse;
+        }
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public int CurrentReceivedCount ()
+        {
+            throw new NotImplementedException ();
+        }
+
+        public int CurrentRequestCount ()
+        {
+            throw new NotImplementedException ();
+        }
+
+        public IList<PieceRequest> ExportActiveRequests ()
+        {
+            throw new NotImplementedException ();
+        }
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        {
+            throw new NotImplementedException ();
         }
     }
 }

@@ -34,7 +34,7 @@ using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class StandardPicker : PiecePicker
+    public class StandardPicker : IPiecePicker
     {
         static readonly Logger logger = Logger.Create ();
 
@@ -43,12 +43,11 @@ namespace MonoTorrent.Client.PiecePicking
         ITorrentData TorrentData { get; set; }
 
         public StandardPicker ()
-            : base (null)
         {
             requests = new SortList<Piece> ();
         }
 
-        public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
+        public void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
         {
             CancelWhere (b => b.StartOffset == startOffset &&
                               b.RequestLength == length &&
@@ -56,7 +55,7 @@ namespace MonoTorrent.Client.PiecePicking
                               peer == b.RequestedOff);
         }
 
-        public override void CancelRequests (IPieceRequester peer)
+        public void CancelRequests (IPieceRequester peer)
         {
             CancelWhere (b => peer == b.RequestedOff);
         }
@@ -79,7 +78,7 @@ namespace MonoTorrent.Client.PiecePicking
                 requests.RemoveAll (p => p.NoBlocksRequested);
         }
 
-        public override int CurrentReceivedCount ()
+        public int CurrentReceivedCount ()
         {
             int count = 0;
             for (int i = 0; i < requests.Count; i++)
@@ -87,7 +86,7 @@ namespace MonoTorrent.Client.PiecePicking
             return count;
         }
 
-        public override int CurrentRequestCount ()
+        public int CurrentRequestCount ()
         {
             int count = 0;
             for (int i = 0; i < requests.Count; i++)
@@ -95,12 +94,12 @@ namespace MonoTorrent.Client.PiecePicking
             return count;
         }
 
-        public override List<Piece> ExportActiveRequests ()
+        public List<Piece> ExportActiveRequests ()
         {
             return new List<Piece> (requests);
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
         {
             TorrentData = torrentData;
             this.requests.Clear ();
@@ -108,12 +107,12 @@ namespace MonoTorrent.Client.PiecePicking
                 this.requests.Add (p);
         }
 
-        public override bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (BitField bitfield)
         {
             return !bitfield.AllFalse;
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             PieceRequest message;
             IList<PieceRequest> bundle;
@@ -145,7 +144,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Reset ()
+        public void Reset ()
         {
             requests.Clear ();
         }
@@ -153,7 +152,7 @@ namespace MonoTorrent.Client.PiecePicking
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
             => piece.Index.CompareTo (comparand);
 
-        public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             int pIndex = requests.BinarySearch (IndexComparer, pieceIndex);
 
@@ -185,7 +184,7 @@ namespace MonoTorrent.Client.PiecePicking
             return true;
         }
 
-        public override PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
             => ContinueExistingRequest (peer, startIndex, endIndex, false, false);
 
         PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex, bool allowAbandoned, bool allowAny)
@@ -209,7 +208,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.

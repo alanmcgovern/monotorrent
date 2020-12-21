@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.PiecePicking
         BitField bitfield;
         PeerId peer;
         List<PeerId> peers;
-        PiecePicker picker;
+        IPiecePicker picker;
         TestTorrentData torrentData;
 
         [SetUp]

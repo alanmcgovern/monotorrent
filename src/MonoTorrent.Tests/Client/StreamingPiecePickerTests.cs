@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         (StreamingPiecePicker picker, T basePicker) CreatePicker<T> ()
-            where T : PiecePicker, new ()
+            where T : IPiecePicker, new ()
         {
             var basePicker = new T ();
             var picker = new StreamingPiecePicker (basePicker);

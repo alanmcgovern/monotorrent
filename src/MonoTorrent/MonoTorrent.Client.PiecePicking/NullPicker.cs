@@ -27,66 +27,70 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    class NullPicker : PiecePicker
+    class NullPicker : IPiecePicker
     {
-        public NullPicker ()
-            : base (null)
-        {
-
-        }
-
-        public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
-        {
-
-        }
-
-        public override void CancelRequests (IPieceRequester peer)
-        {
-
-        }
-
-        public override int CurrentReceivedCount ()
+        public int AbortRequests (IPieceRequester peer)
         {
             return 0;
         }
 
-        public override int CurrentRequestCount ()
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
         {
-            return 0;
+            return Array.Empty<PieceRequest> ();
         }
 
-        public override List<Piece> ExportActiveRequests ()
-        {
-            return new List<Piece> ();
-        }
-
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
-        {
-
-        }
-
-        public override bool IsInteresting (BitField bitfield)
-        {
-            return false;
-        }
-
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }
 
-        public override void Reset ()
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
-
+            return null;
         }
 
-        public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public int CurrentReceivedCount ()
         {
-            piece = null;
+            return 0;
+        }
+
+        public int CurrentRequestCount ()
+        {
+            return 0;
+        }
+
+        public IList<PieceRequest> ExportActiveRequests ()
+        {
+            return Array.Empty<PieceRequest> ();
+        }
+
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        {
+        }
+
+        public bool IsInteresting (BitField bitfield)
+        {
+            return false;
+        }
+
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        {
+            return Array.Empty<PieceRequest> ();
+        }
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+        {
+        }
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        {
+            pieceComplete = false;
+            peersInvolved = null;
             return false;
         }
     }

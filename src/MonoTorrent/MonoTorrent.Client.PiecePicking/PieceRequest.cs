@@ -31,35 +31,33 @@ using System;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class PieceRequest : IEquatable<PieceRequest>
+    public sealed class PieceRequest : IEquatable<PieceRequest>
     {
         public int PieceIndex { get; }
         public int StartOffset { get; }
         public int RequestLength { get; }
 
         public PieceRequest (int pieceIndex, int startOffset, int requestLength)
-        {
-            PieceIndex = pieceIndex;
-            StartOffset = startOffset;
-            RequestLength = requestLength;
-        }
+            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
         public override bool Equals (object obj)
-        {
-            return Equals (obj as PieceRequest);
-        }
+            => Equals (obj as PieceRequest);
 
         public bool Equals (PieceRequest other)
         {
             return other != null
-                       && other.PieceIndex == PieceIndex
-                       && other.StartOffset == StartOffset
-                       && other.RequestLength == RequestLength;
+                && other.PieceIndex == PieceIndex
+                && other.StartOffset == StartOffset
+                && other.RequestLength == RequestLength;
         }
 
         public override int GetHashCode ()
-        {
-            return PieceIndex;
-        }
+            => PieceIndex;
+
+        public static bool operator == (PieceRequest left, PieceRequest right)
+            => left is null ? right is null : left.Equals (right);
+
+        public static bool operator != (PieceRequest left, PieceRequest right)
+            => !(left == right);
     }
 }

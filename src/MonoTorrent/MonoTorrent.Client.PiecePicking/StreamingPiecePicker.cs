@@ -38,9 +38,9 @@ namespace MonoTorrent.Client.PiecePicking
     /// sufficient data has been buffered, then it moves to a standard 'rarest first'
     /// mode.
     /// </summary>
-    class StreamingPiecePicker : PiecePicker
+    class StreamingPiecePicker : IPiecePicker
     {
-        PiecePicker LowPriorityPicker { get; }
+        IPiecePicker LowPriorityPicker { get; }
 
         /// <summary>
         /// This is the piece index of the block of data currently being consumed by the
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
-        public StreamingPiecePicker (PiecePicker picker)
+        public StreamingPiecePicker (IPiecePicker picker)
             : base (new PriorityPicker (picker))
         {
             LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (picker)));

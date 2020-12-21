@@ -31,43 +31,34 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class RarestFirstPicker : PiecePicker
+    public class RarestFirstPicker : IPiecePicker
     {
         readonly Stack<BitField> rarest;
         readonly Stack<BitField> spares;
-        int length;
 
-        BitField DequeueSpare ()
-        {
-            return spares.Count > 0 ? spares.Pop () : new BitField (length);
-        }
+        IPiecePicker NextPicker { get; }
 
-        public RarestFirstPicker (PiecePicker picker)
-            : base (picker)
+        public RarestFirstPicker (IPiecePicker picker)
         {
+            NextPicker = picker;
+
             rarest = new Stack<BitField> ();
             spares = new Stack<BitField> ();
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
-        {
-            base.Initialise (bitfield, torrentData, requests);
-            length = bitfield.Length;
-        }
-
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
                 return null;
 
             if (count > 1)
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return NextPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             GenerateRarestFirst (available, otherPeers);
 
             while (rarest.Count > 0) {
                 BitField current = rarest.Pop ();
-                IList<PieceRequest> bundle = base.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
+                IList<PieceRequest> bundle = NextPicker.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
                 spares.Push (current);
 
                 if (bundle != null)
@@ -83,8 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
             while (rarest.Count > 0)
                 spares.Push (rarest.Pop ());
 
-            BitField current = DequeueSpare ();
-            current.From (peerBitfield);
+            BitField current = spares.Count > 0 ? spares.Pop ().From (peerBitfield) : peerBitfield.Clone ();
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push (current);
@@ -94,7 +84,7 @@ namespace MonoTorrent.Client.PiecePicking
                 if (otherPeers[i].BitField.AllTrue)
                     continue;
 
-                current = DequeueSpare ().From (current);
+                current = spares.Count > 0 ? spares.Pop ().From (current) : current.Clone ();
 
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.
@@ -111,5 +101,42 @@ namespace MonoTorrent.Client.PiecePicking
                 rarest.Push (current);
             }
         }
+
+        public int AbortRequests (IPieceRequester peer)
+            => NextPicker.AbortRequests (peer);
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.CancelRequests (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueExistingRequest (peer, startIndex, endIndex);
+
+        public int CurrentReceivedCount ()
+            => NextPicker.CurrentReceivedCount ();
+
+        public int CurrentRequestCount ()
+            => NextPicker.CurrentRequestCount ();
+
+        public IList<PieceRequest> ExportActiveRequests ()
+            => NextPicker.ExportActiveRequests ();
+
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        {
+            NextPicker.Initialise (bitfield, torrentData, requests);
+            rarest.Clear ();
+            spares.Clear ();
+        }
+
+        public bool IsInteresting (BitField bitfield)
+            => NextPicker.IsInteresting (bitfield);
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (peer, rejectedRequest);
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
     }
 }
