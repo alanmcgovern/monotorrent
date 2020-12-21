@@ -168,6 +168,26 @@ namespace MonoTorrent.Streaming
         }
 
         [Test]
+        public async Task SeekBeforeStart ()
+        {
+            var provider = new StreamProvider (Engine, "testDir", Torrent);
+            await provider.StartAsync ();
+            using var stream = await provider.CreateStreamAsync (provider.Files[0], prebuffer: false, CancellationToken.None).WithTimeout ();
+            stream.Seek (-100, SeekOrigin.Begin);
+            Assert.AreEqual (0, stream.Position);
+        }
+
+        [Test]
+        public async Task SeekPastEnd ()
+        {
+            var provider = new StreamProvider (Engine, "testDir", Torrent);
+            await provider.StartAsync ();
+            using var stream = await provider.CreateStreamAsync (provider.Files[0], prebuffer: false, CancellationToken.None).WithTimeout ();
+            stream.Seek (stream.Length + 100, SeekOrigin.Begin);
+            Assert.AreEqual (stream.Length, stream.Position);
+        }
+
+        [Test]
         public void CreateStreamBeforeStart ()
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);

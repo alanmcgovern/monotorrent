@@ -28,8 +28,8 @@
 
 
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -161,8 +161,46 @@ namespace MonoTorrent.Streaming
                     throw new NotSupportedException ();
             }
 
-            Picker.SeekToPosition (File, position);
+            // Clamp it to within reasonable bounds.
+            position = Math.Max (0, position);
+            position = Math.Min (position, Length);
+
+            MaybeAdjustCurrentPieceRequests ();
             return position;
+        }
+
+        async void MaybeAdjustCurrentPieceRequests ()
+        {
+            await ClientEngine.MainLoop;
+            if (!Picker.SeekToPosition (File, position))
+                return;
+
+            var fastestPeers = Manager.Peers.ConnectedPeers
+            .OrderBy (t => -t.Monitor.DownloadSpeed)
+            .ToArray ();
+
+            foreach (var peer in fastestPeers)
+                Manager.PieceManager.Picker.CancelRequests (peer);
+
+            var quiteFast = fastestPeers
+                .Where (t => t.Monitor.DownloadSpeed > 50 * 1024)
+                .ToArray ();
+
+            // Queue up 12 pieces for each of our fastest peers. At a download
+            // speed of 50kB/sec this should be 3 seconds of transfer for each peer.
+            for (int i = 0; i < 4; i++) {
+                foreach (var peer in quiteFast) {
+                    // FIXME: make an API for this?
+                    var original = peer.MaxPendingRequests;
+                    peer.MaxPendingRequests = (i + 1) * 3;
+                    Manager.PieceManager.AddPieceRequests (peer);
+                    peer.MaxPendingRequests = original;
+                }
+            }
+
+            // Then fill up the request queues for all peers
+            foreach (var peer in fastestPeers)
+                Manager.PieceManager.AddPieceRequests (peer);
         }
 
         public override void SetLength (long value)

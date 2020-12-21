@@ -159,22 +159,22 @@ namespace MonoTorrent.Client.PiecePicking
 
             if (pIndex < 0) {
                 piece = null;
-                logger.InfoFormatted ("Piece validation failed: {0} - {1}. No piece.", pieceIndex, startOffset);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", pieceIndex, startOffset, peer.Uri);
                 return false;
             }
             piece = requests[pIndex];
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf (piece.Blocks, startOffset, length);
             if (blockIndex == -1 || !peer.Equals (piece.Blocks[blockIndex].RequestedOff)) {
-                logger.InfoFormatted ("Piece validation failed: {0} - {1}. No block ", pieceIndex, startOffset);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No block ", pieceIndex, startOffset, peer.Uri);
                 return false;
             }
             if (piece.Blocks[blockIndex].Received) {
-                logger.InfoFormatted ("Piece validation failed: {0} - {1}. Already received.", pieceIndex, startOffset);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Already received.", pieceIndex, startOffset, peer.Uri);
                 return false;
             }
             if (!piece.Blocks[blockIndex].Requested) {
-                logger.InfoFormatted ("Piece validation failed: {0} - {1}. Not requested.", pieceIndex, startOffset);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Not requested.", pieceIndex, startOffset, peer.Uri);
                 return false;
             }
             peer.AmRequestingPiecesCount--;

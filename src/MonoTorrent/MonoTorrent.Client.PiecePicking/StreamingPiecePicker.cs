@@ -40,8 +40,6 @@ namespace MonoTorrent.Client.PiecePicking
     /// </summary>
     class StreamingPiecePicker : PiecePicker
     {
-        bool CancelPendingRequests { get; set; }
-
         PiecePicker LowPriorityPicker { get; }
 
         /// <summary>
@@ -53,7 +51,9 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// The number of pieces which will be kept buffered to avoid stuttering while streaming media.
         /// </summary>
-        internal int HighPriorityCount { get; set; } = 30;
+        internal int HighPriorityCount { get; set; } = 15;
+
+        internal int LowPriorityCount => HighPriorityCount * 2;
 
         ITorrentData TorrentData { get; set; }
 
@@ -76,14 +76,6 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            // If we have seeked to a new location recently we should try to cancel pending requests.
-            if (CancelPendingRequests) {
-                foreach (var p in otherPeers)
-                    CancelRequests (p);
-                CancelRequests (peer);
-                CancelPendingRequests = false;
-            }
-
             PieceRequest request;
             IList<PieceRequest> bundle;
 
@@ -100,6 +92,10 @@ namespace MonoTorrent.Client.PiecePicking
             if (endIndex < HighPriorityPieceIndex)
                 return null;
 
+            var lowPriorityEndIndex = Math.Min (HighPriorityPieceIndex + LowPriorityCount, endIndex);
+            if ((bundle = LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, lowPriorityEndIndex)) != null)
+                return bundle;
+
             return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, endIndex);
         }
 
@@ -109,13 +105,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        internal void SeekToPosition (ITorrentFileInfo file, long position)
+        internal bool SeekToPosition (ITorrentFileInfo file, long position)
         {
             // Update the high priority set, then cancel pending requests.
-            var oldPosition = HighPriorityPieceIndex;
+            var oldIndex = HighPriorityPieceIndex;
             ReadToPosition (file, position);
-            if (oldPosition != HighPriorityPieceIndex)
-                CancelPendingRequests = true;
+            return oldIndex != HighPriorityPieceIndex;
         }
 
         /// <summary>
