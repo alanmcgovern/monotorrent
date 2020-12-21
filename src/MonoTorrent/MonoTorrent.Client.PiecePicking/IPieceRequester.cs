@@ -48,5 +48,6 @@ namespace MonoTorrent.Client.PiecePicking
         int TotalHashFails { get; }
 
         void Cancel (int pieceIndex, int pieceOffset, int requestLength);
+        Uri Uri { get; }
     }
 }
