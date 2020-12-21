@@ -247,7 +247,7 @@ namespace MonoTorrent.Streaming
 
             var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
             if (prebuffer) {
-                ActiveStream.Seek (ActiveStream.Length - 2, SeekOrigin.Begin);
+                ActiveStream.Seek (ActiveStream.Length - Manager.PieceLength * 2, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
 
                 ActiveStream.Seek (0, SeekOrigin.Begin);
