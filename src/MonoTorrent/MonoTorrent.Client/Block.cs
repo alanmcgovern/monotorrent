@@ -113,5 +113,10 @@ namespace MonoTorrent.Client
                 return -1;
             return index;
         }
+
+        internal void FromRequest (PieceRequest block)
+        {
+            throw new NotImplementedException ();
+        }
     }
 }

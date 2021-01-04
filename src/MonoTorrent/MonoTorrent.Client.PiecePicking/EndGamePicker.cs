@@ -55,24 +55,29 @@ namespace MonoTorrent.Client.PiecePicking
         List<Piece> pieces;
 
         // These are all the requests for the individual blocks
-        internal List<Request> Requests { get; }
+        internal List<PieceRequest> Requests { get; }
 
         ITorrentData TorrentData { get; set; }
 
         public EndGamePicker ()
         {
-            Requests = new List<Request> ();
+            Requests = new List<PieceRequest> ();
+        }
+
+        public int AbortRequests (IPieceRequester peer)
+        {
+            throw new NotImplementedException ();
         }
 
         // Cancels a pending request when the predicate returns 'true'
-        void CancelWhere (Predicate<Request> predicate, bool sendCancel)
+        void CancelWhere (Predicate<PieceRequest> predicate, bool sendCancel)
         {
             for (int i = 0; i < Requests.Count; i++) {
-                Request r = Requests[i];
+                PieceRequest r = Requests[i];
                 if (predicate (r)) {
-                    r.Peer.AmRequestingPiecesCount--;
+                    r.RequestedOff.AmRequestingPiecesCount--;
                     if (sendCancel)
-                        r.Peer.Cancel (r.Block.PieceIndex, r.Block.StartOffset, r.Block.RequestLength);
+                        r.RequestedOff.CancelRequest (r);
                 }
             }
             Requests.RemoveAll (predicate);
@@ -97,15 +102,15 @@ namespace MonoTorrent.Client.PiecePicking
             return Requests.Count;
         }
 
-        public IList<Piece> ExportActiveRequests ()
+        public IList<PieceRequest> ExportActiveRequests ()
         {
-            return new List<Piece> (pieces);
+            return new List<PieceRequest> (Requests);
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
         {
             // 'Requests' should contain a list of all the pieces we need to complete
-            pieces = new List<Piece> (requests);
+            pieces = new List<PieceRequest> (request);
             Requests.Clear ();
             TorrentData = torrentData;
             foreach (Piece piece in pieces) {
@@ -171,6 +176,11 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
+        public void RequestRejected (IPieceRequester peer, PieceRequest request)
+        {
+            throw new NotImplementedException ();
+        }
+
         void LoadPieces (BitField b)
         {
             int length = b.Length;
@@ -195,9 +205,16 @@ namespace MonoTorrent.Client.PiecePicking
                               peer == r.Peer, false);
         }
 
-        public void CancelRequests (IPieceRequester peer)
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
         {
-            CancelWhere (r => r.Peer == peer, false);
+            var existingRequests = Requests.Where (r => r.Peer == peer && r.Block.PieceIndex >= startIndex && r.Block.PieceIndex <= endIndex && !r.Block.Received).ToArray ();
+            Requests.RemoveAll (r => existingRequests.Contains (r));
+            return existingRequests;
+        }
+
+        public void Tick ()
+        {
+            // no-op
         }
 
         public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)

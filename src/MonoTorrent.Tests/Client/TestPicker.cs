@@ -140,6 +140,11 @@ namespace MonoTorrent.Client.PiecePicking
             throw new NotImplementedException ();
         }
 
+        public void Tick ()
+        {
+            // no-op
+        }
+
         public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
             throw new NotImplementedException ();

@@ -42,6 +42,8 @@ namespace MonoTorrent.Client.PiecePicking
     {
         IPiecePicker LowPriorityPicker { get; }
 
+        IPiecePicker HighPriorityPicker { get; }
+
         /// <summary>
         /// This is the piece index of the block of data currently being consumed by the
         /// media player or other program.
@@ -57,24 +59,23 @@ namespace MonoTorrent.Client.PiecePicking
 
         ITorrentData TorrentData { get; set; }
 
-
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
         public StreamingPiecePicker (IPiecePicker picker)
-            : base (new PriorityPicker (picker))
         {
+            HighPriorityPicker = new PriorityPicker (picker);
             LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (picker)));
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
         {
             TorrentData = torrentData;
-            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
-            base.Initialise (bitfield, torrentData, requests);
+            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
+            HighPriorityPicker.Initialise (bitfield, torrentData, requests);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             PieceRequest request;
             IList<PieceRequest> bundle;
@@ -82,10 +83,10 @@ namespace MonoTorrent.Client.PiecePicking
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 var start = HighPriorityPieceIndex;
                 var end = Math.Min (endIndex, HighPriorityPieceIndex + HighPriorityCount - 1);
-                if ((request = BasePicker.ContinueAnyExisting (peer, start, end)) != null)
+                if ((request = HighPriorityPicker.ContinueAnyExisting (peer, start, end)) != null)
                     return new[] { request };
 
-                if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
+                if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
@@ -123,5 +124,38 @@ namespace MonoTorrent.Client.PiecePicking
         {
             HighPriorityPieceIndex = file.StartPieceIndex + (int) ((file.StartPieceOffset + position) / TorrentData.PieceLength);
         }
+
+        public int AbortRequests (IPieceRequester peer)
+            => HighPriorityPicker.AbortRequests (peer);
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+            => HighPriorityPicker.CancelRequests (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+            => HighPriorityPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+
+        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => HighPriorityPicker.ContinueExistingRequest (peer, startIndex, endIndex);
+
+        public int CurrentReceivedCount ()
+            => HighPriorityPicker.CurrentReceivedCount ();
+
+        public int CurrentRequestCount ()
+            => HighPriorityPicker.CurrentRequestCount ();
+
+        public IList<PieceRequest> ExportActiveRequests ()
+            => HighPriorityPicker.ExportActiveRequests ();
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            =>  HighPriorityPicker.RequestRejected (peer, rejectedRequest);
+
+        public void Tick ()
+            => HighPriorityPicker.Tick ();
+
+        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => HighPriorityPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
+
+        public bool IsInteresting (BitField bitfield)
+            => HighPriorityPicker.IsInteresting (bitfield);
     }
 }

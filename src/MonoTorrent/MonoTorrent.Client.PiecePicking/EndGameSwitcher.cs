@@ -107,6 +107,9 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
             => ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
+        public void Tick ()
+            => ActivePicker.Tick ();
+
         public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
             => ActivePicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
 

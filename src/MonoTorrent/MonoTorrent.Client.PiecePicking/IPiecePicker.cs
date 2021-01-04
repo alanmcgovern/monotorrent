@@ -28,13 +28,52 @@
 
 
 using System.Collections.Generic;
+using System.Linq;
 
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public interface IPiecePicker
+    public static class IPiecePickerExtensions
+    {
+        public static IList<PieceRequest> CancelRequests (this IPiecePicker picker, IPieceRequester peer)
+        {
+            return picker.CancelRequests (peer, 0, peer.BitField.Length - 1);
+        }
+
+        public static void Initialise (this IPiecePicker picker, BitField bitfield, ITorrentData torrentData)
+        {
+            picker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
+        }
+
+        public static PieceRequest PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
+        {
+            return picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1).SingleOrDefault ();
+        }
+
+        public static IList<PieceRequest> PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)
+        {
+            return picker.PickPiece (peer, available, otherPeers, count, 0, available.Length - 1);
+        }
+
+    }
+    public interface IPiecePickerFilter
+    {
+        /// <summary>
+        /// Reset all internal state. Called after <see cref="TorrentManager.StartAsync()"/> or <see cref="TorrentManager.StopAsync()"/> is invoked.
+        /// </summary>
+        /// <param name="bitfield"></param>
+        /// <param name="torrentData"></param>
+        /// <param name="requests"></param>
+        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests);
+
+        bool IsInteresting (BitField bitfield);
+
+        IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex);
+    }
+
+    public interface IPiecePicker : IPiecePickerFilter
     {
         /// <summary>
         /// Cancel all unreceived requests. No further blocks will be requested from this peer.
@@ -95,10 +134,6 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="torrentData"></param>
         /// <param name="requests"></param>
         void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests);
-
-        bool IsInteresting (BitField bitfield);
-
-        IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex);
 
         /// <summary>
         /// Called when a <see cref="RejectRequestMessage"/> is received from the <paramref name="peer"/> to indicate

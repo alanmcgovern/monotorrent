@@ -44,10 +44,9 @@ namespace MonoTorrent.Client
         List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
         bool IPieceRequester.CanCancelRequests => SupportsFastPeer;
         int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
-
-        void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
+        void IPieceRequester.CancelRequest (PieceRequest request)
         {
-            MessageQueue.Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
+            MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
         }
     }
 }

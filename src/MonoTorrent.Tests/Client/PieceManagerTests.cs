@@ -95,8 +95,8 @@ namespace MonoTorrent.Client.PiecePicking
             PieceRequest p;
             var requests = new List<PieceRequest> ();
             Piece piece = null;
-            while ((p = manager.Picker.PickPiece (peers[0], peers[0].BitField, peers, 1, 0, bitfield.Length - 1)) != null) {
-                piece = manager.PieceDataReceived (peers[0], new PieceMessage (p.PieceIndex, p.StartOffset, p.RequestLength));
+            while ((p = manager.Picker.PickPiece (peers[0], peers[0].BitField, peers)) != null) {
+                manager.PieceDataReceived (peers[0], new PieceMessage (p.PieceIndex, p.StartOffset, p.RequestLength), out bool pieceComplete, out IList<IPieceRequester> peersInvolved);
                 if (requests.Any (t => t.PieceIndex == p.PieceIndex && t.RequestLength == p.RequestLength && t.StartOffset == p.StartOffset))
                     Assert.Fail ("We should not pick the same piece twice");
                 requests.Add (p);

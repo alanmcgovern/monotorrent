@@ -36,9 +36,10 @@ namespace MonoTorrent.Client.PiecePicking
         public int PieceIndex { get; }
         public int StartOffset { get; }
         public int RequestLength { get; }
+        public IPieceRequester RequestedOff { get; }
 
-        public PieceRequest (int pieceIndex, int startOffset, int requestLength)
-            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
+        public PieceRequest (int pieceIndex, int startOffset, int requestLength, IPieceRequester requestedOff)
+            => (PieceIndex, StartOffset, RequestLength, RequestedOff) = (pieceIndex, startOffset, requestLength, requestedOff);
 
         public override bool Equals (object obj)
             => Equals (obj as PieceRequest);
@@ -46,6 +47,7 @@ namespace MonoTorrent.Client.PiecePicking
         public bool Equals (PieceRequest other)
         {
             return other != null
+                && other.RequestedOff == RequestedOff
                 && other.PieceIndex == PieceIndex
                 && other.StartOffset == StartOffset
                 && other.RequestLength == RequestLength;

@@ -220,13 +220,13 @@ namespace MonoTorrent.Client
         {
             var messages = requests.ToRequestMessages ().ToList ();
             for (int i = 0; i < messages.Count - 1; i++) {
-                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength));
+                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, out _);
                 int orig = id.AmRequestingPiecesCount;
                 rig.Manager.PieceManager.AddPieceRequests (id);
                 Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
             }
 
-            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength));
+            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength), out _, out _);
             Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
 
             rig.Manager.PieceManager.AddPieceRequests (id);

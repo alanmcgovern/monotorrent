@@ -206,6 +206,11 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
             => NextPicker.RequestRejected (peer, rejectedRequest);
 
+        public void Tick ()
+        {
+            // no-op
+        }
+
         public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
             => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
     }
