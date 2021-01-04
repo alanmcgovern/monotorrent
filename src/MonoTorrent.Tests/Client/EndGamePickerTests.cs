@@ -119,12 +119,18 @@ namespace MonoTorrent.Client.PiecePicking
                 }
             }
 
+            Assert.AreNotEqual (0, id.AmRequestingPiecesCount);
+            Assert.AreNotEqual (0, other.AmRequestingPiecesCount);
+
             picker.Initialise (bitfield, torrentData, requests);
             picker.CancelRequests (id);
             picker.CancelRequests (other);
 
+            Assert.AreEqual (0, id.AmRequestingPiecesCount);
+            Assert.AreEqual (0, other.AmRequestingPiecesCount);
+
             id.BitField[4] = true;
-            Assert.IsNotNull (picker.PickPiece (id, id.BitField, new List<PeerId> ()));
+            Assert.IsNotNull (picker.PickPiece (id, id.BitField));
         }
 
         [Test]
@@ -170,13 +176,13 @@ namespace MonoTorrent.Client.PiecePicking
             id.BitField[0] = true;
             picker.Initialise (bitfield, torrentData);
 
-            while ((m = picker.PickPiece (id, id.BitField, new List<PeerId> ())) != null)
+            while ((m = picker.PickPiece (id, id.BitField)) != null)
                 requests.Add (m);
 
             foreach (var message in requests)
                 Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out _, out _));
 
-            Assert.IsNotNull (picker.PickPiece (id, id.BitField, new List<PeerId> ()));
+            Assert.IsNotNull (picker.PickPiece (id, id.BitField));
         }
 
         [Test]

@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         // This list stores all the pieces which have not yet been completed. If a piece is *not* in this list
         // we don't need to download it.
-        List<Piece> pieces;
+        List<Piece> Pieces { get; }
 
         // These are all the requests for the individual blocks
         internal List<PieceRequest> Requests { get; }
@@ -48,6 +48,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public EndGamePicker ()
         {
+            Pieces = new List<Piece> ();
             Requests = new List<PieceRequest> ();
         }
 
@@ -81,7 +82,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public int CurrentReceivedCount ()
         {
-            return (int) Toolbox.Accumulate (pieces, p => p.TotalReceived);
+            return (int) Toolbox.Accumulate (Pieces, p => p.TotalReceived);
         }
 
         public int CurrentRequestCount ()
@@ -99,7 +100,7 @@ namespace MonoTorrent.Client.PiecePicking
             // 'Requests' should contain a list of all the pieces we need to complete
             foreach (var pieceRequests in requests.GroupBy (p => p.PieceIndex)) {
                 var piece = new Piece (pieceRequests.Key, torrentData.PieceLength, torrentData.Size);
-                pieces.Add (piece);
+                Pieces.Add (piece);
                 foreach (var request in pieceRequests)
                     piece.Blocks[request.StartOffset % Piece.BlockSize].FromRequest (request);
             }
@@ -123,7 +124,7 @@ namespace MonoTorrent.Client.PiecePicking
             LoadPieces (available);
 
             // 1) See if there are any blocks which have not been requested at all. Request the block if the peer has it
-            foreach (Piece p in pieces) {
+            foreach (Piece p in Pieces) {
                 if (!available[p.Index] || p.AllBlocksRequested)
                     continue;
 
@@ -138,7 +139,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // 2) For each block with an existing request, add another request. We do a search from the start
             //    of the list to the end. So when we add a duplicate request, move both requests to the end of the list
-            foreach (Piece p in pieces) {
+            foreach (Piece p in Pieces) {
                 if (!available[p.Index])
                     continue;
 
@@ -173,8 +174,8 @@ namespace MonoTorrent.Client.PiecePicking
         {
             int length = b.Length;
             for (int i = b.FirstTrue (0, length); i != -1; i = b.FirstTrue (i + 1, length))
-                if (!pieces.Exists (p => p.Index == i))
-                    pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
+                if (!Pieces.Exists (p => p.Index == i))
+                    Pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
         }
 
         bool AlreadyRequested (Block block, IPieceRequester peer)
@@ -197,6 +198,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             var existingRequests = Requests.Where (r => r.RequestedOff == peer && r.PieceIndex >= startIndex && r.PieceIndex <= endIndex && !r.Received).ToArray ();
             Requests.RemoveAll (r => existingRequests.Contains (r));
+            peer.AmRequestingPiecesCount -= existingRequests.Length;
             return existingRequests;
         }
 
@@ -214,7 +216,7 @@ namespace MonoTorrent.Client.PiecePicking
                 return false;
             }
 
-            var piece = pieces.Single (p => p.Index == r.PieceIndex);
+            var piece = Pieces.Single (p => p.Index == r.PieceIndex);
             if (piece == null)
                 return false;
 
@@ -234,7 +236,7 @@ namespace MonoTorrent.Client.PiecePicking
             // If a piece *fails* the hashcheck, we need to add it back into the list so
             // we download it again.
             if (piece.AllBlocksReceived) {
-                pieces.Remove (piece);
+                Pieces.Remove (piece);
                 CancelWhere (r => r.PieceIndex == pieceIndex, false);
                 pieceComplete = true;
                 peersInvolved = piece.Blocks.Select (p => p.RequestedOff).Where (t => t != null).ToArray ();

@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -47,9 +48,16 @@ namespace MonoTorrent.Client.PiecePicking
             picker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
         }
 
+        public static PieceRequest PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available)
+        {
+            var result = picker.PickPiece (peer, available, Array.Empty<IPieceRequester> (), 1, 0, available.Length - 1);
+            return result?.Single ();
+        }
+
         public static PieceRequest PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
         {
-            return picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1).SingleOrDefault ();
+            var result = picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1);
+            return result?.Single ();
         }
 
         public static IList<PieceRequest> PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count)
