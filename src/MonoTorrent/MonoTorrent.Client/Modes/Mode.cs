@@ -240,7 +240,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleRejectRequestMessage (PeerId id, RejectRequestMessage message)
         {
-            Manager.PieceManager.Picker.RequestRejected (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
+            Manager.PieceManager.Picker.RequestRejected (new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength, id));
         }
 
         protected virtual void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)

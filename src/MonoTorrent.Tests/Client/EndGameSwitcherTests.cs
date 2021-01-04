@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void SmallTorrent_InitializeSwitcher_NoExisting ()
         {
-            Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent, Enumerable.Empty<Piece> ());
+            Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent);
             Assert.AreEqual (0, Endgame.ExportActiveRequests ().Count, "#1");
             Assert.AreEqual (0, Standard.ExportActiveRequests ().Count, "#2");
             Assert.AreSame (Standard, Switcher.ActivePicker, "#3");
@@ -69,9 +69,9 @@ namespace MonoTorrent.Client.PiecePicking
         public void SmallTorrent_InitializeSwitcher_WithExisting ()
         {
             var piece = new Piece (0, SmallTorrent.PieceLength, SmallTorrent.Size);
-            piece.Blocks[0].CreateRequest (SmallTorrent.Seeder);
+            var requests = new[] { piece.Blocks[0].CreateRequest (SmallTorrent.Seeder) };
 
-            Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent, new[] { piece });
+            Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent, requests);
             Assert.AreEqual (1, Standard.ExportActiveRequests ().Count, "#1");
             Assert.AreEqual (0, Endgame.ExportActiveRequests ().Count, "#2");
             Assert.AreSame (Standard, Switcher.ActivePicker, "#3");
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void SmallTorrent_RequestAll_TriggerEndgame ()
         {
-            Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent, Enumerable.Empty<Piece> ());
+            Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent);
             // Pretend we have all the pieces except one.
             SmallTorrent.Bitfield.SetAll (true).Set (0, false);
             // When picking we should indicate there's 1 piece that we desire - the one we're missing.
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void LargeTorrent_RequestAll_TriggerEndgame ()
         {
-            Switcher.Initialise (LargeTorrent.Bitfield, LargeTorrent, Enumerable.Empty<Piece> ());
+            Switcher.Initialise (LargeTorrent.Bitfield, LargeTorrent);
             // Pretend we have all the pieces except one.
             LargeTorrent.Bitfield.SetAll (true).Set (0, false);
             // When picking we should indicate there's 1 piece that we desire - the one we're missing.

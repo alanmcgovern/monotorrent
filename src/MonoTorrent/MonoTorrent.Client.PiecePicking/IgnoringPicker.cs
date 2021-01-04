@@ -88,8 +88,8 @@ namespace MonoTorrent.Client.PiecePicking
             return NextPicker.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
         }
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
-            => NextPicker.RequestRejected (peer, rejectedRequest);
+        public void RequestRejected (PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (rejectedRequest);
 
         public void Tick ()
             => NextPicker.Tick ();

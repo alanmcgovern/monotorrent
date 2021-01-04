@@ -135,7 +135,7 @@ namespace MonoTorrent.Client.PiecePicking
             throw new NotImplementedException ();
         }
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+        public void RequestRejected (PieceRequest rejectedRequest)
         {
             throw new NotImplementedException ();
         }

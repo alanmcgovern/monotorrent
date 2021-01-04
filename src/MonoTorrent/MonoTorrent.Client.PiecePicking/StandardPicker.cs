@@ -65,10 +65,10 @@ namespace MonoTorrent.Client.PiecePicking
                 Block[] blocks = requests[p].Blocks;
                 for (int i = 0; i < blocks.Length; i++) {
                     if (!blocks[i].Received && blocks[i].RequestedOff == peer) {
-                        requests[p].Abandoned = true;
                         blocks[i].CancelRequest ();
+                        requests[p].Abandoned = true;
                         cancelled ??= new List<PieceRequest> ();
-                        cancelled.Add (new PieceRequest (piece.Index, blocks[i].StartOffset, blocks[i].RequestLength));
+                        cancelled.Add (new PieceRequest (piece.Index, blocks[i].StartOffset, blocks[i].RequestLength, peer));
                     }
                 }
             }
@@ -76,12 +76,12 @@ namespace MonoTorrent.Client.PiecePicking
             return cancelled ?? Array.Empty<PieceRequest> ();
         }
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest request)
+        public void RequestRejected (PieceRequest request)
         {
             CancelWhere (b => b.StartOffset == request.StartOffset &&
                               b.RequestLength == request.RequestLength &&
                               b.PieceIndex == request.PieceIndex &&
-                              peer == b.RequestedOff);
+                              b.RequestedOff == request.RequestedOff);
         }
 
         int CancelWhere (Predicate<Block> predicate)
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.PiecePicking
             foreach(var piece in requests) {
                 foreach (var block in piece.Blocks) {
                     if (block.Requested)
-                        list.Add (new PieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength));
+                        list.Add (new PieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.Received, block.RequestedOff));
                     // FIXME: Include 'RequestedOff'
                 }
             }

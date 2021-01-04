@@ -60,8 +60,8 @@ namespace MonoTorrent.Client.PiecePicking
         public int AbortRequests (IPieceRequester peer)
             => ActivePicker.AbortRequests (peer);
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest requestRejected)
-            => ActivePicker.RequestRejected (peer, requestRejected);
+        public void RequestRejected (PieceRequest requestRejected)
+            => ActivePicker.RequestRejected (requestRejected);
 
         public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
             => ActivePicker.CancelRequests (peer, startIndex, endIndex);

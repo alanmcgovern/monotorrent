@@ -87,8 +87,8 @@ namespace MonoTorrent.Client.PiecePicking
         public bool IsInteresting (BitField bitfield)
             => NextPicker.IsInteresting (bitfield);
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
-            => NextPicker.RequestRejected (peer, rejectedRequest);
+        public void RequestRejected (PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (rejectedRequest);
 
         public void Tick ()
             => NextPicker.Tick ();

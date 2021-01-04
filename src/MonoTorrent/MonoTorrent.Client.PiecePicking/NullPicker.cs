@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
             return Array.Empty<PieceRequest> ();
         }
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+        public void RequestRejected (PieceRequest rejectedRequest)
         {
         }
 

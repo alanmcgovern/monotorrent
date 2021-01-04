@@ -146,8 +146,8 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> ExportActiveRequests ()
             => HighPriorityPicker.ExportActiveRequests ();
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
-            =>  HighPriorityPicker.RequestRejected (peer, rejectedRequest);
+        public void RequestRejected (PieceRequest rejectedRequest)
+            =>  HighPriorityPicker.RequestRejected (rejectedRequest);
 
         public void Tick ()
             => HighPriorityPicker.Tick ();

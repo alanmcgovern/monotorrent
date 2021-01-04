@@ -112,13 +112,14 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void CancelTest ()
         {
+            var requests = new List<PieceRequest> ();
             foreach (Piece p in pieces) {
                 for (int i = 0; i < p.BlockCount; i++) {
-                    p.Blocks[i].CreateRequest (i % 2 == 0 ? id : other);
+                    requests.Add (p.Blocks[i].CreateRequest (i % 2 == 0 ? id : other));
                 }
             }
 
-            picker.Initialise (bitfield, torrentData, pieces);
+            picker.Initialise (bitfield, torrentData, requests);
             picker.CancelRequests (id);
             picker.CancelRequests (other);
 
@@ -132,12 +133,13 @@ namespace MonoTorrent.Client.PiecePicking
             id.BitField.Set (pieces[0].Index, true);
             other.BitField.Set (pieces[0].Index, true);
 
+            var requests = new List<PieceRequest> ();
             for (int i = 2; i < pieces[0].BlockCount; i++) {
-                pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount));
+                requests.Add (pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount)));
                 pieces[0].Blocks[i].Received = true;
             }
 
-            picker.Initialise (bitfield, torrentData, pieces);
+            picker.Initialise (bitfield, torrentData, requests);
 
             // Pick blocks 1 and 2 for both peers
             while (picker.PickPiece (id, id.BitField, new List<PeerId> ()) != null) { }
@@ -180,13 +182,14 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void ReceivedPiecesAreNotRequested ()
         {
+            var requests = new List<PieceRequest> ();
             for (int i = 2; i < pieces[0].BlockCount; i++) {
-                pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount));
+                requests.Add (pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount)));
                 pieces[0].Blocks[i].Received = true;
             }
 
-            picker.Initialise (bitfield, torrentData, pieces);
-            Assert.IsTrue (picker.Requests.All (t => !t.Block.Received), "#1");
+            picker.Initialise (bitfield, torrentData, requests);
+            Assert.IsTrue (picker.Requests.All (t => !t.Received), "#1");
         }
     }
 }

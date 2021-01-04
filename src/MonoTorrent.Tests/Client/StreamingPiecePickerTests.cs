@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             var basePicker = new T ();
             var picker = new StreamingPiecePicker (basePicker);
-            picker.Initialise (bitfield, data, Enumerable.Empty<Piece> ());
+            picker.Initialise (bitfield, data, Enumerable.Empty<PieceRequest> ());
             return (picker, basePicker);
         }
 

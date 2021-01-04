@@ -139,9 +139,8 @@ namespace MonoTorrent.Client.PiecePicking
         /// Called when a <see cref="RejectRequestMessage"/> is received from the <paramref name="peer"/> to indicate
         /// the <see cref="PieceRequest"/> will not be fulfilled.
         /// </summary>
-        /// <param name="peer"></param>
         /// <param name="rejectedRequest"></param>
-        void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest);
+        void RequestRejected (PieceRequest rejectedRequest);
 
         /// <summary>
         /// Called periodically to allow time based piece expiration/requesting to be implemented

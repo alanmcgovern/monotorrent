@@ -203,8 +203,8 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> ExportActiveRequests ()
             => NextPicker.ExportActiveRequests ();
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
-            => NextPicker.RequestRejected (peer, rejectedRequest);
+        public void RequestRejected (PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (rejectedRequest);
 
         public void Tick ()
         {

@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.PiecePicking
             peers = new List<PeerId> ();
 
             picker = new StandardPicker ();
-            picker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
+            picker.Initialise (bitfield, torrentData);
 
             peer = PeerId.CreateNull (pieceCount);
             for (int i = 0; i < 20; i++) {
@@ -319,7 +319,7 @@ namespace MonoTorrent.Client.PiecePicking
                 messages.Add (m);
 
             foreach (PieceRequest message in messages)
-                picker.RequestRejected (peer, message);
+                picker.RequestRejected (message);
 
             var messages2 = new List<PieceRequest> ();
             while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)
