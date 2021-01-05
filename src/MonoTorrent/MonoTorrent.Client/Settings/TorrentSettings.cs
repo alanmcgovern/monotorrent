@@ -101,12 +101,17 @@ namespace MonoTorrent.Client
         /// </summary>
         internal TimeSpan TimeToWaitUntilIdle => TimeSpan.FromMinutes (10);
 
+        /// <summary>
+        /// If set to false then root folder will be not created for multi-files torrents
+        /// </summary>
+        internal bool CreateSubFolder { get; } = true;
+
         public TorrentSettings ()
         {
 
         }
 
-        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger)
+        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger, bool createSubFolder)
         {
             AllowDht = allowDht;
             AllowInitialSeeding = allowInitialSeeding;
@@ -117,6 +122,7 @@ namespace MonoTorrent.Client
             UploadSlots = uploadSlots;
             WebSeedDelay = webSeedDelay;
             WebSeedSpeedTrigger = webSeedSpeedTrigger;
+            CreateSubFolder = createSubFolder;
         }
 
         public override bool Equals (object obj)
@@ -133,7 +139,8 @@ namespace MonoTorrent.Client
                 && MaximumUploadSpeed == other.MaximumUploadSpeed
                 && UploadSlots == other.UploadSlots
                 && WebSeedDelay == other.WebSeedDelay
-                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger;
+                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger
+                && CreateSubFolder == other.CreateSubFolder;
         }
 
         public override int GetHashCode ()
