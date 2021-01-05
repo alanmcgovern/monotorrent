@@ -118,6 +118,8 @@ namespace MonoTorrent.Client
         {
             Received = block.Received;
             RequestedOff = block.RequestedOff;
+
+            piece.TotalRequested += 1;
         }
     }
 }

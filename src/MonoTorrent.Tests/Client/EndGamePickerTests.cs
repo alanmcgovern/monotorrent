@@ -136,35 +136,48 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void MultiPick ()
         {
+            // We only need 1 more piece
+            bitfield.SetAll (false).Set (pieces[0].Index, true);
+
+            // The peers have the piece we need.
             id.BitField.Set (pieces[0].Index, true);
             other.BitField.Set (pieces[0].Index, true);
 
             var requests = new List<PieceRequest> ();
-            for (int i = 2; i < pieces[0].BlockCount; i++) {
-                requests.Add (pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount)));
-                pieces[0].Blocks[i].Received = true;
-            }
+            for (int i = 2; i < pieces[0].BlockCount; i++)
+                requests.Add (new PieceRequest (pieces[0].Index, i * Piece.BlockSize, Piece.BlockSize, true, PeerId.CreateNull (torrentData.PieceCount)));
 
             picker.Initialise (bitfield, torrentData, requests);
 
             // Pick blocks 1 and 2 for both peers
-            while (picker.PickPiece (id, id.BitField, new List<PeerId> ()) != null) { }
-            while (picker.PickPiece (other, id.BitField, new List<PeerId> ()) != null) { }
+            while (picker.PickPiece (id, bitfield) != null) { }
+            while (picker.PickPiece (other, bitfield) != null) { }
 
             Assert.AreEqual (2, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual (2, other.AmRequestingPiecesCount, "#1");
 
-            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out _, out _))
+            bool pieceComplete;
+            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out pieceComplete, out _))
                 Assert.Fail ("I should've validated!");
+            Assert.IsFalse (pieceComplete, "#5");
 
-            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out _, out _))
+            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out pieceComplete, out _))
                 Assert.Fail ("I should not have validated!");
+            Assert.IsFalse (pieceComplete, "#6");
 
             Assert.AreEqual (1, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual (1, other.AmRequestingPiecesCount, "#1");
-            Assert.IsTrue (pieces[0][0].Received, "#5");
-            Assert.AreEqual (16, pieces[0].TotalRequested, "#6");
-            Assert.AreEqual (15, pieces[0].TotalReceived, "#7");
+
+            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][1].StartOffset, pieces[0][1].RequestLength, out pieceComplete, out _))
+                Assert.Fail ("I should've validated!");
+            Assert.IsTrue (pieceComplete, "#7");
+
+            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][1].StartOffset, pieces[0][1].RequestLength, out pieceComplete, out _))
+                Assert.Fail ("I should not have validated!");
+            Assert.IsFalse (pieceComplete, "#8");
+
+            Assert.AreEqual (0, id.AmRequestingPiecesCount);
+            Assert.AreEqual (0, other.AmRequestingPiecesCount);
         }
 
         [Test]

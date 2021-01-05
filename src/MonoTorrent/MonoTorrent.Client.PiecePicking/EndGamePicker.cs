@@ -97,14 +97,16 @@ namespace MonoTorrent.Client.PiecePicking
 
         public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
         {
+            Requests.Clear ();
+            Pieces.Clear ();
+
             // 'Requests' should contain a list of all the pieces we need to complete
             foreach (var pieceRequests in requests.GroupBy (p => p.PieceIndex)) {
                 var piece = new Piece (pieceRequests.Key, torrentData.PieceLength, torrentData.Size);
                 Pieces.Add (piece);
                 foreach (var request in pieceRequests)
-                    piece.Blocks[request.StartOffset % Piece.BlockSize].FromRequest (request);
+                    piece.Blocks[request.StartOffset / Piece.BlockSize].FromRequest (request);
             }
-            Requests.Clear ();
             Requests.AddRange (requests.Where (r => !r.Received));
             TorrentData = torrentData;
         }
@@ -118,7 +120,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             // Only request 2 pieces at a time in endgame mode
             // to prevent a *massive* overshoot
-            if (peer.IsChoking || peer.AmRequestingPiecesCount > 2)
+            if (peer.IsChoking || peer.AmRequestingPiecesCount >= 2)
                 return null;
 
             LoadPieces (available);
