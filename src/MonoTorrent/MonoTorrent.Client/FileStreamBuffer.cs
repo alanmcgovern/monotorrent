@@ -168,9 +168,11 @@ namespace MonoTorrent.Client.PieceWriters
                 logger.InfoFormatted ("Opening filestream: {0}", oldest.Key.FullPath);
 
                 using (await oldest.Value.Locker.EnterAsync ()) {
-                    oldest.Value.Stream.Dispose ();
-                    oldest.Value.Stream = null;
-                    Count--;
+                    if (oldest.Value.Stream != null) {
+                        oldest.Value.Stream.Dispose ();
+                        oldest.Value.Stream = null;
+                        Count--;
+                    }
                 }
             }
         }
