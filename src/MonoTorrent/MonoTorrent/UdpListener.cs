@@ -53,8 +53,10 @@ namespace MonoTorrent
         public async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
             try {
-                if (endpoint.Address != IPAddress.Any)
-                    await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
+                if (Client != null) {
+                    if (endpoint.Address != IPAddress.Any)
+                        await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
+                }
             } catch (Exception ex) {
                 logger.Exception (ex, "UdpListener could not send message");
             }
