@@ -54,13 +54,14 @@ namespace MonoTorrent.Client
 
         internal static IList<EncryptionType> Remove (IList<EncryptionType> allowedEncryption, EncryptionType encryptionType)
         {
-            var result = new EncryptionType[allowedEncryption.Count - 1];
-            int j = 0;
-            for (int i = 0; i < allowedEncryption.Count; i++)
-                if (allowedEncryption[i] != encryptionType)
-                    result[j++] = allowedEncryption[i];
-
-            return MakeReadOnly (result);
+            if (allowedEncryption.Count > 0) {
+                var result = new EncryptionType[allowedEncryption.Count - 1];
+                int j = 0;
+                for (int i = 0; i < allowedEncryption.Count; i++)
+                    if (allowedEncryption[i] != encryptionType)
+                        result[j++] = allowedEncryption[i];
+            }
+            return MakeReadOnly (allowedEncryption);
         }
 
         internal static EncryptionType? PreferredRC4 (IList<EncryptionType> allowedEncryption)
