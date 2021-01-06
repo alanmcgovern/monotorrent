@@ -99,6 +99,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public int WebSeedSpeedTrigger { get; set; }
 
+        /// <summary>
+        /// If set to false then root folder will be not created for multi-files torrents
+        /// </summary>
+        public bool CreateSubFolder { get; set; }
+
         public TorrentSettingsBuilder ()
             : this (new TorrentSettings ())
         {
@@ -116,6 +121,7 @@ namespace MonoTorrent.Client
             UploadSlots = settings.UploadSlots;
             WebSeedDelay = settings.WebSeedDelay;
             WebSeedSpeedTrigger = settings.WebSeedSpeedTrigger;
+            CreateSubFolder = settings.CreateSubFolder;
         }
 
         public TorrentSettings ToSettings ()
@@ -129,7 +135,8 @@ namespace MonoTorrent.Client
                 MaximumUploadSpeed,
                 UploadSlots,
                 WebSeedDelay,
-                WebSeedSpeedTrigger
+                WebSeedSpeedTrigger,
+                CreateSubFolder
             );
         }
 
