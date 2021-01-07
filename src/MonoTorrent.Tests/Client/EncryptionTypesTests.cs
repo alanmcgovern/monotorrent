@@ -27,6 +27,8 @@
 //
 
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using NUnit.Framework;
@@ -81,6 +83,14 @@ namespace MonoTorrent.Client
                 new[] { EncryptionType.RC4Full, EncryptionType.PlainText, EncryptionType.RC4Header });
 
             Assert.AreEqual (EncryptionType.PlainText, result.Single ());
+        }
+
+        [Test]
+        public void RemoveFromEmptyList()
+        {
+            var result = EncryptionTypes.Remove (new List<EncryptionType> (), EncryptionType.PlainText);
+            Assert.IsEmpty (result);
+            Assert.Throws<NotSupportedException> (() => result.Add (EncryptionType.PlainText));
         }
     }
 }

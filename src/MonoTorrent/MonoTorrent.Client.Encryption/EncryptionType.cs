@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     {
         internal static IList<EncryptionType> All { get; } = MakeReadOnly (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full, EncryptionType.PlainText });
         internal static IList<EncryptionType> PlainText { get; } = MakeReadOnly (new[] { EncryptionType.PlainText });
-        internal static IList<EncryptionType> None { get; } = Array.Empty<EncryptionType> ();
+        internal static IList<EncryptionType> None { get; } = MakeReadOnly (Array.Empty<EncryptionType> ());
 
         static IList<EncryptionType> RC4Full { get; } = Array.AsReadOnly (new[] { EncryptionType.RC4Full });
         static IList<EncryptionType> RC4Header { get; } = Array.AsReadOnly (new[] { EncryptionType.RC4Header });
@@ -54,14 +54,16 @@ namespace MonoTorrent.Client
 
         internal static IList<EncryptionType> Remove (IList<EncryptionType> allowedEncryption, EncryptionType encryptionType)
         {
-            var result = allowedEncryption;
-            if (result.Count > 0) {
-                result = new EncryptionType[allowedEncryption.Count - 1];
-                int j = 0;
-                for (int i = 0; i < allowedEncryption.Count; i++)
-                    if (allowedEncryption[i] != encryptionType)
-                        result[j++] = allowedEncryption[i];
-            }
+            // Never return the value passed into this function as we want to be *guaranteed* that any return value
+            // is an empty and immutable IList. An array of length 0 is immutable, but a List<T> of length zero is not.
+            if (allowedEncryption.Count == 0)
+                return None;
+
+            var result = new EncryptionType[allowedEncryption.Count - 1];
+            int j = 0;
+            for (int i = 0; i < allowedEncryption.Count; i++)
+                if (allowedEncryption[i] != encryptionType)
+                    result[j++] = allowedEncryption[i];
             return MakeReadOnly (result);
         }
 
