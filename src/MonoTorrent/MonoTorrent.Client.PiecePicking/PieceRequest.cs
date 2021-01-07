@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public bool Equals (PieceRequest other)
         {
-            return other != null
+            return !(other is null)
                 && other.RequestedOff == RequestedOff
                 && other.Received == Received
                 && other.PieceIndex == PieceIndex

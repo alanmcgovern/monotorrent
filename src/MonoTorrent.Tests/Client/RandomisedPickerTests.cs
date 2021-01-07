@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.PiecePicking
             // We should pick a random midpoint and select a piece starting from there.
             // If that fails we should wrap around to 0 and scan from the beginning.
             Assert.IsTrue (checker.PickedIndex[0].Item1 > 0, "#1");
-            Assert.IsTrue (checker.PickedIndex[0].Item2 == pieceCount, "#2");
+            Assert.IsTrue (checker.PickedIndex[0].Item2 == peer.BitField.Length - 1, "#2");
 
             Assert.AreEqual (0, checker.PickedIndex[1].Item1, "#3");
             Assert.AreEqual (checker.PickedIndex[0].Item1, checker.PickedIndex[1].Item2, "#4");
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
             Assert.AreEqual (0, checker.PickedIndex[0].Item1, "#2");
-            Assert.AreEqual (1, checker.PickedIndex[0].Item2, "#2");
+            Assert.AreEqual (0, checker.PickedIndex[0].Item2, "#2");
         }
 
         [Test]
