@@ -319,7 +319,7 @@ namespace MonoTorrent.Client.PiecePicking
                 messages.Add (m);
 
             foreach (PieceRequest message in messages)
-                picker.RequestRejected (message);
+                picker.RequestRejected (peer, message);
 
             var messages2 = new List<PieceRequest> ();
             while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)

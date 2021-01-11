@@ -50,7 +50,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             Standard = new StandardPicker ();
             Endgame = new EndGamePicker ();
-            Switcher = new EndGameSwitcher (Standard, Endgame, null);
+            Switcher = new EndGameSwitcher (Standard, Endgame);
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void SmallTorrent_InitializeSwitcher_WithExisting ()
         {
             var piece = new Piece (0, SmallTorrent.PieceLength, SmallTorrent.Size);
-            var requests = new[] { piece.Blocks[0].CreateRequest (SmallTorrent.Seeder) };
+            var requests = new[] { new ActivePieceRequest (piece.Blocks[0].CreateRequest (SmallTorrent.Seeder), PeerId.CreateNull (10)) };
 
             Switcher.Initialise (SmallTorrent.Bitfield, SmallTorrent, requests);
             Assert.AreEqual (1, Standard.ExportActiveRequests ().Count, "#1");

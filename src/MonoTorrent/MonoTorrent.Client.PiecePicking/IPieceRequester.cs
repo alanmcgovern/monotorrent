@@ -47,6 +47,6 @@ namespace MonoTorrent.Client.PiecePicking
         // CancelRequest if the FastPeer extensions are supported. This includes enqueuing
         // and sending the appropriate Cancel messages.
         bool CanCancelRequests { get; }
-        void CancelRequest (PieceRequest request);
+        void CancelRequest (ActivePieceRequest request);
     }
 }

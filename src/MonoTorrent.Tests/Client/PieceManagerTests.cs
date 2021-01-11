@@ -75,7 +75,7 @@ namespace MonoTorrent.Client.PiecePicking
             torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new BitField (pieceCount).SetAll (true), new BitField (pieceCount).SetAll (false)));
             manager = new PieceManager (torrentManager);
             manager.ChangePicker (new StandardPicker (), bitfield);
-            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
+            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
 
             peer = PeerId.CreateNull (pieceCount);
             for (int i = 0; i < 20; i++) {
@@ -94,15 +94,18 @@ namespace MonoTorrent.Client.PiecePicking
 
             PieceRequest p;
             var requests = new List<PieceRequest> ();
-            Piece piece = null;
+            var completedPieces = bitfield.Clone ();
             while ((p = manager.Picker.PickPiece (peers[0], peers[0].BitField, peers)) != null) {
                 manager.PieceDataReceived (peers[0], new PieceMessage (p.PieceIndex, p.StartOffset, p.RequestLength), out bool pieceComplete, out IList<IPieceRequester> peersInvolved);
                 if (requests.Any (t => t.PieceIndex == p.PieceIndex && t.RequestLength == p.RequestLength && t.StartOffset == p.StartOffset))
                     Assert.Fail ("We should not pick the same piece twice");
                 requests.Add (p);
+                if (completedPieces[p.PieceIndex] && pieceComplete)
+                    Assert.Fail ("This piece was already marked as complete: " + p.PieceIndex);
+                completedPieces[p.PieceIndex] |= pieceComplete;
             }
             Assert.IsNull (manager.Picker.PickPiece (peers[0], peers[0].BitField, peers, 1, 0, bitfield.Length - 1), "#1");
-            Assert.IsTrue (piece.AllBlocksReceived, "#2");
+            Assert.IsTrue (completedPieces.AllTrue, "#2");
         }
 
         [Test]
@@ -124,7 +127,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestInEndgame_AllDoNotDownload ()
         {
             manager.ChangePicker (torrentManager.CreateStandardPicker (), bitfield);
-            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
+            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
             foreach (var file in torrentData.Files)
                 file.Priority = Priority.DoNotDownload;
 

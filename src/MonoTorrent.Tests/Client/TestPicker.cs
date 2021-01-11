@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
 
         }
@@ -130,12 +130,12 @@ namespace MonoTorrent.Client.PiecePicking
             throw new NotImplementedException ();
         }
 
-        public IList<PieceRequest> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
         {
             throw new NotImplementedException ();
         }
 
-        public void RequestRejected (PieceRequest rejectedRequest)
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
         {
             throw new NotImplementedException ();
         }

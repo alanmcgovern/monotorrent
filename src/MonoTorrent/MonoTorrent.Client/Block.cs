@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
 
             RequestedOff = peer;
             RequestedOff.AmRequestingPiecesCount++;
-            return new PieceRequest (PieceIndex, StartOffset, RequestLength, received, peer);
+            return new PieceRequest (PieceIndex, StartOffset, RequestLength);
         }
 
         internal void CancelRequest ()
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
             return index;
         }
 
-        internal void FromRequest (PieceRequest block)
+        internal void FromRequest (ActivePieceRequest block)
         {
             Received = block.Received;
             RequestedOff = block.RequestedOff;

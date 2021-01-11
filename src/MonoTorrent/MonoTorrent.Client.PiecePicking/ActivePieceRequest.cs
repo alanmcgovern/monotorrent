@@ -31,22 +31,14 @@ using System;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public sealed class PieceRequest : IEquatable<PieceRequest>
+    public sealed class PieceRequest
     {
         public int PieceIndex { get; }
         public int StartOffset { get; }
-        public bool Received { get; }
         public int RequestLength { get; }
-        public IPieceRequester RequestedOff { get; }
 
-        public PieceRequest (int pieceIndex, int startOffset, int requestLength, IPieceRequester requestedOff)
-            : this (pieceIndex, startOffset, requestLength, false, requestedOff)
-        {
-
-        }
-
-        public PieceRequest (int pieceIndex, int startOffset, int requestLength, bool received, IPieceRequester requestedOff)
-            => (PieceIndex, StartOffset, RequestLength, Received, RequestedOff) = (pieceIndex, startOffset, requestLength, received, requestedOff);
+        public PieceRequest (int pieceIndex, int startOffset, int requestLength)
+            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
         public override bool Equals (object obj)
             => Equals (obj as PieceRequest);
@@ -54,8 +46,6 @@ namespace MonoTorrent.Client.PiecePicking
         public bool Equals (PieceRequest other)
         {
             return !(other is null)
-                && other.RequestedOff == RequestedOff
-                && other.Received == Received
                 && other.PieceIndex == PieceIndex
                 && other.StartOffset == StartOffset
                 && other.RequestLength == RequestLength;
@@ -68,6 +58,52 @@ namespace MonoTorrent.Client.PiecePicking
             => left is null ? right is null : left.Equals (right);
 
         public static bool operator != (PieceRequest left, PieceRequest right)
+            => !(left == right);
+    }
+
+    public sealed class ActivePieceRequest : IEquatable<ActivePieceRequest>
+    {
+        public int PieceIndex { get; }
+        public int StartOffset { get; }
+        public int RequestLength { get; }
+        public bool Received { get; }
+        public IPieceRequester RequestedOff { get; }
+
+        internal ActivePieceRequest (PieceRequest request, IPieceRequester requestedOff)
+            : this(request.PieceIndex, request.StartOffset, request.RequestLength, requestedOff)
+        {
+
+        }
+
+        public ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, IPieceRequester requestedOff)
+            : this (pieceIndex, startOffset, requestLength, false, requestedOff)
+        {
+
+        }
+
+        public ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, bool received, IPieceRequester requestedOff)
+            => (PieceIndex, StartOffset, RequestLength, Received, RequestedOff) = (pieceIndex, startOffset, requestLength, received, requestedOff);
+
+        public override bool Equals (object obj)
+            => Equals (obj as ActivePieceRequest);
+
+        public bool Equals (ActivePieceRequest other)
+        {
+            return !(other is null)
+                && other.RequestedOff == RequestedOff
+                && other.Received == Received
+                && other.PieceIndex == PieceIndex
+                && other.StartOffset == StartOffset
+                && other.RequestLength == RequestLength;
+        }
+
+        public override int GetHashCode ()
+            => PieceIndex;
+
+        public static bool operator == (ActivePieceRequest left, ActivePieceRequest right)
+            => left is null ? right is null : left.Equals (right);
+
+        public static bool operator != (ActivePieceRequest left, ActivePieceRequest right)
             => !(left == right);
     }
 }

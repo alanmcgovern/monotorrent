@@ -42,14 +42,14 @@ namespace MonoTorrent.Client.PiecePicking
         List<Piece> Pieces { get; }
 
         // These are all the requests for the individual blocks
-        internal List<PieceRequest> Requests { get; }
+        internal List<ActivePieceRequest> Requests { get; }
 
         ITorrentData TorrentData { get; set; }
 
         public EndGamePicker ()
         {
             Pieces = new List<Piece> ();
-            Requests = new List<PieceRequest> ();
+            Requests = new List<ActivePieceRequest> ();
         }
 
         public int AbortRequests (IPieceRequester peer)
@@ -58,10 +58,10 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         // Cancels a pending request when the predicate returns 'true'
-        void CancelWhere (Predicate<PieceRequest> predicate, bool sendCancel)
+        void CancelWhere (Predicate<ActivePieceRequest> predicate, bool sendCancel)
         {
             for (int i = 0; i < Requests.Count; i++) {
-                PieceRequest r = Requests[i];
+                ActivePieceRequest r = Requests[i];
                 if (predicate (r)) {
                     r.RequestedOff.AmRequestingPiecesCount--;
                     if (sendCancel)
@@ -90,12 +90,12 @@ namespace MonoTorrent.Client.PiecePicking
             return Requests.Count;
         }
 
-        public IList<PieceRequest> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
         {
-            return new List<PieceRequest> (Requests);
+            return new List<ActivePieceRequest> (Requests);
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             Requests.Clear ();
             Pieces.Clear ();
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client.PiecePicking
                     if (p.Blocks[i].Requested)
                         continue;
                     PieceRequest requestMessage = p.Blocks[i].CreateRequest (peer);
-                    Requests.Add (requestMessage);
+                    Requests.Add (new ActivePieceRequest (requestMessage, peer));
                     return new[] { requestMessage };
                 }
             }
@@ -159,7 +159,7 @@ namespace MonoTorrent.Client.PiecePicking
                         }
                     }
                     PieceRequest requestMessage = p.Blocks[i].CreateRequest (peer);
-                    Requests.Add (requestMessage);
+                    Requests.Add (new ActivePieceRequest (requestMessage, peer));
                     return new[] { requestMessage };
                 }
             }
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public void RequestRejected (PieceRequest request)
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
         {
             throw new NotImplementedException ();
         }
@@ -201,7 +201,7 @@ namespace MonoTorrent.Client.PiecePicking
             var existingRequests = Requests.Where (r => r.RequestedOff == peer && r.PieceIndex >= startIndex && r.PieceIndex <= endIndex && !r.Received).ToArray ();
             Requests.RemoveAll (r => existingRequests.Contains (r));
             peer.AmRequestingPiecesCount -= existingRequests.Length;
-            return existingRequests;
+            return existingRequests.Select (p => new PieceRequest (p.PieceIndex, p.StartOffset, p.RequestLength)).ToArray ();
         }
 
         public void Tick ()

@@ -62,10 +62,10 @@ namespace MonoTorrent.Client.PiecePicking
         public int CurrentRequestCount ()
             => NextPicker.CurrentRequestCount ();
 
-        public IList<PieceRequest> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
             => NextPicker.ExportActiveRequests ();
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
             => NextPicker.Initialise (bitfield, torrentData, requests);
 
         public bool IsInteresting (BitField bitfield)
@@ -88,8 +88,8 @@ namespace MonoTorrent.Client.PiecePicking
             return NextPicker.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
         }
 
-        public void RequestRejected (PieceRequest rejectedRequest)
-            => NextPicker.RequestRejected (rejectedRequest);
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            => NextPicker.RequestRejected (peer, rejectedRequest);
 
         public void Tick ()
             => NextPicker.Tick ();

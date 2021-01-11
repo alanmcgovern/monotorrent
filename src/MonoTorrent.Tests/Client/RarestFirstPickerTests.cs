@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             checker = new TestPicker ();
             picker = new RarestFirstPicker (checker);
-            picker.Initialise (bitfield, torrentData, new List<PieceRequest> ());
+            picker.Initialise (bitfield, torrentData, new List<ActivePieceRequest> ());
 
             peer = PeerId.CreateNull (pieces);
             peer.BitField.SetAll (true);

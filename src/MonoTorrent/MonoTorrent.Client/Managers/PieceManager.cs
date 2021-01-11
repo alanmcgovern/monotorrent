@@ -166,13 +166,13 @@ namespace MonoTorrent.Client
         internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
         {
             ChangePicker (originalPicker, bitfield);
-            Picker.Initialise (bitfield, data, Enumerable.Empty<PieceRequest> ());
+            Picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         internal void Reset ()
         {
             PendingHashCheckPieces.SetAll (false);
-            Picker?.Initialise (Manager.Bitfield, Manager, Array.Empty<PieceRequest> ());
+            Picker?.Initialise (Manager.Bitfield, Manager, Array.Empty<ActivePieceRequest> ());
         }
 
         public async Task<int> CurrentRequestCountAsync ()

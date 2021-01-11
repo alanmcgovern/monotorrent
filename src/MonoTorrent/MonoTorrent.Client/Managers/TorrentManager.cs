@@ -99,7 +99,6 @@ namespace MonoTorrent.Client
 
         bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
-        internal bool isInEndGame;       // Set true when the torrent enters end game processing
         Mode mode;
         readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
@@ -167,7 +166,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
         /// </summary>
-        public bool IsInEndGame => State == TorrentState.Downloading && isInEndGame;
+        public bool IsInEndGame => State == TorrentState.Downloading && switcher != null && switcher.InEndgame;
 
         public ConnectionMonitor Monitor { get; private set; }
 
@@ -407,7 +406,7 @@ namespace MonoTorrent.Client
         internal void ChangePicker (IPiecePicker picker)
         {
             Check.Picker (picker);
-            var pieces = PieceManager.Picker?.ExportActiveRequests () ?? Array.Empty<PieceRequest> ();
+            var pieces = PieceManager.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
             PieceManager.ChangePicker (picker, Bitfield);
             if (Torrent != null)
                 PieceManager.Picker.Initialise (Bitfield, this, pieces);
@@ -861,6 +860,7 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
+        EndGameSwitcher switcher;
         internal IPiecePicker CreateStandardPicker ()
         {
             IPiecePicker picker = new StandardPicker ();
@@ -868,7 +868,7 @@ namespace MonoTorrent.Client
             picker = new RarestFirstPicker (picker);
 
             if (ClientEngine.SupportsEndgameMode)
-                picker = new EndGameSwitcher (picker, new EndGamePicker (), this);
+                picker = switcher = new EndGameSwitcher (picker, new EndGamePicker ());
 
             picker = new PriorityPicker (picker);
             return picker;

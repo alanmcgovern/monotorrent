@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.PiecePicking
                         blocks[i].CancelRequest ();
                         requests[p].Abandoned = true;
                         cancelled ??= new List<PieceRequest> ();
-                        cancelled.Add (new PieceRequest (piece.Index, blocks[i].StartOffset, blocks[i].RequestLength, peer));
+                        cancelled.Add (new PieceRequest (piece.Index, blocks[i].StartOffset, blocks[i].RequestLength));
                     }
                 }
             }
@@ -76,12 +76,12 @@ namespace MonoTorrent.Client.PiecePicking
             return cancelled ?? Array.Empty<PieceRequest> ();
         }
 
-        public void RequestRejected (PieceRequest request)
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
         {
-            CancelWhere (b => b.StartOffset == request.StartOffset &&
-                              b.RequestLength == request.RequestLength &&
-                              b.PieceIndex == request.PieceIndex &&
-                              b.RequestedOff == request.RequestedOff);
+            CancelWhere (b => b.StartOffset == rejectedRequest.StartOffset &&
+                              b.RequestLength == rejectedRequest.RequestLength &&
+                              b.PieceIndex == rejectedRequest.PieceIndex &&
+                              b.RequestedOff == peer);
         }
 
         int CancelWhere (Predicate<Block> predicate)
@@ -119,20 +119,20 @@ namespace MonoTorrent.Client.PiecePicking
             return count;
         }
 
-        public IList<PieceRequest> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
         {
-            var list = new List<PieceRequest> ();
+            var list = new List<ActivePieceRequest> ();
             foreach(var piece in requests) {
                 foreach (var block in piece.Blocks) {
                     if (block.Requested)
-                        list.Add (new PieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.Received, block.RequestedOff));
+                        list.Add (new ActivePieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.Received, block.RequestedOff));
                     // FIXME: Include 'RequestedOff'
                 }
             }
             return list;
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             TorrentData = torrentData;
             this.requests.Clear ();

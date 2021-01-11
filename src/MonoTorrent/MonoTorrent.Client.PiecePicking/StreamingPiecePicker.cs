@@ -68,10 +68,10 @@ namespace MonoTorrent.Client.PiecePicking
             LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (picker)));
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             TorrentData = torrentData;
-            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
+            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
             HighPriorityPicker.Initialise (bitfield, torrentData, requests);
         }
 
@@ -143,11 +143,11 @@ namespace MonoTorrent.Client.PiecePicking
         public int CurrentRequestCount ()
             => HighPriorityPicker.CurrentRequestCount ();
 
-        public IList<PieceRequest> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
             => HighPriorityPicker.ExportActiveRequests ();
 
-        public void RequestRejected (PieceRequest rejectedRequest)
-            =>  HighPriorityPicker.RequestRejected (rejectedRequest);
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+            =>  HighPriorityPicker.RequestRejected (peer, rejectedRequest);
 
         public void Tick ()
             => HighPriorityPicker.Tick ();

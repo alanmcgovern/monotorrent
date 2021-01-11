@@ -112,10 +112,11 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void CancelTest ()
         {
-            var requests = new List<PieceRequest> ();
+            var requests = new List<ActivePieceRequest> ();
             foreach (Piece p in pieces) {
                 for (int i = 0; i < p.BlockCount; i++) {
-                    requests.Add (p.Blocks[i].CreateRequest (i % 2 == 0 ? id : other));
+                    var peer = i % 2 == 0 ? id : other;
+                    requests.Add (new ActivePieceRequest (p.Blocks[i].CreateRequest (peer), peer));
                 }
             }
 
@@ -143,9 +144,9 @@ namespace MonoTorrent.Client.PiecePicking
             id.BitField.Set (pieces[0].Index, true);
             other.BitField.Set (pieces[0].Index, true);
 
-            var requests = new List<PieceRequest> ();
+            var requests = new List<ActivePieceRequest> ();
             for (int i = 2; i < pieces[0].BlockCount; i++)
-                requests.Add (new PieceRequest (pieces[0].Index, i * Piece.BlockSize, Piece.BlockSize, true, PeerId.CreateNull (torrentData.PieceCount)));
+                requests.Add (new ActivePieceRequest (pieces[0].Index, i * Piece.BlockSize, Piece.BlockSize, true, PeerId.CreateNull (torrentData.PieceCount)));
 
             picker.Initialise (bitfield, torrentData, requests);
 
@@ -201,9 +202,10 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void ReceivedPiecesAreNotRequested ()
         {
-            var requests = new List<PieceRequest> ();
+            var requests = new List<ActivePieceRequest> ();
             for (int i = 2; i < pieces[0].BlockCount; i++) {
-                requests.Add (pieces[0].Blocks[i].CreateRequest (PeerId.CreateNull (torrentData.PieceCount)));
+                var peer = PeerId.CreateNull (torrentData.PieceCount);
+                requests.Add (new ActivePieceRequest(pieces[0].Blocks[i].CreateRequest (peer), peer));
                 pieces[0].Blocks[i].Received = true;
             }
 

@@ -64,12 +64,12 @@ namespace MonoTorrent.Client.PiecePicking
             return 0;
         }
 
-        public IList<PieceRequest> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
         {
-            return Array.Empty<PieceRequest> ();
+            return Array.Empty<ActivePieceRequest> ();
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
         }
 
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
             return Array.Empty<PieceRequest> ();
         }
 
-        public void RequestRejected (PieceRequest rejectedRequest)
+        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
         {
         }
 

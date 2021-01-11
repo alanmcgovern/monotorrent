@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public static void Initialise (this IPiecePicker picker, BitField bitfield, ITorrentData torrentData)
         {
-            picker.Initialise (bitfield, torrentData, Enumerable.Empty<PieceRequest> ());
+            picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         public static PieceRequest PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available)
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="bitfield"></param>
         /// <param name="torrentData"></param>
         /// <param name="requests"></param>
-        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests);
+        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
 
         bool IsInteresting (BitField bitfield);
 
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// Returns a list of all
         /// </summary>
         /// <returns></returns>
-        IList<PieceRequest> ExportActiveRequests ();
+        IList<ActivePieceRequest> ExportActiveRequests ();
 
         /// <summary>
         /// Reset all internal state. Called after <see cref="TorrentManager.StartAsync()"/> or <see cref="TorrentManager.StopAsync()"/> is invoked.
@@ -141,14 +141,14 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="bitfield"></param>
         /// <param name="torrentData"></param>
         /// <param name="requests"></param>
-        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<PieceRequest> requests);
+        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
 
         /// <summary>
         /// Called when a <see cref="RejectRequestMessage"/> is received from the <paramref name="peer"/> to indicate
         /// the <see cref="PieceRequest"/> will not be fulfilled.
         /// </summary>
         /// <param name="rejectedRequest"></param>
-        void RequestRejected (PieceRequest rejectedRequest);
+        void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest);
 
         /// <summary>
         /// Called periodically to allow time based piece expiration/requesting to be implemented

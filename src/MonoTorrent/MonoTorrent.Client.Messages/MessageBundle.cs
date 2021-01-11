@@ -55,10 +55,10 @@ namespace MonoTorrent.Client.Messages
             Messages.Add (message);
         }
 
-        internal MessageBundle (IList<PieceRequest> requests)
+        internal MessageBundle (IList<ActivePieceRequest> requests)
             : this ()
         {
-            foreach (PieceRequest m in requests)
+            foreach (ActivePieceRequest m in requests)
                 Messages.Add (new RequestMessage (m.PieceIndex, m.StartOffset, m.RequestLength));
         }
 
