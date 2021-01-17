@@ -66,7 +66,7 @@ namespace MonoTorrent.Client.PiecePicking
         }
     }
 
-    class PiecePickerFilter : IPiecePicker
+    public abstract class PiecePickerFilter : IPiecePicker
     {
         IPiecePicker Next { get; }
 
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PiecePicking
             => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex);
 
         public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
-            => ContinueExistingRequest (peer, startIndex, endIndex);
+            => Next.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
             => Next.CurrentReceivedCount ();
@@ -94,13 +94,13 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<ActivePieceRequest> ExportActiveRequests ()
             => Next.ExportActiveRequests ();
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+        public virtual void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
             => Next.Initialise (bitfield, torrentData, requests);
 
-        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
+        public virtual bool IsInteresting (IPieceRequester peer, BitField bitfield)
             => Next.IsInteresting (peer, bitfield);
 
-        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public virtual IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
             => Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
         public void RequestRejected (IPieceRequester peer, PieceRequest request)
