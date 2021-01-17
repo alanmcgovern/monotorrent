@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public sealed class PieceRequest
+    public readonly struct PieceRequest
     {
         public int PieceIndex { get; }
         public int StartOffset { get; }
@@ -41,12 +41,11 @@ namespace MonoTorrent.Client.PiecePicking
             => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
         public override bool Equals (object obj)
-            => Equals (obj as PieceRequest);
+            => obj is PieceRequest req && Equals (req);
 
         public bool Equals (PieceRequest other)
         {
-            return !(other is null)
-                && other.PieceIndex == PieceIndex
+            return other.PieceIndex == PieceIndex
                 && other.StartOffset == StartOffset
                 && other.RequestLength == RequestLength;
         }
@@ -55,10 +54,10 @@ namespace MonoTorrent.Client.PiecePicking
             => PieceIndex;
 
         public static bool operator == (PieceRequest left, PieceRequest right)
-            => left is null ? right is null : left.Equals (right);
+            => left.Equals (right);
 
         public static bool operator != (PieceRequest left, PieceRequest right)
-            => !(left == right);
+            => !left.Equals (right);
     }
 
     public sealed class ActivePieceRequest : IEquatable<ActivePieceRequest>

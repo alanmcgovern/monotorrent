@@ -65,15 +65,15 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
             => ActivePicker.CancelRequests (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
-            var bundle = ActivePicker.ContinueAnyExisting (peer, startIndex, endIndex);
+            var bundle = ActivePicker.ContinueAnyExistingRequest (peer, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame ())
-                return ActivePicker.ContinueAnyExisting (peer, startIndex, endIndex);
+                return ActivePicker.ContinueAnyExistingRequest (peer, startIndex, endIndex);
             return bundle;
         }
 
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
             => ActivePicker.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -100,8 +100,8 @@ namespace MonoTorrent.Client.PiecePicking
             endgame.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
         }
 
-        public bool IsInteresting (BitField bitfield)
-            => ActivePicker.IsInteresting (bitfield);
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
+            => ActivePicker.IsInteresting (peer, bitfield);
 
         public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
             => ActivePicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
@@ -109,8 +109,8 @@ namespace MonoTorrent.Client.PiecePicking
         public void Tick ()
             => ActivePicker.Tick ();
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
-            => ActivePicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => ActivePicker.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
 
         bool TryEnableEndgame ()
         {

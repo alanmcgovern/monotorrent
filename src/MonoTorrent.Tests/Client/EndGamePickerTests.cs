@@ -95,18 +95,18 @@ namespace MonoTorrent.Client.PiecePicking
 
             var otherRequest = picker.PickPiece (other, other.BitField, new List<PeerId> ());
 
-            PieceRequest message;
+            PieceRequest? message;
             bool pieceComplete = false;
             while (!pieceComplete && (message = picker.PickPiece (id, id.BitField, new List<PeerId> ())) != null) {
-                Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out pieceComplete, out _));
+                Assert.IsTrue (picker.ValidatePiece (id, message.Value, out pieceComplete, out _));
             }
 
             Assert.AreEqual (0, id.AmRequestingPiecesCount, "#requesting");
-            Assert.IsFalse (picker.ValidatePiece (other, otherRequest.PieceIndex, otherRequest.StartOffset, otherRequest.RequestLength, out pieceComplete, out _), "#1");
+            Assert.IsFalse (picker.ValidatePiece (other, otherRequest.Value, out pieceComplete, out _), "#1");
             Assert.IsFalse (pieceComplete, "#2");
 
             message = picker.PickPiece (other, other.BitField, new List<PeerId> ());
-            Assert.AreEqual (0, message.PieceIndex, "#3");
+            Assert.AreEqual (0, message.Value.PieceIndex, "#3");
         }
 
         [Test]
@@ -158,22 +158,22 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.AreEqual (2, other.AmRequestingPiecesCount, "#1");
 
             bool pieceComplete;
-            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out pieceComplete, out _))
+            if (!picker.ValidatePiece (id, new PieceRequest (pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength), out pieceComplete, out _))
                 Assert.Fail ("I should've validated!");
             Assert.IsFalse (pieceComplete, "#5");
 
-            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out pieceComplete, out _))
+            if (picker.ValidatePiece (other, new PieceRequest (pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength), out pieceComplete, out _))
                 Assert.Fail ("I should not have validated!");
             Assert.IsFalse (pieceComplete, "#6");
 
             Assert.AreEqual (1, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual (1, other.AmRequestingPiecesCount, "#1");
 
-            if (!picker.ValidatePiece (id, pieces[0].Index, pieces[0][1].StartOffset, pieces[0][1].RequestLength, out pieceComplete, out _))
+            if (!picker.ValidatePiece (id, new PieceRequest (pieces[0].Index, pieces[0][1].StartOffset, pieces[0][1].RequestLength), out pieceComplete, out _))
                 Assert.Fail ("I should've validated!");
             Assert.IsTrue (pieceComplete, "#7");
 
-            if (picker.ValidatePiece (other, pieces[0].Index, pieces[0][1].StartOffset, pieces[0][1].RequestLength, out pieceComplete, out _))
+            if (picker.ValidatePiece (other, new PieceRequest (pieces[0].Index, pieces[0][1].StartOffset, pieces[0][1].RequestLength), out pieceComplete, out _))
                 Assert.Fail ("I should not have validated!");
             Assert.IsFalse (pieceComplete, "#8");
 
@@ -184,17 +184,17 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void HashFail ()
         {
-            PieceRequest m;
+            PieceRequest? m;
             List<PieceRequest> requests = new List<PieceRequest> ();
 
             id.BitField[0] = true;
             picker.Initialise (bitfield, torrentData);
 
             while ((m = picker.PickPiece (id, id.BitField)) != null)
-                requests.Add (m);
+                requests.Add (m.Value);
 
             foreach (var message in requests)
-                Assert.IsTrue (picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out _, out _));
+                Assert.IsTrue (picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out _, out _));
 
             Assert.IsNotNull (picker.PickPiece (id, id.BitField));
         }

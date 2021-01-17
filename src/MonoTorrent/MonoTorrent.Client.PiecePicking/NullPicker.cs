@@ -44,12 +44,12 @@ namespace MonoTorrent.Client.PiecePicking
             return Array.Empty<PieceRequest> ();
         }
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }
 
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
         {
             return false;
         }
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         }
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
             pieceComplete = false;
             peersInvolved = null;

@@ -92,17 +92,17 @@ namespace MonoTorrent.Client.PiecePicking
             peers[0].IsChoking = false;
             bitfield.SetAll (true).SetFalse (1);
 
-            PieceRequest p;
+            PieceRequest? p;
             var requests = new List<PieceRequest> ();
             var completedPieces = bitfield.Clone ();
             while ((p = manager.Picker.PickPiece (peers[0], peers[0].BitField, peers)) != null) {
-                manager.PieceDataReceived (peers[0], new PieceMessage (p.PieceIndex, p.StartOffset, p.RequestLength), out bool pieceComplete, out IList<IPieceRequester> peersInvolved);
-                if (requests.Any (t => t.PieceIndex == p.PieceIndex && t.RequestLength == p.RequestLength && t.StartOffset == p.StartOffset))
+                manager.PieceDataReceived (peers[0], new PieceMessage (p.Value.PieceIndex, p.Value.StartOffset, p.Value.RequestLength), out bool pieceComplete, out IList<IPieceRequester> peersInvolved);
+                if (requests.Any (t => t.PieceIndex == p.Value.PieceIndex && t.RequestLength == p.Value.RequestLength && t.StartOffset == p.Value.StartOffset))
                     Assert.Fail ("We should not pick the same piece twice");
-                requests.Add (p);
-                if (completedPieces[p.PieceIndex] && pieceComplete)
-                    Assert.Fail ("This piece was already marked as complete: " + p.PieceIndex);
-                completedPieces[p.PieceIndex] |= pieceComplete;
+                requests.Add (p.Value);
+                if (completedPieces[p.Value.PieceIndex] && pieceComplete)
+                    Assert.Fail ("This piece was already marked as complete: " + p.Value.PieceIndex);
+                completedPieces[p.Value.PieceIndex] |= pieceComplete;
             }
             Assert.IsNull (manager.Picker.PickPiece (peers[0], peers[0].BitField, peers, 1, 0, bitfield.Length - 1), "#1");
             Assert.IsTrue (completedPieces.AllTrue, "#2");

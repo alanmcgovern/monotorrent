@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
-            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out pieceComplete, out peersInvolved)) {
+            if (Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
@@ -97,9 +97,9 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking || id.SupportsFastPeer) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueExistingRequest (id, 0, id.BitField.Length - 1);
+                    PieceRequest? request = Picker.ContinueExistingRequest (id, 0, id.BitField.Length - 1);
                     if (request != null)
-                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+                        id.MessageQueue.Enqueue (new RequestMessage (request.Value.PieceIndex, request.Value.StartOffset, request.Value.RequestLength));
                     else
                         break;
                 }
@@ -118,9 +118,9 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking && id.AmRequestingPiecesCount == 0) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueAnyExisting (id, 0, Manager.Bitfield.Length - 1);
+                    PieceRequest? request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1);
                     if (request != null)
-                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+                        id.MessageQueue.Enqueue (new RequestMessage (request.Value.PieceIndex, request.Value.StartOffset, request.Value.RequestLength));
                     else
                         break;
                 }
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
                 return true;
 
             // Otherwise we need to do a full check
-            return Picker.IsInteresting (id.BitField);
+            return Picker.IsInteresting (id, id.BitField);
         }
 
         internal void ChangePicker (IPiecePicker picker, BitField bitfield)

@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.PiecePicking
             CancelledRequestsFrom.Add (peer);
         }
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             HasContinuedAnyExisting = true;
             return null;
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         }
 
-        public bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
         {
             IsInterestingBitfield.Add (bitfield);
             return !bitfield.AllFalse;
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.PiecePicking
             throw new NotImplementedException ();
         }
 
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             throw new NotImplementedException ();
         }
@@ -145,7 +145,7 @@ namespace MonoTorrent.Client.PiecePicking
             // no-op
         }
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
             throw new NotImplementedException ();
         }

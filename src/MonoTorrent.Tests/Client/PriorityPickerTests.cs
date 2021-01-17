@@ -129,7 +129,7 @@ namespace MonoTorrent.Client.PiecePicking
             picker.PickPiece (multiPeer, multiBitfield, peers, 1, 0, multiBitfield.Length - 1);
             Assert.AreEqual (1, tester.PickPieceBitfield.Count, "#1");
             Assert.IsTrue (tester.PickPieceBitfield[0].AllTrue, "#2");
-            Assert.IsTrue (picker.IsInteresting (multiBitfield), "#3");
+            Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#3");
         }
 
         [Test]
@@ -153,15 +153,15 @@ namespace MonoTorrent.Client.PiecePicking
             multiFile.SetAll (Priority.DoNotDownload);
             picker.Initialise (multiBitfield, multiFile, Enumerable.Empty<ActivePieceRequest> ());
 
-            Assert.IsFalse (picker.IsInteresting (multiBitfield), "#0");
+            Assert.IsFalse (picker.IsInteresting (multiPeer, multiBitfield), "#0");
             multiFile.Files[4].Priority = Priority.Lowest;
-            Assert.IsTrue (picker.IsInteresting (multiBitfield), "#1");
+            Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#1");
 
             multiFile.Files[4].Priority = Priority.DoNotDownload;
-            Assert.IsFalse (picker.IsInteresting (multiBitfield), "#2");
+            Assert.IsFalse (picker.IsInteresting (multiPeer, multiBitfield), "#2");
 
             multiFile.Files[4].Priority = Priority.High;
-            Assert.IsTrue (picker.IsInteresting (multiBitfield), "#2");
+            Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#2");
         }
 
         [Test]
@@ -172,12 +172,12 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.PickPiece (multiPeer, multiBitfield, peers, 1, 0, multiBitfield.Length - 1);
             Assert.AreEqual (0, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsFalse (picker.IsInteresting (multiBitfield), "#2");
+            Assert.IsFalse (picker.IsInteresting (multiPeer, multiBitfield), "#2");
 
             multiFile.SetAll (Priority.Immediate);
             picker.PickPiece (multiPeer, multiBitfield, peers, 1, 0, multiBitfield.Length - 1);
             Assert.AreEqual (1, tester.PickPieceBitfield.Count, "#3");
-            Assert.IsTrue (picker.IsInteresting (multiBitfield), "#4");
+            Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#4");
         }
 
         [Test]
@@ -200,14 +200,14 @@ namespace MonoTorrent.Client.PiecePicking
             // Make sure every downloadable file is available
             var bf = new BitField (multiBitfield.Length);
             foreach (var file in multiFile.Files.Where (t => t.Priority != Priority.DoNotDownload)) {
-                Assert.IsTrue (picker.IsInteresting (bf.SetAll (false).Set (file.StartPieceIndex, true)), "#2");
-                Assert.IsTrue (picker.IsInteresting (bf.SetAll (false).Set (file.EndPieceIndex, true)), "#3");
+                Assert.IsTrue (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (file.StartPieceIndex, true)), "#2");
+                Assert.IsTrue (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (file.EndPieceIndex, true)), "#3");
             }
 
             // Make sure the not downloadable file is not available and
             // that everything was selected in priority order.
-            Assert.IsFalse (picker.IsInteresting (bf.SetAll (false).Set (multiFile.Files[1].StartPieceIndex + 1, true)), "#4");
-            Assert.IsFalse (picker.IsInteresting (bf.SetAll (false).Set (multiFile.Files[1].EndPieceIndex - 1, true)), "#5");
+            Assert.IsFalse (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (multiFile.Files[1].StartPieceIndex + 1, true)), "#4");
+            Assert.IsFalse (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (multiFile.Files[1].EndPieceIndex - 1, true)), "#5");
 
             bf = new BitField (multiBitfield.Length).SetTrue (multiFile.Files[2].GetSelector ());
             Assert.AreEqual (bf, tester.PickPieceBitfield[0], "#6");
@@ -236,12 +236,12 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.PickPiece (multiPeer, multiBitfield, peers, 1, 0, multiBitfield.Length - 1);
             Assert.AreEqual (0, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsFalse (picker.IsInteresting (multiBitfield), "#2");
+            Assert.IsFalse (picker.IsInteresting (multiPeer, multiBitfield), "#2");
 
             multiBitfield.SetAll (true);
             picker.PickPiece (multiPeer, multiBitfield, peers, 1, 0, multiBitfield.Length - 1);
             Assert.AreEqual (1, tester.PickPieceBitfield.Count, "#3");
-            Assert.IsTrue (picker.IsInteresting (multiBitfield), "#4");
+            Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#4");
         }
 
         [Test]
@@ -252,7 +252,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.PickPiece (multiPeer, multiBitfield, new List<PeerId> (), 1, 0, multiBitfield.Length - 1);
             Assert.AreEqual (2, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsTrue (picker.IsInteresting (multiBitfield), "#2");
+            Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#2");
             Assert.AreEqual (new BitField (multiBitfield.Length).SetTrue (multiFile.Files[1].GetSelector ()), tester.PickPieceBitfield[0], "#3");
 
             var bf = new BitField (multiBitfield.Length);
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client.PiecePicking
             picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length -1 );
             Assert.AreEqual (1, tester.PickPieceBitfield.Count, "#1");
             Assert.IsTrue (tester.PickPieceBitfield[0].AllTrue, "#2");
-            Assert.IsTrue (picker.IsInteresting (singleBitfield), "#2");
+            Assert.IsTrue (picker.IsInteresting (singlePeer, singleBitfield), "#2");
         }
 
         [Test]
@@ -293,15 +293,15 @@ namespace MonoTorrent.Client.PiecePicking
         {
             picker.Initialise (singleBitfield, singleFile, Enumerable.Empty<ActivePieceRequest> ());
 
-            Assert.IsTrue (picker.IsInteresting (singleBitfield), "#0");
+            Assert.IsTrue (picker.IsInteresting (singlePeer, singleBitfield), "#0");
             singleFile.Files[0].Priority = Priority.Lowest;
-            Assert.IsTrue (picker.IsInteresting (singleBitfield), "#1");
+            Assert.IsTrue (picker.IsInteresting (singlePeer, singleBitfield), "#1");
 
             singleFile.Files[0].Priority = Priority.DoNotDownload;
-            Assert.IsFalse (picker.IsInteresting (singleBitfield), "#2");
+            Assert.IsFalse (picker.IsInteresting (singlePeer, singleBitfield), "#2");
 
             singleFile.Files[0].Priority = Priority.High;
-            Assert.IsTrue (picker.IsInteresting (singleBitfield), "#2");
+            Assert.IsTrue (picker.IsInteresting (singlePeer, singleBitfield), "#2");
         }
 
         [Test]
@@ -312,7 +312,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length - 1);
             Assert.AreEqual (0, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsFalse (picker.IsInteresting (singleBitfield), "#2");
+            Assert.IsFalse (picker.IsInteresting (singlePeer, singleBitfield), "#2");
         }
 
         [Test]
@@ -323,12 +323,12 @@ namespace MonoTorrent.Client.PiecePicking
             singleFile.Files[0].Priority = Priority.High;
             picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length - 1);
             Assert.AreEqual (1, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsTrue (picker.IsInteresting (singleBitfield), "#2");
+            Assert.IsTrue (picker.IsInteresting (singlePeer, singleBitfield), "#2");
 
             singleFile.Files[0].Priority = Priority.DoNotDownload;
             picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length - 1);
             Assert.AreEqual (1, tester.PickPieceBitfield.Count, "#3");
-            Assert.IsFalse (picker.IsInteresting (singleBitfield), "#4");
+            Assert.IsFalse (picker.IsInteresting (singlePeer, singleBitfield), "#4");
         }
 
 
@@ -341,7 +341,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length - 1);
             Assert.AreEqual (0, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsFalse (picker.IsInteresting (singleBitfield), "#2");
+            Assert.IsFalse (picker.IsInteresting (singlePeer, singleBitfield), "#2");
         }
     }
 }

@@ -93,18 +93,18 @@ namespace MonoTorrent.Client.PiecePicking
             };
 
             foreach (var peer in seeders) {
-                Assert.IsNotNull (Switcher.PickPiece (peer, onePieceLeft, Array.Empty<IPieceRequester> ()) ?? Switcher.ContinueAnyExisting (peer, 0, SmallTorrent.Bitfield.Length - 1), "#1");
+                Assert.IsNotNull (Switcher.PickPiece (peer, onePieceLeft, Array.Empty<IPieceRequester> ()) ?? Switcher.ContinueAnyExistingRequest (peer, 0, SmallTorrent.Bitfield.Length - 1), "#1");
                 Assert.AreEqual (1, peer.AmRequestingPiecesCount, "#2");
                 Assert.AreSame (Standard, Switcher.ActivePicker, "#3");
             }
 
             // Trigger endgame mode, but don't pick a piece.
             Assert.IsInstanceOf<StandardPicker> (Switcher.ActivePicker);
-            Assert.IsNull (Switcher.ContinueAnyExisting (LargeTorrent.Seeder, 0, SmallTorrent.Bitfield.Length - 1));
+            Assert.IsNull (Switcher.ContinueAnyExistingRequest (LargeTorrent.Seeder, 0, SmallTorrent.Bitfield.Length - 1));
             Assert.IsInstanceOf<EndGamePicker> (Switcher.ActivePicker);
 
             // The next request *should* get a valid request.
-            Assert.IsNotNull (Switcher.PickPiece (SmallTorrent.Seeder, onePieceLeft, Array.Empty<IPieceRequester> ()) ?? Switcher.ContinueAnyExisting (SmallTorrent.Seeder, 0, SmallTorrent.Bitfield.Length - 1), "#4");
+            Assert.IsNotNull (Switcher.PickPiece (SmallTorrent.Seeder, onePieceLeft, Array.Empty<IPieceRequester> ()) ?? Switcher.ContinueAnyExistingRequest (SmallTorrent.Seeder, 0, SmallTorrent.Bitfield.Length - 1), "#4");
             Assert.AreSame (Endgame, Switcher.ActivePicker, "#5");
         }
 
@@ -124,14 +124,14 @@ namespace MonoTorrent.Client.PiecePicking
 
             // 256 blocks per piece, request 1 block per peer.
             foreach (var peer in seeders) {
-                Assert.IsNotNull (Switcher.PickPiece (peer, onePieceLeft, Array.Empty<IPieceRequester> ()) ?? Switcher.ContinueAnyExisting (peer, 0, LargeTorrent.Bitfield.Length - 1), "#1");
+                Assert.IsNotNull (Switcher.PickPiece (peer, onePieceLeft, Array.Empty<IPieceRequester> ()) ?? Switcher.ContinueAnyExistingRequest (peer, 0, LargeTorrent.Bitfield.Length - 1), "#1");
                 Assert.AreEqual (1, peer.AmRequestingPiecesCount, "#2");
                 Assert.AreSame (Standard, Switcher.ActivePicker, "#3");
             }
 
             // Trigger endgame mode, but don't pick a piece.
             Assert.IsInstanceOf<StandardPicker> (Switcher.ActivePicker);
-            Assert.IsNull (Switcher.ContinueAnyExisting (LargeTorrent.Seeder, 0, LargeTorrent.Bitfield.Length - 1));
+            Assert.IsNull (Switcher.ContinueAnyExistingRequest (LargeTorrent.Seeder, 0, LargeTorrent.Bitfield.Length - 1));
             Assert.IsInstanceOf<EndGamePicker> (Switcher.ActivePicker);
 
             // The next request *should* get a valid request.

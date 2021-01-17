@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     ///
     /// </summary>
-    public struct Block
+    struct Block
     {
         readonly Piece piece;
         bool received;

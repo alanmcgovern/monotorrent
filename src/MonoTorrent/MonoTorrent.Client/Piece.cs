@@ -33,7 +33,7 @@ using System.Diagnostics;
 namespace MonoTorrent.Client
 {
     [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
-    internal class Piece : IComparable<Piece>
+    class Piece : IComparable<Piece>
     {
         internal const int BlockSize = (1 << 14); // 16kB
 

@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.PiecePicking
             BuildSelectors ();
         }
 
-        public bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
         {
             if (ShouldRebuildSelectors ())
                 BuildSelectors ();
@@ -95,12 +95,12 @@ namespace MonoTorrent.Client.PiecePicking
             if (files.Count == 1 || files.TrueForAll (AllSamePriority)) {
                 if (files[0].Priority == Priority.DoNotDownload)
                     return false;
-                return NextPicker.IsInteresting (bitfield);
+                return NextPicker.IsInteresting (peer, bitfield);
             } else {
                 temp.From (allPrioritisedPieces).And (bitfield);
                 if (temp.AllFalse)
                     return false;
-                return NextPicker.IsInteresting (temp);
+                return NextPicker.IsInteresting (peer, temp);
             }
         }
 
@@ -188,10 +188,10 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
             => NextPicker.CancelRequests (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
-            => NextPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueAnyExistingRequest (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
             => NextPicker.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -211,7 +211,7 @@ namespace MonoTorrent.Client.PiecePicking
             // no-op
         }
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
-            => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => NextPicker.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
 }

@@ -71,11 +71,11 @@ namespace MonoTorrent.Client.PiecePicking
             Requests.RemoveAll (predicate);
         }
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
         {
             return null;
         }
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.PiecePicking
             TorrentData = torrentData;
         }
 
-        public bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
         {
             return !bitfield.AllFalse;
         }
@@ -209,11 +209,11 @@ namespace MonoTorrent.Client.PiecePicking
             // no-op
         }
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
             pieceComplete = false;
             peersInvolved = null;
-            var r = Requests.SingleOrDefault (t => t.PieceIndex == pieceIndex && t.StartOffset == startOffset && t.RequestLength == length && t.RequestedOff == peer);
+            var r = Requests.SingleOrDefault (t => t.PieceIndex == request.PieceIndex && t.StartOffset == request.StartOffset && t.RequestLength == request.RequestLength && t.RequestedOff == peer);
             if (r == null) {
                 return false;
             }
@@ -223,13 +223,13 @@ namespace MonoTorrent.Client.PiecePicking
                 return false;
 
             // All the other requests for this block need to be cancelled.
-            CancelWhere (req => req.PieceIndex == pieceIndex &&
-                                req.StartOffset == startOffset &&
-                                req.RequestLength == length &&
+            CancelWhere (req => req.PieceIndex == request.PieceIndex &&
+                                req.StartOffset == request.StartOffset &&
+                                req.RequestLength == request.RequestLength &&
                                 req.RequestedOff != peer, true);
 
             // Mark the block as received
-            piece.Blocks[startOffset / Piece.BlockSize].Received = true;
+            piece.Blocks[request.StartOffset / Piece.BlockSize].Received = true;
 
             Requests.Remove (r);
             peer.AmRequestingPiecesCount--;
@@ -239,7 +239,7 @@ namespace MonoTorrent.Client.PiecePicking
             // we download it again.
             if (piece.AllBlocksReceived) {
                 Pieces.Remove (piece);
-                CancelWhere (r => r.PieceIndex == pieceIndex, false);
+                CancelWhere (r => r.PieceIndex == request.PieceIndex, false);
                 pieceComplete = true;
                 peersInvolved = piece.Blocks.Select (p => p.RequestedOff).Where (t => t != null).ToArray ();
             }

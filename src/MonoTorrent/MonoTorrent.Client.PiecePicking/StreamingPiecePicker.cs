@@ -77,14 +77,14 @@ namespace MonoTorrent.Client.PiecePicking
 
         public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
-            PieceRequest request;
+            PieceRequest? request;
             IList<PieceRequest> bundle;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 var start = HighPriorityPieceIndex;
                 var end = Math.Min (endIndex, HighPriorityPieceIndex + HighPriorityCount - 1);
-                if ((request = HighPriorityPicker.ContinueAnyExisting (peer, start, end)) != null)
-                    return new[] { request };
+                if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, start, end)) != null)
+                    return new[] { request.Value };
 
                 if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
@@ -131,10 +131,10 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
             => HighPriorityPicker.CancelRequests (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
-            => HighPriorityPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => HighPriorityPicker.ContinueAnyExistingRequest (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
             => HighPriorityPicker.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -152,10 +152,10 @@ namespace MonoTorrent.Client.PiecePicking
         public void Tick ()
             => HighPriorityPicker.Tick ();
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
-            => HighPriorityPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => HighPriorityPicker.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
 
-        public bool IsInteresting (BitField bitfield)
-            => HighPriorityPicker.IsInteresting (bitfield);
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
+            => HighPriorityPicker.IsInteresting (peer, bitfield);
     }
 }

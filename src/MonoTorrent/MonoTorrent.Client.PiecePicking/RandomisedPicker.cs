@@ -66,10 +66,10 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
             => NextPicker.CancelRequests (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
-            => NextPicker.ContinueAnyExisting (peer, startIndex, endIndex);
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => NextPicker.ContinueAnyExistingRequest (peer, startIndex, endIndex);
 
-        public PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
             => NextPicker.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -84,8 +84,8 @@ namespace MonoTorrent.Client.PiecePicking
         public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
             => NextPicker.Initialise (bitfield, torrentData, requests);
 
-        public bool IsInteresting (BitField bitfield)
-            => NextPicker.IsInteresting (bitfield);
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
+            => NextPicker.IsInteresting (peer, bitfield);
 
         public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
             => NextPicker.RequestRejected (peer, rejectedRequest);
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void Tick ()
             => NextPicker.Tick ();
 
-        public bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
-            => NextPicker.ValidatePiece (peer, pieceIndex, startOffset, length, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => NextPicker.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
 }

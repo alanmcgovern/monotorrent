@@ -48,13 +48,13 @@ namespace MonoTorrent.Client.PiecePicking
             picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
         }
 
-        public static PieceRequest PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available)
+        public static PieceRequest? PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available)
         {
             var result = picker.PickPiece (peer, available, Array.Empty<IPieceRequester> (), 1, 0, available.Length - 1);
             return result?.Single ();
         }
 
-        public static PieceRequest PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
+        public static PieceRequest? PickPiece (this IPiecePicker picker, IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers)
         {
             var result = picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1);
             return result?.Single ();
@@ -64,30 +64,62 @@ namespace MonoTorrent.Client.PiecePicking
         {
             return picker.PickPiece (peer, available, otherPeers, count, 0, available.Length - 1);
         }
-
     }
-    public interface IPiecePickerFilter
+
+    class PiecePickerFilter : IPiecePicker
     {
-        /// <summary>
-        /// Reset all internal state. Called after <see cref="TorrentManager.StartAsync()"/> or <see cref="TorrentManager.StopAsync()"/> is invoked.
-        /// </summary>
-        /// <param name="bitfield"></param>
-        /// <param name="torrentData"></param>
-        /// <param name="requests"></param>
-        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
+        IPiecePicker Next { get; }
 
-        bool IsInteresting (BitField bitfield);
+        protected PiecePickerFilter (IPiecePicker picker)
+            => Next = picker;
 
-        IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex);
+        public int AbortRequests (IPieceRequester peer)
+            => Next.AbortRequests (peer);
+
+        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+            => Next.CancelRequests (peer, startIndex, endIndex);
+
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex);
+
+        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+            => ContinueExistingRequest (peer, startIndex, endIndex);
+
+        public int CurrentReceivedCount ()
+            => Next.CurrentReceivedCount ();
+
+        public int CurrentRequestCount ()
+            => Next.CurrentReceivedCount ();
+
+        public IList<ActivePieceRequest> ExportActiveRequests ()
+            => Next.ExportActiveRequests ();
+
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+            => Next.Initialise (bitfield, torrentData, requests);
+
+        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
+            => Next.IsInteresting (peer, bitfield);
+
+        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+            => Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+
+        public void RequestRejected (IPieceRequester peer, PieceRequest request)
+            => Next.RequestRejected (peer, request);
+
+        public void Tick ()
+            => Next.Tick ();
+
+        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+            => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
 
-    public interface IPiecePicker : IPiecePickerFilter
+    public interface IPiecePicker
     {
         /// <summary>
         /// Cancel all unreceived requests. No further blocks will be requested from this peer.
         /// </summary>
         /// <param name="peer">The peer whose requests will be cancelled.</param>
-        /// <returns></returns>
+        /// <returns>The number of requests which were cancelled</returns>
         int AbortRequests (IPieceRequester peer);
 
         /// <summary>
@@ -96,7 +128,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="peer">The peer to request the block from</param>
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
-        /// <returns></returns>
+        /// <returns>The list of requests which were cancelled</returns>
         IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex);
 
         /// <summary>
@@ -106,7 +138,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <returns></returns>
-        PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex);
+        PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex);
 
         /// <summary>
         /// Request the next unrequested block from a piece owned by this peer, within the specified bounds.
@@ -115,7 +147,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <returns></returns>
-        PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex);
+        PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex);
 
         /// <summary>
         /// Returns the number of blocks which have been received f pieces currently being requested.
@@ -144,11 +176,32 @@ namespace MonoTorrent.Client.PiecePicking
         void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="bitfield"></param>
+        /// <returns></returns>
+        bool IsInteresting (IPieceRequester peer, BitField bitfield);
+
+        /// <summary>
         /// Called when a <see cref="RejectRequestMessage"/> is received from the <paramref name="peer"/> to indicate
         /// the <see cref="PieceRequest"/> will not be fulfilled.
         /// </summary>
-        /// <param name="rejectedRequest"></param>
-        void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest);
+        /// <param name="peer"></param>
+        /// <param name="request"></param>
+        void RequestRejected (IPieceRequester peer, PieceRequest request);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="available"></param>
+        /// <param name="otherPeers"></param>
+        /// <param name="count"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex);
 
         /// <summary>
         /// Called periodically to allow time based piece expiration/requesting to be implemented
@@ -161,12 +214,10 @@ namespace MonoTorrent.Client.PiecePicking
         /// be discarded.
         /// </summary>
         /// <param name="peer"></param>
-        /// <param name="pieceIndex"></param>
-        /// <param name="startOffset"></param>
-        /// <param name="length"></param>
+        /// <param name="request"></param>
         /// <param name="pieceComplete">True if this was the final block for the piece</param>
         /// <param name="peersInvolved">When <paramref name="pieceComplete"/> is true this is a non-null list of peers used to download the piece. Otherwise this is null.</param>
         /// <returns></returns>
-        bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out bool pieceComplete, out IList<IPieceRequester> peersInvolved);
+        bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved);
     }
 }
