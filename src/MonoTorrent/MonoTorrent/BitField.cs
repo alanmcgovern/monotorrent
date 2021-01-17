@@ -99,7 +99,7 @@ namespace MonoTorrent
         #region Methods BitArray
 
         public bool this[int index] {
-            get => Get (index);
+            get => AllTrue || Get (index);
             internal set => Set (index, value);
         }
 

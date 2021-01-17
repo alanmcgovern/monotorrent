@@ -237,12 +237,12 @@ namespace MonoTorrent.Client.PiecePicking
         {
             for (int req = 0; req < requests.Count; req++) {
                 Piece p = requests[req];
-                if (p.Index < startIndex || p.Index > endIndex || !peer.BitField[p.Index])
+                if (p.Index < startIndex || p.Index > endIndex || p.AllBlocksRequested || !peer.BitField[p.Index])
                     continue;
 
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if (allowAny || (allowAbandoned && p.Abandoned && peer.RepeatedHashFails == 0) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
+                if (allowAny || (allowAbandoned && p.Abandoned && peer.RepeatedHashFails == 0) || peer == p.Blocks[0].RequestedOff) {
                     for (int i = 0; i < p.BlockCount; i++) {
                         if (!p.Blocks[i].Received && !p.Blocks[i].Requested)
                             return p.Blocks[i].CreateRequest (peer);

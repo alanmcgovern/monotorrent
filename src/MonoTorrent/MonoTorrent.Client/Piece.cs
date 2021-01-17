@@ -51,11 +51,11 @@ namespace MonoTorrent.Client
 
         internal Block[] Blocks { get; set; }
 
-        public bool AllBlocksRequested => TotalRequested == BlockCount;
+        public bool AllBlocksRequested => TotalRequested == Blocks.Length;
 
-        public bool AllBlocksReceived => TotalReceived == BlockCount;
+        public bool AllBlocksReceived => TotalReceived == Blocks.Length;
 
-        public bool AllBlocksWritten => TotalWritten == BlockCount;
+        public bool AllBlocksWritten => TotalWritten == Blocks.Length;
 
         public int BlockCount => Blocks.Length;
 
