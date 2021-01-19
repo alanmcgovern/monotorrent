@@ -193,11 +193,21 @@ namespace MonoTorrent
             return true;
         }
 
+        /// <summary>
+        /// Returns the index of the first <see langword="true" /> bit in the bitfield.
+        /// Returns -1 if no <see langword="true" /> bit is found. />
+        /// </summary>
+        /// <returns></returns>
         public int FirstTrue ()
-        {
-            return FirstTrue (0, Length - 1);
-        }
+            => FirstTrue (0, Length - 1);
 
+        /// <summary>
+        /// Returns the index of the first <see langword="true" /> bit between <paramref name="startIndex"/> and <paramref name="endIndex"/> (inclusive).
+        /// Returns -1 if no <see langword="true" /> bit is found. />
+        /// </summary>
+        /// <param name="startIndex">The first index to check</param>
+        /// <param name="endIndex">The last index to check</param>
+        /// <returns></returns>
         public int FirstTrue (int startIndex, int endIndex)
         {
             if (startIndex < 0 || startIndex >= Length)
@@ -207,6 +217,8 @@ namespace MonoTorrent
 
             if (AllTrue)
                 return startIndex;
+            if (AllFalse)
+                return -1;
 
             int start;
             int end;
@@ -234,11 +246,21 @@ namespace MonoTorrent
             return -1;              // Nothing is true
         }
 
+        /// <summary>
+        /// Returns the index of the first <see langword="false" /> bit in the bitfield.
+        /// Returns -1 if no <see langword="false" /> bit is found. />
+        /// </summary>
+        /// <returns></returns>
         public int FirstFalse ()
-        {
-            return FirstFalse (0, Length - 1);
-        }
+            => FirstFalse (0, Length - 1);
 
+        /// <summary>
+        /// Returns the index of the first <see langword="false" /> bit between <paramref name="startIndex"/> and <paramref name="endIndex"/> (inclusive).
+        /// Returns -1 if no <see langword="false" /> bit is found. />
+        /// </summary>
+        /// <param name="startIndex">The first index to check</param>
+        /// <param name="endIndex">The last index to check</param>
+        /// <returns></returns>
         public int FirstFalse (int startIndex, int endIndex)
         {
             if (startIndex < 0 || startIndex >= Length)
@@ -251,6 +273,8 @@ namespace MonoTorrent
 
             if (AllTrue)
                 return -1;
+            if (AllFalse)
+                return 0;
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
@@ -274,6 +298,7 @@ namespace MonoTorrent
 
             return -1;              // Nothing is true
         }
+
         internal void FromArray (byte[] buffer, int offset)
         {
             int end = Length / 32;
