@@ -58,6 +58,9 @@ namespace MonoTorrent.Client.PiecePicking
 
         public static bool operator != (PieceRequest left, PieceRequest right)
             => !left.Equals (right);
+
+        public override string ToString ()
+            => $"Piece: {PieceIndex} - Offset {StartOffset / Piece.BlockSize}";
     }
 
     public sealed class ActivePieceRequest : IEquatable<ActivePieceRequest>

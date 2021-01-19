@@ -92,19 +92,19 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Two peers have piece 25
             Assert.AreEqual (25, checker.PickPieceBitfield[0].FirstTrue (), "#1");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[0].FirstFalse (25, torrentData.Pieces), "#2");
+            Assert.AreEqual (-1, checker.PickPieceBitfield[0].FirstFalse (25, torrentData.Pieces - 1), "#2");
 
             // Three peers have piece 20
             Assert.AreEqual (20, checker.PickPieceBitfield[1].FirstTrue (), "#3");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[1].FirstFalse (20, torrentData.Pieces), "#4");
+            Assert.AreEqual (-1, checker.PickPieceBitfield[1].FirstFalse (20, torrentData.Pieces - 1), "#4");
 
             // Three peers have piece 20
             Assert.AreEqual (15, checker.PickPieceBitfield[2].FirstTrue (), "#4");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[2].FirstFalse (15, torrentData.Pieces), "#6");
+            Assert.AreEqual (-1, checker.PickPieceBitfield[2].FirstFalse (15, torrentData.Pieces - 1), "#6");
 
             // Three peers have piece 20
             Assert.AreEqual (10, checker.PickPieceBitfield[3].FirstTrue (), "#5");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[3].FirstFalse (10, torrentData.Pieces), "#8");
+            Assert.AreEqual (-1, checker.PickPieceBitfield[3].FirstFalse (10, torrentData.Pieces - 1), "#8");
         }
 
         [Test]

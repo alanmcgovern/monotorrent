@@ -174,10 +174,13 @@ namespace MonoTorrent.Client.PiecePicking
 
         void LoadPieces (BitField b)
         {
-            int length = b.Length;
-            for (int i = b.FirstTrue (0, length); i != -1; i = b.FirstTrue (i + 1, length))
-                if (!Pieces.Exists (p => p.Index == i))
-                    Pieces.Add (new Piece (i, TorrentData.PieceLength, TorrentData.Size));
+            int lastPiece = b.Length - 1;
+            int piece = 0;
+            while (piece <= lastPiece && (piece = b.FirstTrue (piece, lastPiece)) != -1) {
+                if (!Pieces.Exists (p => p.Index == piece))
+                    Pieces.Add (new Piece (piece, TorrentData.PieceLength, TorrentData.Size));
+                piece++;
+            }
         }
 
         bool AlreadyRequested (Block block, IPieceRequester peer)

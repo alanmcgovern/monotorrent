@@ -443,7 +443,7 @@ namespace MonoTorrent.Client.PiecePicking
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (bitfield, torrentData);
-            var bundle = picker.PickPiece (peer, new BitField (peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
+            var bundle = picker.PickPiece (peer, new BitField (peer.BitField.Length), peers, 1, 0, peer.BitField.Length - 1);
             Assert.IsNull (bundle);
         }
 
@@ -457,7 +457,7 @@ namespace MonoTorrent.Client.PiecePicking
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (bitfield, torrentData);
-            var bundle = picker.PickPiece (peer, new BitField (peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
+            var bundle = picker.PickPiece (peer, new BitField (peer.BitField.Length), peers, 1, 0, peer.BitField.Length - 1);
             Assert.IsNull (bundle);
         }
 

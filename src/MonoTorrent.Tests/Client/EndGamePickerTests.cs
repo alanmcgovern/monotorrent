@@ -212,5 +212,38 @@ namespace MonoTorrent.Client.PiecePicking
             picker.Initialise (bitfield, torrentData, requests);
             Assert.IsTrue (picker.Requests.All (t => !t.Received), "#1");
         }
+
+        [Test]
+        public void PickFirstPiece ()
+        {
+            // Missing one piece
+            picker.Initialise (bitfield, torrentData);
+
+            var onePieceMissing = bitfield.Clone ().SetAll (false).Set (0, true);
+            var request = picker.PickPiece (PeerId.CreateNull (bitfield.Length, true, false, true), onePieceMissing);
+            Assert.AreEqual (0, request.Value.PieceIndex);
+        }
+
+        [Test]
+        public void PickLastPiece ()
+        {
+            // Missing one piece
+            picker.Initialise (bitfield, torrentData);
+
+            var onePieceMissing = bitfield.Clone ().SetAll (false).Set (bitfield.Length - 1, true);
+            var request = picker.PickPiece (PeerId.CreateNull (bitfield.Length, true, false, true), onePieceMissing);
+            Assert.AreEqual (bitfield.Length - 1, request.Value.PieceIndex);
+        }
+
+        [Test]
+        public void PickMiddlePiece ()
+        {
+            // Missing one piece
+            picker.Initialise (bitfield, torrentData);
+
+            var onePieceMissing = bitfield.Clone ().SetAll (false).Set (bitfield.Length - 3, true);
+            var request = picker.PickPiece (PeerId.CreateNull (bitfield.Length, true, false, true), onePieceMissing);
+            Assert.AreEqual (bitfield.Length - 3, request.Value.PieceIndex);
+        }
     }
 }

@@ -314,13 +314,31 @@ namespace MonoTorrent.Client.PiecePicking
 
         int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
+            // This is the easiest case to consider - special case it
+            if (pieceCount == 1) {
+                while (pieceStartIndex <= pieceEndIndex && (pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
+                    var end = bitfield.FirstFalse (pieceStartIndex, pieceEndIndex);
+
+                    // If end is a valid value, it's the first *false* piece. Subtract '1' from it
+                    // to give us the last available piece we can request. If it's -1 then we can use
+                    // 'pieceEndIndex' as the last available piece to request as all pieces are available.
+                    var lastAvailable = end == -1 ? pieceEndIndex : end - 1;
+                    for (int i = pieceStartIndex; i <= lastAvailable; i++)
+                        if (!AlreadyRequested (i))
+                            return i;
+                    pieceStartIndex = lastAvailable + 1;
+                }
+                return -1;
+            }
+
             int largestStart = 0;
             int largestEnd = 0;
-            while ((pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
+            while (pieceStartIndex <= pieceEndIndex  && (pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
                 int end = bitfield.FirstFalse (pieceStartIndex, pieceEndIndex);
                 if (end == -1)
                     end = Math.Min (pieceStartIndex + pieceCount, bitfield.Length);
 
+                // Do not include 'end' as it's the first *false* piece.
                 for (int i = pieceStartIndex; i < end; i++)
                     if (AlreadyRequested (i))
                         end = i;

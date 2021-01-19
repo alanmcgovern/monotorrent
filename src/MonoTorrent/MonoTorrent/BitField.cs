@@ -99,7 +99,11 @@ namespace MonoTorrent
         #region Methods BitArray
 
         public bool this[int index] {
-            get => AllTrue || Get (index);
+            get {
+                if (index < 0 || index >= Length)
+                    throw new ArgumentOutOfRangeException (nameof (index));
+                return TrueCount == Length || Get (index);
+            }
             internal set => Set (index, value);
         }
 
@@ -191,11 +195,19 @@ namespace MonoTorrent
 
         public int FirstTrue ()
         {
-            return FirstTrue (0, Length);
+            return FirstTrue (0, Length - 1);
         }
 
         public int FirstTrue (int startIndex, int endIndex)
         {
+            if (startIndex < 0 || startIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (startIndex));
+            if (endIndex < 0 || endIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (endIndex));
+
+            if (AllTrue)
+                return startIndex;
+
             int start;
             int end;
 
@@ -224,13 +236,21 @@ namespace MonoTorrent
 
         public int FirstFalse ()
         {
-            return FirstFalse (0, Length);
+            return FirstFalse (0, Length - 1);
         }
 
         public int FirstFalse (int startIndex, int endIndex)
         {
+            if (startIndex < 0 || startIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (startIndex));
+            if (endIndex < 0 || endIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (endIndex));
+
             int start;
             int end;
+
+            if (AllTrue)
+                return -1;
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
@@ -271,13 +291,9 @@ namespace MonoTorrent
             Validate ();
         }
 
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
         bool Get (int index)
-        {
-            if (index < 0 || index >= Length)
-                throw new ArgumentOutOfRangeException (nameof (index));
-
-            return (array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
-        }
+            => (array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
 
         public IEnumerator<bool> GetEnumerator ()
         {
