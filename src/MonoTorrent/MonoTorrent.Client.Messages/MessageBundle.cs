@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.Messages
             : this ()
         {
             foreach (ActivePieceRequest m in requests)
-                Messages.Add (new RequestMessage (m.PieceIndex, m.StartOffset, m.RequestLength));
+                Messages.Add (new RequestMessage (m.Request.PieceIndex, m.Request.StartOffset, m.Request.RequestLength));
         }
 
         public override int ByteLength {

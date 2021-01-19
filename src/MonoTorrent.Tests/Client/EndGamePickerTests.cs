@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             var requests = new List<ActivePieceRequest> ();
             for (int i = 2; i < pieces[0].BlockCount; i++)
-                requests.Add (new ActivePieceRequest (pieces[0].Index, i * Piece.BlockSize, Piece.BlockSize, true, PeerId.CreateNull (torrentData.PieceCount)));
+                requests.Add (new ActivePieceRequest (pieces[0].Index, i * Piece.BlockSize, Piece.BlockSize, PeerId.CreateNull (torrentData.PieceCount), true));
 
             picker.Initialise (bitfield, torrentData, requests);
 

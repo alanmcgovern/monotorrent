@@ -44,11 +44,9 @@ namespace MonoTorrent.Client.PiecePicking
             => obj is PieceRequest req && Equals (req);
 
         public bool Equals (PieceRequest other)
-        {
-            return other.PieceIndex == PieceIndex
-                && other.StartOffset == StartOffset
-                && other.RequestLength == RequestLength;
-        }
+            => other.PieceIndex == PieceIndex
+            && other.StartOffset == StartOffset
+            && other.RequestLength == RequestLength;
 
         public override int GetHashCode ()
             => PieceIndex;
@@ -63,49 +61,48 @@ namespace MonoTorrent.Client.PiecePicking
             => $"Piece: {PieceIndex} - Offset {StartOffset / Piece.BlockSize}";
     }
 
-    public sealed class ActivePieceRequest : IEquatable<ActivePieceRequest>
+    public readonly struct ActivePieceRequest : IEquatable<ActivePieceRequest>
     {
-        public int PieceIndex { get; }
-        public int StartOffset { get; }
-        public int RequestLength { get; }
         public bool Received { get; }
+        public PieceRequest Request { get; }
         public IPieceRequester RequestedOff { get; }
 
+        internal ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, IPieceRequester requestedOff, bool received)
+            : this (new PieceRequest (pieceIndex, startOffset, requestLength), requestedOff, received)
+        {
+
+        }
+
         internal ActivePieceRequest (PieceRequest request, IPieceRequester requestedOff)
-            : this(request.PieceIndex, request.StartOffset, request.RequestLength, requestedOff)
+            : this (request, requestedOff, false)
         {
 
         }
 
-        public ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, IPieceRequester requestedOff)
-            : this (pieceIndex, startOffset, requestLength, false, requestedOff)
+        internal ActivePieceRequest (PieceRequest request, IPieceRequester requestedOff, bool received)
         {
-
+            Request = request;
+            RequestedOff = requestedOff;
+            Received = received;
         }
-
-        public ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, bool received, IPieceRequester requestedOff)
-            => (PieceIndex, StartOffset, RequestLength, Received, RequestedOff) = (pieceIndex, startOffset, requestLength, received, requestedOff);
 
         public override bool Equals (object obj)
-            => Equals (obj as ActivePieceRequest);
+            => obj is ActivePieceRequest req && Equals (req);
 
         public bool Equals (ActivePieceRequest other)
         {
-            return !(other is null)
-                && other.RequestedOff == RequestedOff
+            return other.RequestedOff == RequestedOff
                 && other.Received == Received
-                && other.PieceIndex == PieceIndex
-                && other.StartOffset == StartOffset
-                && other.RequestLength == RequestLength;
+                && other.Request == Request;
         }
 
         public override int GetHashCode ()
-            => PieceIndex;
+            => Request.PieceIndex;
 
         public static bool operator == (ActivePieceRequest left, ActivePieceRequest right)
-            => left is null ? right is null : left.Equals (right);
+            => left.Equals (right);
 
         public static bool operator != (ActivePieceRequest left, ActivePieceRequest right)
-            => !(left == right);
+            => !left.Equals (right);
     }
 }

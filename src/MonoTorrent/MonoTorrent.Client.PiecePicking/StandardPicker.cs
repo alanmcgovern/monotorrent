@@ -125,8 +125,7 @@ namespace MonoTorrent.Client.PiecePicking
             foreach(var piece in requests) {
                 foreach (var block in piece.Blocks) {
                     if (block.Requested)
-                        list.Add (new ActivePieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.Received, block.RequestedOff));
-                    // FIXME: Include 'RequestedOff'
+                        list.Add (new ActivePieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.RequestedOff, block.Received));
                 }
             }
             return list;
@@ -136,10 +135,10 @@ namespace MonoTorrent.Client.PiecePicking
         {
             TorrentData = torrentData;
             this.requests.Clear ();
-            foreach (var group in requests.GroupBy (p => p.PieceIndex)) {
+            foreach (var group in requests.GroupBy (p => p.Request.PieceIndex)) {
                 var piece = new Piece (group.Key, torrentData.PieceLength, torrentData.Size);
                 foreach (var block in group)
-                    piece.Blocks[block.StartOffset / Piece.BlockSize].FromRequest (block);
+                    piece.Blocks[block.Request.StartOffset / Piece.BlockSize].FromRequest (block);
                 this.requests.Add (piece);
             }
         }
