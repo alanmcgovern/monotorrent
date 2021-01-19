@@ -44,10 +44,8 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         public override bool IsInteresting (IPieceRequester peer, BitField bitfield)
-        {
-            Temp.From (bitfield).NAnd (Bitfield);
-            return !Temp.AllFalse && base.IsInteresting (peer, Temp);
-        }
+            => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
+            && base.IsInteresting (peer, Temp);
 
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {

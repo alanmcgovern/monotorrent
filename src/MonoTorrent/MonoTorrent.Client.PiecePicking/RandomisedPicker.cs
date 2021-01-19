@@ -42,9 +42,6 @@ namespace MonoTorrent.Client.PiecePicking
             Random = new Random ();
         }
 
-        public override bool IsInteresting (IPieceRequester peer, BitField bitfield)
-            => base.IsInteresting (peer, bitfield);
-
         public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
