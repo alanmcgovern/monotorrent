@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.PiecePicking
 
     public abstract class PiecePickerFilter : IPiecePicker
     {
-        IPiecePicker Next { get; }
+        protected IPiecePicker Next { get; }
 
         protected PiecePickerFilter (IPiecePicker picker)
             => Next = picker;
