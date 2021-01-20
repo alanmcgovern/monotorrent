@@ -860,16 +860,11 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
-        EndGameSwitcher switcher;
         internal IPiecePicker CreateStandardPicker ()
         {
             IPiecePicker picker = new StandardPicker ();
             picker = new RandomisedPicker (picker);
             picker = new RarestFirstPicker (picker);
-
-            if (ClientEngine.SupportsEndgameMode)
-                picker = switcher = new EndGameSwitcher (picker, new EndGamePicker ());
-
             picker = new PriorityPicker (picker);
             return picker;
         }
