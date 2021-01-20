@@ -47,7 +47,7 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         BitField bitfield;
-        TestPicker checker;
+        PiecePickerFilterChecker checker;
         PeerId peer;
         List<PeerId> peers;
         RarestFirstPicker picker;
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.PiecePicking
                 Size = size
             };
 
-            checker = new TestPicker ();
+            checker = new PiecePickerFilterChecker ();
             picker = new RarestFirstPicker (checker);
             picker.Initialise (bitfield, torrentData, new List<ActivePieceRequest> ());
 
@@ -88,23 +88,23 @@ namespace MonoTorrent.Client.PiecePicking
 
             // No pieces should be selected, but we can check what was requested.
             picker.PickPiece (peer, peer.BitField, peers, 1, 0, peer.BitField.Length - 1);
-            Assert.AreEqual (6, checker.PickPieceBitfield.Count);
+            Assert.AreEqual (6, checker.Picks.Count);
 
             // Two peers have piece 25
-            Assert.AreEqual (25, checker.PickPieceBitfield[0].FirstTrue (), "#1");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[0].FirstFalse (25, torrentData.Pieces - 1), "#2");
+            Assert.AreEqual (25, checker.Picks[0].available.FirstTrue (), "#1");
+            Assert.AreEqual (-1, checker.Picks[0].available.FirstFalse (25, torrentData.Pieces - 1), "#2");
 
             // Three peers have piece 20
-            Assert.AreEqual (20, checker.PickPieceBitfield[1].FirstTrue (), "#3");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[1].FirstFalse (20, torrentData.Pieces - 1), "#4");
+            Assert.AreEqual (20, checker.Picks[1].available.FirstTrue (), "#3");
+            Assert.AreEqual (-1, checker.Picks[1].available.FirstFalse (20, torrentData.Pieces - 1), "#4");
 
             // Three peers have piece 20
-            Assert.AreEqual (15, checker.PickPieceBitfield[2].FirstTrue (), "#4");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[2].FirstFalse (15, torrentData.Pieces - 1), "#6");
+            Assert.AreEqual (15, checker.Picks[2].available.FirstTrue (), "#4");
+            Assert.AreEqual (-1, checker.Picks[2].available.FirstFalse (15, torrentData.Pieces - 1), "#6");
 
             // Three peers have piece 20
-            Assert.AreEqual (10, checker.PickPieceBitfield[3].FirstTrue (), "#5");
-            Assert.AreEqual (-1, checker.PickPieceBitfield[3].FirstFalse (10, torrentData.Pieces - 1), "#8");
+            Assert.AreEqual (10, checker.Picks[3].available.FirstTrue (), "#5");
+            Assert.AreEqual (-1, checker.Picks[3].available.FirstFalse (10, torrentData.Pieces - 1), "#8");
         }
 
         [Test]
@@ -127,12 +127,12 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Ensure that pieces which were not in the 'available' bitfield were not offered
             // as suggestions.
-            foreach (var bf in checker.PickPieceBitfield)
-                Assert.IsTrue (available.Clone ().Not ().And (bf).AllFalse, "#1");
+            foreach (var pick in checker.Picks)
+                Assert.IsTrue (available.Clone ().Not ().And (pick.available).AllFalse, "#1");
 
             // Ensure at least one of the pieces in our bitfield *was* offered.
-            foreach (var bf in checker.PickPieceBitfield)
-                Assert.IsFalse (available.Clone ().And (bf).AllFalse, "#2");
+            foreach (var pick in checker.Picks)
+                Assert.IsFalse (available.Clone ().And (pick.available).AllFalse, "#2");
         }
     }
 }

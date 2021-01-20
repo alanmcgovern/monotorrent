@@ -63,7 +63,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// Empty constructor for changing piece pickers
         /// </summary>
         public StreamingPiecePicker ()
-            : base (new StandardPicker ())
+            : this (new StandardPicker ())
+        {
+        }
+
+        internal StreamingPiecePicker (IPiecePicker picker)
+            : base (picker)
         {
             HighPriorityPicker = new PriorityPicker (Next);
             LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (Next)));
