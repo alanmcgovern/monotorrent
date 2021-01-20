@@ -43,6 +43,9 @@ namespace MonoTorrent.Client.PiecePicking
             return picker.CancelRequests (peer, 0, peer.BitField.Length - 1);
         }
 
+        public static PieceRequest? ContinueAnyExistingRequest (this IPiecePicker picker, IPieceRequester peer, int startIndex, int endIndex)
+            => picker.ContinueAnyExistingRequest (peer, startIndex, endIndex, 1);
+
         public static void Initialise (this IPiecePicker picker, BitField bitfield, ITorrentData torrentData)
         {
             picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
@@ -79,8 +82,8 @@ namespace MonoTorrent.Client.PiecePicking
         public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
             => Next.CancelRequests (peer, startIndex, endIndex);
 
-        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
-            => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex);
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex, int maxDuplicateRequests)
+            => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests);
 
         public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
             => Next.ContinueExistingRequest (peer, startIndex, endIndex);
@@ -137,8 +140,9 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="peer">The peer to request the block from</param>
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
+        /// <param name="maxDuplicateRequests">The maximum number of concurrent duplicate requests</param>
         /// <returns></returns>
-        PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex);
+        PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex, int maxDuplicateRequests);
 
         /// <summary>
         /// Request the next unrequested block from a piece owned by this peer, within the specified bounds.

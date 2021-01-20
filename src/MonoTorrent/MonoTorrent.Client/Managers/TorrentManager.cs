@@ -166,7 +166,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
         /// </summary>
-        public bool IsInEndGame => State == TorrentState.Downloading && switcher != null && switcher.InEndgame;
+        public bool IsInEndGame => State == TorrentState.Downloading && PieceManager.InEndgameMode;
 
         public ConnectionMonitor Monitor { get; private set; }
 

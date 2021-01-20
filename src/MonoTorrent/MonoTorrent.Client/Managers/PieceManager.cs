@@ -55,6 +55,11 @@ namespace MonoTorrent.Client
         internal IPiecePicker Picker { get; private set; }
         internal BitField PendingHashCheckPieces { get; private set; }
 
+        /// <summary>
+        /// Returns true when every block has been requested at least once.
+        /// </summary>
+        internal bool InEndgameMode { get; private set; }
+
         internal PieceManager (TorrentManager manager)
         {
             Manager = manager;
@@ -76,7 +81,7 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests (PeerId id)
         {
-            int maxRequests = id.MaxPendingRequests;
+            int maxRequests = InEndgameMode ? 3 : id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return;
@@ -118,7 +123,15 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking && id.AmRequestingPiecesCount == 0) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest? request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1);
+                    PieceRequest? request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1, 1);
+                    // If this peer is a seeder and we are unable to request any new blocks, then we should enter
+                    // endgame mode. Every block has been requested at least once at this point.
+                    if (request == null && (InEndgameMode || id.IsSeeder)) {
+                        request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1, 2);
+                        if (InEndgameMode = request != null)
+                            maxRequests = 3;
+                    }
+
                     if (request != null)
                         id.MessageQueue.Enqueue (new RequestMessage (request.Value.PieceIndex, request.Value.StartOffset, request.Value.RequestLength));
                     else

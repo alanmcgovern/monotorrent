@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.PiecePicking
             return Array.Empty<PieceRequest> ();
         }
 
-        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex, int maxDuplicateRequests)
         {
             return null;
         }

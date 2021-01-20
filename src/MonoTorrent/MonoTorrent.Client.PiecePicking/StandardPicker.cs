@@ -155,7 +155,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
             // requests that could be continued would be existing "Fast" pieces.
-            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, false, false)) != null)
+            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, 1, false, false)) != null)
                 return new[] { message.Value };
 
             // Then we check if there are any allowed "Fast" pieces to download
@@ -168,7 +168,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Only try to continue an abandoned piece if this peer has not recently been involved in downloading data which
             // failed it's hash check.
-            if (peer.RepeatedHashFails == 0  && (message = ContinueExistingRequest (peer, startIndex, endIndex, true, false)) != null)
+            if (peer.RepeatedHashFails == 0  && (message = ContinueExistingRequest (peer, startIndex, endIndex, 1, true, false)) != null)
                 return new[] { message.Value };
 
             // We see if the peer has suggested any pieces we should request
@@ -232,9 +232,9 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
-            => ContinueExistingRequest (peer, startIndex, endIndex, false, false);
+            => ContinueExistingRequest (peer, startIndex, endIndex, 1, false, false);
 
-        PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex, bool allowAbandoned, bool allowAny)
+        PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex, int maxDuplicateRequests, bool allowAbandoned, bool allowAny)
         {
             for (int req = 0; req < requests.Count; req++) {
                 Piece p = requests[req];
@@ -251,18 +251,20 @@ namespace MonoTorrent.Client.PiecePicking
                 }
             }
 
+            // FIXME: fully support 'maxDuplicateRequests'
+
             // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
             return null;
         }
 
-        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex, int maxDuplicateRequests)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
             if (peer.RepeatedHashFails != 0)
                 return null;
 
-            return ContinueExistingRequest (peer, startIndex, endIndex, true, true);
+            return ContinueExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests, true, true);
         }
 
         PieceRequest? GetFromList (IPieceRequester peer, BitField bitfield, IList<int> pieces)
