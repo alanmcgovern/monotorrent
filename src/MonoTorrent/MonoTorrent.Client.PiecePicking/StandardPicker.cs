@@ -190,7 +190,7 @@ namespace MonoTorrent.Client.PiecePicking
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
             => piece.Index.CompareTo (comparand);
 
-        public void Tick ()
+        public void Tick (IManualPieceRequest requester, IList<IPieceRequester> peers)
         {
             // no-op
         }

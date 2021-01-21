@@ -38,6 +38,7 @@ namespace MonoTorrent.Client.PiecePicking
         BitField BitField { get; }
         List<int> IsAllowedFastPieces { get; }
         bool IsChoking { get; }
+        int MaxSupportedPendingRequests { get; }
         int RepeatedHashFails { get; }
         List<int> SuggestedPieces { get; }
         bool SupportsFastPeer { get; }
@@ -47,6 +48,5 @@ namespace MonoTorrent.Client.PiecePicking
         // CancelRequest if the FastPeer extensions are supported. This includes enqueuing
         // and sending the appropriate Cancel messages.
         bool CanCancelRequests { get; }
-        void CancelRequest (ActivePieceRequest request);
     }
 }

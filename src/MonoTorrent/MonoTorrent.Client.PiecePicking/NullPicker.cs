@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public void Tick ()
+        public void Tick (IManualPieceRequest requester, IList<IPieceRequester> peers)
         {
 
         }
