@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public interface IPieceRequester
+    public interface IPeer
     {
         int AmRequestingPiecesCount { get; set; }
         BitField BitField { get; }

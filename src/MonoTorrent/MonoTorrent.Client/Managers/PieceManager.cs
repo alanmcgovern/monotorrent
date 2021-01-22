@@ -48,10 +48,10 @@ namespace MonoTorrent.Client
         {
             public static ManualPieceRequester Instance = new ManualPieceRequester ();
 
-            void IManualPieceRequest.EnqueueCancelRequest (IPieceRequester peer, PieceRequest request)
+            void IManualPieceRequest.EnqueueCancelRequest (IPeer peer, PieceRequest request)
                => ((PeerId) peer).MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
 
-            void IManualPieceRequest.EnqueuePieceRequest (IPieceRequester peer, PieceRequest request)
+            void IManualPieceRequest.EnqueuePieceRequest (IPeer peer, PieceRequest request)
                 => ((PeerId) peer).MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
         }
 
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
             PendingHashCheckPieces = new BitField (1);
         }
 
-        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
             if (Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();

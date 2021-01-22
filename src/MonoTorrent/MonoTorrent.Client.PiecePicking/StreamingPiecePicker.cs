@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.PiecePicking
             HighPriorityPicker.Initialise (bitfield, torrentData, requests);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             PieceRequest? request;
             IList<PieceRequest> bundle;

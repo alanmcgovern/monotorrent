@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
 
         public int RequestLength { get; }
 
-        internal IPieceRequester RequestedOff { get; private set; }
+        internal IPeer RequestedOff { get; private set; }
 
         public int StartOffset { get; }
 
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
             StartOffset = startOffset;
         }
 
-        internal PieceRequest CreateRequest (IPieceRequester peer)
+        internal PieceRequest CreateRequest (IPeer peer)
         {
             if (RequestedOff == null)
                 piece.TotalRequested++;

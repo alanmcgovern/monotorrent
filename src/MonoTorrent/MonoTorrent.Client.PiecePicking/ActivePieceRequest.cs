@@ -65,21 +65,21 @@ namespace MonoTorrent.Client.PiecePicking
     {
         public bool Received { get; }
         public PieceRequest Request { get; }
-        public IPieceRequester RequestedOff { get; }
+        public IPeer RequestedOff { get; }
 
-        internal ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, IPieceRequester requestedOff, bool received)
+        internal ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, IPeer requestedOff, bool received)
             : this (new PieceRequest (pieceIndex, startOffset, requestLength), requestedOff, received)
         {
 
         }
 
-        internal ActivePieceRequest (PieceRequest request, IPieceRequester requestedOff)
+        internal ActivePieceRequest (PieceRequest request, IPeer requestedOff)
             : this (request, requestedOff, false)
         {
 
         }
 
-        internal ActivePieceRequest (PieceRequest request, IPieceRequester requestedOff, bool received)
+        internal ActivePieceRequest (PieceRequest request, IPeer requestedOff, bool received)
         {
             Request = request;
             RequestedOff = requestedOff;

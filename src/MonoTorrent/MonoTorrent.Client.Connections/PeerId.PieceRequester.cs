@@ -35,16 +35,16 @@ using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPieceRequester
+    public partial class PeerId : IPeer
     {
-        int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
-        long IPieceRequester.DownloadSpeed => Monitor.DownloadSpeed;
-        List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool IPieceRequester.IsChoking => IsChoking;
-        int IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
-        List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
-        bool IPieceRequester.CanCancelRequests => SupportsFastPeer;
-        int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
-        int IPieceRequester.MaxSupportedPendingRequests => MaxSupportedPendingRequests;
+        int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        long IPeer.DownloadSpeed => Monitor.DownloadSpeed;
+        List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
+        bool IPeer.IsChoking => IsChoking;
+        int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;
+        List<int> IPeer.SuggestedPieces => SuggestedPieces;
+        bool IPeer.CanCancelRequests => SupportsFastPeer;
+        int IPeer.TotalHashFails => Peer.TotalHashFails;
+        int IPeer.MaxSupportedPendingRequests => MaxSupportedPendingRequests;
     }
 }

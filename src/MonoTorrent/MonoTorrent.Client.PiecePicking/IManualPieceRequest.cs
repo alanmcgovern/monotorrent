@@ -42,22 +42,22 @@ namespace MonoTorrent.Client.PiecePicking
     {
         /// <summary>
         /// Enqueues a <see cref="RequestMessage"/> in the peer's message queue.
-        /// Typically used when manually invoke <see cref="IPiecePicker.ContinueAnyExistingRequest(IPieceRequester, int, int, int)"/>,
-        /// <see cref="IPiecePicker.ContinueExistingRequest(IPieceRequester, int, int)"/> or
-        /// <see cref="IPiecePicker.PickPiece(IPieceRequester, BitField, IReadOnlyList{IPieceRequester}, int, int, int)"/>
+        /// Typically used when manually invoke <see cref="IPiecePicker.ContinueAnyExistingRequest(IPeer, int, int, int)"/>,
+        /// <see cref="IPiecePicker.ContinueExistingRequest(IPeer, int, int)"/> or
+        /// <see cref="IPiecePicker.PickPiece(IPeer, BitField, IReadOnlyList{IPeer}, int, int, int)"/>
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        void EnqueuePieceRequest (IPieceRequester peer, PieceRequest request);
+        void EnqueuePieceRequest (IPeer peer, PieceRequest request);
 
         /// <summary>
         /// Enqueues a <see cref="CancelMessage"/> in the peer's message queue.
         /// This is typically used to send cancel messages for each <see cref="PieceRequest" />
-        /// returned by <see cref="IPiecePicker.CancelRequests(IPieceRequester, int, int)"/>
+        /// returned by <see cref="IPiecePicker.CancelRequests(IPeer, int, int)"/>
         /// </summary>
         /// <param name="peer">The peer to send the <see cref="CancelMessage"/> to</param>
         /// <param name="request">The piece request to cancel.</param>
-        void EnqueueCancelRequest (IPieceRequester peer, PieceRequest request);
+        void EnqueueCancelRequest (IPeer peer, PieceRequest request);
     }
 }

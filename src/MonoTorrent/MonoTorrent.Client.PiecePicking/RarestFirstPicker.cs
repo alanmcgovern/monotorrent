@@ -50,7 +50,7 @@ namespace MonoTorrent.Client.PiecePicking
             spares.Clear ();
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
                 return null;
@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        void GenerateRarestFirst (BitField peerBitfield, IReadOnlyList<IPieceRequester> otherPeers)
+        void GenerateRarestFirst (BitField peerBitfield, IReadOnlyList<IPeer> otherPeers)
         {
             // Move anything in the rarest buffer into the spares
             while (rarest.Count > 0)

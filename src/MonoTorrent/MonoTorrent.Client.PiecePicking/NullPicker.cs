@@ -34,22 +34,22 @@ namespace MonoTorrent.Client.PiecePicking
 {
     class NullPicker : IPiecePicker
     {
-        public int AbortRequests (IPieceRequester peer)
+        public int AbortRequests (IPeer peer)
         {
             return 0;
         }
 
-        public IList<PieceRequest> CancelRequests (IPieceRequester peer, int startIndex, int endIndex)
+        public IList<PieceRequest> CancelRequests (IPeer peer, int startIndex, int endIndex)
         {
             return Array.Empty<PieceRequest> ();
         }
 
-        public PieceRequest? ContinueAnyExistingRequest (IPieceRequester peer, int startIndex, int endIndex, int maxDuplicateRequests)
+        public PieceRequest? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
         {
             return null;
         }
 
-        public PieceRequest? ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
         {
             return null;
         }
@@ -73,21 +73,21 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public bool IsInteresting (IPieceRequester peer, BitField bitfield)
+        public bool IsInteresting (IPeer peer, BitField bitfield)
         {
             return false;
         }
 
-        public IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             return Array.Empty<PieceRequest> ();
         }
 
-        public void RequestRejected (IPieceRequester peer, PieceRequest rejectedRequest)
+        public void RequestRejected (IPeer peer, PieceRequest rejectedRequest)
         {
         }
 
-        public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
+        public bool ValidatePiece (IPeer peer, PieceRequest request, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
             pieceComplete = false;
             peersInvolved = null;

@@ -34,8 +34,8 @@ namespace MonoTorrent.Client.PiecePicking
     class PiecePickerFilterChecker : PiecePickerFilter
     {
         public List<(BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)> Initialised;
-        public List<(IPieceRequester peer, BitField bitfield)> Interesting;
-        public List<(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)> Picks;
+        public List<(IPeer peer, BitField bitfield)> Interesting;
+        public List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> Picks;
 
         public PiecePickerFilterChecker ()
             : this (null)
@@ -46,8 +46,8 @@ namespace MonoTorrent.Client.PiecePicking
             : base (next)
         {
             Initialised = new List<(BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)> ();
-            Interesting = new List<(IPieceRequester peer, BitField bitfield)> ();
-            Picks = new List<(IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)> ();
+            Interesting = new List<(IPeer peer, BitField bitfield)> ();
+            Picks = new List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> ();
         }
 
         public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
@@ -56,15 +56,15 @@ namespace MonoTorrent.Client.PiecePicking
             Next?.Initialise (bitfield, torrentData, requests);
         }
 
-        public override bool IsInteresting (IPieceRequester peer, BitField bitfield)
+        public override bool IsInteresting (IPeer peer, BitField bitfield)
         {
             Interesting.Add ((peer, bitfield));
             return Next == null ? !bitfield.AllFalse : Next.IsInteresting (peer, bitfield);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            Picks.Add ((peer, available.Clone (), new List<IPieceRequester> (otherPeers).AsReadOnly (), count, startIndex, endIndex));
+            Picks.Add ((peer, available.Clone (), new List<IPeer> (otherPeers).AsReadOnly (), count, startIndex, endIndex));
             return Next == null ? null : Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
     }

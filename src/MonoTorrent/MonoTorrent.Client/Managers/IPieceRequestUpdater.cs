@@ -42,20 +42,20 @@ namespace MonoTorrent.Client
     internal interface IPieceRequestUpdater
     {
         /// <summary>
-        /// This event should be raised to indicate that <see cref="UpdateRequests(IPiecePicker, IReadOnlyList{IPieceRequester}, IManualPieceRequest)"/>
+        /// This event should be raised to indicate that <see cref="UpdateRequests(IPiecePicker, IReadOnlyList{IPeer}, IManualPieceRequest)"/>
         /// should be invoked by the <see cref="ClientEngine"/>.
         /// </summary>
         event EventHandler UpdateNeeded;
 
         /// <summary>
         /// When invoked by the <see cref="ClientEngine"/> it is safe to cancel or create piece requests for any peers. It is up to the
-        /// implementator of this method to ensure that <see cref="IPieceRequester.MaxSupportedPendingRequests"/> is respected. Failure
+        /// implementator of this method to ensure that <see cref="IPeer.MaxSupportedPendingRequests"/> is respected. Failure
         /// to respect this limit may cause the peer to terminate the connection.
         /// </summary>
         /// <param name="picker">The <see cref="IPiecePicker"/> which can be used to cancel or create requests</param>
         /// <param name="peers">The list of active peers</param>
         /// <param name="requester">Used to enqueue <see cref="RequestMessage"/> or <see cref="CancelMessage"/> messages with the peer depending
         /// on whether a new block needs to be requested, or any existing request is being cancelled.</param>
-        void UpdateRequests (IPiecePicker picker, IReadOnlyList<IPieceRequester> peers, IManualPieceRequest requester);
+        void UpdateRequests (IPiecePicker picker, IReadOnlyList<IPeer> peers, IManualPieceRequest requester);
     }
 }

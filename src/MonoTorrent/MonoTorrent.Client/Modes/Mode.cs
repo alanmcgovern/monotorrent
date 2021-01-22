@@ -329,7 +329,7 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandlePieceMessage (PeerId id, PieceMessage message)
         {
             id.PiecesReceived++;
-            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IPieceRequester> peersInvolved))
+            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IPeer> peersInvolved))
                 WritePieceAsync (message, pieceComplete, peersInvolved);
             else
                 message.DataReleaser.Dispose ();
@@ -337,7 +337,7 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceManager.AddPieceRequests (id);
         }
 
-        async void WritePieceAsync (PieceMessage message, bool pieceComplete, IList<IPieceRequester> peersInvolved)
+        async void WritePieceAsync (PieceMessage message, bool pieceComplete, IList<IPeer> peersInvolved)
         {
             long offset = (long) message.PieceIndex * Manager.Torrent.PieceLength + message.StartOffset;
 
