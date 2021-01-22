@@ -109,9 +109,6 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestRejected (IPieceRequester peer, PieceRequest request)
             => Next.RequestRejected (peer, request);
 
-        public void Tick (IManualPieceRequest requester, IList<IPieceRequester> peers)
-            => Next.Tick (requester, peers);
-
         public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
             => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
@@ -206,11 +203,6 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="endIndex"></param>
         /// <returns></returns>
         IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex);
-
-        /// <summary>
-        /// Called periodically to allow time based piece expiration/requesting to be implemented
-        /// </summary>
-        void Tick (IManualPieceRequest requester, IList<IPieceRequester> peers);
 
         /// <summary>
         /// Called when a <see cref="PieceMessage"/> is received from the <paramref name="peer"/>. Returns true if the

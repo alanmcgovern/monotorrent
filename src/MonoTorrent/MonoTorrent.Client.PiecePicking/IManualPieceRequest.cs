@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="peer"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        int EnqueuePieceRequest (IPieceRequester peer, PieceRequest request);
+        void EnqueuePieceRequest (IPieceRequester peer, PieceRequest request);
 
         /// <summary>
         /// Enqueues a <see cref="CancelMessage"/> in the peer's message queue.

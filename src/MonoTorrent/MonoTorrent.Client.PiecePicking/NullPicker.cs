@@ -87,11 +87,6 @@ namespace MonoTorrent.Client.PiecePicking
         {
         }
 
-        public void Tick (IManualPieceRequest requester, IList<IPieceRequester> peers)
-        {
-
-        }
-
         public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
             pieceComplete = false;

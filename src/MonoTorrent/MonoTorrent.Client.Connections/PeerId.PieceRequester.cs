@@ -38,6 +38,7 @@ namespace MonoTorrent.Client
     public partial class PeerId : IPieceRequester
     {
         int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        long IPieceRequester.DownloadSpeed => Monitor.DownloadSpeed;
         List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
         bool IPieceRequester.IsChoking => IsChoking;
         int IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;

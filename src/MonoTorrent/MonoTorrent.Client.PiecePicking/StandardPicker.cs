@@ -190,11 +190,6 @@ namespace MonoTorrent.Client.PiecePicking
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
             => piece.Index.CompareTo (comparand);
 
-        public void Tick (IManualPieceRequest requester, IList<IPieceRequester> peers)
-        {
-            // no-op
-        }
-
         public bool ValidatePiece (IPieceRequester peer, PieceRequest request, out bool pieceComplete, out IList<IPieceRequester> peersInvolved)
         {
             int pIndex = requests.BinarySearch (IndexComparer, request.PieceIndex);

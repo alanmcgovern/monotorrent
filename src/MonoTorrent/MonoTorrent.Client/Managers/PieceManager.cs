@@ -44,6 +44,17 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PieceManager
     {
+        class ManualPieceRequester : IManualPieceRequest
+        {
+            public static ManualPieceRequester Instance = new ManualPieceRequester ();
+
+            void IManualPieceRequest.EnqueueCancelRequest (IPieceRequester peer, PieceRequest request)
+               => ((PeerId) peer).MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+
+            void IManualPieceRequest.EnqueuePieceRequest (IPieceRequester peer, PieceRequest request)
+                => ((PeerId) peer).MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount
         internal const int BonusRequestPerKb = 10;
 
@@ -54,6 +65,7 @@ namespace MonoTorrent.Client
         IPiecePicker originalPicker;
         internal IPiecePicker Picker { get; private set; }
         internal BitField PendingHashCheckPieces { get; private set; }
+        IPieceRequestUpdater RequestUpdater { get; set; }
 
         /// <summary>
         /// Returns true when every block has been requested at least once.
@@ -155,6 +167,9 @@ namespace MonoTorrent.Client
         }
 
         internal void ChangePicker (IPiecePicker picker, BitField bitfield)
+            => ChangePicker (picker, null, bitfield);
+
+        internal void ChangePicker (IPiecePicker picker, IPieceRequestUpdater requestUpdater, BitField bitfield)
         {
             originalPicker = picker;
             if (PendingHashCheckPieces.Length != bitfield.Length)
@@ -173,12 +188,26 @@ namespace MonoTorrent.Client
             picker = new IgnoringPicker (bitfield, picker);
             picker = new IgnoringPicker (PendingHashCheckPieces, picker);
             picker = new IgnoringPicker (Manager.UnhashedPieces, picker);
+
+            if (RequestUpdater != null)
+                RequestUpdater.UpdateNeeded -= UpdateNeeded;
+            RequestUpdater = requestUpdater;
+            if (RequestUpdater != null)
+                RequestUpdater.UpdateNeeded += UpdateNeeded;
+
             Picker = picker;
+        }
+
+        async void UpdateNeeded (object sender, EventArgs args)
+        {
+            var updater = RequestUpdater;
+            await ClientEngine.MainLoop;
+            updater.UpdateRequests (Picker, Manager.Peers.ConnectedPeers, ManualPieceRequester.Instance);
         }
 
         internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
         {
-            ChangePicker (originalPicker, bitfield);
+            ChangePicker (originalPicker, RequestUpdater, bitfield);
             Picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
         }
 

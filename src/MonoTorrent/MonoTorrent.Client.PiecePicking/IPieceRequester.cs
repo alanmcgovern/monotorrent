@@ -36,6 +36,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         int AmRequestingPiecesCount { get; set; }
         BitField BitField { get; }
+        long DownloadSpeed { get; }
         List<int> IsAllowedFastPieces { get; }
         bool IsChoking { get; }
         int MaxSupportedPendingRequests { get; }
