@@ -38,9 +38,11 @@ namespace MonoTorrent.Client.PiecePicking
     /// sufficient data has been buffered, then it moves to a standard 'rarest first'
     /// mode.
     /// </summary>
-    class StreamingPiecePicker : PiecePicker
+    class StreamingPiecePicker : PiecePickerFilter
     {
-        PiecePicker LowPriorityPicker { get; }
+        IPiecePicker LowPriorityPicker { get; }
+
+        IPiecePicker HighPriorityPicker { get; }
 
         /// <summary>
         /// This is the piece index of the block of data currently being consumed by the
@@ -57,35 +59,40 @@ namespace MonoTorrent.Client.PiecePicking
 
         ITorrentData TorrentData { get; set; }
 
-
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
-        public StreamingPiecePicker (PiecePicker picker)
-            : base (new PriorityPicker (picker))
+        public StreamingPiecePicker ()
+            : this (new StandardPicker ())
         {
-            LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (picker)));
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        internal StreamingPiecePicker (IPiecePicker picker)
+            : base (picker)
+        {
+            HighPriorityPicker = new PriorityPicker (Next);
+            LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (Next)));
+        }
+
+        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             TorrentData = torrentData;
-            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
-            base.Initialise (bitfield, torrentData, requests);
+            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
+            HighPriorityPicker.Initialise (bitfield, torrentData, requests);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            PieceRequest request;
+            PieceRequest? request;
             IList<PieceRequest> bundle;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 var start = HighPriorityPieceIndex;
                 var end = Math.Min (endIndex, HighPriorityPieceIndex + HighPriorityCount - 1);
-                if ((request = BasePicker.ContinueAnyExisting (peer, start, end)) != null)
-                    return new[] { request };
+                if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, start, end)) != null)
+                    return new[] { request.Value };
 
-                if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
+                if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 

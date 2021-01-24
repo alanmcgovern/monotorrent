@@ -34,6 +34,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client;
+using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Streaming
@@ -175,26 +176,42 @@ namespace MonoTorrent.Streaming
             if (!Picker.SeekToPosition (File, position))
                 return;
 
-            var fastestPeers = Manager.Peers.ConnectedPeers
+            var allPeers = Manager.Peers.ConnectedPeers
             .OrderBy (t => -t.Monitor.DownloadSpeed)
             .ToArray ();
 
-            foreach (var peer in fastestPeers)
-                Manager.PieceManager.Picker.CancelRequests (peer);
+            // It's only worth cancelling requests for peers which support cancellation. This is part of
+            // of the fast peer extensions. For peers which do not support cancellation all we can do is
+            // close the connection or allow the existing request queue to drain naturally.
+            foreach (var peer in allPeers.Where (p => p.SupportsFastPeer)) {
+                if (Picker.HighPriorityPieceIndex > 0) {
+                    foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, 0, Picker.HighPriorityPieceIndex - 1))
+                        peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
+                }
 
-            var quiteFast = fastestPeers
+                if (Picker.HighPriorityPieceIndex + Picker.HighPriorityCount < Manager.Bitfield.Length) {
+                    foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, Picker.HighPriorityPieceIndex + Picker.HighPriorityCount, Manager.Bitfield.Length - 1))
+                        peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
+                }
+            }
+
+            var fastestPeers = allPeers
                 .Where (t => t.Monitor.DownloadSpeed > 50 * 1024)
                 .ToArray ();
 
             // Queue up 12 pieces for each of our fastest peers. At a download
             // speed of 50kB/sec this should be 3 seconds of transfer for each peer.
-            for (int i = 0; i < 4; i++) {
-                foreach (var peer in quiteFast) {
-                    // FIXME: make an API for this?
-                    var original = peer.MaxPendingRequests;
-                    peer.MaxPendingRequests = (i + 1) * 3;
-                    Manager.PieceManager.AddPieceRequests (peer);
-                    peer.MaxPendingRequests = original;
+            // We queue from peers which support cancellation first as their queue
+            // is likely to be empty.
+            foreach (var supportsFastPeer in new[] { true, false }) {
+                for (int i = 0; i < 4; i++) {
+                    foreach (var peer in fastestPeers.Where (p => p.SupportsFastPeer == supportsFastPeer)) {
+                        // FIXME: make an API for this?
+                        var original = peer.MaxPendingRequests;
+                        peer.MaxPendingRequests = (i + 1) * 3;
+                        Manager.PieceManager.AddPieceRequests (peer);
+                        peer.MaxPendingRequests = original;
+                    }
                 }
             }
 

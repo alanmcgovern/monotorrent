@@ -31,31 +31,26 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class RarestFirstPicker : PiecePicker
+    public class RarestFirstPicker : PiecePickerFilter
     {
         readonly Stack<BitField> rarest;
         readonly Stack<BitField> spares;
-        int length;
 
-        BitField DequeueSpare ()
-        {
-            return spares.Count > 0 ? spares.Pop () : new BitField (length);
-        }
-
-        public RarestFirstPicker (PiecePicker picker)
+        public RarestFirstPicker (IPiecePicker picker)
             : base (picker)
         {
             rarest = new Stack<BitField> ();
             spares = new Stack<BitField> ();
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             base.Initialise (bitfield, torrentData, requests);
-            length = bitfield.Length;
+            rarest.Clear ();
+            spares.Clear ();
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
                 return null;
@@ -77,14 +72,13 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        void GenerateRarestFirst (BitField peerBitfield, IReadOnlyList<IPieceRequester> otherPeers)
+        void GenerateRarestFirst (BitField peerBitfield, IReadOnlyList<IPeer> otherPeers)
         {
             // Move anything in the rarest buffer into the spares
             while (rarest.Count > 0)
                 spares.Push (rarest.Pop ());
 
-            BitField current = DequeueSpare ();
-            current.From (peerBitfield);
+            BitField current = spares.Count > 0 ? spares.Pop ().From (peerBitfield) : peerBitfield.Clone ();
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push (current);
@@ -94,7 +88,7 @@ namespace MonoTorrent.Client.PiecePicking
                 if (otherPeers[i].BitField.AllTrue)
                     continue;
 
-                current = DequeueSpare ().From (current);
+                current = spares.Count > 0 ? spares.Pop ().From (current) : current.Clone ();
 
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.

@@ -419,7 +419,7 @@ namespace MonoTorrent.Client.Modes
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
-            await mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ().WithTimeout ();
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#1");
 
             var oldStateTask = new TaskCompletionSource<TorrentState> ();
@@ -429,10 +429,10 @@ namespace MonoTorrent.Client.Modes
                 newStateTask.SetResult (e.NewState);
             };
             Manager.Files.Skip (1).First ().Priority = Priority.Normal;
-            await mode.UpdateSeedingDownloadingState ();
+            await mode.UpdateSeedingDownloadingState ().WithTimeout ();
 
-            var oldState = await oldStateTask.Task;
-            var newState = await newStateTask.Task;
+            var oldState = await oldStateTask.Task.WithTimeout ();
+            var newState = await newStateTask.Task.WithTimeout ();
 
             Assert.That (Manager.Progress, Is.GreaterThan (0.0), "#3a");
             Assert.That (Manager.Progress, Is.LessThan (100.0), "#3b");

@@ -67,29 +67,28 @@ namespace MonoTorrent.Client.PiecePicking
             otherPeer = PeerId.CreateNull (pieceCount, seeder: true, isChoking: false, amInterested: true);
         }
 
-        (StreamingPiecePicker picker, T basePicker) CreatePicker<T> ()
-            where T : PiecePicker, new ()
+        (StreamingPiecePicker picker, PiecePickerFilterChecker checker) CreatePicker ()
         {
-            var basePicker = new T ();
-            var picker = new StreamingPiecePicker (basePicker);
-            picker.Initialise (bitfield, data, Enumerable.Empty<Piece> ());
-            return (picker, basePicker);
+            var checker = new PiecePickerFilterChecker (new StandardPicker ());
+            var picker = new StreamingPiecePicker (checker);
+            picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
+            return (picker, checker);
         }
 
         [Test]
         public void HighPriorityPreferred ()
         {
-            (var picker, var checker) = CreatePicker<TestPicker> ();
+            (var picker, var checker) = CreatePicker ();
 
-            checker.ReturnNoPiece = false;
             picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
-            Assert.AreEqual (checker.PickedIndex.Single (), Tuple.Create (0, picker.HighPriorityCount - 1));
+            Assert.AreEqual (checker.Picks[0].startIndex, 0);
+            Assert.AreEqual (checker.Picks[0].endIndex, picker.HighPriorityCount - 1);
         }
 
         [Test]
         public void LowPriority_AlwaysHigherThanHighPriority ()
         {
-            (var picker, _) = CreatePicker<StandardPicker> ();
+            (var picker, _) = CreatePicker ();
             Assert.IsTrue (picker.SeekToPosition (data.Files[0], data.PieceLength * 5));
             picker.HighPriorityCount = 20;
 
@@ -110,7 +109,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void LowPriority_PeersDoNotSharePieceRequests ()
         {
-            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            (var picker, _) = CreatePicker ();
             var alreadyDownloaded = bitfield
                 .Clone ()
                 .SetTrue ((picker.HighPriorityPieceIndex, picker.HighPriorityPieceIndex + picker.HighPriorityCount - 1))
@@ -126,18 +125,17 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void HighPriority_PeersSharePieceRequests ()
         {
-            (var picker, var checker) = CreatePicker<TestPicker> ();
+            (var picker, var checker) = CreatePicker ();
 
-            checker.ReturnNoPiece = false;
             picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
-            Assert.AreEqual (checker.PickedIndex.Single (), Tuple.Create (0, picker.HighPriorityCount - 1));
-            Assert.IsTrue (checker.HasContinuedAnyExisting);
+            Assert.AreEqual (checker.Picks[0].startIndex, 0);
+            Assert.AreEqual (checker.Picks[0].endIndex, picker.HighPriorityCount - 1);
         }
 
         [Test]
         public void CheckPiecesPicker_Start ()
         {
-            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            (var picker, _) = CreatePicker ();
 
             var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
             for (int i = 0; i < 16; i++)
@@ -147,7 +145,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void CheckPiecesPicker_Mid ()
         {
-            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            (var picker, _) = CreatePicker ();
             Assert.IsTrue (picker.SeekToPosition (data.Files[0], data.PieceLength * 7));
 
             var requests = picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
@@ -158,7 +156,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void PickAfterHighPriorityDownloaded ()
         {
-            (var streamingPicker, var checker) = CreatePicker<StandardPicker> ();
+            (var streamingPicker, _) = CreatePicker ();
 
             Assert.IsFalse (streamingPicker.SeekToPosition (data.Files[0], 0));
             for (int i = 0; i < streamingPicker.HighPriorityCount; i++)
@@ -173,7 +171,7 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void StreamingPickerSupportsPriority ()
         {
-            (var picker, var checker) = CreatePicker<StandardPicker> ();
+            (var picker, _) = CreatePicker ();
             data.Files[0].Priority = Priority.DoNotDownload;
             Assert.IsFalse (picker.SeekToPosition (data.Files[0], 0));
 

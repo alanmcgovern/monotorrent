@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     ///
     /// </summary>
-    public struct Block
+    struct Block
     {
         readonly Piece piece;
         bool received;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
 
         public int RequestLength { get; }
 
-        internal IPieceRequester RequestedOff { get; private set; }
+        internal IPeer RequestedOff { get; private set; }
 
         public int StartOffset { get; }
 
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
             StartOffset = startOffset;
         }
 
-        internal PieceRequest CreateRequest (IPieceRequester peer)
+        internal PieceRequest CreateRequest (IPeer peer)
         {
             if (RequestedOff == null)
                 piece.TotalRequested++;
@@ -112,6 +112,14 @@ namespace MonoTorrent.Client
             if (blocks[index].StartOffset != startOffset || blocks[index].RequestLength != blockLength)
                 return -1;
             return index;
+        }
+
+        internal void FromRequest (ActivePieceRequest block)
+        {
+            Received = block.Received;
+            RequestedOff = block.RequestedOff;
+
+            piece.TotalRequested += 1;
         }
     }
 }

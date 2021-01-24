@@ -35,21 +35,16 @@ using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPieceRequester
+    public partial class PeerId : IPeer
     {
-        int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
-        bool IPieceRequester.Disposed => Disposed;
-        List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool IPieceRequester.IsChoking => IsChoking;
-        TimeSpan IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
-        int IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
-        List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
-        bool IPieceRequester.SupportsFastPeer => SupportsFastPeer;
-        int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
-
-        void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
-        {
-            MessageQueue.Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
-        }
+        int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        long IPeer.DownloadSpeed => Monitor.DownloadSpeed;
+        List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
+        bool IPeer.IsChoking => IsChoking;
+        int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;
+        List<int> IPeer.SuggestedPieces => SuggestedPieces;
+        bool IPeer.CanCancelRequests => SupportsFastPeer;
+        int IPeer.TotalHashFails => Peer.TotalHashFails;
+        int IPeer.MaxSupportedPendingRequests => MaxSupportedPendingRequests;
     }
 }

@@ -29,12 +29,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class StandardPicker : PiecePicker
+    public class StandardPicker : IPiecePicker
     {
         static readonly Logger logger = Logger.Create ();
 
@@ -43,43 +44,66 @@ namespace MonoTorrent.Client.PiecePicking
         ITorrentData TorrentData { get; set; }
 
         public StandardPicker ()
-            : base (null)
         {
             requests = new SortList<Piece> ();
         }
 
-        public override void CancelRequest (IPieceRequester peer, int piece, int startOffset, int length)
+        public int AbortRequests (IPeer peer)
         {
-            CancelWhere (b => b.StartOffset == startOffset &&
-                              b.RequestLength == length &&
-                              b.PieceIndex == piece &&
-                              peer == b.RequestedOff);
+            return CancelWhere (b => peer == b.RequestedOff);
         }
 
-        public override void CancelRequests (IPieceRequester peer)
+        public IList<PieceRequest> CancelRequests (IPeer peer, int startIndex, int endIndex)
         {
-            CancelWhere (b => peer == b.RequestedOff);
+            IList<PieceRequest> cancelled = null;
+
+            for (int p = 0; p < requests.Count; p++) {
+                Piece piece = requests[p];
+                if (piece.Index < startIndex || piece.Index > endIndex)
+                    continue;
+
+                Block[] blocks = requests[p].Blocks;
+                for (int i = 0; i < blocks.Length; i++) {
+                    if (!blocks[i].Received && blocks[i].RequestedOff == peer) {
+                        blocks[i].CancelRequest ();
+                        requests[p].Abandoned = true;
+                        cancelled ??= new List<PieceRequest> ();
+                        cancelled.Add (new PieceRequest (piece.Index, blocks[i].StartOffset, blocks[i].RequestLength));
+                    }
+                }
+            }
+
+            return cancelled ?? Array.Empty<PieceRequest> ();
         }
 
-        void CancelWhere (Predicate<Block> predicate)
+        public void RequestRejected (IPeer peer, PieceRequest rejectedRequest)
         {
-            bool cancelled = false;
+            CancelWhere (b => b.StartOffset == rejectedRequest.StartOffset &&
+                              b.RequestLength == rejectedRequest.RequestLength &&
+                              b.PieceIndex == rejectedRequest.PieceIndex &&
+                              b.RequestedOff == peer);
+        }
+
+        int CancelWhere (Predicate<Block> predicate)
+        {
+            int count = 0;
             for (int p = 0; p < requests.Count; p++) {
                 Block[] blocks = requests[p].Blocks;
                 for (int i = 0; i < blocks.Length; i++) {
                     if (predicate (blocks[i]) && !blocks[i].Received) {
                         requests[p].Abandoned = true;
-                        cancelled = true;
                         blocks[i].CancelRequest ();
+                        count++;
                     }
                 }
             }
 
-            if (cancelled)
+            if (count > 0)
                 requests.RemoveAll (p => p.NoBlocksRequested);
+            return count;
         }
 
-        public override int CurrentReceivedCount ()
+        public int CurrentReceivedCount ()
         {
             int count = 0;
             for (int i = 0; i < requests.Count; i++)
@@ -87,7 +111,7 @@ namespace MonoTorrent.Client.PiecePicking
             return count;
         }
 
-        public override int CurrentRequestCount ()
+        public int CurrentRequestCount ()
         {
             int count = 0;
             for (int i = 0; i < requests.Count; i++)
@@ -95,48 +119,61 @@ namespace MonoTorrent.Client.PiecePicking
             return count;
         }
 
-        public override List<Piece> ExportActiveRequests ()
+        public IList<ActivePieceRequest> ExportActiveRequests ()
         {
-            return new List<Piece> (requests);
+            var list = new List<ActivePieceRequest> ();
+            foreach(var piece in requests) {
+                foreach (var block in piece.Blocks) {
+                    if (block.Requested)
+                        list.Add (new ActivePieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.RequestedOff, block.Received));
+                }
+            }
+            return list;
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             TorrentData = torrentData;
             this.requests.Clear ();
-            foreach (Piece p in requests)
-                this.requests.Add (p);
+            foreach (var group in requests.GroupBy (p => p.Request.PieceIndex)) {
+                var piece = new Piece (group.Key, torrentData.PieceLength, torrentData.Size);
+                foreach (var block in group)
+                    piece.Blocks[block.Request.StartOffset / Piece.BlockSize].FromRequest (block);
+                this.requests.Add (piece);
+            }
         }
 
-        public override bool IsInteresting (BitField bitfield)
+        public bool IsInteresting (IPeer peer, BitField bitfield)
         {
             return !bitfield.AllFalse;
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            PieceRequest message;
+            PieceRequest? message;
             IList<PieceRequest> bundle;
 
             // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
             // requests that could be continued would be existing "Fast" pieces.
-            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, false, false)) != null)
-                return new[] { message };
+            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, 1, false, false)) != null)
+                return new[] { message.Value };
 
             // Then we check if there are any allowed "Fast" pieces to download
             if (peer.IsChoking && (message = GetFromList (peer, available, peer.IsAllowedFastPieces)) != null)
-                return new[] { message };
+                return new[] { message.Value };
 
             // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
             if (peer.IsChoking)
                 return null;
 
-            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, true, false)) != null)
-                return new[] { message };
+            // Only try to continue an abandoned piece if this peer has not recently been involved in downloading data which
+            // failed it's hash check.
+            if (peer.RepeatedHashFails == 0  && (message = ContinueExistingRequest (peer, startIndex, endIndex, 1, true, false)) != null)
+                return new[] { message.Value };
 
             // We see if the peer has suggested any pieces we should request
             if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null)
-                return new[] { message };
+                return new[] { message.Value };
 
             // Now we see what pieces the peer has that we don't have and try and request one
             if ((bundle = GetStandardRequest (peer, available, startIndex, endIndex, count)) != null)
@@ -145,7 +182,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Reset ()
+        public void Reset ()
         {
             requests.Clear ();
         }
@@ -153,51 +190,55 @@ namespace MonoTorrent.Client.PiecePicking
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
             => piece.Index.CompareTo (comparand);
 
-        public override bool ValidatePiece (IPieceRequester peer, int pieceIndex, int startOffset, int length, out Piece piece)
+        public bool ValidatePiece (IPeer peer, PieceRequest request, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            int pIndex = requests.BinarySearch (IndexComparer, pieceIndex);
+            int pIndex = requests.BinarySearch (IndexComparer, request.PieceIndex);
+            pieceComplete = false;
+            peersInvolved = null;
 
             if (pIndex < 0) {
-                piece = null;
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", pieceIndex, startOffset, peer.Uri);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
-            piece = requests[pIndex];
+            var piece = requests[pIndex];
             // Pick out the block that this piece message belongs to
-            int blockIndex = Block.IndexOf (piece.Blocks, startOffset, length);
+            int blockIndex = Block.IndexOf (piece.Blocks, request.StartOffset, request.RequestLength);
             if (blockIndex == -1 || !peer.Equals (piece.Blocks[blockIndex].RequestedOff)) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No block ", pieceIndex, startOffset, peer.Uri);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No block ", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             if (piece.Blocks[blockIndex].Received) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Already received.", pieceIndex, startOffset, peer.Uri);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Already received.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             if (!piece.Blocks[blockIndex].Requested) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Not requested.", pieceIndex, startOffset, peer.Uri);
+                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Not requested.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             peer.AmRequestingPiecesCount--;
             piece.Blocks[blockIndex].Received = true;
 
-            if (piece.AllBlocksReceived)
+            if (piece.AllBlocksReceived) {
+                pieceComplete = true;
+                peersInvolved = piece.Blocks.Select (t => t.RequestedOff).Distinct ().ToArray ();
                 requests.RemoveAt (pIndex);
+            }
             return true;
         }
 
-        public override PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex)
-            => ContinueExistingRequest (peer, startIndex, endIndex, false, false);
+        public PieceRequest? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
+            => ContinueExistingRequest (peer, startIndex, endIndex, 1, false, false);
 
-        PieceRequest ContinueExistingRequest (IPieceRequester peer, int startIndex, int endIndex, bool allowAbandoned, bool allowAny)
+        PieceRequest? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests, bool allowAbandoned, bool allowAny)
         {
             for (int req = 0; req < requests.Count; req++) {
                 Piece p = requests[req];
-                if (p.Index < startIndex || p.Index > endIndex || !peer.BitField[p.Index])
+                if (p.Index < startIndex || p.Index > endIndex || p.AllBlocksRequested || !peer.BitField[p.Index])
                     continue;
 
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if (allowAny || (allowAbandoned && p.Abandoned && peer.RepeatedHashFails == 0) || (peer == p.Blocks[0].RequestedOff && !p.AllBlocksRequested)) {
+                if (allowAny || (allowAbandoned && p.Abandoned) || peer == p.Blocks[0].RequestedOff) {
                     for (int i = 0; i < p.BlockCount; i++) {
                         if (!p.Blocks[i].Received && !p.Blocks[i].Requested)
                             return p.Blocks[i].CreateRequest (peer);
@@ -205,21 +246,23 @@ namespace MonoTorrent.Client.PiecePicking
                 }
             }
 
+            // FIXME: fully support 'maxDuplicateRequests'
+
             // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
             return null;
         }
 
-        public override PieceRequest ContinueAnyExisting (IPieceRequester peer, int startIndex, int endIndex)
+        public PieceRequest? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
             if (peer.RepeatedHashFails != 0)
                 return null;
 
-            return ContinueExistingRequest (peer, startIndex, endIndex, true, true);
+            return ContinueExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests, true, true);
         }
 
-        protected PieceRequest GetFromList (IPieceRequester peer, BitField bitfield, IList<int> pieces)
+        PieceRequest? GetFromList (IPeer peer, BitField bitfield, IList<int> pieces)
         {
             if (!peer.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
                 return null;
@@ -240,7 +283,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public IList<PieceRequest> GetStandardRequest (IPieceRequester peer, BitField current, int startIndex, int endIndex, int count)
+        IList<PieceRequest> GetStandardRequest (IPeer peer, BitField current, int startIndex, int endIndex, int count)
         {
             int piecesNeeded = (count * Piece.BlockSize) / TorrentData.PieceLength;
             if ((count * Piece.BlockSize) % TorrentData.PieceLength != 0)
@@ -269,13 +312,31 @@ namespace MonoTorrent.Client.PiecePicking
 
         int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
+            // This is the easiest case to consider - special case it
+            if (pieceCount == 1) {
+                while (pieceStartIndex <= pieceEndIndex && (pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
+                    var end = bitfield.FirstFalse (pieceStartIndex, pieceEndIndex);
+
+                    // If end is a valid value, it's the first *false* piece. Subtract '1' from it
+                    // to give us the last available piece we can request. If it's -1 then we can use
+                    // 'pieceEndIndex' as the last available piece to request as all pieces are available.
+                    var lastAvailable = end == -1 ? pieceEndIndex : end - 1;
+                    for (int i = pieceStartIndex; i <= lastAvailable; i++)
+                        if (!AlreadyRequested (i))
+                            return i;
+                    pieceStartIndex = lastAvailable + 1;
+                }
+                return -1;
+            }
+
             int largestStart = 0;
             int largestEnd = 0;
-            while ((pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
+            while (pieceStartIndex <= pieceEndIndex  && (pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
                 int end = bitfield.FirstFalse (pieceStartIndex, pieceEndIndex);
                 if (end == -1)
                     end = Math.Min (pieceStartIndex + pieceCount, bitfield.Length);
 
+                // Do not include 'end' as it's the first *false* piece.
                 for (int i = pieceStartIndex; i < end; i++)
                     if (AlreadyRequested (i))
                         end = i;

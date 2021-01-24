@@ -196,7 +196,7 @@ namespace MonoTorrent.Client
             int index = 0;
             while (advertised < max) {
                 // Get the index of the first piece we can send him
-                index = temp.FirstTrue (index, temp.Length);
+                index = temp.FirstTrue (index, temp.Length - 1);
                 // Looks like he's not interested in us...
                 if (index == -1)
                     return;

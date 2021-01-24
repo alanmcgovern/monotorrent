@@ -44,6 +44,17 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PieceManager
     {
+        class ManualPieceRequester : IManualPieceRequest
+        {
+            public static ManualPieceRequester Instance = new ManualPieceRequester ();
+
+            void IManualPieceRequest.EnqueueCancelRequest (IPeer peer, PieceRequest request)
+               => ((PeerId) peer).MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+
+            void IManualPieceRequest.EnqueuePieceRequest (IPeer peer, PieceRequest request)
+                => ((PeerId) peer).MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount
         internal const int BonusRequestPerKb = 10;
 
@@ -51,9 +62,15 @@ namespace MonoTorrent.Client
         internal const int NormalRequestAmount = 8;
 
         TorrentManager Manager { get; }
-        PiecePicker originalPicker;
-        internal PiecePicker Picker { get; private set; }
+        IPiecePicker originalPicker;
+        internal IPiecePicker Picker { get; private set; }
         internal BitField PendingHashCheckPieces { get; private set; }
+        IPieceRequestUpdater RequestUpdater { get; set; }
+
+        /// <summary>
+        /// Returns true when every block has been requested at least once.
+        /// </summary>
+        internal bool InEndgameMode { get; private set; }
 
         internal PieceManager (TorrentManager manager)
         {
@@ -62,20 +79,21 @@ namespace MonoTorrent.Client
             PendingHashCheckPieces = new BitField (1);
         }
 
-        internal Piece PieceDataReceived (PeerId id, PieceMessage message)
+        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece)) {
+            if (Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
-                if (piece.AllBlocksReceived)
+                if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
-                return piece;
+                return true;
+            } else {
+                return false;
             }
-            return null;
         }
 
         internal void AddPieceRequests (PeerId id)
         {
-            int maxRequests = id.MaxPendingRequests;
+            int maxRequests = InEndgameMode ? 3 : id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return;
@@ -96,9 +114,9 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking || id.SupportsFastPeer) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueExistingRequest (id, 0, id.BitField.Length - 1);
+                    PieceRequest? request = Picker.ContinueExistingRequest (id, 0, id.BitField.Length - 1);
                     if (request != null)
-                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+                        id.MessageQueue.Enqueue (new RequestMessage (request.Value.PieceIndex, request.Value.StartOffset, request.Value.RequestLength));
                     else
                         break;
                 }
@@ -107,7 +125,7 @@ namespace MonoTorrent.Client
             if (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0)) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
                     List<PeerId> otherPeers = Manager.Peers.ConnectedPeers ?? new List<PeerId> ();
-                    IList<PieceRequest> request = Picker.PickPiece (id, id.BitField, otherPeers, count);
+                    IList<PieceRequest> request = Picker.PickPiece (id, id.BitField, otherPeers, count, 0, Manager.Bitfield.Length - 1);
                     if (request != null && request.Count > 0)
                         id.MessageQueue.Enqueue (new RequestBundle (request));
                     else
@@ -117,9 +135,17 @@ namespace MonoTorrent.Client
 
             if (!id.IsChoking && id.AmRequestingPiecesCount == 0) {
                 while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueAnyExisting (id, 0, Manager.Bitfield.Length - 1);
+                    PieceRequest? request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1, 1);
+                    // If this peer is a seeder and we are unable to request any new blocks, then we should enter
+                    // endgame mode. Every block has been requested at least once at this point.
+                    if (request == null && (InEndgameMode || id.IsSeeder)) {
+                        request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1, 2);
+                        if (InEndgameMode = request != null)
+                            maxRequests = 3;
+                    }
+
                     if (request != null)
-                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+                        id.MessageQueue.Enqueue (new RequestMessage (request.Value.PieceIndex, request.Value.StartOffset, request.Value.RequestLength));
                     else
                         break;
                 }
@@ -137,10 +163,13 @@ namespace MonoTorrent.Client
                 return true;
 
             // Otherwise we need to do a full check
-            return Picker.IsInteresting (id.BitField);
+            return Picker.IsInteresting (id, id.BitField);
         }
 
-        internal void ChangePicker (PiecePicker picker, BitField bitfield)
+        internal void ChangePicker (IPiecePicker picker, BitField bitfield)
+            => ChangePicker (picker, null, bitfield);
+
+        internal void ChangePicker (IPiecePicker picker, IPieceRequestUpdater requestUpdater, BitField bitfield)
         {
             originalPicker = picker;
             if (PendingHashCheckPieces.Length != bitfield.Length)
@@ -159,19 +188,33 @@ namespace MonoTorrent.Client
             picker = new IgnoringPicker (bitfield, picker);
             picker = new IgnoringPicker (PendingHashCheckPieces, picker);
             picker = new IgnoringPicker (Manager.UnhashedPieces, picker);
+
+            if (RequestUpdater != null)
+                RequestUpdater.UpdateNeeded -= UpdateNeeded;
+            RequestUpdater = requestUpdater;
+            if (RequestUpdater != null)
+                RequestUpdater.UpdateNeeded += UpdateNeeded;
+
             Picker = picker;
+        }
+
+        async void UpdateNeeded (object sender, EventArgs args)
+        {
+            var updater = RequestUpdater;
+            await ClientEngine.MainLoop;
+            updater.UpdateRequests (Picker, Manager.Peers.ConnectedPeers, ManualPieceRequester.Instance);
         }
 
         internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
         {
-            ChangePicker (originalPicker, bitfield);
-            Picker.Initialise (bitfield, data, Enumerable.Empty<Piece> ());
+            ChangePicker (originalPicker, RequestUpdater, bitfield);
+            Picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         internal void Reset ()
         {
             PendingHashCheckPieces.SetAll (false);
-            Picker?.Reset ();
+            Picker?.Initialise (Manager.Bitfield, Manager, Array.Empty<ActivePieceRequest> ());
         }
 
         public async Task<int> CurrentRequestCountAsync ()

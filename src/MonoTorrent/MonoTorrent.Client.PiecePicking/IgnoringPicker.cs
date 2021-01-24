@@ -31,19 +31,23 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class IgnoringPicker : PiecePicker
+    public class IgnoringPicker : PiecePickerFilter
     {
         readonly BitField Bitfield;
         readonly BitField Temp;
 
-        public IgnoringPicker (BitField bitfield, PiecePicker picker)
+        public IgnoringPicker (BitField bitfield, IPiecePicker picker)
             : base (picker)
         {
             Bitfield = bitfield;
             Temp = new BitField (bitfield.Length);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override bool IsInteresting (IPeer peer, BitField bitfield)
+            => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
+            && base.IsInteresting (peer, Temp);
+
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
@@ -55,12 +59,6 @@ namespace MonoTorrent.Client.PiecePicking
                 return null;
 
             return base.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
-        }
-
-        public override bool IsInteresting (BitField bitfield)
-        {
-            Temp.From (bitfield).NAnd (Bitfield);
-            return !Temp.AllFalse && base.IsInteresting (Temp);
         }
     }
 }
