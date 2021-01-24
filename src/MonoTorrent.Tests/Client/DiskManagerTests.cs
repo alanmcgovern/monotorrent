@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
                 ("First",  Piece.BlockSize / 2),
                 ("Second", Piece.BlockSize),
                 ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
-                ("Fourth", Piece.BlockSize * 6 + Piece.BlockSize / 2),
+                ("Fourth", Piece.BlockSize * 10 + Piece.BlockSize / 2),
             };
 
             int pieceLength = Piece.BlockSize * 3;
@@ -206,7 +206,7 @@ namespace MonoTorrent.Client
             }
 
             foreach (var v in tasks)
-                Assert.DoesNotThrowAsync (async () => await v.WithTimeout (1000), "#6");
+                Assert.DoesNotThrowAsync (() => v.WithTimeout (1000), "#6");
         }
 
         [Test]
@@ -337,14 +337,17 @@ namespace MonoTorrent.Client
             diskManager.UpdateSettings (new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize }.ToSettings ());
             await diskManager.Tick (1000);
 
-            for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
-                _ = diskManager.ReadAsync (fileData, 0, buffer, buffer.Length);
+            var tasks = new List<Task> ();
+            for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
+                tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
 
             while (diskManager.PendingReads > 0)
                 await diskManager.Tick (1000);
 
             // We should be reading at about 1 block per second.
-            Assert.IsTrue (Math.Abs (Piece.BlockSize - diskManager.ReadRate) < (Piece.BlockSize * 0.1), "#1");
+            Assert.AreEqual (Piece.BlockSize, diskManager.ReadRate, "#1");
+            Assert.AreEqual ((SpeedMonitor.DefaultAveragePeriod + 1) * Piece.BlockSize, diskManager.TotalRead, "#2");
+            await Task.WhenAll (tasks).WithTimeout ();
         }
 
         [Test]
@@ -408,17 +411,12 @@ namespace MonoTorrent.Client
 
             int offset = 0;
             foreach (var block in allData.Partition (Piece.BlockSize)) {
-                await diskManager.WriteAsync (fileData, offset, block, block.Length);
-
-                // Attempt to 'overwrite' the data from the primary torrent by writing the same block
-                // or the subsequent block
-                await diskManager.WriteAsync (otherData, offset, emptyBytes, block.Length);
-
-                // Don't accidentally write beyond the end of the data
-                if (offset + Piece.BlockSize < otherData.Size) {
-                    var count = offset + Piece.BlockSize + block.Length > otherData.Size ? otherData.Size % otherData.PieceLength : Piece.BlockSize;
-                    await diskManager.WriteAsync (otherData, offset + Piece.BlockSize, emptyBytes, (int) count);
-                }
+                await Task.WhenAll (
+                    diskManager.WriteAsync (fileData, offset, block, block.Length).AsTask (),
+                    // Attempt to 'overwrite' the data from the primary torrent by writing the same block
+                    // or the subsequent block
+                    diskManager.WriteAsync (otherData, offset, emptyBytes, block.Length).AsTask ()
+                );
                 offset += block.Length;
             }
 
@@ -433,6 +431,7 @@ namespace MonoTorrent.Client
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
             }
+            Assert.AreEqual (fileData.Size + otherData.Size, diskManager.TotalWritten, "#4");
         }
 
         [Test]
@@ -525,14 +524,16 @@ namespace MonoTorrent.Client
             diskManager.UpdateSettings (new EngineSettingsBuilder { MaximumDiskWriteRate = Piece.BlockSize }.ToSettings ());
             await diskManager.Tick (1000);
 
-            for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod * 2; i++)
-                _ = diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length);
-
+            var writes = new List<Task> ();
+            for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
+                writes.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length).AsTask ());
             while (diskManager.PendingWrites > 0)
-                await diskManager.Tick (1000);
+                await diskManager.Tick (1000).WithTimeout ();
 
             // We should be writing at about 1 block per second.
-            Assert.IsTrue (Math.Abs (Piece.BlockSize - diskManager.WriteRate) < (Piece.BlockSize * 0.1), "#1");
+            Assert.AreEqual (Piece.BlockSize, diskManager.WriteRate, "#1");
+            Assert.AreEqual ((SpeedMonitor.DefaultAveragePeriod + 1) * Piece.BlockSize, diskManager.TotalWritten, "#2");
+            await Task.WhenAll (writes).WithTimeout ();
         }
     }
 }
