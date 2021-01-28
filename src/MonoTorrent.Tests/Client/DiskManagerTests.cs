@@ -116,8 +116,8 @@ namespace MonoTorrent.Client
         DiskManager diskManager;
         PieceWriter writer;
 
-        [SetUp]
-        public void Setup ()
+        [OneTimeSetUp]
+        public void OnetimeSetup ()
         {
             var random = new Random ();
             var filePieces = new[] {
@@ -156,10 +156,14 @@ namespace MonoTorrent.Client
                 Size = files.Sum (f => f.Length),
                 PieceLength = pieceLength
             };
+        }
 
+        [SetUp]
+        public void Setup ()
+        {
             writer = new PieceWriter ();
-            for (int i = 0; i < files.Count; i++)
-                writer.Data.Add (files[i], fileBytes[i]);
+            for (int i = 0; i < fileData.Files.Count; i++)
+                writer.Data.Add (fileData.Files[i], fileData.Data[i]);
 
             diskManager = new DiskManager (new EngineSettings (), writer);
         }
