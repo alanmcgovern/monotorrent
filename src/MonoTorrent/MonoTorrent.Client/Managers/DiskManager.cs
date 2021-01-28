@@ -592,7 +592,19 @@ namespace MonoTorrent.Client
         /// <param name="delta">The amount of time, in milliseconds, which has passed</param>
         /// <returns></returns>
         internal async ReusableTask Tick (int delta)
-            =>  await Tick (delta, true);
+        {
+            // The tests sometimes set the rate limit to 1kB/sec, then they tick
+            // time forwards, and they ensure no data is actually written. If the
+            // test fixture has called ReadAsync/WriteAsync, we want to ensure the
+            // tick executes *after* they are processed to avoid having a race condition
+            // where the tests enqueues things assuming the rate limit is 1kB/sec and so
+            // the pieces won't be written, but then they *are* actually written because
+            // UpdateChunks is invoked before the IO thread loops.
+            // By forcing this to occur on the IO loop for the tests, that race condition
+            // is eliminated. In the real world this is a threadsafe update so it's fine!
+            await IOLoop;
+            await Tick (delta, true);
+        }
 
         ReusableTask Tick (int delta, bool waitForBufferedIO)
         {

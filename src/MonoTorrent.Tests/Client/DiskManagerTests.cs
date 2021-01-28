@@ -169,7 +169,7 @@ namespace MonoTorrent.Client
         {
             // Ensure the read rate is smaller than a block
             diskManager.UpdateSettings (new EngineSettingsBuilder { MaximumDiskReadRate = 1 }.ToSettings ());
-            await diskManager.Tick (1000);
+            await diskManager.Tick (1000).WithTimeout ();
 
             // Queue up 6 reads, none should process.
             var buffer = new byte[Piece.BlockSize];
@@ -181,13 +181,13 @@ namespace MonoTorrent.Client
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#1");
 
             // We should still process none.
-            await diskManager.Tick (1000);
+            await diskManager.Tick (1000).WithTimeout ();
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#2");
 
             // Give a proper max read rate.
             diskManager.UpdateSettings (new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize * 2 }.ToSettings ());
             for (int i = 0; i < 2; i++) {
-                await diskManager.Tick (1000);
+                await diskManager.Tick (1000).WithTimeout ();
                 count -= 2;
                 Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#3." + i);
             }
@@ -198,9 +198,8 @@ namespace MonoTorrent.Client
                 tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
             }
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#4." + count);
-
             while (count > 0) {
-                await diskManager.Tick (1000);
+                await diskManager.Tick (1000).WithTimeout ();
                 count -= 2;
                 Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#5." + count);
             }
