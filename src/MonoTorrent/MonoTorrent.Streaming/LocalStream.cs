@@ -186,15 +186,21 @@ namespace MonoTorrent.Streaming
             // It's only worth cancelling requests for peers which support cancellation. This is part of
             // of the fast peer extensions. For peers which do not support cancellation all we can do is
             // close the connection or allow the existing request queue to drain naturally.
-            foreach (var peer in allPeers.Where (p => p.SupportsFastPeer)) {
-                if (Picker.HighPriorityPieceIndex > 0) {
-                    foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, 0, Picker.HighPriorityPieceIndex - 1))
-                        peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
-                }
+            //
+            // FIXME: how could/should this be implemented in a custom IPiecePicker??
+            var start = Picker.HighPriorityPieceIndex;
+            var end = Math.Min (Manager.Bitfield.Length - 1, start + Picker.HighPriorityCount - 1);
+            if (Manager.Bitfield.FirstFalse (start, end) != -1) {
+                foreach (var peer in allPeers.Where (p => p.SupportsFastPeer)) {
+                    if (Picker.HighPriorityPieceIndex > 0) {
+                        foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, 0, Picker.HighPriorityPieceIndex - 1))
+                            peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
+                    }
 
-                if (Picker.HighPriorityPieceIndex + Picker.HighPriorityCount < Manager.Bitfield.Length) {
-                    foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, Picker.HighPriorityPieceIndex + Picker.HighPriorityCount, Manager.Bitfield.Length - 1))
-                        peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
+                    if (Picker.HighPriorityPieceIndex + Picker.HighPriorityCount < Manager.Bitfield.Length) {
+                        foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, Picker.HighPriorityPieceIndex + Picker.HighPriorityCount, Manager.Bitfield.Length - 1))
+                            peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
+                    }
                 }
             }
 
