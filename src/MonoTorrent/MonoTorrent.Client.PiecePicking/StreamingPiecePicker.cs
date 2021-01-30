@@ -113,6 +113,10 @@ namespace MonoTorrent.Client.PiecePicking
             if ((bundle = LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, lowPriorityEndIndex)) != null)
                 return bundle;
 
+            // If we're downloading from the 'not important at all' section, queue up at most 2.
+            if (peer.AmRequestingPiecesCount > 2)
+                return null;
+
             return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, endIndex);
         }
 
