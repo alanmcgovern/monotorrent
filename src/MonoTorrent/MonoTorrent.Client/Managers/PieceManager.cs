@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
                     // endgame mode. Every block has been requested at least once at this point.
                     if (request == null && (InEndgameMode || id.IsSeeder)) {
                         request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1, 2);
-                        if (InEndgameMode = request != null)
+                        if (InEndgameMode |= request != null)
                             maxRequests = 3;
                     }
 
