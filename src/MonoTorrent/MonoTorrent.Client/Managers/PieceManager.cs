@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests (PeerId id)
         {
-            int maxRequests = InEndgameMode ? 3 : id.MaxPendingRequests;
+            int maxRequests = id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return;
@@ -140,8 +140,9 @@ namespace MonoTorrent.Client
                     // endgame mode. Every block has been requested at least once at this point.
                     if (request == null && (InEndgameMode || id.IsSeeder)) {
                         request = Picker.ContinueAnyExistingRequest (id, 0, Manager.Bitfield.Length - 1, 2);
-                        if (InEndgameMode |= request != null)
-                            maxRequests = 3;
+                        // FIXME: What if the picker is choosing to not allocate pieces? Then it's not endgame mode.
+                        // This should be deterministic, not a heuristic?
+                        InEndgameMode |= request != null && (Manager.Bitfield.Length - Manager.Bitfield.TrueCount) < 10;
                     }
 
                     if (request != null)
