@@ -121,5 +121,14 @@ namespace MonoTorrent.Client
 
             piece.TotalRequested += 1;
         }
+
+        internal void TrySetReceived (IPeer peer)
+        {
+            if (!received) {
+                CancelRequest ();
+                RequestedOff = peer;
+                Received = true;
+            }
+        }
     }
 }

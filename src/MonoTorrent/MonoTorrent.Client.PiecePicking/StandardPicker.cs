@@ -39,12 +39,14 @@ namespace MonoTorrent.Client.PiecePicking
     {
         static readonly Logger logger = Logger.Create ();
 
+        readonly Dictionary<int, List<Piece>> duplicates;
         readonly SortList<Piece> requests;
 
         ITorrentData TorrentData { get; set; }
 
         public StandardPicker ()
         {
+            duplicates = new Dictionary<int, List<Piece>> ();
             requests = new SortList<Piece> ();
         }
 
@@ -184,6 +186,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public void Reset ()
         {
+            duplicates.Clear ();
             requests.Clear ();
         }
 
@@ -200,7 +203,48 @@ namespace MonoTorrent.Client.PiecePicking
                 logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
-            var piece = requests[pIndex];
+
+            var primaryPiece = requests[pIndex];
+            var result = ValidateRequestWithPiece (peer, request, primaryPiece, out pieceComplete, out peersInvolved);
+
+            // If there are no duplicate requests, exit early! Otherwise we'll need to do book keeping to
+            // ensure our received piece is not re-requested again.
+            if (!duplicates.TryGetValue (request.PieceIndex, out List<Piece> extraPieces)) {
+                if (pieceComplete)
+                    requests.RemoveAt (pIndex);
+                return result;
+            }
+
+            // We have duplicate requests and have, so far, failed to validate the block. Try to validate it now.
+            if (!result) {
+                for (int i = 0; i < extraPieces.Count && !result; i++)
+                    if ((result = ValidateRequestWithPiece (peer, request, extraPieces[i], out pieceComplete, out peersInvolved)))
+                        break;
+            }
+
+
+            // If we successfully validated the block using *any* version of the request, update the primary piece and
+            // all duplicates to reflect this. This will implicitly cancel any outstanding requests from other peers.
+            if (result) {
+                primaryPiece.Blocks[request.StartOffset / Piece.BlockSize].TrySetReceived (peer);
+                for (int i = 0; i < extraPieces.Count; i++)
+                    extraPieces[i].Blocks[request.StartOffset / Piece.BlockSize].TrySetReceived (peer);
+            }
+
+            // If the piece is complete then remove it, and any dupes, from the picker.
+            if (pieceComplete) {
+                requests.RemoveAt (pIndex);
+                duplicates.Remove (primaryPiece.Index);
+                return result;
+            }
+            return result;
+        }
+
+        bool ValidateRequestWithPiece (IPeer peer, PieceRequest request, Piece piece, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        {
+            pieceComplete = false;
+            peersInvolved = null;
+
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf (piece.Blocks, request.StartOffset, request.RequestLength);
             if (blockIndex == -1 || !peer.Equals (piece.Blocks[blockIndex].RequestedOff)) {
@@ -221,7 +265,6 @@ namespace MonoTorrent.Client.PiecePicking
             if (piece.AllBlocksReceived) {
                 pieceComplete = true;
                 peersInvolved = piece.Blocks.Select (t => t.RequestedOff).Distinct ().ToArray ();
-                requests.RemoveAt (pIndex);
             }
             return true;
         }
@@ -246,7 +289,33 @@ namespace MonoTorrent.Client.PiecePicking
                 }
             }
 
-            // FIXME: fully support 'maxDuplicateRequests'
+            // If all blocks have been requested at least once and we're allowed more than 1 request then
+            // let's try and issue a duplicate!
+            for (int duplicate = 1; duplicate < maxDuplicateRequests; duplicate++) {
+                for (int req = 0; req < requests.Count; req++) {
+                    Piece primaryPiece = requests[req];
+                    if (primaryPiece.Index < startIndex || primaryPiece.Index > endIndex || !peer.BitField[primaryPiece.Index])
+                        continue;
+
+                    if (!duplicates.TryGetValue (primaryPiece.Index, out List<Piece> extraPieces))
+                        duplicates[primaryPiece.Index] = extraPieces = new List<Piece> ();
+
+                    if (extraPieces.Count < duplicate) {
+                        var newPiece = new Piece (primaryPiece.Index, TorrentData.PieceLength, TorrentData.Size);
+                        for (int i = 0; i < primaryPiece.BlockCount; i++)
+                            if (primaryPiece.Blocks[i].Received)
+                                newPiece.Blocks[i].TrySetReceived (primaryPiece.Blocks[i].RequestedOff);
+                        extraPieces.Add (newPiece);
+                    }
+
+                    for (int extraPieceIndex = 0; extraPieceIndex < extraPieces.Count; extraPieceIndex++) {
+                        var extraPiece = extraPieces[extraPieceIndex];
+                        for (int i = 0; i < extraPiece.BlockCount; i++)
+                            if (!extraPiece.Blocks[i].Requested)
+                                return extraPiece.Blocks[i].CreateRequest (peer);
+                    }
+                }
+            }
 
             // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
             return null;

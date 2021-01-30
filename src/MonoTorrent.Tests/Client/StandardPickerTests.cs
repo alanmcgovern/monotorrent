@@ -594,9 +594,153 @@ namespace MonoTorrent.Client.PiecePicking
                 peers[i].IsAllowedFastPieces.Add (5);
                 peers[i].IsAllowedFastPieces.Add (6);
             }
-            var m1 = picker.PickPiece (peers[0], peers[0].BitField, new List<PeerId> ()).Value;
-            var m2 = picker.PickPiece (peers[1], peers[1].BitField, new List<PeerId> ()).Value;
+            var m1 = picker.PickPiece (peers[0], peers[0].BitField).Value;
+            var m2 = picker.PickPiece (peers[1], peers[1].BitField).Value;
             Assert.AreNotEqual (m1.PieceIndex, m2.PieceIndex, "#1");
+        }
+
+        [Test]
+        public void DupeRequests_PickSameBlockTwiceWhenAllRequested ()
+        {
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peers[0].BitField.SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder1, 0, bitfield.Length));
+
+            PieceRequest? req;
+            var requests1 = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests1.Add (req.Value);
+
+            // There are no pieces owned by this peer, so there's nothing to continue.
+            Assert.IsNull (picker.ContinueExistingRequest (seeder2, 0, bitfield.Length));
+
+            // Every block has been requested once and no duplicates are allowed.
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length));
+
+            // Every block has been requested once and no duplicates are allowed.
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length, 1));
+
+            var requests2 = new List<PieceRequest> ();
+            while ((req = picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length, 2)) != null)
+                requests2.Add (req.Value);
+
+            CollectionAssert.AreEquivalent (requests1, requests2);
+        }
+
+        [Test]
+        public void DupeRequests_ValidateDupeThenPrimary ()
+        {
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peers[0].BitField.SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder1, 0, bitfield.Length));
+
+            PieceRequest? req;
+            var requests1 = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests1.Add (req.Value);
+
+            // This piece has been requested by both peers now.
+            PieceRequest request = picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length, 2).Value;
+
+            // Validate the duplicate request first.
+            Assert.IsTrue (picker.ValidatePiece (seeder2, request, out _, out _));
+            // Now the primary will be discarded as we already received the block
+            Assert.IsFalse (picker.ValidatePiece (seeder1, request, out _, out _));
+        }
+
+        [Test]
+        public void DupeRequests_ValidatePrimaryThenDupe ()
+        {
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peers[0].BitField.SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder1, 0, bitfield.Length));
+
+            PieceRequest? req;
+            var requests1 = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests1.Add (req.Value);
+
+            // This piece has been requested by both peers now.
+            PieceRequest request = picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length, 2).Value;
+
+            // Validate the primary request first
+            Assert.IsTrue (picker.ValidatePiece (seeder1, request, out _, out _));
+            // Now the duplicate will be discarded as we've already received the primary request.
+            Assert.IsFalse (picker.ValidatePiece (seeder2, request, out _, out _));
+        }
+
+        [Test]
+        public void DupeRequests_FinalBlock_ValidatePrimaryThenDupe()
+        {
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peers[0].BitField.SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder1, 0, bitfield.Length));
+
+            PieceRequest? req;
+            var requests = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests.Add (req.Value);
+            for (int i = 0; i < requests.Count; i++)
+                if (i != 2)
+                    Assert.IsTrue (picker.ValidatePiece (seeder1, requests[i], out _, out _));
+
+            // This should be the final unrequested block
+            PieceRequest request = picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length, 2).Value;
+            Assert.AreEqual (requests[2], request);
+
+            // Validate the primary request first
+            Assert.IsTrue (picker.ValidatePiece (seeder1, request, out var complete, out var peersInvolved));
+            Assert.IsTrue (complete);
+            CollectionAssert.AreEqual (new[] { seeder1 }, peersInvolved);
+            Assert.AreEqual (0, seeder1.AmRequestingPiecesCount);
+            Assert.AreEqual (0, seeder2.AmRequestingPiecesCount);
+
+            // Now the duplicate will be discarded as we've already received the primary request.
+            Assert.IsFalse (picker.ValidatePiece (seeder2, request, out complete, out peersInvolved));
+            Assert.IsFalse (complete);
+            Assert.IsNull (peersInvolved);
+        }
+
+        [Test]
+        public void DupeRequests_FinalBlock_ValidateDupleThenPrimary ()
+        {
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peers[0].BitField.SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder1, 0, bitfield.Length));
+
+            PieceRequest? req;
+            var requests = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests.Add (req.Value);
+            for (int i = 0; i < requests.Count; i++)
+                if (i != 2)
+                    Assert.IsTrue (picker.ValidatePiece (seeder1, requests[i], out _, out _));
+
+            // This should be the final unrequested block
+            PieceRequest request = picker.ContinueAnyExistingRequest (seeder2, 0, bitfield.Length, 2).Value;
+            Assert.AreEqual (requests[2], request);
+
+            // Validate the dupe request first
+            Assert.IsTrue (picker.ValidatePiece (seeder2, request, out bool complete, out var peersInvolved));
+            Assert.IsTrue (complete);
+            CollectionAssert.AreEqual (new[] { seeder1, seeder2 }, peersInvolved);
+            Assert.AreEqual (0, seeder1.AmRequestingPiecesCount);
+            Assert.AreEqual (0, seeder2.AmRequestingPiecesCount);
+
+            // Now the primary will be discarded as we've already received the primary request.
+            Assert.IsFalse (picker.ValidatePiece (seeder1, request, out complete, out peersInvolved));
+            Assert.IsFalse (complete);
+            Assert.IsNull (peersInvolved);
         }
     }
 }
