@@ -147,26 +147,29 @@ namespace MonoTorrent.Streaming
         public override long Seek (long offset, SeekOrigin origin)
         {
             ThrowIfDisposed ();
-
+            long newPosition;
             switch (origin) {
                 case SeekOrigin.Begin:
-                    position = offset;
+                    newPosition = offset;
                     break;
                 case SeekOrigin.Current:
-                    position += offset;
+                    newPosition = position + offset;
                     break;
                 case SeekOrigin.End:
-                    position = Length - offset;
+                    newPosition = Length - offset;
                     break;
                 default:
                     throw new NotSupportedException ();
             }
 
             // Clamp it to within reasonable bounds.
-            position = Math.Max (0, position);
-            position = Math.Min (position, Length);
+            newPosition = Math.Max (0, newPosition);
+            newPosition = Math.Min (newPosition, Length);
 
-            MaybeAdjustCurrentPieceRequests ();
+            if (newPosition != position) {
+                position = newPosition;
+                MaybeAdjustCurrentPieceRequests ();
+            }
             return position;
         }
 
