@@ -78,11 +78,22 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void HighPriorityPreferred ()
         {
-            (var picker, var checker) = CreatePicker ();
+            PieceRequest? request;
+            var picker = new StreamingPiecePicker ();
+            picker.Initialise (bitfield, data);
+            picker.ReadToPosition (data.Files[0], 10 * data.PieceLength);
 
-            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
-            Assert.AreEqual (checker.Picks[0].startIndex, 0);
-            Assert.AreEqual (checker.Picks[0].endIndex, picker.HighPriorityCount - 1);
+            var toRequest = peer.BitField.Clone ().SetAll (true);
+            for (int i = picker.HighPriorityPieceIndex; i < picker.HighPriorityCount; i++) {
+                while ((request = picker.PickPiece (peer, toRequest)) != null) {
+                    Assert.AreEqual (i, request.Value.PieceIndex);
+                    Assert.IsTrue (picker.ValidatePiece (peer, request.Value, out bool pieceComplete, out _));
+                    if (pieceComplete) {
+                        toRequest[i] = false;
+                        break;
+                    }
+                }
+            }
         }
 
         [Test]
@@ -125,11 +136,30 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void HighPriority_PeersSharePieceRequests ()
         {
-            (var picker, var checker) = CreatePicker ();
+            PieceRequest? request;
+            var picker = new StreamingPiecePicker ();
+            picker.Initialise (bitfield, data);
+            picker.ReadToPosition (data.Files[0], 10 * data.PieceLength);
 
-            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 16);
-            Assert.AreEqual (checker.Picks[0].startIndex, 0);
-            Assert.AreEqual (checker.Picks[0].endIndex, picker.HighPriorityCount - 1);
+            int seederIndex = 0;
+            var seeders = new[] {
+                PeerId.CreateNull (bitfield.Length, true, false, true),
+                PeerId.CreateNull (bitfield.Length, true, false, true),
+            };
+
+            var toRequest = peer.BitField.Clone ().SetAll (true);
+            for (int i = picker.HighPriorityPieceIndex; i < picker.HighPriorityCount; i++) {
+                while ((request = picker.PickPiece (seeders[++seederIndex % seeders.Length], toRequest)) != null) {
+                    Assert.AreEqual (i, request.Value.PieceIndex);
+                    Assert.IsTrue (picker.ValidatePiece (seeders[seederIndex % seeders.Length], request.Value, out bool pieceComplete, out var involvedPeers));
+                    if (pieceComplete) {
+                        CollectionAssert.AreEquivalent (seeders, involvedPeers);
+                        toRequest[i] = false;
+                        break;
+                    }
+                }
+            }
+
         }
 
         [Test]
