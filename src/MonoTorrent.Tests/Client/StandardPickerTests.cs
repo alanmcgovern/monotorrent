@@ -742,5 +742,63 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.IsFalse (complete);
             Assert.IsNull (peersInvolved);
         }
+
+        [Test]
+        public void DupeRequests_PeerCannotDuplicateOwnRequest ()
+        {
+            var seeder = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = seeder.BitField.Clone ().SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder, 0, bitfield.Length - 1));
+
+            PieceRequest? req;
+            var requests = new List<PieceRequest> ();
+            while ((req = picker.PickPiece (seeder, singlePiece)) != null)
+                requests.Add (req.Value);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder, 0, bitfield.Length - 1));
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder, 0, bitfield.Length - 1, 2));
+        }
+
+        [Test]
+        public void DupeRequests_CanRequestInTriplicate ()
+        {
+            var seeders = new IPeer[] {
+                PeerId.CreateNull (bitfield.Length, true, false, true),
+                PeerId.CreateNull (bitfield.Length, true, false, true),
+                PeerId.CreateNull (bitfield.Length, true, false, true),
+            };
+
+            var queue = new Queue<IPeer> (seeders);
+            var requests = seeders.ToDictionary (t => t, t => new List<PieceRequest> ());
+            var singlePiece = seeders[0].BitField.Clone ().SetAll (false).Set (3, true);
+
+            // Request an entire piece using 1 peer first to ensure we have collisions when
+            // issuing duplicates. In the end all peers should have the same set though.
+            while (true) {
+                var req = picker.PickPiece (seeders[0], singlePiece)
+                       ?? picker.ContinueAnyExistingRequest (seeders[0], 0, bitfield.Length - 1, 3);
+                if (req.HasValue)
+                    requests[seeders[0]].Add (req.Value);
+                else
+                    break;
+            }
+            Assert.AreEqual (torrentData.BlocksPerPiece, requests[seeders[0]].Count);
+
+            while (queue.Count > 0) {
+                var seeder = queue.Dequeue ();
+                var req = picker.PickPiece (seeder, singlePiece)
+                       ?? picker.ContinueAnyExistingRequest (seeder, 0, bitfield.Length - 1, 3);
+
+                if (req.HasValue) {
+                    queue.Enqueue (seeder);
+                    requests[seeder].Add (req.Value);
+                }
+            }
+
+            CollectionAssert.AreEquivalent (requests[seeders[0]], requests[seeders[1]]);
+            CollectionAssert.AreEquivalent (requests[seeders[1]], requests[seeders[2]]);
+            Assert.AreEqual (torrentData.BlocksPerPiece, requests.Values.First ().Count);
+        }
     }
 }

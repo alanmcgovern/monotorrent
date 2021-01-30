@@ -311,7 +311,7 @@ namespace MonoTorrent.Client.PiecePicking
                     for (int extraPieceIndex = 0; extraPieceIndex < extraPieces.Count; extraPieceIndex++) {
                         var extraPiece = extraPieces[extraPieceIndex];
                         for (int i = 0; i < extraPiece.BlockCount; i++)
-                            if (!extraPiece.Blocks[i].Requested)
+                            if (!extraPiece.Blocks[i].Requested && !HasAlreadyRequestedBlock(primaryPiece, extraPieces, peer, i))
                                 return extraPiece.Blocks[i].CreateRequest (peer);
                     }
                 }
@@ -319,6 +319,16 @@ namespace MonoTorrent.Client.PiecePicking
 
             // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
             return null;
+        }
+
+        static bool HasAlreadyRequestedBlock (Piece piece, IList<Piece> extraPieces, IPeer peer, int blockIndex)
+        {
+            if (piece.Blocks[blockIndex].RequestedOff == peer)
+                return true;
+            for (int i = 0; i < extraPieces.Count; i++)
+                if (extraPieces[i].Blocks[blockIndex].RequestedOff == peer)
+                    return true;
+            return false;
         }
 
         public PieceRequest? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
