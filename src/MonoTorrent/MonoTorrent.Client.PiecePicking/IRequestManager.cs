@@ -44,6 +44,7 @@ namespace MonoTorrent.Client.PiecePicking
         bool InEndgameMode { get; }
 
         void AddRequests (IReadOnlyList<IPeerWithMessaging> peers);
-        void Initialise (BitField bitfield, ITorrentData torrentData);
+        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers);
+        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
     }
 }

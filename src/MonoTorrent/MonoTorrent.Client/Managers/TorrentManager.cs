@@ -409,7 +409,7 @@ namespace MonoTorrent.Client
             var pieces = PieceManager.Picker?.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
             PieceManager.ChangePicker (picker, Bitfield);
             if (Torrent != null)
-                PieceManager.Picker.Picker.Initialise (Bitfield, this, pieces);
+                PieceManager.Picker.Initialise (Bitfield, this, pieces);
         }
 
         /// <summary>

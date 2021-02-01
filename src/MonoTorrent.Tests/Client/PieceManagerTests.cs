@@ -75,7 +75,7 @@ namespace MonoTorrent.Client.PiecePicking
             torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new BitField (pieceCount).SetAll (true), new BitField (pieceCount).SetAll (false)));
             manager = new PieceManager (torrentManager);
             manager.ChangePicker (new StandardPicker (), bitfield);
-            manager.Picker.Initialise (bitfield, torrentData);
+            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
 
             peer = PeerId.CreateNull (pieceCount);
             for (int i = 0; i < 20; i++) {
@@ -127,7 +127,7 @@ namespace MonoTorrent.Client.PiecePicking
         public void RequestInEndgame_AllDoNotDownload ()
         {
             manager.ChangePicker (torrentManager.CreateStandardPicker (), bitfield);
-            manager.Picker.Initialise (bitfield, torrentData);
+            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
             foreach (var file in torrentData.Files)
                 file.Priority = Priority.DoNotDownload;
 

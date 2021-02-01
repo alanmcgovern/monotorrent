@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests (PeerId id)
         {
-            throw new NotImplementedException ();
+            Picker.AddRequests (id, Manager.Peers.ConnectedPeers);
         }
 
         internal void ChangePicker (IPiecePicker picker, BitField bitfield)
@@ -124,13 +124,13 @@ namespace MonoTorrent.Client
         internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
         {
             ChangePicker (originalPicker, bitfield);
-            Picker.Initialise (bitfield, data);
+            Picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         internal void Reset ()
         {
             PendingHashCheckPieces.SetAll (false);
-            Picker?.Initialise (Manager.Bitfield, Manager);
+            Picker?.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         public async Task<int> CurrentRequestCountAsync()

@@ -20,10 +20,11 @@ namespace MonoTorrent.Client.PiecePicking
             Picker = picker;
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
         {
             Bitfield = bitfield;
             TorrentData = torrentData;
+            Picker.Initialise (bitfield, torrentData, requests);
         }
 
         public void AddRequests (IReadOnlyList<IPeerWithMessaging> peers)
@@ -32,14 +33,14 @@ namespace MonoTorrent.Client.PiecePicking
                 AddRequests (peer, peers);
         }
 
-        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> allPeers)
+        public void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> allPeers)
         {
             int maxRequests = peer.MaxPendingRequests;
 
             if (!peer.CanRequestMorePieces)
                 return;
 
-            int count = peer.PreferredRequestAmount;
+            int count = peer.PreferredRequestAmount (TorrentData.PieceLength);
 
             if (!peer.IsChoking || peer.SupportsFastPeer) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
