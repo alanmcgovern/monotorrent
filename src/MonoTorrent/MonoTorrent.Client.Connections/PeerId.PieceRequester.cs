@@ -30,21 +30,42 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPeer
+    public partial class PeerId : IPeerWithMessaging
     {
         int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        bool IPeer.CanRequestMorePieces {
+            get {
+               if (Connection is Connections.HttpConnection) {
+                    return AmRequestingPiecesCount == 0;
+                } else {
+                    return AmRequestingPiecesCount < MaxPendingRequests;
+                }
+            }
+        }
         long IPeer.DownloadSpeed => Monitor.DownloadSpeed;
         List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
         bool IPeer.IsChoking => IsChoking;
+        int IPeer.PreferredRequestAmount => Connection is Connections.HttpConnection ? 128 : 1;
         int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;
         List<int> IPeer.SuggestedPieces => SuggestedPieces;
         bool IPeer.CanCancelRequests => SupportsFastPeer;
         int IPeer.TotalHashFails => Peer.TotalHashFails;
-        int IPeer.MaxSupportedPendingRequests => MaxSupportedPendingRequests;
+        int IPeer.MaxPendingRequests => MaxPendingRequests;
+
+        public void EnqueueRequest (PieceRequest request)
+        {
+            MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
+        public void EnqueueRequests (IList<PieceRequest> requests)
+        {
+            MessageQueue.Enqueue (new RequestBundle (requests));
+        }
     }
 }

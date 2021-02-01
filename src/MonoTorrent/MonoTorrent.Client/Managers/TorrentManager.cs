@@ -404,15 +404,12 @@ namespace MonoTorrent.Client
         #region Public Methods
 
         internal void ChangePicker (IPiecePicker picker)
-            => ChangePicker (picker, null);
-
-        internal void ChangePicker (IPiecePicker picker, IPieceRequestUpdater requestUpdater)
         {
             Check.Picker (picker);
-            var pieces = PieceManager.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
-            PieceManager.ChangePicker (picker, requestUpdater, Bitfield);
+            var pieces = PieceManager.Picker?.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
+            PieceManager.ChangePicker (picker, Bitfield);
             if (Torrent != null)
-                PieceManager.Picker.Initialise (Bitfield, this, pieces);
+                PieceManager.Picker.Picker.Initialise (Bitfield, this, pieces);
         }
 
         /// <summary>
