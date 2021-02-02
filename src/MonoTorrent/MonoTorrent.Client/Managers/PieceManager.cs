@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
         TorrentManager Manager { get; }
         IPiecePicker originalPicker;
-        internal IRequestManager Picker { get; private set; }
+        internal IRequestManager Requester { get; private set; }
         internal BitField PendingHashCheckPieces { get; private set; }
 
         /// <summary>
@@ -63,13 +63,13 @@ namespace MonoTorrent.Client
         internal PieceManager (TorrentManager manager)
         {
             Manager = manager;
-            Picker = new RequestManager (new NullPicker ());
+            Requester = new RequestManager (new NullPicker ());
             PendingHashCheckPieces = new BitField (1);
         }
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Picker.Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
+            if (Requester.Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
@@ -90,12 +90,12 @@ namespace MonoTorrent.Client
                 return true;
 
             // Otherwise we need to do a full check
-            return Picker.Picker.IsInteresting (id, id.BitField);
+            return Requester.Picker.IsInteresting (id, id.BitField);
         }
 
         internal void AddPieceRequests (PeerId id)
         {
-            Picker.AddRequests (id, Manager.Peers.ConnectedPeers);
+            Requester.AddRequests (id, Manager.Peers.ConnectedPeers);
         }
 
         internal void ChangePicker (IPiecePicker picker, BitField bitfield)
@@ -118,25 +118,25 @@ namespace MonoTorrent.Client
             picker = new IgnoringPicker (PendingHashCheckPieces, picker);
             picker = new IgnoringPicker (Manager.UnhashedPieces, picker);
 
-            Picker = new RequestManager (picker);
+            Requester = new RequestManager (picker);
         }
 
         internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
         {
             ChangePicker (originalPicker, bitfield);
-            Picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
+            Requester.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         internal void Reset ()
         {
             PendingHashCheckPieces.SetAll (false);
-            Picker?.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<ActivePieceRequest> ());
+            Requester?.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<ActivePieceRequest> ());
         }
 
         public async Task<int> CurrentRequestCountAsync()
         {
             await ClientEngine.MainLoop;
-            return Picker.Picker.CurrentRequestCount ();
+            return Requester.Picker.CurrentRequestCount ();
         }
     }
 }

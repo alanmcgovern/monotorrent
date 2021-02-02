@@ -406,10 +406,10 @@ namespace MonoTorrent.Client
         internal void ChangePicker (IPiecePicker picker)
         {
             Check.Picker (picker);
-            var pieces = PieceManager.Picker?.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
+            var pieces = PieceManager.Requester?.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
             PieceManager.ChangePicker (picker, Bitfield);
             if (Torrent != null)
-                PieceManager.Picker.Initialise (Bitfield, this, pieces);
+                PieceManager.Requester.Initialise (Bitfield, this, pieces);
         }
 
         /// <summary>

@@ -240,7 +240,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleRejectRequestMessage (PeerId id, RejectRequestMessage message)
         {
-            Manager.PieceManager.Picker.Picker.RequestRejected (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
+            Manager.PieceManager.Requester.Picker.RequestRejected (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
         }
 
         protected virtual void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)
@@ -283,7 +283,7 @@ namespace MonoTorrent.Client.Modes
         {
             id.IsChoking = true;
             if (!id.SupportsFastPeer)
-                Manager.PieceManager.Picker.Picker.CancelRequests (id, 0, Manager.Bitfield.Length - 1);
+                Manager.PieceManager.Requester.Picker.CancelRequests (id, 0, Manager.Bitfield.Length - 1);
         }
 
         protected virtual void HandleInterestedMessage (PeerId id, InterestedMessage message)
