@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             Manager.DhtAnnounce ();
-            Manager.PieceManager.Reset ();
+            Manager.PieceManager.Initialise ();
             await Manager.LocalPeerAnnounceAsync ();
         }
 

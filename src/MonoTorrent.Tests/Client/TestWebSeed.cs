@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             partialData = false;
 
             rig = TestRig.CreateMultiFile ();
-            rig.Manager.ChangePicker (new StandardPicker ());
+            rig.Manager.ChangePicker (new StandardRequestManager ());
 
             connection = new HttpConnection (new Uri (ListenerURL));
             connection.Manager = rig.Manager;

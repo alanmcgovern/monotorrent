@@ -36,6 +36,14 @@ namespace MonoTorrent.Client.PiecePicking
         readonly BitField Bitfield;
         readonly BitField Temp;
 
+        public static IPiecePicker Wrap(IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
+        {
+            var result = picker;
+            foreach (var bf in ignoringBitfields)
+                result = new IgnoringPicker (bf, result);
+            return result;
+        }
+
         public IgnoringPicker (BitField bitfield, IPiecePicker picker)
             : base (picker)
         {

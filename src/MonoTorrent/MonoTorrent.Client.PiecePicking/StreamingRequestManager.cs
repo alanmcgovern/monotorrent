@@ -7,23 +7,29 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    class RequestManager : IRequestManager
+    class StreamingRequestManager : IRequestManager
     {
         BitField Bitfield { get; set; }
         ITorrentData TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
-        public IPiecePicker Picker { get; }
+        public StreamingPiecePicker Picker { get; private set; }
 
-        public RequestManager (IPiecePicker picker)
-        {
-            Picker = picker;
-        }
+        IPiecePicker IRequestManager.Picker => Picker;
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests, IReadOnlyList<BitField> ignoringBitfields)
         {
             Bitfield = bitfield;
             TorrentData = torrentData;
+
+            // IPiecePicker picker = new StandardPicker ();
+            // picker = new RandomisedPicker (picker);
+            // picker = new RarestFirstPicker (picker);
+            // picker = new PriorityPicker (picker);
+
+            // Picker = IgnoringPicker.Wrap (picker, ignoringBitfields);
+
+            Picker = new StreamingPiecePicker ();
             Picker.Initialise (bitfield, torrentData, requests);
         }
 

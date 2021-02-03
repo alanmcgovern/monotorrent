@@ -40,11 +40,44 @@ namespace MonoTorrent.Client.PiecePicking
     /// </summary>
     public interface IRequestManager
     {
-        IPiecePicker Picker { get; }
+        /// <summary>
+        /// Should return <see langword="true"/> if the underlying piece picking algorithm
+        /// has entered 'endgame mode' as defined by the bittorrent specification.
+        /// </summary>
         bool InEndgameMode { get; }
 
+        /// <summary>
+        /// The underlying <see cref="IPiecePicker"/> used to create piece requests and validate piece messages when they are received.
+        /// </summary>
+        IPiecePicker Picker { get; }
+
+        /// <summary>
+        /// Should enqueue piece requests for any peer who is has capacity.
+        /// </summary>
+        /// <param name="peers"></param>
         void AddRequests (IReadOnlyList<IPeerWithMessaging> peers);
+
+        /// <summary>
+        /// Attempts to enqueue more requests for the specified peer.
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="peers"></param>
         void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers);
-        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bitfield">The bitfield representing the pieces which have been successfully downloaded and hashed for the current torrent</param>
+        /// <param name="torrentData">The files, size and piecelength for the torrent.</param>
+        /// <param name="requests">Any active requests which should be taken into consideration</param>
+        /// <param name="ignorableBitfields"> These bitfields represent pieces which have successfully
+        /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
+        /// pieces which have not yet been hash checked by the library and so it is not known whether they should be requested or not.
+        /// After creating an <see cref="IPiecePicker"/>, you should call
+        /// <see cref="IgnoringPicker.Wrap(IPiecePicker, IEnumerable{BitField})"/> passing the <see cref="IPiecePicker"/>
+        /// you created and the <paramref name="ignorableBitfields"/>. This will wrap your picker in several <see cref="IgnoringPicker"/>
+        /// so the engine can enforce that these pieces will not be requested a second time.</param>
+        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests, IReadOnlyList<BitField> ignorableBitfields);
     }
 }

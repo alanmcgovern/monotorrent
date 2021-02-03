@@ -63,8 +63,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             int pieceCount = 40;
             int pieceLength = 256 * 1024;
-            bitfield = new BitField (pieceCount);
-            torrentData = new TestTorrentData {
+            var torrentData = new TestTorrentData {
                 Files = new[] { new TorrentFileInfo (new TorrentFile ("File", pieceLength * pieceCount)) },
                 PieceLength = pieceLength,
                 Size = pieceLength * pieceCount
@@ -73,9 +72,9 @@ namespace MonoTorrent.Client.PiecePicking
 
             torrentManager = TestRig.CreateSingleFileManager (torrentData.Size, torrentData.PieceLength);
             torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new BitField (pieceCount).SetAll (true), new BitField (pieceCount).SetAll (false)));
+
             manager = new PieceManager (torrentManager);
-            manager.ChangePicker (new StandardPicker (), bitfield);
-            manager.Requester.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
+            manager.Initialise ();
 
             peer = PeerId.CreateNull (pieceCount);
             for (int i = 0; i < 20; i++) {
@@ -126,8 +125,6 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void RequestInEndgame_AllDoNotDownload ()
         {
-            manager.ChangePicker (torrentManager.CreateStandardPicker (), bitfield);
-            manager.Requester.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
             foreach (var file in torrentData.Files)
                 file.Priority = Priority.DoNotDownload;
 

@@ -51,7 +51,6 @@ namespace MonoTorrent.Client
         internal const int NormalRequestAmount = 8;
 
         TorrentManager Manager { get; }
-        IPiecePicker originalPicker;
         internal IRequestManager Requester { get; private set; }
         internal BitField PendingHashCheckPieces { get; private set; }
 
@@ -63,8 +62,8 @@ namespace MonoTorrent.Client
         internal PieceManager (TorrentManager manager)
         {
             Manager = manager;
-            Requester = new RequestManager (new NullPicker ());
             PendingHashCheckPieces = new BitField (1);
+            Requester = new StandardRequestManager ();
         }
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
@@ -98,39 +97,26 @@ namespace MonoTorrent.Client
             Requester.AddRequests (id, Manager.Peers.ConnectedPeers);
         }
 
-        internal void ChangePicker (IPiecePicker picker, BitField bitfield)
+        internal void ChangePicker(IRequestManager requester)
         {
-            originalPicker = picker;
-            if (PendingHashCheckPieces.Length != bitfield.Length)
-                PendingHashCheckPieces = new BitField (bitfield.Length);
-
-            // 'PendingHashCheckPieces' is the list of fully downloaded pieces which
-            // are waiting to be hash checked. We should not begin a second download of
-            // a piece while waiting to confirm if the original download was successful.
-            //
-            // 'Manager.UnhashedPieces' represents the pieces from the torrent which
-            // have not been hash checked as they are marked as 'DoNotDownload'. If
-            // a file is changed to be downloadable, the engine will hashcheck the data
-            // first and then remove them from the 'UnhashedPieces' bitfield which will
-            // make them downloadable. If they actually passed the hashcheck then they
-            // won't actually be requested again.
-            picker = new IgnoringPicker (bitfield, picker);
-            picker = new IgnoringPicker (PendingHashCheckPieces, picker);
-            picker = new IgnoringPicker (Manager.UnhashedPieces, picker);
-
-            Requester = new RequestManager (picker);
+            if (Manager.State != TorrentState.Stopped)
+                throw new InvalidOperationException ($"The {nameof (IRequestManager)} must be set while the TorrentManager is in the Stopped state.");
+            Requester = requester;
+            Initialise ();
         }
 
-        internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
+        internal void Initialise ()
         {
-            ChangePicker (originalPicker, bitfield);
-            Requester.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
-        }
+            if (Manager.HasMetadata) {
+                PendingHashCheckPieces = new BitField (Manager.Bitfield.Length);
 
-        internal void Reset ()
-        {
-            PendingHashCheckPieces.SetAll (false);
-            Requester?.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<ActivePieceRequest> ());
+                var ignorableBitfieds = new[] {
+                    Manager.Bitfield,
+                    PendingHashCheckPieces,
+                    Manager.UnhashedPieces,
+                };
+                Requester.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<ActivePieceRequest> (), ignorableBitfieds);
+            }
         }
 
         public async Task<int> CurrentRequestCountAsync()
