@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PiecePicking
                 return null;
 
             // If there's only one piece to choose then there isn't any midpoint.
-            if (endIndex - startIndex < 2)
+            if (endIndex - startIndex < 2 || count > 1)
                 return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
             // If there are two or more pieces to choose, ensure we always start *at least* one
