@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PiecePicking
             checker = new PiecePickerFilterChecker (new StandardPicker ());
             picker = new RandomisedPicker (checker);
             seeder = PeerId.CreateNull (40, true, false, true);
-            picker.Initialise (new BitField (40), new TestTorrentData ());
+            picker.Initialise (new TestTorrentData ());
         }
 
         [Test]

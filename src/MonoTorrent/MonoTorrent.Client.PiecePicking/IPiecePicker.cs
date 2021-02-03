@@ -27,92 +27,13 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public static class IPiecePickerExtensions
-    {
-        public static IList<PieceRequest> CancelRequests (this IPiecePicker picker, IPeer peer)
-        {
-            return picker.CancelRequests (peer, 0, peer.BitField.Length - 1);
-        }
-
-        public static PieceRequest? ContinueAnyExistingRequest (this IPiecePicker picker, IPeer peer, int startIndex, int endIndex)
-            => picker.ContinueAnyExistingRequest (peer, startIndex, endIndex, 1);
-
-        public static void Initialise (this IPiecePicker picker, BitField bitfield, ITorrentData torrentData)
-        {
-            picker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
-        }
-
-        public static PieceRequest? PickPiece (this IPiecePicker picker, IPeer peer, BitField available)
-        {
-            var result = picker.PickPiece (peer, available, Array.Empty<IPeer> (), 1, 0, available.Length - 1);
-            return result?.Single ();
-        }
-
-        public static PieceRequest? PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers)
-        {
-            var result = picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1);
-            return result?.Single ();
-        }
-
-        public static IList<PieceRequest> PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count)
-        {
-            return picker.PickPiece (peer, available, otherPeers, count, 0, available.Length - 1);
-        }
-    }
-
-    public abstract class PiecePickerFilter : IPiecePicker
-    {
-        protected IPiecePicker Next { get; }
-
-        protected PiecePickerFilter (IPiecePicker picker)
-            => Next = picker;
-
-        public int AbortRequests (IPeer peer)
-            => Next.AbortRequests (peer);
-
-        public IList<PieceRequest> CancelRequests (IPeer peer, int startIndex, int endIndex)
-            => Next.CancelRequests (peer, startIndex, endIndex);
-
-        public PieceRequest? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
-            => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests);
-
-        public PieceRequest? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
-            => Next.ContinueExistingRequest (peer, startIndex, endIndex);
-
-        public int CurrentReceivedCount ()
-            => Next.CurrentReceivedCount ();
-
-        public int CurrentRequestCount ()
-            => Next.CurrentReceivedCount ();
-
-        public IList<ActivePieceRequest> ExportActiveRequests ()
-            => Next.ExportActiveRequests ();
-
-        public virtual void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
-            => Next.Initialise (bitfield, torrentData, requests);
-
-        public virtual bool IsInteresting (IPeer peer, BitField bitfield)
-            => Next.IsInteresting (peer, bitfield);
-
-        public virtual IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
-            => Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
-
-        public void RequestRejected (IPeer peer, PieceRequest request)
-            => Next.RequestRejected (peer, request);
-
-        public bool ValidatePiece (IPeer peer, PieceRequest request, out bool pieceComplete, out IList<IPeer> peersInvolved)
-            => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
-    }
-
     public interface IPiecePicker
     {
         /// <summary>
@@ -171,10 +92,8 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// Reset all internal state. Called after <see cref="TorrentManager.StartAsync()"/> or <see cref="TorrentManager.StopAsync()"/> is invoked.
         /// </summary>
-        /// <param name="bitfield"></param>
         /// <param name="torrentData"></param>
-        /// <param name="requests"></param>
-        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests);
+        void Initialise (ITorrentData torrentData);
 
         /// <summary>
         /// 

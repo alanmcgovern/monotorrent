@@ -74,11 +74,11 @@ namespace MonoTorrent.Client.PiecePicking
             LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (Next)));
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+        public override void Initialise (ITorrentData torrentData)
         {
             TorrentData = torrentData;
-            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<ActivePieceRequest> ());
-            HighPriorityPicker.Initialise (bitfield, torrentData, requests);
+            LowPriorityPicker.Initialise (torrentData);
+            HighPriorityPicker.Initialise (torrentData);
         }
 
         public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)

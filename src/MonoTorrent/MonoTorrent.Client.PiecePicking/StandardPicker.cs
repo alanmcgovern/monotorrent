@@ -133,16 +133,10 @@ namespace MonoTorrent.Client.PiecePicking
             return list;
         }
 
-        public void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+        public void Initialise (ITorrentData torrentData)
         {
             TorrentData = torrentData;
-            this.requests.Clear ();
-            foreach (var group in requests.GroupBy (p => p.Request.PieceIndex)) {
-                var piece = new Piece (group.Key, torrentData.PieceLength, torrentData.Size);
-                foreach (var block in group)
-                    piece.Blocks[block.Request.StartOffset / Piece.BlockSize].FromRequest (block);
-                this.requests.Add (piece);
-            }
+            requests.Clear ();
         }
 
         public bool IsInteresting (IPeer peer, BitField bitfield)

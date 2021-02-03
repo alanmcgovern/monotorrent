@@ -94,7 +94,7 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests (PeerId id)
         {
-            Requester.AddRequests (id, Manager.Peers.ConnectedPeers);
+            Requester.AddRequests (id, Manager.Peers.ConnectedPeers, Manager.Bitfield);
         }
 
         internal void ChangePicker(IRequestManager requester)
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
                     PendingHashCheckPieces,
                     Manager.UnhashedPieces,
                 };
-                Requester.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<ActivePieceRequest> (), ignorableBitfieds);
+                Requester.Initialise (Manager, ignorableBitfieds);
             }
         }
 

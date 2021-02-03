@@ -55,22 +55,22 @@ namespace MonoTorrent.Client.PiecePicking
         /// Should enqueue piece requests for any peer who is has capacity.
         /// </summary>
         /// <param name="peers"></param>
-        void AddRequests (IReadOnlyList<IPeerWithMessaging> peers);
+        /// <param name="bitfield"></param>
+        void AddRequests (IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield);
 
         /// <summary>
         /// Attempts to enqueue more requests for the specified peer.
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="peers"></param>
-        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers);
+        /// <param name="bitfield"></param>
+        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield);
 
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="bitfield">The bitfield representing the pieces which have been successfully downloaded and hashed for the current torrent</param>
         /// <param name="torrentData">The files, size and piecelength for the torrent.</param>
-        /// <param name="requests">Any active requests which should be taken into consideration</param>
         /// <param name="ignorableBitfields"> These bitfields represent pieces which have successfully
         /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
         /// pieces which have not yet been hash checked by the library and so it is not known whether they should be requested or not.
@@ -78,6 +78,6 @@ namespace MonoTorrent.Client.PiecePicking
         /// <see cref="IgnoringPicker.Wrap(IPiecePicker, IEnumerable{BitField})"/> passing the <see cref="IPiecePicker"/>
         /// you created and the <paramref name="ignorableBitfields"/>. This will wrap your picker in several <see cref="IgnoringPicker"/>
         /// so the engine can enforce that these pieces will not be requested a second time.</param>
-        void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests, IReadOnlyList<BitField> ignorableBitfields);
+        void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignorableBitfields);
     }
 }

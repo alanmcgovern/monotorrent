@@ -71,12 +71,12 @@ namespace MonoTorrent.Client.PiecePicking
             AllSamePriority = file => file.Priority == files[0].Priority;
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+        public override void Initialise (ITorrentData torrentData)
         {
-            base.Initialise (bitfield, torrentData, requests);
+            base.Initialise (torrentData);
 
-            allPrioritisedPieces = new BitField (bitfield.Length);
-            temp = new BitField (bitfield.Length);
+            allPrioritisedPieces = new BitField (torrentData.PieceCount ());
+            temp = new BitField (torrentData.PieceCount ());
 
             files.Clear ();
             for (int i = 0; i < torrentData.Files.Count; i++)

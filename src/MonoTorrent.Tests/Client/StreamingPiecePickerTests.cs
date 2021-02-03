@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             var checker = new PiecePickerFilterChecker (new StandardPicker ());
             var picker = new StreamingPiecePicker (checker);
-            picker.Initialise (bitfield, data, Enumerable.Empty<ActivePieceRequest> ());
+            picker.Initialise (data);
             return (picker, checker);
         }
 
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             PieceRequest? request;
             var picker = new StreamingPiecePicker ();
-            picker.Initialise (bitfield, data);
+            picker.Initialise (data);
             picker.ReadToPosition (data.Files[0], 10 * data.PieceLength);
 
             var toRequest = peer.BitField.Clone ().SetAll (true);
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             PieceRequest? request;
             var picker = new StreamingPiecePicker ();
-            picker.Initialise (bitfield, data);
+            picker.Initialise (data);
             picker.ReadToPosition (data.Files[0], 10 * data.PieceLength);
 
             int seederIndex = 0;

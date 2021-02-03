@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.PiecePicking
 {
     class PiecePickerFilterChecker : PiecePickerFilter
     {
-        public List<(BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)> Initialised;
+        public List<ITorrentData> Initialised;
         public List<(IPeer peer, BitField bitfield)> Interesting;
         public List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> Picks;
 
@@ -45,15 +45,15 @@ namespace MonoTorrent.Client.PiecePicking
         public PiecePickerFilterChecker (IPiecePicker next)
             : base (next)
         {
-            Initialised = new List<(BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)> ();
+            Initialised = new List<ITorrentData> ();
             Interesting = new List<(IPeer peer, BitField bitfield)> ();
             Picks = new List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> ();
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<ActivePieceRequest> requests)
+        public override void Initialise (ITorrentData torrentData)
         {
-            Initialised.Add ((bitfield, torrentData, requests));
-            Next?.Initialise (bitfield, torrentData, requests);
+            Initialised.Add (torrentData);
+            Next?.Initialise (torrentData);
         }
 
         public override bool IsInteresting (IPeer peer, BitField bitfield)
