@@ -7,7 +7,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    class StandardRequestManager : IRequestManager
+    class StandardRequestManager : IPieceRequester
     {
         ITorrentData TorrentData { get; set; }
 

@@ -7,14 +7,14 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    class StreamingRequestManager : IRequestManager
+    class StreamingRequestManager : IPieceRequester
     {
         ITorrentData TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
         public StreamingPiecePicker Picker { get; private set; }
 
-        IPiecePicker IRequestManager.Picker => Picker;
+        IPiecePicker IPieceRequester.Picker => Picker;
 
         public void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignoringBitfields)
         {

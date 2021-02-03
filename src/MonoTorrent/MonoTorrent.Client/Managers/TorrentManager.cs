@@ -401,7 +401,7 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        internal void ChangePicker (IRequestManager requestManager)
+        internal void ChangePicker (IPieceRequester requestManager)
         {
             if (requestManager == null)
                 throw new ArgumentNullException (nameof (requestManager));
@@ -414,7 +414,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="picker">The new picker to use.</param>
         /// <returns></returns>
-        public async Task ChangePickerAsync (IRequestManager picker)
+        public async Task ChangePickerAsync (IPieceRequester picker)
         {
             await ClientEngine.MainLoop;
             ChangePicker (picker);

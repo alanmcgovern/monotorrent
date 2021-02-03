@@ -29,8 +29,6 @@
 
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages.Standard;
-
 namespace MonoTorrent.Client.PiecePicking
 {
     /// <summary>
@@ -38,7 +36,7 @@ namespace MonoTorrent.Client.PiecePicking
     /// specific peers and then add them to the peers message queue. If the
     /// limits on maximum concurrent piece requests are ignored
     /// </summary>
-    public interface IRequestManager
+    public interface IPieceRequester
     {
         /// <summary>
         /// Should return <see langword="true"/> if the underlying piece picking algorithm
@@ -65,7 +63,6 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="peers"></param>
         /// <param name="bitfield"></param>
         void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield);
-
 
         /// <summary>
         /// 

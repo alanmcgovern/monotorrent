@@ -1,5 +1,5 @@
 ﻿//
-// IPieceRequester.cs
+// IPeer.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com

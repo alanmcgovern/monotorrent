@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
         internal const int NormalRequestAmount = 8;
 
         TorrentManager Manager { get; }
-        internal IRequestManager Requester { get; private set; }
+        internal IPieceRequester Requester { get; private set; }
         internal BitField PendingHashCheckPieces { get; private set; }
 
         /// <summary>
@@ -97,10 +97,10 @@ namespace MonoTorrent.Client
             Requester.AddRequests (id, Manager.Peers.ConnectedPeers, Manager.Bitfield);
         }
 
-        internal void ChangePicker(IRequestManager requester)
+        internal void ChangePicker(IPieceRequester requester)
         {
             if (Manager.State != TorrentState.Stopped)
-                throw new InvalidOperationException ($"The {nameof (IRequestManager)} must be set while the TorrentManager is in the Stopped state.");
+                throw new InvalidOperationException ($"The {nameof (IPieceRequester)} must be set while the TorrentManager is in the Stopped state.");
             Requester = requester;
             Initialise ();
         }
