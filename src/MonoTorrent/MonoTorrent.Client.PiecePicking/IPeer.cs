@@ -36,10 +36,12 @@ namespace MonoTorrent.Client.PiecePicking
     {
         int AmRequestingPiecesCount { get; set; }
         BitField BitField { get; }
+        bool CanRequestMorePieces { get; }
         long DownloadSpeed { get; }
         List<int> IsAllowedFastPieces { get; }
         bool IsChoking { get; }
-        int MaxSupportedPendingRequests { get; }
+        bool IsSeeder { get; }
+        int MaxPendingRequests { get; }
         int RepeatedHashFails { get; }
         List<int> SuggestedPieces { get; }
         bool SupportsFastPeer { get; }
@@ -49,5 +51,19 @@ namespace MonoTorrent.Client.PiecePicking
         // CancelRequest if the FastPeer extensions are supported. This includes enqueuing
         // and sending the appropriate Cancel messages.
         bool CanCancelRequests { get; }
+
+        /// <summary>
+        /// Returns the number of blocks to request. If the value is greater than 1 it will be
+        /// rounded up to 1 full piece.
+        /// </summary>
+        /// <param name="pieceLength"></param>
+        /// <returns></returns>
+        int PreferredRequestAmount (int pieceLength);
+    }
+
+    public interface IPeerWithMessaging : IPeer
+    {
+        void EnqueueRequest (PieceRequest request);
+        void EnqueueRequests (IList<PieceRequest> requests);
     }
 }

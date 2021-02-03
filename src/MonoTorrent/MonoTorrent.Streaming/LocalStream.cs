@@ -193,12 +193,12 @@ namespace MonoTorrent.Streaming
             if (Manager.Bitfield.FirstFalse (start, end) != -1) {
                 foreach (var peer in allPeers.Where (p => p.SupportsFastPeer)) {
                     if (Picker.HighPriorityPieceIndex > 0) {
-                        foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, 0, Picker.HighPriorityPieceIndex - 1))
+                        foreach (var cancelled in Manager.PieceManager.Requester.Picker.CancelRequests (peer, 0, Picker.HighPriorityPieceIndex - 1))
                             peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
                     }
 
                     if (Picker.HighPriorityPieceIndex + Picker.HighPriorityCount < Manager.Bitfield.Length) {
-                        foreach (var cancelled in Manager.PieceManager.Picker.CancelRequests (peer, Picker.HighPriorityPieceIndex + Picker.HighPriorityCount, Manager.Bitfield.Length - 1))
+                        foreach (var cancelled in Manager.PieceManager.Requester.Picker.CancelRequests (peer, Picker.HighPriorityPieceIndex + Picker.HighPriorityCount, Manager.Bitfield.Length - 1))
                             peer.MessageQueue.Enqueue (new CancelMessage (cancelled.PieceIndex, cancelled.StartOffset, cancelled.RequestLength));
                     }
                 }

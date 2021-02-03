@@ -30,14 +30,24 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPeer
+    public partial class PeerId : IPeerWithMessaging
     {
         int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        bool IPeer.CanRequestMorePieces {
+            get {
+                if (Connection is Connections.HttpConnection) {
+                    return AmRequestingPiecesCount == 0;
+                } else {
+                    return AmRequestingPiecesCount < MaxPendingRequests;
+                }
+            }
+        }
         long IPeer.DownloadSpeed => Monitor.DownloadSpeed;
         List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
         bool IPeer.IsChoking => IsChoking;
@@ -45,6 +55,31 @@ namespace MonoTorrent.Client
         List<int> IPeer.SuggestedPieces => SuggestedPieces;
         bool IPeer.CanCancelRequests => SupportsFastPeer;
         int IPeer.TotalHashFails => Peer.TotalHashFails;
-        int IPeer.MaxSupportedPendingRequests => MaxSupportedPendingRequests;
+        int IPeer.MaxPendingRequests => MaxPendingRequests;
+
+        void IPeerWithMessaging.EnqueueRequest (PieceRequest request)
+        {
+            MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
+        void IPeerWithMessaging.EnqueueRequests (IList<PieceRequest> requests)
+        {
+            MessageQueue.Enqueue (new RequestBundle (requests));
+        }
+
+        int IPeer.PreferredRequestAmount (int pieceLength)
+        {
+            if (Connection is Connections.HttpConnection) {
+                // How many whole pieces fit into 2MB
+                var count = (2 * 1024 * 1024) / pieceLength;
+
+                // Make sure we have at least one whole piece
+                count = Math.Max (count, 1);
+
+                return count * (pieceLength / Piece.BlockSize);
+            } else {
+                return 1;
+            }
+        }
     }
 }

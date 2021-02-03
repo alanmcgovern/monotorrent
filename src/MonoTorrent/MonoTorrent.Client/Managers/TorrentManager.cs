@@ -379,8 +379,6 @@ namespace MonoTorrent.Client
 
             Mode = new StoppedMode (this, null, null, null);
             CreateRateLimiters ();
-
-            ChangePicker (CreateStandardPicker ());
         }
 
         void CreateRateLimiters ()
@@ -403,16 +401,12 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        internal void ChangePicker (IPiecePicker picker)
-            => ChangePicker (picker, null);
-
-        internal void ChangePicker (IPiecePicker picker, IPieceRequestUpdater requestUpdater)
+        internal void ChangePicker (IRequestManager requestManager)
         {
-            Check.Picker (picker);
-            var pieces = PieceManager.Picker?.ExportActiveRequests () ?? Array.Empty<ActivePieceRequest> ();
-            PieceManager.ChangePicker (picker, requestUpdater, Bitfield);
-            if (Torrent != null)
-                PieceManager.Picker.Initialise (Bitfield, this, pieces);
+            if (requestManager == null)
+                throw new ArgumentNullException (nameof (requestManager));
+
+            PieceManager.ChangePicker (requestManager);
         }
 
         /// <summary>
@@ -420,7 +414,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="picker">The new picker to use.</param>
         /// <returns></returns>
-        public async Task ChangePickerAsync (IPiecePicker picker)
+        public async Task ChangePickerAsync (IRequestManager picker)
         {
             await ClientEngine.MainLoop;
             ChangePicker (picker);
@@ -595,7 +589,7 @@ namespace MonoTorrent.Client
                 new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
             
-            PieceManager.RefreshPickerWithMetadata (Bitfield, this);
+            PieceManager.Initialise ();
         }
 
         /// <summary>
@@ -614,6 +608,9 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("The manager cannot be started a second time while it is already in the Starting state.");
 
             CheckRegisteredAndDisposed ();
+
+            if (PieceManager.Requester == null)
+                PieceManager.ChangePicker (new StandardRequestManager ());
 
             await Engine.StartAsync ();
             // If the torrent was "paused", then just update the state to Downloading and forcefully
@@ -861,15 +858,6 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("This manager has not been registed with an Engine");
             if (Engine.Disposed)
                 throw new InvalidOperationException ("The registered engine has been disposed");
-        }
-
-        internal IPiecePicker CreateStandardPicker ()
-        {
-            IPiecePicker picker = new StandardPicker ();
-            picker = new RandomisedPicker (picker);
-            picker = new RarestFirstPicker (picker);
-            picker = new PriorityPicker (picker);
-            return picker;
         }
 
         public void LoadFastResume (FastResume data)
