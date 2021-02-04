@@ -1,13 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿//
+// StandardPieceRequester.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2021 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
 
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
+
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    class StandardRequestManager : IPieceRequester
+    class StandardPieceRequester : IPieceRequester
     {
         ITorrentData TorrentData { get; set; }
 
@@ -29,8 +53,10 @@ namespace MonoTorrent.Client.PiecePicking
 
         public void AddRequests (IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield)
         {
-            foreach (var peer in peers)
-                AddRequests (peer, peers, bitfield);
+            if (InEndgameMode) {
+                foreach (var peer in peers)
+                    AddRequests (peer, peers, bitfield);
+            }
         }
 
         public void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> allPeers, BitField bitfield)
@@ -42,6 +68,9 @@ namespace MonoTorrent.Client.PiecePicking
 
             int count = peer.PreferredRequestAmount (TorrentData.PieceLength);
 
+            // This is safe to invoke. 'ContinueExistingRequest' strongly guarantees that a peer will only
+            // continue a piece they have initiated. If they're choking then the only piece they can continue
+            // will be a fast piece (if one exists!)
             if (!peer.IsChoking || peer.SupportsFastPeer) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     PieceRequest? request = Picker.ContinueExistingRequest (peer, 0, peer.BitField.Length - 1);
@@ -52,6 +81,7 @@ namespace MonoTorrent.Client.PiecePicking
                 }
             }
 
+            // FIXME: Would it be easier if RequestManager called PickPiece(AllowedFastPieces[0]) or something along those lines?
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     IList<PieceRequest> request = Picker.PickPiece (peer, peer.BitField, allPeers, count, 0, TorrentData.PieceCount () - 1);

@@ -29,9 +29,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MonoTorrent.Client;
@@ -46,8 +44,7 @@ namespace MonoTorrent.Streaming
     {
         LocalStream ActiveStream { get; set; }
         ClientEngine Engine { get; }
-        StreamingPiecePicker Picker => Requester.Picker;
-        StreamingRequestManager Requester { get; }
+        StreamingPieceRequester Requester { get; }
 
         /// <summary>
         /// Returns true when the <see cref="StreamProvider"/> has been started.
@@ -93,7 +90,7 @@ namespace MonoTorrent.Streaming
         {
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
-            Manager.ChangePicker (Requester = new StreamingRequestManager ());
+            Manager.ChangePicker (Requester = new StreamingPieceRequester ());
             Files = Manager.Files;
         }
 
@@ -112,7 +109,7 @@ namespace MonoTorrent.Streaming
             Engine = engine;
             var path = Path.Combine (metadataSaveDirectory, $"{magnetLink.InfoHash.ToHex ()}.torrent");
             Manager = new TorrentManager (magnetLink, saveDirectory, new TorrentSettings (), path);
-            Manager.ChangePicker (Requester = new StreamingRequestManager ());
+            Manager.ChangePicker (Requester = new StreamingPieceRequester ());
 
             // If the metadata for this MagnetLink has been downloaded/cached already, we will synchronously
             // load it here and will have access to the list of Files. Otherwise we need to wait.
@@ -244,7 +241,7 @@ namespace MonoTorrent.Streaming
             if (ActiveStream != null && !ActiveStream.Disposed)
                 throw new InvalidOperationException ("You must Dispose the previous stream before creating a new one.");
 
-            ActiveStream = new LocalStream (Manager, file, Picker);
+            ActiveStream = new LocalStream (Manager, file, Requester);
 
             var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
             if (prebuffer) {

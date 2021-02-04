@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
         {
             Manager = manager;
             PendingHashCheckPieces = new BitField (1);
-            Requester = new StandardRequestManager ();
+            Requester = new StandardPieceRequester ();
         }
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
