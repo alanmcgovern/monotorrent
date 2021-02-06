@@ -122,7 +122,11 @@ namespace MonoTorrent.Client
         public async Task<int> CurrentRequestCountAsync()
         {
             await ClientEngine.MainLoop;
-            return Requester.Picker.CurrentRequestCount ();
+
+            if (null != Requester.Picker)
+                return Requester.Picker.CurrentRequestCount();
+            else
+                return 0;
         }
     }
 }
