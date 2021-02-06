@@ -13,7 +13,7 @@
     <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
     <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
 
-    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha</MonoTorrentReleaseSuffix>
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha.unstable</MonoTorrentReleaseSuffix>
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
@@ -33,7 +33,11 @@
   <!-- want this logic to run if restore hasn't been executed as the 'GitVersion' target won't exist.   -->
   <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' " DependsOnTargets="GitVersion">
     <PropertyGroup>
-      <MonoTorrentFileVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
+      <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) == ''">$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
+      <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) != ''">$(GitBaseVersion)</MonoTorrentFileVersion>
+
+      <PaddedSemVerPatch>$([System.String]::Format('{0:0000}', $([System.Int32]::Parse('$(GitSemVerPatch)'))))</PaddedSemVerPatch>
+      <MonoTorrentReleaseSuffix Condition="$(MonoTorrentReleaseSuffix) != ''">$(MonoTorrentReleaseSuffix).rev$(PaddedSemVerPatch)</MonoTorrentReleaseSuffix>
       <MonoTorrentInformationalVersion>$(MonoTorrentFileVersion)-$(GitBranch)+$(GitCommit)</MonoTorrentInformationalVersion>
 
       <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(MonoTorrentABIVersion)</AssemblyVersion>

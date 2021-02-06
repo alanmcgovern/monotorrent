@@ -32,6 +32,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client.PiecePicking;
+
 namespace MonoTorrent.Client.Modes
 {
     class StartingMode : Mode
@@ -56,7 +58,7 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("Torrents with no metadata must use 'MetadataMode', not 'StartingMode'.");
 
             try {
-                Manager.PieceManager.Picker.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<Piece> ());
+                Manager.PieceManager.Requester.Picker.Initialise (Manager);
                 await VerifyHashState ();
                 Cancellation.Token.ThrowIfCancellationRequested ();
             } catch (Exception ex) {
@@ -100,7 +102,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             Manager.DhtAnnounce ();
-            Manager.PieceManager.Reset ();
+            Manager.PieceManager.Initialise ();
             await Manager.LocalPeerAnnounceAsync ();
         }
 

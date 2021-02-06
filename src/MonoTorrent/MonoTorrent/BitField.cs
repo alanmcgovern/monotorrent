@@ -99,7 +99,11 @@ namespace MonoTorrent
         #region Methods BitArray
 
         public bool this[int index] {
-            get => Get (index);
+            get {
+                if (index < 0 || index >= Length)
+                    throw new ArgumentOutOfRangeException (nameof (index));
+                return TrueCount == Length || Get (index);
+            }
             internal set => Set (index, value);
         }
 
@@ -189,13 +193,33 @@ namespace MonoTorrent
             return true;
         }
 
+        /// <summary>
+        /// Returns the index of the first <see langword="true" /> bit in the bitfield.
+        /// Returns -1 if no <see langword="true" /> bit is found. />
+        /// </summary>
+        /// <returns></returns>
         public int FirstTrue ()
-        {
-            return FirstTrue (0, Length);
-        }
+            => FirstTrue (0, Length - 1);
 
+        /// <summary>
+        /// Returns the index of the first <see langword="true" /> bit between <paramref name="startIndex"/> and <paramref name="endIndex"/> (inclusive).
+        /// Returns -1 if no <see langword="true" /> bit is found. />
+        /// </summary>
+        /// <param name="startIndex">The first index to check</param>
+        /// <param name="endIndex">The last index to check</param>
+        /// <returns></returns>
         public int FirstTrue (int startIndex, int endIndex)
         {
+            if (startIndex < 0 || startIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (startIndex));
+            if (endIndex < 0 || endIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (endIndex));
+
+            if (AllTrue)
+                return startIndex;
+            if (AllFalse)
+                return -1;
+
             int start;
             int end;
 
@@ -222,15 +246,35 @@ namespace MonoTorrent
             return -1;              // Nothing is true
         }
 
+        /// <summary>
+        /// Returns the index of the first <see langword="false" /> bit in the bitfield.
+        /// Returns -1 if no <see langword="false" /> bit is found. />
+        /// </summary>
+        /// <returns></returns>
         public int FirstFalse ()
-        {
-            return FirstFalse (0, Length);
-        }
+            => FirstFalse (0, Length - 1);
 
+        /// <summary>
+        /// Returns the index of the first <see langword="false" /> bit between <paramref name="startIndex"/> and <paramref name="endIndex"/> (inclusive).
+        /// Returns -1 if no <see langword="false" /> bit is found. />
+        /// </summary>
+        /// <param name="startIndex">The first index to check</param>
+        /// <param name="endIndex">The last index to check</param>
+        /// <returns></returns>
         public int FirstFalse (int startIndex, int endIndex)
         {
+            if (startIndex < 0 || startIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (startIndex));
+            if (endIndex < 0 || endIndex >= Length)
+                throw new IndexOutOfRangeException (nameof (endIndex));
+
             int start;
             int end;
+
+            if (AllTrue)
+                return -1;
+            if (AllFalse)
+                return 0;
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
@@ -254,6 +298,7 @@ namespace MonoTorrent
 
             return -1;              // Nothing is true
         }
+
         internal void FromArray (byte[] buffer, int offset)
         {
             int end = Length / 32;
@@ -271,13 +316,9 @@ namespace MonoTorrent
             Validate ();
         }
 
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
         bool Get (int index)
-        {
-            if (index < 0 || index >= Length)
-                throw new ArgumentOutOfRangeException (nameof (index));
-
-            return (array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
-        }
+            => (array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
 
         public IEnumerator<bool> GetEnumerator ()
         {

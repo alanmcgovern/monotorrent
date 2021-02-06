@@ -38,11 +38,11 @@ namespace MonoTorrent.Client.PiecePicking
     /// sufficient data has been buffered, then it moves to a standard 'rarest first'
     /// mode.
     /// </summary>
-    class StreamingPiecePicker : PiecePicker
+    class StreamingPiecePicker : PiecePickerFilter
     {
-        bool CancelPendingRequests { get; set; }
+        IPiecePicker LowPriorityPicker { get; }
 
-        PiecePicker LowPriorityPicker { get; }
+        IPiecePicker HighPriorityPicker { get; }
 
         /// <summary>
         /// This is the piece index of the block of data currently being consumed by the
@@ -53,48 +53,71 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// The number of pieces which will be kept buffered to avoid stuttering while streaming media.
         /// </summary>
-        internal int HighPriorityCount => 30;
+        internal int HighPriorityCount { get; set; } = 15;
+
+        internal int LowPriorityCount => HighPriorityCount * 2;
 
         ITorrentData TorrentData { get; set; }
-
 
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
-        public StreamingPiecePicker (PiecePicker picker)
-            : base (new PriorityPicker (picker))
+        public StreamingPiecePicker ()
+            : this (new StandardPicker ())
         {
-            LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (picker)));
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        internal StreamingPiecePicker (IPiecePicker picker)
+            : base (picker)
+        {
+            HighPriorityPicker = new PriorityPicker (Next);
+            LowPriorityPicker = new PriorityPicker (new RarestFirstPicker (new RandomisedPicker (Next)));
+        }
+
+        public override void Initialise (ITorrentData torrentData)
         {
             TorrentData = torrentData;
-            LowPriorityPicker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
-            base.Initialise (bitfield, torrentData, requests);
+            LowPriorityPicker.Initialise (torrentData);
+            HighPriorityPicker.Initialise (torrentData);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            // If we have seeked to a new location recently we should try to cancel pending requests.
-            if (CancelPendingRequests) {
-                foreach (var p in otherPeers)
-                    CancelRequests (p);
-                CancelRequests (peer);
-                CancelPendingRequests = false;
-            }
-
+            PieceRequest? request;
             IList<PieceRequest> bundle;
-            int start, end;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
-                start = HighPriorityPieceIndex;
-                end = Math.Min (endIndex, start + HighPriorityCount - 1);
-                if ((bundle = base.PickPiece (peer, available, otherPeers, count, start, end)) != null)
+                var start = HighPriorityPieceIndex;
+                var end = Math.Min (endIndex, HighPriorityPieceIndex + HighPriorityCount - 1);
+
+                for (int prioritised = start; prioritised <= start + 1 && prioritised <= end; prioritised++) {
+                    if (available[prioritised]) {
+                        if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, prioritised, prioritised)) != null)
+                            return bundle;
+                        if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, prioritised, prioritised, 3)) != null)
+                            return new[] { request.Value };
+                    }
+                }
+
+                if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, start, end)) != null)
+                    return new[] { request.Value };
+
+                if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, start, end)) != null)
                     return bundle;
             }
 
-            return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+            if (endIndex < HighPriorityPieceIndex)
+                return null;
+
+            var lowPriorityEndIndex = Math.Min (HighPriorityPieceIndex + LowPriorityCount, endIndex);
+            if ((bundle = LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, lowPriorityEndIndex)) != null)
+                return bundle;
+
+            // If we're downloading from the 'not important at all' section, queue up at most 2.
+            if (peer.AmRequestingPiecesCount > 2)
+                return null;
+
+            return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, endIndex);
         }
 
         /// <summary>
@@ -103,11 +126,12 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        internal void SeekToPosition (ITorrentFileInfo file, long position)
+        internal bool SeekToPosition (ITorrentFileInfo file, long position)
         {
             // Update the high priority set, then cancel pending requests.
+            var oldIndex = HighPriorityPieceIndex;
             ReadToPosition (file, position);
-            CancelPendingRequests = true;
+            return oldIndex != HighPriorityPieceIndex;
         }
 
         /// <summary>

@@ -1,10 +1,10 @@
 ﻿//
-// PieceRequest.cs
+// NullPeerListener.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2019 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,37 +29,25 @@
 
 using System;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client.Listeners
 {
-    public class PieceRequest : IEquatable<PieceRequest>
+    class NullPeerListener : IPeerListener
     {
-        public int PieceIndex { get; }
-        public int StartOffset { get; }
-        public int RequestLength { get; }
+#pragma warning disable 0067
+        public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        public event EventHandler<EventArgs> StatusChanged;
+#pragma warning restore 0067
 
-        public PieceRequest (int pieceIndex, int startOffset, int requestLength)
+        public ListenerStatus Status => ListenerStatus.NotListening;
+
+        public void Start ()
         {
-            PieceIndex = pieceIndex;
-            StartOffset = startOffset;
-            RequestLength = requestLength;
+            
         }
 
-        public override bool Equals (object obj)
+        public void Stop ()
         {
-            return Equals (obj as PieceRequest);
-        }
-
-        public bool Equals (PieceRequest other)
-        {
-            return other != null
-                       && other.PieceIndex == PieceIndex
-                       && other.StartOffset == StartOffset
-                       && other.RequestLength == RequestLength;
-        }
-
-        public override int GetHashCode ()
-        {
-            return PieceIndex;
+            
         }
     }
 }

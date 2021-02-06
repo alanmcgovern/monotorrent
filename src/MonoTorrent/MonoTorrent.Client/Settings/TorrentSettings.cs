@@ -34,29 +34,60 @@ using MonoTorrent.Dht;
 namespace MonoTorrent.Client
 {
     [Serializable]
-    public class TorrentSettings : ICloneable
+    public class TorrentSettings : IEquatable<TorrentSettings>
     {
-        int maximumConnections = 60;
-        int maximumDownloadSpeed;
-        int maximumUploadSpeed;
-        int uploadSlots = 8;
-
         /// <summary>
         /// If set to false then the <see cref="DhtEngine"/> registered with the <see cref="ClientEngine" /> will
         /// never be used to locate additional peers. Defaults to true.
         /// </summary>
-        public bool AllowDht { get; set; } = true;
+        public bool AllowDht { get; } = true;
 
         /// <summary>
         /// If set to true, and there are no other seeders for this torrent, then Initial Seeding mode may be used to
         /// prioritise sharing pieces which are not already available in the swarm.
         /// </summary>
-        public bool AllowInitialSeeding { get; set; }
+        public bool AllowInitialSeeding { get; }
 
         /// <summary>
         /// If set to false then Peer Exchange messages will never be used to locate additional peers. Defaults to true.
         /// </summary>
-        public bool AllowPeerExchange { get; set; } = true;
+        public bool AllowPeerExchange { get; } = true;
+
+        /// <summary>
+        /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
+        /// </summary>
+        public int MaximumConnections { get; } = 60;
+
+        /// <summary>
+        /// The maximum download speed, in bytes per second, for this torrent. A value of 0 means unlimited. Defaults to 0.
+        /// </summary>
+        public int MaximumDownloadSpeed { get; }
+
+        /// <summary>
+        /// The maximum upload speed, in bytes per second, for this torrent. A value of 0 means unlimited. defaults to 0.
+        /// </summary>
+        public int MaximumUploadSpeed { get; }
+
+        /// <summary>
+        /// The number of peers which can be uploaded to concurrently for this torrent. A value of 0 means unlimited. defaults to 8.
+        /// </summary>
+        public int UploadSlots { get; } = 8;
+
+        /// <summary>
+        /// The delay before a torrent will start using web seeds.
+        /// </summary>
+        public TimeSpan WebSeedDelay { get; } = TimeSpan.FromMinutes (1);
+
+        /// <summary>
+        /// The download speed under which a torrent will start using web seeds.
+        /// </summary>
+        public int WebSeedSpeedTrigger { get; } = 15 * 1024;
+
+        /// <summary>
+        /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
+        /// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
+        /// </summary>
+        internal long ConnectionRetentionFactor => 1024;
 
         /// <summary>
         /// The number of peers we should maintain in our internal lists. If we are allowed maintain 100 connections,
@@ -65,77 +96,44 @@ namespace MonoTorrent.Client
         internal int MaximumPeerDetails => MaximumConnections + 50;
 
         /// <summary>
-        /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
-        /// </summary>
-        public int MaximumConnections {
-            get => maximumConnections;
-            set => maximumConnections = CheckZeroOrPositive (value);
-        }
-
-        /// <summary>
-        /// The maximum download speed, in bytes per second, for this torrent. A value of 0 means unlimited. Defaults to 0.
-        /// </summary>
-        public int MaximumDownloadSpeed {
-            get => maximumDownloadSpeed;
-            set => maximumDownloadSpeed = CheckZeroOrPositive (value);
-        }
-
-        /// <summary>
-        /// The maximum upload speed, in bytes per second, for this torrent. A value of 0 means unlimited. defaults to 0.
-        /// </summary>
-        public int MaximumUploadSpeed {
-            get => maximumUploadSpeed;
-            set => maximumUploadSpeed = CheckZeroOrPositive (value);
-        }
-
-        /// <summary>
-        /// The number of peers which can be uploaded to concurrently for this torrent. A value of 0 means unlimited. defaults to 8.
-        /// </summary>
-        public int UploadSlots {
-            get => uploadSlots;
-            set => uploadSlots = CheckZeroOrPositive (value);
-        }
-
-        /// <summary>
-        /// The delay before a torrent will start using web seeds.
-        /// </summary>
-        public TimeSpan WebSeedDelay { get; set; } = TimeSpan.FromMinutes (1);
-
-        /// <summary>
-        /// The download speed under which a torrent will start using web seeds.
-        /// </summary>
-        public int WebSeedSpeedTrigger { get; set; } = 15 * 1024;
-
-        /// <summary>
         /// The time, in seconds, the inactivity manager should wait until it can consider a peer eligible for disconnection.  Peers are disconnected only if they have not provided
         /// any data.  Default is 600.  A value of 0 disables the inactivity manager.
         /// </summary>
-        internal TimeSpan TimeToWaitUntilIdle { get; set; } = TimeSpan.FromMinutes (10);
+        internal TimeSpan TimeToWaitUntilIdle => TimeSpan.FromMinutes (10);
 
-        /// <summary>
-        /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
-        /// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
-        /// </summary>
-        internal long ConnectionRetentionFactor { get; set; } = 1024;
-
-        object ICloneable.Clone ()
+        public TorrentSettings ()
         {
-            return Clone ();
+
         }
 
-        public TorrentSettings Clone ()
+        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger)
         {
-            return (TorrentSettings) MemberwiseClone ();
+            AllowDht = allowDht;
+            AllowInitialSeeding = allowInitialSeeding;
+            AllowPeerExchange = allowPeerExchange;
+            MaximumConnections = maximumConnections;
+            MaximumDownloadSpeed = maximumDownloadSpeed;
+            MaximumUploadSpeed = maximumUploadSpeed;
+            UploadSlots = uploadSlots;
+            WebSeedDelay = webSeedDelay;
+            WebSeedSpeedTrigger = webSeedSpeedTrigger;
         }
 
         public override bool Equals (object obj)
+            => Equals (obj as TorrentSettings);
+
+        public bool Equals (TorrentSettings other)
         {
-            return obj is TorrentSettings settings
-                && AllowInitialSeeding == settings.AllowInitialSeeding
-                && MaximumConnections == settings.MaximumConnections
-                && MaximumDownloadSpeed == settings.MaximumDownloadSpeed
-                && MaximumUploadSpeed == settings.MaximumUploadSpeed
-                && UploadSlots == settings.uploadSlots;
+            return other != null
+                && AllowDht == other.AllowDht
+                && AllowInitialSeeding == other.AllowInitialSeeding
+                && AllowPeerExchange == other.AllowPeerExchange
+                && MaximumConnections == other.MaximumConnections
+                && MaximumDownloadSpeed == other.MaximumDownloadSpeed
+                && MaximumUploadSpeed == other.MaximumUploadSpeed
+                && UploadSlots == other.UploadSlots
+                && WebSeedDelay == other.WebSeedDelay
+                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger;
         }
 
         public override int GetHashCode ()
@@ -145,13 +143,6 @@ namespace MonoTorrent.Client
                 ^ MaximumDownloadSpeed
                 ^ MaximumUploadSpeed
                 ^ UploadSlots;
-        }
-
-        static int CheckZeroOrPositive (int value)
-        {
-            if (value < 0)
-                throw new ArgumentOutOfRangeException (nameof (value), "Value should be zero or greater");
-            return value;
         }
     }
 }

@@ -46,7 +46,8 @@ namespace MonoTorrent.Streaming
     {
         LocalStream ActiveStream { get; set; }
         ClientEngine Engine { get; }
-        StreamingPiecePicker Picker { get; }
+        StreamingPiecePicker Picker => Requester.Picker;
+        StreamingRequestManager Requester { get; }
 
         /// <summary>
         /// Returns true when the <see cref="StreamProvider"/> has been started.
@@ -92,7 +93,7 @@ namespace MonoTorrent.Streaming
         {
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
-            Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
+            Manager.ChangePicker (Requester = new StreamingRequestManager ());
             Files = Manager.Files;
         }
 
@@ -111,7 +112,7 @@ namespace MonoTorrent.Streaming
             Engine = engine;
             var path = Path.Combine (metadataSaveDirectory, $"{magnetLink.InfoHash.ToHex ()}.torrent");
             Manager = new TorrentManager (magnetLink, saveDirectory, new TorrentSettings (), path);
-            Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
+            Manager.ChangePicker (Requester = new StreamingRequestManager ());
 
             // If the metadata for this MagnetLink has been downloaded/cached already, we will synchronously
             // load it here and will have access to the list of Files. Otherwise we need to wait.
@@ -243,17 +244,18 @@ namespace MonoTorrent.Streaming
             if (ActiveStream != null && !ActiveStream.Disposed)
                 throw new InvalidOperationException ("You must Dispose the previous stream before creating a new one.");
 
-            Picker.SeekToPosition (file, 0);
             ActiveStream = new LocalStream (Manager, file, Picker);
 
             var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
             if (prebuffer) {
-                ActiveStream.Seek (ActiveStream.Length - 2, SeekOrigin.Begin);
+                ActiveStream.Seek (ActiveStream.Length - Manager.PieceLength * 2, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
 
                 ActiveStream.Seek (0, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
             }
+
+            ActiveStream.Seek (0, SeekOrigin.Begin);
             return ActiveStream;
         }
 

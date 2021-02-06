@@ -40,14 +40,12 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ConnectionListenerTests
     {
-        readonly IPEndPoint endpoint = new IPEndPoint (IPAddress.Loopback, 55652);
-
-        IPeerListener listener;
+        PeerListener listener;
 
         [SetUp]
         public void Setup ()
         {
-            listener = new PeerListener (endpoint);
+            listener = new PeerListener (new IPEndPoint (IPAddress.Loopback, 0));
             listener.Start ();
         }
 
@@ -63,7 +61,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 10; i++) {
                 using TcpClient c = new TcpClient (AddressFamily.InterNetwork);
                 var task = AcceptSocket ();
-                c.Connect (endpoint);
+                c.Connect (listener.EndPoint);
                 if (await Task.WhenAny (Task.Delay (1000), task) != task)
                     Assert.Fail ("Failed to establish a connection");
                 (await task).Connection.Dispose ();
@@ -74,7 +72,7 @@ namespace MonoTorrent.Client
         public void PortNotFree ()
         {
             var tcs = new TaskCompletionSource<object> ();
-            var otherListener = new PeerListener (endpoint);
+            var otherListener = new PeerListener (listener.EndPoint);
             otherListener.StatusChanged += (o, e) => tcs.SetResult (null);
             otherListener.Start ();
             Assert.AreEqual (ListenerStatus.PortNotFree, otherListener.Status);

@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             partialData = false;
 
             rig = TestRig.CreateMultiFile ();
-            rig.Manager.ChangePicker (new StandardPicker ());
+            rig.Manager.ChangePicker (new StandardRequestManager ());
 
             connection = new HttpConnection (new Uri (ListenerURL));
             connection.Manager = rig.Manager;
@@ -203,7 +203,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ChunkedRequest ()
         {
-            rig.Manager.PieceManager.Picker.CancelRequests (id);
+            rig.Manager.PieceManager.Requester.Picker.CancelRequests (id);
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.MessageQueue.TryDequeue ();
@@ -220,13 +220,13 @@ namespace MonoTorrent.Client
         {
             var messages = requests.ToRequestMessages ().ToList ();
             for (int i = 0; i < messages.Count - 1; i++) {
-                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength));
+                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, out _);
                 int orig = id.AmRequestingPiecesCount;
                 rig.Manager.PieceManager.AddPieceRequests (id);
                 Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
             }
 
-            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength));
+            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength), out _, out _);
             Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
 
             rig.Manager.PieceManager.AddPieceRequests (id);

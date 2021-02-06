@@ -73,6 +73,54 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
+        public async Task FlushMultipleBlocks()
+        {
+            byte[] buffer;
+            var blocking = new BlockingWriter ();
+            var memory = new MemoryWriter (blocking, Piece.BlockSize * 3);
+
+            // Write 3 blocks
+            for (int i = 0; i < 3; i++) {
+                buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
+                await memory.WriteAsync (file, Piece.BlockSize * i, buffer, 0, buffer.Length).WithTimeout ();
+            }
+
+            // Flush them all
+            var flushTask = memory.FlushAsync (file);
+
+            // Process the first flush
+            blocking.Writes.TakeWithTimeout ().tcs.SetResult (null);
+
+            // write a new block
+            buffer = Enumerable.Repeat ((byte) 1, Piece.BlockSize).ToArray ();
+            await memory.WriteAsync (file, Piece.BlockSize, buffer, 0, buffer.Length).WithTimeout ();
+
+            // Process the remaining two flushes
+            blocking.Writes.TakeWithTimeout ().tcs.SetResult (null);
+            blocking.Writes.TakeWithTimeout ().tcs.SetResult (null);
+
+            await flushTask.WithTimeout ();
+        }
+
+        [Test]
+        public async Task WriteBlockWhileFlushing ()
+        {
+            var blocking = new BlockingWriter ();
+            var memory = new MemoryWriter (blocking, Piece.BlockSize * 3);
+
+            await memory.WriteAsync (file, Piece.BlockSize, new byte[Piece.BlockSize], 0, Piece.BlockSize).WithTimeout ();
+
+            // Begin flushing the piece, but write another block to the cache while the flush is in-progress
+            var flushTask = memory.FlushAsync (file);
+            await memory.WriteAsync (file, Piece.BlockSize, new byte[Piece.BlockSize], 0, Piece.BlockSize).WithTimeout ();
+            blocking.Writes.TakeWithTimeout ().tcs.SetResult (null);
+            await flushTask.WithTimeout ();
+
+            // At the end we should have one block still in the cache.
+            Assert.AreEqual (Piece.BlockSize, memory.CacheUsed);
+        }
+
+        [Test]
         public async Task ReadWriteBlock ()
         {
             var buffer = Enumerable.Repeat ((byte) 55, Piece.BlockSize).ToArray ();

@@ -59,7 +59,7 @@ namespace MonoTorrent.Dht
 
         int counter;
         [Test]
-        public void SendQueryTaskTimeout ()
+        public async Task SendQueryTaskTimeout ()
         {
             engine.MessageLoop.Timeout = TimeSpan.Zero;
 
@@ -70,12 +70,12 @@ namespace MonoTorrent.Dht
                     counter++;
             };
 
-            Assert.IsTrue (engine.SendQueryAsync (ping, node).Wait (3000), "#1");
+            Assert.IsTrue ((await engine.SendQueryAsync (ping, node).WithTimeout(3000)).TimedOut, "#1");
             Assert.AreEqual (4, counter, "#2");
         }
 
         [Test]
-        public void SendQueryTaskSucceed ()
+        public async Task SendQueryTaskSucceed ()
         {
             var ping = new Ping (engine.LocalId) {
                 TransactionId = transactionId
@@ -89,7 +89,7 @@ namespace MonoTorrent.Dht
             };
 
             Assert.IsFalse (node.LastSeen < TimeSpan.FromSeconds (2));
-            Assert.IsTrue (engine.SendQueryAsync (ping, node).Wait (3000), "#1");
+            Assert.IsFalse ((await engine.SendQueryAsync (ping, node).WithTimeout (3000)).TimedOut, "#1");
             Assert.AreEqual (1, counter, "#2");
             Node n = engine.RoutingTable.FindNode (node.Id);
             Assert.IsNotNull (n, "#3");
@@ -97,7 +97,7 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void NodeReplaceTest ()
+        public async Task NodeReplaceTest ()
         {
             int nodeCount = 0;
             Bucket b = new Bucket ();
@@ -127,7 +127,7 @@ namespace MonoTorrent.Dht
             };
 
             ReplaceNodeTask task = new ReplaceNodeTask (engine, b, null);
-            Assert.IsTrue (task.Execute ().Wait (4000), "#10");
+            await task.Execute ().WithTimeout (4000);
         }
 
         [Test]
@@ -170,7 +170,7 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void ReplaceNodeTest ()
+        public async Task ReplaceNodeTest ()
         {
             engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds (0);
             Node replacement = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Loopback, 1337));
@@ -182,7 +182,7 @@ namespace MonoTorrent.Dht
             Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
 
             ReplaceNodeTask task = new ReplaceNodeTask (engine, engine.RoutingTable.Buckets[0], replacement);
-            Assert.IsTrue (task.Execute ().Wait (1000), "#a");
+            await task.Execute ().WithTimeout (1000);
             Assert.IsFalse (engine.RoutingTable.Buckets[0].Nodes.Contains (nodeToReplace), "#1");
             Assert.IsTrue (engine.RoutingTable.Buckets[0].Nodes.Contains (replacement), "#2");
         }

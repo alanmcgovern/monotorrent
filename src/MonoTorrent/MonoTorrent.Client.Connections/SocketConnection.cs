@@ -31,8 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 
 using ReusableTasks;
 
@@ -102,7 +100,7 @@ namespace MonoTorrent.Client.Connections
 
         ReusableTaskCompletionSource<int> SendTcs { get; }
 
-        Socket Socket { get; set; }
+        Socket Socket { get; }
 
         public Uri Uri { get; protected set; }
 
@@ -180,12 +178,6 @@ namespace MonoTorrent.Client.Connections
 
         public ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
         {
-            // If this has been disposed, then bail out
-            if (Socket == null) {
-                ReceiveTcs.SetResult (0);
-                return ReceiveTcs.Task;
-            }
-
             SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
             args.UserToken = ReceiveTcs;
@@ -199,6 +191,8 @@ namespace MonoTorrent.Client.Connections
             try {
                 if (!Socket.ReceiveAsync (args))
                     ReceiveTcs.SetResult (args.BytesTransferred);
+            } catch (ObjectDisposedException) {
+                ReceiveTcs.SetResult (0);
             } finally {
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
@@ -210,12 +204,6 @@ namespace MonoTorrent.Client.Connections
 
         public ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
         {
-            // If this has been disposed, then bail out
-            if (Socket == null) {
-                SendTcs.SetResult (0);
-                return SendTcs.Task;
-            }
-
             SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
             args.SetBuffer (offset, count);
             args.UserToken = SendTcs;
@@ -229,6 +217,8 @@ namespace MonoTorrent.Client.Connections
             try {
                 if (!Socket.SendAsync (args))
                     SendTcs.SetResult (count);
+            } catch (ObjectDisposedException) {
+                SendTcs.SetResult (0);
             } finally {
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
@@ -240,8 +230,7 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose ()
         {
-            Socket?.SafeDispose ();
-            Socket = null;
+            Socket.Dispose ();
         }
 
 #endregion

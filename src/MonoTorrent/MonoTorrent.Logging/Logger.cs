@@ -77,6 +77,12 @@ namespace MonoTorrent.Logging
                 Writer.Info (string.Format (format, p1, p2));
         }
 
+        internal void InfoFormatted (string format, int p1, int p2, object p3)
+        {
+            if (Writer != null)
+                Writer.Info (string.Format (format, p1, p2, p3));
+        }
+
         internal void InfoFormatted (string format, object p1)
         {
             if (Writer != null)

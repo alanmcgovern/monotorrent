@@ -40,16 +40,17 @@ namespace MonoTorrent.Client
 
         #region Public Properties
 
+        // FIXME: Expose the details in a threadsafe/immutable way
         /// <summary>
         /// The block whose state changed
         /// </summary>
-        public Block Block => block;
+        internal Block Block => block;
 
 
         /// <summary>
         /// The piece that the block belongs too
         /// </summary>
-        public Piece Piece { get; set; }
+        internal Piece Piece { get; set; }
 
 
         /// <summary>

@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Modes
             var connection = pair.Incoming;
             PeerId id = new PeerId (new Peer ("", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
 
-            var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, rig.Engine.Settings, new[] { rig.Manager.InfoHash });
+            var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, new[] { rig.Manager.InfoHash });
             decryptor = id.Decryptor = result.Decryptor;
             encryptor = id.Encryptor = result.Encryptor;
         }
@@ -80,6 +80,16 @@ namespace MonoTorrent.Client.Modes
             await rig.Manager.StopAsync ();
             pair.Dispose ();
             rig.Dispose ();
+        }
+
+        [Test]
+        public async Task UnknownMetadataLength ()
+        {
+            await Setup (true, "path.torrent");
+
+            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, null, 5555);
+            exHand.Supports.Add (LTMetadata.Support);
+            Assert.DoesNotThrow (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1), exHand));
         }
 
         [Test]
@@ -254,6 +264,7 @@ namespace MonoTorrent.Client.Modes
             PeerMessage m;
             while (unrequestedPieces.Count > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is ExtendedHandshakeMessage ex) {
+                    Assert.IsNull (ex.MetadataSize);
                     Assert.AreEqual (ClientEngine.DefaultMaxPendingRequests, ex.MaxRequests);
                 } else if (m is HaveNoneMessage) {
                     receivedHaveNone = true;

@@ -199,7 +199,7 @@ namespace MonoTorrent.Client.Modes
 
             var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = hashingMode;
-            await hashingMode.WaitForHashingToComplete ();
+            await hashingMode.WaitForHashingToComplete ().WithTimeout ();
 
             Manager.PieceManager.AddPieceRequests (Peer);
             Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1");

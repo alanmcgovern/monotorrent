@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
         /// </summary>
-        EngineSettings Settings { get; }
+        EngineSettings Settings { get; set; }
 
         /// <summary>
         /// Limits how fast data is written to the disk.
@@ -164,12 +164,16 @@ namespace MonoTorrent.Client
 
         ValueStopwatch UpdateTimer;
 
+        DiskWriter DiskWriter { get; }
+
+        MemoryWriter MemoryWriter { get; }
+
         /// <summary>
         /// The piece writer used to read/write data
         /// </summary>
         internal IPieceWriter Writer { get; set; }
 
-        internal DiskManager (EngineSettings settings, IPieceWriter writer)
+        internal DiskManager (EngineSettings settings, IPieceWriter writer = null)
         {
             ReadLimiter = new RateLimiter ();
             ReadMonitor = new SpeedMonitor ();
@@ -182,7 +186,16 @@ namespace MonoTorrent.Client
             UpdateTimer = ValueStopwatch.StartNew ();
 
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
-            Writer = writer ?? throw new ArgumentNullException (nameof (writer));
+
+            // If we pass in an IPieceWriter it should be used  *instead* of these.
+            // However we still create these so the properties are non-null.
+            DiskWriter = new DiskWriter (settings.MaximumOpenFiles) {
+                ReadMonitor = ReadMonitor,
+                WriteMonitor = WriteMonitor,
+            };
+            MemoryWriter = new MemoryWriter (DiskWriter, settings.DiskCacheBytes);
+
+            Writer = writer ?? MemoryWriter;
         }
 
         void IDisposable.Dispose ()
@@ -279,11 +292,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        ReusableTask<bool> WaitForPendingWrites ()
+        async ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
             WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
-            return tcs.Task;
+            await ProcessBufferedIOAsync ();
+            return await tcs.Task;
         }
 
         internal async Task CloseFilesAsync (ITorrentData manager)
@@ -293,8 +307,7 @@ namespace MonoTorrent.Client
             // Process all pending reads/writes then close any open streams
             await ProcessBufferedIOAsync (true);
             foreach (var file in manager.Files)
-                using (await file.Locker.EnterAsync ())
-                    await Writer.CloseAsync (file);
+                await Writer.CloseAsync (file);
         }
 
         /// <summary>
@@ -321,10 +334,26 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException (nameof (manager));
             await IOLoop;
 
-            await WaitForPendingWrites ();
+            if (WriteQueue.Count > 0)
+                await WaitForPendingWrites ();
+
             foreach (var file in manager.Files) {
                 if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
                     await Writer.FlushAsync (file);
+            }
+        }
+
+        internal void UpdateSettings(EngineSettings settings)
+        {
+            var oldSettings = Settings;
+            Settings = settings;
+
+            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles) {
+                DiskWriter.UpdateMaximumOpenFiles (settings.MaximumOpenFiles);
+            }
+
+            if (oldSettings.DiskCacheBytes != settings.DiskCacheBytes) {
+                MemoryWriter.Capacity = settings.DiskCacheBytes;
             }
         }
 
@@ -432,6 +461,8 @@ namespace MonoTorrent.Client
 
         async ReusableTask ProcessBufferedIOAsync (bool force = false)
         {
+            await IOLoop;
+
             BufferedIO io;
 
             while (WriteQueue.Count > 0) {
@@ -498,7 +529,13 @@ namespace MonoTorrent.Client
 
         async ReusableTask<bool> DoReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
-            ReadMonitor.AddDelta (count);
+            IOLoop.CheckThread ();
+
+            // If the user passed a custom IPieceWriter we should record the data here.
+            // Otherwise we record the data when the DiskWriter we created writes the actual data
+            // to disk.
+            if (MemoryWriter != Writer)
+                ReadMonitor.AddDelta (count);
 
             if (count < 1)
                 throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
@@ -531,12 +568,7 @@ namespace MonoTorrent.Client
 
         async ReusableTask<int> ReadFromFileAsync (ITorrentFileInfo torrentFile, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            await torrentFile.Locker.WaitAsync ();
-            try {
-                return await Writer.ReadAsync (torrentFile, offset, buffer, bufferOffset, count);
-            } finally {
-                torrentFile.Locker.Release ();
-            }
+            return await Writer.ReadAsync (torrentFile, offset, buffer, bufferOffset, count);
         }
 
         /// <summary>
@@ -561,6 +593,15 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal async ReusableTask Tick (int delta)
         {
+            // The tests sometimes set the rate limit to 1kB/sec, then they tick
+            // time forwards, and they ensure no data is actually written. If the
+            // test fixture has called ReadAsync/WriteAsync, we want to ensure the
+            // tick executes *after* they are processed to avoid having a race condition
+            // where the tests enqueues things assuming the rate limit is 1kB/sec and so
+            // the pieces won't be written, but then they *are* actually written because
+            // UpdateChunks is invoked before the IO thread loops.
+            // By forcing this to occur on the IO loop for the tests, that race condition
+            // is eliminated. In the real world this is a threadsafe update so it's fine!
             await IOLoop;
             await Tick (delta, true);
         }
@@ -581,7 +622,13 @@ namespace MonoTorrent.Client
 
         async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
-            WriteMonitor.AddDelta (count);
+            IOLoop.CheckThread ();
+
+            // If the user passed a custom IPieceWriter we should record the data here.
+            // Otherwise we record the data when the DiskWriter we created writes the actual data
+            // to disk.
+            if (MemoryWriter != Writer)
+                WriteMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
@@ -595,12 +642,7 @@ namespace MonoTorrent.Client
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
 
-                await files[i].Locker.WaitAsync ();
-                try {
-                    await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
-                } finally {
-                    files[i].Locker.Release ();
-                }
+                await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
                 offset += fileToWrite;
                 totalWritten += fileToWrite;
                 if (offset >= files[i].Length) {

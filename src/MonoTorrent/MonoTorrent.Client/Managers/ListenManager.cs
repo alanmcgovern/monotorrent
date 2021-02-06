@@ -41,18 +41,20 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    class ListenManager : IDisposable
+    class ListenManager
     {
         static readonly Logger logger = Logger.Create ();
 
         ClientEngine Engine { get; set; }
-        List<IPeerListener> Listeners { get; }
+
+        IPeerListener Listener { get; set; }
+
         InfoHash[] SKeys { get; set; }
 
         internal ListenManager (ClientEngine engine)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
-            Listeners = new List<IPeerListener> ();
+            Listener = new NullPeerListener ();
             SKeys = Array.Empty<InfoHash> ();
         }
 
@@ -73,23 +75,11 @@ namespace MonoTorrent.Client
             SKeys = clone;
         }
 
-        public void Dispose ()
+        public void SetListener (IPeerListener listener)
         {
-            foreach (IPeerListener listener in Listeners.ToArray ())
-                Unregister (listener);
-            Listeners.Clear ();
-        }
-
-        public void Register (IPeerListener listener)
-        {
-            Listeners.Add (listener);
-            listener.ConnectionReceived += ConnectionReceived;
-        }
-
-        public void Unregister (IPeerListener listener)
-        {
-            listener.ConnectionReceived -= ConnectionReceived;
-            Listeners.Remove (listener);
+            Listener.ConnectionReceived -= ConnectionReceived;
+            Listener = listener ?? new NullPeerListener ();
+            Listener.ConnectionReceived += ConnectionReceived;
         }
 
         async void ConnectionReceived (object sender, NewConnectionEventArgs e)
@@ -112,7 +102,8 @@ namespace MonoTorrent.Client
 
                 logger.Info (e.Connection, "ConnectionReceived");
 
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, e.Peer.AllowedEncryption, Engine.Settings, SKeys);
+                var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (e.Peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys);
                 if (!await HandleHandshake (e.Peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch {
@@ -127,7 +118,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // If we're forcing encrypted connections and this is in plain-text, close it!
-            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.HasFlag (EncryptionTypes.PlainText))
+            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText))
                 return false;
 
             for (int i = 0; i < Engine.Torrents.Count; i++)

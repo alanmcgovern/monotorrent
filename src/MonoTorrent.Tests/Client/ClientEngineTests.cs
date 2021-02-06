@@ -32,6 +32,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Dht;
 
 using NUnit.Framework;
 
@@ -47,6 +48,8 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
+            DhtEngineFactory.Creator = listener => new ManualDhtEngine ();
+
             rig = TestRig.CreateMultiFile (new TestWriter ());
             conn = new ConnectionPair ().WithTimeout ();
         }
@@ -54,6 +57,8 @@ namespace MonoTorrent.Client
         [TearDown]
         public void Teardown ()
         {
+            DhtEngineFactory.Creator = listener => new DhtEngine (listener);
+
             rig.Dispose ();
             conn.Dispose ();
         }
@@ -61,8 +66,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_Dht ()
         {
-            var dht = new ManualDhtEngine ();
-            await rig.Engine.RegisterDhtAsync (dht);
+            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
             var manager = rig.Engine.Torrents[0];
@@ -90,8 +94,7 @@ namespace MonoTorrent.Client
             var manager = new TorrentManager (editor.ToTorrent (), "path", new TorrentSettings ());
             await rig.Engine.Register (manager);
 
-            var dht = new ManualDhtEngine ();
-            await rig.Engine.RegisterDhtAsync (dht);
+            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
             manager.PeersFound += (o, e) => {
@@ -109,8 +112,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_LocalPeerDiscovery ()
         {
-            var localPeer = new ManualLocalPeerListener ();
-            await rig.Engine.RegisterLocalPeerDiscoveryAsync (localPeer);
+            var localPeer = (ManualLocalPeerListener) rig.Engine.LocalPeerDiscovery;
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
             var manager = rig.Engine.Torrents[0];
@@ -138,8 +140,7 @@ namespace MonoTorrent.Client
             var manager = new TorrentManager (editor.ToTorrent (), "path", new TorrentSettings ());
             await rig.Engine.Register (manager);
 
-            var localPeer = new ManualLocalPeerListener ();
-            await rig.Engine.RegisterLocalPeerDiscoveryAsync (localPeer);
+            var localPeer = (ManualLocalPeerListener) rig.Engine.LocalPeerDiscovery;
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
             manager.PeersFound += (o, e) => {

@@ -33,26 +33,29 @@ using System.Diagnostics;
 namespace MonoTorrent.Client
 {
     [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
-    public class Piece : IComparable<Piece>
+    class Piece : IComparable<Piece>
     {
         internal const int BlockSize = (1 << 14); // 16kB
-
-        #region Member Variables
-
-        #endregion MemberVariables
 
 
         #region Fields
 
         public Block this[int index] => Blocks[index];
 
+        /// <summary>
+        /// Set to true when the original peer times out sending a piece, disconnects, or chokes us.
+        /// This allows other peers to immediately begin downloading blocks from this piece to complete
+        /// it.
+        /// </summary>
+        internal bool Abandoned { get; set; }
+
         internal Block[] Blocks { get; set; }
 
-        public bool AllBlocksRequested => TotalRequested == BlockCount;
+        public bool AllBlocksRequested => TotalRequested == Blocks.Length;
 
-        public bool AllBlocksReceived => TotalReceived == BlockCount;
+        public bool AllBlocksReceived => TotalReceived == Blocks.Length;
 
-        public bool AllBlocksWritten => TotalWritten == BlockCount;
+        public bool AllBlocksWritten => TotalWritten == Blocks.Length;
 
         public int BlockCount => Blocks.Length;
 

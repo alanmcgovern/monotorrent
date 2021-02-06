@@ -113,17 +113,23 @@ namespace MonoTorrent.Client
         public int AmRequestingPiecesCount { get; internal set; }
         public BitField BitField { get; internal set; }
         public Software ClientApp { get; internal set; }
-        public EncryptionTypes EncryptionType {
+
+        public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
+
+        public EncryptionType EncryptionType {
             get {
                 if (Encryptor is RC4)
-                    return EncryptionTypes.RC4Full;
+                    return EncryptionType.RC4Full;
                 if (Encryptor is RC4Header)
-                    return EncryptionTypes.RC4Header;
+                    return EncryptionType.RC4Header;
                 if (Encryptor is PlainTextEncryption || Encryptor == null)
-                    return EncryptionTypes.PlainText;
-                return EncryptionTypes.None;
+                    return EncryptionType.PlainText;
+                throw new NotSupportedException ($"Encryption type {Encryptor.GetType ().Name} is unsupported");
             }
         }
+
+        public IList<EncryptionType> SupportedEncryptionTypes => Peer.AllowedEncryption;
+
         public bool IsChoking { get; internal set; }
         public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }

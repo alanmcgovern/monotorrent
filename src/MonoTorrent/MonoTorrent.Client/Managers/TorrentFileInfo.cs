@@ -40,8 +40,6 @@ namespace MonoTorrent.Client
 
         public BitField BitField { get; }
 
-        public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
-
         public Priority Priority { get; set; } = Priority.Normal;
 
         public string Path => TorrentFile.Path;
