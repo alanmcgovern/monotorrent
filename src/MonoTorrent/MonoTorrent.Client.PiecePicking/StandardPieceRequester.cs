@@ -53,8 +53,9 @@ namespace MonoTorrent.Client.PiecePicking
 
         public void AddRequests (IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield)
         {
-            if (InEndgameMode) {
-                foreach (var peer in peers)
+            for (int i = 0; i < peers.Count; i++) {
+                var peer = peers[i];
+                if (peer.SuggestedPieces.Count > 0 || (!peer.IsChoking && peer.AmRequestingPiecesCount == 0))
                     AddRequests (peer, peers, bitfield);
             }
         }
