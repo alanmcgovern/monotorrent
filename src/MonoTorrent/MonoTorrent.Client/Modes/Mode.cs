@@ -576,6 +576,8 @@ namespace MonoTorrent.Client.Modes
                 }
             }
 
+            Manager.PieceManager?.Requester.AddRequests (Manager.Peers.ConnectedPeers, Manager.Bitfield);
+
             if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
                 _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);
             }
