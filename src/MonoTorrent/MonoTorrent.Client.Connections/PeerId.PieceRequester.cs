@@ -67,6 +67,17 @@ namespace MonoTorrent.Client
             MessageQueue.Enqueue (new RequestBundle (requests));
         }
 
+        void IPeerWithMessaging.EnqueueCancellation (PieceRequest request)
+        {
+            MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
+        void IPeerWithMessaging.EnqueueCancellations (IList<PieceRequest> requests)
+        {
+            for (int i = 0; i < requests.Count; i++)
+                MessageQueue.Enqueue (new CancelMessage (requests[i].PieceIndex, requests[i].StartOffset, requests[i].RequestLength));
+        }
+
         int IPeer.PreferredRequestAmount (int pieceLength)
         {
             if (Connection is Connections.HttpConnection) {

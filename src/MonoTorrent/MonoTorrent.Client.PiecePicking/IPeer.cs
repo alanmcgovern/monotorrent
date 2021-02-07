@@ -65,5 +65,7 @@ namespace MonoTorrent.Client.PiecePicking
     {
         void EnqueueRequest (PieceRequest request);
         void EnqueueRequests (IList<PieceRequest> requests);
+        void EnqueueCancellation (PieceRequest request);
+        void EnqueueCancellations (IList<PieceRequest> requests);
     }
 }

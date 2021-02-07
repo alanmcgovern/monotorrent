@@ -610,7 +610,7 @@ namespace MonoTorrent.Client
             CheckRegisteredAndDisposed ();
 
             if (PieceManager.Requester == null)
-                PieceManager.ChangePicker (new StandardRequestManager ());
+                PieceManager.ChangePicker (new StandardPieceRequester ());
 
             await Engine.StartAsync ();
             // If the torrent was "paused", then just update the state to Downloading and forcefully
