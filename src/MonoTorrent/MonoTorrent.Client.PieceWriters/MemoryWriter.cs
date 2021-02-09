@@ -120,7 +120,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
         {
-            if (forceWrite) {
+            if (forceWrite || Capacity < count) {
                 await Writer.WriteAsync (file, offset, buffer, bufferOffset, count);
             } else {
                 if (CacheUsed > (Capacity - count))

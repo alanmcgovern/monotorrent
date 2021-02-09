@@ -141,5 +141,18 @@ namespace MonoTorrent.Client.PieceWriters
             await level1.ReadAsync (file, 0, buffer, 0, buffer.Length);
             Assert.That (buffer, Is.All.EqualTo ((byte) 5), "#2");
         }
+
+        [Test]
+        public async Task MemoryWriter_ZeroCapacity_Write()
+        {
+            var main = new MemoryWriter (new NullWriter (), Piece.BlockSize);
+            var empty = new MemoryWriter (main, 0);
+            await empty.WriteAsync (file, 0, new byte[] { 7 }, 0, 1);
+            Assert.AreEqual (1, main.CacheUsed);
+
+            var data = new byte[1];
+            Assert.AreEqual (1, await empty.ReadAsync (file, 0, data, 0, 1));
+            Assert.AreEqual (7, data[0]);
+        }
     }
 }
