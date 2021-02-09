@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, TimeSpan connectionTimeout, int dhtPort, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, string savePath)
+        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, string savePath)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -158,6 +158,7 @@ namespace MonoTorrent.Client
             AllowLocalPeerDiscovery = allowLocalPeerDiscovery;
             AllowPortForwarding = allowPortForwarding;
             DhtPort = dhtPort;
+            DiskCacheBytes = diskCacheBytes;
             ConnectionTimeout = connectionTimeout;
             ListenPort = listenPort;
             MaximumConnections = maximumConnections;
@@ -182,6 +183,7 @@ namespace MonoTorrent.Client
                    && AllowLocalPeerDiscovery == other.AllowLocalPeerDiscovery
                    && AllowPortForwarding == other.AllowPortForwarding
                    && DhtPort == other.DhtPort
+                   && DiskCacheBytes == other.DiskCacheBytes
                    && ListenPort == other.ListenPort
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate

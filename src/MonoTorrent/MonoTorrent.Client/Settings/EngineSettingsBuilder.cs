@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int DiskCacheBytes {
             get => diskCacheBytes;
-            set => diskCacheBytes = CheckZeroOrPositive (5 * 1024 * 1024);
+            set => diskCacheBytes = CheckZeroOrPositive (value);
         }
 
         /// <summary>
@@ -207,6 +207,7 @@ namespace MonoTorrent.Client
             AllowPortForwarding = settings.AllowPortForwarding;
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtPort = settings.DhtPort;
+            DiskCacheBytes = settings.DiskCacheBytes;
             ListenPort = settings.ListenPort;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
@@ -235,6 +236,7 @@ namespace MonoTorrent.Client
                 allowPortForwarding: AllowPortForwarding,
                 connectionTimeout: ConnectionTimeout,
                 dhtPort: DhtPort,
+                diskCacheBytes: diskCacheBytes,
                 listenPort: ListenPort,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,
