@@ -166,7 +166,7 @@ namespace MonoTorrent.Client
 
         DiskWriter DiskWriter { get; }
 
-        //MemoryWriter MemoryWriter { get; }
+        MemoryWriter MemoryWriter { get; }
 
         /// <summary>
         /// The piece writer used to read/write data
@@ -193,9 +193,9 @@ namespace MonoTorrent.Client
                 ReadMonitor = ReadMonitor,
                 WriteMonitor = WriteMonitor,
             };
-            //MemoryWriter = new MemoryWriter (DiskWriter, settings.DiskCacheBytes);
+            MemoryWriter = new MemoryWriter (DiskWriter, settings.DiskCacheBytes);
 
-            Writer = writer ?? DiskWriter; //MemoryWriter;
+            Writer = writer ?? MemoryWriter;
         }
 
         void IDisposable.Dispose ()
@@ -353,7 +353,7 @@ namespace MonoTorrent.Client
             }
 
             if (oldSettings.DiskCacheBytes != settings.DiskCacheBytes) {
-                //MemoryWriter.Capacity = settings.DiskCacheBytes;
+                MemoryWriter.Capacity = settings.DiskCacheBytes;
             }
         }
 
@@ -534,7 +534,7 @@ namespace MonoTorrent.Client
             // If the user passed a custom IPieceWriter we should record the data here.
             // Otherwise we record the data when the DiskWriter we created writes the actual data
             // to disk.
-            if (DiskWriter != Writer) //MemoryWriter != Writer)
+            if (MemoryWriter != Writer)
                 ReadMonitor.AddDelta (count);
 
             if (count < 1)
@@ -627,7 +627,7 @@ namespace MonoTorrent.Client
             // If the user passed a custom IPieceWriter we should record the data here.
             // Otherwise we record the data when the DiskWriter we created writes the actual data
             // to disk.
-            if (DiskWriter != Writer) //MemoryWriter != Writer)
+            if (MemoryWriter != Writer)
                 WriteMonitor.AddDelta (count);
 
             if (offset < 0 || offset + count > manager.Size)
