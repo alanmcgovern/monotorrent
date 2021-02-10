@@ -306,7 +306,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public TestWriter Writer {
+        public IPieceWriter Writer {
             get; set;
         }
 
@@ -378,13 +378,13 @@ namespace MonoTorrent.Client
         #region Rig Creation
 
         readonly TorrentFile[] files;
-        TestRig (string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files)
+        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, TorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
 
         }
 
-        TestRig (string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
+        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
         {
             this.files = files;
             this.savePath = savePath;
@@ -477,9 +477,9 @@ namespace MonoTorrent.Client
             return new TestRig ("", StandardPieceSize (), StandardWriter (), StandardTrackers (), StandardMultiFile ());
         }
 
-        internal static TestRig CreateMultiFile (TorrentFile[] files, int pieceLength)
+        internal static TestRig CreateMultiFile (TorrentFile[] files, int pieceLength, IPieceWriter writer = null)
         {
-            return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), files);
+            return new TestRig ("", pieceLength, writer ?? StandardWriter (), StandardTrackers (), files);
         }
 
         public static TestRig CreateTrackers (string[][] tier)
@@ -570,15 +570,15 @@ namespace MonoTorrent.Client
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;
         }
 
-        internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength)
+        internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength, IPieceWriter writer = null)
         {
             var files = fileSizes.Select ((size, index) => new TorrentFile ($"File {index}", size)).ToArray ();
-            return CreateMultiFileManager (files, pieceLength);
+            return CreateMultiFileManager (files, pieceLength, writer);
         }
 
-        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength)
+        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength, IPieceWriter writer = null)
         {
-            return CreateMultiFile (files, pieceLength).Manager;
+            return CreateMultiFile (files, pieceLength, writer: writer).Manager;
         }
     }
 }

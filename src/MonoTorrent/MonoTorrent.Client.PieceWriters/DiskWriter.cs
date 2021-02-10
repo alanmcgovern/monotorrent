@@ -45,10 +45,6 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int OpenFiles => StreamCache.Count;
 
-        internal SpeedMonitor ReadMonitor { get; set; }
-
-        internal SpeedMonitor WriteMonitor { get; set; }
-
         readonly FileStreamBuffer StreamCache;
 
         public DiskWriter ()
@@ -120,7 +116,6 @@ namespace MonoTorrent.Client.PieceWriters
                 if (rented.Stream.Position != offset)
                     await rented.Stream.SeekAsync (offset);
 
-                ReadMonitor?.AddDelta (count);
                 return await rented.Stream.ReadAsync (buffer, bufferOffset, count);
             }
         }
@@ -144,7 +139,6 @@ namespace MonoTorrent.Client.PieceWriters
                 await MainLoop.SwitchToThreadpool ();
                 await rented.Stream.SeekAsync (offset).ConfigureAwait (false);
                 await rented.Stream.WriteAsync (buffer, bufferOffset, count).ConfigureAwait (false);
-                WriteMonitor?.AddDelta (count);
             }
         }
 

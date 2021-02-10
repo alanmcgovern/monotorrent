@@ -182,18 +182,18 @@ namespace MonoTorrent.Client
             for (int i = 0; i < count; i++)
                 tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
 
-            Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#1");
+            Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#1");
 
             // We should still process none.
             await diskManager.Tick (1000).WithTimeout ();
-            Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#2");
+            Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#2");
 
             // Give a proper max read rate.
             diskManager.UpdateSettings (new EngineSettingsBuilder { MaximumDiskReadRate = Piece.BlockSize * 2 }.ToSettings ());
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000).WithTimeout ();
                 count -= 2;
-                Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#3." + i);
+                Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#3." + i);
             }
 
             // If we add more reads after we used up our allowance they still won't process.
@@ -201,11 +201,11 @@ namespace MonoTorrent.Client
                 count++;
                 tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
             }
-            Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#4." + count);
+            Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#4." + count);
             while (count > 0) {
                 await diskManager.Tick (1000).WithTimeout ();
                 count -= 2;
-                Assert.AreEqual (buffer.Length * count, diskManager.PendingReads, "#5." + count);
+                Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#5." + count);
             }
 
             foreach (var v in tasks)
@@ -226,18 +226,18 @@ namespace MonoTorrent.Client
             for (int i = 0; i < count; i++)
                 tasks.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length));
 
-            Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#1");
+            Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#1");
 
             // We should still process none.
             await diskManager.Tick (1000);
-            Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#2");
+            Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#2");
 
             // Give a proper max read rate.
             diskManager.UpdateSettings (new EngineSettingsBuilder { MaximumDiskWriteRate = Piece.BlockSize * 2 }.ToSettings ());
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
                 count -= 2;
-                Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#3." + i);
+                Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#3." + i);
             }
 
             // If we add more writes after we used up our allowance they still won't process.
@@ -245,12 +245,12 @@ namespace MonoTorrent.Client
                 count++;
                 tasks.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length));
             }
-            Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#4");
+            Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#4");
 
-            while (diskManager.PendingWrites > 0) {
+            while (diskManager.PendingWriteBytes > 0) {
                 await diskManager.Tick (1000);
                 count -= 2;
-                Assert.AreEqual (buffer.Length * count, diskManager.PendingWrites, "#5." + diskManager.PendingWrites);
+                Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#5." + diskManager.PendingWriteBytes);
             }
 
             foreach (var v in tasks)
@@ -344,12 +344,12 @@ namespace MonoTorrent.Client
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
                 tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
 
-            while (diskManager.PendingReads > 0)
+            while (diskManager.PendingReadBytes > 0)
                 await diskManager.Tick (1000);
 
             // We should be reading at about 1 block per second.
             Assert.AreEqual (Piece.BlockSize, diskManager.ReadRate, "#1");
-            Assert.AreEqual ((SpeedMonitor.DefaultAveragePeriod + 1) * Piece.BlockSize, diskManager.TotalRead, "#2");
+            Assert.AreEqual ((SpeedMonitor.DefaultAveragePeriod + 1) * Piece.BlockSize, diskManager.TotalBytesRead, "#2");
             await Task.WhenAll (tasks).WithTimeout ();
         }
 
@@ -434,7 +434,7 @@ namespace MonoTorrent.Client
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
                 Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
             }
-            Assert.AreEqual (fileData.Size + otherData.Size, diskManager.TotalWritten, "#4");
+            Assert.AreEqual (fileData.Size + otherData.Size, diskManager.TotalBytesWritten, "#4");
         }
 
         [Test]
@@ -530,12 +530,12 @@ namespace MonoTorrent.Client
             var writes = new List<Task> ();
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
                 writes.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length).AsTask ());
-            while (diskManager.PendingWrites > 0)
+            while (diskManager.PendingWriteBytes > 0)
                 await diskManager.Tick (1000).WithTimeout ();
 
             // We should be writing at about 1 block per second.
             Assert.AreEqual (Piece.BlockSize, diskManager.WriteRate, "#1");
-            Assert.AreEqual ((SpeedMonitor.DefaultAveragePeriod + 1) * Piece.BlockSize, diskManager.TotalWritten, "#2");
+            Assert.AreEqual ((SpeedMonitor.DefaultAveragePeriod + 1) * Piece.BlockSize, diskManager.TotalBytesWritten, "#2");
             await Task.WhenAll (writes).WithTimeout ();
         }
     }

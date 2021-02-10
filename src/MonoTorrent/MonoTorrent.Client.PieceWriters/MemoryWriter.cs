@@ -75,7 +75,11 @@ namespace MonoTorrent.Client.PieceWriters
         /// </summary>
         public int Capacity { get; set; }
 
-        IPieceWriter Writer { get; }
+        internal SpeedMonitor ReadMonitor { get; set; }
+
+        internal SpeedMonitor WriteMonitor { get; set; }
+
+        internal IPieceWriter Writer { get; }
 
         public MemoryWriter (IPieceWriter writer)
             : this (writer, 2 * 1024 * 1024)
@@ -110,6 +114,7 @@ namespace MonoTorrent.Client.PieceWriters
             }
 
             Interlocked.Add (ref cacheMisses, count);
+            ReadMonitor?.AddDelta (count);
             return await Writer.ReadAsync (file, offset, buffer, bufferOffset, count);
         }
 
@@ -120,6 +125,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             if (preferSkipCache || forceWrite || Capacity < count) {
                 await Writer.WriteAsync (file, offset, buffer, bufferOffset, count, preferSkipCache);
+                WriteMonitor?.AddDelta (count);
             } else {
                 if (CacheUsed > (Capacity - count))
                     await FlushAsync (0);

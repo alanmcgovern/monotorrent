@@ -61,9 +61,8 @@ namespace MonoTorrent.Client.Modes
                 Piece.BlockSize * 2,
                 Piece.BlockSize * 13,
             };
-            Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
+            Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2, writer: PieceWriter);
             Manager.SetTrackerManager (TrackerManager);
-            Manager.Engine.DiskManager.Writer = PieceWriter;
 
             Settings = Manager.Engine.Settings;
             DiskManager = Manager.Engine.DiskManager;
