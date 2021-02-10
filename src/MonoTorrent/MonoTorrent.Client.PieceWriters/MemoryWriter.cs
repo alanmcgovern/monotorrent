@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             public ITorrentFileInfo File;
             public long Offset;
-            public byte[] Buffer;
+            public byte[] Buffer => BufferReleaser.Buffer.Data;
             public ByteBufferPool.Releaser BufferReleaser;
             public int Count;
         }
@@ -130,18 +130,25 @@ namespace MonoTorrent.Client.PieceWriters
                 if (CacheUsed > (Capacity - count))
                     await FlushAsync (0);
 
-                var releaser = DiskManager.BufferPool.Rent (count, out byte[] cacheBuffer);
-                Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
+                CachedBlock? block = null;
+                for (int i = 0; i < CachedBlocks.Count && !block.HasValue; i++) {
+                    if (CachedBlocks[i].File == file && CachedBlocks[i].Offset == offset && CachedBlocks[i].Count == count)
+                        block = CachedBlocks[i];
+                }
 
-                var block = new CachedBlock {
-                    Buffer = cacheBuffer,
-                    BufferReleaser = releaser,
-                    Count = count,
-                    Offset = offset,
-                    File = file
-                };
-                CachedBlocks.Add (block);
-                Interlocked.Add (ref cacheUsed, block.Count);
+                if (!block.HasValue) {
+                    var releaser = DiskManager.BufferPool.Rent (count, out byte[] _);
+
+                    block = new CachedBlock {
+                        BufferReleaser = releaser,
+                        Count = count,
+                        Offset = offset,
+                        File = file
+                    };
+                    CachedBlocks.Add (block.Value);
+                    Interlocked.Add (ref cacheUsed, count);
+                }
+                Buffer.BlockCopy (buffer, bufferOffset, block.Value.Buffer, 0, count);
             }
         }
 

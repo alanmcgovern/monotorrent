@@ -103,6 +103,30 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
+        public async Task WriteSameBlockTwice ()
+        {
+            var data1 = new byte[] { 1, 1, 1 };
+            var data2 = new byte[] { 2, 2, 2 };
+            var data3 = new byte[] { 3, 3, 3 };
+
+            var memory = new MemoryWriter (new NullWriter (), 1024);
+            await memory.WriteAsync (file, 0, data1, 0, data1.Length, false);
+            await memory.WriteAsync (file, 5, data2, 0, data1.Length, false);
+            await memory.WriteAsync (file, 5, data3, 0, data1.Length, false);
+
+            Assert.AreEqual (6, memory.CacheUsed);
+
+            var result = new byte[3];
+            Assert.AreEqual (3, await memory.ReadAsync (file, 0, result, 0, result.Length));
+            CollectionAssert.AreEqual (data1, result);
+            Assert.AreEqual (3, memory.CacheUsed);
+
+            Assert.AreEqual (3, await memory.ReadAsync (file, 5, result, 0, result.Length));
+            CollectionAssert.AreEqual (data3, result);
+            Assert.AreEqual (0, memory.CacheUsed);
+        }
+
+        [Test]
         public async Task WriteBlockWhileFlushing ()
         {
             var blocking = new BlockingWriter ();
