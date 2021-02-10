@@ -421,8 +421,10 @@ namespace MonoTorrent.Client
                     var msgLength = msg.ByteLength;
 
                     if (msg is PieceMessage pm) {
-                        if (pieceBuffer.Buffer == null)
+                        if (pieceBuffer.Buffer == null || pieceBuffer.Buffer.Data.Length < msgLength) {
+                            pieceBuffer.Dispose ();
                             pieceBuffer = DiskManager.BufferPool.Rent (msgLength, out ByteBuffer _);
+                        }
                         pm.DataReleaser = pieceBuffer;
                         try {
                             await DiskManager.ReadAsync (manager, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength).ConfigureAwait (false);
