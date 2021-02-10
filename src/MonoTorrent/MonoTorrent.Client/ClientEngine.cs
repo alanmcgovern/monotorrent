@@ -580,6 +580,9 @@ namespace MonoTorrent.Client
         async Task UpdateSettingsAsync (EngineSettings oldSettings, EngineSettings newSettings)
         {
             DiskManager.UpdateSettings (newSettings);
+            if (newSettings.DiskCacheBytes != oldSettings.DiskCacheBytes)
+                await Task.WhenAll (Torrents.Select (t => DiskManager.FlushAsync (t)));
+
             ConnectionManager.Settings = newSettings;
 
             if (oldSettings.AllowPortForwarding != newSettings.AllowPortForwarding) {
