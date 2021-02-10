@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.PieceWriters
             // Write 4 blocks to the stream and then verify they can all be read
             for (int i = 0; i < 4; i++) {
                 var buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
-                await level1.WriteAsync (file, Piece.BlockSize * i, buffer, 0, buffer.Length);
+                await level1.WriteAsync (file, Piece.BlockSize * i, buffer, 0, buffer.Length, false);
             }
 
             Assert.AreEqual (Piece.BlockSize * 3, level1.CacheUsed, "#1");
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.PieceWriters
             // Write 3 blocks
             for (int i = 0; i < 3; i++) {
                 buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
-                await memory.WriteAsync (file, Piece.BlockSize * i, buffer, 0, buffer.Length).WithTimeout ();
+                await memory.WriteAsync (file, Piece.BlockSize * i, buffer, 0, buffer.Length, false).WithTimeout ();
             }
 
             // Flush them all
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             // write a new block
             buffer = Enumerable.Repeat ((byte) 1, Piece.BlockSize).ToArray ();
-            await memory.WriteAsync (file, Piece.BlockSize, buffer, 0, buffer.Length).WithTimeout ();
+            await memory.WriteAsync (file, Piece.BlockSize, buffer, 0, buffer.Length, false).WithTimeout ();
 
             // Process the remaining two flushes
             blocking.Writes.TakeWithTimeout ().tcs.SetResult (null);
@@ -108,11 +108,11 @@ namespace MonoTorrent.Client.PieceWriters
             var blocking = new BlockingWriter ();
             var memory = new MemoryWriter (blocking, Piece.BlockSize * 3);
 
-            await memory.WriteAsync (file, Piece.BlockSize, new byte[Piece.BlockSize], 0, Piece.BlockSize).WithTimeout ();
+            await memory.WriteAsync (file, Piece.BlockSize, new byte[Piece.BlockSize], 0, Piece.BlockSize, false).WithTimeout ();
 
             // Begin flushing the piece, but write another block to the cache while the flush is in-progress
             var flushTask = memory.FlushAsync (file);
-            await memory.WriteAsync (file, Piece.BlockSize, new byte[Piece.BlockSize], 0, Piece.BlockSize).WithTimeout ();
+            await memory.WriteAsync (file, Piece.BlockSize, new byte[Piece.BlockSize], 0, Piece.BlockSize, false).WithTimeout ();
             blocking.Writes.TakeWithTimeout ().tcs.SetResult (null);
             await flushTask.WithTimeout ();
 
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.PieceWriters
         public async Task ReadWriteBlock ()
         {
             var buffer = Enumerable.Repeat ((byte) 55, Piece.BlockSize).ToArray ();
-            await level1.WriteAsync (file, 0, buffer, 0, buffer.Length);
+            await level1.WriteAsync (file, 0, buffer, 0, buffer.Length, false);
 
             buffer = new byte[Piece.BlockSize];
             await level1.ReadAsync (file, 0, buffer, 0, buffer.Length);
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client.PieceWriters
         public async Task ReadWriteBlockChangeOriginal ()
         {
             var buffer = Enumerable.Repeat ((byte) 5, Piece.BlockSize).ToArray ();
-            await level1.WriteAsync (file, 0, buffer, 0, buffer.Length);
+            await level1.WriteAsync (file, 0, buffer, 0, buffer.Length, false);
 
             buffer = new byte[Piece.BlockSize];
             await level1.ReadAsync (file, 0, buffer, 0, buffer.Length);
@@ -147,7 +147,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             var main = new MemoryWriter (new NullWriter (), Piece.BlockSize);
             var empty = new MemoryWriter (main, 0);
-            await empty.WriteAsync (file, 0, new byte[] { 7 }, 0, 1);
+            await empty.WriteAsync (file, 0, new byte[] { 7 }, 0, 1, false);
             Assert.AreEqual (1, main.CacheUsed);
 
             var data = new byte[1];

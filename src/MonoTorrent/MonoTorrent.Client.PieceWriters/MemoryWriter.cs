@@ -113,15 +113,13 @@ namespace MonoTorrent.Client.PieceWriters
             return await Writer.ReadAsync (file, offset, buffer, bufferOffset, count);
         }
 
-        public async ReusableTask WriteAsync  (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            await WriteAsync (file, offset, buffer, bufferOffset, count, false);
-        }
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+            => WriteAsync (file, offset, buffer, bufferOffset, count, preferSkipCache, false);
 
-        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache, bool forceWrite)
         {
-            if (forceWrite || Capacity < count) {
-                await Writer.WriteAsync (file, offset, buffer, bufferOffset, count);
+            if (preferSkipCache || forceWrite || Capacity < count) {
+                await Writer.WriteAsync (file, offset, buffer, bufferOffset, count, preferSkipCache);
             } else {
                 if (CacheUsed > (Capacity - count))
                     await FlushAsync (0);
@@ -184,7 +182,7 @@ namespace MonoTorrent.Client.PieceWriters
             Interlocked.Add (ref cacheUsed, -b.Count);
 
             using (b.BufferReleaser)
-                await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, true);
+                await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, false, true);
         }
 
         public async ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)

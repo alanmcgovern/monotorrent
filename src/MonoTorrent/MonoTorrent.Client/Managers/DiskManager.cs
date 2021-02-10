@@ -77,13 +77,15 @@ namespace MonoTorrent.Client
             public readonly byte[] buffer;
             public readonly int count;
             public readonly ReusableTaskCompletionSource<bool> tcs;
+            public readonly bool preferSkipCache;
 
-            public BufferedIO (ITorrentData manager, long offset, byte[] buffer, int count, ReusableTaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentData manager, long offset, byte[] buffer, int count, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
                 this.offset = offset;
                 this.buffer = buffer;
                 this.count = count;
+                this.preferSkipCache = preferSkipCache;
                 this.tcs = tcs;
             }
         }
@@ -300,7 +302,7 @@ namespace MonoTorrent.Client
         async ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
-            WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
+            WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, false, tcs));
             await ProcessBufferedIOAsync ();
             return await tcs.Task;
         }
@@ -398,7 +400,7 @@ namespace MonoTorrent.Client
                 }
             } else {
                 var tcs = new ReusableTaskCompletionSource<bool> ();
-                ReadQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
+                ReadQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, false, tcs));
                 return await tcs.Task;
             }
         }
@@ -422,16 +424,19 @@ namespace MonoTorrent.Client
 
             ReusableTaskCompletionSource<bool> tcs = null;
             ReusableTask writeTask = default;
+            // Don't retain this in a cache if we are about to successfully incrementally hash the piece.
+            // We know we won't have to read this block back later.
+            bool preferSkipCache = incrementalHash != null && offset == incrementalHash.NextOffsetToHash;
             if (WriteLimiter.TryProcess (count)) {
                 try {
-                    writeTask = DoWriteAsync (manager, offset, buffer, count);
+                    writeTask = DoWriteAsync (manager, offset, buffer, count, preferSkipCache);
                 } catch {
                     Interlocked.Add (ref pendingWrites, -count);
                     throw;
                 }
             } else {
                 tcs = new ReusableTaskCompletionSource<bool> ();
-                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
+                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, preferSkipCache, tcs));
             }
 
             if (incrementalHash != null) {
@@ -488,7 +493,7 @@ namespace MonoTorrent.Client
 
                 try {
                     try {
-                        await DoWriteAsync (io.manager, io.offset, io.buffer, io.count);
+                        await DoWriteAsync (io.manager, io.offset, io.buffer, io.count, io.preferSkipCache);
                     } finally {
                         Interlocked.Add (ref pendingWrites, -io.count);
                     }
@@ -626,7 +631,7 @@ namespace MonoTorrent.Client
             return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
         }
 
-        async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count, bool preferSkipCache)
         {
             IOLoop.CheckThread ();
 
@@ -648,7 +653,7 @@ namespace MonoTorrent.Client
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
 
-                await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
+                await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite, preferSkipCache);
                 offset += fileToWrite;
                 totalWritten += fileToWrite;
                 if (offset >= files[i].Length) {

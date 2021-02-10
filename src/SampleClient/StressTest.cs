@@ -46,7 +46,7 @@ namespace SampleClient
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
         {
             return ReusableTask.CompletedTask;
         }
@@ -108,7 +108,7 @@ namespace SampleClient
                     var dataRead = new byte[16 * 1024];
                     int offset = (int)fileStream.Position;
                     int read = fileStream.Read (dataRead, 0, dataRead.Length);
-                    await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read);
+                    await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read, false);
                 }
             }
 

@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             using var writer = new DiskWriter ();
 
-            await writer.WriteAsync (TorrentFile, 0, new byte[10], 0, 10);
+            await writer.WriteAsync (TorrentFile, 0, new byte[10], 0, 10, false);
             Assert.IsTrue (File.Exists (TorrentFile.FullPath));
 
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
@@ -95,13 +95,13 @@ namespace MonoTorrent.Client.PieceWriters
             };
             using var writer = new DiskWriter (creator, 1);
 
-            var writeTask = writer.WriteAsync (TorrentFile, 0, new byte[100], 0, 100);
+            var writeTask = writer.WriteAsync (TorrentFile, 0, new byte[100], 0, 100, false);
             await streamCreated.Task.WithTimeout ();
 
             // There's a limit of 1 concurrent read/write.
             var secondStreamWaiter = streamCreated.Task.AsTask ();
 
-            var secondStream = writer.WriteAsync (Others.First (), 0, new byte[100], 0, 100);
+            var secondStream = writer.WriteAsync (Others.First (), 0, new byte[100], 0, 100, false);
             Assert.ThrowsAsync<TimeoutException> (() => secondStreamWaiter.WithTimeout (100));
 
             streams[0].WriteTcs.SetResult (1);
