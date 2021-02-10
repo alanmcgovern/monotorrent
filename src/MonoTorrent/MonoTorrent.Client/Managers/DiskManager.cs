@@ -54,10 +54,12 @@ namespace MonoTorrent.Client
         {
             public readonly SHA1 Hasher;
             public long NextOffsetToHash;
+            public ReusableExclusiveSemaphore Locker;
 
             public IncrementalHashData ()
             {
                 Hasher = HashAlgoFactory.SHA1 ();
+                Locker = new ReusableExclusiveSemaphore ();
                 Initialise ();
             }
 
@@ -241,6 +243,9 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             if (IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash)) {
+                // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
+                IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
+
                 // We request the blocks for most pieces sequentially, and most (all?) torrent clients
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
@@ -249,7 +254,6 @@ namespace MonoTorrent.Client
                  || incrementalHash.NextOffsetToHash == manager.Size) {
                     byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
-                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                     return result;
                 }
             } else {
@@ -266,6 +270,7 @@ namespace MonoTorrent.Client
             if (WriteQueue.Count > 0)
                 await WaitForPendingWrites ();
 
+            using var releaser = await incrementalHash.Locker.EnterAsync ();
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             long startOffset = incrementalHash.NextOffsetToHash;
             long endOffset = Math.Min ((long) manager.PieceLength * (pieceIndex + 1), manager.Size);
@@ -430,6 +435,7 @@ namespace MonoTorrent.Client
             }
 
             if (incrementalHash != null) {
+                using var releaser = await incrementalHash.Locker.EnterAsync ();
                 // Incremental hashing does not perform proper bounds checking to ensure
                 // that pieces are correctly incrementally hashed even if 'count' is greater
                 // than the PieceLength. This should never happen under normal operation, but
