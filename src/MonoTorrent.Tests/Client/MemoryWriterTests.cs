@@ -145,6 +145,16 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
+        public async Task WritePrefersSkippingCache ()
+        {
+            var data = new byte[] { 1, 1, 1 };
+
+            var memory = new MemoryWriter (new NullWriter (), 1024);
+            await memory.WriteAsync (file, 0, data, 0, data.Length, true);
+            Assert.AreEqual (0, memory.CacheUsed);
+        }
+
+        [Test]
         public async Task ReadWriteBlock ()
         {
             var buffer = Enumerable.Repeat ((byte) 55, Piece.BlockSize).ToArray ();
