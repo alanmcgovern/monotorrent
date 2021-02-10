@@ -240,7 +240,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleRejectRequestMessage (PeerId id, RejectRequestMessage message)
         {
-            Manager.PieceManager.Requester.Picker.RequestRejected (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
+            Manager.PieceManager.RequestRejected (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
         }
 
         protected virtual void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)
@@ -283,7 +283,7 @@ namespace MonoTorrent.Client.Modes
         {
             id.IsChoking = true;
             if (!id.SupportsFastPeer)
-                Manager.PieceManager.Requester.Picker.CancelRequests (id, 0, Manager.Bitfield.Length - 1);
+                Manager.PieceManager.CancelRequests (id);
         }
 
         protected virtual void HandleInterestedMessage (PeerId id, InterestedMessage message)
@@ -369,7 +369,7 @@ namespace MonoTorrent.Client.Modes
 
             bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, message.PieceIndex);
             Manager.OnPieceHashed (message.PieceIndex, result, 1, 1);
-            Manager.PieceManager.PendingHashCheckPieces[message.PieceIndex] = false;
+            Manager.PieceManager.PieceHashed(message.PieceIndex);
             if (!result)
                 Manager.HashFails++;
 
@@ -576,7 +576,7 @@ namespace MonoTorrent.Client.Modes
                 }
             }
 
-            Manager.PieceManager?.Requester.AddRequests (Manager.Peers.ConnectedPeers, Manager.Bitfield);
+            Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
 
             if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
                 _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);

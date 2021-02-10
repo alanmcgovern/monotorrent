@@ -86,7 +86,6 @@ namespace MonoTorrent.Client
             partialData = false;
 
             rig = TestRig.CreateMultiFile ();
-            rig.Manager.ChangePicker (new StandardPieceRequester ());
 
             connection = new HttpConnection (new Uri (ListenerURL));
             connection.Manager = rig.Manager;
@@ -203,7 +202,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ChunkedRequest ()
         {
-            rig.Manager.PieceManager.Requester.Picker.CancelRequests (id);
+            rig.Manager.PieceManager.CancelRequests (id);
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.MessageQueue.TryDequeue ();

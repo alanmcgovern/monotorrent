@@ -58,9 +58,9 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("Torrents with no metadata must use 'MetadataMode', not 'StartingMode'.");
 
             try {
-                Manager.PieceManager.Requester.Picker.Initialise (Manager);
                 await VerifyHashState ();
                 Cancellation.Token.ThrowIfCancellationRequested ();
+                Manager.PieceManager.Initialise ();
             } catch (Exception ex) {
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 Manager.TrySetError (Reason.ReadFailure, ex);

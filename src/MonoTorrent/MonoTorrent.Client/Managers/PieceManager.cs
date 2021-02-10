@@ -50,9 +50,10 @@ namespace MonoTorrent.Client
         // Default to a minimum of 8 blocks
         internal const int NormalRequestAmount = 8;
 
+        bool Initialised { get; set; }
         TorrentManager Manager { get; }
-        internal IPieceRequester Requester { get; private set; }
-        internal BitField PendingHashCheckPieces { get; private set; }
+        IPieceRequester Requester { get; set; }
+        BitField PendingHashCheckPieces { get; set; }
 
         /// <summary>
         /// Returns true when every block has been requested at least once.
@@ -68,12 +69,14 @@ namespace MonoTorrent.Client
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Requester.Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
+            if (Initialised && Requester.Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
                 return true;
             } else {
+                pieceComplete = false;
+                peersInvolved = null;
                 return false;
             }
         }
@@ -81,7 +84,7 @@ namespace MonoTorrent.Client
         internal bool IsInteresting (PeerId id)
         {
             // If i have completed the torrent, then no-one is interesting
-            if (Manager.Complete)
+            if (!Initialised || Manager.Complete)
                 return false;
 
             // If the peer is a seeder, then he is definately interesting
@@ -94,20 +97,28 @@ namespace MonoTorrent.Client
 
         internal void AddPieceRequests (PeerId id)
         {
-            Requester.AddRequests (id, Manager.Peers.ConnectedPeers, Manager.Bitfield);
+            if (Initialised)
+                Requester.AddRequests (id, Manager.Peers.ConnectedPeers, Manager.Bitfield);
         }
 
-        internal void ChangePicker(IPieceRequester requester)
+        internal void AddPieceRequests (List<PeerId> peers)
+        {
+            if (Initialised)
+                Requester.AddRequests (peers, Manager.Bitfield);
+        }
+
+        internal void ChangePicker (IPieceRequester requester)
         {
             if (Manager.State != TorrentState.Stopped)
                 throw new InvalidOperationException ($"The {nameof (IPieceRequester)} must be set while the TorrentManager is in the Stopped state.");
             Requester = requester;
-            Initialise ();
+            Initialised = false;
         }
 
         internal void Initialise ()
         {
             if (Manager.HasMetadata) {
+                Initialised = true;
                 PendingHashCheckPieces = new BitField (Manager.Bitfield.Length);
 
                 var ignorableBitfieds = new[] {
@@ -119,14 +130,31 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<int> CurrentRequestCountAsync()
+        public async Task<int> CurrentRequestCountAsync ()
         {
-            await ClientEngine.MainLoop;
-
-            if (null != Requester.Picker)
-                return Requester.Picker.CurrentRequestCount();
-            else
+            if (!Initialised)
                 return 0;
+
+            await ClientEngine.MainLoop;
+            return Requester.Picker.CurrentRequestCount (); ;
+        }
+
+        internal void PieceHashed (int pieceIndex)
+        {
+            if (Initialised)
+                PendingHashCheckPieces[pieceIndex] = false;
+        }
+
+        internal void CancelRequests (PeerId id)
+        {
+            if (Initialised)
+                Requester.Picker.CancelRequests (id, 0, Manager.PieceCount () - 1);
+        }
+
+        internal void RequestRejected (PeerId id, PieceRequest pieceRequest)
+        {
+            if (Initialised)
+                Requester.Picker.RequestRejected (id, pieceRequest);
         }
     }
 }

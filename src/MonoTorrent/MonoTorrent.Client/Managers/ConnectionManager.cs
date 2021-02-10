@@ -299,7 +299,7 @@ namespace MonoTorrent.Client
                     && id.Peer.AllowedEncryption.Count > 0
                     && !manager.Engine.PeerId.Equals (id.PeerID);
 
-                manager.PieceManager.Requester.Picker?.CancelRequests (id, 0, manager.Bitfield.Length - 1);
+                manager.PieceManager.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
 
                 id.PeerExchangeManager?.Dispose ();
