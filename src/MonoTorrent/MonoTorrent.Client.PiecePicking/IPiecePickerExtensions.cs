@@ -35,27 +35,27 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public static class IPiecePickerExtensions
     {
-        public static IList<PieceRequest> CancelRequests (this IPiecePicker picker, IPeer peer)
+        public static IList<BlockInfo> CancelRequests (this IPiecePicker picker, IPeer peer)
         {
             return picker.CancelRequests (peer, 0, peer.BitField.Length - 1);
         }
 
-        public static PieceRequest? ContinueAnyExistingRequest (this IPiecePicker picker, IPeer peer, int startIndex, int endIndex)
+        public static BlockInfo? ContinueAnyExistingRequest (this IPiecePicker picker, IPeer peer, int startIndex, int endIndex)
             => picker.ContinueAnyExistingRequest (peer, startIndex, endIndex, 1);
 
-        public static PieceRequest? PickPiece (this IPiecePicker picker, IPeer peer, BitField available)
+        public static BlockInfo? PickPiece (this IPiecePicker picker, IPeer peer, BitField available)
         {
             var result = picker.PickPiece (peer, available, Array.Empty<IPeer> (), 1, 0, available.Length - 1);
             return result?.Single ();
         }
 
-        public static PieceRequest? PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers)
+        public static BlockInfo? PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers)
         {
             var result = picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1);
             return result?.Single ();
         }
 
-        public static IList<PieceRequest> PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count)
+        public static IList<BlockInfo> PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count)
         {
             return picker.PickPiece (peer, available, otherPeers, count, 0, available.Length - 1);
         }

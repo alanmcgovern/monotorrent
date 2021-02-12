@@ -31,55 +31,25 @@ using System;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public readonly struct PieceRequest
-    {
-        public int PieceIndex { get; }
-        public int StartOffset { get; }
-        public int RequestLength { get; }
-
-        public PieceRequest (int pieceIndex, int startOffset, int requestLength)
-            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
-
-        public override bool Equals (object obj)
-            => obj is PieceRequest req && Equals (req);
-
-        public bool Equals (PieceRequest other)
-            => other.PieceIndex == PieceIndex
-            && other.StartOffset == StartOffset
-            && other.RequestLength == RequestLength;
-
-        public override int GetHashCode ()
-            => PieceIndex;
-
-        public static bool operator == (PieceRequest left, PieceRequest right)
-            => left.Equals (right);
-
-        public static bool operator != (PieceRequest left, PieceRequest right)
-            => !left.Equals (right);
-
-        public override string ToString ()
-            => $"Piece: {PieceIndex} - Offset {StartOffset / Piece.BlockSize}";
-    }
-
     public readonly struct ActivePieceRequest : IEquatable<ActivePieceRequest>
     {
         public bool Received { get; }
-        public PieceRequest Request { get; }
+        public BlockInfo Request { get; }
         public IPeer RequestedOff { get; }
 
         internal ActivePieceRequest (int pieceIndex, int startOffset, int requestLength, IPeer requestedOff, bool received)
-            : this (new PieceRequest (pieceIndex, startOffset, requestLength), requestedOff, received)
+            : this (new BlockInfo (pieceIndex, startOffset, requestLength), requestedOff, received)
         {
 
         }
 
-        internal ActivePieceRequest (PieceRequest request, IPeer requestedOff)
+        internal ActivePieceRequest (BlockInfo request, IPeer requestedOff)
             : this (request, requestedOff, false)
         {
 
         }
 
-        internal ActivePieceRequest (PieceRequest request, IPeer requestedOff, bool received)
+        internal ActivePieceRequest (BlockInfo request, IPeer requestedOff, bool received)
         {
             Request = request;
             RequestedOff = requestedOff;

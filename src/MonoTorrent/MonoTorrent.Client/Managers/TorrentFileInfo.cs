@@ -28,7 +28,7 @@
 
 
 using System;
-using System.Threading;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
@@ -66,5 +66,29 @@ namespace MonoTorrent.Client
 
         public (int startPiece, int endPiece) GetSelector ()
             => (StartPieceIndex, EndPieceIndex);
+
+
+        internal static TorrentFileInfo[] Create (int pieceLength, params int[] sizes)
+        {
+            var totalSize = 0;
+
+            var files = new List<TorrentFileInfo> ();
+            for (int i = 0; i < sizes.Length; i++) {
+                var size = sizes[i];
+                var pieceStart = totalSize / pieceLength;
+                var pieceEnd = (totalSize + size) / pieceLength;
+                var startOffset = totalSize - (totalSize / pieceLength) * pieceLength;
+                if ((totalSize + size) % pieceLength == 0) {
+                    if (size == 0) {
+                        startOffset = pieceLength - 1;
+                        pieceStart--;
+                    }
+                    pieceEnd--;
+                }
+                files.Add (new TorrentFileInfo (new TorrentFile ("File_" + i, size, pieceStart, pieceEnd, startOffset, null, null, null), "full/path/File_" + i));
+                totalSize += size;
+            }
+            return files.ToArray ();
+        }
     }
 }

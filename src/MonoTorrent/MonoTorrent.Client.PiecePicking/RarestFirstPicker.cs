@@ -50,7 +50,7 @@ namespace MonoTorrent.Client.PiecePicking
             spares.Clear ();
         }
 
-        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             if (available.AllFalse)
                 return null;
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             while (rarest.Count > 0) {
                 BitField current = rarest.Pop ();
-                IList<PieceRequest> bundle = base.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
+                IList<BlockInfo> bundle = base.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
                 spares.Push (current);
 
                 if (bundle != null)

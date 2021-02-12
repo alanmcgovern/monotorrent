@@ -34,7 +34,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Streaming
@@ -125,17 +124,10 @@ namespace MonoTorrent.Streaming
 
             cancellationToken.ThrowIfCancellationRequested ();
 
-            // Always flush the data we wish to read to disk before we attempt to read it. If we attempt to read some data which crosses
-            // the boundary between two, or more, blocks it's significantly easier to correctly read the data if it has been flushed.
-            // Otherwise the internal memory cache would need a lot of complexity so it can fulfill a 64kB read when some parts are in
-            // memory and other parts are not.
-            //
-            // We can add support for reads where data is partially in memory and partially on disk at a later stage.
-            for (int i = startPiece; i <= endPiece; i++)
-                await Manager.Engine.DiskManager.FlushAsync (Manager, i);
+            // Flush any pending data.
+            await Manager.Engine.DiskManager.FlushAsync (Manager, startPiece, endPiece);
 
-            // Now we can safely read an arbitrary amount of data using DiskManager.
-            if (!await Manager.Engine.DiskManager.ReadAsync (Manager, Position + torrentFileStartOffset, buffer, count).ConfigureAwait (false))
+            if (!await Manager.Engine.DiskManager.ReadAsync (Manager, File, Position, buffer, offset, count).ConfigureAwait (false))
                 throw new InvalidOperationException ("Could not read the requested data from the torrent");
             ThrowIfDisposed ();
 

@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
-        public override IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse)
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.PiecePicking
             for (int i = 0; i < prioritised.Count; i++) {
                 temp.From (prioritised[i]).And (available);
                 if (!temp.AllFalse) {
-                    IList<PieceRequest> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
+                    IList<BlockInfo> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
                     if (result != null)
                         return result;
                 }

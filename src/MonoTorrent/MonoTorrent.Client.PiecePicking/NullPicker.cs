@@ -39,17 +39,17 @@ namespace MonoTorrent.Client.PiecePicking
             return 0;
         }
 
-        public IList<PieceRequest> CancelRequests (IPeer peer, int startIndex, int endIndex)
+        public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
         {
-            return Array.Empty<PieceRequest> ();
+            return Array.Empty<BlockInfo> ();
         }
 
-        public PieceRequest? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
+        public BlockInfo? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
         {
             return null;
         }
 
-        public PieceRequest? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
+        public BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
         {
             return null;
         }
@@ -78,16 +78,16 @@ namespace MonoTorrent.Client.PiecePicking
             return false;
         }
 
-        public IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            return Array.Empty<PieceRequest> ();
+            return Array.Empty<BlockInfo> ();
         }
 
-        public void RequestRejected (IPeer peer, PieceRequest rejectedRequest)
+        public void RequestRejected (IPeer peer, BlockInfo rejectedRequest)
         {
         }
 
-        public bool ValidatePiece (IPeer peer, PieceRequest request, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        public bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
             pieceComplete = false;
             peersInvolved = null;

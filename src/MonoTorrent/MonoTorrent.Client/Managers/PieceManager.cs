@@ -69,7 +69,7 @@ namespace MonoTorrent.Client
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Initialised && Requester.Picker.ValidatePiece (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
+            if (Initialised && Requester.Picker.ValidatePiece (id, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
                 Requester.Picker.CancelRequests (id, 0, Manager.PieceCount () - 1);
         }
 
-        internal void RequestRejected (PeerId id, PieceRequest pieceRequest)
+        internal void RequestRejected (PeerId id, BlockInfo pieceRequest)
         {
             if (Initialised)
                 Requester.Picker.RequestRejected (id, pieceRequest);

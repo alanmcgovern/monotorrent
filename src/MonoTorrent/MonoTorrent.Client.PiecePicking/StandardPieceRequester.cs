@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
             // will be a fast piece (if one exists!)
             if (!peer.IsChoking || peer.SupportsFastPeer) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest? request = Picker.ContinueExistingRequest (peer, 0, peer.BitField.Length - 1);
+                    BlockInfo? request = Picker.ContinueExistingRequest (peer, 0, peer.BitField.Length - 1);
                     if (request != null)
                         peer.EnqueueRequest (request.Value);
                     else
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.PiecePicking
             // FIXME: Would it be easier if RequestManager called PickPiece(AllowedFastPieces[0]) or something along those lines?
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    IList<PieceRequest> request = Picker.PickPiece (peer, peer.BitField, allPeers, count, 0, TorrentData.PieceCount () - 1);
+                    IList<BlockInfo> request = Picker.PickPiece (peer, peer.BitField, allPeers, count, 0, TorrentData.PieceCount () - 1);
                     if (request != null && request.Count > 0)
                         peer.EnqueueRequests (request);
                     else
@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             if (!peer.IsChoking && peer.AmRequestingPiecesCount == 0) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest? request = Picker.ContinueAnyExistingRequest (peer, 0, TorrentData.PieceCount () - 1, 1);
+                    BlockInfo? request = Picker.ContinueAnyExistingRequest (peer, 0, TorrentData.PieceCount () - 1, 1);
                     // If this peer is a seeder and we are unable to request any new blocks, then we should enter
                     // endgame mode. Every block has been requested at least once at this point.
                     if (request == null && (InEndgameMode || peer.IsSeeder)) {

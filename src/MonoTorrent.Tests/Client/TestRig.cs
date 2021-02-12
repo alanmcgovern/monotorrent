@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
             return ReusableTask.FromResult (count);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.CompletedTask;
         }
@@ -395,7 +395,8 @@ namespace MonoTorrent.Client
             PeerListenerFactory.Creator = endpoint => new CustomListener ();
             LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
             Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
-            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = 12345 }.ToSettings (), writer);
+            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = 12345 }.ToSettings ());
+            Engine.DiskManager.ChangePieceWriter (writer);
             Writer = writer;
 
             RecreateManager ().Wait ();

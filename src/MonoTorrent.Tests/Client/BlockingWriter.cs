@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
             return await tcs.Task;
         }
 
-        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             var tcs = new ReusableTaskCompletionSource<object> ();
             Writes.Add ((file, offset, buffer, bufferOffset, count, tcs));
