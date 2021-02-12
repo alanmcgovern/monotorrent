@@ -36,6 +36,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Logging;
 
@@ -427,7 +428,8 @@ namespace MonoTorrent.Client
                         }
                         pm.DataReleaser = pieceBuffer;
                         try {
-                            await DiskManager.ReadAsync (manager, pm.StartOffset + ((long) pm.PieceIndex * manager.Torrent.PieceLength), pm.Data, pm.RequestLength).ConfigureAwait (false);
+                            var request = new BlockInfo (pm.PieceIndex, pm.StartOffset, pm.RequestLength);
+                            await DiskManager.ReadAsync (manager, request, pm.Data).ConfigureAwait (false);
                         } catch (Exception ex) {
                             await ClientEngine.MainLoop;
                             manager.TrySetError (Reason.ReadFailure, ex);

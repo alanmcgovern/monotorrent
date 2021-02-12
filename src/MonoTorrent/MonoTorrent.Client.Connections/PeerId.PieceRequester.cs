@@ -57,22 +57,22 @@ namespace MonoTorrent.Client
         int IPeer.TotalHashFails => Peer.TotalHashFails;
         int IPeer.MaxPendingRequests => MaxPendingRequests;
 
-        void IPeerWithMessaging.EnqueueRequest (PieceRequest request)
+        void IPeerWithMessaging.EnqueueRequest (BlockInfo request)
         {
             MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
         }
 
-        void IPeerWithMessaging.EnqueueRequests (IList<PieceRequest> requests)
+        void IPeerWithMessaging.EnqueueRequests (IList<BlockInfo> requests)
         {
             MessageQueue.Enqueue (new RequestBundle (requests));
         }
 
-        void IPeerWithMessaging.EnqueueCancellation (PieceRequest request)
+        void IPeerWithMessaging.EnqueueCancellation (BlockInfo request)
         {
             MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
         }
 
-        void IPeerWithMessaging.EnqueueCancellations (IList<PieceRequest> requests)
+        void IPeerWithMessaging.EnqueueCancellations (IList<BlockInfo> requests)
         {
             for (int i = 0; i < requests.Count; i++)
                 MessageQueue.Enqueue (new CancelMessage (requests[i].PieceIndex, requests[i].StartOffset, requests[i].RequestLength));

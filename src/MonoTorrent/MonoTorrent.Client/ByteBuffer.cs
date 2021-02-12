@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Net.Sockets;
 
 namespace MonoTorrent.Client
@@ -39,7 +40,7 @@ namespace MonoTorrent.Client
 
         public ByteBuffer (int size)
         {
-            Data = new byte[size];
+            Data = size == 0 ? Array.Empty<byte> () : new byte[size];
         }
     }
 }

@@ -151,7 +151,7 @@ namespace MonoTorrent.Client.PiecePicking
             // into account that a peer which is choking us can *only* resume a 'fast piece' in the 'AmAllowedfastPiece' list.
             if (!peer.IsChoking) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest? request = Picker.ContinueAnyExistingRequest (peer, startPieceIndex, endPieceIndex, maxDuplicates);
+                    BlockInfo? request = Picker.ContinueAnyExistingRequest (peer, startPieceIndex, endPieceIndex, maxDuplicates);
                     if (request != null)
                         peer.EnqueueRequest (request.Value);
                     else
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client.PiecePicking
             // If the peer supports fast peer and they are choking us, they'll still send pieces in the allowed fast set.
             if (peer.SupportsFastPeer && peer.IsChoking) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest? request = Picker.ContinueExistingRequest (peer, startPieceIndex, endPieceIndex);
+                    BlockInfo? request = Picker.ContinueExistingRequest (peer, startPieceIndex, endPieceIndex);
                     if (request != null)
                         peer.EnqueueRequest (request.Value);
                     else
@@ -175,7 +175,7 @@ namespace MonoTorrent.Client.PiecePicking
             // FIXME add a test for this.
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    IList<PieceRequest> request = PriorityPick (peer, peer.BitField, allPeers, preferredRequestAmount, 0, TorrentData.PieceCount () - 1);
+                    IList<BlockInfo> request = PriorityPick (peer, peer.BitField, allPeers, preferredRequestAmount, 0, TorrentData.PieceCount () - 1);
                     if (request != null && request.Count > 0)
                         peer.EnqueueRequests (request);
                     else
@@ -185,7 +185,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             if (!peer.IsChoking && peer.AmRequestingPiecesCount == 0) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest? request = Picker.ContinueAnyExistingRequest (peer, HighPriorityPieceIndex, bitfield.Length - 1, 1);
+                    BlockInfo? request = Picker.ContinueAnyExistingRequest (peer, HighPriorityPieceIndex, bitfield.Length - 1, 1);
                     // If this peer is a seeder and we are unable to request any new blocks, then we should enter
                     // endgame mode. Every block has been requested at least once at this point.
                     if (request == null && (InEndgameMode || peer.IsSeeder)) {
@@ -203,10 +203,10 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
-         IList<PieceRequest> PriorityPick (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+         IList<BlockInfo> PriorityPick (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            PieceRequest? request;
-            IList<PieceRequest> bundle;
+            BlockInfo? request;
+            IList<BlockInfo> bundle;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 var start = HighPriorityPieceIndex;

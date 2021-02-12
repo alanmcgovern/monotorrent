@@ -63,9 +63,9 @@ namespace MonoTorrent.Client.PiecePicking
 
     public interface IPeerWithMessaging : IPeer
     {
-        void EnqueueRequest (PieceRequest request);
-        void EnqueueRequests (IList<PieceRequest> requests);
-        void EnqueueCancellation (PieceRequest request);
-        void EnqueueCancellations (IList<PieceRequest> requests);
+        void EnqueueRequest (BlockInfo request);
+        void EnqueueRequests (IList<BlockInfo> requests);
+        void EnqueueCancellation (BlockInfo request);
+        void EnqueueCancellations (IList<BlockInfo> requests);
     }
 }

@@ -169,14 +169,8 @@ namespace MonoTorrent.Client
         }
 
         public ClientEngine (EngineSettings settings)
-            : this (settings, null)
         {
-
-        }
-
-        public ClientEngine (EngineSettings settings, IPieceWriter writer)
-        {
-            Check.Settings (settings);
+            settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             // This is just a sanity check to make sure the ReusableTasks.dll assembly is
             // loadable.
@@ -189,7 +183,9 @@ namespace MonoTorrent.Client
             publicTorrents = new List<TorrentManager> ();
             Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
 
-            DiskManager = new DiskManager (Settings, writer);
+            DiskManager = new DiskManager (Settings);
+            DiskManager.ChangePieceWriter (new DiskWriter (Settings.MaximumOpenFiles));
+
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
             listenManager = new ListenManager (this);
             PortForwarder = new MonoNatPortForwarder ();
@@ -226,6 +222,16 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        public async Task ChangePieceWriterAsync (IPieceWriter writer)
+        {
+            writer = writer ?? throw new ArgumentNullException (nameof (writer));
+
+            await MainLoop;
+            if (IsRunning)
+                throw new InvalidOperationException ("You must stop all active downloads before changing the piece writer used to write data to disk.");
+            DiskManager.ChangePieceWriter (writer);
+        }
 
         void CheckDisposed ()
         {

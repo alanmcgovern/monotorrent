@@ -46,7 +46,7 @@ namespace SampleClient
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.CompletedTask;
         }
@@ -61,22 +61,27 @@ namespace SampleClient
         {
             //LoggerFactory.Creator = className => new TextLogger (Console.Out, className);
 
-            var seederWriter = new MemoryWriter (new NullWriter (), DataSize);
             int port = 37827;
             var seeder = new ClientEngine (
                 new EngineSettingsBuilder {
                     AllowedEncryption = new[] { EncryptionType.PlainText },
+                    DiskCacheBytes = DataSize,
                     ListenPort = port++
-                }.ToSettings (),
-                seederWriter
+                }.ToSettings ()
             );
+            await seeder.ChangePieceWriterAsync (new NullWriter ());
 
             var downloaders = Enumerable.Range (port, 16).Select (p => {
                 return new ClientEngine (
-                    new EngineSettingsBuilder { ListenPort = p, AllowedEncryption = new[] { EncryptionType.PlainText } }.ToSettings (),
-                    new MemoryWriter (new NullWriter (), DataSize)
+                    new EngineSettingsBuilder {
+                        AllowedEncryption = new[] { EncryptionType.PlainText },
+                        DiskCacheBytes = DataSize,
+                        ListenPort = p,
+                    }.ToSettings ()
                 );
             }).ToArray ();
+            foreach (var engine in downloaders)
+                await engine.ChangePieceWriterAsync (new NullWriter ());
 
             Directory.CreateDirectory (DataDir);
             // Generate some fake data on-disk
@@ -108,7 +113,9 @@ namespace SampleClient
                     var dataRead = new byte[16 * 1024];
                     int offset = (int)fileStream.Position;
                     int read = fileStream.Read (dataRead, 0, dataRead.Length);
-                    await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read, false);
+                    // FIXME: Implement a custom IPieceWriter to handle this.
+                    // The internal MemoryWriter is limited and isn't a general purpose read/write API
+                    // await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read, false);
                 }
             }
 

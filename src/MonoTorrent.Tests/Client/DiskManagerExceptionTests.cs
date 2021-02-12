@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
                 return ReusableTask.FromResult (count);
             }
 
-            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 if (write)
                     throw new Exception ("write");
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            var files = new [] {
+            var files = new[] {
                 new TorrentFileInfo (new TorrentFile ("First",  Piece.BlockSize / 2)),
                 new TorrentFileInfo (new TorrentFile ("Second", Piece.BlockSize)),
                 new TorrentFileInfo (new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2)),
@@ -168,14 +168,14 @@ namespace MonoTorrent.Client
         public void ReadFail ()
         {
             writer.read = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, 0, buffer, buffer.Length).AsTask ());
+            Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, new BlockInfo (0, 0, Piece.BlockSize), buffer).AsTask ());
         }
 
         [Test]
         public void WriteFail ()
         {
             writer.write = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync (data, 0, buffer, buffer.Length).AsTask ());
+            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync (data, new BlockInfo (0, 0, Piece.BlockSize), buffer).AsTask ());
         }
     }
 }

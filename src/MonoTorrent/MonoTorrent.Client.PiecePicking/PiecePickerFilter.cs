@@ -41,13 +41,13 @@ namespace MonoTorrent.Client.PiecePicking
         public int AbortRequests (IPeer peer)
             => Next.AbortRequests (peer);
 
-        public IList<PieceRequest> CancelRequests (IPeer peer, int startIndex, int endIndex)
+        public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
             => Next.CancelRequests (peer, startIndex, endIndex);
 
-        public PieceRequest? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
+        public BlockInfo? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
             => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests);
 
-        public PieceRequest? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
+        public BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
             => Next.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -65,13 +65,13 @@ namespace MonoTorrent.Client.PiecePicking
         public virtual bool IsInteresting (IPeer peer, BitField bitfield)
             => Next.IsInteresting (peer, bitfield);
 
-        public virtual IList<PieceRequest> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public virtual IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
             => Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
-        public void RequestRejected (IPeer peer, PieceRequest request)
+        public void RequestRejected (IPeer peer, BlockInfo request)
             => Next.RequestRejected (peer, request);
 
-        public bool ValidatePiece (IPeer peer, PieceRequest request, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        public bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved)
             => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
 }

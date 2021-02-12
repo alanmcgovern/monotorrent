@@ -74,14 +74,14 @@ namespace MonoTorrent.Client
             StartOffset = startOffset;
         }
 
-        internal PieceRequest CreateRequest (IPeer peer)
+        internal BlockInfo CreateRequest (IPeer peer)
         {
             if (RequestedOff == null)
                 piece.TotalRequested++;
 
             RequestedOff = peer;
             RequestedOff.AmRequestingPiecesCount++;
-            return new PieceRequest (PieceIndex, StartOffset, RequestLength);
+            return new BlockInfo (PieceIndex, StartOffset, RequestLength);
         }
 
         internal void CancelRequest ()

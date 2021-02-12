@@ -32,6 +32,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.PieceWriters;
 
 using NUnit.Framework;
@@ -79,7 +81,7 @@ namespace MonoTorrent.Client
                 return ReusableTask.FromResult (count);
             }
 
-            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
             {
                 var result = new byte[count];
                 Buffer.BlockCopy (buffer, bufferOffset, result, 0, count);
@@ -121,26 +123,19 @@ namespace MonoTorrent.Client
         {
             var random = new Random ();
             var filePieces = new[] {
-                ("First",  Piece.BlockSize / 2),
-                ("Second", Piece.BlockSize),
-                ("Third",  Piece.BlockSize + Piece.BlockSize / 2),
-                ("Fourth", Piece.BlockSize * 10 + Piece.BlockSize / 2),
+                Piece.BlockSize / 2,
+                Piece.BlockSize,
+                Piece.BlockSize + Piece.BlockSize / 2,
+                Piece.BlockSize * 10 + Piece.BlockSize / 2,
             };
 
             int pieceLength = Piece.BlockSize * 3;
 
-            var files = new List<ITorrentFileInfo> ();
-            long total = 0;
-            foreach ((string name, long length) in filePieces) {
-                var file = new TorrentFileInfo (new TorrentFile (name, length, (int)( total / pieceLength), (int)((total + length) / pieceLength), (int)(total % pieceLength), null, null, null));
-                total += file.Length;
-                files.Add (file);
-            }
-
+            var files = TorrentFileInfo.Create (pieceLength, filePieces);
+            long total = files.Sum (f => f.Length);
             var fileBytes = files
                 .Select (f => { var b = new byte[f.Length]; random.NextBytes (b); return b; })
                 .ToArray ();
-
 
             // Turn all the files into one byte array. Group the byte array into bittorrent pieces. Hash that piece.
             var hashes = fileBytes
@@ -180,7 +175,7 @@ namespace MonoTorrent.Client
             int count = 6;
             var tasks = new List<Task> ();
             for (int i = 0; i < count; i++)
-                tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
+                tasks.Add (diskManager.ReadAsync (fileData, new BlockInfo (0, 0, buffer.Length), buffer).AsTask ());
 
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#1");
 
@@ -199,7 +194,7 @@ namespace MonoTorrent.Client
             // If we add more reads after we used up our allowance they still won't process.
             for (int i = 0; i < 2; i++) {
                 count++;
-                tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
+                tasks.Add (diskManager.ReadAsync (fileData, new BlockInfo (0, 0, buffer.Length), buffer).AsTask ());
             }
             Assert.AreEqual (buffer.Length * count, diskManager.PendingReadBytes, "#4." + count);
             while (count > 0) {
@@ -224,7 +219,7 @@ namespace MonoTorrent.Client
             int count = 6;
             var tasks = new List<ReusableTask> ();
             for (int i = 0; i < count; i++)
-                tasks.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length));
+                tasks.Add (diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer));
 
             Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#1");
 
@@ -243,7 +238,7 @@ namespace MonoTorrent.Client
             // If we add more writes after we used up our allowance they still won't process.
             for (int i = 0; i < 2; i++) {
                 count++;
-                tasks.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length));
+                tasks.Add (diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer));
             }
             Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#4");
 
@@ -258,59 +253,17 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void FindFile_FirstFile ()
-        {
-            var file = fileData.Files[0];
-            Assert.AreEqual (0, DiskManager.FindFileIndex (fileData.Files, 0, fileData.PieceLength));
-            Assert.AreEqual (0, DiskManager.FindFileIndex (fileData.Files, 1, fileData.PieceLength));
-            Assert.AreEqual (0, DiskManager.FindFileIndex (fileData.Files, file.Length - 1, fileData.PieceLength));
-        }
-
-        [Test]
-        public void FindFile_SecondFile ()
-        {
-            Assert.AreEqual (1, DiskManager.FindFileIndex (fileData.Files, fileData.Files[0].Length, fileData.PieceLength));
-        }
-
-        [Test]
-        public void FindFile_LastFile ()
-        {
-            Assert.AreEqual (fileData.Files.Count - 1, DiskManager.FindFileIndex (fileData.Files, fileData.Files.Last ().Length - 1, fileData.PieceLength));
-        }
-
-        [Test]
-        public void FindFile_InvalidOffset ()
-        {
-            var totalSize = fileData.Files.Sum (t => t.Length);
-            Assert.Negative (DiskManager.FindFileIndex (fileData.Files, totalSize, fileData.PieceLength));
-            Assert.Negative (DiskManager.FindFileIndex (fileData.Files, -1, fileData.PieceLength));
-        }
-
-        [Test]
-        public async Task ReadAllData ()
-        {
-            var buffer = new byte[fileData.Size];
-            Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
-
-            int offset = 0;
-            foreach (var data in fileData.Data) {
-                Assert.IsTrue (Toolbox.ByteMatch (buffer, offset, data, 0, data.Length), "#2");
-                offset += data.Length;
-            }
-        }
-
-        [Test]
         public void ReadPastTheEnd ()
         {
             var buffer = new byte[Piece.BlockSize];
-            Assert.ThrowsAsync<ArgumentOutOfRangeException> (() => diskManager.ReadAsync (fileData, Piece.BlockSize * 1000, buffer, buffer.Length).AsTask (), "#1");
+            Assert.ThrowsAsync<ArgumentOutOfRangeException> (() => diskManager.ReadAsync (fileData, new BlockInfo (1000, 0, Piece.BlockSize), buffer).AsTask (), "#1");
         }
 
         [Test]
         public async Task ReadPieceOne ()
         {
             var buffer = new byte[Piece.BlockSize];
-            Assert.IsTrue (await diskManager.ReadAsync (fileData, 0, buffer, buffer.Length), "#1");
+            Assert.IsTrue (await diskManager.ReadAsync (fileData, new BlockInfo (0, 0, Piece.BlockSize), buffer), "#1");
 
             var data1 = fileData.Data[0];
             var data2 = fileData.Data[1];
@@ -323,7 +276,7 @@ namespace MonoTorrent.Client
         public async Task ReadPieceTwo ()
         {
             var buffer = new byte[Piece.BlockSize];
-            Assert.IsTrue (await diskManager.ReadAsync (fileData, Piece.BlockSize, buffer, buffer.Length), "#1");
+            Assert.IsTrue (await diskManager.ReadAsync (fileData, new BlockInfo (0, Piece.BlockSize, Piece.BlockSize), buffer), "#1");
 
             var data0 = fileData.Data[0];
             var data1 = fileData.Data[1];
@@ -342,7 +295,7 @@ namespace MonoTorrent.Client
 
             var tasks = new List<Task> ();
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
-                tasks.Add (diskManager.ReadAsync (fileData, 0, buffer, buffer.Length).AsTask ());
+                tasks.Add (diskManager.ReadAsync (fileData, new BlockInfo (0, 0, Piece.BlockSize), buffer).AsTask ());
 
             while (diskManager.PendingReadBytes > 0)
                 await diskManager.Tick (1000);
@@ -356,37 +309,15 @@ namespace MonoTorrent.Client
         [Test]
         public async Task WriteAllData ()
         {
-            var allData = fileData.Data.SelectMany (t => t).ToArray ();
-            await diskManager.WriteAsync (fileData, 0, allData, allData.Length);
+            var buffer = new byte[Piece.BlockSize];
+            var allData = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).ToArray ();
+            int blocksPerPiece = fileData.PieceLength / Piece.BlockSize;
+            for (int i = 0; i < allData.Length; i ++) {
+                var pieceIndex = i / blocksPerPiece;
+                var offset = (i % blocksPerPiece) * Piece.BlockSize;
 
-            var offset = 0;
-            foreach (var data in fileData.Data) {
-                Assert.IsTrue (Toolbox.ByteMatch (allData, offset, data, 0, data.Length), "#1");
-                offset += data.Length;
-            }
-
-            for (int i = 0; i < fileData.Hashes.Length; i++) {
-                // Check twice because the first check should give us the result from the incremental hash.
-                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#2." + i);
-                Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[i], await diskManager.GetHashAsync (fileData, i)), "#3." + i);
-            }
-        }
-
-        [Test]
-        public async Task WriteAllData_ByBlock ()
-        {
-            var allData = fileData.Data.SelectMany (t => t).ToArray ();
-
-            int offset = 0;
-            foreach (var block in allData.Partition (Piece.BlockSize)) {
-                await diskManager.WriteAsync (fileData, offset, block, block.Length);
-                offset += block.Length;
-            }
-
-            offset = 0;
-            foreach (var data in fileData.Data) {
-                Assert.IsTrue (Toolbox.ByteMatch (allData, offset, data, 0, data.Length), "#1");
-                offset += data.Length;
+                Buffer.BlockCopy (allData[i], 0, buffer, 0, allData[i].Length);
+                await diskManager.WriteAsync (fileData, new BlockInfo (pieceIndex, offset, allData[i].Length), buffer);
             }
 
             for (int i = 0; i < fileData.Hashes.Length; i++) {
@@ -414,19 +345,17 @@ namespace MonoTorrent.Client
 
             int offset = 0;
             foreach (var block in allData.Partition (Piece.BlockSize)) {
+                var buffer = new byte[Piece.BlockSize];
+                Buffer.BlockCopy (block, 0, buffer, 0, block.Length);
+
+                var request = new BlockInfo (offset / fileData.PieceLength, offset % fileData.PieceLength, block.Length);
                 await Task.WhenAll (
-                    diskManager.WriteAsync (fileData, offset, block, block.Length).AsTask (),
+                    diskManager.WriteAsync (fileData, request, buffer).AsTask (),
                     // Attempt to 'overwrite' the data from the primary torrent by writing the same block
                     // or the subsequent block
-                    diskManager.WriteAsync (otherData, offset, emptyBytes, block.Length).AsTask ()
+                    diskManager.WriteAsync (otherData, request, buffer).AsTask ()
                 );
                 offset += block.Length;
-            }
-
-            offset = 0;
-            foreach (var data in fileData.Data) {
-                Assert.IsTrue (Toolbox.ByteMatch (allData, offset, data, 0, data.Length), "#1");
-                offset += data.Length;
             }
 
             for (int i = 0; i < fileData.Hashes.Length; i++) {
@@ -441,7 +370,7 @@ namespace MonoTorrent.Client
         public async Task WriteBlock_SpanTwoFiles ()
         {
             var buffer = fileData.Data[0].Concat (fileData.Data[1]).Take (Piece.BlockSize).ToArray ();
-            await diskManager.WriteAsync (fileData, 0, buffer, buffer.Length);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, 0, Piece.BlockSize), buffer);
 
             Assert.AreEqual (2, writer.WrittenData.Count, "#1");
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Data[0], 0, buffer, 0, fileData.Data[0].Length), "#2");
@@ -453,10 +382,15 @@ namespace MonoTorrent.Client
         {
             writer.Data = null;
 
-            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
-            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
-            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
-            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
+            var blocks = fileData.Data
+                .SelectMany (t => t)
+                .Partition (Piece.BlockSize)
+                .Take (fileData.PieceLength / Piece.BlockSize)
+                .ToArray ();
+
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 1, Piece.BlockSize), blocks[1]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 0, Piece.BlockSize), blocks[0]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 2, Piece.BlockSize), blocks[2]);
 
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[0], await diskManager.GetHashAsync (fileData, 0)), "#1");
             Assert.AreEqual (Piece.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
@@ -471,10 +405,14 @@ namespace MonoTorrent.Client
         {
             writer.Data = null;
 
-            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
-            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
-            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
-            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
+            var blocks = fileData.Data
+                .SelectMany (t => t).Partition (Piece.BlockSize)
+                .Take (fileData.PieceLength / Piece.BlockSize)
+                .ToArray ();
+
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 0, Piece.BlockSize), blocks[0]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 1, Piece.BlockSize), blocks[1]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 2, Piece.BlockSize), blocks[2]);
 
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[0], await diskManager.GetHashAsync (fileData, 0)), "#1");
             Assert.AreEqual (0, writer.ReadData.Sum (t => t.Item3), "#2");
@@ -489,10 +427,15 @@ namespace MonoTorrent.Client
         {
             writer.Data = null;
 
-            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
-            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
-            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
-            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
+            var blocks = fileData.Data
+                .SelectMany (t => t)
+                .Partition (Piece.BlockSize)
+                .Take (fileData.PieceLength / Piece.BlockSize)
+                .ToArray ();
+
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 0, Piece.BlockSize), blocks[0]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 2, Piece.BlockSize), blocks[2]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 1, Piece.BlockSize), blocks[1]);
 
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[0], await diskManager.GetHashAsync (fileData, 0)), "#1");
             Assert.AreEqual (Piece.BlockSize, writer.ReadData.Sum (t => t.Item3), "#2");
@@ -507,10 +450,15 @@ namespace MonoTorrent.Client
         {
             writer.Data = null;
 
-            var blocks = fileData.Data.SelectMany (t => t).Partition (Piece.BlockSize).Take (fileData.PieceLength / Piece.BlockSize).ToArray ();
-            await diskManager.WriteAsync (fileData, Piece.BlockSize * 2, blocks[2], blocks[2].Length);
-            await diskManager.WriteAsync (fileData, Piece.BlockSize, blocks[1], blocks[1].Length);
-            await diskManager.WriteAsync (fileData, 0, blocks[0], blocks[0].Length);
+            var blocks = fileData.Data
+                .SelectMany (t => t)
+                .Partition (Piece.BlockSize)
+                .Take (fileData.PieceLength / Piece.BlockSize)
+                .ToArray ();
+
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 2, Piece.BlockSize), blocks[2]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 1, Piece.BlockSize), blocks[1]);
+            await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 0, Piece.BlockSize), blocks[0]);
 
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[0], await diskManager.GetHashAsync (fileData, 0)), "#1");
             Assert.AreEqual (Piece.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
@@ -529,7 +477,7 @@ namespace MonoTorrent.Client
 
             var writes = new List<Task> ();
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
-                writes.Add (diskManager.WriteAsync (fileData, Piece.BlockSize * i, buffer, buffer.Length).AsTask ());
+                writes.Add (diskManager.WriteAsync (fileData, new BlockInfo (i / (fileData.PieceLength / Piece.BlockSize), i, Piece.BlockSize), buffer).AsTask ());
             while (diskManager.PendingWriteBytes > 0)
                 await diskManager.Tick (1000).WithTimeout ();
 

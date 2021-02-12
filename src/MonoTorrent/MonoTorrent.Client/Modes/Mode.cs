@@ -240,7 +240,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleRejectRequestMessage (PeerId id, RejectRequestMessage message)
         {
-            Manager.PieceManager.RequestRejected (id, new PieceRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
+            Manager.PieceManager.RequestRejected (id, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength));
         }
 
         protected virtual void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)
@@ -342,7 +342,7 @@ namespace MonoTorrent.Client.Modes
             long offset = (long) message.PieceIndex * Manager.Torrent.PieceLength + message.StartOffset;
 
             try {
-                await DiskManager.WriteAsync (Manager, offset, message.Data, message.RequestLength);
+                await DiskManager.WriteAsync (Manager, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), message.Data);
                 if (Cancellation.IsCancellationRequested)
                     return;
             } catch (Exception ex) {
