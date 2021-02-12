@@ -39,6 +39,6 @@ namespace MonoTorrent.Client.PieceWriters
         ReusableTask FlushAsync (ITorrentFileInfo file);
         ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite);
         ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
+        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache);
     }
 }

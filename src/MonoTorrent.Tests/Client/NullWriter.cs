@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.PieceWriters
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
         {
             return ReusableTask.CompletedTask;
         }

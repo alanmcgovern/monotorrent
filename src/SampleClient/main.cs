@@ -71,6 +71,7 @@ namespace SampleClient
                 SavePath = downloadsPath,
                 ListenPort = port,
                 DhtPort = port,
+                DiskCacheBytes = 5 * 1024 * 1024,
             }.ToSettings ();
 
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
@@ -201,8 +202,10 @@ namespace SampleClient
                     AppendFormat (sb, "Total Upload Rate:   {0:0.00}kB/sec", engine.TotalUploadSpeed / 1024.0);
                     AppendFormat (sb, "Disk Read Rate:      {0:0.00} kB/s", engine.DiskManager.ReadRate / 1024.0);
                     AppendFormat (sb, "Disk Write Rate:     {0:0.00} kB/s", engine.DiskManager.WriteRate / 1024.0);
-                    AppendFormat (sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead / 1024.0);
-                    AppendFormat (sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten / 1024.0);
+                    AppendFormat (sb, "Cache Used:         {0:0.00} kB", engine.DiskManager.CacheBytesUsed / 1024.0);
+                    AppendFormat (sb, "Cache Read:         {0:0.00} kB", engine.DiskManager.TotalCacheBytesRead / 1024.0);
+                    AppendFormat (sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalBytesRead / 1024.0);
+                    AppendFormat (sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalBytesWritten / 1024.0);
                     AppendFormat (sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
 
                     foreach (TorrentManager manager in torrents) {

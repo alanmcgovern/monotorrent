@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             public ITorrentFileInfo File;
             public long Offset;
-            public byte[] Buffer;
+            public byte[] Buffer => BufferReleaser.Buffer.Data;
             public ByteBufferPool.Releaser BufferReleaser;
             public int Count;
         }
@@ -75,7 +75,11 @@ namespace MonoTorrent.Client.PieceWriters
         /// </summary>
         public int Capacity { get; set; }
 
-        IPieceWriter Writer { get; }
+        internal SpeedMonitor ReadMonitor { get; set; }
+
+        internal SpeedMonitor WriteMonitor { get; set; }
+
+        internal IPieceWriter Writer { get; }
 
         public MemoryWriter (IPieceWriter writer)
             : this (writer, 2 * 1024 * 1024)
@@ -110,34 +114,41 @@ namespace MonoTorrent.Client.PieceWriters
             }
 
             Interlocked.Add (ref cacheMisses, count);
+            ReadMonitor?.AddDelta (count);
             return await Writer.ReadAsync (file, offset, buffer, bufferOffset, count);
         }
 
-        public async ReusableTask WriteAsync  (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            await WriteAsync (file, offset, buffer, bufferOffset, count, false);
-        }
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache)
+            => WriteAsync (file, offset, buffer, bufferOffset, count, preferSkipCache, false);
 
-        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool forceWrite)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count, bool preferSkipCache, bool forceWrite)
         {
-            if (forceWrite || Capacity < count) {
-                await Writer.WriteAsync (file, offset, buffer, bufferOffset, count);
+            if (preferSkipCache || forceWrite || Capacity < count) {
+                await Writer.WriteAsync (file, offset, buffer, bufferOffset, count, preferSkipCache);
+                WriteMonitor?.AddDelta (count);
             } else {
                 if (CacheUsed > (Capacity - count))
                     await FlushAsync (0);
 
-                var releaser = DiskManager.BufferPool.Rent (count, out byte[] cacheBuffer);
-                Buffer.BlockCopy (buffer, bufferOffset, cacheBuffer, 0, count);
+                CachedBlock? block = null;
+                for (int i = 0; i < CachedBlocks.Count && !block.HasValue; i++) {
+                    if (CachedBlocks[i].File == file && CachedBlocks[i].Offset == offset && CachedBlocks[i].Count == count)
+                        block = CachedBlocks[i];
+                }
 
-                var block = new CachedBlock {
-                    Buffer = cacheBuffer,
-                    BufferReleaser = releaser,
-                    Count = count,
-                    Offset = offset,
-                    File = file
-                };
-                CachedBlocks.Add (block);
-                Interlocked.Add (ref cacheUsed, block.Count);
+                if (!block.HasValue) {
+                    var releaser = DiskManager.BufferPool.Rent (count, out byte[] _);
+
+                    block = new CachedBlock {
+                        BufferReleaser = releaser,
+                        Count = count,
+                        Offset = offset,
+                        File = file
+                    };
+                    CachedBlocks.Add (block.Value);
+                    Interlocked.Add (ref cacheUsed, count);
+                }
+                Buffer.BlockCopy (buffer, bufferOffset, block.Value.Buffer, 0, count);
             }
         }
 
@@ -184,7 +195,7 @@ namespace MonoTorrent.Client.PieceWriters
             Interlocked.Add (ref cacheUsed, -b.Count);
 
             using (b.BufferReleaser)
-                await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, true);
+                await WriteAsync (b.File, b.Offset, b.Buffer, 0, b.Count, false, true);
         }
 
         public async ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)

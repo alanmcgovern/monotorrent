@@ -77,13 +77,15 @@ namespace MonoTorrent.Client
             public readonly byte[] buffer;
             public readonly int count;
             public readonly ReusableTaskCompletionSource<bool> tcs;
+            public readonly bool preferSkipCache;
 
-            public BufferedIO (ITorrentData manager, long offset, byte[] buffer, int count, ReusableTaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentData manager, long offset, byte[] buffer, int count, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
                 this.offset = offset;
                 this.buffer = buffer;
                 this.count = count;
+                this.preferSkipCache = preferSkipCache;
                 this.tcs = tcs;
             }
         }
@@ -91,8 +93,13 @@ namespace MonoTorrent.Client
         static readonly MainLoop IOLoop = new MainLoop ("Disk IO");
 
         // These are fields so we can use threadsafe Interlocked operations to add/subtract.
-        int pendingWrites;
-        int pendingReads;
+        int pendingWriteBytes;
+        int pendingReadBytes;
+
+        /// <summary>
+        /// Size of the memory cache in bytes.
+        /// </summary>
+        public long CacheBytesUsed => Writer.CacheUsed;
 
         /// <summary>
         /// True if the object has been disposed.
@@ -100,14 +107,14 @@ namespace MonoTorrent.Client
         bool Disposed { get; set; }
 
         /// <summary>
-        /// The number of bytes which are currently cached in memory, pending writing.
+        /// The number of bytes pending being read as the <see cref="EngineSettings.MaximumDiskReadRate"/> rate limit is being exceeded.
         /// </summary>
-        public int PendingReads => pendingReads;
+        public int PendingReadBytes => pendingReadBytes;
 
         /// <summary>
-        /// The number of bytes which are currently cached in memory, pending writing.
+        /// The number of bytes pending being written as the <see cref="EngineSettings.MaximumDiskWriteRate"/> rate limit is being exceeded.
         /// </summary>
-        public int PendingWrites => pendingWrites;
+        public int PendingWriteBytes => pendingWriteBytes;
 
         /// <summary>
         /// Limits how fast data is read from the disk.
@@ -155,25 +162,28 @@ namespace MonoTorrent.Client
         public long WriteRate => WriteMonitor.Rate;
 
         /// <summary>
-        /// The total number of bytes which have been read.
+        /// Total bytes read from the cache.
         /// </summary>
-        public long TotalRead => ReadMonitor.Total;
+        public long TotalCacheBytesRead => Writer.CacheHits;
 
         /// <summary>
-        /// The total number of bytes which have been written.
+        /// The total bytes which have been read. Excludes bytes read from the cache.
         /// </summary>
-        public long TotalWritten => WriteMonitor.Total;
+        public long TotalBytesRead => ReadMonitor.Total;
+
+        /// <summary>
+        /// The total number of bytes which have been written. Excludes bytes written to the cache.
+        /// </summary>
+        public long TotalBytesWritten => WriteMonitor.Total;
 
         ValueStopwatch UpdateTimer;
 
-        DiskWriter DiskWriter { get; }
-
-        MemoryWriter MemoryWriter { get; }
+        IPieceWriter UnderlyingWriter { get; set; }
 
         /// <summary>
         /// The piece writer used to read/write data
         /// </summary>
-        internal IPieceWriter Writer { get; set; }
+        MemoryWriter Writer { get; set; }
 
         internal DiskManager (EngineSettings settings, IPieceWriter writer = null)
         {
@@ -191,13 +201,13 @@ namespace MonoTorrent.Client
 
             // If we pass in an IPieceWriter it should be used  *instead* of these.
             // However we still create these so the properties are non-null.
-            DiskWriter = new DiskWriter (settings.MaximumOpenFiles) {
+            UnderlyingWriter = writer ?? new DiskWriter (settings.MaximumOpenFiles);
+            var memoryWriter = new MemoryWriter (UnderlyingWriter, settings.DiskCacheBytes) {
                 ReadMonitor = ReadMonitor,
                 WriteMonitor = WriteMonitor,
             };
-            MemoryWriter = new MemoryWriter (DiskWriter, settings.DiskCacheBytes);
 
-            Writer = writer ?? MemoryWriter;
+            Writer = memoryWriter;
         }
 
         void IDisposable.Dispose ()
@@ -300,7 +310,7 @@ namespace MonoTorrent.Client
         async ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
-            WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
+            WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, false, tcs));
             await ProcessBufferedIOAsync ();
             return await tcs.Task;
         }
@@ -353,12 +363,12 @@ namespace MonoTorrent.Client
             var oldSettings = Settings;
             Settings = settings;
 
-            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles) {
-                DiskWriter.UpdateMaximumOpenFiles (settings.MaximumOpenFiles);
+            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles && UnderlyingWriter is DiskWriter dr) {
+                dr.UpdateMaximumOpenFiles (settings.MaximumOpenFiles);
             }
 
             if (oldSettings.DiskCacheBytes != settings.DiskCacheBytes) {
-                MemoryWriter.Capacity = settings.DiskCacheBytes;
+                Writer.Capacity = settings.DiskCacheBytes;
             }
         }
 
@@ -386,7 +396,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask<bool> ReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
-            Interlocked.Add (ref pendingReads, count);
+            Interlocked.Add (ref pendingReadBytes, count);
 
             await IOLoop;
 
@@ -394,11 +404,11 @@ namespace MonoTorrent.Client
                 try {
                     return await DoReadAsync (manager, offset, buffer, count);
                 } finally {
-                    Interlocked.Add (ref pendingReads, -count);
+                    Interlocked.Add (ref pendingReadBytes, -count);
                 }
             } else {
                 var tcs = new ReusableTaskCompletionSource<bool> ();
-                ReadQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
+                ReadQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, false, tcs));
                 return await tcs.Task;
             }
         }
@@ -408,7 +418,7 @@ namespace MonoTorrent.Client
             if (count < 1)
                 throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
 
-            Interlocked.Add (ref pendingWrites, count);
+            Interlocked.Add (ref pendingWriteBytes, count);
             await IOLoop;
 
             int pieceIndex = (int) (offset / manager.PieceLength);
@@ -422,16 +432,19 @@ namespace MonoTorrent.Client
 
             ReusableTaskCompletionSource<bool> tcs = null;
             ReusableTask writeTask = default;
+            // Don't retain this in a cache if we are about to successfully incrementally hash the piece.
+            // We know we won't have to read this block back later.
+            bool preferSkipCache = incrementalHash != null && offset == incrementalHash.NextOffsetToHash;
             if (WriteLimiter.TryProcess (count)) {
                 try {
-                    writeTask = DoWriteAsync (manager, offset, buffer, count);
+                    writeTask = DoWriteAsync (manager, offset, buffer, count, preferSkipCache);
                 } catch {
-                    Interlocked.Add (ref pendingWrites, -count);
+                    Interlocked.Add (ref pendingWriteBytes, -count);
                     throw;
                 }
             } else {
                 tcs = new ReusableTaskCompletionSource<bool> ();
-                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
+                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, preferSkipCache, tcs));
             }
 
             if (incrementalHash != null) {
@@ -460,7 +473,7 @@ namespace MonoTorrent.Client
                 try {
                     await writeTask.ConfigureAwait (false);
                 } finally {
-                    Interlocked.Add (ref pendingWrites, -count);
+                    Interlocked.Add (ref pendingWriteBytes, -count);
                 }
             }
         }
@@ -488,9 +501,9 @@ namespace MonoTorrent.Client
 
                 try {
                     try {
-                        await DoWriteAsync (io.manager, io.offset, io.buffer, io.count);
+                        await DoWriteAsync (io.manager, io.offset, io.buffer, io.count, io.preferSkipCache);
                     } finally {
-                        Interlocked.Add (ref pendingWrites, -io.count);
+                        Interlocked.Add (ref pendingWriteBytes, -io.count);
                     }
                     io.tcs.SetResult (true);
                 } catch (Exception ex) {
@@ -505,7 +518,7 @@ namespace MonoTorrent.Client
                 io = ReadQueue.Dequeue ();
 
                 try {
-                    Interlocked.Add (ref pendingReads, -io.count);
+                    Interlocked.Add (ref pendingReadBytes, -io.count);
                     bool result = await DoReadAsync (io.manager, io.offset, io.buffer, io.count);
                     io.tcs.SetResult (result);
                 } catch (Exception ex) {
@@ -536,12 +549,6 @@ namespace MonoTorrent.Client
         async ReusableTask<bool> DoReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
         {
             IOLoop.CheckThread ();
-
-            // If the user passed a custom IPieceWriter we should record the data here.
-            // Otherwise we record the data when the DiskWriter we created writes the actual data
-            // to disk.
-            if (MemoryWriter != Writer)
-                ReadMonitor.AddDelta (count);
 
             if (count < 1)
                 throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
@@ -626,16 +633,9 @@ namespace MonoTorrent.Client
             return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
         }
 
-        async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count, bool preferSkipCache)
         {
             IOLoop.CheckThread ();
-
-            // If the user passed a custom IPieceWriter we should record the data here.
-            // Otherwise we record the data when the DiskWriter we created writes the actual data
-            // to disk.
-            if (MemoryWriter != Writer)
-                WriteMonitor.AddDelta (count);
-
             if (offset < 0 || offset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
@@ -648,7 +648,7 @@ namespace MonoTorrent.Client
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
 
-                await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
+                await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite, preferSkipCache);
                 offset += fileToWrite;
                 totalWritten += fileToWrite;
                 if (offset >= files[i].Length) {
