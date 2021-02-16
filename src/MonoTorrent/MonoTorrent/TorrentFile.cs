@@ -28,6 +28,8 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace MonoTorrent
@@ -72,32 +74,28 @@ namespace MonoTorrent
         public int StartPieceIndex { get; }
 
         /// <summary>
-        /// Piece byte offset of the file
+        /// The offset to the start point of the files data within the torrent, in bytes.
         /// </summary>
-        public int StartPieceOffset { get; }
+        public long OffsetInTorrent { get; }
 
-        internal TorrentFile (string path, long length)
-            : this (path, length, 0, 0)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent)
+            : this(path, length, startIndex, endIndex, offsetInTorrent, null, null, null)
         {
 
         }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex)
-            : this (path, length, startIndex, endIndex, 0, null, null, null)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, byte[] md5, byte[] ed2k, byte[] sha1)
         {
-
-        }
-
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, int startOffset, byte[] md5, byte[] ed2k, byte[] sha1)
-        {
-            ED2K = ed2k;
-            EndPieceIndex = endIndex;
-            Length = length;
-            MD5 = md5;
             Path = path;
-            SHA1 = sha1;
+            Length = length;
+
             StartPieceIndex = startIndex;
-            StartPieceOffset = startOffset;
+            EndPieceIndex = endIndex;
+            OffsetInTorrent = offsetInTorrent;
+
+            ED2K = ed2k;
+            MD5 = md5;
+            SHA1 = sha1;
         }
 
         public override bool Equals (object obj)
@@ -119,6 +117,49 @@ namespace MonoTorrent
             sb.Append (" EndIndex: ");
             sb.Append (EndPieceIndex);
             return sb.ToString ();
+        }
+
+        internal static TorrentFile[] Create (int pieceLength, params long[] lengths)
+            => Create (pieceLength, lengths.Select ((length, index) => ("File_" + index, length)).ToArray ());
+
+        internal static TorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
+            => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, (byte[])null, (byte[]) null, (byte[]) null)).ToArray ());
+
+        internal static TorrentFile[] Create (int pieceLength, params (string path, long length, byte[] md5sum, byte[] ed2k, byte[] sha1)[] files)
+        {
+            long totalSize = 0;
+            var results = new List<TorrentFile> (files.Length);
+            for (int i = 0; i < files.Length; i++) {
+                var length = files[i].length;
+
+                var pieceStart = (int) (totalSize / pieceLength);
+                var pieceEnd = (int) ((totalSize + length) / pieceLength);
+                var startOffsetInTorrent = totalSize;
+                if ((totalSize + length) % pieceLength == 0)
+                    pieceEnd--;
+
+                if (length == 0) {
+                    pieceStart = i > 0 ? results[i - 1].StartPieceIndex : 0;
+                    pieceEnd = i > 0 ? results[i - 1].StartPieceIndex : 0;
+                    startOffsetInTorrent = i > 0 ? results[i - 1].OffsetInTorrent : 0;
+                }
+
+                results.Add (new TorrentFile (files[i].path, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].md5sum, files[i].ed2k, files[i].sha1));
+                totalSize += length;
+            }
+
+            // If a zero length file starts at offset 100, it also ends at offset 100 as it's length is zero.
+            // If a non-zero length file starts at offset 100, it will end at a much later offset (for example 1000).
+            // In this scenario we want the zero length file to be placed *before* the non-zero length file in this
+            // list so we can effectively binary search it later when looking for pieces which begin at a particular offset.
+            // The invariant that files later in the list always 'end' at a later point in the file will be maintained.
+            results.Sort ((left, right) => {
+                var comparison = left.OffsetInTorrent.CompareTo (right.OffsetInTorrent);
+                if (comparison == 0)
+                    comparison = left.Length.CompareTo (right.Length);
+                return comparison;
+            });
+            return results.ToArray ();
         }
     }
 }

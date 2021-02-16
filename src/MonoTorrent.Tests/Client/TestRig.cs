@@ -507,19 +507,17 @@ namespace MonoTorrent.Client
 
         static TorrentFile[] StandardMultiFile ()
         {
-            return new[] {
-                new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
-                new TorrentFile ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
-                new TorrentFile ("File3", (int)(StandardPieceSize () * 23.68)),
-                new TorrentFile ("File4", (int)(StandardPieceSize () * 2.05)),
-            };
+            return TorrentFile.Create (StandardPieceSize (),
+                ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
+                ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
+                ("File3", (int)(StandardPieceSize () * 23.68)),
+                ("File4", (int)(StandardPieceSize () * 2.05))
+            );
         }
 
         static TorrentFile[] StandardSingleFile ()
         {
-            return new[] {
-                 new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44))
-            };
+            return TorrentFile.Create (StandardPieceSize (), ("Dir1/File1", (int) (StandardPieceSize () * 0.44)));
         }
 
         static string[][] StandardTrackers ()
@@ -541,7 +539,7 @@ namespace MonoTorrent.Client
 
         internal static TorrentManager CreatePrivate ()
         {
-            var dict = CreateTorrent (16 * 1024 * 8, new[] { new TorrentFile ("File", 16 * 1024 * 8) }, null);
+            var dict = CreateTorrent (16 * 1024 * 8, TorrentFile.Create (16 * 1024 * 8 , ("File", 16 * 1024 * 8)), null);
             var editor = new TorrentEditor (dict) {
                 CanEditSecureMetadata = true,
                 Private = true,
@@ -557,7 +555,7 @@ namespace MonoTorrent.Client
         internal static TestRig CreateSingleFile (long torrentSize, int pieceLength, bool metadataMode)
         {
             TorrentFile[] files = StandardSingleFile ();
-            files[0] = new TorrentFile (files[0].Path, torrentSize);
+            files[0] = TorrentFile.Create (pieceLength, (files[0].Path, torrentSize)).Single ();
             return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), files, metadataMode);
         }
 
@@ -571,9 +569,9 @@ namespace MonoTorrent.Client
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;
         }
 
-        internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength, IPieceWriter writer = null)
+        internal static TorrentManager CreateMultiFileManager (long[] fileSizes, int pieceLength, IPieceWriter writer = null)
         {
-            var files = fileSizes.Select ((size, index) => new TorrentFile ($"File {index}", size)).ToArray ();
+            var files = TorrentFile.Create (pieceLength, fileSizes).ToArray ();
             return CreateMultiFileManager (files, pieceLength, writer);
         }
 

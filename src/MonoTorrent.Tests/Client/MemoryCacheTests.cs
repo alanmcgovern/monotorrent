@@ -116,11 +116,12 @@ namespace MonoTorrent.Client.PieceWriters
         [SetUp]
         public void Setup ()
         {
-            var file = new TorrentFileInfo (new TorrentFile ("Relative/Path.txt", Piece.BlockSize * 5));
+            var pieceLength = Piece.BlockSize * 8;
+            var files = TorrentFileInfo.Create (pieceLength, ("Relative/Path.txt", Piece.BlockSize * 5, "Full/Path/Relative/Path.txt"));
             torrent = new TorrentData {
-                Files = new[] { file },
-                PieceLength = Piece.BlockSize * 8,
-                Size = file.Length,
+                Files = files,
+                PieceLength = pieceLength,
+                Size = files.Single ().Length,
             };
 
             writer = new MemoryWriter ();

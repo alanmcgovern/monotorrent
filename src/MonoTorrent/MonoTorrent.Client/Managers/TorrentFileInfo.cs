@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MonoTorrent.Client
 {
@@ -46,7 +47,7 @@ namespace MonoTorrent.Client
 
         public int StartPieceIndex => TorrentFile.StartPieceIndex;
 
-        public int StartPieceOffset => TorrentFile.StartPieceOffset;
+        public long OffsetInTorrent => TorrentFile.OffsetInTorrent;
 
         public int EndPieceIndex => TorrentFile.EndPieceIndex;
 
@@ -68,27 +69,17 @@ namespace MonoTorrent.Client
             => (StartPieceIndex, EndPieceIndex);
 
 
-        internal static TorrentFileInfo[] Create (int pieceLength, params int[] sizes)
-        {
-            var totalSize = 0;
+        internal static TorrentFileInfo[] Create (int pieceLength, params long[] sizes)
+            => Create (pieceLength, sizes.Select ((size, index) => ("File_" + index, size, "full/path/to/File_" + index)).ToArray ());
 
-            var files = new List<TorrentFileInfo> ();
-            for (int i = 0; i < sizes.Length; i++) {
-                var size = sizes[i];
-                var pieceStart = totalSize / pieceLength;
-                var pieceEnd = (totalSize + size) / pieceLength;
-                var startOffset = totalSize - (totalSize / pieceLength) * pieceLength;
-                if ((totalSize + size) % pieceLength == 0) {
-                    if (size == 0) {
-                        startOffset = pieceLength - 1;
-                        pieceStart--;
-                    }
-                    pieceEnd--;
-                }
-                files.Add (new TorrentFileInfo (new TorrentFile ("File_" + i, size, pieceStart, pieceEnd, startOffset, null, null, null), "full/path/File_" + i));
-                totalSize += size;
-            }
-            return files.ToArray ();
+        internal static TorrentFileInfo[] Create (int pieceLength, params (string torrentPath, long size, string fullPath)[] infos)
+        {
+            // TorrentFile.Create can reorder the files if there are any of length zero.
+            var torrentFiles = MonoTorrent.TorrentFile.Create (pieceLength, infos.Select (t => (t.torrentPath, t.size)).ToArray ());
+            return torrentFiles.Select (t => {
+                var info = infos.Single (info => info.torrentPath == t.Path);
+                return new TorrentFileInfo (t, info.fullPath);
+            }).ToArray ();
         }
     }
 }

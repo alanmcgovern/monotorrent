@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
         public void OnetimeSetup ()
         {
             var random = new Random ();
-            var filePieces = new[] {
+            var filePieces = new long[] {
                 Piece.BlockSize / 2,
                 Piece.BlockSize,
                 Piece.BlockSize + Piece.BlockSize / 2,

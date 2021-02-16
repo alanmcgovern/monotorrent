@@ -84,11 +84,11 @@ namespace MonoTorrent.Client.PiecePicking
         {
             int pieceLength = Piece.BlockSize * 16;
             var size = pieceLength * 32 + 123;
-            var file = new TorrentFileInfo (new TorrentFile ("Single", size, 0, size / pieceLength + ((size % pieceLength == 0) ? -1 : 0)));
+            var files = TorrentFileInfo.Create (pieceLength, ("Single", size, "full/path/Single"));
             return new TestTorrentData {
-                Files = new[] { file },
+                Files = files,
                 PieceLength = pieceLength,
-                Size = file.Length
+                Size = files.Single ().Length
             };
         }
 
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             int pieceLength = Piece.BlockSize * 16;
 
-            int[] sizes = {
+            long[] sizes = {
                 pieceLength * 10,
                 pieceLength * 7  + 123,
                 pieceLength * 32 + 123,
@@ -107,14 +107,7 @@ namespace MonoTorrent.Client.PiecePicking
                 pieceLength * 7,
             };
 
-            int start = 0;
-            var files = sizes.Select ((size, index) => {
-                var startIndex = start / pieceLength;
-                var endIndex = (start + size) / pieceLength + ((start + size) % pieceLength == 0 ? -1 : 0);
-                start += size;
-                return new TorrentFileInfo (new TorrentFile ($"File {index}", size, startIndex, endIndex));
-            }).ToArray ();
-
+            var files = TorrentFileInfo.Create (pieceLength, sizes);
             return new TestTorrentData {
                 Files = files,
                 PieceLength = pieceLength,

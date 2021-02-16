@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Modes
             PieceWriter = new TestWriter ();
             TrackerManager = new ManualTrackerManager ();
 
-            int[] fileSizes = {
+            long[] fileSizes = {
                 Piece.BlockSize / 2,
                 Piece.BlockSize * 32,
                 Piece.BlockSize * 2,
