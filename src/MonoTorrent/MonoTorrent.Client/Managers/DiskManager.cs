@@ -242,7 +242,7 @@ namespace MonoTorrent.Client
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
-                if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
+                if (incrementalHash.NextOffsetToHash == manager.PieceIndexToByteOffset (pieceIndex + 1)
                  || incrementalHash.NextOffsetToHash == manager.Size) {
                     byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
@@ -264,8 +264,8 @@ namespace MonoTorrent.Client
             using var releaser = await incrementalHash.Locker.EnterAsync ();
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             int startOffset = incrementalHash.NextOffsetToHash;
-            int endOffset = (int) Math.Min (manager.Size - (long) manager.PieceLength * pieceIndex, manager.PieceLength);
-            using (DiskManager.BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
+            int endOffset = (int) Math.Min (manager.Size - manager.PieceIndexToByteOffset (pieceIndex), manager.PieceLength);
+            using (BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
                 try {
                     SHA1 hasher = incrementalHash.Hasher;
 
@@ -395,7 +395,7 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             int pieceIndex = request.PieceIndex;
-            long pieceStart = (long) pieceIndex * manager.PieceLength;
+            long pieceStart = manager.PieceIndexToByteOffset (pieceIndex);
             long pieceEnd = pieceStart + manager.PieceLength;
 
             if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
@@ -431,7 +431,7 @@ namespace MonoTorrent.Client
                 } else if (incrementalHash.NextOffsetToHash == request.StartOffset) {
                     await MainLoop.SwitchThread ();
                     incrementalHash.Hasher.TransformBlock (buffer, 0, request.RequestLength, buffer, 0);
-                    if (incrementalHash.NextOffsetToHash + request.RequestLength == (long) manager.PieceLength * (pieceIndex + 1)
+                    if (incrementalHash.NextOffsetToHash + request.RequestLength == manager.PieceIndexToByteOffset (pieceIndex + 1)
                         || incrementalHash.NextOffsetToHash + request.RequestLength == manager.Size) {
                         incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
                     }

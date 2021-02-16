@@ -339,8 +339,6 @@ namespace MonoTorrent.Client.Modes
 
         async void WritePieceAsync (PieceMessage message, bool pieceComplete, IList<IPeer> peersInvolved)
         {
-            long offset = (long) message.PieceIndex * Manager.Torrent.PieceLength + message.StartOffset;
-
             try {
                 await DiskManager.WriteAsync (Manager, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), message.Data);
                 if (Cancellation.IsCancellationRequested)
