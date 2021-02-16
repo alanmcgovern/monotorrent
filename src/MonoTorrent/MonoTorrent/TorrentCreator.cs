@@ -75,7 +75,7 @@ namespace MonoTorrent
 
             public int StartPieceIndex => throw new NotImplementedException ();
 
-            public int StartPieceOffset => throw new NotImplementedException ();
+            public long OffsetInTorrent => throw new NotImplementedException ();
 
             public int EndPieceIndex => throw new NotImplementedException ();
 

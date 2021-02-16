@@ -262,7 +262,8 @@ namespace MonoTorrent.Client.PiecePicking
         /// <param name="position"></param>
         internal void ReadToPosition (ITorrentFileInfo file, long position)
         {
-            HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, file.StartPieceIndex + (int) ((file.StartPieceOffset + position) / TorrentData.PieceLength));
+            var pieceIndex = TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent);
+            HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, pieceIndex);
         }
     }
 }

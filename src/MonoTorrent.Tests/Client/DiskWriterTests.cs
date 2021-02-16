@@ -46,13 +46,18 @@ namespace MonoTorrent.Client.PieceWriters
         [SetUp]
         public void Setup ()
         {
+            var pieceLength = Piece.BlockSize * 2;
             Temp = Path.GetTempPath () + "monotorrent_tests";
-            TorrentFile = new TorrentFileInfo (new TorrentFile ("test.file", 12345), Path.Combine (Temp, "test.file"));
-            Others = new[] {
-                new TorrentFileInfo (new TorrentFile ("test2.file", 12345), Path.Combine (Temp, "test2.file")),
-                new TorrentFileInfo (new TorrentFile ("test3.file", 12345), Path.Combine (Temp, "test3.file")),
-                new TorrentFileInfo (new TorrentFile ("test4.file", 12345), Path.Combine (Temp, "test4.file")),
-            };
+
+            var files = TorrentFileInfo.Create (pieceLength,
+                ("test1.file", 12345, Path.Combine (Temp, "test1.file")),
+                ("test2.file", 12345, Path.Combine (Temp, "test2.file")),
+                ("test3.file", 12345, Path.Combine (Temp, "test3.file")),
+                ("test4.file", 12345, Path.Combine (Temp, "test4.file"))
+            );
+
+            TorrentFile = files.First ();
+            Others = files.Skip (1).ToArray ();
         }
 
         [TearDown]

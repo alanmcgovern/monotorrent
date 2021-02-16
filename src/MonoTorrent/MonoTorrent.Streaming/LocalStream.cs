@@ -94,7 +94,7 @@ namespace MonoTorrent.Streaming
             ThrowIfDisposed ();
 
             // The torrent is treated as one big block of data, so this is the offset at which the current file's data starts at.
-            var torrentFileStartOffset = (long) File.StartPieceIndex * (long) Manager.Torrent.PieceLength + File.StartPieceOffset;
+            var torrentFileStartOffset = File.OffsetInTorrent;
 
             // Clamp things so we cannot overread.
             if (Position + count > Length)

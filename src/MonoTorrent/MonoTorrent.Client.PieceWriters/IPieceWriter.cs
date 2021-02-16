@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.PieceWriters
     {
         static readonly Func<ITorrentFileInfo, (long offset, int pieceLength), int> OffsetComparator = (file, offsetAndPieceLength) => {
             (long torrentOffset, int pieceLength) = offsetAndPieceLength;
-            var fileStart = (long) file.StartPieceIndex * pieceLength + file.StartPieceOffset;
+            var fileStart = file.OffsetInTorrent;
             var fileEnd = fileStart + file.Length;
             if (torrentOffset >= fileStart && torrentOffset < fileEnd)
                 return 0;
@@ -66,12 +66,12 @@ namespace MonoTorrent.Client.PieceWriters
         /// <param name="offset"></param>
         /// <param name="pieceLength"></param>
         /// <returns></returns>
-        public static int FindFileByOffset (IList<ITorrentFileInfo> files, long offset, int pieceLength)
+        internal static int FindFileByOffset (IList<ITorrentFileInfo> files, long offset, int pieceLength)
         {
             var firstMatch = files.BinarySearch (OffsetComparator, (offset, pieceLength));
             while (firstMatch > 0) {
                 var previous = files[firstMatch - 1];
-                if ((long) previous.StartPieceIndex * pieceLength + previous.StartPieceOffset >= offset) {
+                if (previous.OffsetInTorrent >= offset) {
                     firstMatch--;
                 } else {
                     break;
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.PieceWriters
         /// <param name="files"></param>
         /// <param name="pieceIndex"></param>
         /// <returns></returns>
-        public static int FindFileByPieceIndex (IList<ITorrentFileInfo> files, int pieceIndex)
+        internal static int FindFileByPieceIndex (IList<ITorrentFileInfo> files, int pieceIndex)
         {
             var firstMatch = files.BinarySearch (PieceIndexComparator, (pieceIndex));
             while (firstMatch > 0) {
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.PieceWriters
             int totalRead = 0;
             var files = manager.Files;
             int i = FindFileByOffset (manager.Files, offset, manager.PieceLength);
-            offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
+            offset -= files[i].OffsetInTorrent;
 
             while (totalRead < count) {
                 int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
@@ -137,14 +137,14 @@ namespace MonoTorrent.Client.PieceWriters
         public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, byte[] buffer)
         {
             var count = request.RequestLength;
-            var offset = request.ToByteOffset (manager.PieceLength);
-            if (offset < 0 || offset + count > manager.Size)
-                throw new ArgumentOutOfRangeException (nameof (offset));
+            var torrentOffset = request.ToByteOffset (manager.PieceLength);
+            if (torrentOffset < 0 || torrentOffset + count > manager.Size)
+                throw new ArgumentOutOfRangeException (nameof (request));
 
             int totalWritten = 0;
             var files = manager.Files;
-            int i = FindFileByOffset(files, offset, manager.PieceLength);
-            offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
+            int i = FindFileByOffset(files, torrentOffset, manager.PieceLength);
+            var offset = torrentOffset - files[i].OffsetInTorrent;
 
             while (totalWritten < count) {
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);

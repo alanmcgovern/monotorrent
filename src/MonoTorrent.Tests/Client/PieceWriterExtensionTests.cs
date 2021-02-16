@@ -37,16 +37,17 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Piece.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0);
-            Assert.AreEqual (files.Length - 2, IPieceWriterExtensions.FindFileByOffset (files, Piece.BlockSize * 2 - 1, pieceLength));
+            Assert.AreEqual (files.Length - 1, IPieceWriterExtensions.FindFileByOffset (files, Piece.BlockSize * 2 - 1, pieceLength));
         }
 
         [Test]
-        [Ignore("Figure out how to load/handle multiple empty files")]
         public void Offset_TwoEmptyFilesAtEnd ()
         {
             var pieceLength = Piece.BlockSize;
+            // If two files start at the same offset (which zero length files do), then the files are ordered based on
+            // their length. This way zero length files are never the last file, unless the whole torrent is empty. Which is nonsense :p
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0, 0);
-            Assert.AreEqual (files.Length - 3, IPieceWriterExtensions.FindFileByOffset (files, Piece.BlockSize * 2 - 1, pieceLength));
+            Assert.AreEqual (files.Length - 1, IPieceWriterExtensions.FindFileByOffset (files, Piece.BlockSize * 2 - 1, pieceLength));
         }
 
         [Test]

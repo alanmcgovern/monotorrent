@@ -58,5 +58,8 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public static int PieceCount (this ITorrentData self)
             => (int) (self.Size / self.PieceLength) + (self.Size % self.PieceLength != 0 ? 1 : 0);
+
+        public static int ByteOffsetToPieceIndex (this ITorrentData self, long offset)
+            => (int)((offset / self.PieceLength) + (offset % self.PieceLength != 0 ? 1 : 0));
     }
 }
