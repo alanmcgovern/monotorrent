@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Limits how fast data is read from the disk.
         /// </summary>
-        internal RateLimiter ReadLimiter { get; }
+        RateLimiter ReadLimiter { get; }
 
         /// <summary>
         /// Read requests which have been queued because the <see cref="EngineSettings.MaximumDiskReadRate"/> limit has been exceeded.
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Limits how fast data is written to the disk.
         /// </summary>
-        internal RateLimiter WriteLimiter { get; }
+        RateLimiter WriteLimiter { get; }
 
         /// <summary>
         /// Read requests which have been queued because the <see cref="EngineSettings.MaximumDiskWriteRate"/> limit has been exceeded.
@@ -370,20 +370,20 @@ namespace MonoTorrent.Client
 
             await IOLoop;
 
-            if (ReadLimiter.TryProcess (request.RequestLength)) {
-                try {
-                    return await Cache.ReadAsync (manager, request, buffer) == request.RequestLength;
-                } finally {
-                    Interlocked.Add (ref pendingReadBytes, -request.RequestLength);
+            try {
+                if (ReadLimiter.TryProcess (request.RequestLength)) {
+                    return await Cache.ReadAsync (manager, request, buffer).ConfigureAwait (false) == request.RequestLength;
+                } else {
+                    var tcs = new ReusableTaskCompletionSource<bool> ();
+                    ReadQueue.Enqueue (new BufferedIO (manager, request, buffer, false, tcs));
+                    return await tcs.Task.ConfigureAwait (false);
                 }
-            } else {
-                var tcs = new ReusableTaskCompletionSource<bool> ();
-                ReadQueue.Enqueue (new BufferedIO (manager, request, buffer, false, tcs));
-                return await tcs.Task;
+            } finally {
+                Interlocked.Add (ref pendingReadBytes, -request.RequestLength);
             }
         }
 
-        internal async Task<bool> ReadAsync (ITorrentData manager, ITorrentFileInfo file, long position, byte[] buffer, int offset, int count)
+        internal async Task<bool> ReadAsync (ITorrentFileInfo file, long position, byte[] buffer, int offset, int count)
             => await Cache.Writer.ReadAsync (file, position, buffer, offset, count) == count;
 
         internal async ReusableTask WriteAsync (ITorrentData manager, BlockInfo request, byte[] buffer)
@@ -392,61 +392,57 @@ namespace MonoTorrent.Client
                 throw new ArgumentOutOfRangeException (nameof (request.RequestLength), $"Count must be greater than zero, but was {request.RequestLength}.");
 
             Interlocked.Add (ref pendingWriteBytes, request.RequestLength);
+
             await IOLoop;
 
-            int pieceIndex = request.PieceIndex;
-            long pieceStart = manager.PieceIndexToByteOffset (pieceIndex);
-            long pieceEnd = pieceStart + manager.PieceLength;
+            try {
+                int pieceIndex = request.PieceIndex;
+                long pieceStart = manager.PieceIndexToByteOffset (pieceIndex);
+                long pieceEnd = pieceStart + manager.PieceLength;
 
-            if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
-                incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
-            }
+                if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
+                    incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
+                }
 
-            ReusableTaskCompletionSource<bool> tcs = null;
-            ReusableTask writeTask = default;
-            // Don't retain this in a cache if we are about to successfully incrementally hash the piece.
-            // We know we won't have to read this block back later.
-            bool preferSkipCache = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
-            if (WriteLimiter.TryProcess (request.RequestLength)) {
-                try {
+                ReusableTaskCompletionSource<bool> tcs = null;
+                ReusableTask writeTask = default;
+                // Don't retain this in a cache if we are about to successfully incrementally hash the piece.
+                // We know we won't have to read this block back later.
+                bool preferSkipCache = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
+                if (WriteLimiter.TryProcess (request.RequestLength)) {
                     writeTask = Cache.WriteAsync (manager, request, buffer, preferSkipCache);
-                } catch {
-                    Interlocked.Add (ref pendingWriteBytes, -request.RequestLength);
-                    throw;
+                } else {
+                    tcs = new ReusableTaskCompletionSource<bool> ();
+                    WriteQueue.Enqueue (new BufferedIO (manager, request, buffer, preferSkipCache, tcs));
                 }
-            } else {
-                tcs = new ReusableTaskCompletionSource<bool> ();
-                WriteQueue.Enqueue (new BufferedIO (manager, request, buffer, preferSkipCache, tcs));
-            }
 
-            if (incrementalHash != null) {
-                using var releaser = await incrementalHash.Locker.EnterAsync ();
-                // Incremental hashing does not perform proper bounds checking to ensure
-                // that pieces are correctly incrementally hashed even if 'count' is greater
-                // than the PieceLength. This should never happen under normal operation, but
-                // unit tests do it for convenience sometimes. Keep things safe by cancelling
-                // incremental hashing if that occurs.
-                if ((incrementalHash.NextOffsetToHash + request.RequestLength) > pieceEnd) {
-                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
-                } else if (incrementalHash.NextOffsetToHash == request.StartOffset) {
-                    await MainLoop.SwitchThread ();
-                    incrementalHash.Hasher.TransformBlock (buffer, 0, request.RequestLength, buffer, 0);
-                    if (incrementalHash.NextOffsetToHash + request.RequestLength == manager.PieceIndexToByteOffset (pieceIndex + 1)
-                        || incrementalHash.NextOffsetToHash + request.RequestLength == manager.Size) {
-                        incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+                if (incrementalHash != null) {
+                    using var releaser = await incrementalHash.Locker.EnterAsync ();
+                    // Incremental hashing does not perform proper bounds checking to ensure
+                    // that pieces are correctly incrementally hashed even if 'count' is greater
+                    // than the PieceLength. This should never happen under normal operation, but
+                    // unit tests do it for convenience sometimes. Keep things safe by cancelling
+                    // incremental hashing if that occurs.
+                    if ((incrementalHash.NextOffsetToHash + request.RequestLength) > pieceEnd) {
+                        IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
+                    } else if (incrementalHash.NextOffsetToHash == request.StartOffset) {
+                        await MainLoop.SwitchThread ();
+                        incrementalHash.Hasher.TransformBlock (buffer, 0, request.RequestLength, buffer, 0);
+                        if (incrementalHash.NextOffsetToHash + request.RequestLength == manager.PieceIndexToByteOffset (pieceIndex + 1)
+                            || incrementalHash.NextOffsetToHash + request.RequestLength == manager.Size) {
+                            incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+                        }
+                        incrementalHash.NextOffsetToHash += request.RequestLength;
                     }
-                    incrementalHash.NextOffsetToHash += request.RequestLength;
                 }
-            }
 
-            if (tcs != null)
-                await tcs.Task.ConfigureAwait (false);
-            else {
-                try {
+                if (tcs != null)
+                    await tcs.Task.ConfigureAwait (false);
+                else {
                     await writeTask.ConfigureAwait (false);
-                } finally {
-                    Interlocked.Add (ref pendingWriteBytes, -request.RequestLength);
                 }
+            } finally {
+                Interlocked.Add (ref pendingWriteBytes, -request.RequestLength);
             }
         }
 
@@ -472,11 +468,7 @@ namespace MonoTorrent.Client
                 io = WriteQueue.Dequeue ();
 
                 try {
-                    try {
-                        await Cache.WriteAsync (io.manager, io.request, io.buffer, io.preferSkipCache);
-                    } finally {
-                        Interlocked.Add (ref pendingWriteBytes, -io.request.RequestLength);
-                    }
+                    await Cache.WriteAsync (io.manager, io.request, io.buffer, io.preferSkipCache);
                     io.tcs.SetResult (true);
                 } catch (Exception ex) {
                     io.tcs.SetException (ex);
@@ -490,7 +482,6 @@ namespace MonoTorrent.Client
                 io = ReadQueue.Dequeue ();
 
                 try {
-                    Interlocked.Add (ref pendingReadBytes, -io.request.RequestLength);
                     bool result = await Cache.ReadAsync (io.manager, io.request, io.buffer) == io.request.RequestLength;
                     io.tcs.SetResult (result);
                 } catch (Exception ex) {
