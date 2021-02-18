@@ -43,7 +43,6 @@ namespace MonoTorrent.Client.PieceWriters
             public BlockInfo Block;
             public byte[] Buffer => BufferReleaser.Buffer.Data;
             public ByteBufferPool.Releaser BufferReleaser;
-            public ITorrentData Torrent;
         }
 
         long cacheHits;
@@ -68,7 +67,7 @@ namespace MonoTorrent.Client.PieceWriters
         /// <summary>
         /// The blocks which have been cached in memory
         /// </summary>
-        List<CachedBlock> CachedBlocks { get; }
+        Dictionary<ITorrentData, List<CachedBlock>> CachedBlocks { get; }
 
         /// <summary>
         /// The size of the in memory cache, in bytes.
@@ -89,7 +88,7 @@ namespace MonoTorrent.Client.PieceWriters
             Capacity = capacity;
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));
 
-            CachedBlocks = new List<CachedBlock> ();
+            CachedBlocks = new Dictionary<ITorrentData, List<CachedBlock>> ();
             ReadMonitor = new SpeedMonitor ();
             WriteMonitor = new SpeedMonitor ();
         }
@@ -101,11 +100,14 @@ namespace MonoTorrent.Client.PieceWriters
             if (buffer == null)
                 throw new ArgumentNullException (nameof (buffer));
 
-            for (int i = 0; i < CachedBlocks.Count; i++) {
-                var cached = CachedBlocks[i];
+            if (!CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks))
+                CachedBlocks[torrent] = blocks = new List<CachedBlock> ();
+
+            for (int i = 0; i < blocks.Count; i++) {
+                var cached = blocks[i];
                 if (cached.Block != block)
                     continue;
-                CachedBlocks.RemoveAt (i);
+                blocks.RemoveAt (i);
                 Interlocked.Add (ref cacheUsed, -block.RequestLength);
 
                 using (cached.BufferReleaser) {
@@ -126,28 +128,30 @@ namespace MonoTorrent.Client.PieceWriters
             if (preferSkipCache || Capacity < block.RequestLength) {
                 await WriteToFilesAsync (torrent, block, buffer);
             } else {
+                if (!CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks))
+                    CachedBlocks[torrent] = blocks = new List<CachedBlock> ();
+
                 if (CacheUsed > (Capacity - block.RequestLength)) {
-                    var cached = CachedBlocks[0];
-                    CachedBlocks.RemoveAt (0);
+                    var cached = blocks[0];
+                    blocks.RemoveAt (0);
                     Interlocked.Add (ref cacheUsed, -block.RequestLength);
 
                     using (cached.BufferReleaser)
-                        await WriteToFilesAsync (cached.Torrent, cached.Block, cached.Buffer);
+                        await WriteToFilesAsync (torrent, cached.Block, cached.Buffer);
                 }
 
                 CachedBlock? cache = null;
-                for (int i = 0; i < CachedBlocks.Count && !cache.HasValue; i++) {
-                    if (CachedBlocks[i].Block == block)
-                        cache = CachedBlocks[i];
+                for (int i = 0; i < blocks.Count && !cache.HasValue; i++) {
+                    if (blocks[i].Block == block)
+                        cache = blocks[i];
                 }
 
                 if (!cache.HasValue) {
                     cache = new CachedBlock {
                         Block = block,
                         BufferReleaser = DiskManager.BufferPool.Rent (block.RequestLength, out byte[] _),
-                        Torrent = torrent,
                     };
-                    CachedBlocks.Add (cache.Value);
+                    blocks.Add (cache.Value);
                     Interlocked.Add (ref cacheUsed, block.RequestLength);
                 }
                 Buffer.BlockCopy (buffer, 0, cache.Value.Buffer, 0, block.RequestLength);
@@ -168,7 +172,6 @@ namespace MonoTorrent.Client.PieceWriters
 
         public void Dispose ()
         {
-            Debug.Assert (CachedBlocks.Count == 0, "MemoryWriter should have been flushed before being disposed");
             Writer.Dispose ();
         }
     }

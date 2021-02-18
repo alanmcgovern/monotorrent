@@ -181,6 +181,30 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         [Test]
+        public async Task WriteSameBlockDifferentTorrents ()
+        {
+            var data1 = new byte[] { 1, 1, 1 };
+            var data2 = new byte[] { 2, 2, 2 };
+
+            var torrent2 = new TorrentData {
+                Files = torrent.Files,
+                PieceLength = torrent.PieceLength,
+                Size = torrent.Size
+            };
+
+            var memory = new MemoryCache (1024, new NullWriter ());
+            await memory.WriteAsync (torrent, new BlockInfo (0, 0, 3), data1, false);
+            await memory.WriteAsync (torrent2, new BlockInfo (0, 0, 3), data2, false);
+
+            var readBuffer = new byte[3];
+            await memory.ReadAsync (torrent, new BlockInfo (0, 0, 3), readBuffer);
+            CollectionAssert.AreEqual (data1, readBuffer);
+
+            await memory.ReadAsync (torrent2, new BlockInfo (0, 0, 3), readBuffer);
+            CollectionAssert.AreEqual (data2, readBuffer);
+        }
+
+        [Test]
         public async Task WriteSameBlockTwice ()
         {
             var data1 = new byte[] { 1, 1, 1 };
