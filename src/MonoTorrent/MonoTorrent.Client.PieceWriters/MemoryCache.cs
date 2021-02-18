@@ -142,11 +142,9 @@ namespace MonoTorrent.Client.PieceWriters
                 }
 
                 if (!cache.HasValue) {
-                    var releaser = DiskManager.BufferPool.Rent (block.RequestLength, out byte[] _);
-
                     cache = new CachedBlock {
                         Block = block,
-                        BufferReleaser = releaser,
+                        BufferReleaser = DiskManager.BufferPool.Rent (block.RequestLength, out byte[] _),
                         Torrent = torrent,
                     };
                     CachedBlocks.Add (cache.Value);
