@@ -384,7 +384,10 @@ namespace MonoTorrent.Client
         }
 
         internal async Task<bool> ReadAsync (ITorrentFileInfo file, long position, byte[] buffer, int offset, int count)
-            => await Cache.Writer.ReadAsync (file, position, buffer, offset, count) == count;
+        {
+            await IOLoop;
+            return await Cache.Writer.ReadAsync (file, position, buffer, offset, count) == count;
+        }
 
         internal async ReusableTask WriteAsync (ITorrentData manager, BlockInfo request, byte[] buffer)
         {
