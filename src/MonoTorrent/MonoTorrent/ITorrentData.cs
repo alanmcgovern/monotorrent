@@ -51,16 +51,32 @@ namespace MonoTorrent.Client
 
     static class ITorrentDataExtensions
     {
+        public static int BlocksPerPiece (this ITorrentData self, int pieceIndex)
+        {
+            if (pieceIndex < self.PieceCount () - 1)
+                return self.PieceLength / Piece.BlockSize;
+
+            var remainder = (int) self.Size - self.PieceLength * pieceIndex;
+            return (remainder + Piece.BlockSize - 1) / Piece.BlockSize;
+        }
+
+        public static int BytesPerPiece (this ITorrentData self, int pieceIndex)
+        {
+            if (pieceIndex < self.PieceCount () - 1)
+                return self.PieceLength;
+            return (int) (self.Size - (long) self.PieceLength * pieceIndex);
+        }
+
+        public static int ByteOffsetToPieceIndex (this ITorrentData self, long offset)
+            => (int) ((offset / self.PieceLength) + (offset % self.PieceLength != 0 ? 1 : 0));
+
         /// <summary>
         /// The number of pieces in the torrent
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
         public static int PieceCount (this ITorrentData self)
-            => (int) (self.Size / self.PieceLength) + (self.Size % self.PieceLength != 0 ? 1 : 0);
-
-        public static int ByteOffsetToPieceIndex (this ITorrentData self, long offset)
-            => (int) ((offset / self.PieceLength) + (offset % self.PieceLength != 0 ? 1 : 0));
+            => (int) ((self.Size + self.PieceLength - 1) / self.PieceLength);
 
         public static long PieceIndexToByteOffset (this ITorrentData self, int pieceIndex)
             => (long) self.PieceLength * pieceIndex;
