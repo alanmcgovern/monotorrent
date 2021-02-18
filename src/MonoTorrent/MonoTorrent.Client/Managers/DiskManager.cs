@@ -238,12 +238,12 @@ namespace MonoTorrent.Client
                 // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
                 IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
 
+                using var lockReleaser = await incrementalHash.Locker.EnterAsync ();
                 // We request the blocks for most pieces sequentially, and most (all?) torrent clients
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
-                if (incrementalHash.NextOffsetToHash == manager.PieceIndexToByteOffset (pieceIndex + 1)
-                 || incrementalHash.NextOffsetToHash == manager.Size) {
+                if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex)) {
                     byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
                     return result;
@@ -264,7 +264,7 @@ namespace MonoTorrent.Client
             using var releaser = await incrementalHash.Locker.EnterAsync ();
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             int startOffset = incrementalHash.NextOffsetToHash;
-            int endOffset = (int) Math.Min (manager.Size - manager.PieceIndexToByteOffset (pieceIndex), manager.PieceLength);
+            int endOffset = manager.BytesPerPiece (pieceIndex);
             using (BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
                 try {
                     SHA1 hasher = incrementalHash.Hasher;
@@ -400,50 +400,43 @@ namespace MonoTorrent.Client
 
             try {
                 int pieceIndex = request.PieceIndex;
-                long pieceStart = manager.PieceIndexToByteOffset (pieceIndex);
-                long pieceEnd = pieceStart + manager.PieceLength;
-
                 if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
                     incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
                 }
 
                 ReusableTaskCompletionSource<bool> tcs = null;
                 ReusableTask writeTask = default;
-                // Don't retain this in a cache if we are about to successfully incrementally hash the piece.
-                // We know we won't have to read this block back later.
-                bool preferSkipCache = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
-                if (WriteLimiter.TryProcess (request.RequestLength)) {
-                    writeTask = Cache.WriteAsync (manager, request, buffer, preferSkipCache);
-                } else {
-                    tcs = new ReusableTaskCompletionSource<bool> ();
-                    WriteQueue.Enqueue (new BufferedIO (manager, request, buffer, preferSkipCache, tcs));
-                }
 
-                if (incrementalHash != null) {
-                    using var releaser = await incrementalHash.Locker.EnterAsync ();
-                    // Incremental hashing does not perform proper bounds checking to ensure
-                    // that pieces are correctly incrementally hashed even if 'count' is greater
-                    // than the PieceLength. This should never happen under normal operation, but
-                    // unit tests do it for convenience sometimes. Keep things safe by cancelling
-                    // incremental hashing if that occurs.
-                    if ((incrementalHash.NextOffsetToHash + request.RequestLength) > pieceEnd) {
-                        IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
-                    } else if (incrementalHash.NextOffsetToHash == request.StartOffset) {
-                        await MainLoop.SwitchThread ();
+                using (incrementalHash == null ? default : await incrementalHash.Locker.EnterAsync ()) {
+                    bool canIncrementallyHash = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
+
+                    // If we can incrementally hash the data, instruct the cache to write the block straight through
+                    // to the IPieceWriter, so it is not stored in the in-memory cache.
+                    if (WriteLimiter.TryProcess (request.RequestLength)) {
+                        writeTask = Cache.WriteAsync (manager, request, buffer, canIncrementallyHash);
+                    } else {
+                        tcs = new ReusableTaskCompletionSource<bool> ();
+                        WriteQueue.Enqueue (new BufferedIO (manager, request, buffer, canIncrementallyHash, tcs));
+                    }
+
+                    if (canIncrementallyHash) {
+                        // Yield the thread we're currently on so that the next 'WriteAsync' invocation can begin
+                        // to process. If it's for a different piece it will run concurrently with the remainder of
+                        // this method.
+                        await MainLoop.SwitchToThreadpool ();
                         incrementalHash.Hasher.TransformBlock (buffer, 0, request.RequestLength, buffer, 0);
-                        if (incrementalHash.NextOffsetToHash + request.RequestLength == manager.PieceIndexToByteOffset (pieceIndex + 1)
-                            || incrementalHash.NextOffsetToHash + request.RequestLength == manager.Size) {
-                            incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                        }
                         incrementalHash.NextOffsetToHash += request.RequestLength;
+
+                        if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex))
+                            incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
                     }
                 }
 
+
                 if (tcs != null)
                     await tcs.Task.ConfigureAwait (false);
-                else {
+                else
                     await writeTask.ConfigureAwait (false);
-                }
             } finally {
                 Interlocked.Add (ref pendingWriteBytes, -request.RequestLength);
             }

@@ -329,15 +329,16 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandlePieceMessage (PeerId id, PieceMessage message)
         {
             id.PiecesReceived++;
-            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IPeer> peersInvolved))
-                WritePieceAsync (message, pieceComplete, peersInvolved);
+            if (Manager.PieceManager.PieceDataReceived (id, message, out bool _, out IList<IPeer> peersInvolved))
+                WritePieceAsync (message, peersInvolved);
             else
                 message.DataReleaser.Dispose ();
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests (id);
         }
 
-        async void WritePieceAsync (PieceMessage message, bool pieceComplete, IList<IPeer> peersInvolved)
+        readonly Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> ();
+        async void WritePieceAsync (PieceMessage message, IList<IPeer> peersInvolved)
         {
             try {
                 await DiskManager.WriteAsync (Manager, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), message.Data);
@@ -350,9 +351,19 @@ namespace MonoTorrent.Client.Modes
                 message.DataReleaser.Dispose ();
             }
 
-            // If we haven't received all the pieces to disk, there's no point in hash checking
-            if (!pieceComplete)
+            if (!BlocksWrittenPerPiece.TryGetValue (message.PieceIndex, out (int blocksWritten, IList<IPeer> peersInvolved) data))
+                data = (0, peersInvolved);
+
+            // Increment the number of blocks, and keep storing 'peersInvolved' until it's non-null. It will be non-null when the
+            // final piece is received.
+            data = (data.blocksWritten + 1, data.peersInvolved ?? peersInvolved);
+            if (data.blocksWritten != Manager.BlocksPerPiece (message.PieceIndex)) {
+                BlocksWrittenPerPiece[message.PieceIndex] = data;
                 return;
+            }
+
+            // All blocks have been written for this piece have been written!
+            BlocksWrittenPerPiece.Remove (message.PieceIndex);
 
             // Hashcheck the piece as we now have all the blocks.
             byte[] hash;
