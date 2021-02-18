@@ -27,18 +27,7 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
@@ -61,6 +50,23 @@ namespace MonoTorrent.Client
             Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (1));
             Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4 + 1, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (2));
             Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 5 - 1, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (2));
+
+            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (0));
+        }
+
+        [Test]
+        public void ByteOffsetToPieceIndex ()
+        {
+            Assert.AreEqual (0, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (0));
+            Assert.AreEqual (0, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (1));
+            Assert.AreEqual (0, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 2 - 1));
+            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 2));
+            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 2 + 1));
+            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 3 - 1));
+            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 3));
+            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 4));
+
+            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 4));
         }
 
         [Test]
@@ -71,6 +77,8 @@ namespace MonoTorrent.Client
 
             Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4 + 1, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (2));
             Assert.AreEqual (Piece.BlockSize - 1, new Data { Size = Piece.BlockSize * 5 - 1, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (2));
+
+            Assert.AreEqual (Piece.BlockSize * 2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (2));
         }
 
         [Test]
@@ -80,6 +88,8 @@ namespace MonoTorrent.Client
             Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4 - 1, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
             Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
             Assert.AreEqual (3, new Data { Size = Piece.BlockSize * 4 + 1, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
+
+            Assert.AreEqual (262144, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
         }
     }
 }

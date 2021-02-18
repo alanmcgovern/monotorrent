@@ -44,7 +44,7 @@ namespace MonoTorrent.Streaming
     {
         LocalStream ActiveStream { get; set; }
         ClientEngine Engine { get; }
-        StreamingPieceRequester Requester { get; }
+        internal StreamingPieceRequester Requester { get; }
 
         /// <summary>
         /// Returns true when the <see cref="StreamProvider"/> has been started.

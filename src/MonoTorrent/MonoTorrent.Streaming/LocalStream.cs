@@ -105,11 +105,8 @@ namespace MonoTorrent.Streaming
                 return 0;
 
             // Take our current position into account when calculating the start/end pieces of the data we're reading.
-            var startPiece = (int) ((torrentFileStartOffset + Position) / Manager.Torrent.PieceLength);
-            var endPiece = (int) ((torrentFileStartOffset + Position + count) / Manager.Torrent.PieceLength);
-            if (Length % Manager.Torrent.PieceLength == 0 && endPiece == Manager.Torrent.Pieces.Count)
-                endPiece--;
-
+            var startPiece = Manager.ByteOffsetToPieceIndex (torrentFileStartOffset + Position);
+            var endPiece = Math.Min (File.EndPieceIndex, Manager.ByteOffsetToPieceIndex (torrentFileStartOffset + Position + count));
             while (Manager.State != TorrentState.Stopped && Manager.State != TorrentState.Error) {
                 bool allAvailable = true;
                 for (int i = startPiece; i <= endPiece && allAvailable; i++)
@@ -148,7 +145,7 @@ namespace MonoTorrent.Streaming
                     newPosition = position + offset;
                     break;
                 case SeekOrigin.End:
-                    newPosition = Length - offset;
+                    newPosition = Length + offset;
                     break;
                 default:
                     throw new NotSupportedException ();

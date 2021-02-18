@@ -56,19 +56,19 @@ namespace MonoTorrent.Client
             if (pieceIndex < self.PieceCount () - 1)
                 return self.PieceLength / Piece.BlockSize;
 
-            var remainder = (int) self.Size - self.PieceLength * pieceIndex;
-            return (remainder + Piece.BlockSize - 1) / Piece.BlockSize;
+            var remainder = self.Size - self.PieceIndexToByteOffset (pieceIndex);
+            return (int) ((remainder + Piece.BlockSize - 1) / Piece.BlockSize);
         }
 
         public static int BytesPerPiece (this ITorrentData self, int pieceIndex)
         {
             if (pieceIndex < self.PieceCount () - 1)
                 return self.PieceLength;
-            return (int) (self.Size - (long) self.PieceLength * pieceIndex);
+            return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
         }
 
         public static int ByteOffsetToPieceIndex (this ITorrentData self, long offset)
-            => (int) ((offset / self.PieceLength) + (offset % self.PieceLength != 0 ? 1 : 0));
+            => (int) (offset / self.PieceLength);
 
         /// <summary>
         /// The number of pieces in the torrent

@@ -161,10 +161,10 @@ namespace MonoTorrent.Streaming
             provider.Manager.Bitfield.SetAll (true); // the public API shouldn't allow this.
 
             using var stream = await provider.CreateStreamAsync (provider.Files[0], prebuffer: false, CancellationToken.None).WithTimeout ();
-            stream.Seek (1, SeekOrigin.End);
+            stream.Seek (-1, SeekOrigin.End);
             Assert.AreEqual (1, await stream.ReadAsync (new byte[1], 0, 1).WithTimeout ());
 
-            stream.Seek (1, SeekOrigin.End);
+            stream.Seek (-1, SeekOrigin.End);
             Assert.AreEqual (1, await stream.ReadAsync (new byte[5], 0, 5).WithTimeout ());
         }
 
@@ -176,6 +176,20 @@ namespace MonoTorrent.Streaming
             using var stream = await provider.CreateStreamAsync (provider.Files[0], prebuffer: false, CancellationToken.None).WithTimeout ();
             stream.Seek (-100, SeekOrigin.Begin);
             Assert.AreEqual (0, stream.Position);
+        }
+
+        [Test]
+        public async Task SeekToMiddle ()
+        {
+            var provider = new StreamProvider (Engine, "testDir", Torrent);
+
+            await provider.StartAsync ();
+            await provider.Manager.WaitForState (TorrentState.Downloading);
+            provider.Manager.Bitfield.SetAll (true); // should not be allowed by public API.
+
+            using var stream = await provider.CreateStreamAsync (provider.Files[0], prebuffer: false, CancellationToken.None);
+            stream.Seek (12345, SeekOrigin.Begin);
+            Assert.AreEqual (provider.Manager.ByteOffsetToPieceIndex (12345), provider.Requester.HighPriorityPieceIndex);
         }
 
         [Test]
