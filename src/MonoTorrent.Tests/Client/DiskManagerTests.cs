@@ -230,7 +230,7 @@ namespace MonoTorrent.Client
             int count = 6;
             var tasks = new List<Task> ();
             for (int i = 0; i < count; i++)
-                tasks.Add (diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer).AsTask ());
+                tasks.Add (diskManager.WriteAsync (fileData, new BlockInfo (i / 3, Piece.BlockSize * (i % 3), Piece.BlockSize), buffer).AsTask ());
 
             Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#1");
 
