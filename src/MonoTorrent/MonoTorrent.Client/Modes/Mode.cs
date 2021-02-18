@@ -364,6 +364,7 @@ namespace MonoTorrent.Client.Modes
 
             // All blocks have been written for this piece have been written!
             BlocksWrittenPerPiece.Remove (message.PieceIndex);
+            peersInvolved = data.peersInvolved;
 
             // Hashcheck the piece as we now have all the blocks.
             byte[] hash;
