@@ -295,7 +295,7 @@ namespace MonoTorrent.Client.PiecePicking
                         duplicates[primaryPiece.Index] = extraPieces = new List<Piece> ();
 
                     if (extraPieces.Count < duplicate) {
-                        var newPiece = new Piece (primaryPiece.Index, TorrentData.PieceLength, TorrentData.Size);
+                        var newPiece = new Piece (primaryPiece.Index, TorrentData.BytesPerPiece (primaryPiece.Index));
                         for (int i = 0; i < primaryPiece.BlockCount; i++)
                             if (primaryPiece.Blocks[i].Received)
                                 newPiece.Blocks[i].TrySetReceived (primaryPiece.Blocks[i].RequestedOff);
@@ -347,7 +347,7 @@ namespace MonoTorrent.Client.PiecePicking
                     continue;
 
                 pieces.RemoveAt (i);
-                var p = new Piece (index, TorrentData.PieceLength, TorrentData.Size);
+                var p = new Piece (index, TorrentData.BytesPerPiece (index));
                 requests.Add (p);
                 return p.Blocks[0].CreateRequest (peer);
             }
@@ -370,7 +370,7 @@ namespace MonoTorrent.Client.PiecePicking
             var bundle = new List<BlockInfo> (count);
             for (int i = 0; bundle.Count < count && i < piecesNeeded; i++) {
                 // Request the piece
-                var p = new Piece (checkIndex + i, TorrentData.PieceLength, TorrentData.Size);
+                var p = new Piece (checkIndex + i, TorrentData.BytesPerPiece (checkIndex + i));
                 requests.Add (p);
                 for (int j = 0; j < p.Blocks.Length && bundle.Count < count; j++)
                     bundle.Add (p.Blocks[j].CreateRequest (peer));

@@ -472,6 +472,32 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void CreateFinalPiece ()
+        {
+            var piece = new Piece (0, Piece.BlockSize * 3 + 1);
+            Assert.AreEqual (4, piece.BlockCount);
+
+            Assert.AreEqual (Piece.BlockSize * 3, piece.Blocks[3].StartOffset);
+            Assert.AreEqual (1, piece.Blocks[3].RequestLength);
+        }
+
+        [Test]
+        public void CreateNormalPiece ()
+        {
+            var piece = new Piece (0, Piece.BlockSize * 3);
+            Assert.AreEqual (3, piece.BlockCount);
+
+            Assert.AreEqual (Piece.BlockSize * 0, piece.Blocks[0].StartOffset);
+            Assert.AreEqual (Piece.BlockSize * 1, piece.Blocks[0].RequestLength);
+
+            Assert.AreEqual (Piece.BlockSize * 1, piece.Blocks[1].StartOffset);
+            Assert.AreEqual (Piece.BlockSize * 1, piece.Blocks[1].RequestLength);
+
+            Assert.AreEqual (Piece.BlockSize * 2, piece.Blocks[2].StartOffset);
+            Assert.AreEqual (Piece.BlockSize * 1, piece.Blocks[2].RequestLength);
+        }
+
+        [Test]
         public void PickBundle ()
         {
             peer.IsChoking = false;
