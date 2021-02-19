@@ -31,6 +31,7 @@ using System;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Listeners;
 
 namespace MonoTorrent.Dht
 {
@@ -46,6 +47,7 @@ namespace MonoTorrent.Dht
         void Announce (InfoHash infohash, int port);
         void GetPeers (InfoHash infohash);
         Task<byte[]> SaveNodesAsync ();
+        void SetListener (IDhtListener listener);
         Task StartAsync ();
         Task StartAsync (byte[] initialNodes);
         Task StopAsync ();

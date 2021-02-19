@@ -12,6 +12,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Dht;
 using MonoTorrent.Logging;
+using MonoTorrent.Streaming;
 
 namespace SampleClient
 {
@@ -54,8 +55,9 @@ namespace SampleClient
 
         private static async Task StartEngine ()
         {
+#if DEBUG
             Logger.Factory = (string className) => new TextLogger (Console.Out, className);
-
+#endif
             int port;
             Torrent torrent = null;
             // Ask the user what port they want to use for incoming connections
@@ -65,10 +67,12 @@ namespace SampleClient
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
-            EngineSettings engineSettings = new EngineSettings {
+            EngineSettings engineSettings = new EngineSettingsBuilder {
                 SavePath = downloadsPath,
-                ListenPort = port
-            };
+                ListenPort = port,
+                DhtPort = port,
+                DiskCacheBytes = 5 * 1024 * 1024,
+            }.ToSettings ();
 
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
@@ -88,8 +92,6 @@ namespace SampleClient
                 Console.WriteLine ("No existing dht nodes could be loaded");
             }
 
-            DhtEngine dht = new DhtEngine (new IPEndPoint (IPAddress.Any, port));
-            await engine.RegisterDhtAsync (dht);
 
             // This starts the Dht engine but does not wait for the full initialization to
             // complete. This is because it can take up to 2 minutes to bootstrap, depending
@@ -156,7 +158,7 @@ namespace SampleClient
                 manager.ConnectionAttemptFailed += (o, e) => {
                     lock (listener)
                         listener.WriteLine (
-                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason} - {e.Peer.AllowedEncryption}");
+                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason}");
                 };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
@@ -179,10 +181,6 @@ namespace SampleClient
                 await manager.StartAsync ();
             }
 
-            // Enable automatic port forwarding. The engine will use Mono.Nat to search for
-            // uPnP or NAT-PMP compatible devices and then issue port forwarding requests to it.
-            await engine.EnablePortForwardingAsync (CancellationToken.None);
-
             // This is how to access the list of port mappings, and to see if they were
             // successful, pending or failed. If they failed it could be because the public port
             // is already in use by another computer on your network.
@@ -204,8 +202,10 @@ namespace SampleClient
                     AppendFormat (sb, "Total Upload Rate:   {0:0.00}kB/sec", engine.TotalUploadSpeed / 1024.0);
                     AppendFormat (sb, "Disk Read Rate:      {0:0.00} kB/s", engine.DiskManager.ReadRate / 1024.0);
                     AppendFormat (sb, "Disk Write Rate:     {0:0.00} kB/s", engine.DiskManager.WriteRate / 1024.0);
-                    AppendFormat (sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead / 1024.0);
-                    AppendFormat (sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten / 1024.0);
+                    AppendFormat (sb, "Cache Used:         {0:0.00} kB", engine.DiskManager.CacheBytesUsed / 1024.0);
+                    AppendFormat (sb, "Cache Read:         {0:0.00} kB", engine.DiskManager.TotalCacheBytesRead / 1024.0);
+                    AppendFormat (sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalBytesRead / 1024.0);
+                    AppendFormat (sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalBytesWritten / 1024.0);
                     AppendFormat (sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
 
                     foreach (TorrentManager manager in torrents) {
@@ -223,11 +223,26 @@ namespace SampleClient
                         if (manager.PieceManager != null)
                             AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 
-                        foreach (PeerId p in await manager.GetPeersAsync ())
-                            AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Uri,
+                        var peers = await manager.GetPeersAsync ();
+                        AppendFormat (sb, "Outgoing:");
+                        foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Outgoing)) {
+                            AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
                                                                                       p.Monitor.DownloadSpeed / 1024.0,
                                                                                       p.AmRequestingPiecesCount,
-                                                                                      p.Monitor.UploadSpeed / 1024.0);
+                                                                                      p.Monitor.UploadSpeed / 1024.0,
+                                                                                      p.EncryptionType,
+                                                                                      string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
+                        }
+                        AppendFormat (sb, "");
+                        AppendFormat (sb, "Incoming:");
+                        foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Incoming)) {
+                            AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
+                                                                                      p.Monitor.DownloadSpeed / 1024.0,
+                                                                                      p.AmRequestingPiecesCount,
+                                                                                      p.Monitor.UploadSpeed / 1024.0,
+                                                                                      p.EncryptionType,
+                                                                                      string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
+                        }
 
                         AppendFormat (sb, "", null);
                         if (manager.Torrent != null)
@@ -241,10 +256,6 @@ namespace SampleClient
 
                 Thread.Sleep (500);
             }
-
-            // Stop searching for uPnP or NAT-PMP compatible devices and delete
-            // all mapppings which had been created.
-            await engine.DisablePortForwardingAsync (CancellationToken.None);
         }
 
         static void Manager_PeersFound (object sender, PeersAddedEventArgs e)

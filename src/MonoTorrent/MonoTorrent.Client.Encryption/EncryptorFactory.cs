@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
@@ -56,22 +57,21 @@ namespace MonoTorrent.Client.Encryption
 
         static TimeSpan Timeout => Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (10);
 
-        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash[] sKeys)
+        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys)
         {
             if (!connection.IsIncoming)
                 throw new Exception ("oops");
 
             using var cts = new CancellationTokenSource (Timeout);
             using CancellationTokenRegistration registration = cts.Token.Register (connection.Dispose);
-            return await DoCheckIncomingConnectionAsync (connection, encryption, settings, sKeys).ConfigureAwait (false);
+            return await DoCheckIncomingConnectionAsync (connection, allowedEncryption, sKeys).ConfigureAwait (false);
         }
 
-        static async ReusableTask<EncryptorResult> DoCheckIncomingConnectionAsync (IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash[] sKeys)
+        static async ReusableTask<EncryptorResult> DoCheckIncomingConnectionAsync (IConnection connection, IList<EncryptionType> preferredEncryption, InfoHash[] sKeys)
         {
-            EncryptionTypes allowedEncryption = (settings?.AllowedEncryption ?? EncryptionTypes.All) & encryption;
-            bool supportsRC4Header = allowedEncryption.HasFlag (EncryptionTypes.RC4Header);
-            bool supportsRC4Full = allowedEncryption.HasFlag (EncryptionTypes.RC4Full);
-            bool supportsPlainText = allowedEncryption.HasFlag (EncryptionTypes.PlainText);
+            bool supportsRC4Header = preferredEncryption.Contains (EncryptionType.RC4Header);
+            bool supportsRC4Full = preferredEncryption.Contains (EncryptionType.RC4Full);
+            bool supportsPlainText = preferredEncryption.Contains (EncryptionType.PlainText);
 
             // If the connection is incoming, receive the handshake before
             // trying to decide what encryption to use
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Encryption
                     // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
                     await MainLoop.SwitchToThreadpool ();
 
-                    var encSocket = new PeerBEncryption (sKeys, EncryptionTypes.All);
+                    var encSocket = new PeerBEncryption (sKeys, preferredEncryption);
                     await encSocket.HandshakeAsync (connection, buffer.Data, 0, HandshakeMessage.HandshakeLength).ConfigureAwait (false);
                     if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                         throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");
@@ -115,27 +115,26 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException ("Invalid handshake received and no decryption works");
         }
 
-        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash infoHash, HandshakeMessage handshake = null)
+        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake = null)
         {
             if (connection.IsIncoming)
                 throw new Exception ("oops");
 
             using var cts = new CancellationTokenSource (Timeout);
             using CancellationTokenRegistration registration = cts.Token.Register (connection.Dispose);
-            return await DoCheckOutgoingConnectionAsync (connection, encryption, settings, infoHash, handshake).ConfigureAwait (false);
+            return await DoCheckOutgoingConnectionAsync (connection, allowedEncryption, infoHash, handshake).ConfigureAwait (false);
         }
 
-        static async ReusableTask<EncryptorResult> DoCheckOutgoingConnectionAsync (IConnection connection, EncryptionTypes encryption, EngineSettings settings, InfoHash infoHash, HandshakeMessage handshake)
+        static async ReusableTask<EncryptorResult> DoCheckOutgoingConnectionAsync (IConnection connection, IList<EncryptionType> preferredEncryption, InfoHash infoHash, HandshakeMessage handshake)
         {
-            EncryptionTypes allowedEncryption = settings.AllowedEncryption & encryption;
-            bool supportsRC4Header = allowedEncryption.HasFlag (EncryptionTypes.RC4Header);
-            bool supportsRC4Full = allowedEncryption.HasFlag (EncryptionTypes.RC4Full);
-            bool supportsPlainText = allowedEncryption.HasFlag (EncryptionTypes.PlainText);
+            bool supportsRC4Header = preferredEncryption.Contains (EncryptionType.RC4Header);
+            bool supportsRC4Full = preferredEncryption.Contains (EncryptionType.RC4Full);
+            bool supportsPlainText = preferredEncryption.Contains (EncryptionType.PlainText);
 
             // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
             await MainLoop.SwitchToThreadpool ();
-            if ((settings.PreferEncryption || !supportsPlainText) && (supportsRC4Header || supportsRC4Full)) {
-                var encSocket = new PeerAEncryption (infoHash, allowedEncryption, handshake?.Encode ());
+            if (preferredEncryption[0] != EncryptionType.PlainText) {
+                var encSocket = new PeerAEncryption (infoHash, preferredEncryption, handshake?.Encode ());
                 await encSocket.HandshakeAsync (connection).ConfigureAwait (false);
                 if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                     throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");

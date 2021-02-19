@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public string Version => version ?? "";
 
-        public int MetadataSize { get; set; }
+        public int? MetadataSize { get; set; }
 
         #region Constructors
         public ExtendedHandshakeMessage ()
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             Supports = new ExtensionSupports ();
         }
 
-        public ExtendedHandshakeMessage (bool privateTorrent, int metadataSize, int localListenPort)
+        public ExtendedHandshakeMessage (bool privateTorrent, int? metadataSize, int localListenPort)
             : base (Support.MessageId)
         {
             Supports = new ExtensionSupports (SupportedMessages);
@@ -125,7 +125,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write (buffer, written, Support.MessageId);
             written += dict.Encode (buffer, written);
 
-            CheckWritten (written - offset);
             return written - offset;
         }
 
@@ -144,7 +143,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             SupportedMessages.ForEach (delegate (ExtensionSupport s) { supportsDict.Add (s.Name, (BEncodedNumber) s.MessageId); });
             mainDict.Add (SupportsKey, supportsDict);
 
-            mainDict.Add (MetadataSizeKey, (BEncodedNumber) MetadataSize);
+            if (MetadataSize.HasValue)
+                mainDict.Add (MetadataSizeKey, (BEncodedNumber) MetadataSize);
 
             return mainDict;
         }

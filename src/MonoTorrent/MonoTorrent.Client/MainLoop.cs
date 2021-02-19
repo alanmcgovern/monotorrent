@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -57,8 +58,8 @@ namespace MonoTorrent.Client
             }
         }
 
-        readonly Queue<QueuedTask> actions = new Queue<QueuedTask> ();
-        readonly ManualResetEventSlim actionsWaiter = new ManualResetEventSlim ();
+        Queue<QueuedTask> actions = new Queue<QueuedTask> ();
+        readonly object actionsLock = new object ();
         readonly Thread thread;
 
         public MainLoop (string name)
@@ -72,30 +73,32 @@ namespace MonoTorrent.Client
 
         void Loop ()
         {
+            var currentQueue = new Queue<QueuedTask> ();
+
             SetSynchronizationContext (this);
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             using (ExecutionContext.SuppressFlow ())
 #endif
                 while (true) {
-                    QueuedTask? task = null;
 
-                    lock (actions) {
-                        if (actions.Count > 0)
-                            task = actions.Dequeue ();
-                        else
-                            actionsWaiter.Reset ();
+                    lock (actionsLock) {
+                       if (actions.Count == 0)
+                            Monitor.Wait (actionsLock);
+
+                        var swap = actions;
+                        actions = currentQueue;
+                        currentQueue = swap;
                     }
 
-                    if (!task.HasValue) {
-                        actionsWaiter.Wait ();
-                    } else {
+                    while (currentQueue.Count > 0) {
+                        var task = currentQueue.Dequeue ();
                         try {
-                            task.Value.Action?.Invoke ();
-                            task.Value.SendOrPostCallback?.Invoke (task.Value.State);
+                            task.Action?.Invoke ();
+                            task.SendOrPostCallback?.Invoke (task.State);
                         } catch (Exception ex) {
                             Console.WriteLine ("Unexpected main loop exception: {0}", ex);
                         } finally {
-                            task.Value.WaitHandle?.Set ();
+                            task.WaitHandle?.Set ();
                         }
                     }
                 }
@@ -135,15 +138,11 @@ namespace MonoTorrent.Client
 
         void Queue (QueuedTask task)
         {
-            bool shouldSet = false;
-            lock (actions) {
+            lock (actionsLock) {
                 actions.Enqueue (task);
                 if (actions.Count == 1)
-                    shouldSet = true;
+                    Monitor.Pulse (actionsLock);
             }
-
-            if (shouldSet)
-                actionsWaiter.Set ();
         }
 
         [EditorBrowsable (EditorBrowsableState.Never)]
@@ -208,6 +207,13 @@ namespace MonoTorrent.Client
             return new ThreadSwitcher ();
         }
 
-#endregion
+        [Conditional("DEBUG")]
+        internal void CheckThread ()
+        {
+            if (Thread.CurrentThread != thread)
+                throw new InvalidOperationException ($"Missing context switch to the {thread.Name} MainLoop.");
+        }
+
+        #endregion
     }
 }

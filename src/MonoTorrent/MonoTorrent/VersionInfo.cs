@@ -56,9 +56,9 @@ namespace MonoTorrent
         static VersionInfo ()
         {
             var version = new Version (
-                int.Parse (ThisAssembly.Git.SemVer.Major),
-                int.Parse (ThisAssembly.Git.SemVer.Minor),
-                int.Parse (ThisAssembly.Git.SemVer.Patch)
+                int.Parse (ThisAssembly.Git.BaseVersion.Major),
+                int.Parse (ThisAssembly.Git.BaseVersion.Minor),
+                int.Parse (ThisAssembly.Git.BaseVersion.Patch)
             );
             Initialize (version);
             Version = version;

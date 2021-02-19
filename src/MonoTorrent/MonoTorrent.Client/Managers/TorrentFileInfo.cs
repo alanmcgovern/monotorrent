@@ -28,7 +28,8 @@
 
 
 using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MonoTorrent.Client
 {
@@ -40,15 +41,13 @@ namespace MonoTorrent.Client
 
         public BitField BitField { get; }
 
-        public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
-
         public Priority Priority { get; set; } = Priority.Normal;
 
         public string Path => TorrentFile.Path;
 
         public int StartPieceIndex => TorrentFile.StartPieceIndex;
 
-        public int StartPieceOffset => TorrentFile.StartPieceOffset;
+        public long OffsetInTorrent => TorrentFile.OffsetInTorrent;
 
         public int EndPieceIndex => TorrentFile.EndPieceIndex;
 
@@ -68,5 +67,19 @@ namespace MonoTorrent.Client
 
         public (int startPiece, int endPiece) GetSelector ()
             => (StartPieceIndex, EndPieceIndex);
+
+
+        internal static TorrentFileInfo[] Create (int pieceLength, params long[] sizes)
+            => Create (pieceLength, sizes.Select ((size, index) => ("File_" + index, size, "full/path/to/File_" + index)).ToArray ());
+
+        internal static TorrentFileInfo[] Create (int pieceLength, params (string torrentPath, long size, string fullPath)[] infos)
+        {
+            // TorrentFile.Create can reorder the files if there are any of length zero.
+            var torrentFiles = MonoTorrent.TorrentFile.Create (pieceLength, infos.Select (t => (t.torrentPath, t.size)).ToArray ());
+            return torrentFiles.Select (t => {
+                var info = infos.Single (info => info.torrentPath == t.Path);
+                return new TorrentFileInfo (t, info.fullPath);
+            }).ToArray ();
+        }
     }
 }

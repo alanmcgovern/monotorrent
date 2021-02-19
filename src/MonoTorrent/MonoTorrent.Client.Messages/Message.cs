@@ -36,13 +36,6 @@ namespace MonoTorrent.Client.Messages
     {
         public abstract int ByteLength { get; }
 
-        protected int CheckWritten (int written)
-        {
-            if (written != ByteLength)
-                throw new MessageException ("Message encoded incorrectly. Incorrect number of bytes written");
-            return written;
-        }
-
         public abstract void Decode (byte[] buffer, int offset, int length);
 
         public byte[] Encode ()
@@ -141,40 +134,59 @@ namespace MonoTorrent.Client.Messages
 
         public static int Write (byte[] buffer, int offset, ushort value)
         {
-            return Write (buffer, offset, (short) value);
+            buffer[offset + 0] = (byte) (value >> 8);
+            buffer[offset + 1] = (byte) value;
+            return 2;
         }
 
         public static int Write (byte[] buffer, int offset, short value)
         {
-            offset += Write (buffer, offset, (byte) (value >> 8));
-            offset += Write (buffer, offset, (byte) value);
+            buffer[offset + 0] = (byte) (value >> 8);
+            buffer[offset + 1] = (byte) value;
             return 2;
         }
-
         public static int Write (byte[] buffer, int offset, int value)
         {
-            offset += Write (buffer, offset, (byte) (value >> 24));
-            offset += Write (buffer, offset, (byte) (value >> 16));
-            offset += Write (buffer, offset, (byte) (value >> 8));
-            offset += Write (buffer, offset, (byte) (value));
+            buffer[offset + 0] = (byte) (value >> 24);
+            buffer[offset + 1] = (byte) (value >> 16);
+            buffer[offset + 2] = (byte) (value >> 8);
+            buffer[offset + 3] = (byte) value;
             return 4;
         }
 
         public static int Write (byte[] buffer, int offset, uint value)
         {
-            return Write (buffer, offset, (int) value);
+            buffer[offset + 0] = (byte) (value >> 24);
+            buffer[offset + 1] = (byte) (value >> 16);
+            buffer[offset + 2] = (byte) (value >> 8);
+            buffer[offset + 3] = (byte) value;
+            return 4;
         }
 
         public static int Write (byte[] buffer, int offset, long value)
         {
-            offset += Write (buffer, offset, (int) (value >> 32));
-            offset += Write (buffer, offset, (int) value);
+            buffer[offset + 0] = (byte) (value >> 56);
+            buffer[offset + 1] = (byte) (value >> 48);
+            buffer[offset + 2] = (byte) (value >> 40);
+            buffer[offset + 3] = (byte) (value >> 32);
+            buffer[offset + 4] = (byte) (value >> 24);
+            buffer[offset + 5] = (byte) (value >> 16);
+            buffer[offset + 6] = (byte) (value >> 8);
+            buffer[offset + 7] = (byte) value;
             return 8;
         }
 
         public static int Write (byte[] buffer, int offset, ulong value)
         {
-            return Write (buffer, offset, (long) value);
+            buffer[offset + 0] = (byte) (value >> 56);
+            buffer[offset + 1] = (byte) (value >> 48);
+            buffer[offset + 2] = (byte) (value >> 40);
+            buffer[offset + 3] = (byte) (value >> 32);
+            buffer[offset + 4] = (byte) (value >> 24);
+            buffer[offset + 5] = (byte) (value >> 16);
+            buffer[offset + 6] = (byte) (value >> 8);
+            buffer[offset + 7] = (byte) value;
+            return 8;
         }
 
         public static int Write (byte[] buffer, int offset, byte[] value)
@@ -185,7 +197,7 @@ namespace MonoTorrent.Client.Messages
         public static int WriteAscii (byte[] buffer, int offset, string text)
         {
             for (int i = 0; i < text.Length; i++)
-                Write (buffer, offset + i, (byte) text[i]);
+                buffer[offset + i] = (byte) text[i];
             return text.Length;
         }
     }

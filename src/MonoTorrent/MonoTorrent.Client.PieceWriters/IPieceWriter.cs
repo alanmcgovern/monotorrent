@@ -28,10 +28,139 @@
 
 
 using System;
+using System.Collections.Generic;
+
+using MonoTorrent.Client.PiecePicking;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
+    static class IPieceWriterExtensions
+    {
+        static readonly Func<ITorrentFileInfo, (long offset, int pieceLength), int> OffsetComparator = (file, offsetAndPieceLength) => {
+            (long torrentOffset, int pieceLength) = offsetAndPieceLength;
+            var fileStart = file.OffsetInTorrent;
+            var fileEnd = fileStart + file.Length;
+            if (torrentOffset >= fileStart && torrentOffset < fileEnd)
+                return 0;
+            if (torrentOffset >= fileEnd)
+                return -1;
+            else
+                return 1;
+        };
+
+        static readonly Func<ITorrentFileInfo, int, int> PieceIndexComparator = (file, pieceIndex) => {
+            if (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex)
+                return 0;
+            if (pieceIndex > file.EndPieceIndex)
+                return -1;
+            else
+                return 1;
+        };
+
+        /// <summary>
+        /// Used for tests
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="offset"></param>
+        /// <param name="pieceLength"></param>
+        /// <returns></returns>
+        internal static int FindFileByOffset (IList<ITorrentFileInfo> files, long offset, int pieceLength)
+        {
+            var firstMatch = files.BinarySearch (OffsetComparator, (offset, pieceLength));
+            while (firstMatch > 0) {
+                var previous = files[firstMatch - 1];
+                if (previous.OffsetInTorrent >= offset) {
+                    firstMatch--;
+                } else {
+                    break;
+                }
+            }
+            return firstMatch;
+        }
+
+        /// <summary>
+        /// Used for tests
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="pieceIndex"></param>
+        /// <returns></returns>
+        internal static int FindFileByPieceIndex (IList<ITorrentFileInfo> files, int pieceIndex)
+        {
+            var firstMatch = files.BinarySearch (PieceIndexComparator, (pieceIndex));
+            while (firstMatch > 0) {
+                var previous = files[firstMatch - 1];
+                if (previous.StartPieceIndex >= pieceIndex) {
+                    firstMatch--;
+                } else {
+                    break;
+                }
+            }
+            return firstMatch;
+        }
+
+        public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, byte[] buffer)
+        {
+            var count = request.RequestLength;
+            var offset = request.ToByteOffset (manager.PieceLength);
+
+            if (count < 1)
+                throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
+
+            if (offset < 0 || offset + count > manager.Size)
+                throw new ArgumentOutOfRangeException (nameof (offset));
+
+            int totalRead = 0;
+            var files = manager.Files;
+            int i = FindFileByOffset (manager.Files, offset, manager.PieceLength);
+            offset -= files[i].OffsetInTorrent;
+
+            while (totalRead < count) {
+                int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
+                fileToRead = Math.Min (fileToRead, Piece.BlockSize);
+
+                if (fileToRead != await writer.ReadAsync (files[i], offset, buffer, totalRead, fileToRead))
+                    return totalRead;
+
+                offset += fileToRead;
+                totalRead += fileToRead;
+                if (offset >= files[i].Length) {
+                    offset = 0;
+                    i++;
+                }
+            }
+
+            return totalRead;
+        }
+
+        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, byte[] buffer)
+        {
+            var count = request.RequestLength;
+            var torrentOffset = request.ToByteOffset (manager.PieceLength);
+            if (torrentOffset < 0 || torrentOffset + count > manager.Size)
+                throw new ArgumentOutOfRangeException (nameof (request));
+
+            int totalWritten = 0;
+            var files = manager.Files;
+            int i = FindFileByOffset(files, torrentOffset, manager.PieceLength);
+            var offset = torrentOffset - files[i].OffsetInTorrent;
+
+            while (totalWritten < count) {
+                int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
+                fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
+
+                await writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
+                offset += fileToWrite;
+                totalWritten += fileToWrite;
+                if (offset >= files[i].Length) {
+                    offset = 0;
+                    i++;
+                }
+            }
+        }
+    }
+
     public interface IPieceWriter : IDisposable
     {
         ReusableTask CloseAsync (ITorrentFileInfo file);

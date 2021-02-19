@@ -53,11 +53,13 @@ namespace MonoTorrent.Client
         class IncrementalHashData : ICacheable
         {
             public readonly SHA1 Hasher;
-            public long NextOffsetToHash;
+            public int NextOffsetToHash;
+            public ReusableExclusiveSemaphore Locker;
 
             public IncrementalHashData ()
             {
                 Hasher = HashAlgoFactory.SHA1 ();
+                Locker = new ReusableExclusiveSemaphore ();
                 Initialise ();
             }
 
@@ -71,17 +73,17 @@ namespace MonoTorrent.Client
         struct BufferedIO
         {
             public readonly ITorrentData manager;
-            public readonly long offset;
+            public readonly BlockInfo request;
             public readonly byte[] buffer;
-            public readonly int count;
             public readonly ReusableTaskCompletionSource<bool> tcs;
+            public readonly bool preferSkipCache;
 
-            public BufferedIO (ITorrentData manager, long offset, byte[] buffer, int count, ReusableTaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentData manager, BlockInfo request, byte[] buffer, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
-                this.offset = offset;
+                this.request = request;
                 this.buffer = buffer;
-                this.count = count;
+                this.preferSkipCache = preferSkipCache;
                 this.tcs = tcs;
             }
         }
@@ -89,8 +91,13 @@ namespace MonoTorrent.Client
         static readonly MainLoop IOLoop = new MainLoop ("Disk IO");
 
         // These are fields so we can use threadsafe Interlocked operations to add/subtract.
-        int pendingWrites;
-        int pendingReads;
+        int pendingWriteBytes;
+        int pendingReadBytes;
+
+        /// <summary>
+        /// Size of the memory cache in bytes.
+        /// </summary>
+        public long CacheBytesUsed => Cache.CacheUsed;
 
         /// <summary>
         /// True if the object has been disposed.
@@ -98,24 +105,19 @@ namespace MonoTorrent.Client
         bool Disposed { get; set; }
 
         /// <summary>
-        /// The number of bytes which are currently cached in memory, pending writing.
+        /// The number of bytes pending being read as the <see cref="EngineSettings.MaximumDiskReadRate"/> rate limit is being exceeded.
         /// </summary>
-        public int PendingReads => pendingReads;
+        public int PendingReadBytes => pendingReadBytes;
 
         /// <summary>
-        /// The number of bytes which are currently cached in memory, pending writing.
+        /// The number of bytes pending being written as the <see cref="EngineSettings.MaximumDiskWriteRate"/> rate limit is being exceeded.
         /// </summary>
-        public int PendingWrites => pendingWrites;
+        public int PendingWriteBytes => pendingWriteBytes;
 
         /// <summary>
         /// Limits how fast data is read from the disk.
         /// </summary>
-        internal RateLimiter ReadLimiter { get; }
-
-        /// <summary>
-        /// Tracks how fast the disk is being read from.
-        /// </summary>
-        SpeedMonitor ReadMonitor { get; }
+        RateLimiter ReadLimiter { get; }
 
         /// <summary>
         /// Read requests which have been queued because the <see cref="EngineSettings.MaximumDiskReadRate"/> limit has been exceeded.
@@ -125,22 +127,17 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being read per second.
         /// </summary>
-        public long ReadRate => ReadMonitor.Rate;
+        public long ReadRate => Cache.ReadMonitor.Rate;
 
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
         /// </summary>
-        EngineSettings Settings { get; }
+        EngineSettings Settings { get; set; }
 
         /// <summary>
         /// Limits how fast data is written to the disk.
         /// </summary>
-        internal RateLimiter WriteLimiter { get; }
-
-        /// <summary>
-        /// Tracks how fast the disk is being written to.
-        /// </summary>
-        SpeedMonitor WriteMonitor { get; }
+        RateLimiter WriteLimiter { get; }
 
         /// <summary>
         /// Read requests which have been queued because the <see cref="EngineSettings.MaximumDiskWriteRate"/> limit has been exceeded.
@@ -150,39 +147,49 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being written per second.
         /// </summary>
-        public long WriteRate => WriteMonitor.Rate;
+        public long WriteRate => Cache.WriteMonitor.Rate;
 
         /// <summary>
-        /// The total number of bytes which have been read.
+        /// Total bytes read from the cache.
         /// </summary>
-        public long TotalRead => ReadMonitor.Total;
+        public long TotalCacheBytesRead => Cache.CacheHits;
 
         /// <summary>
-        /// The total number of bytes which have been written.
+        /// The total bytes which have been read. Excludes bytes read from the cache.
         /// </summary>
-        public long TotalWritten => WriteMonitor.Total;
+        public long TotalBytesRead => Cache.ReadMonitor.Total;
+
+        /// <summary>
+        /// The total number of bytes which have been written. Excludes bytes written to the cache.
+        /// </summary>
+        public long TotalBytesWritten => Cache.WriteMonitor.Total;
 
         ValueStopwatch UpdateTimer;
 
         /// <summary>
         /// The piece writer used to read/write data
         /// </summary>
-        internal IPieceWriter Writer { get; set; }
+        MemoryCache Cache { get; }
 
-        internal DiskManager (EngineSettings settings, IPieceWriter writer)
+        internal DiskManager (EngineSettings settings, IPieceWriter writer = null)
         {
             ReadLimiter = new RateLimiter ();
-            ReadMonitor = new SpeedMonitor ();
             ReadQueue = new Queue<BufferedIO> ();
 
             WriteLimiter = new RateLimiter ();
-            WriteMonitor = new SpeedMonitor ();
             WriteQueue = new Queue<BufferedIO> ();
 
             UpdateTimer = ValueStopwatch.StartNew ();
 
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
-            Writer = writer ?? throw new ArgumentNullException (nameof (writer));
+
+            writer ??= new DiskWriter (settings.MaximumOpenFiles);
+            Cache = new MemoryCache (settings.DiskCacheBytes, writer);
+        }
+
+        internal void ChangePieceWriter (IPieceWriter writer)
+        {
+            Cache.Writer = writer;
         }
 
         void IDisposable.Dispose ()
@@ -198,14 +205,14 @@ namespace MonoTorrent.Client
             Debug.Assert (ReadQueue.Count == 0, "The read queue should be cancelled");
             Debug.Assert (WriteQueue.Count == 0, "The write queue should be flushed before disposing");
             Disposed = true;
-            Writer.Dispose ();
+            Cache.Dispose ();
         }
 
         internal async Task<bool> CheckFileExistsAsync (ITorrentFileInfo file)
         {
             await IOLoop;
 
-            return await Writer.ExistsAsync (file).ConfigureAwait (false);
+            return await Cache.Writer.ExistsAsync (file).ConfigureAwait (false);
         }
 
         internal async Task<bool> CheckAnyFilesExistAsync (ITorrentData manager)
@@ -213,7 +220,7 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             for (int i = 0; i < manager.Files.Count; i++)
-                if (await Writer.ExistsAsync (manager.Files[i]).ConfigureAwait (false))
+                if (await Cache.Writer.ExistsAsync (manager.Files[i]).ConfigureAwait (false))
                     return true;
             return false;
         }
@@ -228,22 +235,23 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             if (IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash)) {
+                // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
+                IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
+
+                using var lockReleaser = await incrementalHash.Locker.EnterAsync ();
                 // We request the blocks for most pieces sequentially, and most (all?) torrent clients
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
-                if (incrementalHash.NextOffsetToHash == (long) manager.PieceLength * (pieceIndex + 1)
-                 || incrementalHash.NextOffsetToHash == manager.Size) {
+                if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex)) {
                     byte[] result = incrementalHash.Hasher.Hash;
                     IncrementalHashCache.Enqueue (incrementalHash);
-                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
                     return result;
                 }
             } else {
                 // If we have no partial hash data for this piece we could be doing a full
                 // hash check, so let's create a IncrementalHashData for our piece!
                 incrementalHash = IncrementalHashCache.Dequeue ();
-                incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -253,17 +261,17 @@ namespace MonoTorrent.Client
             if (WriteQueue.Count > 0)
                 await WaitForPendingWrites ();
 
+            using var releaser = await incrementalHash.Locker.EnterAsync ();
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
-            long startOffset = incrementalHash.NextOffsetToHash;
-            long endOffset = Math.Min ((long) manager.PieceLength * (pieceIndex + 1), manager.Size);
-
-            using (DiskManager.BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
+            int startOffset = incrementalHash.NextOffsetToHash;
+            int endOffset = manager.BytesPerPiece (pieceIndex);
+            using (BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
                 try {
                     SHA1 hasher = incrementalHash.Hasher;
 
                     while (startOffset != endOffset) {
                         int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
-                        if (!await ReadAsync (manager, startOffset, hashBuffer, count).ConfigureAwait (false))
+                        if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false))
                             return null;
                         startOffset += count;
                         hasher.TransformBlock (hashBuffer, 0, count, hashBuffer, 0);
@@ -279,11 +287,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTask WaitForPendingWrites ()
+        async ReusableTask<bool> WaitForPendingWrites ()
         {
             var tcs = new ReusableTaskCompletionSource<bool> ();
-            WriteQueue.Enqueue (new BufferedIO (null, -1, null, -1, tcs));
-            await tcs.Task;
+            WriteQueue.Enqueue (new BufferedIO (null, default, null, false, tcs));
+            await ProcessBufferedIOAsync ();
+            return await tcs.Task;
         }
 
         internal async Task CloseFilesAsync (ITorrentData manager)
@@ -293,8 +302,7 @@ namespace MonoTorrent.Client
             // Process all pending reads/writes then close any open streams
             await ProcessBufferedIOAsync (true);
             foreach (var file in manager.Files)
-                using (await file.Locker.EnterAsync ())
-                    await Writer.CloseAsync (file);
+                await Cache.Writer.CloseAsync (file);
         }
 
         /// <summary>
@@ -305,7 +313,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public Task FlushAsync (ITorrentData manager)
         {
-            return FlushAsync (manager, -1);
+            return FlushAsync (manager, 0, manager.PieceCount () - 1);
         }
 
         /// <summary>
@@ -313,18 +321,24 @@ namespace MonoTorrent.Client
         /// flushes that file to disk. Typically a <see cref="TorrentManager"/> will be passed to this method.
         /// </summary>
         /// <param name="manager">The torrent containing the files to flush</param>
-        /// <param name="pieceIndex">The index of the piece to flush.</param>
+        /// <param name="startIndex">The first index of the piece to flush.</param>
+        /// <param name="endIndex">The final index of the piece to flush.</param>
         /// <returns></returns>
-        public async Task FlushAsync (ITorrentData manager, int pieceIndex)
+        public async Task FlushAsync (ITorrentData manager, int startIndex, int endIndex)
         {
             if (manager is null)
                 throw new ArgumentNullException (nameof (manager));
             await IOLoop;
 
-            await WaitForPendingWrites ();
-            foreach (var file in manager.Files) {
-                if (pieceIndex == -1 || (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex))
-                    await Writer.FlushAsync (file);
+            if (WriteQueue.Count > 0)
+                await WaitForPendingWrites ();
+
+            var firstFile = IPieceWriterExtensions.FindFileByPieceIndex (manager.Files, startIndex);
+            for (int i = firstFile; i < manager.Files.Count; i ++) {
+                if (manager.Files[i].StartPieceIndex <= endIndex)
+                    await Cache.Writer.FlushAsync (manager.Files[i]);
+                else
+                    break;
             }
         }
 
@@ -333,7 +347,7 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             newPath = Path.GetFullPath (newPath);
-            await Writer.MoveAsync (file, newPath, false);
+            await Cache.Writer.MoveAsync (file, newPath, false);
             file.FullPath = newPath;
         }
 
@@ -343,93 +357,95 @@ namespace MonoTorrent.Client
 
             foreach (TorrentFileInfo file in manager.Files) {
                 string newPath = Path.Combine (newRoot, file.Path);
-                await Writer.MoveAsync (file, newPath, overwrite);
+                if (await Cache.Writer.ExistsAsync (file)) {
+                    await Cache.Writer.MoveAsync (file, newPath, overwrite);
+                }
                 file.FullPath = newPath;
             }
         }
 
-        internal async ReusableTask<bool> ReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        internal async ReusableTask<bool> ReadAsync (ITorrentData manager, BlockInfo request, byte[] buffer)
         {
-            Interlocked.Add (ref pendingReads, count);
+            Interlocked.Add (ref pendingReadBytes, request.RequestLength);
 
             await IOLoop;
 
-            if (ReadLimiter.TryProcess (count)) {
-                try {
-                    return await DoReadAsync (manager, offset, buffer, count);
-                } finally {
-                    Interlocked.Add (ref pendingReads, -count);
+            try {
+                if (ReadLimiter.TryProcess (request.RequestLength)) {
+                    return await Cache.ReadAsync (manager, request, buffer).ConfigureAwait (false) == request.RequestLength;
+                } else {
+                    var tcs = new ReusableTaskCompletionSource<bool> ();
+                    ReadQueue.Enqueue (new BufferedIO (manager, request, buffer, false, tcs));
+                    return await tcs.Task.ConfigureAwait (false);
                 }
-            } else {
-                var tcs = new ReusableTaskCompletionSource<bool> ();
-                ReadQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
-                return await tcs.Task;
+            } finally {
+                Interlocked.Add (ref pendingReadBytes, -request.RequestLength);
             }
         }
 
-        internal async ReusableTask WriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        internal async Task<bool> ReadAsync (ITorrentFileInfo file, long position, byte[] buffer, int offset, int count)
         {
-            if (count < 1)
-                throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
+            await IOLoop;
+            return await Cache.Writer.ReadAsync (file, position, buffer, offset, count) == count;
+        }
 
-            Interlocked.Add (ref pendingWrites, count);
+        internal async ReusableTask WriteAsync (ITorrentData manager, BlockInfo request, byte[] buffer)
+        {
+            if (request.RequestLength < 1)
+                throw new ArgumentOutOfRangeException (nameof (request.RequestLength), $"Count must be greater than zero, but was {request.RequestLength}.");
+
+            Interlocked.Add (ref pendingWriteBytes, request.RequestLength);
+
             await IOLoop;
 
-            int pieceIndex = (int) (offset / manager.PieceLength);
-            long pieceStart = (long) pieceIndex * manager.PieceLength;
-            long pieceEnd = pieceStart + manager.PieceLength;
-
-            if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && offset == pieceStart) {
-                incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
-                incrementalHash.NextOffsetToHash = (long) manager.PieceLength * pieceIndex;
-            }
-
-            ReusableTaskCompletionSource<bool> tcs = null;
-            ReusableTask writeTask = default;
-            if (WriteLimiter.TryProcess (count)) {
-                try {
-                    writeTask = DoWriteAsync (manager, offset, buffer, count);
-                } catch {
-                    Interlocked.Add (ref pendingWrites, -count);
-                    throw;
+            try {
+                int pieceIndex = request.PieceIndex;
+                if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
+                    incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
                 }
-            } else {
-                tcs = new ReusableTaskCompletionSource<bool> ();
-                WriteQueue.Enqueue (new BufferedIO (manager, offset, buffer, count, tcs));
-            }
 
-            if (incrementalHash != null) {
-                // Incremental hashing does not perform proper bounds checking to ensure
-                // that pieces are correctly incrementally hashed even if 'count' is greater
-                // than the PieceLength. This should never happen under normal operation, but
-                // unit tests do it for convenience sometimes. Keep things safe by cancelling
-                // incremental hashing if that occurs.
-                if ((incrementalHash.NextOffsetToHash + count) > pieceEnd) {
-                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
-                } else if (incrementalHash.NextOffsetToHash == offset) {
-                    await MainLoop.SwitchThread ();
-                    incrementalHash.Hasher.TransformBlock (buffer, 0, count, buffer, 0);
-                    if (incrementalHash.NextOffsetToHash + count == (long) manager.PieceLength * (pieceIndex + 1)
-                        || incrementalHash.NextOffsetToHash + count == manager.Size) {
-                        incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+                ReusableTaskCompletionSource<bool> tcs = null;
+                ReusableTask writeTask = default;
+
+                using (incrementalHash == null ? default : await incrementalHash.Locker.EnterAsync ()) {
+                    bool canIncrementallyHash = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
+
+                    // If we can incrementally hash the data, instruct the cache to write the block straight through
+                    // to the IPieceWriter, so it is not stored in the in-memory cache.
+                    if (WriteLimiter.TryProcess (request.RequestLength)) {
+                        writeTask = Cache.WriteAsync (manager, request, buffer, canIncrementallyHash);
+                    } else {
+                        tcs = new ReusableTaskCompletionSource<bool> ();
+                        WriteQueue.Enqueue (new BufferedIO (manager, request, buffer, canIncrementallyHash, tcs));
                     }
-                    incrementalHash.NextOffsetToHash += count;
-                }
-            }
 
-            if (tcs != null)
-                await tcs.Task.ConfigureAwait (false);
-            else {
-                try {
-                    await writeTask.ConfigureAwait (false);
-                } finally {
-                    Interlocked.Add (ref pendingWrites, -count);
+                    if (canIncrementallyHash) {
+                        // Yield the thread we're currently on so that the next 'WriteAsync' invocation can begin
+                        // to process. If it's for a different piece it will run concurrently with the remainder of
+                        // this method.
+                        await MainLoop.SwitchToThreadpool ();
+                        incrementalHash.Hasher.TransformBlock (buffer, 0, request.RequestLength, buffer, 0);
+                        incrementalHash.NextOffsetToHash += request.RequestLength;
+
+                        if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex))
+                            incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
+                    }
                 }
+
+
+                if (tcs != null)
+                    await tcs.Task.ConfigureAwait (false);
+                else
+                    await writeTask.ConfigureAwait (false);
+            } finally {
+                Interlocked.Add (ref pendingWriteBytes, -request.RequestLength);
             }
         }
 
         async ReusableTask ProcessBufferedIOAsync (bool force = false)
         {
+            await IOLoop;
+
             BufferedIO io;
 
             while (WriteQueue.Count > 0) {
@@ -442,17 +458,13 @@ namespace MonoTorrent.Client
                     continue;
                 }
 
-                if (!force && !WriteLimiter.TryProcess (io.count))
+                if (!force && !WriteLimiter.TryProcess (io.request.RequestLength))
                     break;
 
                 io = WriteQueue.Dequeue ();
 
                 try {
-                    try {
-                        await DoWriteAsync (io.manager, io.offset, io.buffer, io.count);
-                    } finally {
-                        Interlocked.Add (ref pendingWrites, -io.count);
-                    }
+                    await Cache.WriteAsync (io.manager, io.request, io.buffer, io.preferSkipCache);
                     io.tcs.SetResult (true);
                 } catch (Exception ex) {
                     io.tcs.SetException (ex);
@@ -460,80 +472,17 @@ namespace MonoTorrent.Client
             }
 
             while (ReadQueue.Count > 0) {
-                if (!force && !ReadLimiter.TryProcess (ReadQueue.Peek ().count))
+                if (!force && !ReadLimiter.TryProcess (ReadQueue.Peek ().request.RequestLength))
                     break;
 
                 io = ReadQueue.Dequeue ();
 
                 try {
-                    Interlocked.Add (ref pendingReads, -io.count);
-                    bool result = await DoReadAsync (io.manager, io.offset, io.buffer, io.count);
+                    bool result = await Cache.ReadAsync (io.manager, io.request, io.buffer) == io.request.RequestLength;
                     io.tcs.SetResult (result);
                 } catch (Exception ex) {
                     io.tcs.SetException (ex);
                 }
-            }
-        }
-
-        static readonly Func<ITorrentFileInfo, (long offset, int pieceLength), int> Comparator = (file, offsetAndPieceLength) => {
-            // Force these two be longs right at the start so we don't overflow
-            // int32s when dealing with large torrents.
-            (long offset, long pieceLength) = offsetAndPieceLength;
-            var fileStart = (long) file.StartPieceIndex * pieceLength + file.StartPieceOffset;
-            var fileEnd = fileStart + file.Length;
-            if (offset >= fileStart && offset < fileEnd)
-                return 0;
-            if (offset >= fileEnd)
-                return -1;
-            else
-                return 1;
-        };
-
-        public static int FindFileIndex (IList<ITorrentFileInfo> files, long offset, int pieceLength)
-        {
-            return files.BinarySearch (Comparator, (offset, pieceLength));
-        }
-
-        async ReusableTask<bool> DoReadAsync (ITorrentData manager, long offset, byte[] buffer, int count)
-        {
-            ReadMonitor.AddDelta (count);
-
-            if (count < 1)
-                throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
-
-            if (offset < 0 || offset + count > manager.Size)
-                throw new ArgumentOutOfRangeException (nameof (offset));
-
-            int totalRead = 0;
-            var files = manager.Files;
-            int i = FindFileIndex (files, offset, manager.PieceLength);
-            offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
-
-            while (totalRead < count) {
-                int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
-                fileToRead = Math.Min (fileToRead, Piece.BlockSize);
-
-                if (fileToRead != await ReadFromFileAsync (files[i], offset, buffer, totalRead, fileToRead))
-                    return false;
-
-                offset += fileToRead;
-                totalRead += fileToRead;
-                if (offset >= files[i].Length) {
-                    offset = 0;
-                    i++;
-                }
-            }
-
-            return true;
-        }
-
-        async ReusableTask<int> ReadFromFileAsync (ITorrentFileInfo torrentFile, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            await torrentFile.Locker.WaitAsync ();
-            try {
-                return await Writer.ReadAsync (torrentFile, offset, buffer, bufferOffset, count);
-            } finally {
-                torrentFile.Locker.Release ();
             }
         }
 
@@ -559,6 +508,15 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal async ReusableTask Tick (int delta)
         {
+            // The tests sometimes set the rate limit to 1kB/sec, then they tick
+            // time forwards, and they ensure no data is actually written. If the
+            // test fixture has called ReadAsync/WriteAsync, we want to ensure the
+            // tick executes *after* they are processed to avoid having a race condition
+            // where the tests enqueues things assuming the rate limit is 1kB/sec and so
+            // the pieces won't be written, but then they *are* actually written because
+            // UpdateChunks is invoked before the IO thread loops.
+            // By forcing this to occur on the IO loop for the tests, that race condition
+            // is eliminated. In the real world this is a threadsafe update so it's fine!
             await IOLoop;
             await Tick (delta, true);
         }
@@ -567,8 +525,8 @@ namespace MonoTorrent.Client
         {
             UpdateTimer.Restart ();
 
-            ReadMonitor.Tick (delta);
-            WriteMonitor.Tick (delta);
+            Cache.ReadMonitor.Tick (delta);
+            Cache.WriteMonitor.Tick (delta);
 
             WriteLimiter.UpdateChunks (Settings.MaximumDiskWriteRate, WriteRate);
             ReadLimiter.UpdateChunks (Settings.MaximumDiskReadRate, ReadRate);
@@ -577,34 +535,19 @@ namespace MonoTorrent.Client
             return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
         }
 
-        async ReusableTask DoWriteAsync (ITorrentData manager, long offset, byte[] buffer, int count)
+        internal async ReusableTask UpdateSettingsAsync (EngineSettings settings)
         {
-            WriteMonitor.AddDelta (count);
+            await IOLoop;
 
-            if (offset < 0 || offset + count > manager.Size)
-                throw new ArgumentOutOfRangeException (nameof (offset));
+            var oldSettings = Settings;
+            Settings = settings;
 
-            int totalWritten = 0;
-            var files = manager.Files;
-            int i = FindFileIndex (files, offset, manager.PieceLength);
-            offset -= (long) files[i].StartPieceIndex * manager.PieceLength + files[i].StartPieceOffset;
+            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles && Cache.Writer is DiskWriter dr) {
+                dr.UpdateMaximumOpenFiles (settings.MaximumOpenFiles);
+            }
 
-            while (totalWritten < count) {
-                int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
-                fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
-
-                await files[i].Locker.WaitAsync ();
-                try {
-                    await Writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
-                } finally {
-                    files[i].Locker.Release ();
-                }
-                offset += fileToWrite;
-                totalWritten += fileToWrite;
-                if (offset >= files[i].Length) {
-                    offset = 0;
-                    i++;
-                }
+            if (oldSettings.DiskCacheBytes != settings.DiskCacheBytes) {
+                Cache.Capacity = settings.DiskCacheBytes;
             }
         }
     }

@@ -30,25 +30,67 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPieceRequester
+    public partial class PeerId : IPeerWithMessaging
     {
-        int IPieceRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
-        List<int> IPieceRequester.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool IPieceRequester.IsChoking => IsChoking;
-        TimeSpan IPieceRequester.TimeSinceLastMessageReceived => LastMessageReceived.Elapsed;
-        int IPieceRequester.RepeatedHashFails => Peer.RepeatedHashFails;
-        List<int> IPieceRequester.SuggestedPieces => SuggestedPieces;
-        bool IPieceRequester.SupportsFastPeer => SupportsFastPeer;
-        int IPieceRequester.TotalHashFails => Peer.TotalHashFails;
+        int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        bool IPeer.CanRequestMorePieces {
+            get {
+                if (Connection is Connections.HttpConnection) {
+                    return AmRequestingPiecesCount == 0;
+                } else {
+                    return AmRequestingPiecesCount < MaxPendingRequests;
+                }
+            }
+        }
+        long IPeer.DownloadSpeed => Monitor.DownloadSpeed;
+        List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
+        bool IPeer.IsChoking => IsChoking;
+        int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;
+        List<int> IPeer.SuggestedPieces => SuggestedPieces;
+        bool IPeer.CanCancelRequests => SupportsFastPeer;
+        int IPeer.TotalHashFails => Peer.TotalHashFails;
+        int IPeer.MaxPendingRequests => MaxPendingRequests;
 
-        void IPieceRequester.Cancel (int pieceIndex, int pieceOffset, int requestLength)
+        void IPeerWithMessaging.EnqueueRequest (BlockInfo request)
         {
-            MessageQueue.Enqueue (new CancelMessage (pieceIndex, pieceOffset, requestLength));
+            MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
+        void IPeerWithMessaging.EnqueueRequests (IList<BlockInfo> requests)
+        {
+            MessageQueue.Enqueue (new RequestBundle (requests));
+        }
+
+        void IPeerWithMessaging.EnqueueCancellation (BlockInfo request)
+        {
+            MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+        }
+
+        void IPeerWithMessaging.EnqueueCancellations (IList<BlockInfo> requests)
+        {
+            for (int i = 0; i < requests.Count; i++)
+                MessageQueue.Enqueue (new CancelMessage (requests[i].PieceIndex, requests[i].StartOffset, requests[i].RequestLength));
+        }
+
+        int IPeer.PreferredRequestAmount (int pieceLength)
+        {
+            if (Connection is Connections.HttpConnection) {
+                // How many whole pieces fit into 2MB
+                var count = (2 * 1024 * 1024) / pieceLength;
+
+                // Make sure we have at least one whole piece
+                count = Math.Max (count, 1);
+
+                return count * (pieceLength / Piece.BlockSize);
+            } else {
+                return 1;
+            }
         }
     }
 }

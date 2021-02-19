@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Modes
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
                 Manager.Monitor.Reset ();
-                Manager.PieceManager.Reset ();
+                Manager.PieceManager.Initialise ();
                 Manager.finishedPieces.Clear ();
 
                 var stoppingTasks = new List<Task> ();

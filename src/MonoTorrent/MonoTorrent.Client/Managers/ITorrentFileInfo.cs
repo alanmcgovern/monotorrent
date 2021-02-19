@@ -27,6 +27,7 @@
 //
 
 
+using System.Diagnostics;
 using System.Threading;
 
 namespace MonoTorrent.Client
@@ -34,10 +35,10 @@ namespace MonoTorrent.Client
 
     public interface ITorrentFileInfo : ITorrentFile
     {
+        // FIXME: make BitField readonly.
         BitField BitField { get; }
         string FullPath { get; }
         Priority Priority { get; set; }
-        SemaphoreSlim Locker { get; }
 
         (int startPiece, int endPiece) GetSelector ();
     }

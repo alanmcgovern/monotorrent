@@ -55,15 +55,14 @@ namespace MonoTorrent.Client.Modes
             PieceWriter = new TestWriter ();
             TrackerManager = new ManualTrackerManager ();
 
-            int[] fileSizes = {
+            long[] fileSizes = {
                 Piece.BlockSize / 2,
                 Piece.BlockSize * 32,
                 Piece.BlockSize * 2,
                 Piece.BlockSize * 13,
             };
-            Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
+            Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2, writer: PieceWriter);
             Manager.SetTrackerManager (TrackerManager);
-            Manager.Engine.DiskManager.Writer = PieceWriter;
 
             Settings = Manager.Engine.Settings;
             DiskManager = Manager.Engine.DiskManager;
@@ -199,7 +198,7 @@ namespace MonoTorrent.Client.Modes
 
             var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = hashingMode;
-            await hashingMode.WaitForHashingToComplete ();
+            await hashingMode.WaitForHashingToComplete ().WithTimeout ();
 
             Manager.PieceManager.AddPieceRequests (Peer);
             Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1");

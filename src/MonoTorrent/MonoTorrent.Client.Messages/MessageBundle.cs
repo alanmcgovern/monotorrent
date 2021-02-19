@@ -55,13 +55,6 @@ namespace MonoTorrent.Client.Messages
             Messages.Add (message);
         }
 
-        internal MessageBundle (IList<PieceRequest> requests)
-            : this ()
-        {
-            foreach (PieceRequest m in requests)
-                Messages.Add (new RequestMessage (m.PieceIndex, m.StartOffset, m.RequestLength));
-        }
-
         public override int ByteLength {
             get {
                 int total = 0;
@@ -83,7 +76,7 @@ namespace MonoTorrent.Client.Messages
             for (int i = 0; i < Messages.Count; i++)
                 written += Messages[i].Encode (buffer, written);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
     }
 }

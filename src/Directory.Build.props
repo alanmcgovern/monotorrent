@@ -3,6 +3,8 @@
 
   <PropertyGroup>
     <LangVersion>8.0</LangVersion>
+	<DebugType>portable</DebugType>
+	<DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
 </Project>

@@ -28,6 +28,7 @@
 
 
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -43,8 +44,20 @@ namespace MonoTorrent.Client.Modes
 
             // Ensure the state is correct. We should either be downloading or seeding based on
             // the files whose priority is not set to 'DoNotDownload'.
-            state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
-            UpdateSeedingDownloadingState ();
+            if (manager.Complete) {
+                state = TorrentState.Seeding;
+            } else {
+                state = TorrentState.Downloading;
+
+                UpdatePartialProgress ();
+                if (Manager.PartialProgressSelector.TrueCount > 0) {
+                    // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
+                    // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
+                    if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) == Manager.PartialProgressSelector.TrueCount && state == TorrentState.Downloading) {
+                        state = TorrentState.Seeding;
+                    }
+                }
+            }
         }
 
         public override void HandlePeerConnected (PeerId id)
@@ -63,7 +76,7 @@ namespace MonoTorrent.Client.Modes
         {
             base.Tick (counter);
 
-            UpdateSeedingDownloadingState ();
+            _ = UpdateSeedingDownloadingState ();
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 if (!ShouldConnect (Manager.Peers.ConnectedPeers[i])) {
@@ -73,23 +86,28 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        internal void UpdateSeedingDownloadingState ()
+        internal async Task UpdateSeedingDownloadingState ()
         {
             UpdatePartialProgress ();
 
             //If download is fully complete, set state to 'Seeding' and send an announce to the tracker.
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;
+                await Task.WhenAll (
+                    Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None).AsTask (),
+                    DiskManager.FlushAsync (Manager)
+                );
                 Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
-                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None);
             } else if (Manager.PartialProgressSelector.TrueCount > 0) {
                 // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
                 // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
                 if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) == Manager.PartialProgressSelector.TrueCount && state == TorrentState.Downloading) {
                     state = TorrentState.Seeding;
+                    await DiskManager.FlushAsync (Manager);
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
                 } else if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) < Manager.PartialProgressSelector.TrueCount && state == TorrentState.Seeding) {
                     state = TorrentState.Downloading;
+                    await DiskManager.FlushAsync (Manager);
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Seeding, TorrentState.Downloading));
                 }
             }

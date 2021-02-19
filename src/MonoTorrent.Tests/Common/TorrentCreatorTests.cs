@@ -28,7 +28,7 @@ namespace MonoTorrent.Common
     {
         const string Comment = "My Comment";
         const string CreatedBy = "Created By MonoTorrent";
-        const int PieceLength = 64 * 1024;
+        const long PieceLength = 64 * 1024;
         const string Publisher = "My Publisher";
         const string PublisherUrl = "www.mypublisher.com";
         readonly BEncodedString CustomKey = "Custom Key";
@@ -66,11 +66,11 @@ namespace MonoTorrent.Common
             creator.PublisherUrl = PublisherUrl;
             creator.SetCustom (CustomKey, CustomValue);
             files = new List<TorrentCreator.InputFile> {
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (int)(PieceLength * 2.30)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (int)(PieceLength * 36.5)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir2", "File3"), (int)(PieceLength * 3.17)),
-                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir1", "File4"), (int)(PieceLength * 1.22)),
-                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir2", "File5"), (int)(PieceLength * 6.94)),
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength * 2.30)),
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 36.5)),
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir2", "File3"), (long)(PieceLength * 3.17)),
+                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir1", "File4"), (long)(PieceLength * 1.22)),
+                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir2", "File5"), (long)(PieceLength * 6.94)),
             };
         }
 

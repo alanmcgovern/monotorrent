@@ -120,8 +120,7 @@ namespace MonoTorrent.Dht
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            var task = new InitialiseTask (this, Node.FromCompactNode (nodes));
-            _ = task.ExecuteAsync ();
+            InitializeAsync (Node.FromCompactNode (nodes));
         }
 
         internal void Add (IEnumerable<Node> nodes)
@@ -191,13 +190,9 @@ namespace MonoTorrent.Dht
             }
         }
 
-        async void InitializeAsync (byte[] initialNodes)
+        async void InitializeAsync (IEnumerable<Node> nodes)
         {
-            if (initialNodes == null) {
-                initialNodes = Array.Empty<byte> ();
-            }
-
-            var initTask = new InitialiseTask (this, Node.FromCompactNode (initialNodes));
+            var initTask = new InitialiseTask (this, nodes);
             await initTask.ExecuteAsync ();
             RaiseStateChanged (DhtState.Ready);
         }
@@ -209,8 +204,10 @@ namespace MonoTorrent.Dht
 
         void RaiseStateChanged (DhtState newState)
         {
-            State = newState;
-            StateChanged?.Invoke (this, EventArgs.Empty);
+            if (State != newState) {
+                State = newState;
+                StateChanged?.Invoke (this, EventArgs.Empty);
+            }
         }
 
         internal async Task RefreshBuckets ()
@@ -280,7 +277,7 @@ namespace MonoTorrent.Dht
             MessageLoop.Start ();
             if (RoutingTable.NeedsBootstrap) {
                 RaiseStateChanged (DhtState.Initialising);
-                InitializeAsync (initialNodes);
+                InitializeAsync (Node.FromCompactNode (initialNodes ?? Array.Empty<byte> ()));
             } else {
                 RaiseStateChanged (DhtState.Ready);
             }
@@ -320,6 +317,10 @@ namespace MonoTorrent.Dht
             StateChanged += handler;
             await tcs.Task;
         }
+
+        public void SetListener (IDhtListener listener)
+            =>  MessageLoop.SetListener (listener);
+
         #endregion Methods
     }
 }

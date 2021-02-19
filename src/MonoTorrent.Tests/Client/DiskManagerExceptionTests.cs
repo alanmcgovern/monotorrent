@@ -111,18 +111,19 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            var files = new [] {
-                new TorrentFileInfo (new TorrentFile ("First",  Piece.BlockSize / 2)),
-                new TorrentFileInfo (new TorrentFile ("Second", Piece.BlockSize)),
-                new TorrentFileInfo (new TorrentFile ("Third",  Piece.BlockSize + Piece.BlockSize / 2)),
-                new TorrentFileInfo (new TorrentFile ("Fourth", Piece.BlockSize * 2 + Piece.BlockSize / 2)),
-            };
+            var pieceLength = Piece.BlockSize * 2;
+            var files = TorrentFileInfo.Create (pieceLength,
+                Piece.BlockSize / 2,
+                Piece.BlockSize,
+                Piece.BlockSize + Piece.BlockSize / 2,
+                Piece.BlockSize * 2 + Piece.BlockSize / 2
+            );
 
             buffer = new byte[Piece.BlockSize];
             data = new TestTorrentData {
                 Files = files,
                 Size = files.Sum (f => f.Length),
-                PieceLength = Piece.BlockSize * 2
+                PieceLength = pieceLength
             };
 
             writer = new ExceptionWriter ();
@@ -168,14 +169,14 @@ namespace MonoTorrent.Client
         public void ReadFail ()
         {
             writer.read = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, 0, buffer, buffer.Length).AsTask ());
+            Assert.ThrowsAsync<Exception> (() => diskManager.ReadAsync (data, new BlockInfo (0, 0, Piece.BlockSize), buffer).AsTask ());
         }
 
         [Test]
         public void WriteFail ()
         {
             writer.write = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync (data, 0, buffer, buffer.Length).AsTask ());
+            Assert.ThrowsAsync<Exception> (() => diskManager.WriteAsync (data, new BlockInfo (0, 0, Piece.BlockSize), buffer).AsTask ());
         }
     }
 }

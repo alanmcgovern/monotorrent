@@ -29,9 +29,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MonoTorrent.Client;
@@ -46,7 +44,7 @@ namespace MonoTorrent.Streaming
     {
         LocalStream ActiveStream { get; set; }
         ClientEngine Engine { get; }
-        StreamingPiecePicker Picker { get; }
+        internal StreamingPieceRequester Requester { get; }
 
         /// <summary>
         /// Returns true when the <see cref="StreamProvider"/> has been started.
@@ -92,7 +90,7 @@ namespace MonoTorrent.Streaming
         {
             Engine = engine;
             Manager = new TorrentManager (torrent, saveDirectory);
-            Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
+            Manager.ChangePicker (Requester = new StreamingPieceRequester ());
             Files = Manager.Files;
         }
 
@@ -111,14 +109,12 @@ namespace MonoTorrent.Streaming
             Engine = engine;
             var path = Path.Combine (metadataSaveDirectory, $"{magnetLink.InfoHash.ToHex ()}.torrent");
             Manager = new TorrentManager (magnetLink, saveDirectory, new TorrentSettings (), path);
-            Manager.ChangePicker (Picker = new StreamingPiecePicker (new StandardPicker ()));
+            Manager.ChangePicker (Requester = new StreamingPieceRequester ());
 
             // If the metadata for this MagnetLink has been downloaded/cached already, we will synchronously
             // load it here and will have access to the list of Files. Otherwise we need to wait.
             if (Manager.HasMetadata)
                 Files = Manager.Files;
-            else
-                Manager.MetadataReceived += (o, e) => Files = Manager.Files;
         }
 
         /// <summary>
@@ -245,17 +241,18 @@ namespace MonoTorrent.Streaming
             if (ActiveStream != null && !ActiveStream.Disposed)
                 throw new InvalidOperationException ("You must Dispose the previous stream before creating a new one.");
 
-            Picker.SeekToPosition (file, 0);
-            ActiveStream = new LocalStream (Manager, file, Picker);
+            ActiveStream = new LocalStream (Manager, file, Requester);
 
             var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
             if (prebuffer) {
-                ActiveStream.Seek (ActiveStream.Length - 1, SeekOrigin.Begin);
+                ActiveStream.Seek (ActiveStream.Length - Manager.PieceLength * 2, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
 
                 ActiveStream.Seek (0, SeekOrigin.Begin);
                 await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
             }
+
+            ActiveStream.Seek (0, SeekOrigin.Begin);
             return ActiveStream;
         }
 
@@ -329,19 +326,25 @@ namespace MonoTorrent.Streaming
             await ClientEngine.MainLoop;
             token.ThrowIfCancellationRequested ();
 
+            if (Manager.HasMetadata) {
+                Files = Manager.Files;
+                return;
+            }
+
             // Cancel if the user call StopAsync or if they cancel the token they passed in
             var cts = CancellationTokenSource.CreateLinkedTokenSource (token, Cancellation.Token);
 
-            // If the files still aren't available then let's wait for the metadata
-            // to be downloaded.
-            if (Files == null) {
-                var tcs = new TaskCompletionSource<bool> ();
-                using var reg = cts.Token.Register (() => tcs.TrySetCanceled ());
-                // The EventHandler set during StartAsync will ensure the list of
-                // files has been set.
-                Manager.MetadataReceived += (o, e) => tcs.TrySetResult (true);
+            var tcs = new TaskCompletionSource<bool> ();
+            using var reg = cts.Token.Register (() => tcs.TrySetCanceled ());
+            EventHandler<byte[]> metadataReceivedHandler = (o, e) => tcs.TrySetResult (true);
+            Manager.MetadataReceived += metadataReceivedHandler;
+            try {
                 await tcs.Task;
+            } finally {
+                Manager.MetadataReceived -= metadataReceivedHandler;
             }
+
+            Files = Manager.Files ?? throw new InvalidOperationException ("Internal error: The list of files should not be null after metadata has been received");
         }
     }
 }

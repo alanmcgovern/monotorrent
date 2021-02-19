@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.RateLimiters
 
         DiskManager Manager { get; }
 
-        public bool Unlimited => Manager.PendingWrites < MaxPendingWriteBytes;
+        public bool Unlimited => Manager.PendingWriteBytes < MaxPendingWriteBytes;
 
         public DiskWriterLimiter (DiskManager manager)
         {

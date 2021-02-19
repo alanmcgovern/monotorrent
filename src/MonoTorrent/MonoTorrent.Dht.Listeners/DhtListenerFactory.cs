@@ -27,12 +27,15 @@
 //
 
 
+using System;
 using System.Net;
 
 namespace MonoTorrent.Dht.Listeners
 {
     public static class DhtListenerFactory
     {
+        internal static Func<IPEndPoint, IDhtListener> Creator = (endpoint) => new DhtListener (endpoint);
+
         /// <summary>
         /// Creates a listener which binds to IPAddress.Any and listens for incoming UDP requests on the given local port.
         /// </summary>
@@ -51,6 +54,8 @@ namespace MonoTorrent.Dht.Listeners
         /// <returns></returns>
         public static IDhtListener CreateUdp (IPAddress address, int port)
         {
+            if (port == -1)
+                return new NullDhtListener ();
             return CreateUdp (new IPEndPoint (address, port));
         }
 
@@ -61,7 +66,7 @@ namespace MonoTorrent.Dht.Listeners
         /// <returns></returns>
         public static IDhtListener CreateUdp (IPEndPoint endpoint)
         {
-            return new DhtListener (endpoint);
+            return Creator (endpoint);
         }
     }
 }

@@ -84,12 +84,12 @@ namespace MonoTorrent.BEncoding
             return written;
         }
 
-        public static BEncodedDictionary DecodeTorrent (byte[] bytes)
+        public static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (byte[] bytes)
         {
             return DecodeTorrent (new MemoryStream (bytes));
         }
 
-        public static BEncodedDictionary DecodeTorrent (Stream s)
+        public static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (Stream s)
         {
             return DecodeTorrent (new RawReader (s));
         }
@@ -100,7 +100,7 @@ namespace MonoTorrent.BEncoding
         /// overall torrent file, but imposes strict rules on the info dictionary.
         /// </summary>
         /// <returns></returns>
-        public static BEncodedDictionary DecodeTorrent (RawReader reader)
+        public static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (RawReader reader)
         {
             return BEncodeDecoder.DecodeTorrent (reader);
         }

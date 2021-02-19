@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PieceWriters
         static readonly Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> DefaultStreamCreator =
             (file, access) => new TorrentFileStream (file.FullPath, access);
 
-        readonly SemaphoreSlim Limiter;
+        SemaphoreSlim Limiter { get; set; }
 
         public int OpenFiles => StreamCache.Count;
 
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
                 await MainLoop.SwitchToThreadpool ();
                 if (rented.Stream.Length < offset + count)
@@ -115,6 +115,7 @@ namespace MonoTorrent.Client.PieceWriters
 
                 if (rented.Stream.Position != offset)
                     await rented.Stream.SeekAsync (offset);
+
                 return await rented.Stream.ReadAsync (buffer, bufferOffset, count);
             }
         }
@@ -128,7 +129,7 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetStreamAsync (file, FileAccess.ReadWrite);
+                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
 
                 // FileStream.WriteAsync does some work synchronously, according to the profiler.
                 // It looks like if the file is too small it is expanded (SetLength is called)
@@ -136,9 +137,14 @@ namespace MonoTorrent.Client.PieceWriters
                 //
                 // We also want the Seek operation to execute on the threadpool.
                 await MainLoop.SwitchToThreadpool ();
-                await rented.Stream.SeekAsync (offset);
+                await rented.Stream.SeekAsync (offset).ConfigureAwait (false);
                 await rented.Stream.WriteAsync (buffer, bufferOffset, count).ConfigureAwait (false);
             }
+        }
+
+        internal void UpdateMaximumOpenFiles (int maximumOpenFiles)
+        {
+            Limiter = new SemaphoreSlim (maximumOpenFiles);
         }
     }
 }

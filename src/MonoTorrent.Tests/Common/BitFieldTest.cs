@@ -103,12 +103,11 @@ namespace MonoTorrent.Common
         [Test]
         public void FirstTrue ()
         {
-            Assert.AreEqual (0, bf.FirstTrue (0, bf.Length));
+            Assert.AreEqual (0, bf.FirstTrue (0, bf.Length - 1));
             Assert.AreEqual (0, bf.FirstTrue (0, 0));
-            Assert.AreEqual (-1, bf.FirstTrue (bf.Length, bf.Length));
-            Assert.AreEqual (11, bf.FirstTrue (bf.Length - 1, bf.Length - 1));
-            Assert.AreEqual (11, bf.FirstTrue (bf.Length - 1, bf.Length));
-            Assert.AreEqual (11, bf.FirstTrue (9, bf.Length));
+            Assert.AreEqual (11, bf.FirstTrue (bf.Length - 2, bf.Length - 1));
+            Assert.AreEqual (11, bf.FirstTrue (bf.Length - 1, bf.Length -1));
+            Assert.AreEqual (11, bf.FirstTrue (9, bf.Length - 1));
         }
 
         [Test]
@@ -116,7 +115,7 @@ namespace MonoTorrent.Common
         {
             BitField b = new BitField (1025);
             b[1024] = true;
-            Assert.AreEqual (1024, b.FirstTrue (0, 1025));
+            Assert.AreEqual (1024, b.FirstTrue (0, b.Length - 1));
         }
 
         [Test]

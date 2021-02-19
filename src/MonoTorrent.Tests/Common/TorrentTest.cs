@@ -328,15 +328,15 @@ namespace MonoTorrent.Common
         public void StartEndIndices ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = {
-                new TorrentFile ("File0", 0),
-                new TorrentFile ("File1", pieceLength),
-                new TorrentFile ("File2", 0),
-                new TorrentFile ("File3", pieceLength - 1),
-                new TorrentFile ("File4", 1),
-                new TorrentFile ("File5", 236),
-                new TorrentFile ("File6", pieceLength * 7)
-            };
+            TorrentFile[] files = TorrentFile.Create (pieceLength,
+                ("File0", 0),
+                ("File1", pieceLength),
+                ("File2", 0),
+                ("File3", pieceLength - 1),
+                ("File4", 1),
+                ("File5", 236),
+                ("File6", pieceLength * 7)
+            );
             Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#0a");
@@ -365,10 +365,10 @@ namespace MonoTorrent.Common
         public void StartEndIndices2 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = {
-                new TorrentFile ("File0", pieceLength),
-                new TorrentFile ("File1", 0)
-            };
+            TorrentFile[] files = TorrentFile.Create (pieceLength,
+                ("File0", pieceLength),
+                ("File1", 0)
+            );
             Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
@@ -382,10 +382,10 @@ namespace MonoTorrent.Common
         public void StartEndIndices3 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = {
-                new TorrentFile ("File0", pieceLength- 10),
-                new TorrentFile ("File1", 10)
-            };
+            TorrentFile[] files = TorrentFile.Create (pieceLength,
+                ("File0", pieceLength - 10),
+                ("File1", 10)
+            );
             Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
@@ -399,10 +399,10 @@ namespace MonoTorrent.Common
         public void StartEndIndices4 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = {
-                new TorrentFile ("File0", pieceLength- 10),
-                new TorrentFile ("File1", 11)
-            };
+            TorrentFile[] files = TorrentFile.Create (pieceLength,
+                ("File0", pieceLength- 10),
+                ("File1", 11)
+            );
             Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");
@@ -416,11 +416,11 @@ namespace MonoTorrent.Common
         public void StartEndIndices5 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = {
-                new TorrentFile ("File0", pieceLength- 10),
-                new TorrentFile ("File1", 10),
-                new TorrentFile ("File1", 1)
-            };
+            TorrentFile[] files = TorrentFile.Create (pieceLength,
+                ("File0", pieceLength - 10),
+                ("File1", 10),
+                ("File1", 1)
+            );
             Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);
 
             Assert.AreEqual (0, t.Files[0].StartPieceIndex, "#1");

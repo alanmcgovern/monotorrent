@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             written += Write (buffer, written, MessageId);
             written += Write (buffer, written, PieceIndex);
 
-            return CheckWritten (written - offset);
+            return written - offset;
         }
 
         public override void Decode (byte[] buffer, int offset, int length)

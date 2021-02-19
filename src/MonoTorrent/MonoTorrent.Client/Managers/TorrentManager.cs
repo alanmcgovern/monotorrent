@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        internal event EventHandler<(Torrent torrent, byte[] dict)> MetadataReceived;
+        internal event EventHandler<byte[]> MetadataReceived;
 
         /// <summary>
         /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
@@ -99,7 +99,6 @@ namespace MonoTorrent.Client
 
         bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
-        internal bool isInEndGame;       // Set true when the torrent enters end game processing
         Mode mode;
         readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
@@ -146,9 +145,9 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void RaiseMetadataReceived (Torrent torrent, BEncodedDictionary dict)
+        internal void RaiseMetadataReceived (byte[] metadata)
         {
-            MetadataReceived?.Invoke (this, (torrent, dict.Encode ()));
+            MetadataReceived?.Invoke (this, metadata);
         }
 
         /// <summary>
@@ -167,7 +166,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
         /// </summary>
-        public bool IsInEndGame => State == TorrentState.Downloading && isInEndGame;
+        public bool IsInEndGame => State == TorrentState.Downloading && PieceManager.InEndgameMode;
 
         public ConnectionMonitor Monitor { get; private set; }
 
@@ -254,7 +253,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The settings for with this TorrentManager
         /// </summary>
-        public TorrentSettings Settings { get; }
+        public TorrentSettings Settings { get; private set; }
 
         /// <summary>
         /// The current state of the TorrentManager
@@ -340,7 +339,7 @@ namespace MonoTorrent.Client
 
             InfoHash = infoHash;
             Settings = settings;
-            this.torrentSave = torrentSave;
+            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
 
             Initialise (savePath, announces);
         }
@@ -355,7 +354,7 @@ namespace MonoTorrent.Client
 
             InfoHash = magnetLink.InfoHash;
             Settings = settings;
-            this.torrentSave = torrentSave;
+            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Path.Combine (Environment.CurrentDirectory, "metadata", $"{InfoHash.ToHex ()}.torrent") : Path.GetFullPath (torrentSave);
             var announces = new List<IList<string>> ();
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
@@ -380,8 +379,6 @@ namespace MonoTorrent.Client
 
             Mode = new StoppedMode (this, null, null, null);
             CreateRateLimiters ();
-
-            ChangePicker (CreateStandardPicker ());
         }
 
         void CreateRateLimiters ()
@@ -404,13 +401,12 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        internal void ChangePicker (PiecePicker picker)
+        internal void ChangePicker (IPieceRequester requestManager)
         {
-            Check.Picker (picker);
-            IEnumerable<Piece> pieces = PieceManager.Picker?.ExportActiveRequests () ?? new List<Piece> ();
-            PieceManager.ChangePicker (picker, Bitfield);
-            if (Torrent != null)
-                PieceManager.Picker.Initialise (Bitfield, this, pieces);
+            if (requestManager == null)
+                throw new ArgumentNullException (nameof (requestManager));
+
+            PieceManager.ChangePicker (requestManager);
         }
 
         /// <summary>
@@ -418,7 +414,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="picker">The new picker to use.</param>
         /// <returns></returns>
-        public async Task ChangePickerAsync (PiecePicker picker)
+        public async Task ChangePickerAsync (IPieceRequester picker)
         {
             await ClientEngine.MainLoop;
             ChangePicker (picker);
@@ -592,8 +588,8 @@ namespace MonoTorrent.Client
             Files = Torrent.Files.Select (file =>
                 new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
-
-            PieceManager.RefreshPickerWithMetadata (Bitfield, this);
+            
+            PieceManager.Initialise ();
         }
 
         /// <summary>
@@ -695,6 +691,12 @@ namespace MonoTorrent.Client
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 await Engine.StopAsync ();
             }
+        }
+
+        public async Task UpdateSettingsAsync (TorrentSettings settings)
+        {
+            await ClientEngine.MainLoop;
+            Settings = settings;
         }
 
         #endregion
@@ -853,19 +855,6 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("This manager has not been registed with an Engine");
             if (Engine.Disposed)
                 throw new InvalidOperationException ("The registered engine has been disposed");
-        }
-
-        internal PiecePicker CreateStandardPicker ()
-        {
-            PiecePicker picker = new StandardPicker ();
-            picker = new RandomisedPicker (picker);
-            picker = new RarestFirstPicker (picker);
-
-            if (ClientEngine.SupportsEndgameMode)
-                picker = new EndGameSwitcher (picker, new EndGamePicker (), this);
-
-            picker = new PriorityPicker (picker);
-            return picker;
         }
 
         public void LoadFastResume (FastResume data)

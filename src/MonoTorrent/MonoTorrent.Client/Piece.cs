@@ -33,26 +33,29 @@ using System.Diagnostics;
 namespace MonoTorrent.Client
 {
     [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
-    public class Piece : IComparable<Piece>
+    class Piece : IComparable<Piece>
     {
         internal const int BlockSize = (1 << 14); // 16kB
-
-        #region Member Variables
-
-        #endregion MemberVariables
 
 
         #region Fields
 
         public Block this[int index] => Blocks[index];
 
+        /// <summary>
+        /// Set to true when the original peer times out sending a piece, disconnects, or chokes us.
+        /// This allows other peers to immediately begin downloading blocks from this piece to complete
+        /// it.
+        /// </summary>
+        internal bool Abandoned { get; set; }
+
         internal Block[] Blocks { get; set; }
 
-        public bool AllBlocksRequested => TotalRequested == BlockCount;
+        public bool AllBlocksRequested => TotalRequested == Blocks.Length;
 
-        public bool AllBlocksReceived => TotalReceived == BlockCount;
+        public bool AllBlocksReceived => TotalReceived == Blocks.Length;
 
-        public bool AllBlocksWritten => TotalWritten == BlockCount;
+        public bool AllBlocksWritten => TotalWritten == Blocks.Length;
 
         public int BlockCount => Blocks.Length;
 
@@ -71,44 +74,15 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal Piece (int pieceIndex, int pieceLength, long torrentSize)
+        internal Piece (int pieceIndex, int length)
         {
             Index = pieceIndex;
 
-            // Request last piece. Special logic needed
-            if ((torrentSize - (long) pieceIndex * pieceLength) < pieceLength)
-                LastPiece (pieceIndex, pieceLength, torrentSize);
-
-            else {
-                int numberOfPieces = (int) Math.Ceiling (((double) pieceLength / BlockSize));
-
-                Blocks = new Block[numberOfPieces];
-
-                for (int i = 0; i < numberOfPieces; i++)
-                    Blocks[i] = new Block (this, i * BlockSize, BlockSize);
-
-                if ((pieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
-                    Blocks[Blocks.Length - 1] = new Block (this, Blocks[Blocks.Length - 1].StartOffset, pieceLength - Blocks[Blocks.Length - 1].StartOffset);
-            }
-        }
-
-        void LastPiece (int pieceIndex, int pieceLength, long torrentSize)
-        {
-            int bytesRemaining = (int) (torrentSize - ((long) pieceIndex * pieceLength));
-            int numberOfBlocks = bytesRemaining / BlockSize;
-            if (bytesRemaining % BlockSize != 0)
-                numberOfBlocks++;
-
-            Blocks = new Block[numberOfBlocks];
-
-            int i = 0;
-            while (bytesRemaining - BlockSize > 0) {
+            Blocks = new Block[(length + BlockSize - 1) / BlockSize];
+            for (int i = 0; i < Blocks.Length - 1; i++)
                 Blocks[i] = new Block (this, i * BlockSize, BlockSize);
-                bytesRemaining -= BlockSize;
-                i++;
-            }
 
-            Blocks[i] = new Block (this, i * BlockSize, bytesRemaining);
+            Blocks[Blocks.Length - 1] = new Block (this, (Blocks.Length - 1) * BlockSize, length - (Blocks.Length - 1) * BlockSize);
         }
 
         #endregion
