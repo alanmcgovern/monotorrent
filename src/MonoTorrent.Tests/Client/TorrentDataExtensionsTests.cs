@@ -52,6 +52,8 @@ namespace MonoTorrent.Client
             Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 5 - 1, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (2));
 
             Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (0));
+
+            Assert.AreEqual (142, new Data { Size = 16 * 1024 * 1024, PieceLength = 2318336 }.BlocksPerPiece (0));
         }
 
         [Test]

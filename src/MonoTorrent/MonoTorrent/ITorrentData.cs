@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
         public static int BlocksPerPiece (this ITorrentData self, int pieceIndex)
         {
             if (pieceIndex < self.PieceCount () - 1)
-                return self.PieceLength / Piece.BlockSize;
+                return (Piece.BlockSize - 1 + self.PieceLength) / Piece.BlockSize;
 
             var remainder = self.Size - self.PieceIndexToByteOffset (pieceIndex);
             return (int) ((remainder + Piece.BlockSize - 1) / Piece.BlockSize);

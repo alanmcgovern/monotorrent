@@ -498,6 +498,18 @@ namespace MonoTorrent.Client.PiecePicking
         }
 
         [Test]
+        public void CreatePiece_NotMultipleOf16KB ()
+        {
+            var totalSize = 2318336;
+            var piece = new Piece (0, totalSize);
+            Assert.AreEqual (142, piece.BlockCount);
+
+            for (int i = 0; i < piece.BlockCount - 1; i++)
+                Assert.AreEqual (Piece.BlockSize, piece[i].RequestLength);
+            Assert.AreEqual (totalSize - (Piece.BlockSize * 141), piece[141].RequestLength);
+        }
+
+        [Test]
         public void PickBundle ()
         {
             peer.IsChoking = false;
