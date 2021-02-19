@@ -535,8 +535,10 @@ namespace MonoTorrent.Client
             return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
         }
 
-        internal void UpdateSettings (EngineSettings settings)
+        internal async ReusableTask UpdateSettingsAsync (EngineSettings settings)
         {
+            await IOLoop;
+
             var oldSettings = Settings;
             Settings = settings;
 

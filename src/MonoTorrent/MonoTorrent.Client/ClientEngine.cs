@@ -585,7 +585,7 @@ namespace MonoTorrent.Client
 
         async Task UpdateSettingsAsync (EngineSettings oldSettings, EngineSettings newSettings)
         {
-            DiskManager.UpdateSettings (newSettings);
+            await DiskManager.UpdateSettingsAsync (newSettings);
             if (newSettings.DiskCacheBytes != oldSettings.DiskCacheBytes)
                 await Task.WhenAll (Torrents.Select (t => DiskManager.FlushAsync (t)));
 
