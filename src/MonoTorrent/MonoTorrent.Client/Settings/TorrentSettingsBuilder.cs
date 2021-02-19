@@ -99,6 +99,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public int WebSeedSpeedTrigger { get; set; }
 
+        /// <summary>
+        /// If set to true then TorrentManager will create a subdirectory with torrent name under torrent SavePath. Defaults to false.
+        /// </summary>
+        public bool CreateSubDirectory { get; set; }
+
         public TorrentSettingsBuilder ()
             : this (new TorrentSettings ())
         {
@@ -116,6 +121,7 @@ namespace MonoTorrent.Client
             UploadSlots = settings.UploadSlots;
             WebSeedDelay = settings.WebSeedDelay;
             WebSeedSpeedTrigger = settings.WebSeedSpeedTrigger;
+            CreateSubDirectory = settings.CreateSubDirectory;
         }
 
         public TorrentSettings ToSettings ()
@@ -129,7 +135,8 @@ namespace MonoTorrent.Client
                 MaximumUploadSpeed,
                 UploadSlots,
                 WebSeedDelay,
-                WebSeedSpeedTrigger
+                WebSeedSpeedTrigger,
+                CreateSubDirectory
             );
         }
 

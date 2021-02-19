@@ -84,6 +84,11 @@ namespace MonoTorrent.Client
         public int WebSeedSpeedTrigger { get; } = 15 * 1024;
 
         /// <summary>
+        /// If set to true then TorrentManager will create a subdirectory with torrent name under torrent SavePath. Defaults to false.
+        /// </summary>
+        public bool CreateSubDirectory { get; } = false;
+
+        /// <summary>
         /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
         /// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
         /// </summary>
@@ -106,7 +111,7 @@ namespace MonoTorrent.Client
 
         }
 
-        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger)
+        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger, bool createSubDirectory)
         {
             AllowDht = allowDht;
             AllowInitialSeeding = allowInitialSeeding;
@@ -117,6 +122,7 @@ namespace MonoTorrent.Client
             UploadSlots = uploadSlots;
             WebSeedDelay = webSeedDelay;
             WebSeedSpeedTrigger = webSeedSpeedTrigger;
+            CreateSubDirectory = createSubDirectory;
         }
 
         public override bool Equals (object obj)
@@ -133,7 +139,8 @@ namespace MonoTorrent.Client
                 && MaximumUploadSpeed == other.MaximumUploadSpeed
                 && UploadSlots == other.UploadSlots
                 && WebSeedDelay == other.WebSeedDelay
-                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger;
+                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger
+                && CreateSubDirectory == other.CreateSubDirectory;
         }
 
         public override int GetHashCode ()
@@ -142,7 +149,8 @@ namespace MonoTorrent.Client
                 ^ MaximumConnections
                 ^ MaximumDownloadSpeed
                 ^ MaximumUploadSpeed
-                ^ UploadSlots;
+                ^ UploadSlots
+                ^ CreateSubDirectory.GetHashCode ();
         }
     }
 }

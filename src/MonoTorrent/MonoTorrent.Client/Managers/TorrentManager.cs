@@ -579,12 +579,10 @@ namespace MonoTorrent.Client
             Bitfield = new BitField (Torrent.Pieces.Count);
             PartialProgressSelector = new BitField (Torrent.Pieces.Count);
             UnhashedPieces = new BitField (Torrent.Pieces.Count).SetAll (true);
-
-            // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             var savePath = SavePath;
-            if (Torrent.Files.Count > 1)
+            if (Settings.CreateSubDirectory) {
                 savePath = Path.Combine (savePath, Torrent.Name);
-
+            }
             Files = Torrent.Files.Select (file =>
                 new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
