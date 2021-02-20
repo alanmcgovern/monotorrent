@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
         public int WebSeedSpeedTrigger { get; set; }
 
         /// <summary>
-        /// If set to false then root folder will be not created for multi-files torrents
+        /// If set to false then root folder will be not created for multi-files torrents, otherwise all files will be placed inside a root folder named <see cref="TorrentManager.Name"/>. Defaults to true.
         /// </summary>
         public bool CreateSubFolder { get; set; }
 
