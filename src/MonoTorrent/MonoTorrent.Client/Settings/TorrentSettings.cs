@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// If set to false then root folder will be not created for multi-files torrents
         /// </summary>
-        internal bool CreateSubFolder { get; } = true;
+        public bool CreateSubFolder { get; } = true;
 
         public TorrentSettings ()
         {
