@@ -26,9 +26,11 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
+
 namespace MonoTorrent.Client
 {
-    public readonly struct BlockInfo
+    public readonly struct BlockInfo : IEquatable<BlockInfo>
     {
         public int PieceIndex { get; }
         public int StartOffset { get; }

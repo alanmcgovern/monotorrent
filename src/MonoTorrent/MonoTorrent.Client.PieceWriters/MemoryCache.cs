@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 
 using ReusableTasks;
@@ -38,11 +37,43 @@ namespace MonoTorrent.Client.PieceWriters
 {
     partial class MemoryCache : IBlockCache
     {
-        struct CachedBlock
+        readonly struct CachedBlock : IEquatable<CachedBlock>
         {
-            public BlockInfo Block;
-            public byte[] Buffer => BufferReleaser.Buffer.Data;
-            public ByteBufferPool.Releaser BufferReleaser;
+            public readonly bool Flushing;
+            public readonly BlockInfo Block;
+            public readonly byte[] Buffer => BufferReleaser.Buffer.Data;
+            public readonly ByteBufferPool.Releaser BufferReleaser;
+
+            public CachedBlock (BlockInfo block, ByteBufferPool.Releaser releaser)
+                : this (block, releaser, false)
+            {
+
+            }
+
+            CachedBlock (BlockInfo block, ByteBufferPool.Releaser releaser, bool flushing)
+            {
+                Block = block;
+                BufferReleaser = releaser;
+                Flushing = flushing;
+            }
+
+            public static bool operator == (CachedBlock left, CachedBlock right)
+                => left.Equals (right);
+
+            public static bool operator != (CachedBlock left, CachedBlock right)
+                => !left.Equals (right);
+
+            public CachedBlock SetFlushing ()
+                => new CachedBlock (Block, BufferReleaser, true);
+
+            public override bool Equals (object obj)
+                => obj is CachedBlock block && Equals (block);
+
+            public bool Equals (CachedBlock other)
+                => other.Block == Block;
+
+            public override int GetHashCode ()
+                => Block.GetHashCode ();
         }
 
         long cacheHits;
@@ -100,21 +131,25 @@ namespace MonoTorrent.Client.PieceWriters
             if (buffer == null)
                 throw new ArgumentNullException (nameof (buffer));
 
-            if (!CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks))
-                CachedBlocks[torrent] = blocks = new List<CachedBlock> ();
+            if (CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks)) {
+                for (int i = 0; i < blocks.Count; i++) {
+                    var cached = blocks[i];
+                    if (cached.Block != block)
+                        continue;
 
-            for (int i = 0; i < blocks.Count; i++) {
-                var cached = blocks[i];
-                if (cached.Block != block)
-                    continue;
-                blocks.RemoveAt (i);
-                Interlocked.Add (ref cacheUsed, -block.RequestLength);
-
-                using (cached.BufferReleaser) {
-                    var asyncWrite = WriteToFilesAsync (torrent, block, cached.Buffer);
-                    Buffer.BlockCopy (cached.Buffer, 0, buffer, 0, block.RequestLength);
+                    if (cached.Flushing) {
+                        Buffer.BlockCopy (cached.Buffer, 0, buffer, 0, block.RequestLength);
+                    } else {
+                        blocks[i] = cached.SetFlushing ();
+                        using (cached.BufferReleaser) {
+                            var asyncWrite = WriteToFilesAsync (torrent, block, cached.Buffer);
+                            Buffer.BlockCopy (cached.Buffer, 0, buffer, 0, block.RequestLength);
+                            Interlocked.Add (ref cacheUsed, -block.RequestLength);
+                            await asyncWrite;
+                            blocks.Remove (cached);
+                        }
+                    }
                     Interlocked.Add (ref cacheHits, block.RequestLength);
-                    await asyncWrite.ConfigureAwait (false);
                     return block.RequestLength;
                 }
             }
@@ -132,12 +167,20 @@ namespace MonoTorrent.Client.PieceWriters
                     CachedBlocks[torrent] = blocks = new List<CachedBlock> ();
 
                 if (CacheUsed > (Capacity - block.RequestLength)) {
-                    var cached = blocks[0];
-                    blocks.RemoveAt (0);
-                    Interlocked.Add (ref cacheUsed, -block.RequestLength);
+                    var firstFlushable = FindFirstFlushable (blocks);
+                    if (firstFlushable < 0) {
+                        await WriteToFilesAsync (torrent, block, buffer);
+                        return;
+                    } else {
+                        var cached = blocks[firstFlushable];
+                        blocks[firstFlushable] = cached.SetFlushing ();
 
-                    using (cached.BufferReleaser)
-                        await WriteToFilesAsync (torrent, cached.Block, cached.Buffer);
+                        using (cached.BufferReleaser)
+                            await WriteToFilesAsync (torrent, cached.Block, cached.Buffer);
+
+                        Interlocked.Add (ref cacheUsed, -cached.Block.RequestLength);
+                        blocks.Remove (cached);
+                    }
                 }
 
                 CachedBlock? cache = null;
@@ -147,15 +190,20 @@ namespace MonoTorrent.Client.PieceWriters
                 }
 
                 if (!cache.HasValue) {
-                    cache = new CachedBlock {
-                        Block = block,
-                        BufferReleaser = DiskManager.BufferPool.Rent (block.RequestLength, out byte[] _),
-                    };
+                    cache = new CachedBlock (block, DiskManager.BufferPool.Rent (block.RequestLength, out byte[] _));
                     blocks.Add (cache.Value);
                     Interlocked.Add (ref cacheUsed, block.RequestLength);
                 }
                 Buffer.BlockCopy (buffer, 0, cache.Value.Buffer, 0, block.RequestLength);
             }
+        }
+
+        static int FindFirstFlushable (List<CachedBlock> blocks)
+        {
+            for (int i = 0; i < blocks.Count; i++)
+                if (!blocks[i].Flushing)
+                    return i;
+            return -1;
         }
 
         ReusableTask<int> ReadFromFilesAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)

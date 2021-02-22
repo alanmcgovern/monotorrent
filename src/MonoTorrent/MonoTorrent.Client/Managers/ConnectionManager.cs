@@ -435,9 +435,10 @@ namespace MonoTorrent.Client
                             manager.TrySetError (Reason.ReadFailure, ex);
                             return;
                         }
-                        System.Threading.Interlocked.Increment (ref id.piecesSent);
+                        Interlocked.Increment (ref id.piecesSent);
                     } else {
                         pieceBuffer.Dispose ();
+                        pieceBuffer = default;
                     }
 
                     if (messageBuffer.Buffer == null || messageBuffer.Buffer.Data.Length < msg.ByteLength) {
@@ -446,7 +447,7 @@ namespace MonoTorrent.Client
                     }
                     await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor, messageBuffer.Buffer).ConfigureAwait (false);
                     if (msg is PieceMessage)
-                        System.Threading.Interlocked.Decrement (ref id.isRequestingPiecesCount);
+                        Interlocked.Decrement (ref id.isRequestingPiecesCount);
 
                     id.LastMessageSent.Restart ();
                 }

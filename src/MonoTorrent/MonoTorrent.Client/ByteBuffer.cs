@@ -34,6 +34,8 @@ namespace MonoTorrent.Client
 {
     public sealed class ByteBuffer
     {
+        // Used to prevent double-frees
+        internal int Counter { get; set; }
         public byte[] Data { get; }
 
         internal SocketAsyncEventArgs Args { get; set; }
