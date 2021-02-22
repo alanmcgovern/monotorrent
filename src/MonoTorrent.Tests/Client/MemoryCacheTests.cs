@@ -91,12 +91,24 @@ namespace MonoTorrent.Client.PieceWriters
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public virtual ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             var actualData = new byte[count];
             Buffer.BlockCopy (buffer, bufferOffset, actualData, 0, count);
             Writes.Add ((file, offset, actualData));
             return ReusableTask.CompletedTask;
+        }
+    }
+
+    class BlockingMemoryWriter : MemoryWriter
+    {
+        public new List<ReusableTaskCompletionSource<object>> Writes { get; } = new List<ReusableTaskCompletionSource<object>> ();
+
+        public override async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        {
+            var tcs = new ReusableTaskCompletionSource<object> ();
+            Writes.Add (tcs);
+            await tcs.Task;
         }
     }
 
@@ -178,6 +190,46 @@ namespace MonoTorrent.Client.PieceWriters
             Assert.AreEqual (Piece.BlockSize * 3, cache.CacheMisses, "#4");
             Assert.AreEqual (4, writer.Writes.Count, "#5");
             Assert.AreEqual (0, cache.CacheUsed, "#6");
+        }
+
+        [Test]
+        public async Task OverFillBuffer_CacheUsed ()
+        {
+            var writer = new MemoryWriter ();
+            var cache = new MemoryCache (4, writer);
+
+            await cache.WriteAsync (torrent, new BlockInfo (0, 0, 3), Enumerable.Repeat ((byte) 1, 3).ToArray (), false);
+            await cache.WriteAsync (torrent, new BlockInfo (0, 3, 4), Enumerable.Repeat ((byte) 2, 4).ToArray (), false);
+
+            Assert.AreEqual (4, cache.CacheUsed);
+        }
+
+        [Test]
+        public async Task ReadBlockWhileWriting ()
+        {
+            var writer = new BlockingMemoryWriter ();
+            var cache = new MemoryCache (3, writer);
+            await cache.WriteAsync (torrent, new BlockInfo (0, 0, 3), Enumerable.Repeat ((byte) 1, 3).ToArray (), false).WithTimeout ();
+
+            var write = cache.WriteAsync (torrent, new BlockInfo (0, 3, 3), Enumerable.Repeat ((byte) 2, 3).ToArray (), false);
+            Assert.IsFalse (write.IsCompleted);
+            Assert.AreEqual (1, writer.Writes.Count);
+            Assert.AreEqual (3, cache.CacheUsed);
+
+            // verify the original block is still accessible. Note: Reading a block implicitly flushes it, but we skip the
+            // flush as the block was already marked as flushing by the 'Write' invocation.
+            var result = new byte[3];
+            var read = await cache.ReadAsync (torrent, new BlockInfo (0, 0, 3), result).WithTimeout ();
+            Assert.AreEqual (3, read);
+            Assert.AreEqual (1, writer.Writes.Count);
+            Assert.AreEqual (3, cache.CacheHits);
+
+            CollectionAssert.AreEqual (Enumerable.Repeat ((byte) 1, 3).ToArray (), result);
+            Assert.IsFalse (write.IsCompleted);
+
+            writer.Writes[0].SetResult (null);
+            await write;
+            Assert.AreEqual (3, cache.CacheUsed);
         }
 
         [Test]
