@@ -124,7 +124,16 @@ namespace MonoTorrent.Client.PieceWriters
             WriteMonitor = new SpeedMonitor ();
         }
 
-        public async ReusableTask<int> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
+        public async ReusableTask<bool> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
+        {
+            if (await ReadFromCacheAsync (torrent, block, buffer))
+                return true;
+
+            Interlocked.Add (ref cacheMisses, block.RequestLength);
+            return await ReadFromFilesAsync (torrent, block, buffer).ConfigureAwait (false) == block.RequestLength;
+        }
+
+        public async ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
         {
             if (torrent == null)
                 throw new ArgumentNullException (nameof (torrent));
@@ -150,12 +159,11 @@ namespace MonoTorrent.Client.PieceWriters
                         }
                     }
                     Interlocked.Add (ref cacheHits, block.RequestLength);
-                    return block.RequestLength;
+                    return true;
                 }
             }
 
-            Interlocked.Add (ref cacheMisses, block.RequestLength);
-            return await ReadFromFilesAsync (torrent, block, buffer).ConfigureAwait (false);
+            return false;
         }
 
         public async ReusableTask WriteAsync (ITorrentData torrent, BlockInfo block, byte[] buffer, bool preferSkipCache)

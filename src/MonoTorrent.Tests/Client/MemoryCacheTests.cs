@@ -219,8 +219,7 @@ namespace MonoTorrent.Client.PieceWriters
             // verify the original block is still accessible. Note: Reading a block implicitly flushes it, but we skip the
             // flush as the block was already marked as flushing by the 'Write' invocation.
             var result = new byte[3];
-            var read = await cache.ReadAsync (torrent, new BlockInfo (0, 0, 3), result).WithTimeout ();
-            Assert.AreEqual (3, read);
+            Assert.IsTrue (await cache.ReadAsync (torrent, new BlockInfo (0, 0, 3), result).WithTimeout ());
             Assert.AreEqual (1, writer.Writes.Count);
             Assert.AreEqual (3, cache.CacheHits);
 
@@ -271,11 +270,11 @@ namespace MonoTorrent.Client.PieceWriters
             Assert.AreEqual (6, memory.CacheUsed);
 
             var result = new byte[3];
-            Assert.AreEqual (3, await memory.ReadAsync (torrent, new BlockInfo (0, 0, 3), result));
+            Assert.IsTrue (await memory.ReadAsync (torrent, new BlockInfo (0, 0, 3), result));
             CollectionAssert.AreEqual (data1, result);
             Assert.AreEqual (3, memory.CacheUsed);
 
-            Assert.AreEqual (3, await memory.ReadAsync (torrent, new BlockInfo (0, 3, 3), result));
+            Assert.IsTrue (await memory.ReadAsync (torrent, new BlockInfo (0, 3, 3), result));
             CollectionAssert.AreEqual (data3, result);
             Assert.AreEqual (0, memory.CacheUsed);
         }
@@ -332,7 +331,7 @@ namespace MonoTorrent.Client.PieceWriters
             Assert.AreEqual (0, cache.CacheUsed);
 
             var data = new byte[1];
-            Assert.AreEqual (1, await cache.ReadAsync (torrent, new BlockInfo (0, 0, 1), data));
+            Assert.IsTrue (await cache.ReadAsync (torrent, new BlockInfo (0, 0, 1), data));
             Assert.AreEqual (7, data[0]);
         }
     }

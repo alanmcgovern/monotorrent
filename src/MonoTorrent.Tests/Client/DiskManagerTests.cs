@@ -404,8 +404,9 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task WritePiece_FirstTwoSwapped ()
+        public async Task WritePiece_FirstTwoSwapped ([Values (0, Piece.BlockSize, Piece.BlockSize * 3)] int cacheSize)
         {
+            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { DiskCacheBytes = cacheSize }.ToSettings ());
             writer.Data = null;
 
             var blocks = fileData.Data
@@ -419,7 +420,12 @@ namespace MonoTorrent.Client
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Piece.BlockSize * 2, Piece.BlockSize), blocks[2]);
 
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[0], await diskManager.GetHashAsync (fileData, 0)), "#1");
-            Assert.AreEqual (Piece.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
+            // If we have at least Piece.BlockSize in the disk cache we'll need to read nothing from disk
+            if (cacheSize < Piece.BlockSize)
+                Assert.AreEqual (Piece.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
+            else
+                Assert.AreEqual (0, writer.ReadData.Sum (t => t.Item3), "#2");
+
 
             writer.ReadData.Clear ();
             Assert.IsTrue (Toolbox.ByteMatch (fileData.Hashes[0], await diskManager.GetHashAsync (fileData, 0)), "#3");

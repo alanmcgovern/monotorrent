@@ -372,7 +372,7 @@ namespace MonoTorrent.Client
 
             try {
                 if (ReadLimiter.TryProcess (request.RequestLength)) {
-                    return await Cache.ReadAsync (manager, request, buffer).ConfigureAwait (false) == request.RequestLength;
+                    return await Cache.ReadAsync (manager, request, buffer).ConfigureAwait (false);
                 } else {
                     var tcs = new ReusableTaskCompletionSource<bool> ();
                     ReadQueue.Enqueue (new BufferedIO (manager, request, buffer, false, tcs));
@@ -408,6 +408,9 @@ namespace MonoTorrent.Client
                 ReusableTask writeTask = default;
 
                 using (incrementalHash == null ? default : await incrementalHash.Locker.EnterAsync ()) {
+                    if (incrementalHash != null && incrementalHash.NextOffsetToHash < request.StartOffset)
+                        await TryIncrementallyHashFromMemory (manager, pieceIndex, incrementalHash);
+
                     bool canIncrementallyHash = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
 
                     // If we can incrementally hash the data, instruct the cache to write the block straight through
@@ -440,6 +443,24 @@ namespace MonoTorrent.Client
             } finally {
                 Interlocked.Add (ref pendingWriteBytes, -request.RequestLength);
             }
+        }
+
+        async ReusableTask TryIncrementallyHashFromMemory (ITorrentData torrent, int pieceIndex, IncrementalHashData incrementalHash)
+        {
+            var sizeOfPiece = torrent.BytesPerPiece (pieceIndex);
+            using var releaser = BufferPool.Rent (Piece.BlockSize, out byte[] buffer);
+            while (incrementalHash.NextOffsetToHash < sizeOfPiece) {
+                var remaining = Math.Min (Piece.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);
+                if (await Cache.ReadFromCacheAsync (torrent, new BlockInfo (pieceIndex, incrementalHash.NextOffsetToHash, remaining), buffer)) {
+                    incrementalHash.Hasher.TransformBlock (buffer, 0, remaining, buffer, 0);
+                    incrementalHash.NextOffsetToHash += remaining;
+                } else {
+                    break;
+                }
+            }
+
+            if (incrementalHash.NextOffsetToHash == sizeOfPiece)
+                incrementalHash.Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
         }
 
         async ReusableTask ProcessBufferedIOAsync (bool force = false)
@@ -478,7 +499,7 @@ namespace MonoTorrent.Client
                 io = ReadQueue.Dequeue ();
 
                 try {
-                    bool result = await Cache.ReadAsync (io.manager, io.request, io.buffer) == io.request.RequestLength;
+                    bool result = await Cache.ReadAsync (io.manager, io.request, io.buffer);
                     io.tcs.SetResult (result);
                 } catch (Exception ex) {
                     io.tcs.SetException (ex);
