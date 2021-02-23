@@ -124,7 +124,16 @@ namespace MonoTorrent.Client.PieceWriters
             WriteMonitor = new SpeedMonitor ();
         }
 
-        public async ReusableTask<int> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
+        public async ReusableTask<bool> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
+        {
+            if (await ReadFromCacheAsync (torrent, block, buffer))
+                return true;
+
+            Interlocked.Add (ref cacheMisses, block.RequestLength);
+            return await ReadFromFilesAsync (torrent, block, buffer).ConfigureAwait (false) == block.RequestLength;
+        }
+
+        public async ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
         {
             if (torrent == null)
                 throw new ArgumentNullException (nameof (torrent));
@@ -150,38 +159,10 @@ namespace MonoTorrent.Client.PieceWriters
                         }
                     }
                     Interlocked.Add (ref cacheHits, block.RequestLength);
-                    return block.RequestLength;
-                }
-            }
-
-            Interlocked.Add (ref cacheMisses, block.RequestLength);
-            return await ReadFromFilesAsync (torrent, block, buffer).ConfigureAwait (false);
-        }
-
-        public async ReusableTask<bool> UseAndFlushBlock(ITorrentData torrent, BlockInfo block, Action<byte[]> action)
-        {
-            if (CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks)) {
-                for (int i = 0; i < blocks.Count; i++) {
-                    var cached = blocks[i];
-                    if (cached.Block != block)
-                        continue;
-
-                    if (cached.Flushing) {
-                        action (cached.Buffer);
-                    } else {
-                        blocks[i] = cached.SetFlushing ();
-                        using (cached.BufferReleaser) {
-                            var asyncWrite = WriteToFilesAsync (torrent, block, cached.Buffer);
-                            action(cached.Buffer);
-                            Interlocked.Add (ref cacheUsed, -block.RequestLength);
-                            await asyncWrite;
-                            blocks.Remove (cached);
-                        }
-                    }
-                    Interlocked.Add (ref cacheHits, block.RequestLength);
                     return true;
                 }
             }
+
             return false;
         }
 

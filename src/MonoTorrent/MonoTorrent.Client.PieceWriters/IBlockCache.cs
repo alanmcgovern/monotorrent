@@ -35,8 +35,33 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public interface IBlockCache : IDisposable
     {
-        ReusableTask<bool> UseAndFlushBlock (ITorrentData torrent, BlockInfo block, Action<byte[]> action);
-        ReusableTask<int> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer);
+        /// <summary>
+        /// Reads data from the cache and flushes it to disk, or reads the data from disk if it is not available in the cache.
+        /// </summary>
+        /// <param name="torrent"></param>
+        /// <param name="block"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        ReusableTask<bool> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer);
+
+        /// <summary>
+        /// If the block of data is available in the cache, the data is read into the buffer and the method returns true.
+        /// If the block is unavailable, the buffer will not be modified and the method will return false.
+        /// </summary>
+        /// <param name="torrent"></param>
+        /// <param name="block"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, byte[] buffer);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="torrent"></param>
+        /// <param name="block"></param>
+        /// <param name="buffer"></param>
+        /// <param name="preferSkipCache"></param>
+        /// <returns></returns>
         ReusableTask WriteAsync (ITorrentData torrent, BlockInfo block, byte[] buffer, bool preferSkipCache);
     }
 }
