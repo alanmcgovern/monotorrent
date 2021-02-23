@@ -35,6 +35,7 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public interface IBlockCache : IDisposable
     {
+        ReusableTask<bool> UseAndFlushBlock (ITorrentData torrent, BlockInfo block, Action<byte[]> action);
         ReusableTask<int> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer);
         ReusableTask WriteAsync (ITorrentData torrent, BlockInfo block, byte[] buffer, bool preferSkipCache);
     }
