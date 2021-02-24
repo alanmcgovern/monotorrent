@@ -451,10 +451,12 @@ namespace MonoTorrent.Client
             using var releaser = BufferPool.Rent (Piece.BlockSize, out byte[] buffer);
             while (incrementalHash.NextOffsetToHash < sizeOfPiece) {
                 var remaining = Math.Min (Piece.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);
-                if (await Cache.ReadFromCacheAsync (torrent, new BlockInfo (pieceIndex, incrementalHash.NextOffsetToHash, remaining), buffer))
+                if (await Cache.ReadFromCacheAsync (torrent, new BlockInfo (pieceIndex, incrementalHash.NextOffsetToHash, remaining), buffer)) {
+                    incrementalHash.Hasher.TransformBlock (buffer, 0, remaining, buffer, 0);
                     incrementalHash.NextOffsetToHash += remaining;
-                else
+                } else {
                     break;
+                }
             }
 
             if (incrementalHash.NextOffsetToHash == sizeOfPiece)
