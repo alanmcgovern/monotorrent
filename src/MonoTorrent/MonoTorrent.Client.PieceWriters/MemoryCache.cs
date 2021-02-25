@@ -133,7 +133,7 @@ namespace MonoTorrent.Client.PieceWriters
             return await ReadFromFilesAsync (torrent, block, buffer).ConfigureAwait (false) == block.RequestLength;
         }
 
-        public async ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
+        public ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
         {
             if (torrent == null)
                 throw new ArgumentNullException (nameof (torrent));
@@ -146,24 +146,27 @@ namespace MonoTorrent.Client.PieceWriters
                     if (cached.Block != block)
                         continue;
 
-                    if (cached.Flushing) {
-                        Buffer.BlockCopy (cached.Buffer, 0, buffer, 0, block.RequestLength);
-                    } else {
+                    Buffer.BlockCopy (cached.Buffer, 0, buffer, 0, block.RequestLength);
+                    if (!cached.Flushing) {
                         blocks[i] = cached.SetFlushing ();
-                        using (cached.BufferReleaser) {
-                            var asyncWrite = WriteToFilesAsync (torrent, block, cached.Buffer);
-                            Buffer.BlockCopy (cached.Buffer, 0, buffer, 0, block.RequestLength);
-                            Interlocked.Add (ref cacheUsed, -block.RequestLength);
-                            await asyncWrite;
-                            blocks.Remove (cached);
-                        }
+                        FlushBlockAsync (torrent, blocks, cached);
                     }
                     Interlocked.Add (ref cacheHits, block.RequestLength);
-                    return true;
+                    return ReusableTask.FromResult(true);
                 }
             }
 
-            return false;
+            return ReusableTask.FromResult (false);
+        }
+
+        async void FlushBlockAsync (ITorrentData torrent, List<CachedBlock> blocks, CachedBlock cached)
+        {
+            // FIXME: How do we handle failures from this?
+            using (cached.BufferReleaser) {
+                await WriteToFilesAsync (torrent, cached.Block, cached.Buffer);
+                Interlocked.Add (ref cacheUsed, -cached.Block.RequestLength);
+                blocks.Remove (cached);
+            }
         }
 
         public async ReusableTask WriteAsync (ITorrentData torrent, BlockInfo block, byte[] buffer, bool preferSkipCache)
