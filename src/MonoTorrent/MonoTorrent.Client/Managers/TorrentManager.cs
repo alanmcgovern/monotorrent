@@ -582,7 +582,7 @@ namespace MonoTorrent.Client
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             var savePath = SavePath;
-            if (Torrent.Files.Count > 1 && Settings.CreateSubFolder)
+            if (Torrent.Files.Count > 1 && Settings.CreateContainingDirectory)
                 savePath = Path.Combine (savePath, Torrent.Name);
 
             Files = Torrent.Files.Select (file =>

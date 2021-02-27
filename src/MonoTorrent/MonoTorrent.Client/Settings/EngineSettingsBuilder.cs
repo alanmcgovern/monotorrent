@@ -190,7 +190,13 @@ namespace MonoTorrent.Client
         /// This is the path where the .torrent metadata will be saved when magnet links are used to start a download.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public string SavePath { get; set; }
+        public string MetadataSaveDirectory { get; set; }
+
+        [Obsolete("use 'MetadataSaveDirectory' instead")]
+        public string SavePath {
+            get => MetadataSaveDirectory;
+            set => MetadataSaveDirectory = value;
+        }
 
         public EngineSettingsBuilder ()
             : this (new EngineSettings ())
@@ -217,7 +223,7 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadSpeed = settings.MaximumUploadSpeed;
             ReportedAddress = settings.ReportedAddress;
-            SavePath = settings.SavePath;
+            MetadataSaveDirectory = settings.MetadataSaveDirectory;
         }
 
         public EngineSettings ToSettings ()
@@ -246,7 +252,7 @@ namespace MonoTorrent.Client
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadSpeed: MaximumUploadSpeed,
                 reportedAddress: ReportedAddress,
-                savePath: SavePath
+                savePath: MetadataSaveDirectory
             );
         }
         static int CheckPort (int value)

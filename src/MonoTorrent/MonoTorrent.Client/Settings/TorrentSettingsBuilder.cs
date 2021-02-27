@@ -58,6 +58,19 @@ namespace MonoTorrent.Client
         public bool AllowPeerExchange { get; set; }
 
         /// <summary>
+        /// If set to true all files in a multi-file torrent will be placed inside a containing directory.
+        /// The directory name will be derived from <see cref="MagnetLink.Name"/> or <see cref="Torrent.Name"/>.
+        /// Defaults to <see langword="true"/>
+        /// </summary>
+        public bool CreateContainingDirectory { get; set; }
+
+        [Obsolete ("Use 'CreateContainingDirectory' instead.")]
+        public bool CreateSubFolder {
+            get => CreateContainingDirectory;
+            set => CreateContainingDirectory = value;
+        }
+
+        /// <summary>
         /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
         /// </summary>
         public int MaximumConnections {
@@ -99,11 +112,6 @@ namespace MonoTorrent.Client
         /// </summary>
         public int WebSeedSpeedTrigger { get; set; }
 
-        /// <summary>
-        /// If set to false then root folder will be not created for multi-files torrents, otherwise all files will be placed inside a root folder named <see cref="TorrentManager.Name"/>. Defaults to true.
-        /// </summary>
-        public bool CreateSubFolder { get; set; }
-
         public TorrentSettingsBuilder ()
             : this (new TorrentSettings ())
         {
@@ -115,13 +123,13 @@ namespace MonoTorrent.Client
             AllowDht = settings.AllowDht;
             AllowInitialSeeding = settings.AllowInitialSeeding;
             AllowPeerExchange = settings.AllowPeerExchange;
+            CreateContainingDirectory = settings.CreateContainingDirectory;
             MaximumConnections = settings.MaximumConnections;
             MaximumDownloadSpeed = settings.MaximumDownloadSpeed;
             MaximumUploadSpeed = settings.MaximumUploadSpeed;
             UploadSlots = settings.UploadSlots;
             WebSeedDelay = settings.WebSeedDelay;
             WebSeedSpeedTrigger = settings.WebSeedSpeedTrigger;
-            CreateSubFolder = settings.CreateSubFolder;
         }
 
         public TorrentSettings ToSettings ()
@@ -136,7 +144,7 @@ namespace MonoTorrent.Client
                 UploadSlots,
                 WebSeedDelay,
                 WebSeedSpeedTrigger,
-                CreateSubFolder
+                CreateContainingDirectory
             );
         }
 

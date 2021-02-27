@@ -68,7 +68,7 @@ namespace SampleClient
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettingsBuilder {
-                SavePath = downloadsPath,
+                MetadataSaveDirectory = downloadsPath,
                 ListenPort = port,
                 DhtPort = port,
                 DiskCacheBytes = 5 * 1024 * 1024,
@@ -99,8 +99,8 @@ namespace SampleClient
             await engine.DhtEngine.StartAsync (nodes);
 
             // If the SavePath does not exist, we want to create it.
-            if (!Directory.Exists (engine.Settings.SavePath))
-                Directory.CreateDirectory (engine.Settings.SavePath);
+            if (!Directory.Exists (engine.Settings.MetadataSaveDirectory))
+                Directory.CreateDirectory (engine.Settings.MetadataSaveDirectory);
 
             // If the torrentsPath does not exist, we want to create it
             if (!Directory.Exists (torrentsPath))

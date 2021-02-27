@@ -54,6 +54,13 @@ namespace MonoTorrent.Client
         public bool AllowPeerExchange { get; } = true;
 
         /// <summary>
+        /// If set to true all files in a multi-file torrent will be placed inside a containing directory.
+        /// The directory name will be derived from <see cref="MagnetLink.Name"/> or <see cref="Torrent.Name"/>.
+        /// Defaults to <see langword="true"/>
+        /// </summary>
+        public bool CreateContainingDirectory { get; } = true;
+
+        /// <summary>
         /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
         /// </summary>
         public int MaximumConnections { get; } = 60;
@@ -101,28 +108,26 @@ namespace MonoTorrent.Client
         /// </summary>
         internal TimeSpan TimeToWaitUntilIdle => TimeSpan.FromMinutes (10);
 
-        /// <summary>
-        /// If set to false then root folder will be not created for multi-files torrents
-        /// </summary>
-        public bool CreateSubFolder { get; } = true;
+        [Obsolete ("Use 'CreateContainingDirectory' instead")]
+        public bool CreateSubFolder => CreateContainingDirectory;
 
         public TorrentSettings ()
         {
 
         }
 
-        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger, bool createSubFolder)
+        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadSpeed, int maximumUploadSpeed, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger, bool createContainingDirectory)
         {
             AllowDht = allowDht;
             AllowInitialSeeding = allowInitialSeeding;
             AllowPeerExchange = allowPeerExchange;
+            CreateContainingDirectory = createContainingDirectory;
             MaximumConnections = maximumConnections;
             MaximumDownloadSpeed = maximumDownloadSpeed;
             MaximumUploadSpeed = maximumUploadSpeed;
             UploadSlots = uploadSlots;
             WebSeedDelay = webSeedDelay;
             WebSeedSpeedTrigger = webSeedSpeedTrigger;
-            CreateSubFolder = createSubFolder;
         }
 
         public override bool Equals (object obj)
@@ -134,13 +139,13 @@ namespace MonoTorrent.Client
                 && AllowDht == other.AllowDht
                 && AllowInitialSeeding == other.AllowInitialSeeding
                 && AllowPeerExchange == other.AllowPeerExchange
+                && CreateContainingDirectory == other.CreateContainingDirectory
                 && MaximumConnections == other.MaximumConnections
                 && MaximumDownloadSpeed == other.MaximumDownloadSpeed
                 && MaximumUploadSpeed == other.MaximumUploadSpeed
                 && UploadSlots == other.UploadSlots
                 && WebSeedDelay == other.WebSeedDelay
-                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger
-                && CreateSubFolder == other.CreateSubFolder;
+                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger;
         }
 
         public override int GetHashCode ()
