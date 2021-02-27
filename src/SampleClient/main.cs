@@ -126,12 +126,12 @@ namespace SampleClient
                         Console.WriteLine (e.Message);
                         continue;
                     }
+
+                    var manager = await engine.AddAsync (torrent, downloadsPath, torrentDefaults);
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager (torrent, downloadsPath, torrentDefaults);
                     if (fastResume.ContainsKey (torrent.InfoHash.ToHex ()))
                         manager.LoadFastResume (new FastResume ((BEncodedDictionary) fastResume[torrent.InfoHash.ToHex ()]));
-                    await engine.Register (manager);
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add (manager);

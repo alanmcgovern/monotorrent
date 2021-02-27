@@ -55,11 +55,10 @@ namespace MonoTorrent.Client.Modes
         private ConnectionPair pair;
         private TestRig rig;
 
-        public async Task Setup (bool metadataMode, string metadataPath, bool multiFile = false, bool metadataOnly = false)
+        public async Task Setup (bool metadataMode, bool multiFile = false, bool metadataOnly = false)
         {
             pair = new ConnectionPair ().WithTimeout ();
             rig = multiFile ? TestRig.CreateMultiFile (32768, metadataMode) : TestRig.CreateSingleFile (1024 * 1024 * 1024, 32768, metadataMode);
-            rig.MetadataPath = metadataPath;
             rig.RecreateManager ().Wait ();
 
             rig.Manager.HashChecked = true;
@@ -85,7 +84,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task UnknownMetadataLength ()
         {
-            await Setup (true, "path.torrent");
+            await Setup (true);
 
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, null, 5555);
             exHand.Supports.Add (LTMetadata.Support);
@@ -95,7 +94,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task RequestMetadata ()
         {
-            await Setup (false, "path.torrent");
+            await Setup (false);
             CustomConnection connection = pair.Incoming;
 
             // 1) Send local handshake. We've already received the remote handshake as part
@@ -130,9 +129,8 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task AfterHandshake_SendBitfieldMessage()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent);
-            await SendMetadataCore (torrent, new BitfieldMessage (rig.Torrent.Pieces.Count));
+            await Setup (true);
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count));
         }
 
         [Test]
@@ -143,71 +141,64 @@ namespace MonoTorrent.Client.Modes
                 .Token
                 .Register (() => tcs.TrySetCanceled ());
 
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent, metadataOnly: true);
+            await Setup (true, metadataOnly: true);
 
             rig.Manager.MetadataReceived += (o, e) => tcs.TrySetResult (e);
-            await SendMetadataCore (torrent, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
             Assert.IsNotNull (await tcs.Task);
         }
 
         [Test]
         public async Task AfterHandshake_SendHaveAllMessage()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent);
-            await SendMetadataCore (torrent, new HaveAllMessage ());
+            await Setup (true);
+            await SendMetadataCore (rig.MetadataPath, new HaveAllMessage ());
         }
 
         [Test]
         public async Task AfterHandshake_SendHaveNoneMessage()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent);
-            await SendMetadataCore (torrent, new HaveNoneMessage ());
+            await Setup (true);
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
         }
 
         [Test]
         public async Task SendMetadata_ToFile ()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent);
-            await SendMetadataCore (torrent, new HaveNoneMessage ());
+            await Setup (true);
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
         }
 
         [Test]
         public async Task SendMetadata_ToFile_CorruptFileExists ()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            File.Create (torrent).Close ();
-            await Setup (true, torrent);
-            await SendMetadataCore (torrent, new HaveNoneMessage ());
+            File.Create (rig.MetadataPath).Close ();
+            await Setup (true);
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
         }
 
         [Test]
         public async Task SendMetadata_ToFile_RealFileExists ()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent);
-            File.WriteAllBytes (torrent, rig.TorrentDict.Encode ());
+            await Setup (true);
+            Directory.CreateDirectory (Path.GetDirectoryName (rig.MetadataPath));
+            File.WriteAllBytes (rig.MetadataPath, rig.TorrentDict.Encode ());
 
-            await SendMetadataCore (torrent, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
         }
 
         [Test]
         public async Task SendMetadata_ToFolder ()
         {
-            await Setup (true, Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "test"));
-            await SendMetadataCore (Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "test")
-                , new HaveNoneMessage ());
+            await Setup (true);
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
         }
 
         [Test]
         public async Task SingleFileSavePath ()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent, multiFile: false);
-            await SendMetadataCore (torrent, new HaveNoneMessage ());
+            await Setup (true, multiFile: false);
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
 
             Assert.AreEqual (@"test.files", rig.Manager.Torrent.Name);
             Assert.AreEqual (Environment.CurrentDirectory, rig.Manager.SavePath);
@@ -221,9 +212,8 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task MultiFileSavePath ()
         {
-            var torrent = Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            await Setup (true, torrent, multiFile: true);
-            await SendMetadataCore (torrent, new HaveNoneMessage ());
+            await Setup (true, multiFile: true);
+            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
 
             Assert.AreEqual (@"test.files", rig.Manager.Torrent.Name);
             Assert.AreEqual (Environment.CurrentDirectory, rig.Manager.SavePath);
@@ -302,9 +292,8 @@ namespace MonoTorrent.Client.Modes
             }
 
             Assert.AreEqual (rig.Manager.InfoHash, torrent.InfoHash, "#2");
-            Assert.AreEqual (2, torrent.AnnounceUrls.Count, "#3");
+            Assert.AreEqual (1, torrent.AnnounceUrls.Count, "#3");
             Assert.AreEqual (2, torrent.AnnounceUrls[0].Count, "#4");
-            Assert.AreEqual (3, torrent.AnnounceUrls[1].Count, "#5");
 
             Assert.IsTrue (receivedHaveNone, "#6");
 

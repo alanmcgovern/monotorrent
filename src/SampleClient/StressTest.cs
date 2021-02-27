@@ -107,7 +107,7 @@ namespace SampleClient
             var metadata = await creator.CreateAsync (new TorrentFileSource (DataDir));
 
             // Set up the seeder
-            await seeder.Register (new TorrentManager (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = 20 }.ToSettings ()));
+            await seeder.AddAsync (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = 20 }.ToSettings ());
             using (var fileStream = File.OpenRead (Path.Combine (DataDir, "file.data"))) {
                 while (fileStream.Position < fileStream.Length) {
                     var dataRead = new byte[16 * 1024];
@@ -123,10 +123,10 @@ namespace SampleClient
 
             List<Task> tasks = new List<Task> ();
             for (int i = 0; i < downloaders.Length; i++) {
-                await downloaders[i].Register (new TorrentManager (
+                await downloaders[i].AddAsync (
                     Torrent.Load (metadata),
                     Path.Combine (DataDir, "Downloader" + i)
-                ));
+                );
 
                 tasks.Add (RepeatDownload (downloaders[i]));
             }

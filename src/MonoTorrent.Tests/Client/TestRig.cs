@@ -321,7 +321,7 @@ namespace MonoTorrent.Client
         }
 
         public string MetadataPath {
-            get; set;
+            get; private set;
         }
 
         public Torrent Torrent { get; set; }
@@ -363,16 +363,17 @@ namespace MonoTorrent.Client
         public async Task RecreateManager ()
         {
             if (Manager != null) {
-                Manager.Dispose ();
                 if (Engine.Contains (Manager))
-                    await Engine.Unregister (Manager);
+                    await Engine.RemoveAsync (Manager);
+                Manager.Dispose ();
             }
             TorrentDict = CreateTorrent (piecelength, files, tier);
             Torrent = Torrent.Load (TorrentDict);
+
+            var magnetLink = new MagnetLink (Torrent.InfoHash, null, tier[0].ToArray (), null, null);
             Manager = MetadataMode
-                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, tier)
-                : new TorrentManager (Torrent, savePath, new TorrentSettings ());
-            await Engine.Register (Manager);
+                ? await Engine.AddAsync (magnetLink, savePath, new TorrentSettings ())
+                : await Engine.AddAsync (Torrent, savePath, new TorrentSettings ());
         }
 
         #region Rig Creation
@@ -391,15 +392,21 @@ namespace MonoTorrent.Client
             this.piecelength = piecelength;
             this.tier = trackers;
             MetadataMode = metadataMode;
-            MetadataPath = "metadataSave.torrent";
+            var metadataDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_metadata_dir");
             PeerListenerFactory.Creator = endpoint => new CustomListener ();
             LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
             Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
-            Engine = new ClientEngine (new EngineSettingsBuilder { ListenPort = 12345 }.ToSettings ());
+            Engine = new ClientEngine (new EngineSettingsBuilder {
+                MetadataSaveDirectory = metadataDir,
+                ListenPort = 12345
+            }.ToSettings ());
+            if (Directory.Exists (Engine.Settings.MetadataSaveDirectory))
+                Directory.Delete (Engine.Settings.MetadataSaveDirectory, true);
             Engine.DiskManager.ChangePieceWriter (writer);
             Writer = writer;
 
             RecreateManager ().Wait ();
+            MetadataPath = Path.Combine (metadataDir, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
         }
 
         static TestRig ()
@@ -537,14 +544,14 @@ namespace MonoTorrent.Client
 
         #endregion Rig Creation
 
-        internal static TorrentManager CreatePrivate ()
+        internal static Torrent CreatePrivate ()
         {
             var dict = CreateTorrent (16 * 1024 * 8, TorrentFile.Create (16 * 1024 * 8 , ("File", 16 * 1024 * 8)), null);
             var editor = new TorrentEditor (dict) {
                 CanEditSecureMetadata = true,
                 Private = true,
             };
-            return new TorrentManager (editor.ToTorrent (), "", new TorrentSettings ());
+            return editor.ToTorrent ();
         }
 
         internal static TestRig CreateSingleFile (long torrentSize, int pieceLength)

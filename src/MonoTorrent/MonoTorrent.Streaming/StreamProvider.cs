@@ -190,7 +190,7 @@ namespace MonoTorrent.Streaming
 
             Cancellation.Cancel ();
             await Manager.StopAsync ();
-            await Engine.Unregister (Manager);
+            await Engine.RemoveAsync (Manager);
             ActiveStream.SafeDispose ();
             Active = false;
         }

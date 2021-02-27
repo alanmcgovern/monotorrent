@@ -254,16 +254,17 @@ namespace MonoTorrent.Streaming
         }
 
         [Test]
+        [Ignore("delete this? ClientEngine has AddAsync now.")]
         public async Task StartManagerManually ()
         {
             var provider = new StreamProvider (Engine, "testDir", Torrent);
             // It hasn't been registered with the engine
             Assert.ThrowsAsync<TorrentException> (() => provider.Manager.StartAsync ());
-            await Engine.Register (provider.Manager);
+            await Engine.AddAsync (provider.Manager.Torrent, "");
             await provider.Manager.StartAsync ();
 
             // People should not register and start the manager manually.
-            Assert.ThrowsAsync<InvalidOperationException> (() => provider.StartAsync ());
+            Assert.ThrowsAsync<TorrentException> (() => provider.StartAsync ());
         }
 
         [Test]
