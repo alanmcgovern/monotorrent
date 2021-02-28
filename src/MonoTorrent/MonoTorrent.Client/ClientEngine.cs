@@ -44,6 +44,7 @@ using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Logging;
+using MonoTorrent.Streaming;
 
 namespace MonoTorrent.Client
 {
@@ -253,6 +254,27 @@ namespace MonoTorrent.Client
             return manager;
         }
 #pragma warning restore CS0618 // Type or member is obsolete
+
+        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory)
+            => AddStreamingAsync (magnetLink, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
+            => AddStreamingAsync (magnetLink, null, saveDirectory, settings);
+
+        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
+            => AddStreamingAsync (torrent, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+            => AddStreamingAsync (null, torrent, saveDirectory, settings);
+
+        async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        {
+            var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
+            var picker = new PiecePicking.StreamingPieceRequester ();
+            await manager.ChangePickerAsync (picker);
+            manager.StreamProvider = new StreamProvider (manager, picker);
+            return manager;
+        }
 
         public Task<bool> RemoveAsync (MagnetLink magnetLink)
         {

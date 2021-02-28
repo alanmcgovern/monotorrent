@@ -29,17 +29,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Streaming;
 
 namespace MonoTorrent.Client
 {
@@ -103,6 +102,7 @@ namespace MonoTorrent.Client
         readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
+        TaskCompletionSource<Torrent> MetadataTask { get; }
         #endregion Member Variables
 
 
@@ -265,6 +265,15 @@ namespace MonoTorrent.Client
         /// </summary>
         public DateTime StartTime { get; private set; }
 
+        /// <summary>
+        /// When a <see cref="Torrent"/> or <see cref="MagnetLink"/> has been added using
+        /// the 'AddStreamingAsync' methods on <see cref="ClientEngine"/> then this property
+        /// will be non-null and streams can be created to access any of the files in the
+        /// torrent while they are downloading. These streams are fully seekable, and if you
+        /// seek to a position which has not been downloaded already the required pieces will
+        /// be prioritised next.
+        /// </summary>
+        public StreamProvider StreamProvider { get; internal set; }
 
         /// <summary>
         /// The tracker connection associated with this TorrentManager
@@ -274,7 +283,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The Torrent contained within this TorrentManager
         /// </summary>
-        public Torrent Torrent { get; private set; }
+        public Torrent Torrent => MetadataTask.Task.IsCompleted ? MetadataTask.Task.Result : null;
 
         /// <summary>
         /// The number of peers that we are currently uploading to
@@ -325,6 +334,8 @@ namespace MonoTorrent.Client
             Check.SavePath (savePath);
             Check.Settings (settings);
 
+            MetadataTask = new TaskCompletionSource<Torrent> ();
+
             InfoHash = torrent.InfoHash;
             Settings = settings;
 
@@ -342,6 +353,8 @@ namespace MonoTorrent.Client
             Check.TorrentSave (torrentSave);
             Check.Announces (announces);
 
+            MetadataTask = new TaskCompletionSource<Torrent> ();
+
             InfoHash = infoHash;
             Settings = settings;
             this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
@@ -357,6 +370,8 @@ namespace MonoTorrent.Client
             Check.SavePath (savePath);
             Check.Settings (settings);
             Check.TorrentSave (torrentSave);
+
+            MetadataTask = new TaskCompletionSource<Torrent> ();
 
             InfoHash = magnetLink.InfoHash;
             Settings = settings;
@@ -422,6 +437,9 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public async Task ChangePickerAsync (IPieceRequester picker)
         {
+            if (StreamProvider != null)
+                throw new InvalidOperationException ("Custom PiecePickers cannot be used for Torrents added using 'ClientEngine.AddStreamingAsync'.");
+
             await ClientEngine.MainLoop;
             ChangePicker (picker);
         }
@@ -443,7 +461,6 @@ namespace MonoTorrent.Client
         {
             return Torrent == null ? "<Metadata Mode>" : Torrent.Name;
         }
-
 
         /// <summary>
         /// 
@@ -579,7 +596,7 @@ namespace MonoTorrent.Client
 
         internal void SetMetadata (Torrent torrent)
         {
-            Torrent = torrent;
+            MetadataTask.SetResult (torrent);
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
                 Engine.ConnectionManager.CleanupSocket (this, id);
             Bitfield = new BitField (Torrent.Pieces.Count);
@@ -703,6 +720,35 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
             Settings = settings;
+        }
+
+        /// <summary>
+        /// Waits for the metadata to be available
+        /// </summary>
+        /// <returns></returns>
+        public Task WaitForMetadataAsync ()
+            => WaitForMetadataAsync (CancellationToken.None);
+
+        public async Task WaitForMetadataAsync (CancellationToken token)
+        {
+            // Fast path (if possible).
+            if (HasMetadata)
+                return;
+
+            var tcs = new TaskCompletionSource<object> ();
+            using var registration = token.Register (tcs.SetCanceled);
+
+            // Wait for the token to be cancelled *or* the metadata is received.
+            // Await the returned task so the OperationCancelled exception propagates as
+            // expected if the token was cancelled. The try/catch is so that we
+            // will always throw an OperationCancelled instead of, sometimes, propagating
+            // a TaskCancelledException.
+            try {
+                await (await Task.WhenAny (MetadataTask.Task, tcs.Task));
+            } catch {
+                token.ThrowIfCancellationRequested ();
+                throw;
+            }
         }
 
         #endregion
