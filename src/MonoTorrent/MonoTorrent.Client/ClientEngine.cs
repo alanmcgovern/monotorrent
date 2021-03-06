@@ -243,7 +243,7 @@ namespace MonoTorrent.Client
             saveDirectory = string.IsNullOrEmpty (saveDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (saveDirectory);
             TorrentManager manager;
             if (magnetLink != null) {
-                var metadataSaveFilePath = Path.Combine (Path.GetFullPath (Settings.MetadataSaveDirectory ?? Environment.CurrentDirectory), magnetLink.InfoHash.ToHex () + ".torrent");
+                var metadataSaveFilePath = Path.Combine (Settings.MetadataSaveDirectory, magnetLink.InfoHash.ToHex () + ".torrent");
                 manager = new TorrentManager (magnetLink, saveDirectory, settings, metadataSaveFilePath);
                 if (File.Exists (metadataSaveFilePath) && Torrent.TryLoad (metadataSaveFilePath, out Torrent loaded) && loaded.InfoHash == magnetLink.InfoHash)
                     manager.SetMetadata (loaded);

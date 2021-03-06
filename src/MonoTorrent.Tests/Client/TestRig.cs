@@ -392,12 +392,12 @@ namespace MonoTorrent.Client
             this.piecelength = piecelength;
             this.tier = trackers;
             MetadataMode = metadataMode;
-            var metadataDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_metadata_dir");
+            var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
             PeerListenerFactory.Creator = endpoint => new CustomListener ();
             LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
             Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
             Engine = new ClientEngine (new EngineSettingsBuilder {
-                MetadataSaveDirectory = metadataDir,
+                CacheDirectory = cacheDir,
                 ListenPort = 12345
             }.ToSettings ());
             if (Directory.Exists (Engine.Settings.MetadataSaveDirectory))
@@ -406,7 +406,7 @@ namespace MonoTorrent.Client
             Writer = writer;
 
             RecreateManager ().Wait ();
-            MetadataPath = Path.Combine (metadataDir, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
+            MetadataPath = Path.Combine (Engine.Settings.MetadataSaveDirectory, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
         }
 
         static TestRig ()
