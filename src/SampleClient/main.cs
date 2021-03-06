@@ -68,7 +68,7 @@ namespace SampleClient
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettingsBuilder {
-                SavePath = downloadsPath,
+                CacheDirectory = "cache",
                 ListenPort = port,
                 DhtPort = port,
                 DiskCacheBytes = 5 * 1024 * 1024,
@@ -98,10 +98,6 @@ namespace SampleClient
             // on how many nodes time out when they are contacted.
             await engine.DhtEngine.StartAsync (nodes);
 
-            // If the SavePath does not exist, we want to create it.
-            if (!Directory.Exists (engine.Settings.SavePath))
-                Directory.CreateDirectory (engine.Settings.SavePath);
-
             // If the torrentsPath does not exist, we want to create it
             if (!Directory.Exists (torrentsPath))
                 Directory.CreateDirectory (torrentsPath);
@@ -126,12 +122,12 @@ namespace SampleClient
                         Console.WriteLine (e.Message);
                         continue;
                     }
+
+                    var manager = await engine.AddAsync (torrent, downloadsPath, torrentDefaults);
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager (torrent, downloadsPath, torrentDefaults);
                     if (fastResume.ContainsKey (torrent.InfoHash.ToHex ()))
                         manager.LoadFastResume (new FastResume ((BEncodedDictionary) fastResume[torrent.InfoHash.ToHex ()]));
-                    await engine.Register (manager);
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add (manager);

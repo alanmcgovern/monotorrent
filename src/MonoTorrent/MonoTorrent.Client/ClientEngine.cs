@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -43,6 +44,7 @@ using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Logging;
+using MonoTorrent.Streaming;
 
 namespace MonoTorrent.Client
 {
@@ -163,7 +165,7 @@ namespace MonoTorrent.Client
         #region Constructors
 
         public ClientEngine ()
-            : this(new EngineSettings ())
+            : this (new EngineSettings ())
         {
 
         }
@@ -223,6 +225,99 @@ namespace MonoTorrent.Client
 
         #region Methods
 
+        public Task<TorrentManager> AddAsync (MagnetLink magnetLink, string saveDirectory)
+            => AddAsync (magnetLink, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
+            => AddAsync (magnetLink, null, saveDirectory, settings);
+
+        public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory)
+            => AddAsync (torrent, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+            => AddAsync (null, torrent, saveDirectory, settings);
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        async Task<TorrentManager> AddAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        {
+            saveDirectory = string.IsNullOrEmpty (saveDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (saveDirectory);
+            TorrentManager manager;
+            if (magnetLink != null) {
+                var metadataSaveFilePath = Path.Combine (Settings.MetadataSaveDirectory, magnetLink.InfoHash.ToHex () + ".torrent");
+                manager = new TorrentManager (magnetLink, saveDirectory, settings, metadataSaveFilePath);
+                if (File.Exists (metadataSaveFilePath) && Torrent.TryLoad (metadataSaveFilePath, out Torrent loaded) && loaded.InfoHash == magnetLink.InfoHash)
+                    manager.SetMetadata (loaded);
+            } else {
+                manager = new TorrentManager (torrent, saveDirectory, settings);
+            }
+            await Register (manager);
+            return manager;
+        }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory)
+            => AddStreamingAsync (magnetLink, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
+            => AddStreamingAsync (magnetLink, null, saveDirectory, settings);
+
+        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
+            => AddStreamingAsync (torrent, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+            => AddStreamingAsync (null, torrent, saveDirectory, settings);
+
+        async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        {
+            var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
+            var picker = new PiecePicking.StreamingPieceRequester ();
+            await manager.ChangePickerAsync (picker);
+            manager.StreamProvider = new StreamProvider (manager, picker);
+            return manager;
+        }
+
+        public Task<bool> RemoveAsync (MagnetLink magnetLink)
+        {
+            magnetLink = magnetLink ?? throw new ArgumentNullException (nameof (magnetLink));
+            return RemoveAsync (magnetLink.InfoHash);
+        }
+
+        public Task<bool> RemoveAsync (Torrent torrent)
+        {
+            torrent = torrent ?? throw new ArgumentNullException (nameof (torrent));
+            return RemoveAsync (torrent.InfoHash);
+        }
+
+        public async Task<bool> RemoveAsync (TorrentManager manager)
+        {
+            CheckDisposed ();
+            Check.Manager (manager);
+
+            await MainLoop;
+            if (manager.Engine != this)
+                throw new TorrentException ("The manager has not been registered with this engine");
+
+            if (manager.State != TorrentState.Stopped)
+                throw new TorrentException ("The manager must be stopped before it can be unregistered");
+
+            allTorrents.Remove (manager);
+            publicTorrents.Remove (manager);
+            ConnectionManager.Remove (manager);
+            listenManager.Remove (manager.InfoHash);
+
+            manager.Engine = null;
+            manager.DownloadLimiters.Remove (downloadLimiters);
+            manager.UploadLimiters.Remove (uploadLimiters);
+            return true;
+        }
+
+        async Task<bool> RemoveAsync (InfoHash infohash)
+        {
+            await MainLoop;
+            var manager = allTorrents.FirstOrDefault (t => t.InfoHash == infohash);
+            return manager == null ? false : await RemoveAsync (manager);
+        }
+
         public async Task ChangePieceWriterAsync (IPieceWriter writer)
         {
             writer = writer ?? throw new ArgumentNullException (nameof (writer));
@@ -263,7 +358,7 @@ namespace MonoTorrent.Client
             if (manager == null)
                 return false;
 
-            return Contains (manager.Torrent);
+            return Contains (manager.InfoHash);
         }
 
         public void Dispose ()
@@ -303,7 +398,7 @@ namespace MonoTorrent.Client
             await manager.StartAsync (metadataOnly: true);
             var data = await metadataCompleted.Task;
             await manager.StopAsync ();
-            await Unregister (manager);
+            await RemoveAsync (manager);
 
             token.ThrowIfCancellationRequested ();
             return data;
@@ -344,8 +439,10 @@ namespace MonoTorrent.Client
             await Task.WhenAll (tasks);
         }
 
+        [Obsolete ("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
         public async Task Register (TorrentManager manager)
             => await Register (manager, true);
+
 
         async Task Register (TorrentManager manager, bool isPublic)
         {
@@ -484,26 +581,10 @@ namespace MonoTorrent.Client
             await Task.WhenAll (tasks);
         }
 
+        [Obsolete ("Use one of the 'ClientEngine.RemoveAsync(Torrent)' overloads to remove a TorrentManager from the ClientEngine.")]
         public async Task Unregister (TorrentManager manager)
         {
-            CheckDisposed ();
-            Check.Manager (manager);
-
-            await MainLoop;
-            if (manager.Engine != this)
-                throw new TorrentException ("The manager has not been registered with this engine");
-
-            if (manager.State != TorrentState.Stopped)
-                throw new TorrentException ("The manager must be stopped before it can be unregistered");
-
-            allTorrents.Remove (manager);
-            publicTorrents.Remove (manager);
-            ConnectionManager.Remove (manager);
-            listenManager.Remove (manager.InfoHash);
-
-            manager.Engine = null;
-            manager.DownloadLimiters.Remove (downloadLimiters);
-            manager.UploadLimiters.Remove (uploadLimiters);
+            await RemoveAsync (manager);
         }
 
         #endregion

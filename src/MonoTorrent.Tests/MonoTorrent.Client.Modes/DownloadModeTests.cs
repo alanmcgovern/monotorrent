@@ -133,9 +133,9 @@ namespace MonoTorrent.Client.Modes
             id.SupportsFastPeer = true;
             id.SupportsLTMessages = true;
 
-            var manager = TestRig.CreatePrivate ();
+            var torrent = TestRig.CreatePrivate ();
             using var engine = new ClientEngine ();
-            await engine.Register (manager);
+            var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
@@ -154,9 +154,9 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task AddPeers_Tracker_Private ()
         {
-            var manager = TestRig.CreatePrivate ();
+            var torrent = TestRig.CreatePrivate ();
             using var engine = new ClientEngine ();
-            await engine.Register (manager);
+            var manager = await engine.AddAsync (torrent, "");
 
             manager.SetTrackerManager (TrackerManager);
 
@@ -237,9 +237,9 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task EmptyPeerId_PrivateTorrent ()
         {
-            var manager = TestRig.CreatePrivate ();
+            var torrent = TestRig.CreatePrivate ();
             using var engine = new ClientEngine ();
-            await engine.Register (manager);
+            var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length);
@@ -265,9 +265,9 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task MismatchedPeerId_PrivateTorrent ()
         {
-            var manager = TestRig.CreatePrivate ();
+            var torrent = TestRig.CreatePrivate ();
             using var engine = new ClientEngine ();
-            await engine.Register (manager);
+            var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length);

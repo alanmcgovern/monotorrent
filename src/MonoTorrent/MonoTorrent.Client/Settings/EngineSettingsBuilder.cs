@@ -29,8 +29,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -75,6 +78,16 @@ namespace MonoTorrent.Client
         /// Defaults to true.
         /// </summary>
         public bool AllowPortForwarding { get; set; }
+
+        /// <summary>
+        /// The directory used to cache any data needed by the engine. Typically used to store a
+        /// cache of the DHT table to improve bootstrapping speed, any metadata downloaded
+        /// using a magnet link, or fast resume data for individual torrents.
+        /// When <see cref="ToSettings"/> is invoked the value will be converted to a full path
+        /// if it is not already a full path, or will be replaced with
+        /// <see cref="Environment.CurrentDirectory"/> if the value is null or empty.
+        /// </summary>
+        public string CacheDirectory { get; set; }
 
         /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
@@ -186,11 +199,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public IPEndPoint ReportedAddress { get; set; }
 
-        /// <summary>
-        /// This is the path where the .torrent metadata will be saved when magnet links are used to start a download.
-        /// Defaults to <see langword="null" />
-        /// </summary>
-        public string SavePath { get; set; }
+        [Obsolete("use 'CacheDirectory' instead")]
+        public string SavePath {
+            get => CacheDirectory;
+            set => CacheDirectory = value;
+        }
 
         public EngineSettingsBuilder ()
             : this (new EngineSettings ())
@@ -205,6 +218,7 @@ namespace MonoTorrent.Client
             AllowHaveSuppression = settings.AllowHaveSuppression;
             AllowLocalPeerDiscovery = settings.AllowLocalPeerDiscovery;
             AllowPortForwarding = settings.AllowPortForwarding;
+            CacheDirectory = settings.CacheDirectory;
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtPort = settings.DhtPort;
             DiskCacheBytes = settings.DiskCacheBytes;
@@ -217,7 +231,6 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadSpeed = settings.MaximumUploadSpeed;
             ReportedAddress = settings.ReportedAddress;
-            SavePath = settings.SavePath;
         }
 
         public EngineSettings ToSettings ()
@@ -234,6 +247,7 @@ namespace MonoTorrent.Client
                 allowHaveSuppression: AllowHaveSuppression,
                 allowLocalPeerDiscovery: AllowLocalPeerDiscovery,
                 allowPortForwarding: AllowPortForwarding,
+                cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
                 connectionTimeout: ConnectionTimeout,
                 dhtPort: DhtPort,
                 diskCacheBytes: diskCacheBytes,
@@ -245,10 +259,10 @@ namespace MonoTorrent.Client
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadSpeed: MaximumUploadSpeed,
-                reportedAddress: ReportedAddress,
-                savePath: SavePath
+                reportedAddress: ReportedAddress
             );
         }
+
         static int CheckPort (int value)
         {
             if (value < -1 || value > ushort.MaxValue)
