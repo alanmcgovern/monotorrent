@@ -134,6 +134,51 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task MetadataOnly_False_WithEvent ()
+        {
+            var tcs = new TaskCompletionSource<IList<ITorrentFileInfo>> ();
+            new CancellationTokenSource (Debugger.IsAttached ? 100_000 : 10_000)
+                .Token
+                .Register (() => tcs.TrySetCanceled ());
+
+            await Setup (true, metadataOnly: false);
+
+            rig.Manager.MetadataReceived += (o, e) => {
+                if (rig.Manager.Files == null)
+                    tcs.SetException (new Exception ("Files were not set"));
+                else
+                    tcs.SetResult (rig.Manager.Files);
+            };
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            Assert.IsNotNull (await tcs.Task);
+        }
+
+        [Test]
+        public async Task MetadataOnly_False_WithTask ()
+        {
+            var tcs = new TaskCompletionSource<IList<ITorrentFileInfo>> ();
+            new CancellationTokenSource (Debugger.IsAttached ? 100_000 : 10_000)
+                .Token
+                .Register (() => tcs.TrySetCanceled ());
+
+            await Setup (true, metadataOnly: false);
+
+            async void WaitAsync ()
+            {
+                await rig.Manager.WaitForMetadataAsync ();
+                if (rig.Manager.Files == null)
+                    tcs.SetException (new Exception ("Files were not set"));
+                else
+                    tcs.SetResult (rig.Manager.Files);
+            }
+
+            WaitAsync ();
+
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            Assert.IsNotNull (await tcs.Task);
+        }
+
+        [Test]
         public async Task MetadataOnly_True ()
         {
             var tcs = new TaskCompletionSource<byte[]> ();

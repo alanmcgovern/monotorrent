@@ -283,7 +283,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The Torrent contained within this TorrentManager
         /// </summary>
-        public Torrent Torrent => MetadataTask.Task.IsCompleted ? MetadataTask.Task.Result : null;
+        public Torrent Torrent { get; private set; }
 
         /// <summary>
         /// The number of peers that we are currently uploading to
@@ -381,6 +381,7 @@ namespace MonoTorrent.Client
                 announces.Add (magnetLink.AnnounceUrls);
 
             Initialise (savePath, announces);
+            // FIXME: Remove this as we can use Torrent.tryLoadAsync if we move this to the caller of the constructor.
             if (Torrent.TryLoad (torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
                 SetMetadata (torrent);
         }
@@ -596,7 +597,7 @@ namespace MonoTorrent.Client
 
         internal void SetMetadata (Torrent torrent)
         {
-            MetadataTask.SetResult (torrent);
+            Torrent = torrent;
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
                 Engine.ConnectionManager.CleanupSocket (this, id);
             Bitfield = new BitField (Torrent.Pieces.Count);
@@ -611,8 +612,9 @@ namespace MonoTorrent.Client
             Files = Torrent.Files.Select (file =>
                 new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
-            
+
             PieceManager.Initialise ();
+            MetadataTask.SetResult (Torrent);
         }
 
         /// <summary>
