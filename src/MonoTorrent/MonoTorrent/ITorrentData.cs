@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         long Size { get; }
     }
 
-    static class ITorrentDataExtensions
+    public static class ITorrentDataExtensions
     {
         public static int BlocksPerPiece (this ITorrentData self, int pieceIndex)
         {
