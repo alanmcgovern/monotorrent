@@ -90,6 +90,23 @@ namespace MonoTorrent
         }
 
         /// <summary>
+        /// Returns <see langword="true"/> if a bitorrent magnet link was successfully parsed from the given string. Otherwise
+        /// return false.
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="magnetLink"></param>
+        /// <returns></returns>
+        public static bool TryParse (string uri, out MagnetLink magnetLink)
+        {
+            try {
+                magnetLink = Parse (uri);
+            } catch {
+                magnetLink = null;
+            }
+            return magnetLink != null;
+        }
+
+        /// <summary>
         /// Parses a magnet link from the given Uri. The uri should be in the form magnet:?xt=urn:btih:
         /// </summary>
         /// <param name="uri"></param>

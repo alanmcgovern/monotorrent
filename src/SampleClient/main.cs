@@ -29,6 +29,11 @@ namespace SampleClient
 
         static void Main (string[] args)
         {
+            if (args.Length == 1 && MagnetLink.TryParse (args[0], out MagnetLink link)) {
+                new MagnetLinkStreaming ().DownloadAsync (link).Wait ();
+                return;
+            }
+
             // Uncomment this to run the stress test
             //
             //var tester = new StressTest ();
