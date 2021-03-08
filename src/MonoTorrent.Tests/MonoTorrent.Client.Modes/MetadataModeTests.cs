@@ -61,7 +61,9 @@ namespace MonoTorrent.Client.Modes
             rig = multiFile ? TestRig.CreateMultiFile (32768, metadataMode) : TestRig.CreateSingleFile (1024 * 1024 * 1024, 32768, metadataMode);
             rig.RecreateManager ().Wait ();
 
-            rig.Manager.HashChecked = true;
+            // Mark the torrent as hash check complete with no data downloaded
+            if (rig.Manager.HasMetadata)
+                rig.Manager.LoadFastResume (new FastResume (rig.Manager.InfoHash, rig.Manager.Bitfield.Clone ().SetAll (false), rig.Manager.Bitfield.Clone ().SetAll (false)));
             await rig.Manager.StartAsync (metadataOnly);
             rig.AddConnection (pair.Outgoing);
 

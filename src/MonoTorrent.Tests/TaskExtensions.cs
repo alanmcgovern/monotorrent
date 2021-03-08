@@ -69,7 +69,13 @@ namespace MonoTorrent
 
         public static async Task WithTimeout (this Task task, TimeSpan timeout, string message = null)
         {
-            var result = await Task.WhenAny (task, Task.Delay (timeout));
+            var cancellation = new System.Threading.CancellationTokenSource ();
+            var delayTask = Task.Delay (timeout, cancellation.Token);
+            var result = await Task.WhenAny (task, delayTask).ConfigureAwait (false);
+
+            cancellation.Cancel ();
+            try { await delayTask.ConfigureAwait (false); } catch (OperationCanceledException) { }
+
             if (result == task) {
                 await task;
             } else {
@@ -91,10 +97,16 @@ namespace MonoTorrent
 
         public static async Task<T> WithTimeout<T> (this Task<T> task, TimeSpan timeout, string message = null)
         {
-            var result = await Task.WhenAny (task, Task.Delay (timeout));
-            if (result == task)
-                return await task;
+            var cancellation = new System.Threading.CancellationTokenSource ();
+            var delayTask = Task.Delay (timeout, cancellation.Token);
+            var result = await Task.WhenAny (task, delayTask).ConfigureAwait (false);
 
+            cancellation.Cancel ();
+            try { await delayTask.ConfigureAwait (false); } catch (OperationCanceledException) { }
+
+            if (result == task) {
+                return await task.ConfigureAwait (false);
+            }
             throw new TimeoutException (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
         }
     }

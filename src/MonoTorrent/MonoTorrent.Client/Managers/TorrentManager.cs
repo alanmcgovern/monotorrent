@@ -40,6 +40,8 @@ using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Streaming;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>, ITorrentData
@@ -150,6 +152,9 @@ namespace MonoTorrent.Client
             MetadataReceived?.Invoke (this, metadata);
         }
 
+        internal void SetNeedsHashCheck ()
+            => HashChecked = false;
+
         /// <summary>
         /// If <see cref="ITorrentFileInfo.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
         /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
@@ -157,7 +162,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal BitField UnhashedPieces { get; set; }
 
-        public bool HashChecked { get; internal set; }
+        public bool HashChecked { get; private set; }
 
         public int HashFails { get; internal set; }
 
@@ -543,6 +548,8 @@ namespace MonoTorrent.Client
             if (autoStart) {
                 await StartAsync ();
             } else if (setStoppedModeWhenDone) {
+                await MaybeWriteFastResumeAsync ();
+
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
         }
@@ -714,6 +721,7 @@ namespace MonoTorrent.Client
 
                 stoppingMode.Token.ThrowIfCancellationRequested ();
                 Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                await MaybeWriteFastResumeAsync ();
                 await Engine.StopAsync ();
             }
         }
@@ -933,6 +941,45 @@ namespace MonoTorrent.Client
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
             return new FastResume (InfoHash, Bitfield, UnhashedPieces);
+        }
+
+        internal async ReusableTask MaybeDeleteFastResumeAsync ()
+        {
+            if (!Engine.Settings.AutomaticFastResume)
+                return;
+
+            try {
+                var path = Engine.Settings.GetFastResumePath (InfoHash);
+                if (File.Exists (path))
+                    await Task.Run (() => File.Delete (path));
+            } catch {
+                // FIXME: I don't think we really care about this? Log it?
+            }
+        }
+
+        internal async ReusableTask MaybeLoadFastResumeAsync ()
+        {
+            if (!Engine.Settings.AutomaticFastResume || !HasMetadata)
+                return;
+
+            await MainLoop.SwitchToThreadpool ();
+            var fastResumePath = Engine.Settings.GetFastResumePath (InfoHash);
+            if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume fastResume) && InfoHash == fastResume.Infohash) {
+                await ClientEngine.MainLoop;
+                LoadFastResume (fastResume);
+            }
+        }
+
+        internal async ReusableTask MaybeWriteFastResumeAsync ()
+        {
+            if (!Engine.Settings.AutomaticFastResume ||!HashChecked)
+                return;
+
+            await MainLoop.SwitchToThreadpool ();
+            var fastResumePath = Engine.Settings.GetFastResumePath (InfoHash);
+            var parentDirectory = Path.GetDirectoryName (fastResumePath);
+            Directory.CreateDirectory (parentDirectory);
+            File.WriteAllBytes (fastResumePath, SaveFastResume ().Encode ().Encode ());
         }
 
         internal void SetTrackerManager (ITrackerManager manager)

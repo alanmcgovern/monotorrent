@@ -171,11 +171,11 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void SaveLoadFastResume ()
+        public async Task SaveLoadFastResume ()
         {
+            await Manager.HashCheckAsync (false);
             Manager.Bitfield.SetAll (true).Set (0, false);
             Manager.UnhashedPieces.SetAll (false).Set (0, true);
-            Manager.HashChecked = true;
 
             var origUnhashed = Manager.UnhashedPieces.Clone ();
             var origBitfield = Manager.Bitfield.Clone ();

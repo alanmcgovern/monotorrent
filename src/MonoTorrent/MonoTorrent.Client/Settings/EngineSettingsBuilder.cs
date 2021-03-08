@@ -42,6 +42,22 @@ namespace MonoTorrent.Client
     /// </summary>
     public class EngineSettingsBuilder
     {
+        internal static EngineSettings CreateForTests (
+            bool allowLocalPeerDiscovery = false,
+            bool allowPortForwarding = false,
+            bool automaticFastResume = false,
+            int dhtPort = -1,
+            int listenPort = -1)
+        {
+            return new EngineSettingsBuilder {
+                AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
+                AllowPortForwarding = allowPortForwarding,
+                AutomaticFastResume = automaticFastResume,
+                DhtPort = dhtPort,
+                ListenPort = listenPort,
+            }.ToSettings ();
+        }
+
         TimeSpan connectionTimeout;
         int dhtPort;
         int diskCacheBytes;
@@ -69,15 +85,22 @@ namespace MonoTorrent.Client
         public bool AllowHaveSuppression { get; set; }
 
         /// <summary>
-        /// True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to true.
+        /// True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to <see langword="true"/>.
         /// </summary>
         public bool AllowLocalPeerDiscovery { get; set; }
 
         /// <summary>
         /// True if the engine should automatically forward ports using any compatible UPnP or NAT-PMP device.
-        /// Defaults to true.
+        /// Defaults to <see langword="true"/>.
         /// </summary>
         public bool AllowPortForwarding { get; set; }
+
+        /// <summary>
+        /// If set to true FastResume data will be implicitly saved after <see cref="TorrentManager.StopAsync()"/> is invoked,
+        /// and will be implicitly loaded before the <see cref="TorrentManager"/> is returned by <see cref="ClientEngine.AddAsync"/>
+        /// Defaults to <see langword="true"/>.
+        /// </summary>
+        public bool AutomaticFastResume { get; set; }
 
         /// <summary>
         /// The directory used to cache any data needed by the engine. Typically used to store a
@@ -218,6 +241,7 @@ namespace MonoTorrent.Client
             AllowHaveSuppression = settings.AllowHaveSuppression;
             AllowLocalPeerDiscovery = settings.AllowLocalPeerDiscovery;
             AllowPortForwarding = settings.AllowPortForwarding;
+            AutomaticFastResume = settings.AutomaticFastResume;
             CacheDirectory = settings.CacheDirectory;
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtPort = settings.DhtPort;
@@ -247,6 +271,7 @@ namespace MonoTorrent.Client
                 allowHaveSuppression: AllowHaveSuppression,
                 allowLocalPeerDiscovery: AllowLocalPeerDiscovery,
                 allowPortForwarding: AllowPortForwarding,
+                automaticFastResume: AutomaticFastResume,
                 cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
                 connectionTimeout: ConnectionTimeout,
                 dhtPort: DhtPort,
