@@ -105,7 +105,7 @@ namespace MonoTorrent.Streaming
                 throw new ArgumentNullException (nameof (file));
             if (Manager.Files == null)
                 throw new InvalidOperationException ("The metadata for this torrent has not been downloaded. You must call WaitForMetadataAsync before creating a stream.");
-            if (Manager.State == TorrentState.Stopped || Manager.State == TorrentState.Stopping || Manager.State == TorrentState.Starting)
+            if (Manager.State == TorrentState.Stopped || Manager.State == TorrentState.Stopping || Manager.State == TorrentState.Error)
                 throw new InvalidOperationException ($"The torrent state was {Manager.State}. StreamProvider cannot be used unless the torrent manager has been successfully started.");
             if (!Manager.Files.Contains (file))
                 throw new ArgumentException ("The TorrentFile is not from this TorrentManager", nameof (file));
