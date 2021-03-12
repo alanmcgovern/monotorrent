@@ -18,10 +18,7 @@ namespace SampleClient
 {
     class MainClass
     {
-        static string dhtNodeFile;
-        static string basePath;
         static string downloadsPath;
-        static string fastResumeFile;
         static string torrentsPath;
         static ClientEngine engine;				// The engine used for downloading
         static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
@@ -39,12 +36,8 @@ namespace SampleClient
             //var tester = new StressTest ();
             //tester.RunAsync ().Wait ();
 
-            /* Generate the paths to the folder we will save .torrent files to and where we download files to */
-            basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
-            torrentsPath = Path.Combine (basePath, "Torrents");				// This is the directory we will save .torrents to
-            downloadsPath = Path.Combine (basePath, "Downloads");			// This is the directory we will save downloads to
-            fastResumeFile = Path.Combine (torrentsPath, "fastresume.data");
-            dhtNodeFile = Path.Combine (basePath, "DhtNodes");
+            torrentsPath = Path.Combine (Environment.CurrentDirectory, "Torrents");				// This is the directory we will save .torrents to
+            downloadsPath = Path.Combine (Environment.CurrentDirectory, "Downloads");			// This is the directory we will save downloads to
             torrents = new List<TorrentManager> ();							// This is where we will store the torrentmanagers
             listener = new Top10Listener (10);
 
@@ -69,49 +62,18 @@ namespace SampleClient
             Console.Write ($"{Environment.NewLine}Choose a listen port: ");
             while (!Int32.TryParse (Console.ReadLine (), out port)) { }
 
-            // Create the settings which the engine will use
-            // downloadsPath - this is the path where we will save all the files to
-            // port - this is the port we listen for connections on
-            EngineSettings engineSettings = new EngineSettingsBuilder {
+            var engineSettingsBuilder = new EngineSettingsBuilder {
                 ListenPort = port,
                 DhtPort = port,
                 DiskCacheBytes = 5 * 1024 * 1024,
-            }.ToSettings ();
-
-            //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
-            //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
-            //engineSettings.MaxReadRate = 1 * 1024 * 1024;
-
-            // Create the default settings which a torrent will have.
-            TorrentSettings torrentDefaults = new TorrentSettings ();
+            };
 
             // Create an instance of the engine.
-            engine = new ClientEngine (engineSettings);
-
-            byte[] nodes = Array.Empty<byte> ();
-            try {
-                if (File.Exists (dhtNodeFile))
-                    nodes = File.ReadAllBytes (dhtNodeFile);
-            } catch {
-                Console.WriteLine ("No existing dht nodes could be loaded");
-            }
-
-
-            // This starts the Dht engine but does not wait for the full initialization to
-            // complete. This is because it can take up to 2 minutes to bootstrap, depending
-            // on how many nodes time out when they are contacted.
-            await engine.DhtEngine.StartAsync (nodes);
+            engine = new ClientEngine (engineSettingsBuilder.ToSettings ());
 
             // If the torrentsPath does not exist, we want to create it
             if (!Directory.Exists (torrentsPath))
                 Directory.CreateDirectory (torrentsPath);
-
-            BEncodedDictionary fastResume = new BEncodedDictionary ();
-            try {
-                if (File.Exists (fastResumeFile))
-                    fastResume = BEncodedValue.Decode<BEncodedDictionary> (File.ReadAllBytes (fastResumeFile));
-            } catch {
-            }
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach (string file in Directory.GetFiles (torrentsPath)) {
@@ -127,11 +89,13 @@ namespace SampleClient
                         continue;
                     }
 
-                    var manager = await engine.AddAsync (torrent, downloadsPath, torrentDefaults);
-                    // When any preprocessing has been completed, you create a TorrentManager
-                    // which you then register with the engine.
-                    if (fastResume.ContainsKey (torrent.InfoHash.ToHex ()))
-                        manager.LoadFastResume (new FastResume ((BEncodedDictionary) fastResume[torrent.InfoHash.ToHex ()]));
+                    // EngineSettings.AutoSaveLoadFastResume is enabled, so any cached fast resume
+                    // data will be implicitly loaded. If fast resume data is found, the 'hash check'
+                    // phase of starting a torrent can be skipped.
+                    // 
+                    // TorrentSettingsBuilder can be used to modify the settings for this
+                    // torrent.
+                    var manager = await engine.AddAsync (torrent, downloadsPath);
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add (manager);
@@ -177,7 +141,9 @@ namespace SampleClient
                     listener.WriteLine ($"{e.Successful}: {e.Tracker}");
                 };
 
-                // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+                // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding.
+                // As EngineSettings.AutoSaveLoadDhtCache is enabled, any cached data will be loaded into the
+                // Dht engine when the first torrent is started, enabling it to bootstrap more rapidly.
                 await manager.StartAsync ();
             }
 
@@ -282,7 +248,9 @@ namespace SampleClient
 
         private static async Task Shutdown ()
         {
-            BEncodedDictionary fastResume = new BEncodedDictionary ();
+            // As EngineSettings.AutoSaveLoadDhtCache is enabled, the DHT table will
+            // be written to disk when the final torrent is stopped. This will allow
+            // the dht engine to bootstrap faster next time.
             for (int i = 0; i < torrents.Count; i++) {
                 var stoppingTask = torrents[i].StopAsync ();
                 while (torrents[i].State != TorrentState.Stopped) {
@@ -290,14 +258,8 @@ namespace SampleClient
                     Thread.Sleep (250);
                 }
                 await stoppingTask;
-
-                if (torrents[i].HashChecked)
-                    fastResume.Add (torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume ().Encode ());
             }
 
-            var nodes = await engine.DhtEngine.SaveNodesAsync ();
-            File.WriteAllBytes (dhtNodeFile, nodes);
-            File.WriteAllBytes (fastResumeFile, fastResume.Encode ());
             engine.Dispose ();
 
             Thread.Sleep (2000);
