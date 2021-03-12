@@ -79,9 +79,9 @@ namespace MonoTorrent.Client
         /// The full path to the directory used to cache any data needed by the engine. Typically used to store a
         /// cache of the DHT table to improve bootstrapping speed, any metadata downloaded
         /// using a magnet link, or fast resume data for individual torrents.
-        /// Defaults to <see cref="Environment.CurrentDirectory"/>
+        /// Defaults to a sub-directory of <see cref="Environment.CurrentDirectory"/> called 'cache'
         /// </summary>
-        public string CacheDirectory { get; } = Environment.CurrentDirectory;
+        public string CacheDirectory { get; } = Path.Combine (Environment.CurrentDirectory, "cache");
 
         /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so

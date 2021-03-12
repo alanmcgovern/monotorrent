@@ -73,7 +73,6 @@ namespace SampleClient
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettingsBuilder {
-                CacheDirectory = "cache",
                 ListenPort = port,
                 DhtPort = port,
                 DiskCacheBytes = 5 * 1024 * 1024,
