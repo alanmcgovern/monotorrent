@@ -120,7 +120,7 @@ namespace MonoTorrent.Client.Modes
             Manager.ModeChanged += (oldMode, newMode) => modeChanged.Add (newMode);
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
-            Manager.HashChecked = true;
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (false), Manager.Bitfield.Clone ().SetAll (false)));
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
 
@@ -136,7 +136,7 @@ namespace MonoTorrent.Client.Modes
             Manager.ModeChanged += (oldMode, newMode) => modeChanged.Add (newMode);
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
-            Manager.HashChecked = false;
+            Assert.IsFalse (Manager.HashChecked);
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
 

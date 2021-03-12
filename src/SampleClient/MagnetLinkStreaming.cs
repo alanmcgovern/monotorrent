@@ -16,7 +16,7 @@ namespace SampleClient
 
         public async Task DownloadAsync (MagnetLink link)
         {
-            var engine = new ClientEngine ();
+            using var engine = new ClientEngine ();
             var manager = await engine.AddStreamingAsync (link, "downloads");
 
             var times = new List<(string message, TimeSpan time)> ();

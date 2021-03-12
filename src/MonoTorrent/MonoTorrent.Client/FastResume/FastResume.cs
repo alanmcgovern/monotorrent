@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
@@ -130,6 +131,21 @@ namespace MonoTorrent.Client
         {
             byte[] data = Encode ().Encode ();
             s.Write (data, 0, data.Length);
+        }
+
+        public static bool TryLoad (string fastResumeFilePath, out FastResume fastResume)
+        {
+            try {
+                if (File.Exists (fastResumeFilePath)) {
+                    var data = (BEncodedDictionary) BEncodedDictionary.Decode (File.ReadAllBytes (fastResumeFilePath));
+                    fastResume = new FastResume (data);
+                } else {
+                    fastResume = null;
+                }
+            } catch {
+                fastResume = null;
+            }
+            return fastResume != null;
         }
     }
 }

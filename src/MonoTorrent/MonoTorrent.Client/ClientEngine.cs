@@ -243,12 +243,15 @@ namespace MonoTorrent.Client
             saveDirectory = string.IsNullOrEmpty (saveDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (saveDirectory);
             TorrentManager manager;
             if (magnetLink != null) {
-                var metadataSaveFilePath = Path.Combine (Settings.MetadataSaveDirectory, magnetLink.InfoHash.ToHex () + ".torrent");
+                var metadataSaveFilePath = Settings.GetMetadataPath (magnetLink.InfoHash);
                 manager = new TorrentManager (magnetLink, saveDirectory, settings, metadataSaveFilePath);
             } else {
                 manager = new TorrentManager (torrent, saveDirectory, settings);
             }
+
             await Register (manager);
+            await manager.MaybeLoadFastResumeAsync ();
+
             return manager;
         }
 #pragma warning restore CS0618 // Type or member is obsolete

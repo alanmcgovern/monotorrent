@@ -27,6 +27,7 @@
 //
 
 
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -80,6 +81,10 @@ namespace MonoTorrent.Client.Modes
 
             int piecesHashed = 0;
             Manager.HashFails = 0;
+
+            // Delete any existing fast resume data. We will need to recreate it after hashing completes.
+            await Manager.MaybeDeleteFastResumeAsync ();
+
             if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {

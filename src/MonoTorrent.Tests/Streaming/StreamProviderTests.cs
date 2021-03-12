@@ -53,8 +53,7 @@ namespace MonoTorrent.Streaming
         [SetUp]
         public void Setup ()
         {
-            LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
-            Engine = new ClientEngine ();
+            Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
 
             PieceWriter = new TestWriter ();
             Engine.DiskManager.ChangePieceWriter (PieceWriter);
