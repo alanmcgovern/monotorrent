@@ -397,7 +397,7 @@ namespace MonoTorrent.Client
             LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
             Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
             Engine = new ClientEngine (new EngineSettingsBuilder {
-                AutomaticFastResume = false,
+                AutoSaveLoadFastResume = false,
                 CacheDirectory = cacheDir,
                 ListenPort = 12345,
             }.ToSettings ());

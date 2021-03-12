@@ -945,7 +945,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeDeleteFastResumeAsync ()
         {
-            if (!Engine.Settings.AutomaticFastResume)
+            if (!Engine.Settings.AutoSaveLoadFastResume)
                 return;
 
             try {
@@ -959,7 +959,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeLoadFastResumeAsync ()
         {
-            if (!Engine.Settings.AutomaticFastResume || !HasMetadata)
+            if (!Engine.Settings.AutoSaveLoadFastResume || !HasMetadata)
                 return;
 
             await MainLoop.SwitchToThreadpool ();
@@ -972,7 +972,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeWriteFastResumeAsync ()
         {
-            if (!Engine.Settings.AutomaticFastResume ||!HashChecked)
+            if (!Engine.Settings.AutoSaveLoadFastResume ||!HashChecked)
                 return;
 
             await MainLoop.SwitchToThreadpool ();

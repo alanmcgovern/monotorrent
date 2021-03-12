@@ -488,7 +488,7 @@ namespace MonoTorrent.Client
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
             if (IsRunning)
-                await DhtEngine.StartAsync ();
+                await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
         }
 
         void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
@@ -630,7 +630,7 @@ namespace MonoTorrent.Client
 
                 Listener.Start ();
                 LocalPeerDiscovery.Start ();
-                await DhtEngine.StartAsync ();
+                await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
 
                 if (Listener is ISocketListener socketListener)
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, socketListener.EndPoint.Port));
@@ -650,10 +650,38 @@ namespace MonoTorrent.Client
             if (!IsRunning) {
                 Listener.Stop ();
                 LocalPeerDiscovery.Stop ();
+
+                await MaybeSaveDhtNodes ();
                 await DhtEngine.StopAsync ();
                 await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort), CancellationToken.None);
                 await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, Settings.DhtPort), CancellationToken.None);
             }
+        }
+
+        async ReusableTasks.ReusableTask<byte[]> MaybeLoadDhtNodes ()
+        {
+            if (!Settings.AutoSaveLoadDhtCache)
+                return null;
+
+            var savePath = Settings.GetDhtNodeCacheFilePath ();
+            return await Task.Run (() => File.Exists (savePath) ? File.ReadAllBytes (savePath) : null);
+        }
+
+        async ReusableTasks.ReusableTask MaybeSaveDhtNodes ()
+        {
+            if (!Settings.AutoSaveLoadDhtCache)
+                return;
+
+            var nodes = await DhtEngine.SaveNodesAsync ();
+            if (nodes.Length == 0)
+                return;
+
+            await Task.Run (() => {
+                var savePath = Settings.GetDhtNodeCacheFilePath ();
+                var parentDir = Path.GetDirectoryName (savePath);
+                Directory.CreateDirectory (parentDir);
+                File.WriteAllBytes (savePath, nodes);
+            });
         }
 
         public async Task UpdateSettingsAsync (EngineSettings settings)

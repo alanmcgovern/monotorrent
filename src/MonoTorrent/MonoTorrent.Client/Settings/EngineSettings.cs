@@ -69,11 +69,22 @@ namespace MonoTorrent.Client
         public bool AllowPortForwarding { get; } = true;
 
         /// <summary>
-        /// If set to true FastResume data will be implicitly saved after <see cref="TorrentManager.StopAsync()"/> is invoked,
-        /// and will be implicitly loaded before the <see cref="TorrentManager"/> is returned by <see cref="ClientEngine.AddAsync"/>
+        /// If set to true dht nodes will be implicitly saved when there are no active <see cref="TorrentManager"/> instances in the engine.
+        /// Dht nodes will be restored when the first <see cref="TorrentManager"/> is started. Otherwise dht nodes will not be cached between
+        /// restarts and the <see cref="DhtEngine"/> will have to bootstrap from scratch each time.
         /// Defaults to <see langword="true"/>.
         /// </summary>
-        public bool AutomaticFastResume { get; } = true;
+        public bool AutoSaveLoadDhtCache { get; } = true;
+
+
+        /// <summary>
+        /// If set to true FastResume data will be implicitly saved after <see cref="TorrentManager.StopAsync()"/> is invoked,
+        /// and will be implicitly loaded before the <see cref="TorrentManager"/> is returned by <see cref="ClientEngine.AddAsync"/>
+        /// Otherwise fast resume data will not be saved or restored and <see cref="TorrentManager"/>
+        /// instances will have to perform a full hash check when they start.
+        /// Defaults to <see langword="true"/>. 
+        /// </summary>
+        public bool AutoSaveLoadFastResume { get; } = true;
 
         /// <summary>
         /// The full path to the directory used to cache any data needed by the engine. Typically used to store a
@@ -109,7 +120,7 @@ namespace MonoTorrent.Client
         public int ListenPort { get; } = 52138;
 
         /// <summary>
-        /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutomaticFastResume"/>
+        /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
         /// is enabled then fast resume data will be written to this when <see cref="TorrentManager.StopAsync"/> or
         /// <see cref="ClientEngine.StopAllAsync"/> is invoked. If fast resume data is available, the data will be loaded
         /// from disk as part of <see cref="ClientEngine.AddAsync"/> or <see cref="ClientEngine.AddStreamingAsync"/>. If
@@ -181,14 +192,15 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool automaticFastResume, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
+        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
             AllowHaveSuppression = allowHaveSuppression;
             AllowLocalPeerDiscovery = allowLocalPeerDiscovery;
             AllowPortForwarding = allowPortForwarding;
-            AutomaticFastResume = automaticFastResume;
+            AutoSaveLoadDhtCache = autoSaveLoadDhtCache;
+            AutoSaveLoadFastResume = autoSaveLoadFastResume;
             DhtPort = dhtPort;
             DiskCacheBytes = diskCacheBytes;
             CacheDirectory = cacheDirectory;
@@ -204,11 +216,14 @@ namespace MonoTorrent.Client
             ReportedAddress = reportedAddress;
         }
 
-        internal string GetMetadataPath (InfoHash infoHash)
-            => Path.Combine (MetadataSaveDirectory, infoHash.ToHex () + ".torrent");
+        internal string GetDhtNodeCacheFilePath ()
+            => Path.Combine (CacheDirectory, "dht_nodes.cache");
 
         internal string GetFastResumePath (InfoHash infoHash)
             => Path.Combine (FastResumeSaveDirectory, $"{infoHash.ToHex ()}.fresume");
+
+        internal string GetMetadataPath (InfoHash infoHash)
+            => Path.Combine (MetadataSaveDirectory, infoHash.ToHex () + ".torrent");
 
         public override bool Equals (object obj)
             => Equals (obj as EngineSettings);
@@ -220,7 +235,8 @@ namespace MonoTorrent.Client
                    && AllowHaveSuppression == other.AllowHaveSuppression
                    && AllowLocalPeerDiscovery == other.AllowLocalPeerDiscovery
                    && AllowPortForwarding == other.AllowPortForwarding
-                   && AutomaticFastResume == other.AutomaticFastResume
+                   && AutoSaveLoadDhtCache == other.AutoSaveLoadDhtCache
+                   && AutoSaveLoadFastResume == other.AutoSaveLoadFastResume
                    && CacheDirectory == other.CacheDirectory
                    && DhtPort == other.DhtPort
                    && DiskCacheBytes == other.DiskCacheBytes
