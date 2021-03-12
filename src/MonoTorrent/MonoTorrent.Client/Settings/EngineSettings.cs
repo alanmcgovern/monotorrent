@@ -204,11 +204,14 @@ namespace MonoTorrent.Client
             ReportedAddress = reportedAddress;
         }
 
-        internal string GetMetadataPath (InfoHash infoHash)
-            => Path.Combine (MetadataSaveDirectory, infoHash.ToHex () + ".torrent");
+        internal string GetDhtNodeCacheFilePath ()
+            => Path.Combine (CacheDirectory, "dht_nodes.cache");
 
         internal string GetFastResumePath (InfoHash infoHash)
             => Path.Combine (FastResumeSaveDirectory, $"{infoHash.ToHex ()}.fresume");
+
+        internal string GetMetadataPath (InfoHash infoHash)
+            => Path.Combine (MetadataSaveDirectory, infoHash.ToHex () + ".torrent");
 
         public override bool Equals (object obj)
             => Equals (obj as EngineSettings);
