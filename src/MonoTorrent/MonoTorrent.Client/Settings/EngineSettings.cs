@@ -76,7 +76,6 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool AutoSaveLoadDhtCache { get; } = true;
 
-
         /// <summary>
         /// If set to true FastResume data will be implicitly saved after <see cref="TorrentManager.StopAsync()"/> is invoked,
         /// and will be implicitly loaded before the <see cref="TorrentManager"/> is returned by <see cref="ClientEngine.AddAsync"/>
@@ -85,6 +84,15 @@ namespace MonoTorrent.Client
         /// Defaults to <see langword="true"/>. 
         /// </summary>
         public bool AutoSaveLoadFastResume { get; } = true;
+
+        /// <summary>
+        /// This setting affects torrents downloaded using a <see cref="MagnetLink"/>. When enabled, metadata for the torrent will be loaded
+        /// from <see cref="MetadataCacheDirectory"/>, if it exists, when the <see cref="MagnetLink"/> is added to the engine using
+        /// <see cref="ClientEngine.AddAsync"/>. Additionally, metadata will be written to this directory if it is successfully retrieved
+        /// from peers so future downloads can start immediately.
+        /// Defaults to <see langword="true"/>. 
+        /// </summary>
+        public bool AutoSaveLoadMagnetLinkMetadata { get; } = true;
 
         /// <summary>
         /// The full path to the directory used to cache any data needed by the engine. Typically used to store a
@@ -127,7 +135,7 @@ namespace MonoTorrent.Client
         /// <see cref="TorrentManager.StartAsync"/> is invoked, any on-disk fast resume data will be deleted to eliminate
         /// the possibility of loading stale data later.
         /// </summary>
-        public string FastResumeSaveDirectory => Path.Combine (CacheDirectory, "fastresume");
+        public string FastResumeCacheDirectory => Path.Combine (CacheDirectory, "fastresume");
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -182,7 +190,10 @@ namespace MonoTorrent.Client
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If a magnet link is used
         /// to download a torrent, the downloaded metata will be cached here.
         /// </summary>
-        public string MetadataSaveDirectory => Path.Combine (CacheDirectory, "metadata");
+        public string MetadataCacheDirectory => Path.Combine (CacheDirectory, "metadata");
+
+        [Obsolete ("Use the 'MetadataCacheDirectory' property instead")]
+        public string MetadataSaveDirectory => CacheDirectory;
 
         [Obsolete ("Use the 'CacheDirectory' property instead")]
         public string SavePath => CacheDirectory;
@@ -192,7 +203,7 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
+        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -201,6 +212,7 @@ namespace MonoTorrent.Client
             AllowPortForwarding = allowPortForwarding;
             AutoSaveLoadDhtCache = autoSaveLoadDhtCache;
             AutoSaveLoadFastResume = autoSaveLoadFastResume;
+            AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata;
             DhtPort = dhtPort;
             DiskCacheBytes = diskCacheBytes;
             CacheDirectory = cacheDirectory;
@@ -220,10 +232,10 @@ namespace MonoTorrent.Client
             => Path.Combine (CacheDirectory, "dht_nodes.cache");
 
         internal string GetFastResumePath (InfoHash infoHash)
-            => Path.Combine (FastResumeSaveDirectory, $"{infoHash.ToHex ()}.fresume");
+            => Path.Combine (FastResumeCacheDirectory, $"{infoHash.ToHex ()}.fresume");
 
         internal string GetMetadataPath (InfoHash infoHash)
-            => Path.Combine (MetadataSaveDirectory, infoHash.ToHex () + ".torrent");
+            => Path.Combine (MetadataCacheDirectory, infoHash.ToHex () + ".torrent");
 
         public override bool Equals (object obj)
             => Equals (obj as EngineSettings);
@@ -237,6 +249,7 @@ namespace MonoTorrent.Client
                    && AllowPortForwarding == other.AllowPortForwarding
                    && AutoSaveLoadDhtCache == other.AutoSaveLoadDhtCache
                    && AutoSaveLoadFastResume == other.AutoSaveLoadFastResume
+                   && AutoSaveLoadMagnetLinkMetadata == other.AutoSaveLoadMagnetLinkMetadata
                    && CacheDirectory == other.CacheDirectory
                    && DhtPort == other.DhtPort
                    && DiskCacheBytes == other.DiskCacheBytes

@@ -401,13 +401,13 @@ namespace MonoTorrent.Client
                 CacheDirectory = cacheDir,
                 ListenPort = 12345,
             }.ToSettings ());
-            if (Directory.Exists (Engine.Settings.MetadataSaveDirectory))
-                Directory.Delete (Engine.Settings.MetadataSaveDirectory, true);
+            if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
+                Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);
             Engine.DiskManager.ChangePieceWriter (writer);
             Writer = writer;
 
             RecreateManager ().Wait ();
-            MetadataPath = Path.Combine (Engine.Settings.MetadataSaveDirectory, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
+            MetadataPath = Path.Combine (Engine.Settings.MetadataCacheDirectory, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
         }
 
         static TestRig ()

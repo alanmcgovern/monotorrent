@@ -245,6 +245,8 @@ namespace MonoTorrent.Client
             if (magnetLink != null) {
                 var metadataSaveFilePath = Settings.GetMetadataPath (magnetLink.InfoHash);
                 manager = new TorrentManager (magnetLink, saveDirectory, settings, metadataSaveFilePath);
+                if (Settings.AutoSaveLoadMagnetLinkMetadata && Torrent.TryLoad (metadataSaveFilePath, out torrent) && torrent.InfoHash == magnetLink.InfoHash)
+                    manager.SetMetadata (torrent);
             } else {
                 manager = new TorrentManager (torrent, saveDirectory, settings);
             }

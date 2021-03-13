@@ -113,6 +113,15 @@ namespace MonoTorrent.Client
         public bool AutoSaveLoadFastResume { get; set; }
 
         /// <summary>
+        /// This setting affects torrents downloaded using a <see cref="MagnetLink"/>. When enabled, metadata for the torrent will be loaded
+        /// from <see cref="MetadataCacheDirectory"/>, if it exists, when the <see cref="MagnetLink"/> is added to the engine using
+        /// <see cref="ClientEngine.AddAsync"/>. Additionally, metadata will be written to this directory if it is successfully retrieved
+        /// from peers so future downloads can start immediately.
+        /// Defaults to <see langword="true"/>. 
+        /// </summary>
+        public bool AutoSaveLoadMagnetLinkMetadata { get; set; }
+
+        /// <summary>
         /// The directory used to cache any data needed by the engine. Typically used to store a
         /// cache of the DHT table to improve bootstrapping speed, any metadata downloaded
         /// using a magnet link, or fast resume data for individual torrents.
@@ -253,6 +262,7 @@ namespace MonoTorrent.Client
             AllowPortForwarding = settings.AllowPortForwarding;
             AutoSaveLoadDhtCache = settings.AutoSaveLoadDhtCache;
             AutoSaveLoadFastResume = settings.AutoSaveLoadFastResume;
+            AutoSaveLoadMagnetLinkMetadata = settings.AutoSaveLoadMagnetLinkMetadata;
             CacheDirectory = settings.CacheDirectory;
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtPort = settings.DhtPort;
@@ -284,6 +294,7 @@ namespace MonoTorrent.Client
                 allowPortForwarding: AllowPortForwarding,
                 autoSaveLoadDhtCache: AutoSaveLoadDhtCache,
                 autoSaveLoadFastResume: AutoSaveLoadFastResume,
+                autoSaveLoadMagnetLinkMetadata: AutoSaveLoadMagnetLinkMetadata,
                 cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
                 connectionTimeout: ConnectionTimeout,
                 dhtPort: DhtPort,

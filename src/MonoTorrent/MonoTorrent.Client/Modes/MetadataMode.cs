@@ -182,10 +182,12 @@ namespace MonoTorrent.Client.Modes
                                 }
 
                                 try {
-                                    if (!Directory.Exists (Path.GetDirectoryName (savePath)))
-                                        Directory.CreateDirectory (Path.GetDirectoryName (savePath));
-                                    File.Delete (savePath);
-                                    File.WriteAllBytes (savePath, dict.Encode ());
+                                    if (this.Settings.AutoSaveLoadMagnetLinkMetadata) {
+                                        if (!Directory.Exists (Path.GetDirectoryName (savePath)))
+                                            Directory.CreateDirectory (Path.GetDirectoryName (savePath));
+                                        File.Delete (savePath);
+                                        File.WriteAllBytes (savePath, dict.Encode ());
+                                    }
                                 } catch (Exception ex) {
                                     logger.ExceptionFormated (ex, "Cannot write metadata to path '{0}'", savePath);
                                     Manager.TrySetError (Reason.WriteFailure, ex);

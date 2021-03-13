@@ -386,9 +386,6 @@ namespace MonoTorrent.Client
                 announces.Add (magnetLink.AnnounceUrls);
 
             Initialise (savePath, announces);
-            // FIXME: Remove this as we can use Torrent.tryLoadAsync if we move this to the caller of the constructor.
-            if (Torrent.TryLoad (torrentSave, out Torrent torrent) && torrent.InfoHash == magnetLink.InfoHash)
-                SetMetadata (torrent);
         }
 
         void Initialise (string savePath, IList<IList<string>> announces)
