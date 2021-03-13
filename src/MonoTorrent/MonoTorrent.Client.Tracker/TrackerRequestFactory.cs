@@ -53,6 +53,8 @@ namespace MonoTorrent.Client.Tracker
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
                 port = engine.Settings.ReportedAddress.Port;
+            } else if (engine.Listener is ISocketListener socketListener && (socketListener?.EndPoint.Port ?? 0) != 0) {
+                port = socketListener.EndPoint.Port;
             } else {
                 port = engine.Settings.ListenPort;
             }
