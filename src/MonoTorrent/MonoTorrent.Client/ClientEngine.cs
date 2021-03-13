@@ -631,6 +631,8 @@ namespace MonoTorrent.Client
                 Listener.Start ();
                 LocalPeerDiscovery.Start ();
                 await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
+                if (Settings.AllowPortForwarding)
+                    await PortForwarder.StartAsync (CancellationToken.None);
 
                 if (Listener is ISocketListener socketListener)
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, socketListener.EndPoint.Port));
@@ -650,6 +652,9 @@ namespace MonoTorrent.Client
             if (!IsRunning) {
                 Listener.Stop ();
                 LocalPeerDiscovery.Stop ();
+
+                if (Settings.AllowPortForwarding)
+                    await PortForwarder.StopAsync (CancellationToken.None);
 
                 await MaybeSaveDhtNodes ();
                 await DhtEngine.StopAsync ();
