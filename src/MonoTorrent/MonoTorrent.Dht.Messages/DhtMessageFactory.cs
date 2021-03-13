@@ -34,17 +34,17 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    static class DhtMessageFactory
+    class DhtMessageFactory
     {
         static readonly BEncodedString QueryNameKey = "q";
         static readonly BEncodedString MessageTypeKey = "y";
         static readonly BEncodedString TransactionIdKey = "t";
-
-        static readonly Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
         static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
 
+        readonly Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
 
-        public static int RegisteredMessages => messages.Count;
+
+        public int RegisteredMessages => messages.Count;
 
         static DhtMessageFactory ()
         {
@@ -54,22 +54,22 @@ namespace MonoTorrent.Dht.Messages
             queryDecoders.Add ("ping", d => new Ping (d));
         }
 
-        internal static bool IsRegistered (BEncodedValue transactionId)
+        internal bool IsRegistered (BEncodedValue transactionId)
         {
             return messages.ContainsKey (transactionId);
         }
 
-        public static void RegisterSend (QueryMessage message)
+        public void RegisterSend (QueryMessage message)
         {
             messages.Add (message.TransactionId, message);
         }
 
-        public static bool UnregisterSend (QueryMessage message)
+        public bool UnregisterSend (QueryMessage message)
         {
             return messages.Remove (message.TransactionId);
         }
 
-        public static DhtMessage DecodeMessage (BEncodedDictionary dictionary)
+        public DhtMessage DecodeMessage (BEncodedDictionary dictionary)
         {
             if (!TryDecodeMessage (dictionary, out DhtMessage message, out string error))
                 throw new MessageException (ErrorCode.GenericError, error);
@@ -77,12 +77,12 @@ namespace MonoTorrent.Dht.Messages
             return message;
         }
 
-        public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message)
+        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message)
         {
             return TryDecodeMessage (dictionary, out message, out string error);
         }
 
-        public static bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message, out string error)
+        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message, out string error)
         {
             message = null;
             error = null;

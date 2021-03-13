@@ -60,6 +60,8 @@ namespace MonoTorrent.Dht
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
+        DhtMessageFactory DhtMessageFactory { get; set; }
+
         /// <summary>
         ///  The DHT engine which owns this message loop.
         /// </summary>
@@ -105,6 +107,7 @@ namespace MonoTorrent.Dht
         public MessageLoop (DhtEngine engine, IDhtListener listener)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
+            DhtMessageFactory = new DhtMessageFactory ();
             Listener = new NullDhtListener ();
             ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>> ();
             SendQueue = new Queue<SendDetails> ();
@@ -137,6 +140,10 @@ namespace MonoTorrent.Dht
         async void MessageReceived (byte[] buffer, IPEndPoint endpoint)
         {
             await DhtEngine.MainLoop;
+
+            // Don't handle new messages if we have already stopped the dht engine.
+            if (Listener.Status == ListenerStatus.NotListening)
+                return;
 
             // I should check the IP address matches as well as the transaction id
             // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
@@ -188,6 +195,12 @@ namespace MonoTorrent.Dht
 
         internal void Stop ()
         {
+            DhtMessageFactory = new DhtMessageFactory ();
+            SendQueue.Clear ();
+            ReceiveQueue.Clear ();
+            WaitingResponse.Clear ();
+            WaitingResponseTimedOut.Clear ();
+
             if (Listener.Status != ListenerStatus.NotListening)
                 Listener.Stop ();
         }
