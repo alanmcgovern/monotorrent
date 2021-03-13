@@ -147,7 +147,8 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
-        /// Defaults to 5MB (5 * 1024 * 1024).
+        /// Set to 0 to disable the cache.
+        /// Defaults to 5MB.
         /// </summary>
         public int DiskCacheBytes {
             get => diskCacheBytes;

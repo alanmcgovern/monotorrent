@@ -111,9 +111,10 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
-        /// Experimental feature. Currently defaults 0. Recommended value when experimenting is 5MB (5 * 1024 * 1024).
+        /// Set to 0 to disable the cache.
+        /// Defaults to 5MB.
         /// </summary>
-        public int DiskCacheBytes { get; } = 0;
+        public int DiskCacheBytes { get; } = 5 * 1024 * 1024;
 
         /// <summary>
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
