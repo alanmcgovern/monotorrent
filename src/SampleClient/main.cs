@@ -137,13 +137,6 @@ namespace SampleClient
                 await manager.StartAsync ();
             }
 
-            // This is how to access the list of port mappings, and to see if they were
-            // successful, pending or failed. If they failed it could be because the public port
-            // is already in use by another computer on your network.
-            foreach (var successfulMapping in engine.PortMappings.Created) { }
-            foreach (var failedMapping in engine.PortMappings.Failed) { }
-            foreach (var failedMapping in engine.PortMappings.Pending) { }
-
             // While the torrents are still running, print out some stats to the screen.
             // Details for all the loaded torrent managers are shown.
             int i = 0;
@@ -154,28 +147,31 @@ namespace SampleClient
                     sb.Remove (0, sb.Length);
                     running = torrents.Exists (m => m.State != TorrentState.Stopped);
 
-                    AppendFormat (sb, "Total Download Rate: {0:0.00}kB/sec", engine.TotalDownloadSpeed / 1024.0);
-                    AppendFormat (sb, "Total Upload Rate:   {0:0.00}kB/sec", engine.TotalUploadSpeed / 1024.0);
-                    AppendFormat (sb, "Disk Read Rate:      {0:0.00} kB/s", engine.DiskManager.ReadRate / 1024.0);
-                    AppendFormat (sb, "Disk Write Rate:     {0:0.00} kB/s", engine.DiskManager.WriteRate / 1024.0);
-                    AppendFormat (sb, "Cache Used:         {0:0.00} kB", engine.DiskManager.CacheBytesUsed / 1024.0);
-                    AppendFormat (sb, "Cache Read:         {0:0.00} kB", engine.DiskManager.TotalCacheBytesRead / 1024.0);
-                    AppendFormat (sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalBytesRead / 1024.0);
-                    AppendFormat (sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalBytesWritten / 1024.0);
-                    AppendFormat (sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
+                    AppendFormat (sb, $"Transfer Rate:      {engine.TotalDownloadSpeed / 1024.0:0.00}kB/sec down / {engine.TotalUploadSpeed / 1024.0:0.00}kB/sec up");
+                    AppendFormat (sb, $"Memory Cache:       {engine.DiskManager.CacheBytesUsed / 1024.0:0.00}/{engine.Settings.DiskCacheBytes / 1024.0:0.00} kB");
+                    AppendFormat (sb, $"Disk IO Rate:       {engine.DiskManager.ReadRate / 1024.0:0.00} kB/s read / {engine.DiskManager.WriteRate / 1024.0:0.00} kB/s write");
+                    AppendFormat (sb, $"Disk IO Total:      {engine.DiskManager.TotalBytesRead / 1024.0:0.00} kB read / {engine.DiskManager.TotalBytesWritten / 1024.0:0.00} kB written");
+                    AppendFormat (sb, $"Open Connections:   {engine.ConnectionManager.OpenConnections}");
+
+                    // Print out the port mappings
+                    foreach (var mapping in engine.PortMappings.Created)
+                        AppendFormat (sb, $"Successful Mapping    {mapping.PublicPort}:{mapping.PrivatePort} ({mapping.Protocol})");
+                    foreach (var mapping in engine.PortMappings.Failed)
+                        AppendFormat (sb, $"Failed mapping:       {mapping.PublicPort}:{mapping.PrivatePort} ({mapping.Protocol})");
+                    foreach (var mapping in engine.PortMappings.Pending)
+                        AppendFormat (sb, $"Pending mapping:      {mapping.PublicPort}:{mapping.PrivatePort} ({mapping.Protocol})");
 
                     foreach (TorrentManager manager in torrents) {
                         AppendSeparator (sb);
-                        AppendFormat (sb, "State:           {0}", manager.State);
-                        AppendFormat (sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-                        AppendFormat (sb, "Progress:           {0:0.00}", manager.Progress);
-                        AppendFormat (sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-                        AppendFormat (sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-                        AppendFormat (sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-                        AppendFormat (sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        AppendFormat(sb, "Tracker Status");
+                        AppendFormat (sb, $"State:              {manager.State}");
+                        AppendFormat (sb, $"Name:               {(manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name)}");
+                        AppendFormat (sb, $"Progress:           {manager.Progress:0.00}");
+                        AppendFormat (sb, $"Transfer Rate:      {manager.Monitor.DownloadSpeed / 1024.0:0.00}kB/s down / {manager.Monitor.UploadSpeed / 1024.0:0.00} kB/s up");
+                        AppendFormat (sb, $"Total transferred:  {manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0):0.00} MB down / {manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0):0.00} MB up");
+                        AppendFormat (sb, $"Tracker Status");
                         foreach (var tier in manager.TrackerManager.Tiers)
                             AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapeSucceeded}.");
+
                         if (manager.PieceManager != null)
                             AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 
