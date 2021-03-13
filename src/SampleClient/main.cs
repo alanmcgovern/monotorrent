@@ -56,20 +56,10 @@ namespace SampleClient
 #if DEBUG
             Logger.Factory = (string className) => new TextLogger (Console.Out, className);
 #endif
-            int port;
             Torrent torrent = null;
-            // Ask the user what port they want to use for incoming connections
-            Console.Write ($"{Environment.NewLine}Choose a listen port: ");
-            while (!Int32.TryParse (Console.ReadLine (), out port)) { }
-
-            var engineSettingsBuilder = new EngineSettingsBuilder {
-                ListenPort = port,
-                DhtPort = port,
-                DiskCacheBytes = 5 * 1024 * 1024,
-            };
 
             // Create an instance of the engine.
-            engine = new ClientEngine (engineSettingsBuilder.ToSettings ());
+            engine = new ClientEngine ();
 
             // If the torrentsPath does not exist, we want to create it
             if (!Directory.Exists (torrentsPath))

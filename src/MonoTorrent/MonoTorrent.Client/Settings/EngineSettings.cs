@@ -118,15 +118,15 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
-        /// Choose -1 to disable DHT. Defaults to 52139.
+        /// Choose -1 to disable DHT. Defaults to 0.
         /// </summary>
-        public int DhtPort { get; } = 52193;
+        public int DhtPort { get; } = 0;
 
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
-        /// available port. Choose -1 to disable listening for incoming connections. Defaults to 52138.
+        /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
-        public int ListenPort { get; } = 52138;
+        public int ListenPort { get; } = 0;
 
         /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
