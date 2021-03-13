@@ -60,7 +60,7 @@ namespace MonoTorrent.Dht
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
-        DhtMessageFactory DhtMessageFactory { get; set; }
+        internal DhtMessageFactory DhtMessageFactory { get; private set; }
 
         /// <summary>
         ///  The DHT engine which owns this message loop.
@@ -189,6 +189,7 @@ namespace MonoTorrent.Dht
 
         internal void Start ()
         {
+            DhtMessageFactory = new DhtMessageFactory ();
             if (Listener.Status != ListenerStatus.Listening)
                 Listener.Start ();
         }

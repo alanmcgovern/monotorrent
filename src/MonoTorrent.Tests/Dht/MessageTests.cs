@@ -45,11 +45,13 @@ namespace MonoTorrent.Dht
         private readonly BEncodedString transactionId = "aa";
 
         private QueryMessage message;
+        DhtMessageFactory DhtMessageFactory;
 
         [SetUp]
         public void Setup ()
         {
             DhtMessage.UseVersionKey = false;
+            DhtMessageFactory = new DhtMessageFactory ();
         }
 
         [TearDown]

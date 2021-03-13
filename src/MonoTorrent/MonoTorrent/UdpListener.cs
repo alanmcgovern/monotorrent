@@ -77,7 +77,8 @@ namespace MonoTorrent
             while (!token.IsCancellationRequested) {
                 try {
                     UdpReceiveResult result = await client.ReceiveAsync ().ConfigureAwait (false);
-                    MessageReceived?.Invoke (result.Buffer, result.RemoteEndPoint);
+                    if (!token.IsCancellationRequested)
+                        MessageReceived?.Invoke (result.Buffer, result.RemoteEndPoint);
                 } catch (SocketException ex) {
                     // If the destination computer closes the connection
                     // we get error code 10054. We need to keep receiving on

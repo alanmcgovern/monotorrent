@@ -80,7 +80,8 @@ namespace MonoTorrent.Dht
             var ping = new Ping (engine.LocalId) {
                 TransactionId = transactionId
             };
-            listener.MessageSent += (message, endpoint) => {
+            listener.MessageSent += (data, endpoint) => {
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
                 if (message is Ping && message.TransactionId.Equals (ping.TransactionId)) {
                     counter++;
                     PingResponse response = new PingResponse (node.Id, transactionId);
@@ -111,7 +112,8 @@ namespace MonoTorrent.Dht
             b.Nodes[1].Seen (TimeSpan.FromDays (4));
             b.Nodes[5].Seen (TimeSpan.FromDays (3));
 
-            listener.MessageSent += (message, endpoint) => {
+            listener.MessageSent += (data, endpoint) => {
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
 
                 b.Nodes.Sort ((l, r) => l.LastSeen.CompareTo (r.LastSeen));
                 if ((endpoint.Port == 3 && nodeCount == 0) ||
@@ -137,7 +139,9 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < 5; i++)
                 nodes.Add (new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i)));
 
-            listener.MessageSent += (message, endpoint) => {
+            listener.MessageSent += (data, endpoint) => {
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+
                 Node current = nodes.Find (n => n.EndPoint.Port.Equals (endpoint.Port));
                 if (current == null)
                     return;
