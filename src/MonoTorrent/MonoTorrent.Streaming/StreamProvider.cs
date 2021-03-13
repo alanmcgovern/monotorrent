@@ -135,7 +135,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <returns></returns>
         public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file)
-            => CreateHttpStreamAsync (file, prebuffer: true, CancellationToken.None);
+            => CreateHttpStreamAsync (file, prebuffer: true, new Uri (""), CancellationToken.None);
 
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
@@ -146,7 +146,7 @@ namespace MonoTorrent.Streaming
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
         public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, CancellationToken token)
-            => CreateHttpStreamAsync (file, prebuffer: true, token);
+            => CreateHttpStreamAsync (file, prebuffer: true, new Uri (""), token);
 
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
@@ -157,8 +157,10 @@ namespace MonoTorrent.Streaming
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <returns></returns>
         public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer)
-            => CreateHttpStreamAsync (file, prebuffer, CancellationToken.None);
+            => CreateHttpStreamAsync (file, prebuffer, new Uri (""), CancellationToken.None);
 
+        public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, Uri serverUri) =>
+            CreateHttpStreamAsync (file, prebuffer, serverUri, CancellationToken.None);
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
         /// while it is downloading. This stream is seekable and readable. This stream must be disposed
@@ -166,12 +168,14 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
+        /// <param name="serverUri">Points to another server requesting stream's content without CORS Policy Issue.</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public async Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
+        
+        public async Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, Uri serverUri, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);
-            var httpStreamer = new HttpStream (stream);
+            var httpStreamer = new HttpStream (stream, serverUri);
             return httpStreamer;
         }
     }
