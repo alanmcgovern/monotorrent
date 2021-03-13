@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
+using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
@@ -273,9 +274,7 @@ namespace MonoTorrent.Client
         async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
         {
             var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
-            var picker = new PiecePicking.StreamingPieceRequester ();
-            await manager.ChangePickerAsync (picker);
-            manager.StreamProvider = new StreamProvider (manager, picker);
+            await manager.ChangePickerAsync (new StreamingPieceRequester ());
             return manager;
         }
 
@@ -445,7 +444,6 @@ namespace MonoTorrent.Client
         [Obsolete ("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
         public async Task Register (TorrentManager manager)
             => await Register (manager, true);
-
 
         async Task Register (TorrentManager manager, bool isPublic)
         {

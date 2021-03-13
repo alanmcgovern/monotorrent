@@ -33,7 +33,7 @@ using System.Linq;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class StreamingPieceRequester : IPieceRequester
+    public class StreamingPieceRequester : IStreamingPieceRequester
     {
         bool RefreshAfterSeeking = false;
 
@@ -246,7 +246,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        internal void SeekToPosition (ITorrentFileInfo file, long position)
+        public void SeekToPosition (ITorrentFileInfo file, long position)
         {
             // Update the high priority set, then cancel pending requests.
             var oldIndex = HighPriorityPieceIndex;
@@ -260,7 +260,7 @@ namespace MonoTorrent.Client.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        internal void ReadToPosition (ITorrentFileInfo file, long position)
+        public void ReadToPosition (ITorrentFileInfo file, long position)
         {
             HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
         }

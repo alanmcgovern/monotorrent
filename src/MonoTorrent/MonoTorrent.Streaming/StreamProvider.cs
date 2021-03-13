@@ -45,9 +45,9 @@ namespace MonoTorrent.Streaming
         LocalStream ActiveStream { get; set; }
         CancellationTokenSource Cancellation { get; set; }
         TorrentManager Manager { get; }
-        StreamingPieceRequester PieceRequester { get; }
+        IStreamingPieceRequester PieceRequester { get; }
 
-        internal StreamProvider (TorrentManager manager, StreamingPieceRequester pieceRequester)
+        internal StreamProvider (TorrentManager manager, IStreamingPieceRequester pieceRequester)
         {
             Cancellation = new CancellationTokenSource ();
             Manager = manager;

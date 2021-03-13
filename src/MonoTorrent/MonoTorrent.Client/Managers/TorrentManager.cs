@@ -425,26 +425,27 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        internal void ChangePicker (IPieceRequester requestManager)
+        internal void ChangePicker (IPieceRequester requester)
         {
-            if (requestManager == null)
-                throw new ArgumentNullException (nameof (requestManager));
+            if (requester == null)
+                throw new ArgumentNullException (nameof (requester));
 
-            PieceManager.ChangePicker (requestManager);
+            PieceManager.ChangePicker (requester);
+            if (requester is IStreamingPieceRequester streamingRequester)
+                StreamProvider = new StreamProvider (this, streamingRequester);
+            else
+                StreamProvider = null;
         }
 
         /// <summary>
         /// Changes the active piece picker. This can be called when the manager is running, or when it is stopped.
         /// </summary>
-        /// <param name="picker">The new picker to use.</param>
+        /// <param name="requester">The new picker to use.</param>
         /// <returns></returns>
-        public async Task ChangePickerAsync (IPieceRequester picker)
+        public async Task ChangePickerAsync (IPieceRequester requester)
         {
-            if (StreamProvider != null)
-                throw new InvalidOperationException ("Custom PiecePickers cannot be used for Torrents added using 'ClientEngine.AddStreamingAsync'.");
-
             await ClientEngine.MainLoop;
-            ChangePicker (picker);
+            ChangePicker (requester);
         }
 
         public void Dispose ()

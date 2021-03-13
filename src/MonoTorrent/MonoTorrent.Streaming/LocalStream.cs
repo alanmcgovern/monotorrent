@@ -67,9 +67,9 @@ namespace MonoTorrent.Streaming
 
         TorrentManager Manager { get; }
 
-        StreamingPieceRequester Picker { get; }
+        IStreamingPieceRequester Picker { get; }
 
-        public LocalStream (TorrentManager manager, ITorrentFileInfo file, StreamingPieceRequester picker)
+        public LocalStream (TorrentManager manager, ITorrentFileInfo file, IStreamingPieceRequester picker)
         {
             Manager = manager;
             File = file;
