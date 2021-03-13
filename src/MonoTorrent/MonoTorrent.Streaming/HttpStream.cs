@@ -50,17 +50,14 @@ namespace MonoTorrent.Streaming
 
         public Uri Uri { get; }
         
-        public HttpStream (Stream stream, Uri serverUri)
+        public HttpStream (Stream stream)
         {
             // Set up a HTTP listener for VLC/UWP to connect to.
             Uri = new Uri ($"http://127.0.0.1:5555/{Guid.NewGuid ()}/");
 
             Listener = new HttpListener ();
             Listener.Prefixes.Add (Uri.ToString ());
-            if (!string.IsNullOrEmpty (serverUri.ToString ())) {
-                Listener.Prefixes.Add (serverUri.ToString ()); //-- this should allow the NodeJS Server to obtain {Uri} content without CORS Policy issue.
-            }
-
+            
             Listener.Start ();
 
             Cancellation = new CancellationTokenSource ();
@@ -132,6 +129,8 @@ namespace MonoTorrent.Streaming
             var buffer = new byte[64 * 1024];
             context.Response.SendChunked = true;
             context.Response.AppendHeader ("Content-Range", $"bytes {firstByte}-{lastByte}");
+            context.Response.AppendHeader ("Access-Control-Allow-Origin", "*"); //-- should allow CORS from another domain.
+            
             context.Response.StatusCode = (int) HttpStatusCode.PartialContent;
             context.Response.ContentLength64 = lastByte - firstByte + 1;
             Debug.WriteLine ($"Requested {firstByte} -> {lastByte}. Length: {context.Response.ContentLength64}");
