@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <NoWarn>1701;1702;1591;0419</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
     <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
 
