@@ -160,7 +160,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < fileData.Files.Count; i++)
                 writer.Data.Add (fileData.Files[i], fileData.Data[i]);
 
-            diskManager = new DiskManager (new EngineSettings (), writer);
+            diskManager = new DiskManager (new EngineSettingsBuilder { DiskCacheBytes = 0 }.ToSettings (), writer);
         }
 
         [Test]
