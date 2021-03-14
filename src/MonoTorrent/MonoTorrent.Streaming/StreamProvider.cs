@@ -167,7 +167,6 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
-        /// <param name="serverUri">Points to another server requesting stream's content without CORS Policy Issue.</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
         
