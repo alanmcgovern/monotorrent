@@ -129,9 +129,15 @@ namespace MonoTorrent.Streaming
             var buffer = new byte[64 * 1024];
             context.Response.SendChunked = true;
             context.Response.AppendHeader ("Content-Range", $"bytes {firstByte}-{lastByte}");
-            context.Response.AppendHeader ("Access-Control-Allow-Origin", "*"); //-- should allow CORS from another domain.
             
-            context.Response.StatusCode = (int) HttpStatusCode.PartialContent;
+			//--- CORS Policy Declined goes away. A lot of SocketExceptions and MonoTorrent.Tracker Exceptions happen. When reverting to original Pre-release 132 Nupackage. No exceptions thrown.
+			//--- HTML5 Player uses HLS.JS and does something, enables play button. When going to Url obtained from CreateHttpStreamAsync, Download Failed - No File. 
+			//--- NodeJS Express Server CORS enabled is: 127.0.0.1:8888 
+			context.Response.AppendHeader ("Access-Control-Allow-Origin", "*"); //-- should allow CORS from another domain.
+            context.Response.AppendHeader ("Access-Control-Allow-Headers", "Content-Type,x-requested-with");
+            context.Response.AppendHeader ("Access-Control-Allow-Methods", "GET,POST,PUT,HEAD,DELETE,OPTIONS");
+            
+			context.Response.StatusCode = (int) HttpStatusCode.PartialContent;
             context.Response.ContentLength64 = lastByte - firstByte + 1;
             Debug.WriteLine ($"Requested {firstByte} -> {lastByte}. Length: {context.Response.ContentLength64}");
             while (firstByte <= lastByte) {
