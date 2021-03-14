@@ -159,6 +159,7 @@ namespace MonoTorrent.Streaming
         public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer)
             => CreateHttpStreamAsync (file, prebuffer, CancellationToken.None);
 
+
         /// <summary>
         /// Creates a <see cref="Stream"/> which can be used to access the given <see cref="TorrentFile"/>
         /// while it is downloading. This stream is seekable and readable. This stream must be disposed
@@ -168,6 +169,7 @@ namespace MonoTorrent.Streaming
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
+        
         public async Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);
