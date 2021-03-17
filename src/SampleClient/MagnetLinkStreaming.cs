@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent;
@@ -13,13 +13,17 @@ namespace SampleClient
 {
     class MagnetLinkStreaming
     {
+        ClientEngine Engine { get; }
 
-        public async Task DownloadAsync (MagnetLink link)
+        public MagnetLinkStreaming (ClientEngine engine)
         {
-            using var engine = new ClientEngine ();
-            var manager = await engine.AddStreamingAsync (link, "downloads");
+            Engine = engine;
+        }
 
+        public async Task DownloadAsync (MagnetLink link, CancellationToken token)
+        {
             var times = new List<(string message, TimeSpan time)> ();
+            var manager = await Engine.AddStreamingAsync (link, "downloads");
 
             var overall = Stopwatch.StartNew ();
             var firstPeerFound = Stopwatch.StartNew ();
@@ -49,44 +53,43 @@ namespace SampleClient
             };
 
             await manager.StartAsync ();
-            await manager.WaitForMetadataAsync ();
+            await manager.WaitForMetadataAsync (token);
 
             var largestFile = manager.Files.OrderByDescending (t => t.Length).First ();
             var stream = await manager.StreamProvider.CreateStreamAsync (largestFile, false);
 
-
             // Read the middle
-            await TimedRead (manager, stream, stream.Length / 2, times);
+            await TimedRead (manager, stream, stream.Length / 2, times, token);
             // Then the start
-            await TimedRead (manager, stream, 0, times);
+            await TimedRead (manager, stream, 0, times, token);
             // Then the last piece
-            await TimedRead (manager, stream, stream.Length - 2, times);
+            await TimedRead (manager, stream, stream.Length - 2, times, token);
             // Then the 3rd last piece
-            await TimedRead (manager, stream, stream.Length - manager.PieceLength * 3, times);
+            await TimedRead (manager, stream, stream.Length - manager.PieceLength * 3, times, token);
             // Then the 5th piece
-            await TimedRead (manager, stream, manager.PieceLength * 5, times);
+            await TimedRead (manager, stream, manager.PieceLength * 5, times, token);
             // Then 1/3 of the way in
-            await TimedRead (manager, stream, stream.Length  / 3, times);
+            await TimedRead (manager, stream, stream.Length  / 3, times, token);
             // Then 2/3 of the way in
-            await TimedRead (manager, stream, stream.Length / 3 * 2, times);
+            await TimedRead (manager, stream, stream.Length / 3 * 2, times, token);
             // Then 1/5 of the way in
-            await TimedRead (manager, stream, stream.Length / 5, times);
+            await TimedRead (manager, stream, stream.Length / 5, times, token);
             // Then 4/5 of the way in
-            await TimedRead (manager, stream, stream.Length / 5 * 4, times);
+            await TimedRead (manager, stream, stream.Length / 5 * 4, times, token);
 
             lock (times) {
-                foreach (var p in times)
-                    Console.WriteLine ($"{p.message} {p.time.TotalSeconds:0.00} seconds");
+                foreach (var (message, time) in times)
+                    Console.WriteLine ($"{message} {time.TotalSeconds:0.00} seconds");
             }
 
             await manager.StopAsync ();
         }
 
-        async Task TimedRead (TorrentManager manager, Stream stream, long position, List<(string, TimeSpan)> times)
+        async Task TimedRead (TorrentManager manager, Stream stream, long position, List<(string, TimeSpan)> times, CancellationToken token)
         {
             var stopwatch = Stopwatch.StartNew ();
             stream.Seek (position, SeekOrigin.Begin);
-            await stream.ReadAsync (new byte[1], 0, 1);
+            await stream.ReadAsync (new byte[1], 0, 1, token);
             lock(times)
                 times.Add (($"Read piece: {manager.ByteOffsetToPieceIndex (stream.Position - 1)}. Time since seeking: ", stopwatch.Elapsed));
         }
