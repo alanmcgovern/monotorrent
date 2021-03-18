@@ -306,13 +306,11 @@ namespace MonoTorrent.Client
         #endregion
 
         #region Constructors
-#pragma warning disable CS0618 // Type or member is obsolete
         internal TorrentManager (MagnetLink magnetLink)
             : this (magnetLink, "", new TorrentSettings (), "")
         {
 
         }
-#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         /// Creates a new TorrentManager instance.

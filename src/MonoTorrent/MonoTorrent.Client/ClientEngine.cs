@@ -238,7 +238,6 @@ namespace MonoTorrent.Client
         public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
             => AddAsync (null, torrent, saveDirectory, settings);
 
-#pragma warning disable CS0618 // Type or member is obsolete
         async Task<TorrentManager> AddAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
         {
             saveDirectory = string.IsNullOrEmpty (saveDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (saveDirectory);
@@ -257,7 +256,6 @@ namespace MonoTorrent.Client
 
             return manager;
         }
-#pragma warning restore CS0618 // Type or member is obsolete
 
         public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory)
             => AddStreamingAsync (magnetLink, saveDirectory, new TorrentSettings ());
