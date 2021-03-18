@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// This setting affects torrents downloaded using a <see cref="MagnetLink"/>. When enabled, metadata for the torrent will be loaded
-        /// from <see cref="MetadataCacheDirectory"/>, if it exists, when the <see cref="MagnetLink"/> is added to the engine using
+        /// from <see cref="EngineSettings.MetadataCacheDirectory"/>, if it exists, when the <see cref="MagnetLink"/> is added to the engine using
         /// <see cref="ClientEngine.AddAsync"/>. Additionally, metadata will be written to this directory if it is successfully retrieved
         /// from peers so future downloads can start immediately.
         /// Defaults to <see langword="true"/>. 
@@ -241,12 +241,6 @@ namespace MonoTorrent.Client
         /// Defaults to <see langword="null" />
         /// </summary>
         public IPEndPoint ReportedAddress { get; set; }
-
-        [Obsolete("use 'CacheDirectory' instead")]
-        public string SavePath {
-            get => CacheDirectory;
-            set => CacheDirectory = value;
-        }
 
         public EngineSettingsBuilder ()
             : this (new EngineSettings ())

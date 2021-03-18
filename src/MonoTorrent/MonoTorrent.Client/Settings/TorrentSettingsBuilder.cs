@@ -64,12 +64,6 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool CreateContainingDirectory { get; set; }
 
-        [Obsolete ("Use 'CreateContainingDirectory' instead.")]
-        public bool CreateSubFolder {
-            get => CreateContainingDirectory;
-            set => CreateContainingDirectory = value;
-        }
-
         /// <summary>
         /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
         /// </summary>

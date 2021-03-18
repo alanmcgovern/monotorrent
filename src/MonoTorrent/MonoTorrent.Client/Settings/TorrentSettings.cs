@@ -108,9 +108,6 @@ namespace MonoTorrent.Client
         /// </summary>
         internal TimeSpan TimeToWaitUntilIdle => TimeSpan.FromMinutes (10);
 
-        [Obsolete ("Use 'CreateContainingDirectory' instead")]
-        public bool CreateSubFolder => CreateContainingDirectory;
-
         public TorrentSettings ()
         {
 

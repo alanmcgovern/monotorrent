@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (InfoHash, new BitField (torrent.Pieces.Count).SetAll (false), new BitField (torrent.Pieces.Count)).Encode ().Encode ());
+            File.WriteAllBytes (path, new FastResume (InfoHash, new BitField (torrent.Pieces.Count).SetAll (false), new BitField (torrent.Pieces.Count)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsFalse (manager.HashChecked);
             await manager.StartAsync ();
@@ -141,7 +141,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new BitField (torrent.Pieces.Count).SetAll (false), new BitField (torrent.Pieces.Count)).Encode ().Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new BitField (torrent.Pieces.Count).SetAll (false), new BitField (torrent.Pieces.Count)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -161,7 +161,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new BitField (torrent.Pieces.Count).SetAll (true), new BitField (torrent.Pieces.Count)).Encode ().Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new BitField (torrent.Pieces.Count).SetAll (true), new BitField (torrent.Pieces.Count)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -185,7 +185,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new BitField (torrent.Pieces.Count).SetAll (true), new BitField (torrent.Pieces.Count)).Encode ().Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new BitField (torrent.Pieces.Count).SetAll (true), new BitField (torrent.Pieces.Count)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             await engine.ChangePieceWriterAsync (new TestWriter {
                 FilesThatExist = new System.Collections.Generic.List<ITorrentFileInfo> (manager.Files)

@@ -319,8 +319,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="torrent">The torrent to load in</param>
         /// <param name="savePath">The directory to save downloaded files to</param>
-        [Obsolete ("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
-        public TorrentManager (Torrent torrent, string savePath)
+        internal TorrentManager (Torrent torrent, string savePath)
             : this (torrent, savePath, new TorrentSettings ())
         {
 
@@ -332,8 +331,7 @@ namespace MonoTorrent.Client
         /// <param name="torrent">The torrent to load in</param>
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
-        [Obsolete("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
-        public TorrentManager (Torrent torrent, string savePath, TorrentSettings settings)
+        internal TorrentManager (Torrent torrent, string savePath, TorrentSettings settings)
         {
             Check.Torrent (torrent);
             Check.SavePath (savePath);
@@ -348,9 +346,7 @@ namespace MonoTorrent.Client
             SetMetadata (torrent);
         }
 
-
-        [Obsolete("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
-        public TorrentManager (InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
+        internal TorrentManager (InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
         {
             Check.InfoHash (infoHash);
             Check.SavePath (savePath);
@@ -367,8 +363,7 @@ namespace MonoTorrent.Client
             Initialise (savePath, announces);
         }
 
-        [Obsolete("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
-        public TorrentManager (MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
+        internal TorrentManager (MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
         {
             Check.MagnetLink (magnetLink);
             Check.InfoHash (magnetLink.InfoHash);
@@ -977,7 +972,7 @@ namespace MonoTorrent.Client
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHash);
             var parentDirectory = Path.GetDirectoryName (fastResumePath);
             Directory.CreateDirectory (parentDirectory);
-            File.WriteAllBytes (fastResumePath, SaveFastResume ().Encode ().Encode ());
+            File.WriteAllBytes (fastResumePath, SaveFastResume ().Encode ());
         }
 
         internal void SetTrackerManager (ITrackerManager manager)

@@ -252,7 +252,7 @@ namespace MonoTorrent.Client
                 manager = new TorrentManager (torrent, saveDirectory, settings);
             }
 
-            await Register (manager);
+            await Register (manager, true);
             await manager.MaybeLoadFastResumeAsync ();
 
             return manager;
@@ -441,10 +441,6 @@ namespace MonoTorrent.Client
             await Task.WhenAll (tasks);
         }
 
-        [Obsolete ("Instead of creating a TorrentManager and invoking 'ClientEngine.Register(TorrentManager)', just invoke 'ClientEngine.AddAsync'.")]
-        public async Task Register (TorrentManager manager)
-            => await Register (manager, true);
-
         async Task Register (TorrentManager manager, bool isPublic)
         {
             CheckDisposed ();
@@ -580,12 +576,6 @@ namespace MonoTorrent.Client
             for (int i = 0; i < publicTorrents.Count; i++)
                 tasks.Add (publicTorrents[i].StopAsync (timeout));
             await Task.WhenAll (tasks);
-        }
-
-        [Obsolete ("Use one of the 'ClientEngine.RemoveAsync(Torrent)' overloads to remove a TorrentManager from the ClientEngine.")]
-        public async Task Unregister (TorrentManager manager)
-        {
-            await RemoveAsync (manager);
         }
 
         #endregion

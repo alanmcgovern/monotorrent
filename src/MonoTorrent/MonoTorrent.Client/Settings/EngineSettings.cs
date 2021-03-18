@@ -193,12 +193,6 @@ namespace MonoTorrent.Client
         /// </summary>
         public string MetadataCacheDirectory => Path.Combine (CacheDirectory, "metadata");
 
-        [Obsolete ("Use the 'MetadataCacheDirectory' property instead")]
-        public string MetadataSaveDirectory => CacheDirectory;
-
-        [Obsolete ("Use the 'CacheDirectory' property instead")]
-        public string SavePath => CacheDirectory;
-
         public EngineSettings ()
         {
 

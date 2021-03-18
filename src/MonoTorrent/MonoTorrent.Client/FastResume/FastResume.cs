@@ -55,20 +55,7 @@ namespace MonoTorrent.Client
 
         public BitField UnhashedPieces { get; }
 
-        [Obsolete ("This constructor should not be used")]
-        public FastResume ()
-        {
-        }
-
-        [Obsolete ("The constructor overload which takes an 'unhashedPieces' parameter should be used instead of this.")]
-        public FastResume (InfoHash infoHash, BitField bitfield)
-        {
-            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
-            Bitfield = bitfield ?? throw new ArgumentNullException (nameof (bitfield));
-            UnhashedPieces = new BitField (Bitfield.Length);
-        }
-
-        public FastResume (InfoHash infoHash, BitField bitfield, BitField unhashedPieces)
+        internal FastResume (InfoHash infoHash, BitField bitfield, BitField unhashedPieces)
         {
             Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
             Bitfield = bitfield?.Clone () ?? throw new ArgumentNullException (nameof (bitfield));
@@ -80,7 +67,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public FastResume (BEncodedDictionary dict)
+        internal FastResume (BEncodedDictionary dict)
         {
             CheckVersion (dict);
             CheckContent (dict, InfoHashKey);
@@ -116,7 +103,7 @@ namespace MonoTorrent.Client
             throw new ArgumentException ($"This FastResume is version {version}, but only version  '1' and '2' are supported");
         }
 
-        public BEncodedDictionary Encode ()
+        public byte[] Encode ()
         {
             return new BEncodedDictionary {
                 { VersionKey, FastResumeVersion },
@@ -124,12 +111,12 @@ namespace MonoTorrent.Client
                 { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
                 { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },
                 { UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) }
-            };
+            }.Encode ();
         }
 
         public void Encode (Stream s)
         {
-            byte[] data = Encode ().Encode ();
+            byte[] data = Encode ();
             s.Write (data, 0, data.Length);
         }
 
