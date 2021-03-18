@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
-    public class ByteBufferPool
+    class ByteBufferPool
     {
         internal readonly struct Releaser : IDisposable
         {

@@ -34,7 +34,7 @@ using System.Numerics;
 
 namespace MonoTorrent
 {
-    public struct BigEndianBigInteger : IComparable<BigEndianBigInteger>, IEquatable<BigEndianBigInteger>
+    struct BigEndianBigInteger : IComparable<BigEndianBigInteger>, IEquatable<BigEndianBigInteger>
     {
 #if !NETSTANDARD2_1
         // If we are not targeting netstandard 2.1 then the methods we want to use may exist
