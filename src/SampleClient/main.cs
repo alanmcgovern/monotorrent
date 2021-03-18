@@ -28,15 +28,42 @@ namespace SampleClient
 
         static async Task MainAsync (string[] args, CancellationToken token)
         {
+            // Give an example of how settings can be modified for the engine.
+            var settingBuilder = new EngineSettingsBuilder {
+                // Allow the engine to automatically forward ports using upnp/nat-pmp (if a compatible router is available)
+                AllowPortForwarding = true,
+
+                // Automatically save a cache of the DHT table when all torrents are stopped.
+                AutoSaveLoadDhtCache = true,
+
+                // Automatically save 'FastResume' data when TorrentManager.StopAsync is invoked, automatically load it
+                // before hash checking the torrent. Fast Resume data will be loaded as part of 'engine.AddAsync' if
+                // torrent metadata is available. Otherwise, if a magnetlink is used to download a torrent, fast resume
+                // data will be loaded after the metadata has been downloaded. 
+                AutoSaveLoadFastResume = true,
+
+                // If a MagnetLink is used to download a torrent, the engine will try to load a copy of the metadata
+                // it's cache directory. Otherwise the metadata will be downloaded and stored in the cache directory
+                // so it can be reloaded later.
+                AutoSaveLoadMagnetLinkMetadata = true,
+
+                // Use a random port to accept incoming connections from other peers.
+                ListenPort = 0,
+
+                // Use a random port for DHT communications.
+                DhtPort = 0,
+            };
+            using var engine = new ClientEngine (settingBuilder.ToSettings ());
+
             Task task;
-
-            using var engine = new ClientEngine ();
-
             if (args.Length == 1 && MagnetLink.TryParse (args[0], out MagnetLink link)) {
                 task = new MagnetLinkStreaming (engine).DownloadAsync (link, token);
             } else {
                 task = new StandardDownloader (engine).DownloadAsync (token);
             }
+
+            if (engine.Settings.AllowPortForwarding)
+                Console.WriteLine ("uPnP or NAT-PMP port mappings will be created for any ports needed by MonoTorrent");
 
             try {
                 await task;
@@ -57,6 +84,9 @@ namespace SampleClient
 
             if (engine.Settings.AutoSaveLoadDhtCache)
                 Console.WriteLine ($"DHT cache has been written to disk.");
+
+            if (engine.Settings.AllowPortForwarding)
+                Console.WriteLine ("uPnP and NAT-PMP port mappings have been removed");
         }
     }
 }

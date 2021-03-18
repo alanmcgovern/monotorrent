@@ -157,7 +157,7 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
-        /// Choose -1 to disable DHT. Defaults to 52139.
+        /// Choose -1 to disable DHT. Defaults to 0.
         /// </summary>
         public int DhtPort {
             get => dhtPort;
@@ -165,7 +165,8 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The TCP port the engine should listen on for incoming connections. Defaults to 52138.
+        /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
+        /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
         public int ListenPort {
             get => listenPort;
