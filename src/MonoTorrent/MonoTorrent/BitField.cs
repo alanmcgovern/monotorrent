@@ -397,6 +397,9 @@ namespace MonoTorrent
 
         internal BitField SetAll (bool value)
         {
+            if ((TrueCount == Length && value) || (!value && TrueCount == 0))
+                return this;
+
             if (value) {
                 for (int i = 0; i < array.Length; i++)
                     array[i] = ~0;
