@@ -704,14 +704,16 @@ namespace MonoTorrent.Client.Modes
             if (PartialProgressUpdater == null || PartialProgressUpdater.Length != Manager.Bitfield.Length)
                 PartialProgressUpdater = new BitField (Manager.Bitfield.Length);
 
-            PartialProgressUpdater.SetAll (false);
-            if (Manager.Torrent != null) {
-                foreach (var file in Manager.Files) {
-                    if (file.Priority != Priority.DoNotDownload) {
-                        for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
-                            PartialProgressUpdater[i] = true;
-                    }
+            if (Manager.HasMetadata) {
+                if (Manager.Files.All (t => t.Priority != Priority.DoNotDownload)) {
+                    PartialProgressUpdater.SetAll (true);
+                } else {
+                    PartialProgressUpdater.SetAll (false);
+                    foreach (var file in Manager.Files.Where (t => t.Priority != Priority.DoNotDownload))
+                        PartialProgressUpdater.SetTrue ((file.StartPieceIndex, file.EndPieceIndex));
                 }
+            } else {
+                PartialProgressUpdater.SetAll (false);
             }
             Manager.PartialProgressSelector.From (PartialProgressUpdater);
         }
