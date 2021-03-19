@@ -65,11 +65,17 @@ namespace MonoTorrent.Client
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            listener = new HttpListener ();
-            ListenerURL = $"http://127.0.0.1:{new Random ().Next (10000, 50000)}/announce/";
-            listener.Prefixes.Add (ListenerURL);
-            listener.Start ();
+            for (int i = 0; i < 10; i++) {
+                try {
+                    listener = new HttpListener ();
+                    ListenerURL = $"http://127.0.0.1:{new Random ().Next (10000, 50000)}/announce/";
+                    listener.Prefixes.Add (ListenerURL);
+                    listener.Start ();
+                    break;
+                } catch {
 
+                }
+            }
             listener.BeginGetContext (GotContext, listener);
         }
 
