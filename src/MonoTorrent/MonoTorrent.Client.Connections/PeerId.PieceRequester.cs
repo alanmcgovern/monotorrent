@@ -44,10 +44,13 @@ namespace MonoTorrent.Client
                 if (Connection is Connections.HttpConnection) {
                     return AmRequestingPiecesCount == 0;
                 } else {
-                    return AmRequestingPiecesCount < MaxPendingRequests;
+                    if (MaxPendingRequests < 20)
+                        return AmRequestingPiecesCount < MaxPendingRequests;
+                    return (AmRequestingPiecesCount / (float) MaxPendingRequests) < 0.75;
                 }
             }
         }
+
         long IPeer.DownloadSpeed => Monitor.DownloadSpeed;
         List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
         bool IPeer.IsChoking => IsChoking;

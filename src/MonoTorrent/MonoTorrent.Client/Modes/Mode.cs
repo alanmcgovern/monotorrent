@@ -544,7 +544,6 @@ namespace MonoTorrent.Client.Modes
                 }
 
                 int maxRequests = PieceManager.NormalRequestAmount + (int) (id.Monitor.DownloadSpeed / 1024.0 / PieceManager.BonusRequestPerKb);
-                maxRequests = Math.Min (id.AmRequestingPiecesCount + 2, maxRequests);
                 maxRequests = Math.Min (id.MaxSupportedPendingRequests, maxRequests);
                 maxRequests = Math.Max (2, maxRequests);
                 id.MaxPendingRequests = maxRequests;
