@@ -47,12 +47,14 @@ namespace MonoTorrent.Client
             bool allowPortForwarding = false,
             bool automaticFastResume = false,
             int dhtPort = -1,
-            int listenPort = -1)
+            int listenPort = -1,
+            string cacheDirectory = null)
         {
             return new EngineSettingsBuilder {
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
                 AutoSaveLoadFastResume = automaticFastResume,
+                CacheDirectory = cacheDirectory,
                 DhtPort = dhtPort,
                 ListenPort = listenPort,
             }.ToSettings ();

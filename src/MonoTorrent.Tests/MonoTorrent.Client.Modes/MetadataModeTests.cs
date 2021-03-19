@@ -323,7 +323,6 @@ namespace MonoTorrent.Client.Modes
                         // thread. It needs to be on the main loop as it's run in the context of the ClientEngine loop.
                         if (rig.Manager.Mode is MetadataMode mode)
                             ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389), exHand), null);
-                            
                     }
                 }
             }
