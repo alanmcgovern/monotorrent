@@ -53,16 +53,14 @@ namespace MonoTorrent.Client.PiecePicking
         /// Should enqueue piece requests for any peer who is has capacity.
         /// </summary>
         /// <param name="peers"></param>
-        /// <param name="bitfield"></param>
-        void AddRequests (IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield);
+        void AddRequests (IReadOnlyList<IPeerWithMessaging> peers);
 
         /// <summary>
         /// Attempts to enqueue more requests for the specified peer.
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="peers"></param>
-        /// <param name="bitfield"></param>
-        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers, BitField bitfield);
+        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers);
 
         /// <summary>
         /// 

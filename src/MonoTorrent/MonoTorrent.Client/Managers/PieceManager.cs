@@ -87,24 +87,23 @@ namespace MonoTorrent.Client
             if (!Initialised || Manager.Complete)
                 return false;
 
-            // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
-                return true;
+            // FIXME: Move this elsewhere?
+            id.Peer.IsSeeder = id.BitField.AllTrue;
 
-            // Otherwise we need to do a full check
+            // If the peer is a seeder it may still be un-interesting if some files are marked as 'DoNotDownload'
             return Requester.Picker.IsInteresting (id, id.BitField);
         }
 
         internal void AddPieceRequests (PeerId id)
         {
             if (Initialised)
-                Requester.AddRequests (id, Manager.Peers.ConnectedPeers, Manager.Bitfield);
+                Requester.AddRequests (id, Manager.Peers.ConnectedPeers);
         }
 
         internal void AddPieceRequests (List<PeerId> peers)
         {
             if (Initialised)
-                Requester.AddRequests (peers, Manager.Bitfield);
+                Requester.AddRequests (peers);
         }
 
         internal void ChangePicker (IPieceRequester requester)
