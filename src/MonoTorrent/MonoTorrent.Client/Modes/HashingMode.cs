@@ -76,9 +76,6 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.HasMetadata)
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
-            // Ensure the partial progress selector is up to date before we start hashing
-            UpdatePartialProgress ();
-
             int piecesHashed = 0;
             Manager.HashFails = 0;
 

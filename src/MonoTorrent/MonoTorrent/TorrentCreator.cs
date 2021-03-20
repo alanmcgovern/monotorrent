@@ -70,20 +70,15 @@ namespace MonoTorrent
 
             public Priority Priority {
                 get => throw new NotImplementedException ();
-                set => throw new NotImplementedException ();
             }
-
-            public int StartPieceIndex => throw new NotImplementedException ();
 
             public long OffsetInTorrent => throw new NotImplementedException ();
 
-            public int EndPieceIndex => throw new NotImplementedException ();
+            public int StartPieceIndex => throw new NotImplementedException ();
 
-            public (int startPiece, int endPiece) GetSelector ()
-            {
-                throw new NotImplementedException ();
-            }
+            public int EndPieceIndex => throw new NotImplementedException ();
         }
+
         const int BlockSize = 16 * 1024;  // 16kB
         const int SmallestPieceSize = 2 * BlockSize;  // 32kB
         const int LargestPieceSize = 512 * BlockSize;  // 8MB

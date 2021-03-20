@@ -192,7 +192,7 @@ namespace MonoTorrent.Client.Modes
 
             foreach (var f in Manager.Files) {
                 PieceWriter.FilesThatExist.Add (f);
-                f.Priority = Priority.DoNotDownload;
+                await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
                 f.BitField.SetAll (true);
             }
 
@@ -223,7 +223,7 @@ namespace MonoTorrent.Client.Modes
 
             foreach (var f in Manager.Files) {
                 PieceWriter.FilesThatExist.Add (f);
-                f.Priority = Priority.DoNotDownload;
+                await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
             }
 
             var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -237,7 +237,7 @@ namespace MonoTorrent.Client.Modes
 
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             foreach (var file in Manager.Files) {
-                file.Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.Normal);
                 await Manager.Mode.TryHashPendingFilesAsync ();
                 for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
                     Assert.IsFalse (Manager.UnhashedPieces[i], "#2." + i);
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public void StopWhileHashingPendingFiles ()
+        public async Task StopWhileHashingPendingFiles ()
         {
             var pieceHashCount = 0;
             DiskManager.GetHashAsyncOverride = (manager, index) => {
@@ -268,11 +268,11 @@ namespace MonoTorrent.Client.Modes
             Manager.Bitfield.SetAll (true);
 
             foreach (var f in Manager.Files)
-                f.Priority = Priority.DoNotDownload;
+                await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
 
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             foreach (var file in Manager.Files)
-                file.Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.Normal);
 
             Assert.ThrowsAsync<OperationCanceledException> (async () => await Manager.Mode.TryHashPendingFilesAsync (), "#1");
             Assert.AreEqual (3, pieceHashCount, "#2");
@@ -311,7 +311,7 @@ namespace MonoTorrent.Client.Modes
 
             foreach (var f in Manager.Files.Skip (1)) {
                 PieceWriter.FilesThatExist.Add (f);
-                f.Priority = Priority.DoNotDownload;
+                await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
             }
 
             var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);

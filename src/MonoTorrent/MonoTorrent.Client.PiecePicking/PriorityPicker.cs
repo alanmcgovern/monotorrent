@@ -153,17 +153,17 @@ namespace MonoTorrent.Client.PiecePicking
 
             // At least one file is not set to DoNotDownload
             temp.SetAll (false);
-            temp.SetTrue (files[0].File.GetSelector ());
+            temp.SetTrue ((files[0].File.StartPieceIndex, files[0].File.EndPieceIndex));
             allPrioritisedPieces.From (temp);
             for (int i = 1; i < files.Count && files[i].Priority != Priority.DoNotDownload; i++) {
-                allPrioritisedPieces.SetTrue (files[i].File.GetSelector ());
+                allPrioritisedPieces.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
 
                 if (files[i].Priority == files[i - 1].Priority) {
-                    temp.SetTrue (files[i].File.GetSelector ());
+                    temp.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
                 } else if (!temp.AllFalse) {
                     prioritised.Add (temp.Clone ());
                     temp.SetAll (false);
-                    temp.SetTrue (files[i].File.GetSelector ());
+                    temp.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
                 }
             }
 

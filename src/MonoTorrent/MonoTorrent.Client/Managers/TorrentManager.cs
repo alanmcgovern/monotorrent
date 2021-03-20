@@ -80,6 +80,35 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
+        public async Task SetFilePriorityAsync (ITorrentFileInfo file, Priority priority)
+        {
+            if (!Files.Contains (file))
+                throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
+
+            // No change
+            if (priority == file.Priority)
+                return;
+
+            await ClientEngine.MainLoop;
+
+            // If the old priority, or new priority, is 'DoNotDownload' then the selector needs to be refreshed
+            bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
+            ((TorrentFileInfo) file).Priority = priority;
+
+            if (needsToUpdateSelector) {
+                // If we change the priority of a file we need to figure out which files are marked
+                // as 'DoNotDownload' and which ones are downloadable.
+                PartialProgressSelector.SetAll (false);
+                if (Files.All (t => t.Priority != Priority.DoNotDownload)) {
+                    PartialProgressSelector.SetAll (true);
+                } else {
+                    PartialProgressSelector.SetAll (false);
+                    foreach (var f in Files.Where (t => t.Priority != Priority.DoNotDownload))
+                        PartialProgressSelector.SetTrue ((f.StartPieceIndex, f.EndPieceIndex));
+                }
+            }
+        }
+
         /// <summary>
         /// This asynchronous event is raised whenever a piece is hashed, either as part of
         /// regular downloading, or as part of a <see cref="HashCheckAsync(bool)"/>.
@@ -599,7 +628,7 @@ namespace MonoTorrent.Client
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
                 Engine.ConnectionManager.CleanupSocket (this, id);
             Bitfield = new BitField (Torrent.Pieces.Count);
-            PartialProgressSelector = new BitField (Torrent.Pieces.Count);
+            PartialProgressSelector = new BitField (Torrent.Pieces.Count).SetAll (true);
             UnhashedPieces = new BitField (Torrent.Pieces.Count).SetAll (true);
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
@@ -607,6 +636,8 @@ namespace MonoTorrent.Client
             if (Torrent.Files.Count > 1 && Settings.CreateContainingDirectory)
                 savePath = Path.Combine (savePath, Torrent.Name);
 
+            // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
+            // should be set to 'true' for each piece as all files are being downloaded.
             Files = Torrent.Files.Select (file =>
                 new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();

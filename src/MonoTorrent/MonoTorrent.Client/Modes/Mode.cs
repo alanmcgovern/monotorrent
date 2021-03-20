@@ -51,7 +51,6 @@ namespace MonoTorrent.Client.Modes
         static readonly Logger logger = Logger.Create ();
 
         bool hashingPendingFiles;
-        BitField PartialProgressUpdater;
 
         protected CancellationTokenSource Cancellation { get; }
         protected ConnectionManager ConnectionManager { get; }
@@ -697,25 +696,6 @@ namespace MonoTorrent.Client.Modes
             } finally {
                 hashingPendingFiles = false;
             }
-        }
-
-        internal void UpdatePartialProgress ()
-        {
-            if (PartialProgressUpdater == null || PartialProgressUpdater.Length != Manager.Bitfield.Length)
-                PartialProgressUpdater = new BitField (Manager.Bitfield.Length);
-
-            if (Manager.HasMetadata) {
-                if (Manager.Files.All (t => t.Priority != Priority.DoNotDownload)) {
-                    PartialProgressUpdater.SetAll (true);
-                } else {
-                    PartialProgressUpdater.SetAll (false);
-                    foreach (var file in Manager.Files.Where (t => t.Priority != Priority.DoNotDownload))
-                        PartialProgressUpdater.SetTrue ((file.StartPieceIndex, file.EndPieceIndex));
-                }
-            } else {
-                PartialProgressUpdater.SetAll (false);
-            }
-            Manager.PartialProgressSelector.From (PartialProgressUpdater);
         }
 
         void SendHaveMessagesToAll ()
