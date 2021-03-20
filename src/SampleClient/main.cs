@@ -56,7 +56,9 @@ namespace SampleClient
             using var engine = new ClientEngine (settingBuilder.ToSettings ());
 
             Task task;
-            if (args.Length == 1 && MagnetLink.TryParse (args[0], out MagnetLink link)) {
+            if (args.Length == 1 && args[0] == "--vlc") {
+                task = new VLCStream (engine).StreamAsync (InfoHash.FromHex ("AEE0F0082CC2F449412C1DD8AF4C58D9AAEE4B5C"), token);
+            } else if (args.Length == 1 && MagnetLink.TryParse (args[0], out MagnetLink link)) {
                 task = new MagnetLinkStreaming (engine).DownloadAsync (link, token);
             } else {
                 task = new StandardDownloader (engine).DownloadAsync (token);
