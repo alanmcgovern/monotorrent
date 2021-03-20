@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.PiecePicking
             if (!RefreshAfterSeeking)
                 return;
 
-            RefreshAfterSeeking = true;
+            RefreshAfterSeeking = false;
             var allPeers = peers
                 .OrderBy (t => -t.DownloadSpeed)
                 .ToArray ();
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client.PiecePicking
             foreach (var supportsFastPeer in new[] { true, false }) {
                 for (int i = 0; i < 4; i++) {
                     foreach (var peer in fastestPeers.Where (p => p.SupportsFastPeer == supportsFastPeer)) {
-                        AddRequests (peer, peers, 0, bitfield.Length - 1, 2, 6);
+                        AddRequests (peer, peers, HighPriorityPieceIndex, Math.Min (HighPriorityPieceIndex + 1, bitfield.Length - 1), 2, (i + 1) * 2);
                     }
                 }
             }
