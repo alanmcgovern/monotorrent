@@ -76,13 +76,13 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.HasMetadata)
                 throw new TorrentException ("A hash check cannot be performed if TorrentManager.HasMetadata is false.");
 
-            int piecesHashed = 0;
             Manager.HashFails = 0;
 
             // Delete any existing fast resume data. We will need to recreate it after hashing completes.
             await Manager.MaybeDeleteFastResumeAsync ();
 
             if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
+                int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
                     if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
@@ -109,9 +109,8 @@ namespace MonoTorrent.Client.Modes
                 }
             } else {
                 await PausedCompletionSource.Task;
-
                 for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.OnPieceHashed (i, false, ++piecesHashed, Manager.Torrent.Pieces.Count);
+                    Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.Pieces.Count);
             }
         }
 
