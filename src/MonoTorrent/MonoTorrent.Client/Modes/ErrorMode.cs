@@ -27,6 +27,8 @@
 //
 
 
+using System.Collections.Generic;
+
 namespace MonoTorrent.Client.Modes
 {
     class ErrorMode : Mode
@@ -44,7 +46,7 @@ namespace MonoTorrent.Client.Modes
         public override void Tick (int counter)
         {
             Manager.Monitor.Reset ();
-            foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
+            foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                 Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
         }
     }
