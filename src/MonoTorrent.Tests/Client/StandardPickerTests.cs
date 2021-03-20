@@ -184,9 +184,9 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.AreEqual (torrentData.TotalBlocks, messages.Count, "#0");
             picker.CancelRequests (peer);
 
-            var messages2 = new List<BlockInfo> ();
+            var messages2 = new HashSet<BlockInfo> ();
             while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)
-                messages2.Add (m.Value);
+                Assert.IsTrue (messages2.Add (m.Value));
 
             Assert.AreEqual (messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
@@ -218,9 +218,9 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.IsNull (picker.PickPiece (otherPeer, otherPeer.BitField, peers));
 
             otherPeer.IsChoking = false;
-            var messages2 = new List<BlockInfo> ();
+            var messages2 = new HashSet<BlockInfo> ();
             while ((m = picker.PickPiece (otherPeer, otherPeer.BitField, peers)) != null)
-                messages2.Add (m.Value);
+                Assert.IsTrue (messages2.Add (m.Value));
 
             Assert.AreEqual (messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
@@ -298,9 +298,9 @@ namespace MonoTorrent.Client.PiecePicking
             Assert.IsNull (picker.PickPiece (otherPeer, otherPeer.BitField, peers));
 
             otherPeer.IsChoking = false;
-            var messages2 = new List<BlockInfo> ();
+            var messages2 = new HashSet<BlockInfo> ();
             while ((m = picker.PickPiece (otherPeer, otherPeer.BitField, peers)) != null)
-                messages2.Add (m.Value);
+                Assert.IsTrue (messages2.Add (m.Value));
 
             Assert.AreEqual (messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
@@ -321,9 +321,9 @@ namespace MonoTorrent.Client.PiecePicking
             foreach (BlockInfo message in messages)
                 picker.RequestRejected (peer, message);
 
-            var messages2 = new List<BlockInfo> ();
+            var messages2 = new HashSet<BlockInfo> ();
             while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)
-                messages2.Add (m.Value);
+                Assert.IsTrue (messages2.Add (m.Value));
 
             Assert.AreEqual (messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
@@ -343,9 +343,9 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.CancelRequests (peer);
 
-            var messages2 = new List<BlockInfo> ();
+            var messages2 = new HashSet<BlockInfo> ();
             while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)
-                messages2.Add (m.Value);
+                Assert.IsTrue (messages2.Add (m.Value));
 
             Assert.AreEqual (messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
@@ -366,7 +366,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             picker.CancelRequests (peer);
 
-            var messages2 = new List<BlockInfo> ();
+            var messages2 = new HashSet<BlockInfo> ();
             while ((m = picker.PickPiece (peer, peer.BitField, peers)) != null)
                 messages2.Add (m.Value);
 
