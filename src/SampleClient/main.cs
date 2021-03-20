@@ -47,11 +47,11 @@ namespace SampleClient
                 // so it can be reloaded later.
                 AutoSaveLoadMagnetLinkMetadata = true,
 
-                // Use a random port to accept incoming connections from other peers.
-                ListenPort = 0,
+                // Use a fixed port to accept incoming connections from other peers.
+                ListenPort = 55123,
 
                 // Use a random port for DHT communications.
-                DhtPort = 0,
+                DhtPort = 55123,
             };
             using var engine = new ClientEngine (settingBuilder.ToSettings ());
 
