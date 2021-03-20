@@ -330,8 +330,8 @@ namespace MonoTorrent.Client.Modes
                 Manager.OnPieceHashed (i, true);
 
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
-            Manager.Files.Last ().Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+            await Manager.SetFilePriorityAsync (Manager.Files.Last (), Priority.Normal);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -358,7 +358,7 @@ namespace MonoTorrent.Client.Modes
         public async Task PartialProgress_NoneDownloaded_AllDoNotDownload ()
         {
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -375,8 +375,8 @@ namespace MonoTorrent.Client.Modes
             Manager.OnPieceHashed (0, true);
 
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
-            Manager.Files.First ().Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+            await Manager.SetFilePriorityAsync (Manager.Files.First (), Priority.Normal);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -396,8 +396,8 @@ namespace MonoTorrent.Client.Modes
             Manager.OnPieceHashed (Manager.Torrent.Pieces.Count - 1, true);
 
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
-            lastFile.Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+            await Manager.SetFilePriorityAsync (lastFile, Priority.Normal);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -414,8 +414,8 @@ namespace MonoTorrent.Client.Modes
             Manager.OnPieceHashed (0, true);
 
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
-            Manager.Files.First ().Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+            await Manager.SetFilePriorityAsync (Manager.Files.First (), Priority.Normal);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -428,7 +428,7 @@ namespace MonoTorrent.Client.Modes
                 oldStateTask.SetResult (e.OldState);
                 newStateTask.SetResult (e.NewState);
             };
-            Manager.Files.Skip (1).First ().Priority = Priority.Normal;
+            await Manager.SetFilePriorityAsync (Manager.Files.Skip (1).First (), Priority.Normal);
             await mode.UpdateSeedingDownloadingState ().WithTimeout ();
 
             var oldState = await oldStateTask.Task.WithTimeout ();
@@ -450,7 +450,7 @@ namespace MonoTorrent.Client.Modes
             Manager.OnPieceHashed (0, true);
 
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
@@ -466,8 +466,8 @@ namespace MonoTorrent.Client.Modes
             Manager.OnPieceHashed (0, true);
 
             foreach (var file in Manager.Files)
-                file.Priority = Priority.DoNotDownload;
-            Manager.Files.Last ().Priority = Priority.Normal;
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+            await Manager.SetFilePriorityAsync (Manager.Files.Last (), Priority.Normal);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;

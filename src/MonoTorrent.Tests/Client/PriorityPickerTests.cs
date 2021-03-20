@@ -40,14 +40,16 @@ namespace MonoTorrent.Client.PiecePicking
     {
         class TestTorrentData : ITorrentData
         {
-            public IList<ITorrentFileInfo> Files { get; set; }
+            IList<ITorrentFileInfo> ITorrentData.Files => new List<ITorrentFileInfo> (Files);
+
+            public IList<TorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
             public int Pieces => (int) Math.Ceiling ((double) Size / PieceLength);
             public long Size { get; set; }
 
             public void SetAll (Priority priority)
             {
-                foreach (var file in Files)
+                foreach (TorrentFileInfo file in Files)
                     file.Priority = priority;
             }
         }

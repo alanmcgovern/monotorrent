@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Standard;
 
@@ -84,10 +85,10 @@ namespace MonoTorrent.Client.PiecePicking
 
 
         [Test]
-        public void RequestInEndgame_AllDoNotDownload ()
+        public async Task RequestInEndgame_AllDoNotDownload ()
         {
             foreach (var file in torrentManager.Files)
-                file.Priority = Priority.DoNotDownload;
+                await torrentManager.SetFilePriorityAsync (file, Priority.DoNotDownload);
 
             torrentManager.Bitfield.SetAll (true).Set (0, false);
             peers[0].BitField.SetAll (true);

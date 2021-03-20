@@ -50,7 +50,6 @@ namespace MonoTorrent.Client.Modes
             } else {
                 state = TorrentState.Downloading;
 
-                UpdatePartialProgress ();
                 if (Manager.PartialProgressSelector.TrueCount > 0) {
                     // If some files are marked as DoNotDownload and we have downloaded all downloadable files, mark the torrent as 'seeding'.
                     // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
@@ -89,8 +88,6 @@ namespace MonoTorrent.Client.Modes
 
         internal async Task UpdateSeedingDownloadingState ()
         {
-            UpdatePartialProgress ();
-
             //If download is fully complete, set state to 'Seeding' and send an announce to the tracker.
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;
