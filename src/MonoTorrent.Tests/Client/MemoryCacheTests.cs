@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.PieceWriters
             for (int i = 0; i < 4; i++) {
                 var buffer = new byte[Piece.BlockSize];
                 await cache.ReadAsync (torrent, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer);
-                Assert.That (buffer, Is.All.EqualTo ((byte) (i + 1)), "#2." + i);
+                Assert.IsTrue (buffer.All (t => t == (byte) (i + 1)), "#2." + i);
             }
             Assert.AreEqual (Piece.BlockSize * 4, cache.CacheHits, "#3");
             Assert.AreEqual (0, cache.CacheMisses, "#4");
@@ -184,7 +184,7 @@ namespace MonoTorrent.Client.PieceWriters
             for (int i = 0; i < 4; i++) {
                 var buffer = new byte[Piece.BlockSize];
                 await cache.ReadAsync (torrent, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer);
-                Assert.That (buffer, Is.All.EqualTo ((byte) (i + 1)), "#2." + i);
+                Assert.IsTrue (buffer.All (t => t == (byte) (i + 1)), "#2." + i);
             }
             Assert.AreEqual (Piece.BlockSize, cache.CacheHits, "#3");
             Assert.AreEqual (Piece.BlockSize * 3, cache.CacheMisses, "#4");
@@ -300,7 +300,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             buffer = new byte[Piece.BlockSize];
             await cache.ReadAsync (torrent, new BlockInfo (0, 0, Piece.BlockSize), buffer);
-            Assert.That (buffer, Is.All.EqualTo (55));
+            Assert.IsTrue (buffer.All (t => t == 55));
         }
 
         [Test]
@@ -316,8 +316,8 @@ namespace MonoTorrent.Client.PieceWriters
 
             buffer = new byte[Piece.BlockSize];
             await cache.ReadAsync (torrent, new BlockInfo (0, 0, Piece.BlockSize), buffer);
-            Assert.That (buffer, Is.All.EqualTo ((byte) 5), "#2");
-            Assert.That (writer.Writes.Single ().buffer, Is.All.EqualTo ((byte) 5), "#3");
+            Assert.IsTrue (buffer.All (t => t == 5), "#2");
+            Assert.IsTrue (writer.Writes.Single ().buffer.All (t => t == 5), "#3");
         }
 
         [Test]
