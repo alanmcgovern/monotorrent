@@ -35,9 +35,11 @@ namespace MonoTorrent.Client
     public sealed class PieceHashedEventArgs : TorrentEventArgs
     {
         /// <summary>
-        /// The index of the piece which was hashed
+        /// Returns null if all pieces in the torrent failed the hashcheck. This can
+        /// occur when none of the files are available on disk and the engine skips
+        /// hash checking. Otherwise this is the index of the piece which was hashed.
         /// </summary>
-        public int PieceIndex { get; }
+        public int? PieceIndex { get; }
 
         /// <summary>
         /// The value of whether the piece passed or failed the hash check
@@ -59,13 +61,13 @@ namespace MonoTorrent.Client
         /// <param name="manager">The <see cref="TorrentManager"/> whose piece was hashed</param>
         /// <param name="pieceIndex">The index of the piece that was hashed</param>
         /// <param name="hashPassed">True if the piece passed the hashcheck, false otherwise</param>
-        internal PieceHashedEventArgs (TorrentManager manager, int pieceIndex, bool hashPassed)
+        internal PieceHashedEventArgs (TorrentManager manager, int? pieceIndex, bool hashPassed)
             : this (manager, pieceIndex, hashPassed, 1, 1)
         {
 
         }
 
-        internal PieceHashedEventArgs (TorrentManager manager, int pieceIndex, bool hashPassed, int piecesHashed, int totalToHash)
+        internal PieceHashedEventArgs (TorrentManager manager, int? pieceIndex, bool hashPassed, int piecesHashed, int totalToHash)
             : base (manager)
         {
             PieceIndex = pieceIndex;

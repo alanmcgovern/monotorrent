@@ -109,9 +109,7 @@ namespace MonoTorrent.Client.Modes
                 }
             } else {
                 await PausedCompletionSource.Task;
-
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.OnPieceHashed (i, false, ++piecesHashed, Manager.Torrent.Pieces.Count);
+                Manager.OnPieceHashed (null, false, Manager.Torrent.Pieces.Count, Manager.Torrent.Pieces.Count);
             }
         }
 

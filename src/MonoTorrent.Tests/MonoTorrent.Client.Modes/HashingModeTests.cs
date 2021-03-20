@@ -155,7 +155,7 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceHashed += (o, e) => {
                 lock (args) {
                     args.Add (e);
-                    if (args.Count == Manager.Torrent.Pieces.Count)
+                    if (args.Count == Manager.Torrent.Pieces.Count || e.PieceIndex == null)
                         tcs.SetResult (true);
                 }
             };
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client.Modes
             await Manager.HashCheckAsync (false);
             await tcs.Task.WithTimeout ("hashing");
 
-            args.Sort ((l, r) => l.PieceIndex.CompareTo (r.PieceIndex));
+            args.Sort ((l, r) => l.PieceIndex.Value.CompareTo (r.PieceIndex.Value));
             for (int i = 1; i < args.Count; i++)
                 Assert.Greater (args[i].Progress, args[i - 1].Progress, "#1." + i);
             Assert.Greater (args.First ().Progress, 0, "#2");
