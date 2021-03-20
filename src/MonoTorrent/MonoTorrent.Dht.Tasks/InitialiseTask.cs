@@ -71,8 +71,6 @@ namespace MonoTorrent.Dht.Tasks
             // If we were given a list of nodes to load at the start, use them
             try {
                 if (initialNodes.Count > 0) {
-                    foreach (Node node in initialNodes)
-                        engine.Add (node);
                     await SendFindNode (initialNodes);
                 } else {
                     var utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
