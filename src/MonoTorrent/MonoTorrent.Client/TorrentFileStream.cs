@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         bool disposed;
 
         public TorrentFileStream (string path, FileAccess access)
-            : base (path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.RandomAccess)
+            : base (path, FileMode.OpenOrCreate, access, FileShare.ReadWrite, 1, FileOptions.RandomAccess)
         {
         }
 
