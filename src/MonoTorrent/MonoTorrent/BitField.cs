@@ -47,13 +47,17 @@ namespace MonoTorrent
 
         readonly int[] array;
 
-        internal bool AllFalse => TrueCount == 0;
+        public bool AllFalse => TrueCount == 0;
 
-        internal bool AllTrue => TrueCount == Length;
+        public bool AllTrue => TrueCount == Length;
 
         public int Length { get; }
 
+        internal int LengthInBytes => (Length + 7) / 8;
+
         public double PercentComplete => (double) TrueCount / Length * 100.0;
+
+        public int TrueCount { get; private set; }
 
         #endregion
 
@@ -108,19 +112,12 @@ namespace MonoTorrent
         }
 
         object ICloneable.Clone ()
-        {
-            return Clone ();
-        }
+            => Clone ();
 
         public BitField Clone ()
-        {
-            var b = new BitField (Length);
-            Buffer.BlockCopy (array, 0, b.array, 0, array.Length * 4);
-            b.TrueCount = TrueCount;
-            return b;
-        }
+            => new BitField (Length).From (this);
 
-        public BitField From (BitField value)
+        internal BitField From (BitField value)
         {
             Check (value);
             Buffer.BlockCopy (value.array, 0, array, 0, array.Length * 4);
@@ -128,7 +125,7 @@ namespace MonoTorrent
             return this;
         }
 
-        public BitField Not ()
+        internal BitField Not ()
         {
             for (int i = 0; i < array.Length; i++)
                 array[i] = ~array[i];
@@ -137,7 +134,7 @@ namespace MonoTorrent
             return this;
         }
 
-        public BitField And (BitField value)
+        internal BitField And (BitField value)
         {
             Check (value);
 
@@ -159,7 +156,7 @@ namespace MonoTorrent
             return this;
         }
 
-        public BitField Or (BitField value)
+        internal BitField Or (BitField value)
         {
             Check (value);
 
@@ -170,7 +167,7 @@ namespace MonoTorrent
             return this;
         }
 
-        public BitField Xor (BitField value)
+        internal BitField Xor (BitField value)
         {
             Check (value);
 
@@ -354,9 +351,7 @@ namespace MonoTorrent
             return count;
         }
 
-        public int LengthInBytes => (Length + 7) / 8;
-
-        public BitField Set (int index, bool value)
+        internal BitField Set (int index, bool value)
         {
             if (index < 0 || index >= Length)
                 throw new ArgumentOutOfRangeException (nameof (index));
@@ -452,8 +447,6 @@ namespace MonoTorrent
 
             return sb.ToString (0, sb.Length - 1);
         }
-
-        public int TrueCount { get; set; }
 
         void Validate ()
         {
