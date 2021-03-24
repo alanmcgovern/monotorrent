@@ -226,7 +226,13 @@ namespace MonoTorrent.Client
         internal string GetDhtNodeCacheFilePath ()
             => Path.Combine (CacheDirectory, "dht_nodes.cache");
 
-        internal string GetFastResumePath (InfoHash infoHash)
+        /// <summary>
+        /// Returns the full path to the <see cref="FastResume"/> file for the specified torrent. This is
+        /// where data will be written to, or loaded from, when <see cref="AutoSaveLoadFastResume"/> is enabled. 
+        /// </summary>
+        /// <param name="infoHash">The infohash of the torrent</param>
+        /// <returns></returns>
+        public string GetFastResumePath (InfoHash infoHash)
             => Path.Combine (FastResumeCacheDirectory, $"{infoHash.ToHex ()}.fresume");
 
         internal string GetMetadataPath (InfoHash infoHash)

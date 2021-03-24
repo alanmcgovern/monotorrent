@@ -181,8 +181,30 @@ namespace MonoTorrent.Client
             MetadataReceived?.Invoke (this, metadata);
         }
 
+        /// <summary>
+        /// Marks the <see cref="TorrentManager"/> as needing a full hash check. If <see cref="EngineSettings.AutoSaveLoadFastResume"/>
+        /// is enabled this method will also delete fast resume data from the location specified by
+        /// <see cref="EngineSettings.GetFastResumePath(InfoHash)"/>. This can only be invoked when the <see cref="State"/> is
+        /// <see cref="TorrentState.Stopped"/>.
+        /// </summary>
+        /// <returns></returns>
+        public async Task SetNeedsHashCheckAsync ()
+        {
+            await ClientEngine.MainLoop;
+            if (State != TorrentState.Stopped)
+                throw new InvalidOperationException ("SetNeedsHashCheckAsync can only be called when the TorrentManager is in the 'Stopped' state");
+            SetNeedsHashCheck ();
+        }
+
         internal void SetNeedsHashCheck ()
-            => HashChecked = false;
+        {
+            HashChecked = false;
+            if (Engine.Settings.AutoSaveLoadFastResume) {
+                var path = Engine.Settings.GetFastResumePath (InfoHash);
+                if (File.Exists (path))
+                    File.Delete (path);
+            }
+        }
 
         /// <summary>
         /// If <see cref="ITorrentFileInfo.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
