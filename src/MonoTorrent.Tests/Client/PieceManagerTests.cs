@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.PiecePicking
             peers = new List<PeerId> ();
 
             torrentManager = TestRig.CreateSingleFileManager (torrentData.Size, torrentData.PieceLength);
-            torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new BitField (pieceCount).SetAll (true), new BitField (pieceCount).SetAll (false)));
+            torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new MutableBitField (pieceCount).SetAll (true), new MutableBitField (pieceCount).SetAll (false)));
 
             manager = new PieceManager (torrentManager);
             manager.Initialise ();
@@ -90,8 +90,8 @@ namespace MonoTorrent.Client.PiecePicking
             foreach (var file in torrentManager.Files)
                 await torrentManager.SetFilePriorityAsync (file, Priority.DoNotDownload);
 
-            torrentManager.Bitfield.SetAll (true).Set (0, false);
-            peers[0].BitField.SetAll (true);
+            torrentManager.MutableBitField.SetAll (true).Set (0, false);
+            peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
             manager.AddPieceRequests (peers[0]);
@@ -102,8 +102,8 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void RequestWhenSeeder ()
         {
-            torrentManager.Bitfield.SetAll (true);
-            peers[0].BitField.SetAll (true);
+            torrentManager.MutableBitField.SetAll (true);
+            peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
             manager.AddPieceRequests (peers[0]);

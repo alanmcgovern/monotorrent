@@ -245,14 +245,14 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)
         {
-            id.BitField.SetAll (false);
+            id.MutableBitField.SetAll (false);
             id.Peer.IsSeeder = false;
             SetAmInterestedStatus (id, false);
         }
 
         protected virtual void HandleHaveAllMessage (PeerId id, HaveAllMessage message)
         {
-            id.BitField.SetAll (true);
+            id.MutableBitField.SetAll (true);
             id.Peer.IsSeeder = true;
             SetAmInterestedStatus (id, Manager.PieceManager.IsInteresting (id));
         }
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleBitfieldMessage (PeerId id, BitfieldMessage message)
         {
-            id.BitField = message.BitField;
+            id.MutableBitField.From (message.BitField);
             id.Peer.IsSeeder = (id.BitField.AllTrue);
 
             SetAmInterestedStatus (id, Manager.PieceManager.IsInteresting (id));
@@ -432,7 +432,7 @@ namespace MonoTorrent.Client.Modes
             id.HaveMessageEstimatedDownloadedBytes += Manager.Torrent.PieceLength;
 
             // First set the peers bitfield to true for that piece
-            id.BitField[message.PieceIndex] = true;
+            id.MutableBitField[message.PieceIndex] = true;
 
             // Fastcheck to see if a peer is a seeder or not
             id.Peer.IsSeeder = id.BitField.AllTrue;
@@ -607,8 +607,7 @@ namespace MonoTorrent.Client.Modes
                         continue;
                     connection.Manager = Manager;
 
-                    var id = new PeerId (peer, connection, Manager.Bitfield.Clone ().SetAll (true));
-                    id.BitField.SetAll (true);
+                    var id = new PeerId (peer, connection, new MutableBitField (Manager.Bitfield.Length).SetAll (true));
                     id.Encryptor = PlainTextEncryption.Instance;
                     id.Decryptor = PlainTextEncryption.Instance;
                     id.IsChoking = false;

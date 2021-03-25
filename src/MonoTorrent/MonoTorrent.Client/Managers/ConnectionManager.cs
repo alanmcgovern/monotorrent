@@ -154,7 +154,7 @@ namespace MonoTorrent.Client
                     connection.Dispose ();
                     manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer, ConnectionFailureReason.Unreachable, manager));
                 } else {
-                    var id = new PeerId (peer, connection, manager.Bitfield?.Clone ().SetAll (false));
+                    var id = new PeerId (peer, connection, new MutableBitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageReceived.Restart ();
                     id.LastMessageSent.Restart ();
 

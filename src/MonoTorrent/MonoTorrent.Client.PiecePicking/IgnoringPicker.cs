@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.PiecePicking
     public class IgnoringPicker : PiecePickerFilter
     {
         readonly BitField Bitfield;
-        readonly BitField Temp;
+        readonly MutableBitField Temp;
 
         public static IPiecePicker Wrap(IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
         {
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.PiecePicking
             : base (picker)
         {
             Bitfield = bitfield;
-            Temp = new BitField (bitfield.Length);
+            Temp = new MutableBitField (bitfield.Length);
         }
 
         public override bool IsInteresting (IPeer peer, BitField bitfield)

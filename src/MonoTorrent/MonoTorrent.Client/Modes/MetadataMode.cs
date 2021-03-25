@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Modes
     {
         static readonly Logger logger = Logger.Create ();
 
-        BitField bitField;
+        MutableBitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
         PeerId currentId;
         string savePath;
@@ -287,7 +287,7 @@ namespace MonoTorrent.Client.Modes
                     if (size > 0)
                         size = 1;
                     size += metadataSize / LTMetadata.BlockSize;
-                    bitField = new BitField (size);
+                    bitField = new MutableBitField (size);
                 }
 
                 // We only create the Stream if the remote peer has sent the metadata size key in their handshake.

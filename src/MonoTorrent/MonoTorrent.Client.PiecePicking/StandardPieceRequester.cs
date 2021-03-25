@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.PiecePicking
     class StandardPieceRequester : IPieceRequester
     {
         IReadOnlyList<BitField> IgnorableBitfields { get; set; }
-        BitField Temp { get; set; }
+        MutableBitField Temp { get; set; }
         ITorrentData TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.PiecePicking
             IgnorableBitfields = ignoringBitfields;
             TorrentData = torrentData;
 
-            Temp = new BitField (TorrentData.PieceCount ());
+            Temp = new MutableBitField (TorrentData.PieceCount ());
 
             IPiecePicker picker = new StandardPicker ();
             picker = new RandomisedPicker (picker);

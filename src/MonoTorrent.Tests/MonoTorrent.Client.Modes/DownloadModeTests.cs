@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false));
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new MutableBitField (Manager.PieceCount ()));
         }
 
         [TearDown]
@@ -192,9 +192,9 @@ namespace MonoTorrent.Client.Modes
         public async Task AnnounceWhenComplete ()
         {
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
-            Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
 
-            Manager.Bitfield[0] = false;
+            Manager.MutableBitField[0] = false;
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
 
@@ -202,7 +202,7 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentState.Downloading, Manager.State, "#0b");
             Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#0");
 
-            Manager.Bitfield[0] = true;
+            Manager.MutableBitField[0] = true;
             TrackerManager.Announces.Clear ();
             mode.Tick (0);
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#0c");
@@ -300,7 +300,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PauseSeeding ()
         {
-            Manager.LoadFastResume (new FastResume (Manager.InfoHash, Manager.Bitfield.Clone ().SetAll (true), Manager.Bitfield.Clone ().SetAll (false)));
+            Manager.LoadFastResume (new FastResume (Manager.InfoHash, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
 
             Assert.AreEqual (TorrentState.Seeding, Manager.State);

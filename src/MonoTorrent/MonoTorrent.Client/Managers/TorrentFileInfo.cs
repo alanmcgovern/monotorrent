@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         {
             TorrentFile = torrentFile;
             FullPath = fullPath;
-            BitField = new BitField (torrentFile.EndPieceIndex - torrentFile.StartPieceIndex + 1);
+            BitField = new MutableBitField (torrentFile.EndPieceIndex - torrentFile.StartPieceIndex + 1);
         }
 
         public (int startPiece, int endPiece) GetSelector ()

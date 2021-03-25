@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            Picks.Add ((peer, available.Clone (), new List<IPeer> (otherPeers).AsReadOnly (), count, startIndex, endIndex));
+            Picks.Add ((peer, new BitField (available), new List<IPeer> (otherPeers).AsReadOnly (), count, startIndex, endIndex));
             return Next == null ? null : Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
         }
     }

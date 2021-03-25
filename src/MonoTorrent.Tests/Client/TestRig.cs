@@ -347,7 +347,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ('a', 'z'));
             Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
-            PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
+            PeerId id = new PeerId (peer, NullConnection.Incoming, new MutableBitField (Manager.PieceCount ()).SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.MessageQueue.SetReady ();
             if (processingQueue)

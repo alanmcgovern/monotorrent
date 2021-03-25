@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.PiecePicking
             public long Size { get; set; }
         }
 
-        BitField bitfield;
+        MutableBitField bitfield;
         PiecePickerFilterChecker checker;
         PeerId peer;
         List<PeerId> peers;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.PiecePicking
             int pieces = 40;
             int size = pieces * pieceLength;
 
-            bitfield = new BitField (pieces);
+            bitfield = new MutableBitField (pieces);
             torrentData = new TestTorrentData {
                 Files = TorrentFileInfo.Create (pieceLength, ("Test", size, "Full/Path/Test")),
                 PieceLength = pieceLength,
@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.PiecePicking
             picker.Initialise (torrentData);
 
             peer = PeerId.CreateNull (pieces);
-            peer.BitField.SetAll (true);
+            peer.MutableBitField.SetAll (true);
 
             peers = new List<PeerId> ();
             for (int i = 0; i < 5; i++)
@@ -84,7 +84,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < (i * 5) + 5; j++)
-                    peers[i].BitField[j] = true;
+                    peers[i].MutableBitField[j] = true;
 
             // No pieces should be selected, but we can check what was requested.
             picker.PickPiece (peer, peer.BitField, peers, 1, 0, peer.BitField.Length - 1);
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.PiecePicking
             bitfield.SetAll (true);
 
             // Pretend the peer has 4 pieces we can choose.
-            var available = new BitField (bitfield.Length)
+            var available = new MutableBitField (bitfield.Length)
                 .Set (1, true)
                 .Set (2, true)
                 .Set (4, true)
@@ -123,16 +123,16 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Every other peer has all pieces except for piece '2'.
             for (int i = 0; i < 5; i++)
-                peers[i].BitField.SetAll (true).Set (i, false);
+                peers[i].MutableBitField.SetAll (true).Set (i, false);
 
             // Ensure that pieces which were not in the 'available' bitfield were not offered
             // as suggestions.
             foreach (var pick in checker.Picks)
-                Assert.IsTrue (available.Clone ().Not ().And (pick.available).AllFalse, "#1");
+                Assert.IsTrue (new MutableBitField (available).Not ().And (pick.available).AllFalse, "#1");
 
             // Ensure at least one of the pieces in our bitfield *was* offered.
             foreach (var pick in checker.Picks)
-                Assert.IsFalse (available.Clone ().And (pick.available).AllFalse, "#2");
+                Assert.IsFalse (new MutableBitField (available).And (pick.available).AllFalse, "#2");
         }
     }
 }
