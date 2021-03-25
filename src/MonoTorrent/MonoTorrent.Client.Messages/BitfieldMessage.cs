@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="length">The length of the bitfield</param>
         public BitfieldMessage (int length)
         {
-            BitField = new BitField (length);
+            BitField = new MutableBitField (length);
         }
 
 
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            BitField?.FromArray (buffer, offset);
+            ((MutableBitField) BitField)?.From (buffer, offset);
         }
 
         public override int Encode (byte[] buffer, int offset)

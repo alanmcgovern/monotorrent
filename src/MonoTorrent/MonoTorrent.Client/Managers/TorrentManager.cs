@@ -139,7 +139,9 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public BitField Bitfield { get; private set; }
+        public BitField Bitfield => MutableBitField;
+
+        internal MutableBitField MutableBitField { get; private set; }
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
@@ -211,7 +213,7 @@ namespace MonoTorrent.Client
         /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
         /// to ensure pieces which have not been hash checked are never downloaded.
         /// </summary>
-        internal BitField UnhashedPieces { get; set; }
+        internal MutableBitField UnhashedPieces { get; set; }
 
         public bool HashChecked { get; private set; }
 
@@ -251,7 +253,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
-        internal BitField PartialProgressSelector { get; set; }
+        internal MutableBitField PartialProgressSelector { get; set; }
 
         /// <summary>
         /// 
@@ -434,9 +436,9 @@ namespace MonoTorrent.Client
 
         void Initialise (string savePath, IList<IList<string>> announces)
         {
-            Bitfield = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
-            PartialProgressSelector = new BitField (HasMetadata ? Torrent.Pieces.Count : 1);
-            UnhashedPieces = new BitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
+            MutableBitField = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
+            PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
+            UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
             SavePath = string.IsNullOrEmpty (savePath) ? Environment.CurrentDirectory : Path.GetFullPath (savePath);
             finishedPieces = new Queue<HaveMessage> ();
             Monitor = new ConnectionMonitor ();
@@ -649,9 +651,9 @@ namespace MonoTorrent.Client
             Torrent = torrent;
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
                 Engine.ConnectionManager.CleanupSocket (this, id);
-            Bitfield = new BitField (Torrent.Pieces.Count);
-            PartialProgressSelector = new BitField (Torrent.Pieces.Count).SetAll (true);
-            UnhashedPieces = new BitField (Torrent.Pieces.Count).SetAll (true);
+            MutableBitField = new MutableBitField (Torrent.Pieces.Count);
+            PartialProgressSelector = new MutableBitField (Torrent.Pieces.Count).SetAll (true);
+            UnhashedPieces = new MutableBitField (Torrent.Pieces.Count).SetAll (true);
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             var savePath = SavePath;
@@ -893,14 +895,14 @@ namespace MonoTorrent.Client
 
         internal void OnPieceHashed (int index, bool hashPassed, int piecesHashed, int totalToHash)
         {
-            Bitfield[index] = hashPassed;
+            MutableBitField[index] = hashPassed;
             // The PiecePickers will no longer ignore this piece as it has now been hash checked.
             UnhashedPieces[index] = false;
 
             var files = Files;
             var fileIndex = files.FindFileByPieceIndex (index);
             for (int i = fileIndex; i < files.Count && files[i].StartPieceIndex <= index; i++)
-                files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
+                ((MutableBitField) files[i].BitField)[index - files[i].StartPieceIndex] = hashPassed;
 
             if (hashPassed) {
                 List<PeerId> connected = Peers.ConnectedPeers;

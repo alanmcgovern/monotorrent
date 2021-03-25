@@ -33,14 +33,14 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class RarestFirstPicker : PiecePickerFilter
     {
-        readonly Stack<BitField> rarest;
-        readonly Stack<BitField> spares;
+        readonly Stack<MutableBitField> rarest;
+        readonly Stack<MutableBitField> spares;
 
         public RarestFirstPicker (IPiecePicker picker)
             : base (picker)
         {
-            rarest = new Stack<BitField> ();
-            spares = new Stack<BitField> ();
+            rarest = new Stack<MutableBitField> ();
+            spares = new Stack<MutableBitField> ();
         }
 
         public override void Initialise (ITorrentData torrentData)
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.PiecePicking
             GenerateRarestFirst (available, otherPeers);
 
             while (rarest.Count > 0) {
-                BitField current = rarest.Pop ();
+                MutableBitField current = rarest.Pop ();
                 IList<BlockInfo> bundle = base.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
                 spares.Push (current);
 
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.PiecePicking
             while (rarest.Count > 0)
                 spares.Push (rarest.Pop ());
 
-            BitField current = spares.Count > 0 ? spares.Pop ().From (peerBitfield) : peerBitfield.Clone ();
+            MutableBitField current = (spares.Count > 0 ? spares.Pop () : new MutableBitField (peerBitfield.Length)).From (peerBitfield);
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push (current);
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.PiecePicking
                 if (otherPeers[i].BitField.AllTrue)
                     continue;
 
-                current = spares.Count > 0 ? spares.Pop ().From (current) : current.Clone ();
+                current = (spares.Count > 0 ? spares.Pop () : new MutableBitField (current.Length)).From (current);
 
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.

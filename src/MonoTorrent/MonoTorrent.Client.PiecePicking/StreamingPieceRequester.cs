@@ -62,13 +62,13 @@ namespace MonoTorrent.Client.PiecePicking
 
         internal int LowPriorityCount => HighPriorityCount * 2;
 
-        BitField Temp { get; set; }
+        MutableBitField Temp { get; set; }
 
         public void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignoringBitfields)
         {
             TorrentData = torrentData;
             IgnoringBitfields = ignoringBitfields;
-            Temp = new BitField (TorrentData.PieceCount ());
+            Temp = new MutableBitField (TorrentData.PieceCount ());
 
             var standardPicker = new StandardPicker ();
 
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.PiecePicking
             // only be made to pieces which *can* be requested? Why not!
             // FIXME add a test for this.
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
-                BitField filtered = null;
+                MutableBitField filtered = null;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= GenerateAlreadyHaves ().Not ().And (peer.BitField);
                     IList<BlockInfo> request = PriorityPick (peer, filtered, allPeers, preferredRequestAmount, 0, TorrentData.PieceCount () - 1);
@@ -204,7 +204,7 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
-        BitField GenerateAlreadyHaves ()
+        MutableBitField GenerateAlreadyHaves ()
         {
             Temp.From (IgnoringBitfields [0]);
             for (int i = 1; i < IgnoringBitfields.Count; i++)

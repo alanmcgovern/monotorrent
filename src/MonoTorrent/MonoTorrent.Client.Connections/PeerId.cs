@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
-                BitField = new BitField (bitfieldLength).SetAll (seeder),
+                MutableBitField = new MutableBitField (bitfieldLength).SetAll (seeder)
             };
             peer.MessageQueue.SetReady ();
             peer.MessageQueue.BeginProcessing (force: true);
@@ -111,7 +111,8 @@ namespace MonoTorrent.Client
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
-        public BitField BitField { get; internal set; }
+        public BitField BitField => MutableBitField;
+        internal MutableBitField MutableBitField { get; private set; }
         public Software ClientApp { get; internal set; }
 
         public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
@@ -198,14 +199,12 @@ namespace MonoTorrent.Client
             InitializeTyrant ();
         }
 
-        internal PeerId (Peer peer, IConnection connection, BitField bitfield)
+        internal PeerId (Peer peer, IConnection connection, MutableBitField bitfield)
             : this (peer)
         {
-            if (connection == null)
-                throw new ArgumentNullException (nameof (connection));
-            Connection = connection;
+            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
-            BitField = bitfield;
+            MutableBitField = bitfield;
         }
 
         #endregion

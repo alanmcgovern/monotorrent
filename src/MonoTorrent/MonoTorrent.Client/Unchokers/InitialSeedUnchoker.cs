@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     {
         public DateTime LastChoked;
         public PeerId Peer;
-        public BitField CurrentPieces;
+        public MutableBitField CurrentPieces;
         public int SharedPieces;
         public DateTime LastUnchoked;
         public int TotalPieces;
@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         {
             LastChoked = DateTime.Now;
             Peer = peer;
-            CurrentPieces = new BitField (peer.BitField.Length);
+            CurrentPieces = new MutableBitField (peer.BitField.Length);
         }
     }
 
@@ -73,9 +73,9 @@ namespace MonoTorrent.Client
     class InitialSeedUnchoker : Unchoker
     {
         readonly List<SeededPiece> advertisedPieces;
-        readonly BitField bitfield;
+        readonly MutableBitField bitfield;
         readonly List<ChokeData> peers;
-        readonly BitField temp;
+        readonly MutableBitField temp;
 
         bool PendingUnchoke => peers.Exists (d => d.Peer.AmChoking && d.Peer.IsInterested);
 
@@ -89,9 +89,9 @@ namespace MonoTorrent.Client
             : base (manager)
         {
             advertisedPieces = new List<SeededPiece> ();
-            bitfield = new BitField (manager.Bitfield.Length);
+            bitfield = new MutableBitField (manager.Bitfield.Length);
             peers = new List<ChokeData> ();
-            temp = new BitField (bitfield.Length);
+            temp = new MutableBitField (bitfield.Length);
         }
 
         public override void Choke (PeerId id)

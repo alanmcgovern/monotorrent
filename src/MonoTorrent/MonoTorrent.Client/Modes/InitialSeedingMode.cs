@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Modes
         {
             unchoker = new InitialSeedUnchoker (manager);
             manager.chokeUnchoker = unchoker;
-            zero = new BitField (manager.Bitfield.Length);
+            zero = new MutableBitField (manager.Bitfield.Length);
         }
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
