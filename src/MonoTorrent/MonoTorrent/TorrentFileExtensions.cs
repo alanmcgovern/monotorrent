@@ -8,13 +8,12 @@ namespace MonoTorrent
 {
     static class TorrentFileExtensions
     {
-        static readonly Func<ITorrentFileInfo, (long offset, int pieceLength), int> OffsetComparator = (file, offsetAndPieceLength) => {
-            (long torrentOffset, int pieceLength) = offsetAndPieceLength;
+        static readonly Func<ITorrentFileInfo, long, int> OffsetComparator = (file, offset) => {
             var fileStart = file.OffsetInTorrent;
             var fileEnd = fileStart + file.Length;
-            if (torrentOffset >= fileStart && torrentOffset < fileEnd)
+            if (offset >= fileStart && offset < fileEnd)
                 return 0;
-            if (torrentOffset >= fileEnd)
+            if (offset >= fileEnd)
                 return -1;
             else
                 return 1;
@@ -34,11 +33,10 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="files"></param>
         /// <param name="offset"></param>
-        /// <param name="pieceLength"></param>
         /// <returns></returns>
-        internal static int FindFileByOffset (this IList<ITorrentFileInfo> files, long offset, int pieceLength)
+        internal static int FindFileByOffset (this IList<ITorrentFileInfo> files, long offset)
         {
-            var firstMatch = files.BinarySearch (OffsetComparator, (offset, pieceLength));
+            var firstMatch = files.BinarySearch (OffsetComparator, offset);
             while (firstMatch > 0) {
                 var previous = files[firstMatch - 1];
                 if (previous.OffsetInTorrent >= offset) {

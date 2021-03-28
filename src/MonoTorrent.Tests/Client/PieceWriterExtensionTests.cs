@@ -18,9 +18,9 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Piece.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024);
-            Assert.AreEqual (0, files.FindFileByOffset (0, pieceLength));
-            Assert.AreEqual (0, files.FindFileByOffset (1023, pieceLength));
-            Assert.AreEqual (1, files.FindFileByOffset (1024, pieceLength));
+            Assert.AreEqual (0, files.FindFileByOffset (0));
+            Assert.AreEqual (0, files.FindFileByOffset (1023));
+            Assert.AreEqual (1, files.FindFileByOffset (1024));
         }
 
         [Test]
@@ -28,8 +28,8 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Piece.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize);
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize, pieceLength));
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize + 1, pieceLength));
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize));
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize + 1));
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Piece.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0);
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize * 2 - 1, pieceLength));
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize * 2 - 1));
         }
 
         [Test]
@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
             // If two files start at the same offset (which zero length files do), then the files are ordered based on
             // their length. This way zero length files are never the last file, unless the whole torrent is empty. Which is nonsense :p
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0, 0);
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize * 2 - 1, pieceLength));
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize * 2 - 1));
         }
 
         [Test]
@@ -55,15 +55,15 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Piece.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Piece.BlockSize, 0);
-            Assert.AreEqual (files.Length - 2, files.FindFileByOffset (Piece.BlockSize, pieceLength));
-            Assert.AreEqual (0, files.FindFileByOffset (0, pieceLength));
+            Assert.AreEqual (files.Length - 2, files.FindFileByOffset (Piece.BlockSize));
+            Assert.AreEqual (0, files.FindFileByOffset (0));
         }
 
         [Test]
         public void Offset_Invalid ()
         {
             var files = TorrentFileInfo.Create (Piece.BlockSize, 1024);
-            Assert.Less (files.FindFileByOffset (Piece.BlockSize * 5, Piece.BlockSize), 0);
+            Assert.Less (files.FindFileByOffset (Piece.BlockSize * 5), 0);
         }
 
         [Test]

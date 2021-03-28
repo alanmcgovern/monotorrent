@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             int totalRead = 0;
             var files = manager.Files;
-            int i = manager.Files.FindFileByOffset (offset, manager.PieceLength);
+            int i = manager.Files.FindFileByOffset (offset);
             offset -= files[i].OffsetInTorrent;
 
             while (totalRead < count) {
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             int totalWritten = 0;
             var files = manager.Files;
-            int i = files.FindFileByOffset (torrentOffset, manager.PieceLength);
+            int i = files.FindFileByOffset (torrentOffset);
             var offset = torrentOffset - files[i].OffsetInTorrent;
 
             while (totalWritten < count) {
