@@ -83,6 +83,25 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void PieceIndex_OverlappingFiles ()
+        {
+            var pieceLength = Piece.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, Piece.BlockSize - 1, Piece.BlockSize, Piece.BlockSize);
+            Assert.AreEqual (0, files.FindFileByPieceIndex (0));
+            Assert.AreEqual (1, files.FindFileByPieceIndex (1));
+        }
+
+        [Test]
+        public void PieceIndex_OverlappingFiles2 ()
+        {
+            var pieceLength = Piece.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, Piece.BlockSize + 1, Piece.BlockSize, Piece.BlockSize);
+            Assert.AreEqual (0, files.FindFileByPieceIndex (0));
+            Assert.AreEqual (0, files.FindFileByPieceIndex (1));
+            Assert.AreEqual (1, files.FindFileByPieceIndex (2));
+        }
+
+        [Test]
         public void PieceIndex_EmptyFileAtEnd ()
         {
             var pieceLength = Piece.BlockSize;

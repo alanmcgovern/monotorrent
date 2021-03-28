@@ -61,7 +61,7 @@ namespace MonoTorrent
             var firstMatch = files.BinarySearch (PieceIndexComparator, (pieceIndex));
             while (firstMatch > 0) {
                 var previous = files[firstMatch - 1];
-                if (previous.StartPieceIndex >= pieceIndex) {
+                if (previous.EndPieceIndex >= pieceIndex) {
                     firstMatch--;
                 } else {
                     break;
