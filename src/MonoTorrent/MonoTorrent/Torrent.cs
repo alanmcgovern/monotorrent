@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -676,10 +676,14 @@ namespace MonoTorrent
 
                     case ("url-list"):
                         if (keypair.Value is BEncodedString httpSeedString) {
-                            HttpSeeds.Add (httpSeedString.Text);
+                            if (Uri.IsWellFormedUriString (httpSeedString.Text, UriKind.Absolute)) {
+                                HttpSeeds.Add (httpSeedString.Text);
+                            }
                         } else if (keypair.Value is BEncodedList httpSeedList) {
                             foreach (BEncodedString str in httpSeedList)
-                                HttpSeeds.Add (str.Text);
+                                if (Uri.IsWellFormedUriString (str.Text, UriKind.Absolute)) {
+                                    HttpSeeds.Add (str.Text);
+                                }
                         }
                         break;
 
