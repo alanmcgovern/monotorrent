@@ -67,7 +67,11 @@ namespace MonoTorrent.Common
                 { "created by", new BEncodedString ($"MonoTorrent/{VersionInfo.ClientVersion}") },
                 { "encoding", new BEncodedString ("UTF-8") },
                 { "info", CreateInfoDict () },
-                { "private", new BEncodedString ("1") }
+                { "private", new BEncodedString ("1") },
+                { "url-list", new BEncodedList() {
+                    new BEncodedString ("https://example.com/8/items/"),
+                    new BEncodedString ("/8/items/"), // this should be ignored on loading
+                } }
             };
             torrent = Torrent.Load (torrentInfo);
         }
@@ -254,6 +258,16 @@ namespace MonoTorrent.Common
 
             Assert.AreEqual (Path.Combine (Path.Combine ("subfolder1", "subfolder2"), "file4.txt"), torrent.Files[3].Path);
             Assert.AreEqual (80000, torrent.Files[3].Length);
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        [Test]
+        public void HttpSeeds ()
+        {
+            Assert.IsTrue (torrent.HttpSeeds.Count == 1);
+            Assert.AreEqual("https://example.com/8/items/", torrent.HttpSeeds[0]);
         }
 
         [Test]
