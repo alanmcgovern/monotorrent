@@ -267,7 +267,7 @@ namespace MonoTorrent.Common
         public void HttpSeeds ()
         {
             Assert.IsTrue (torrent.HttpSeeds.Count == 1);
-            Assert.AreEqual("https://example.com/8/items/", torrent.HttpSeeds[0]);
+            Assert.AreEqual(new Uri("https://example.com/8/items/"), torrent.HttpSeeds[0]);
         }
 
         [Test]

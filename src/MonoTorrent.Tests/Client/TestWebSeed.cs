@@ -329,7 +329,7 @@ namespace MonoTorrent.Client
                 }
 
                 var files = rig.Manager.Torrent.Files;
-                if (files.Count == 1 && rig.Torrent.HttpSeeds[0] == c.Request.Url.OriginalString) {
+                if (files.Count == 1 && rig.Torrent.HttpSeeds[0] == c.Request.Url) {
                     globalStart = 0;
                     exists = start < files[0].Length && end < files[0].Length;
                 }
@@ -361,10 +361,10 @@ namespace MonoTorrent.Client
         {
             rig.Dispose ();
             rig = TestRig.CreateSingleFile ();
-            rig.Torrent.HttpSeeds.Add ($"{ListenerURL}File1.exe");
+            rig.Torrent.HttpSeeds.Add (new Uri($"{ListenerURL}File1.exe"));
 
-            string url = rig.Torrent.HttpSeeds[0];
-            connection = new HttpConnection (new Uri (url));
+            Uri url = rig.Torrent.HttpSeeds[0];
+            connection = new HttpConnection (url);
             connection.Manager = rig.Manager;
             rig.Manager.UnhashedPieces.SetAll (false);
 
