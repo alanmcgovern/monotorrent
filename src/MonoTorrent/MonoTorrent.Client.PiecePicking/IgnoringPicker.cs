@@ -31,19 +31,31 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class IgnoringPicker : PiecePicker
+    public class IgnoringPicker : PiecePickerFilter
     {
         readonly BitField Bitfield;
-        readonly BitField Temp;
+        readonly MutableBitField Temp;
 
-        public IgnoringPicker (BitField bitfield, PiecePicker picker)
+        public static IPiecePicker Wrap(IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
+        {
+            var result = picker;
+            foreach (var bf in ignoringBitfields)
+                result = new IgnoringPicker (bf, result);
+            return result;
+        }
+
+        public IgnoringPicker (BitField bitfield, IPiecePicker picker)
             : base (picker)
         {
             Bitfield = bitfield;
-            Temp = new BitField (bitfield.Length);
+            Temp = new MutableBitField (bitfield.Length);
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override bool IsInteresting (IPeer peer, BitField bitfield)
+            => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
+            && base.IsInteresting (peer, Temp);
+
+        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
@@ -55,12 +67,6 @@ namespace MonoTorrent.Client.PiecePicking
                 return null;
 
             return base.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
-        }
-
-        public override bool IsInteresting (BitField bitfield)
-        {
-            Temp.From (bitfield).NAnd (Bitfield);
-            return !Temp.AllFalse && base.IsInteresting (Temp);
         }
     }
 }

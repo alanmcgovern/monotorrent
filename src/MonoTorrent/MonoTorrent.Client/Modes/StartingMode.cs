@@ -32,6 +32,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client.PiecePicking;
+
 namespace MonoTorrent.Client.Modes
 {
     class StartingMode : Mode
@@ -56,9 +58,9 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("Torrents with no metadata must use 'MetadataMode', not 'StartingMode'.");
 
             try {
-                Manager.PieceManager.Picker.Initialise (Manager.Bitfield, Manager, Enumerable.Empty<Piece> ());
                 await VerifyHashState ();
                 Cancellation.Token.ThrowIfCancellationRequested ();
+                Manager.PieceManager.Initialise ();
             } catch (Exception ex) {
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 Manager.TrySetError (Reason.ReadFailure, ex);
@@ -93,6 +95,13 @@ namespace MonoTorrent.Client.Modes
 
             SendAnnounces ();
 
+            // Save the fast resume data before updating the current mode. This ensures the on-disk data has
+            // either been refreshed or deleted before we make a user-visible change to the state of the torrent.
+            if (Manager.Complete)
+                await Manager.MaybeWriteFastResumeAsync ();
+            else
+                await Manager.MaybeDeleteFastResumeAsync ();
+
             if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
                 Manager.Mode = new InitialSeedingMode (Manager, DiskManager, ConnectionManager, Settings);
             } else {
@@ -100,7 +109,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             Manager.DhtAnnounce ();
-            Manager.PieceManager.Reset ();
+            Manager.PieceManager.Initialise ();
             await Manager.LocalPeerAnnounceAsync ();
         }
 
@@ -120,15 +129,21 @@ namespace MonoTorrent.Client.Modes
 
         async Task VerifyHashState ()
         {
+            // If we do not have metadata or the torrent needs a hash check, fast exit.
+            if (!Manager.HasMetadata || !Manager.HashChecked)
+                return;
+
             // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
             // a zero length file and someone deletes it after the first piece has been written to disk, it will
             // never be recreated. If the downloaded data requires this file to exist, we have an issue.
-            if (Manager.HasMetadata) {
-                foreach (ITorrentFileInfo file in Manager.Files)
-                    if (!file.BitField.AllFalse && Manager.HashChecked && file.Length > 0)
-                        Manager.HashChecked &= await DiskManager.CheckFileExistsAsync (file);
+            foreach (ITorrentFileInfo file in Manager.Files) {
+                if (!file.BitField.AllFalse && file.Length > 0) {
+                    if (!await DiskManager.CheckFileExistsAsync (file)) {
+                        Manager.SetNeedsHashCheck ();
+                        break;
+                    }
+                }
             }
         }
-
     }
 }

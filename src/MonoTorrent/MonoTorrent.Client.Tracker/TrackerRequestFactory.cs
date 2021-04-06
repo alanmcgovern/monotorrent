@@ -42,9 +42,8 @@ namespace MonoTorrent.Client.Tracker
         {
             ClientEngine engine = Manager.Engine;
 
-            EncryptionTypes e = engine.Settings.AllowedEncryption;
-            bool requireEncryption = !e.HasFlag (EncryptionTypes.PlainText);
-            bool supportsEncryption = e.HasFlag (EncryptionTypes.RC4Full) || e.HasFlag (EncryptionTypes.RC4Header);
+            bool requireEncryption = !engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText);
+            bool supportsEncryption = EncryptionTypes.SupportsRC4 (engine.Settings.AllowedEncryption);
 
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
@@ -54,6 +53,8 @@ namespace MonoTorrent.Client.Tracker
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
                 port = engine.Settings.ReportedAddress.Port;
+            } else if (engine.Listener is ISocketListener socketListener && (socketListener?.EndPoint.Port ?? 0) != 0) {
+                port = socketListener.EndPoint.Port;
             } else {
                 port = engine.Settings.ListenPort;
             }

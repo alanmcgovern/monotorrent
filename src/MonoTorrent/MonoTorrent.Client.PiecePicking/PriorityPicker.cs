@@ -32,10 +32,8 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.PiecePicking
 {
-    public class PriorityPicker : PiecePicker
+    public class PriorityPicker : PiecePickerFilter
     {
-        Predicate<Files> AllSamePriority;
-
         class Files : IComparable<Files>
         {
             public Priority Priority { get; private set; }
@@ -60,25 +58,25 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
+        readonly Predicate<Files> AllSamePriority;
         readonly List<Files> files = new List<Files> ();
         readonly List<BitField> prioritised = new List<BitField> ();
 
-        BitField allPrioritisedPieces;
-        BitField temp;
+        MutableBitField allPrioritisedPieces;
+        MutableBitField temp;
 
-        public PriorityPicker (PiecePicker picker)
+        public PriorityPicker (IPiecePicker picker)
             : base (picker)
         {
-
+            AllSamePriority = file => file.Priority == files[0].Priority;
         }
 
-        public override void Initialise (BitField bitfield, ITorrentData torrentData, IEnumerable<Piece> requests)
+        public override void Initialise (ITorrentData torrentData)
         {
-            base.Initialise (bitfield, torrentData, requests);
-            AllSamePriority = file => file.Priority == files[0].Priority;
+            base.Initialise (torrentData);
 
-            allPrioritisedPieces = new BitField (bitfield.Length);
-            temp = new BitField (bitfield.Length);
+            allPrioritisedPieces = new MutableBitField (torrentData.PieceCount ());
+            temp = new MutableBitField (torrentData.PieceCount ());
 
             files.Clear ();
             for (int i = 0; i < torrentData.Files.Count; i++)
@@ -86,7 +84,7 @@ namespace MonoTorrent.Client.PiecePicking
             BuildSelectors ();
         }
 
-        public override bool IsInteresting (BitField bitfield)
+        public override bool IsInteresting (IPeer peer, BitField bitfield)
         {
             if (ShouldRebuildSelectors ())
                 BuildSelectors ();
@@ -94,16 +92,16 @@ namespace MonoTorrent.Client.PiecePicking
             if (files.Count == 1 || files.TrueForAll (AllSamePriority)) {
                 if (files[0].Priority == Priority.DoNotDownload)
                     return false;
-                return base.IsInteresting (bitfield);
+                return base.IsInteresting (peer, bitfield);
             } else {
                 temp.From (allPrioritisedPieces).And (bitfield);
                 if (temp.AllFalse)
                     return false;
-                return base.IsInteresting (temp);
+                return base.IsInteresting (peer, temp);
             }
         }
 
-        public override IList<PieceRequest> PickPiece (IPieceRequester peer, BitField available, IReadOnlyList<IPieceRequester> otherPeers, int count, int startIndex, int endIndex)
+        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse)
@@ -127,7 +125,7 @@ namespace MonoTorrent.Client.PiecePicking
             for (int i = 0; i < prioritised.Count; i++) {
                 temp.From (prioritised[i]).And (available);
                 if (!temp.AllFalse) {
-                    IList<PieceRequest> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
+                    IList<BlockInfo> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
                     if (result != null)
                         return result;
                 }
@@ -155,22 +153,22 @@ namespace MonoTorrent.Client.PiecePicking
 
             // At least one file is not set to DoNotDownload
             temp.SetAll (false);
-            temp.SetTrue (files[0].File.GetSelector ());
+            temp.SetTrue ((files[0].File.StartPieceIndex, files[0].File.EndPieceIndex));
             allPrioritisedPieces.From (temp);
             for (int i = 1; i < files.Count && files[i].Priority != Priority.DoNotDownload; i++) {
-                allPrioritisedPieces.SetTrue (files[i].File.GetSelector ());
+                allPrioritisedPieces.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
 
                 if (files[i].Priority == files[i - 1].Priority) {
-                    temp.SetTrue (files[i].File.GetSelector ());
+                    temp.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
                 } else if (!temp.AllFalse) {
-                    prioritised.Add (temp.Clone ());
+                    prioritised.Add (new MutableBitField (temp));
                     temp.SetAll (false);
-                    temp.SetTrue (files[i].File.GetSelector ());
+                    temp.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
                 }
             }
 
             if (!temp.AllFalse)
-                prioritised.Add (temp.Clone ());
+                prioritised.Add (new MutableBitField (temp));
         }
 
         bool ShouldRebuildSelectors ()

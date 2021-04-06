@@ -306,13 +306,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        public TestWriter Writer {
+        public IPieceWriter Writer {
             get; set;
         }
 
         public ClientEngine Engine { get; }
 
-        public CustomListener Listener { get; }
+        public CustomListener Listener => (CustomListener) Engine.Listener;
 
         public TorrentManager Manager { get; set; }
 
@@ -321,7 +321,7 @@ namespace MonoTorrent.Client
         }
 
         public string MetadataPath {
-            get; set;
+            get; private set;
         }
 
         public Torrent Torrent { get; set; }
@@ -347,7 +347,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ('a', 'z'));
             Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
-            PeerId id = new PeerId (peer, NullConnection.Incoming, Manager.Bitfield?.Clone ().SetAll (false));
+            PeerId id = new PeerId (peer, NullConnection.Incoming, new MutableBitField (Manager.PieceCount ()).SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.MessageQueue.SetReady ();
             if (processingQueue)
@@ -363,41 +363,52 @@ namespace MonoTorrent.Client
         public async Task RecreateManager ()
         {
             if (Manager != null) {
-                Manager.Dispose ();
                 if (Engine.Contains (Manager))
-                    await Engine.Unregister (Manager);
+                    await Engine.RemoveAsync (Manager);
+                Manager.Dispose ();
             }
             TorrentDict = CreateTorrent (piecelength, files, tier);
             Torrent = Torrent.Load (TorrentDict);
+
+            var magnetLink = new MagnetLink (Torrent.InfoHash, null, tier[0].ToArray (), null, null);
             Manager = MetadataMode
-                ? new TorrentManager (Torrent.InfoHash, savePath, new TorrentSettings (), MetadataPath, tier)
-                : new TorrentManager (Torrent, savePath, new TorrentSettings ());
-            await Engine.Register (Manager);
+                ? await Engine.AddAsync (magnetLink, savePath, new TorrentSettings ())
+                : await Engine.AddAsync (Torrent, savePath, new TorrentSettings ());
         }
 
         #region Rig Creation
 
         readonly TorrentFile[] files;
-        TestRig (string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files)
+        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, TorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
 
         }
 
-        TestRig (string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
+        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
         {
             this.files = files;
             this.savePath = savePath;
             this.piecelength = piecelength;
             this.tier = trackers;
             MetadataMode = metadataMode;
-            MetadataPath = "metadataSave.torrent";
-            Listener = new CustomListener ();
-            Engine = new ClientEngine (new EngineSettings (), Listener, writer);
-            Engine.RegisterLocalPeerDiscovery (new ManualLocalPeerListener ());
+            var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
+            PeerListenerFactory.Creator = endpoint => new CustomListener ();
+            LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
+            Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
+            Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
+                allowLocalPeerDiscovery: true,
+                dhtPort: 12345,
+                cacheDirectory: cacheDir,
+                listenPort: 12345
+            ));
+            if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
+                Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);
+            Engine.DiskManager.ChangePieceWriter (writer);
             Writer = writer;
 
             RecreateManager ().Wait ();
+            MetadataPath = Path.Combine (Engine.Settings.MetadataCacheDirectory, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
         }
 
         static TestRig ()
@@ -476,9 +487,9 @@ namespace MonoTorrent.Client
             return new TestRig ("", StandardPieceSize (), StandardWriter (), StandardTrackers (), StandardMultiFile ());
         }
 
-        internal static TestRig CreateMultiFile (TorrentFile[] files, int pieceLength)
+        internal static TestRig CreateMultiFile (TorrentFile[] files, int pieceLength, IPieceWriter writer = null)
         {
-            return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), files);
+            return new TestRig ("", pieceLength, writer ?? StandardWriter (), StandardTrackers (), files);
         }
 
         public static TestRig CreateTrackers (string[][] tier)
@@ -505,19 +516,17 @@ namespace MonoTorrent.Client
 
         static TorrentFile[] StandardMultiFile ()
         {
-            return new[] {
-                new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
-                new TorrentFile ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
-                new TorrentFile ("File3", (int)(StandardPieceSize () * 23.68)),
-                new TorrentFile ("File4", (int)(StandardPieceSize () * 2.05)),
-            };
+            return TorrentFile.Create (StandardPieceSize (),
+                ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
+                ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
+                ("File3", (int)(StandardPieceSize () * 23.68)),
+                ("File4", (int)(StandardPieceSize () * 2.05))
+            );
         }
 
         static TorrentFile[] StandardSingleFile ()
         {
-            return new[] {
-                 new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44))
-            };
+            return TorrentFile.Create (StandardPieceSize (), ("Dir1/File1", (int) (StandardPieceSize () * 0.44)));
         }
 
         static string[][] StandardTrackers ()
@@ -537,14 +546,14 @@ namespace MonoTorrent.Client
 
         #endregion Rig Creation
 
-        internal static TorrentManager CreatePrivate ()
+        internal static Torrent CreatePrivate ()
         {
-            var dict = CreateTorrent (16 * 1024 * 8, new[] { new TorrentFile ("File", 16 * 1024 * 8) }, null);
+            var dict = CreateTorrent (16 * 1024 * 8, TorrentFile.Create (16 * 1024 * 8 , ("File", 16 * 1024 * 8)), null);
             var editor = new TorrentEditor (dict) {
                 CanEditSecureMetadata = true,
                 Private = true,
             };
-            return new TorrentManager (editor.ToTorrent (), "", new TorrentSettings ());
+            return editor.ToTorrent ();
         }
 
         internal static TestRig CreateSingleFile (long torrentSize, int pieceLength)
@@ -555,7 +564,7 @@ namespace MonoTorrent.Client
         internal static TestRig CreateSingleFile (long torrentSize, int pieceLength, bool metadataMode)
         {
             TorrentFile[] files = StandardSingleFile ();
-            files[0] = new TorrentFile (files[0].Path, torrentSize);
+            files[0] = TorrentFile.Create (pieceLength, (files[0].Path, torrentSize)).Single ();
             return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), files, metadataMode);
         }
 
@@ -569,15 +578,15 @@ namespace MonoTorrent.Client
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;
         }
 
-        internal static TorrentManager CreateMultiFileManager (int[] fileSizes, int pieceLength)
+        internal static TorrentManager CreateMultiFileManager (long[] fileSizes, int pieceLength, IPieceWriter writer = null)
         {
-            var files = fileSizes.Select ((size, index) => new TorrentFile ($"File {index}", size)).ToArray ();
-            return CreateMultiFileManager (files, pieceLength);
+            var files = TorrentFile.Create (pieceLength, fileSizes).ToArray ();
+            return CreateMultiFileManager (files, pieceLength, writer);
         }
 
-        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength)
+        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength, IPieceWriter writer = null)
         {
-            return CreateMultiFile (files, pieceLength).Manager;
+            return CreateMultiFile (files, pieceLength, writer: writer).Manager;
         }
     }
 }

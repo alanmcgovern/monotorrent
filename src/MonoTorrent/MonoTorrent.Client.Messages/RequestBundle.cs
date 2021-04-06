@@ -38,9 +38,9 @@ namespace MonoTorrent.Client.Messages
     class RequestBundle : PeerMessage
     {
         MutableRequestMessage Message { get; }
-        IList<PieceRequest> Requests { get; }
+        IList<BlockInfo> Requests { get; }
 
-        internal RequestBundle (IList<PieceRequest> requests)
+        internal RequestBundle (IList<BlockInfo> requests)
         {
             Message = new MutableRequestMessage ();
             Requests = requests;
@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Messages
 
         public IEnumerable<RequestMessage> ToRequestMessages ()
         {
-            foreach (PieceRequest req in Requests)
+            foreach (BlockInfo req in Requests)
                 yield return new RequestMessage (req.PieceIndex, req.StartOffset, req.RequestLength);
         }
     }

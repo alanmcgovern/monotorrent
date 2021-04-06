@@ -29,7 +29,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 using MonoTorrent.Logging;
 
@@ -44,44 +46,54 @@ namespace MonoTorrent.Client.PieceWriters
         internal readonly struct RentedStream : IDisposable
         {
             internal readonly ITorrentFileStream Stream;
+            readonly ReusableExclusiveSemaphore.Releaser Releaser;
 
-            public RentedStream (ITorrentFileStream stream)
+            public RentedStream (ITorrentFileStream stream, ReusableExclusiveSemaphore.Releaser releaser)
             {
                 Stream = stream;
-                stream?.Rent ();
+                Releaser = releaser;
             }
 
             public void Dispose ()
             {
-                Stream?.Release ();
+                Releaser.Dispose ();
             }
+        }
+
+        class StreamData
+        {
+            public long LastUsedStamp = Stopwatch.GetTimestamp ();
+            public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
+            public ITorrentFileStream Stream;
         }
 
         // A list of currently open filestreams. Note: The least recently used is at position 0
         // The most recently used is at the last position in the array
         readonly int MaxStreams;
 
-        public int Count => Streams.Count;
+        public int Count { get; private set; }
 
         Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> StreamCreator { get; }
-        Dictionary<ITorrentFileInfo, ITorrentFileStream> Streams { get; }
-        List<ITorrentFileInfo> UsageOrder { get; }
+
+        Dictionary<ITorrentFileInfo, StreamData> Streams { get; }
 
         internal FileStreamBuffer (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxStreams)
         {
             StreamCreator = streamCreator;
             MaxStreams = maxStreams;
-            Streams = new Dictionary<ITorrentFileInfo, ITorrentFileStream> (maxStreams);
-            UsageOrder = new List<ITorrentFileInfo> ();
+            Streams = new Dictionary<ITorrentFileInfo, StreamData> (maxStreams);
         }
 
         internal async ReusableTask<bool> CloseStreamAsync (ITorrentFileInfo file)
         {
-            using var rented = GetStream (file);
-            if (rented.Stream != null) {
-                await rented.Stream.FlushAsync ();
-                CloseAndRemove (file, rented.Stream);
-                return true;
+            if (Streams.TryGetValue (file, out StreamData data)) {
+                using var releaser = await data.Locker.EnterAsync ();
+                if (data.Stream != null) {
+                    data.Stream.Dispose ();
+                    data.Stream = null;
+                    Count--;
+                    return true;
+                }
             }
 
             return false;
@@ -89,90 +101,87 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal async ReusableTask FlushAsync (ITorrentFileInfo file)
         {
-            using var rented = GetStream (file);
+            using var rented = await GetStream (file);
             if (rented.Stream != null)
                 await rented.Stream.FlushAsync ();
         }
 
-        internal RentedStream GetStream (ITorrentFileInfo file)
+        internal async ReusableTask<RentedStream> GetStream (ITorrentFileInfo file)
         {
-            if (Streams.TryGetValue (file, out ITorrentFileStream stream))
-                return new RentedStream (stream);
-            return new RentedStream (null);
+            if (Streams.TryGetValue (file, out StreamData data)) {
+                var releaser = await data.Locker.EnterAsync ();
+                if (data.Stream == null) {
+                    releaser.Dispose ();
+                } else {
+                    data.LastUsedStamp = Stopwatch.GetTimestamp ();
+                    return new RentedStream (data.Stream, releaser);
+                }
+            }
+            return new RentedStream (null, default);
         }
 
-        internal async ReusableTask<RentedStream> GetStreamAsync (ITorrentFileInfo file, FileAccess access)
+        internal async ReusableTask<RentedStream> GetOrCreateStreamAsync (ITorrentFileInfo file, FileAccess access)
         {
-            if (!Streams.TryGetValue (file, out ITorrentFileStream s))
-                s = null;
+            if (!Streams.TryGetValue (file, out StreamData data))
+                data = Streams[file] = new StreamData ();
 
-            if (s != null) {
+            var releaser = await data.Locker.EnterAsync ();
+            if (data.Stream != null) {
                 // If we are requesting write access and the current stream does not have it
-                if (((access & FileAccess.Write) == FileAccess.Write) && !s.CanWrite) {
+                if (((access & FileAccess.Write) == FileAccess.Write) && !data.Stream.CanWrite) {
                     logger.InfoFormatted ("Didn't have write permission for {0} - reopening", file.Path);
-                    CloseAndRemove (file, s);
-                    s = null;
-                } else {
-                    // Place the filestream at the end so we know it's been recently used
-                    Streams.Remove (file);
-                    Streams.Add (file, s);
+                    data.Stream.Dispose ();
+                    data.Stream = null;
+                    Count--;
                 }
             }
 
-            if (s == null) {
+            if (data.Stream == null) {
                 if (!File.Exists (file.FullPath)) {
                     if (!string.IsNullOrEmpty (Path.GetDirectoryName (file.FullPath)))
                         Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
                     NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
                 }
-                s = StreamCreator(file, access);
+                data.Stream = StreamCreator(file, access);
+                Count++;
 
                 // Ensure that we truncate existing files which are too large
-                if (s.Length > file.Length) {
-                    if (!s.CanWrite) {
-                        s.Dispose ();
-                        s = StreamCreator(file, FileAccess.ReadWrite);
+                if (data.Stream.Length > file.Length) {
+                    if (!data.Stream.CanWrite) {
+                        data.Stream.Dispose ();
+                        data.Stream = StreamCreator(file, FileAccess.ReadWrite);
                     }
-                    await s.SetLengthAsync (file.Length);
-                }
-
-                Add (file, s);
-            }
-
-            return new RentedStream (s);
-        }
-
-        void Add (ITorrentFileInfo file, ITorrentFileStream stream)
-        {
-            logger.InfoFormatted ("Opening filestream: {0}", file.FullPath);
-
-            if (MaxStreams != 0 && Streams.Count >= MaxStreams) {
-                for (int i = 0; i < UsageOrder.Count; i++) {
-                    if (!Streams[UsageOrder[i]].Rented) {
-                        CloseAndRemove (UsageOrder[i], Streams[UsageOrder[i]]);
-                        break;
-                    }
+                    await data.Stream.SetLengthAsync (file.Length);
                 }
             }
-            Streams.Add (file, stream);
-            UsageOrder.Add (file);
+
+            data.LastUsedStamp = Stopwatch.GetTimestamp ();
+            MaybeRemoveOldestStream ();
+
+            return new RentedStream (data.Stream, releaser);
         }
 
-        void CloseAndRemove (ITorrentFileInfo file, ITorrentFileStream s)
+        async void MaybeRemoveOldestStream ()
         {
-            logger.InfoFormatted ("Closing and removing: {0}", file.Path);
-            Streams.Remove (file);
-            UsageOrder.Remove (file);
-            s.Dispose ();
+            if (MaxStreams != 0 && Count > MaxStreams) {
+                var oldest = Streams.OrderBy (t => t.Value.LastUsedStamp).Where (t => t.Value.Stream != null).FirstOrDefault ();
+                logger.InfoFormatted ("Opening filestream: {0}", oldest.Key.FullPath);
+
+                using (await oldest.Value.Locker.EnterAsync ()) {
+                    oldest.Value.Stream.Dispose ();
+                    oldest.Value.Stream = null;
+                    Count--;
+                }
+            }
         }
 
         public void Dispose ()
         {
             foreach (var stream in Streams)
-                stream.Value.Dispose ();
+                stream.Value.Stream?.Dispose ();
 
             Streams.Clear ();
-            UsageOrder.Clear ();
+            Count = 0;
         }
     }
 }

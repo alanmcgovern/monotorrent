@@ -154,13 +154,9 @@ namespace MonoTorrent
             return new InfoHash (hash);
         }
 
-        [Obsolete("Use MagnetLink.Parse instead of this method")]
-        public static InfoHash FromMagnetLink (string magnetLink)
-        => MagnetLink.Parse (magnetLink).InfoHash;
-
         public static InfoHash UrlDecode (string infoHash)
         {
-            Check.InfoHash (infoHash);
+            infoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
             return new InfoHash (UriHelper.UrlDecode (infoHash));
         }
     }

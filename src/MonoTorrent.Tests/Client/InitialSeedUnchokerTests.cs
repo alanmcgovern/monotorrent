@@ -30,6 +30,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Standard;
 
@@ -57,10 +58,10 @@ namespace MonoTorrent.Client
         }
 
         [SetUp]
-        public void Setup ()
+        public async Task Setup ()
         {
             rig.Manager.UploadingTo = 0;
-            rig.Manager.Settings.UploadSlots = 4;
+            await rig.Manager.UpdateSettingsAsync (new TorrentSettingsBuilder (rig.Manager.Settings) { UploadSlots = 4 }.ToSettings ());
             peer = rig.CreatePeer (true);
             unchoker = new InitialSeedUnchoker (rig.Manager);
             unchoker.PeerConnected (peer);
@@ -88,7 +89,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Advertise3 ()
         {
-            peer.BitField.SetTrue (1).SetTrue (3).SetTrue (5).SetTrue (7);
+            peer.MutableBitField.SetTrue (1).SetTrue (3).SetTrue (5).SetTrue (7);
 
             unchoker.UnchokeReview ();
             Assert.AreEqual (unchoker.MaxAdvertised, peer.MessageQueue.QueueLength, "#2");
@@ -113,9 +114,9 @@ namespace MonoTorrent.Client
             peers.ForEach (unchoker.PeerConnected);
             peers.Add (this.peer);
 
-            peers[0].BitField.SetTrue (0).SetTrue (7).SetTrue (14);
-            peers[1].BitField.SetTrue (2).SetTrue (6).SetTrue (10);
-            peers[2].BitField.SetTrue (5).SetTrue (9).SetTrue (12);
+            peers[0].MutableBitField.SetTrue (0).SetTrue (7).SetTrue (14);
+            peers[1].MutableBitField.SetTrue (2).SetTrue (6).SetTrue (10);
+            peers[2].MutableBitField.SetTrue (5).SetTrue (9).SetTrue (12);
 
             unchoker.UnchokeReview ();
 
@@ -134,7 +135,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (unchoker.MaxAdvertised, peer.MessageQueue.QueueLength, "#2");
             for (int i = 0; i < unchoker.MaxAdvertised; i++)
                 Assert.AreEqual (i, ((HaveMessage) peer.MessageQueue.TryDequeue ()).PieceIndex, "#3." + i);
-            peer.BitField.SetTrue (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            peer.MutableBitField.SetTrue ((0, 10));
             unchoker.UnchokeReview ();
             Assert.AreEqual (unchoker.MaxAdvertised, peer.MessageQueue.QueueLength, "#4");
             for (int i = 0; i < unchoker.MaxAdvertised; i++)
@@ -142,11 +143,11 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void Advertise7 ()
+        public async Task Advertise7 ()
         {
             PeerId other = rig.CreatePeer (true);
             // Check that peers which don't share only get a small number of pieces to share
-            rig.Manager.Settings.UploadSlots = 1;
+            await rig.Manager.UpdateSettingsAsync (new TorrentSettingsBuilder (rig.Manager.Settings) { UploadSlots = 1 }.ToSettings ());
             unchoker.PeerDisconnected (peer);
             List<PeerId> peers = new List<PeerId> (new[] { peer, rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
@@ -202,13 +203,13 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void Choke2 ()
+        public async Task Choke2 ()
         {
             PeerId other = rig.CreatePeer (true);
 
             // More peers than slots
             unchoker.PeerDisconnected (this.peer);
-            rig.Manager.Settings.UploadSlots = 1;
+            await rig.Manager.UpdateSettingsAsync (new TorrentSettingsBuilder (rig.Manager.Settings) { UploadSlots = 1 }.ToSettings ());
 
             List<PeerId> peers = new List<PeerId> (new[] { this.peer, rig.CreatePeer (true), rig.CreatePeer (true) });
             peers.ForEach (unchoker.PeerConnected);
@@ -252,10 +253,10 @@ namespace MonoTorrent.Client
         [Test]
         public void ConnectDisconnect ()
         {
-            PeerId a = new PeerId (new Peer (new string ('a', 20), new Uri ("ipv4://127.0.0.5:5353")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
-            PeerId b = new PeerId (new Peer (new string ('b', 20), new Uri ("ipv4://127.0.0.5:5354")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
-            PeerId c = new PeerId (new Peer (new string ('c', 20), new Uri ("ipv4://127.0.0.5:5355")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
-            PeerId d = new PeerId (new Peer (new string ('d', 20), new Uri ("ipv4://127.0.0.5:5356")), NullConnection.Incoming, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            PeerId a = new PeerId (new Peer (new string ('a', 20), new Uri ("ipv4://127.0.0.5:5353")), NullConnection.Incoming, new MutableBitField (rig.Manager.PieceCount ()));
+            PeerId b = new PeerId (new Peer (new string ('b', 20), new Uri ("ipv4://127.0.0.5:5354")), NullConnection.Incoming, new MutableBitField (rig.Manager.PieceCount ()));
+            PeerId c = new PeerId (new Peer (new string ('c', 20), new Uri ("ipv4://127.0.0.5:5355")), NullConnection.Incoming, new MutableBitField (rig.Manager.PieceCount ()));
+            PeerId d = new PeerId (new Peer (new string ('d', 20), new Uri ("ipv4://127.0.0.5:5356")), NullConnection.Incoming, new MutableBitField (rig.Manager.PieceCount ()));
 
             unchoker.PeerDisconnected (a);
             Assert.AreEqual (1, unchoker.PeerCount, "#1");

@@ -28,6 +28,8 @@
 
 
 using System;
+using System.IO;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
@@ -43,32 +45,32 @@ namespace MonoTorrent.Client
         [Test]
         public void AllHashed_AllDownloaded ()
         {
-            var unhashedPieces = new BitField (10).SetAll (false);
-            var downloaded = new BitField (10).SetAll (true);
+            var unhashedPieces = new MutableBitField (10).SetAll (false);
+            var downloaded = new MutableBitField (10).SetAll (true);
             Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void AllHashed_NothingDownloaded ()
         {
-            var unhashedPieces = new BitField (10).SetAll (false);
-            var downloaded = new BitField (10).SetAll (false);
+            var unhashedPieces = new MutableBitField (10).SetAll (false);
+            var downloaded = new MutableBitField (10).SetAll (false);
             Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void NoneHashed_NothingDownloaded ()
         {
-            var unhashedPieces = new BitField (10).SetAll (true);
-            var downloaded = new BitField (10).SetAll (false);
+            var unhashedPieces = new MutableBitField (10).SetAll (true);
+            var downloaded = new MutableBitField (10).SetAll (false);
             Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void NoneHashed_AllDownloaded ()
         {
-            var unhashedPieces = new BitField (10).SetAll (true);
-            var downloaded = new BitField (10).SetAll (true);
+            var unhashedPieces = new MutableBitField (10).SetAll (true);
+            var downloaded = new MutableBitField (10).SetAll (true);
             Assert.Throws<ArgumentException> (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
         }
 
@@ -78,7 +80,7 @@ namespace MonoTorrent.Client
             var v1Data = new BEncodedDictionary {
                 { FastResume.VersionKey, (BEncodedNumber)1 },
                 { FastResume.InfoHashKey, new BEncodedString(InfoHash.Hash) },
-                { FastResume.BitfieldKey, new BEncodedString(new BitField (10).SetAll (true).ToByteArray ()) },
+                { FastResume.BitfieldKey, new BEncodedString(new MutableBitField (10).SetAll (true).ToByteArray ()) },
                 { FastResume.BitfieldLengthKey, (BEncodedNumber)10 },
             };
 
@@ -95,9 +97,9 @@ namespace MonoTorrent.Client
             var v1Data = new BEncodedDictionary {
                 { FastResume.VersionKey, (BEncodedNumber)1 },
                 { FastResume.InfoHashKey, new BEncodedString(InfoHash.Hash) },
-                { FastResume.BitfieldKey, new BEncodedString(new BitField (10).SetAll (false).Set (0, true).ToByteArray ()) },
+                { FastResume.BitfieldKey, new BEncodedString(new MutableBitField (10).SetAll (false).Set (0, true).ToByteArray ()) },
                 { FastResume.BitfieldLengthKey, (BEncodedNumber)10 },
-                { FastResume.UnhashedPiecesKey, new BEncodedString (new BitField (10).SetAll (true).Set (0, false).ToByteArray ()) },
+                { FastResume.UnhashedPiecesKey, new BEncodedString (new MutableBitField (10).SetAll (true).Set (0, false).ToByteArray ()) },
             };
 
             // If this is a v1 FastResume data then it comes from a version of MonoTorrent which always
@@ -107,5 +109,101 @@ namespace MonoTorrent.Client
             Assert.AreEqual (9, fastResume.UnhashedPieces.TrueCount, "#2");
         }
 
+        [Test]
+        public async Task IgnoreInvalidFastResume ()
+        {
+            using var tmpDir = TempDir.Create ();
+            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+                AutoSaveLoadFastResume = true,
+                CacheDirectory = tmpDir.Path,
+            }.ToSettings ());
+
+            var torrent = TestRig.CreatePrivate ();
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            Directory.CreateDirectory (Path.GetDirectoryName (path));
+            File.WriteAllBytes (path, new FastResume (InfoHash, new MutableBitField (torrent.Pieces.Count).SetAll (false), new MutableBitField (torrent.Pieces.Count)).Encode ());
+            var manager = await engine.AddAsync (torrent, "savedir");
+            Assert.IsFalse (manager.HashChecked);
+            await manager.StartAsync ();
+            await manager.WaitForState (TorrentState.Downloading);
+            Assert.IsFalse (File.Exists (path));
+        }
+
+        [Test]
+        public async Task DeleteAfterDownloading ()
+        {
+            using var tmpDir = TempDir.Create ();
+            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+                AutoSaveLoadFastResume = true,
+                CacheDirectory = tmpDir.Path,
+            }.ToSettings ());
+
+            var torrent = TestRig.CreatePrivate ();
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            Directory.CreateDirectory (Path.GetDirectoryName (path));
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.Pieces.Count).SetAll (false), new MutableBitField (torrent.Pieces.Count)).Encode ());
+            var manager = await engine.AddAsync (torrent, "savedir");
+            Assert.IsTrue (manager.HashChecked);
+            await manager.StartAsync ();
+            await manager.WaitForState (TorrentState.Downloading);
+            Assert.IsFalse (File.Exists (path));
+        }
+
+        [Test]
+        public async Task RetainAfterSeeding ()
+        {
+            using var tmpDir = TempDir.Create ();
+            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+                AutoSaveLoadFastResume = true,
+                CacheDirectory = tmpDir.Path,
+            }.ToSettings ());
+
+            var torrent = TestRig.CreatePrivate ();
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            Directory.CreateDirectory (Path.GetDirectoryName (path));
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.Pieces.Count).SetAll (true), new BitField (torrent.Pieces.Count)).Encode ());
+            var manager = await engine.AddAsync (torrent, "savedir");
+            Assert.IsTrue (manager.HashChecked);
+            await manager.StartAsync ();
+            await manager.WaitForState (TorrentState.Downloading);
+            Assert.IsFalse (File.Exists (path));
+
+        }
+
+        [Test]
+        public async Task DeleteBeforeHashing ()
+        {
+            using var tmpDir = TempDir.Create ();
+            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+                AutoSaveLoadFastResume = true,
+                CacheDirectory = tmpDir.Path,
+            }.ToSettings ());
+
+            var first = new TaskCompletionSource<object> ();
+            var second = new TaskCompletionSource<object> ();
+
+            var torrent = TestRig.CreatePrivate ();
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            Directory.CreateDirectory (Path.GetDirectoryName (path));
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.Pieces.Count).SetAll (true), new MutableBitField (torrent.Pieces.Count)).Encode ());
+            var manager = await engine.AddAsync (torrent, "savedir");
+            await engine.ChangePieceWriterAsync (new TestWriter {
+                FilesThatExist = new System.Collections.Generic.List<ITorrentFileInfo> (manager.Files)
+            });
+
+            Assert.IsTrue (manager.HashChecked);
+            manager.Engine.DiskManager.GetHashAsyncOverride = (torrent, pieceIndex) => {
+                first.SetResult (null);
+                second.Task.Wait ();
+                return new byte[20];
+            };
+            var hashCheckTask = manager.HashCheckAsync (false);
+            await first.Task.WithTimeout ();
+            Assert.IsFalse (File.Exists (path));
+
+            second.SetResult (null);
+            await hashCheckTask.WithTimeout ();
+            Assert.IsTrue (File.Exists (path));
+        }
     }
 }

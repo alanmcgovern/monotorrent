@@ -65,11 +65,17 @@ namespace MonoTorrent.Client
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            listener = new HttpListener ();
-            ListenerURL = $"http://127.0.0.1:{new Random ().Next (10000, 50000)}/announce/";
-            listener.Prefixes.Add (ListenerURL);
-            listener.Start ();
+            for (int i = 0; i < 10; i++) {
+                try {
+                    listener = new HttpListener ();
+                    ListenerURL = $"http://127.0.0.1:{new Random ().Next (10000, 50000)}/announce/";
+                    listener.Prefixes.Add (ListenerURL);
+                    listener.Start ();
+                    break;
+                } catch {
 
+                }
+            }
             listener.BeginGetContext (GotContext, listener);
         }
 
@@ -86,16 +92,14 @@ namespace MonoTorrent.Client
             partialData = false;
 
             rig = TestRig.CreateMultiFile ();
-            rig.Manager.ChangePicker (new StandardPicker ());
 
             connection = new HttpConnection (new Uri (ListenerURL));
             connection.Manager = rig.Manager;
             rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId (new Peer ("this is my id", connection.Uri), connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            id = new PeerId (new Peer ("this is my id", connection.Uri), connection, new MutableBitField (rig.Manager.PieceCount ()).SetAll (true));
             id.IsChoking = false;
             id.AmInterested = true;
-            id.BitField.SetAll (true);
             id.MaxPendingRequests = numberOfPieces;
             id.MessageQueue.SetReady ();
 
@@ -203,7 +207,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ChunkedRequest ()
         {
-            rig.Manager.PieceManager.Picker.CancelRequests (id);
+            rig.Manager.PieceManager.CancelRequests (id);
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.MessageQueue.TryDequeue ();
@@ -220,13 +224,13 @@ namespace MonoTorrent.Client
         {
             var messages = requests.ToRequestMessages ().ToList ();
             for (int i = 0; i < messages.Count - 1; i++) {
-                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength));
+                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, out _);
                 int orig = id.AmRequestingPiecesCount;
                 rig.Manager.PieceManager.AddPieceRequests (id);
                 Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
             }
 
-            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength));
+            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength), out _, out _);
             Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
 
             rig.Manager.PieceManager.AddPieceRequests (id);
@@ -325,7 +329,7 @@ namespace MonoTorrent.Client
                 }
 
                 var files = rig.Manager.Torrent.Files;
-                if (files.Count == 1 && rig.Torrent.HttpSeeds[0] == c.Request.Url.OriginalString) {
+                if (files.Count == 1 && rig.Torrent.HttpSeeds[0] == c.Request.Url) {
                     globalStart = 0;
                     exists = start < files[0].Length && end < files[0].Length;
                 }
@@ -357,17 +361,16 @@ namespace MonoTorrent.Client
         {
             rig.Dispose ();
             rig = TestRig.CreateSingleFile ();
-            rig.Torrent.HttpSeeds.Add ($"{ListenerURL}File1.exe");
+            rig.Torrent.HttpSeeds.Add (new Uri($"{ListenerURL}File1.exe"));
 
-            string url = rig.Torrent.HttpSeeds[0];
-            connection = new HttpConnection (new Uri (url));
+            Uri url = rig.Torrent.HttpSeeds[0];
+            connection = new HttpConnection (url);
             connection.Manager = rig.Manager;
             rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, rig.Manager.Bitfield?.Clone ().SetAll (false));
+            id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, new MutableBitField (rig.Manager.PieceCount ()).SetAll (true));
             id.IsChoking = false;
             id.AmInterested = true;
-            id.BitField.SetAll (true);
             id.MaxPendingRequests = numberOfPieces;
             id.MessageQueue.SetReady ();
 

@@ -280,8 +280,8 @@ namespace MonoTorrent.Client.Connections
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            long startOffset = (long) start.PieceIndex * Manager.Torrent.PieceLength + start.StartOffset;
-            long endOffset = (long) end.PieceIndex * Manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
+            long startOffset = new BlockInfo (start.PieceIndex, start.StartOffset, start.RequestLength).ToByteOffset (Manager.PieceLength);
+            long endOffset = new BlockInfo (end.PieceIndex, end.StartOffset, end.RequestLength).ToByteOffset (Manager.PieceLength) + end.RequestLength;
 
             foreach (TorrentFile file in Manager.Torrent.Files) {
                 Uri u = uri;

@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.Modes
         public void Setup ()
         {
             Rig = TestRig.CreateSingleFile (Piece.BlockSize * 20, Piece.BlockSize * 2);
-            Rig.Manager.Bitfield.Not ();
+            Rig.Manager.MutableBitField.Not ();
             Rig.Manager.UnhashedPieces.SetAll (false);
             Rig.Manager.Mode = new InitialSeedingMode (Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
         }
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             Rig.Manager.Peers.ConnectedPeers.Add (Rig.CreatePeer (true, false));
 
             var peer = Rig.CreatePeer (true);
-            peer.BitField.SetAll (true);
+            peer.MutableBitField.SetAll (true);
             Mode.HandlePeerConnected (peer);
             Mode.Tick (0);
 

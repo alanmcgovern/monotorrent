@@ -60,11 +60,11 @@ namespace MonoTorrent.Client.Modes
         {
             try {
                 Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
-                foreach (PeerId id in Manager.Peers.ConnectedPeers.ToArray ())
+                foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 
                 Manager.Monitor.Reset ();
-                Manager.PieceManager.Reset ();
+                Manager.PieceManager.Initialise ();
                 Manager.finishedPieces.Clear ();
 
                 var stoppingTasks = new List<Task> ();

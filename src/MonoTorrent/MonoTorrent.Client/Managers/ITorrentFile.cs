@@ -33,8 +33,8 @@ namespace MonoTorrent
     {
         string Path { get; }
         int StartPieceIndex { get; }
-        int StartPieceOffset { get; }
         int EndPieceIndex { get; }
         long Length { get; }
+        long OffsetInTorrent { get; }
     }
 }

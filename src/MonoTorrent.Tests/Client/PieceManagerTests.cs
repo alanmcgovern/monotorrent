@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 using MonoTorrent.Client.Messages.Standard;
 
@@ -51,11 +52,9 @@ namespace MonoTorrent.Client.PiecePicking
             public int TotalBlocks => (int) Math.Ceiling ((double) Size / Piece.BlockSize);
         }
 
-        BitField bitfield;
         PeerId peer;
         List<PeerId> peers;
         PieceManager manager;
-        TestTorrentData torrentData;
         TorrentManager torrentManager;
 
         [SetUp]
@@ -63,19 +62,18 @@ namespace MonoTorrent.Client.PiecePicking
         {
             int pieceCount = 40;
             int pieceLength = 256 * 1024;
-            bitfield = new BitField (pieceCount);
-            torrentData = new TestTorrentData {
-                Files = new[] { new TorrentFileInfo (new TorrentFile ("File", pieceLength * pieceCount)) },
+            var torrentData = new TestTorrentData {
+                Files = TorrentFileInfo.Create (pieceLength, ("File", pieceLength * pieceCount, "full/path/File")),
                 PieceLength = pieceLength,
                 Size = pieceLength * pieceCount
             };
             peers = new List<PeerId> ();
 
             torrentManager = TestRig.CreateSingleFileManager (torrentData.Size, torrentData.PieceLength);
-            torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new BitField (pieceCount).SetAll (true), new BitField (pieceCount).SetAll (false)));
+            torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHash, new MutableBitField (pieceCount).SetAll (true), new MutableBitField (pieceCount).SetAll (false)));
+
             manager = new PieceManager (torrentManager);
-            manager.ChangePicker (new StandardPicker (), bitfield);
-            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
+            manager.Initialise ();
 
             peer = PeerId.CreateNull (pieceCount);
             for (int i = 0; i < 20; i++) {
@@ -85,51 +83,15 @@ namespace MonoTorrent.Client.PiecePicking
             }
         }
 
-        [Test]
-        public void ReceiveAllPieces_PieceUnhashed ()
-        {
-            peers[0].BitField.SetAll (true);
-            peers[0].IsChoking = false;
-            bitfield.SetAll (true).SetFalse (1);
-
-            PieceRequest p;
-            var requests = new List<PieceRequest> ();
-            Piece piece = null;
-            while ((p = manager.Picker.PickPiece (peers[0], peers[0].BitField, peers)) != null) {
-                piece = manager.PieceDataReceived (peers[0], new PieceMessage (p.PieceIndex, p.StartOffset, p.RequestLength));
-                if (requests.Any (t => t.PieceIndex == p.PieceIndex && t.RequestLength == p.RequestLength && t.StartOffset == p.StartOffset))
-                    Assert.Fail ("We should not pick the same piece twice");
-                requests.Add (p);
-            }
-            Assert.IsNull (manager.Picker.PickPiece (peers[0], peers[0].BitField, peers), "#1");
-            Assert.IsTrue (piece.AllBlocksReceived, "#2");
-        }
 
         [Test]
-        public void RequestFastHaveEverything ()
+        public async Task RequestInEndgame_AllDoNotDownload ()
         {
-            peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange (new[] { 1, 2, 3, 5, 8, 13, 21 });
+            foreach (var file in torrentManager.Files)
+                await torrentManager.SetFilePriorityAsync (file, Priority.DoNotDownload);
 
-            peer.BitField.SetAll (true);
-            bitfield.SetAll (true);
-
-            Assert.IsNull (manager.Picker.PickPiece (peer, peer.BitField, peers), "#1");
-            manager.AddPieceRequests (peer);
-            Assert.AreEqual (0, peer.AmRequestingPiecesCount, "#2");
-            Assert.AreEqual (0, peer.MessageQueue.QueueLength, "#3");
-        }
-
-        [Test]
-        public void RequestInEndgame_AllDoNotDownload ()
-        {
-            manager.ChangePicker (torrentManager.CreateStandardPicker (), bitfield);
-            manager.Picker.Initialise (bitfield, torrentData, Enumerable.Empty<Piece> ());
-            foreach (var file in torrentData.Files)
-                file.Priority = Priority.DoNotDownload;
-
-            bitfield.SetAll (true).Set (0, false);
-            peers[0].BitField.SetAll (true);
+            torrentManager.MutableBitField.SetAll (true).Set (0, false);
+            peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
             manager.AddPieceRequests (peers[0]);
@@ -140,8 +102,8 @@ namespace MonoTorrent.Client.PiecePicking
         [Test]
         public void RequestWhenSeeder ()
         {
-            bitfield.SetAll (true);
-            peers[0].BitField.SetAll (true);
+            torrentManager.MutableBitField.SetAll (true);
+            peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
             manager.AddPieceRequests (peers[0]);

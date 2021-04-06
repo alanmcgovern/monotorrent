@@ -36,70 +36,77 @@ namespace MonoTorrent.Client.PiecePicking
     [TestFixture]
     public class RandomisedPickerTests
     {
-        TestPicker checker;
-        PeerId peer;
+        class TestTorrentData : ITorrentData
+        {
+            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
+            public int PieceLength { get; } = 64 * 1024;
+            public long Size { get; } = 64 * 1024 * 40;
+        }
+
+        PiecePickerFilterChecker checker;
+        PeerId seeder;
         RandomisedPicker picker;
-        int pieceCount;
 
         [SetUp]
         public void Setup ()
         {
-            checker = new TestPicker ();
+            checker = new PiecePickerFilterChecker (new StandardPicker ());
             picker = new RandomisedPicker (checker);
-
-            pieceCount = 40;
-            peer = PeerId.CreateNull (pieceCount);
-            peer.BitField.SetAll (true);
+            seeder = PeerId.CreateNull (40, true, false, true);
+            picker.Initialise (new TestTorrentData ());
         }
 
         [Test]
         public void Pick ()
         {
-            picker.PickPiece (peer, peer.BitField, new List<PeerId> ());
+            // Pretend only the 1st piece is available.
+            var onePiece = new MutableBitField (seeder.BitField.Length).Set (0, true);
+            var piece = picker.PickPiece (seeder, onePiece, new List<PeerId> ()).Value;
 
             // We should pick a random midpoint and select a piece starting from there.
             // If that fails we should wrap around to 0 and scan from the beginning.
-            Assert.IsTrue (checker.PickedIndex[0].Item1 > 0, "#1");
-            Assert.IsTrue (checker.PickedIndex[0].Item2 == pieceCount, "#2");
+            Assert.IsTrue (checker.Picks[0].startIndex > 0, "#1");
+            Assert.IsTrue (checker.Picks[0].endIndex == seeder.BitField.Length - 1, "#2");
 
-            Assert.AreEqual (0, checker.PickedIndex[1].Item1, "#3");
-            Assert.AreEqual (checker.PickedIndex[0].Item1, checker.PickedIndex[1].Item2, "#4");
+            Assert.AreEqual (0, checker.Picks[1].startIndex, "#3");
+            Assert.AreEqual (checker.Picks[1].endIndex, checker.Picks[0].startIndex, "#4");
 
-            foreach (var bf in checker.PickPieceBitfield)
-                Assert.IsTrue (bf.AllTrue, "#5");
+            foreach (var pick in checker.Picks)
+                Assert.AreEqual (onePiece, pick.available, "#5");
         }
 
         [Test]
         public void SinglePieceBitfield ()
         {
-            picker.PickPiece (peer, new BitField (1).SetAll (true), new List<PeerId> ());
+            picker.PickPiece (seeder, new MutableBitField (1).SetAll (true), new List<PeerId> ());
 
-            Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
-            Assert.AreEqual (0, checker.PickedIndex[0].Item1, "#2");
-            Assert.AreEqual (1, checker.PickedIndex[0].Item2, "#2");
+            Assert.AreEqual (1, checker.Picks.Count, "#1");
+            Assert.AreEqual (0, checker.Picks[0].startIndex, "#2");
+            Assert.AreEqual (0, checker.Picks[0].endIndex, "#2");
         }
 
         [Test]
         public void SinglePieceRange ()
         {
-            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, 12, 13);
+            picker.PickPiece (seeder, seeder.BitField, new List<PeerId> (), 1, 12, 13);
 
-            Assert.AreEqual (1, checker.PickPieceBitfield.Count, "#1");
-            Assert.AreEqual (12, checker.PickedIndex[0].Item1, "#2");
-            Assert.AreEqual (13, checker.PickedIndex[0].Item2, "#3");
+            Assert.AreEqual (1, checker.Picks.Count, "#1");
+            Assert.AreEqual (12, checker.Picks[0].startIndex, "#2");
+            Assert.AreEqual (13, checker.Picks[0].endIndex, "#3");
         }
 
         [Test]
         public void TwoPieceRange ()
         {
-            picker.PickPiece (peer, peer.BitField, new List<PeerId> (), 1, 12, 14);
+            var onePiece = new MutableBitField (seeder.BitField.Length).Set (0, true);
+            picker.PickPiece (seeder, onePiece, new List<PeerId> (), 1, 12, 14);
 
-            Assert.AreEqual (2, checker.PickPieceBitfield.Count, "#1");
-            Assert.AreEqual (13, checker.PickedIndex[0].Item1, "#2");
-            Assert.AreEqual (14, checker.PickedIndex[0].Item2, "#3");
+            Assert.AreEqual (2, checker.Picks.Count, "#1");
+            Assert.AreEqual (13, checker.Picks[0].startIndex, "#2");
+            Assert.AreEqual (14, checker.Picks[0].endIndex, "#3");
 
-            Assert.AreEqual (12, checker.PickedIndex[1].Item1, "#4");
-            Assert.AreEqual (13, checker.PickedIndex[1].Item2, "#5");
+            Assert.AreEqual (12, checker.Picks[1].startIndex, "#4");
+            Assert.AreEqual (13, checker.Picks[1].endIndex, "#5");
         }
     }
 }

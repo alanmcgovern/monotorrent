@@ -30,20 +30,22 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
+using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
+using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Logging;
+using MonoTorrent.Streaming;
 
 namespace MonoTorrent.Client
 {
@@ -53,6 +55,7 @@ namespace MonoTorrent.Client
     public class ClientEngine : IDisposable
     {
         internal static readonly MainLoop MainLoop = new MainLoop ("Client Engine Loop");
+        static readonly Logger Log = Logger.Create ();
 
         /// <summary>
         /// An un-seeded random number generator which will not generate the same
@@ -113,25 +116,21 @@ namespace MonoTorrent.Client
 
         public IDhtEngine DhtEngine { get; private set; }
 
+        IDhtListener DhtListener { get; set; }
+
         public DiskManager DiskManager { get; }
 
         public bool Disposed { get; private set; }
 
-        /// <summary>
-        /// Returns true when <see cref="EnablePortForwardingAsync"/> is invoked. When enabled, the
-        /// engine will automatically forward ports using uPnP and/or NAT-PMP compatible routers.
-        /// </summary>
-        public bool PortForwardingEnabled => PortForwarder.Active;
+        internal IPeerListener Listener { get; set; }
 
-        public IPeerListener Listener { get; }
-
-        public ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
+        internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
         /// <summary>
-        /// When <see cref="PortForwardingEnabled"/> is set to true, this will return a representation
+        /// When <see cref="EngineSettings.AllowPortForwarding"/> is set to true, this will return a representation
         /// of the ports the engine is managing.
         /// </summary>
-        public Mappings PortMappings => PortForwardingEnabled ? PortForwarder.Mappings : Mappings.Empty;
+        public Mappings PortMappings => Settings.AllowPortForwarding ? PortForwarder.Mappings : Mappings.Empty;
 
         public bool IsRunning { get; private set; }
 
@@ -139,7 +138,7 @@ namespace MonoTorrent.Client
 
         internal IPortForwarder PortForwarder { get; }
 
-        public EngineSettings Settings { get; }
+        public EngineSettings Settings { get; private set; }
 
         public IList<TorrentManager> Torrents { get; }
 
@@ -167,51 +166,30 @@ namespace MonoTorrent.Client
         #region Constructors
 
         public ClientEngine ()
-            : this(new EngineSettings ())
+            : this (new EngineSettings ())
         {
 
         }
 
         public ClientEngine (EngineSettings settings)
-            : this (settings, new DiskWriter ())
         {
-
-        }
-
-        public ClientEngine (EngineSettings settings, IPieceWriter writer)
-            : this (settings, new PeerListener (new IPEndPoint (IPAddress.Any, settings.ListenPort)), writer)
-
-        {
-
-        }
-
-        public ClientEngine (EngineSettings settings, IPeerListener listener)
-            : this (settings, listener, new DiskWriter ())
-        {
-
-        }
-
-        public ClientEngine (EngineSettings settings, IPeerListener listener, IPieceWriter writer)
-        {
-            Check.Settings (settings);
-            Check.Listener (listener);
-            Check.Writer (writer);
+            settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             // This is just a sanity check to make sure the ReusableTasks.dll assembly is
             // loadable.
             GC.KeepAlive (ReusableTasks.ReusableTask.CompletedTask);
 
             PeerId = GeneratePeerId ();
-            Listener = listener ?? throw new ArgumentNullException (nameof (listener));
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             allTorrents = new List<TorrentManager> ();
             publicTorrents = new List<TorrentManager> ();
             Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
 
-            DiskManager = new DiskManager (Settings, writer);
+            DiskManager = new DiskManager (Settings);
+            DiskManager.ChangePieceWriter (new DiskWriter (Settings.MaximumOpenFiles));
+
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
-            DhtEngine = new NullDhtEngine ();
             listenManager = new ListenManager (this);
             PortForwarder = new MonoNatPortForwarder ();
 
@@ -232,16 +210,123 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            listenManager.Register (listener);
+            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
+            listenManager.SetListener (Listener);
 
-            if (SupportsLocalPeerDiscovery)
-                RegisterLocalPeerDiscovery (new LocalPeerDiscovery (Settings));
+            DhtListener = DhtListenerFactory.CreateUdp (settings.DhtPort);
+            DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
+            DhtEngine.StateChanged += DhtEngineStateChanged;
+            DhtEngine.PeersFound += DhtEnginePeersFound;
+
+            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery && settings.ListenPort > 0 ? LocalPeerDiscoveryFactory.Create (settings.ListenPort) : null);
         }
 
         #endregion
 
 
         #region Methods
+
+        public Task<TorrentManager> AddAsync (MagnetLink magnetLink, string saveDirectory)
+            => AddAsync (magnetLink, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
+            => AddAsync (magnetLink, null, saveDirectory, settings);
+
+        public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory)
+            => AddAsync (torrent, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+            => AddAsync (null, torrent, saveDirectory, settings);
+
+        async Task<TorrentManager> AddAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        {
+            saveDirectory = string.IsNullOrEmpty (saveDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (saveDirectory);
+            TorrentManager manager;
+            if (magnetLink != null) {
+                var metadataSaveFilePath = Settings.GetMetadataPath (magnetLink.InfoHash);
+                manager = new TorrentManager (magnetLink, saveDirectory, settings, metadataSaveFilePath);
+                if (Settings.AutoSaveLoadMagnetLinkMetadata && Torrent.TryLoad (metadataSaveFilePath, out torrent) && torrent.InfoHash == magnetLink.InfoHash)
+                    manager.SetMetadata (torrent);
+            } else {
+                manager = new TorrentManager (torrent, saveDirectory, settings);
+            }
+
+            await Register (manager, true);
+            await manager.MaybeLoadFastResumeAsync ();
+
+            return manager;
+        }
+
+        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory)
+            => AddStreamingAsync (magnetLink, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
+            => AddStreamingAsync (magnetLink, null, saveDirectory, settings);
+
+        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
+            => AddStreamingAsync (torrent, saveDirectory, new TorrentSettings ());
+
+        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+            => AddStreamingAsync (null, torrent, saveDirectory, settings);
+
+        async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        {
+            var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
+            await manager.ChangePickerAsync (new StreamingPieceRequester ());
+            return manager;
+        }
+
+        public Task<bool> RemoveAsync (MagnetLink magnetLink)
+        {
+            magnetLink = magnetLink ?? throw new ArgumentNullException (nameof (magnetLink));
+            return RemoveAsync (magnetLink.InfoHash);
+        }
+
+        public Task<bool> RemoveAsync (Torrent torrent)
+        {
+            torrent = torrent ?? throw new ArgumentNullException (nameof (torrent));
+            return RemoveAsync (torrent.InfoHash);
+        }
+
+        public async Task<bool> RemoveAsync (TorrentManager manager)
+        {
+            CheckDisposed ();
+            Check.Manager (manager);
+
+            await MainLoop;
+            if (manager.Engine != this)
+                throw new TorrentException ("The manager has not been registered with this engine");
+
+            if (manager.State != TorrentState.Stopped)
+                throw new TorrentException ("The manager must be stopped before it can be unregistered");
+
+            allTorrents.Remove (manager);
+            publicTorrents.Remove (manager);
+            ConnectionManager.Remove (manager);
+            listenManager.Remove (manager.InfoHash);
+
+            manager.Engine = null;
+            manager.DownloadLimiters.Remove (downloadLimiters);
+            manager.UploadLimiters.Remove (uploadLimiters);
+            return true;
+        }
+
+        async Task<bool> RemoveAsync (InfoHash infohash)
+        {
+            await MainLoop;
+            var manager = allTorrents.FirstOrDefault (t => t.InfoHash == infohash);
+            return manager == null ? false : await RemoveAsync (manager);
+        }
+
+        public async Task ChangePieceWriterAsync (IPieceWriter writer)
+        {
+            writer = writer ?? throw new ArgumentNullException (nameof (writer));
+
+            await MainLoop;
+            if (IsRunning)
+                throw new InvalidOperationException ("You must stop all active downloads before changing the piece writer used to write data to disk.");
+            DiskManager.ChangePieceWriter (writer);
+        }
 
         void CheckDisposed ()
         {
@@ -273,7 +358,7 @@ namespace MonoTorrent.Client
             if (manager == null)
                 return false;
 
-            return Contains (manager.Torrent);
+            return Contains (manager.InfoHash);
         }
 
         public void Dispose ()
@@ -283,9 +368,14 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
+                Listener.Stop ();
+                listenManager.SetListener (null);
+
+                DhtListener.Stop ();
+                DhtEngine.SetListener (null);
                 DhtEngine.Dispose ();
+
                 DiskManager.Dispose ();
-                listenManager.Dispose ();
                 LocalPeerDiscovery.Stop ();
             });
         }
@@ -308,7 +398,7 @@ namespace MonoTorrent.Client
             await manager.StartAsync (metadataOnly: true);
             var data = await metadataCompleted.Task;
             await manager.StopAsync ();
-            await Unregister (manager);
+            await RemoveAsync (manager);
 
             token.ThrowIfCancellationRequested ();
             return data;
@@ -349,9 +439,6 @@ namespace MonoTorrent.Client
             await Task.WhenAll (tasks);
         }
 
-        public async Task Register (TorrentManager manager)
-            => await Register (manager, true);
-
         async Task Register (TorrentManager manager, bool isPublic)
         {
             CheckDisposed ();
@@ -382,10 +469,8 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task RegisterDhtAsync (IDhtEngine engine)
+        async Task RegisterDht (IDhtEngine engine)
         {
-            await MainLoop;
-
             if (DhtEngine != null) {
                 DhtEngine.StateChanged -= DhtEngineStateChanged;
                 DhtEngine.PeersFound -= DhtEnginePeersFound;
@@ -396,22 +481,21 @@ namespace MonoTorrent.Client
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
+            if (IsRunning)
+                await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
         }
 
-        public async Task RegisterLocalPeerDiscoveryAsync (ILocalPeerDiscovery localPeerDiscovery)
-        {
-            await MainLoop;
-            RegisterLocalPeerDiscovery (localPeerDiscovery);
-        }
-
-        internal void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
+        void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
         {
             if (LocalPeerDiscovery != null) {
                 LocalPeerDiscovery.PeerFound -= HandleLocalPeerFound;
                 LocalPeerDiscovery.Stop ();
             }
 
-            LocalPeerDiscovery = localPeerDiscovery ?? new NullLocalPeerDiscovery ();
+            if (!SupportsLocalPeerDiscovery || localPeerDiscovery == null)
+                localPeerDiscovery = new NullLocalPeerDiscovery ();
+
+            LocalPeerDiscovery = localPeerDiscovery;
 
             if (LocalPeerDiscovery != null) {
                 LocalPeerDiscovery.PeerFound += HandleLocalPeerFound;
@@ -449,10 +533,7 @@ namespace MonoTorrent.Client
                 if (!manager.CanUseDht)
                     continue;
 
-                if (Listener is ISocketListener listener)
-                    DhtEngine.Announce (manager.InfoHash, listener.EndPoint.Port);
-                else
-                    DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
+                DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
                 DhtEngine.GetPeers (manager.InfoHash);
             }
         }
@@ -495,28 +576,6 @@ namespace MonoTorrent.Client
             await Task.WhenAll (tasks);
         }
 
-        public async Task Unregister (TorrentManager manager)
-        {
-            CheckDisposed ();
-            Check.Manager (manager);
-
-            await MainLoop;
-            if (manager.Engine != this)
-                throw new TorrentException ("The manager has not been registered with this engine");
-
-            if (manager.State != TorrentState.Stopped)
-                throw new TorrentException ("The manager must be stopped before it can be unregistered");
-
-            allTorrents.Remove (manager);
-            publicTorrents.Remove (manager);
-            ConnectionManager.Remove (manager);
-            listenManager.Remove (manager.InfoHash);
-
-            manager.Engine = null;
-            manager.DownloadLimiters.Remove (downloadLimiters);
-            manager.UploadLimiters.Remove (uploadLimiters);
-        }
-
         #endregion
 
 
@@ -546,7 +605,6 @@ namespace MonoTorrent.Client
             CriticalException?.InvokeAsync (this, e);
         }
 
-
         internal void RaiseStatsUpdate (StatsUpdateEventArgs args)
         {
             StatsUpdate?.InvokeAsync (this, args);
@@ -557,38 +615,21 @@ namespace MonoTorrent.Client
             CheckDisposed ();
             if (!IsRunning) {
                 IsRunning = true;
-                if (Listener.Status == ListenerStatus.NotListening)
-                    Listener.Start ();
-                if (LocalPeerDiscovery.Status == ListenerStatus.NotListening)
-                    LocalPeerDiscovery.Start ();
-                await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
+
+                Listener.Start ();
+                LocalPeerDiscovery.Start ();
+                await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
+                if (Settings.AllowPortForwarding)
+                    await PortForwarder.StartAsync (CancellationToken.None);
+
+                if (Listener is ISocketListener socketListener)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, socketListener.EndPoint.Port));
+                else
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
+
+                if (DhtListener.EndPoint != null)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.EndPoint.Port));
             }
-        }
-
-        /// <summary>
-        /// Sets <see cref="PortForwardingEnabled"/> to true and begins searching for uPnP or
-        /// NAT-PMP compatible devices. If any are discovered they will be used to forward the
-        /// ports used by the engine.
-        /// </summary>
-        /// <param name="token">If the token is cancelled and an <see cref="OperationCanceledException"/>
-        /// is thrown then the engine is guaranteed to not be searching for compatible devices.</param>
-        /// <returns></returns>
-        public async Task EnablePortForwardingAsync (CancellationToken token)
-        {
-            await PortForwarder.StartAsync (token);
-        }
-
-        /// <summary>
-        /// Sets <see cref="PortForwardingEnabled"/> to false and the engine will no longer
-        /// seach for uPnP or NAT-PMP compatible devices. Ports forwarding requests will
-        /// be deleted, where possible.
-        /// </summary>
-        /// <param name="token">If the token is cancelled the engine is guaranteed to no longer search
-        /// for compatible devices, but existing port forwarding requests may not be deleted.</param>
-        /// <returns></returns>
-        public async Task DisablePortForwardingAsync (CancellationToken token)
-        {
-            await PortForwarder.StopAsync (true, token);
         }
 
         internal async Task StopAsync ()
@@ -599,7 +640,119 @@ namespace MonoTorrent.Client
             if (!IsRunning) {
                 Listener.Stop ();
                 LocalPeerDiscovery.Stop ();
+
+                if (Settings.AllowPortForwarding)
+                    await PortForwarder.StopAsync (CancellationToken.None);
+
+                await MaybeSaveDhtNodes ();
+                await DhtEngine.StopAsync ();
                 await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort), CancellationToken.None);
+                await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, Settings.DhtPort), CancellationToken.None);
+            }
+        }
+
+        async ReusableTasks.ReusableTask<byte[]> MaybeLoadDhtNodes ()
+        {
+            if (!Settings.AutoSaveLoadDhtCache)
+                return null;
+
+            var savePath = Settings.GetDhtNodeCacheFilePath ();
+            return await Task.Run (() => File.Exists (savePath) ? File.ReadAllBytes (savePath) : null);
+        }
+
+        async ReusableTasks.ReusableTask MaybeSaveDhtNodes ()
+        {
+            if (!Settings.AutoSaveLoadDhtCache)
+                return;
+
+            var nodes = await DhtEngine.SaveNodesAsync ();
+            if (nodes.Length == 0)
+                return;
+
+            await Task.Run (() => {
+                var savePath = Settings.GetDhtNodeCacheFilePath ();
+                var parentDir = Path.GetDirectoryName (savePath);
+                Directory.CreateDirectory (parentDir);
+                File.WriteAllBytes (savePath, nodes);
+            });
+        }
+
+        public async Task UpdateSettingsAsync (EngineSettings settings)
+        {
+            await MainLoop;
+
+            var oldSettings = Settings;
+            Settings = settings;
+            await UpdateSettingsAsync (oldSettings, settings);
+        }
+
+        async Task UpdateSettingsAsync (EngineSettings oldSettings, EngineSettings newSettings)
+        {
+            await DiskManager.UpdateSettingsAsync (newSettings);
+            if (newSettings.DiskCacheBytes != oldSettings.DiskCacheBytes)
+                await Task.WhenAll (Torrents.Select (t => DiskManager.FlushAsync (t)));
+
+            ConnectionManager.Settings = newSettings;
+
+            if (oldSettings.AllowPortForwarding != newSettings.AllowPortForwarding) {
+                if (newSettings.AllowPortForwarding)
+                    await PortForwarder.StartAsync (CancellationToken.None);
+                else
+                    await PortForwarder.StopAsync (removeExistingMappings: true, CancellationToken.None);
+            }
+
+            if (oldSettings.DhtPort != newSettings.DhtPort) {
+                if (DhtListener.EndPoint != null)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.EndPoint.Port), CancellationToken.None);
+                else if (oldSettings.DhtPort > 0)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, oldSettings.DhtPort), CancellationToken.None);
+
+                DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort);
+
+                if (oldSettings.DhtPort == -1)
+                    await RegisterDht (DhtEngineFactory.Create (DhtListener));
+                else if (newSettings.DhtPort == -1)
+                    await RegisterDht (new NullDhtEngine ());
+
+                DhtEngine.SetListener (DhtListener);
+
+                if (IsRunning) {
+                    DhtListener.Start ();
+                    if (Listener is ISocketListener newDhtListener)
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, newDhtListener.EndPoint.Port));
+                    else
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, newSettings.DhtPort));
+                }
+            }
+
+            if (oldSettings.ListenPort != newSettings.ListenPort) {
+                if (Listener is ISocketListener oldListener)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldListener.EndPoint.Port), CancellationToken.None);
+                else if (oldSettings.ListenPort > 0)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None);
+
+                Listener.Stop ();
+                Listener = PeerListenerFactory.CreateTcp (newSettings.ListenPort);
+                listenManager.SetListener (Listener);
+
+                if (IsRunning) {
+                    Listener.Start ();
+                    // The settings could say to listen at port 0, which means 'choose one dynamically'
+                    if (Listener is ISocketListener peerListener)
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, peerListener.EndPoint.Port));
+                    else
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.ListenPort));
+                }
+            }
+
+            // This depends on the Listener binding to it's local port.
+            var localPort = newSettings.ListenPort;
+            if (Listener is ISocketListener newListener)
+                localPort = newListener.EndPoint.Port;
+
+            if ((oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) ||
+                (oldSettings.ListenPort != newSettings.ListenPort)) {
+                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery && localPort > 0 ? new LocalPeerDiscovery (localPort) : null);
             }
         }
 

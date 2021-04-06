@@ -29,6 +29,8 @@
 
 using System;
 using System.IO;
+using System.Threading;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client
@@ -36,10 +38,9 @@ namespace MonoTorrent.Client
     class TorrentFileStream : FileStream, ITorrentFileStream
     {
         bool disposed;
-        bool rented;
 
         public TorrentFileStream (string path, FileAccess access)
-            : base (path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.Asynchronous | FileOptions.RandomAccess)
+            : base (path, FileMode.OpenOrCreate, access, FileShare.ReadWrite, 1, FileOptions.RandomAccess)
         {
         }
 
@@ -51,8 +52,6 @@ namespace MonoTorrent.Client
 
         bool ITorrentFileStream.Disposed => disposed;
 
-        bool ITorrentFileStream.Rented => rented;
-
         async ReusableTask ITorrentFileStream.FlushAsync ()
         {
             await FlushAsync ();
@@ -60,9 +59,10 @@ namespace MonoTorrent.Client
 
         async ReusableTask<int> ITorrentFileStream.ReadAsync (byte[] buffer, int offset, int count)
         {
-            if (!rented)
-                throw new InvalidOperationException ("Cannot read from the stream without renting it");
-            return await ReadAsync (buffer, offset, count);
+            // This is more memory efficient than calling Stream.ReadAsync
+            // and has no noticable impact on performance
+            await MainLoop.SwitchThread ();
+            return Read (buffer, offset, count);
         }
 
         ReusableTask ITorrentFileStream.SeekAsync (long position)
@@ -73,32 +73,16 @@ namespace MonoTorrent.Client
 
         public ReusableTask SetLengthAsync (long length)
         {
-            if (!rented)
-                throw new InvalidOperationException ("Cannot set the stream length without renting it");
-
             SetLength (length);
             return ReusableTask.CompletedTask;
         }
 
         async ReusableTask ITorrentFileStream.WriteAsync (byte[] buffer, int offset, int count)
         {
-            if (!rented)
-                throw new InvalidOperationException ("Cannot write to the stream without renting it");
-            await WriteAsync (buffer, offset, count);
-        }
-
-        void ITorrentFileStream.Rent ()
-        {
-            if (rented)
-                throw new InvalidOperationException ("This stream is already in use");
-            rented = true;
-        }
-
-        void ITorrentFileStream.Release ()
-        {
-            if (!rented)
-                throw new InvalidOperationException ("This stream has not been rented");
-            rented = false;
+            // This is more memory efficient than calling Stream.
+            // and has no noticable impact on performance
+            await MainLoop.SwitchThread ();
+            Write (buffer, offset, count);
         }
     }
 }

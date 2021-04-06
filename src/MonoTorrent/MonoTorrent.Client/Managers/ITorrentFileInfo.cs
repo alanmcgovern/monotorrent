@@ -1,5 +1,5 @@
 ﻿//
-// IFile.cs
+// ITorrentFileInfo.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,6 +27,7 @@
 //
 
 
+using System.Diagnostics;
 using System.Threading;
 
 namespace MonoTorrent.Client
@@ -34,12 +35,19 @@ namespace MonoTorrent.Client
 
     public interface ITorrentFileInfo : ITorrentFile
     {
+        // FIXME: make BitField readonly.
         BitField BitField { get; }
-        string FullPath { get; }
-        Priority Priority { get; set; }
-        SemaphoreSlim Locker { get; }
 
-        (int startPiece, int endPiece) GetSelector ();
+        /// <summary>
+        /// The full path to the file on disk. Can be modified by calling <see cref="TorrentManager.MoveFileAsync(ITorrentFileInfo, string)" />
+        /// or <see cref="TorrentManager.MoveFilesAsync(string, bool)"/>.
+        /// </summary>
+        string FullPath { get; }
+
+        /// <summary>
+        /// The priority of the file when downloading. Can be modified by calling <see cref="TorrentManager.SetFilePriorityAsync(ITorrentFileInfo, Priority)"/>
+        /// </summary>
+        Priority Priority { get; }
     }
 
     public static class ITorrentFileInfoExtensions

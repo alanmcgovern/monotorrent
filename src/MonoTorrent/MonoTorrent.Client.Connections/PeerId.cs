@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
-                BitField = new BitField (bitfieldLength).SetAll (seeder),
+                MutableBitField = new MutableBitField (bitfieldLength).SetAll (seeder)
             };
             peer.MessageQueue.SetReady ();
             peer.MessageQueue.BeginProcessing (force: true);
@@ -111,19 +111,26 @@ namespace MonoTorrent.Client
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
-        public BitField BitField { get; internal set; }
+        public BitField BitField => MutableBitField;
+        internal MutableBitField MutableBitField { get; private set; }
         public Software ClientApp { get; internal set; }
-        public EncryptionTypes EncryptionType {
+
+        public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
+
+        public EncryptionType EncryptionType {
             get {
                 if (Encryptor is RC4)
-                    return EncryptionTypes.RC4Full;
+                    return EncryptionType.RC4Full;
                 if (Encryptor is RC4Header)
-                    return EncryptionTypes.RC4Header;
+                    return EncryptionType.RC4Header;
                 if (Encryptor is PlainTextEncryption || Encryptor == null)
-                    return EncryptionTypes.PlainText;
-                return EncryptionTypes.None;
+                    return EncryptionType.PlainText;
+                throw new NotSupportedException ($"Encryption type {Encryptor.GetType ().Name} is unsupported");
             }
         }
+
+        public IList<EncryptionType> SupportedEncryptionTypes => Peer.AllowedEncryption;
+
         public bool IsChoking { get; internal set; }
         public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }
@@ -192,14 +199,12 @@ namespace MonoTorrent.Client
             InitializeTyrant ();
         }
 
-        internal PeerId (Peer peer, IConnection connection, BitField bitfield)
+        internal PeerId (Peer peer, IConnection connection, MutableBitField bitfield)
             : this (peer)
         {
-            if (connection == null)
-                throw new ArgumentNullException (nameof (connection));
-            Connection = connection;
+            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
-            BitField = bitfield;
+            MutableBitField = bitfield;
         }
 
         #endregion

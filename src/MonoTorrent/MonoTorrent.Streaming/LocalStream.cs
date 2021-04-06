@@ -28,8 +28,8 @@
 
 
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,11 +67,9 @@ namespace MonoTorrent.Streaming
 
         TorrentManager Manager { get; }
 
-        StreamingPiecePicker Picker { get; }
+        IStreamingPieceRequester Picker { get; }
 
-        FileStream Stream { get; set; }
-
-        public LocalStream (TorrentManager manager, ITorrentFileInfo file, StreamingPiecePicker picker)
+        public LocalStream (TorrentManager manager, ITorrentFileInfo file, IStreamingPieceRequester picker)
         {
             Manager = manager;
             File = file;
@@ -83,9 +81,6 @@ namespace MonoTorrent.Streaming
             base.Dispose (disposing);
 
             Disposed = true;
-            if (disposing) {
-                Stream?.Dispose ();
-            }
         }
 
         public override void Flush ()
@@ -99,15 +94,19 @@ namespace MonoTorrent.Streaming
             ThrowIfDisposed ();
 
             // The torrent is treated as one big block of data, so this is the offset at which the current file's data starts at.
-            var torrentFileStartOffset = (long) File.StartPieceIndex * (long) Manager.Torrent.PieceLength + File.StartPieceOffset;
+            var torrentFileStartOffset = File.OffsetInTorrent;
 
             // Clamp things so we cannot overread.
             if (Position + count > Length)
                 count = (int) (Length - Position);
 
+            // We've reached the end of the file, so return 0 to indicate EOF.
+            if (count == 0)
+                return 0;
+
             // Take our current position into account when calculating the start/end pieces of the data we're reading.
-            var startPiece = (int) ((torrentFileStartOffset + Position) / Manager.Torrent.PieceLength);
-            var endPiece = (int) ((torrentFileStartOffset + Position + count) / Manager.Torrent.PieceLength);
+            var startPiece = Manager.ByteOffsetToPieceIndex (torrentFileStartOffset + Position);
+            var endPiece = Math.Min (File.EndPieceIndex, Manager.ByteOffsetToPieceIndex (torrentFileStartOffset + Position + count));
             while (Manager.State != TorrentState.Stopped && Manager.State != TorrentState.Error) {
                 bool allAvailable = true;
                 for (int i = startPiece; i <= endPiece && allAvailable; i++)
@@ -116,49 +115,50 @@ namespace MonoTorrent.Streaming
                 if (allAvailable)
                     break;
 
-                await Task.Delay (500, cancellationToken);
+                await Task.Delay (100, cancellationToken).ConfigureAwait (false);
                 ThrowIfDisposed ();
             }
 
             cancellationToken.ThrowIfCancellationRequested ();
-            if (Stream == null) {
-                // FIXME: Is it worth trying to use a stream managed by the normal internal buffer? I don't
-                // think so as those streams are supposed to be temporary, whereas the stream here is supposed
-                // to be kept open permanently so we can provide data to the user. If there's an issue in the
-                // future (highly likely :p ) then I'll have to augment the various APIs to allow a long-lived
-                // stream to be created, and then use the long-lived stream here.
-                Stream = new FileStream (File.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                Stream.Seek (Position, SeekOrigin.Begin);
-            }
 
-            var read = await Stream.ReadAsync (buffer, offset, count, cancellationToken);
+            // Flush any pending data.
+            await Manager.Engine.DiskManager.FlushAsync (Manager, startPiece, endPiece);
+
+            if (!await Manager.Engine.DiskManager.ReadAsync (File, Position, buffer, offset, count).ConfigureAwait (false))
+                throw new InvalidOperationException ("Could not read the requested data from the torrent");
             ThrowIfDisposed ();
 
-            position += read;
+            position += count;
             Picker.ReadToPosition (File, position);
-            return read;
+            return count;
         }
 
         public override long Seek (long offset, SeekOrigin origin)
         {
             ThrowIfDisposed ();
-
+            long newPosition;
             switch (origin) {
                 case SeekOrigin.Begin:
-                    position = offset;
+                    newPosition = offset;
                     break;
                 case SeekOrigin.Current:
-                    position += offset;
+                    newPosition = position + offset;
                     break;
                 case SeekOrigin.End:
-                    position = Length - offset;
+                    newPosition = Length + offset;
                     break;
                 default:
                     throw new NotSupportedException ();
             }
 
-            Picker.SeekToPosition (File, position);
-            Stream?.Seek (offset, origin);
+            // Clamp it to within reasonable bounds.
+            newPosition = Math.Max (0, newPosition);
+            newPosition = Math.Min (newPosition, Length);
+
+            if (newPosition != position) {
+                position = newPosition;
+                Picker.SeekToPosition (File, newPosition);
+            }
             return position;
         }
 

@@ -32,6 +32,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Dht;
 
 using NUnit.Framework;
 
@@ -47,6 +48,8 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
+            DhtEngineFactory.Creator = listener => new ManualDhtEngine ();
+
             rig = TestRig.CreateMultiFile (new TestWriter ());
             conn = new ConnectionPair ().WithTimeout ();
         }
@@ -54,6 +57,8 @@ namespace MonoTorrent.Client
         [TearDown]
         public void Teardown ()
         {
+            DhtEngineFactory.Creator = listener => new DhtEngine (listener);
+
             rig.Dispose ();
             conn.Dispose ();
         }
@@ -61,8 +66,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_Dht ()
         {
-            var dht = new ManualDhtEngine ();
-            await rig.Engine.RegisterDhtAsync (dht);
+            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
             var manager = rig.Engine.Torrents[0];
@@ -87,11 +91,9 @@ namespace MonoTorrent.Client
                 Private = true
             };
 
-            var manager = new TorrentManager (editor.ToTorrent (), "path", new TorrentSettings ());
-            await rig.Engine.Register (manager);
+            var manager = await rig.Engine.AddAsync (editor.ToTorrent (), "path", new TorrentSettings ());
 
-            var dht = new ManualDhtEngine ();
-            await rig.Engine.RegisterDhtAsync (dht);
+            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
             manager.PeersFound += (o, e) => {
@@ -109,8 +111,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_LocalPeerDiscovery ()
         {
-            var localPeer = new ManualLocalPeerListener ();
-            await rig.Engine.RegisterLocalPeerDiscoveryAsync (localPeer);
+            var localPeer = (ManualLocalPeerListener) rig.Engine.LocalPeerDiscovery;
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
             var manager = rig.Engine.Torrents[0];
@@ -135,11 +136,9 @@ namespace MonoTorrent.Client
                 Private = true
             };
 
-            var manager = new TorrentManager (editor.ToTorrent (), "path", new TorrentSettings ());
-            await rig.Engine.Register (manager);
+            var manager = await rig.Engine.AddAsync (editor.ToTorrent (), "path", new TorrentSettings ());
 
-            var localPeer = new ManualLocalPeerListener ();
-            await rig.Engine.RegisterLocalPeerDiscoveryAsync (localPeer);
+            var localPeer = (ManualLocalPeerListener) rig.Engine.LocalPeerDiscovery;
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
             manager.PeersFound += (o, e) => {
@@ -161,25 +160,6 @@ namespace MonoTorrent.Client
             var task = rig.Engine.DownloadMetadataAsync (new MagnetLink (new InfoHash (new byte[20])), cts.Token);
             cts.Cancel ();
             Assert.ThrowsAsync<OperationCanceledException> (() => task);
-        }
-
-        [Test]
-        public async Task ReregisterManager ()
-        {
-            var downloadLimiters = rig.Manager.DownloadLimiters.ToArray ();
-            var uploadLimiters = rig.Manager.UploadLimiters.ToArray ();
-
-            await rig.Engine.Unregister (rig.Manager);
-            Assert.IsNull (rig.Manager.Engine, "#1");
-            CollectionAssert.AreNotEquivalent (downloadLimiters, rig.Manager.DownloadLimiters, "#2");
-            CollectionAssert.AreNotEquivalent (uploadLimiters, rig.Manager.UploadLimiters, "#3");
-            Assert.IsFalse (rig.Engine.ConnectionManager.Contains (rig.Manager), "#4");
-
-            await rig.Engine.Register (rig.Manager);
-            Assert.AreEqual (rig.Engine, rig.Manager.Engine, "#5");
-            CollectionAssert.AreEquivalent (downloadLimiters, rig.Manager.DownloadLimiters, "#6");
-            CollectionAssert.AreEquivalent (uploadLimiters, rig.Manager.UploadLimiters, "#7");
-            Assert.IsTrue (rig.Engine.ConnectionManager.Contains (rig.Manager), "#8");
         }
 
         [Test]

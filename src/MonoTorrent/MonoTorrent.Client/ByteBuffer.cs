@@ -27,19 +27,22 @@
 //
 
 
+using System;
 using System.Net.Sockets;
 
 namespace MonoTorrent.Client
 {
     public sealed class ByteBuffer
     {
+        // Used to prevent double-frees
+        internal int Counter { get; set; }
         public byte[] Data { get; }
 
         internal SocketAsyncEventArgs Args { get; set; }
 
         public ByteBuffer (int size)
         {
-            Data = new byte[size];
+            Data = size == 0 ? Array.Empty<byte> () : new byte[size];
         }
     }
 }

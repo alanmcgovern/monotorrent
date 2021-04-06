@@ -44,158 +44,116 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PieceManager
     {
-        #region Old
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount
         internal const int BonusRequestPerKb = 10;
+
         // Default to a minimum of 8 blocks
         internal const int NormalRequestAmount = 8;
-        // Allow 4 pending blocks per peer during end game
-        internal const int MaxEndGameRequests = 4;
 
-        public event EventHandler<BlockEventArgs> BlockReceived;
-        public event EventHandler<BlockEventArgs> BlockRequested;
-        public event EventHandler<BlockEventArgs> BlockRequestCancelled;
-
-        internal void RaiseBlockReceived (BlockEventArgs args)
-        {
-            BlockReceived?.InvokeAsync (args.TorrentManager, args);
-        }
-
-        internal void RaiseBlockRequested (BlockEventArgs args)
-        {
-            BlockRequested?.InvokeAsync (args.TorrentManager, args);
-        }
-
-        internal void RaiseBlockRequestCancelled (BlockEventArgs args)
-        {
-            BlockRequestCancelled?.InvokeAsync (args.TorrentManager, args);
-        }
-
-        #endregion Old
-
+        bool Initialised { get; set; }
         TorrentManager Manager { get; }
-        PiecePicker originalPicker;
-        internal PiecePicker Picker { get; private set; }
-        internal BitField PendingHashCheckPieces { get; private set; }
+        IPieceRequester Requester { get; set; }
+        MutableBitField PendingHashCheckPieces { get; set; }
+
+        /// <summary>
+        /// Returns true when every block has been requested at least once.
+        /// </summary>
+        internal bool InEndgameMode { get; private set; }
 
         internal PieceManager (TorrentManager manager)
         {
             Manager = manager;
-            Picker = new NullPicker ();
-            PendingHashCheckPieces = new BitField (1);
+            PendingHashCheckPieces = new MutableBitField (1);
+            Requester = new StandardPieceRequester ();
         }
 
-        internal Piece PieceDataReceived (PeerId id, PieceMessage message)
+        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Picker.ValidatePiece (id, message.PieceIndex, message.StartOffset, message.RequestLength, out Piece piece)) {
+            if (Initialised && Requester.Picker.ValidatePiece (id, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
-                Block block = piece.Blocks[message.StartOffset / Piece.BlockSize];
-
-                if (BlockReceived != null)
-                    RaiseBlockReceived (new BlockEventArgs (Manager, block, piece, id));
-
-                if (piece.AllBlocksReceived)
+                if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
-                return piece;
-            }
-            return null;
-        }
-
-        internal void AddPieceRequests (PeerId id)
-        {
-            int maxRequests = id.MaxPendingRequests;
-
-            if (id.AmRequestingPiecesCount >= maxRequests)
-                return;
-
-            int count = 1;
-            if (id.Connection is HttpConnection) {
-                if (id.AmRequestingPiecesCount > 0)
-                    return;
-
-                // How many whole pieces fit into 2MB
-                count = (2 * 1024 * 1024) / Manager.Torrent.PieceLength;
-
-                // Make sure we have at least one whole piece
-                count = Math.Max (count, 1);
-
-                count *= Manager.Torrent.PieceLength / Piece.BlockSize;
-            }
-
-            if (!id.IsChoking || id.SupportsFastPeer) {
-                while (id.AmRequestingPiecesCount < maxRequests) {
-                    PieceRequest request = Picker.ContinueExistingRequest (id);
-                    if (request != null)
-                        id.MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
-                    else
-                        break;
-                }
-            }
-
-            if (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0)) {
-                while (id.AmRequestingPiecesCount < maxRequests) {
-                    List<PeerId> otherPeers = Manager.Peers.ConnectedPeers ?? new List<PeerId> ();
-                    IList<PieceRequest> request = Picker.PickPiece (id, id.BitField, otherPeers, count);
-                    if (request != null && request.Count > 0)
-                        id.MessageQueue.Enqueue (new RequestBundle (request));
-                    else
-                        break;
-                }
+                return true;
+            } else {
+                pieceComplete = false;
+                peersInvolved = null;
+                return false;
             }
         }
 
         internal bool IsInteresting (PeerId id)
         {
             // If i have completed the torrent, then no-one is interesting
-            if (Manager.Complete)
+            if (!Initialised || Manager.Complete)
                 return false;
 
-            // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
-                return true;
+            // FIXME: Move this elsewhere?
+            id.Peer.IsSeeder = id.BitField.AllTrue;
 
-            // Otherwise we need to do a full check
-            return Picker.IsInteresting (id.BitField);
+            // If the peer is a seeder it may still be un-interesting if some files are marked as 'DoNotDownload'
+            return Requester.Picker.IsInteresting (id, id.BitField);
         }
 
-        internal void ChangePicker (PiecePicker picker, BitField bitfield)
+        internal void AddPieceRequests (PeerId id)
         {
-            originalPicker = picker;
-            if (PendingHashCheckPieces.Length != bitfield.Length)
-                PendingHashCheckPieces = new BitField (bitfield.Length);
-
-            // 'PendingHashCheckPieces' is the list of fully downloaded pieces which
-            // are waiting to be hash checked. We should not begin a second download of
-            // a piece while waiting to confirm if the original download was successful.
-            //
-            // 'Manager.UnhashedPieces' represents the pieces from the torrent which
-            // have not been hash checked as they are marked as 'DoNotDownload'. If
-            // a file is changed to be downloadable, the engine will hashcheck the data
-            // first and then remove them from the 'UnhashedPieces' bitfield which will
-            // make them downloadable. If they actually passed the hashcheck then they
-            // won't actually be requested again.
-            picker = new IgnoringPicker (bitfield, picker);
-            picker = new IgnoringPicker (PendingHashCheckPieces, picker);
-            picker = new IgnoringPicker (Manager.UnhashedPieces, picker);
-            Picker = picker;
+            if (Initialised)
+                Requester.AddRequests (id, Manager.Peers.ConnectedPeers);
         }
 
-        internal void RefreshPickerWithMetadata (BitField bitfield, ITorrentData data)
+        internal void AddPieceRequests (List<PeerId> peers)
         {
-            ChangePicker (originalPicker, bitfield);
-            Picker.Initialise (bitfield, data, Enumerable.Empty<Piece> ());
+            if (Initialised)
+                Requester.AddRequests (peers);
         }
 
-        internal void Reset ()
+        internal void ChangePicker (IPieceRequester requester)
         {
-            PendingHashCheckPieces.SetAll (false);
-            Picker?.Reset ();
+            if (Manager.State != TorrentState.Stopped)
+                throw new InvalidOperationException ($"The {nameof (IPieceRequester)} must be set while the TorrentManager is in the Stopped state.");
+            Requester = requester;
+            Initialised = false;
+        }
+
+        internal void Initialise ()
+        {
+            if (Manager.HasMetadata) {
+                Initialised = true;
+                PendingHashCheckPieces = new MutableBitField (Manager.Bitfield.Length);
+
+                var ignorableBitfieds = new[] {
+                    Manager.Bitfield,
+                    PendingHashCheckPieces,
+                    Manager.UnhashedPieces,
+                };
+                Requester.Initialise (Manager, ignorableBitfieds);
+            }
         }
 
         public async Task<int> CurrentRequestCountAsync ()
         {
+            if (!Initialised)
+                return 0;
+
             await ClientEngine.MainLoop;
-            return Picker.CurrentRequestCount ();
+            return Requester.Picker.CurrentRequestCount (); ;
+        }
+
+        internal void PieceHashed (int pieceIndex)
+        {
+            if (Initialised)
+                PendingHashCheckPieces[pieceIndex] = false;
+        }
+
+        internal void CancelRequests (PeerId id)
+        {
+            if (Initialised)
+                Requester.Picker.CancelRequests (id, 0, Manager.PieceCount () - 1);
+        }
+
+        internal void RequestRejected (PeerId id, BlockInfo pieceRequest)
+        {
+            if (Initialised)
+                Requester.Picker.RequestRejected (id, pieceRequest);
         }
     }
 }

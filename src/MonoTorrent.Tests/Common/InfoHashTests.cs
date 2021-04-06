@@ -99,14 +99,5 @@ namespace MonoTorrent.Common
             Assert.IsTrue(first.Equals ((object)second));
             Assert.IsTrue(first.Equals (second));
         }
-
-        [Test]
-        public void ParseFromMagnetLin ()
-        {
-#pragma warning disable CS0618 // Type or member is obsolete
-            var infoHash = InfoHash.FromMagnetLink ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C&xl=12345");
-#pragma warning restore CS0618 // Type or member is obsolete
-            Assert.IsNotNull (infoHash);
-        }
     }
 }

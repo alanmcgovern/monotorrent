@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
@@ -39,6 +40,17 @@ namespace MonoTorrent
     public static class TaskExtensions
     {
         static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
+
+        public static T TakeWithTimeout<T> (this BlockingCollection<T> collection, string message = null)
+        {
+            var cts = new System.Threading.CancellationTokenSource (Timeout);
+            try {
+                return collection.Take (cts.Token);
+            } catch {
+                Assert.Fail (message);
+                throw;
+            }
+        }
 
         public static Task WithTimeout (this ReusableTask task, string message = null)
             => task.AsTask ().WithTimeout (Timeout, message);
@@ -57,7 +69,13 @@ namespace MonoTorrent
 
         public static async Task WithTimeout (this Task task, TimeSpan timeout, string message = null)
         {
-            var result = await Task.WhenAny (task, Task.Delay (timeout));
+            var cancellation = new System.Threading.CancellationTokenSource ();
+            var delayTask = Task.Delay (timeout, cancellation.Token);
+            var result = await Task.WhenAny (task, delayTask).ConfigureAwait (false);
+
+            cancellation.Cancel ();
+            try { await delayTask.ConfigureAwait (false); } catch (OperationCanceledException) { }
+
             if (result == task) {
                 await task;
             } else {
@@ -79,10 +97,16 @@ namespace MonoTorrent
 
         public static async Task<T> WithTimeout<T> (this Task<T> task, TimeSpan timeout, string message = null)
         {
-            var result = await Task.WhenAny (task, Task.Delay (timeout));
-            if (result == task)
-                return await task;
+            var cancellation = new System.Threading.CancellationTokenSource ();
+            var delayTask = Task.Delay (timeout, cancellation.Token);
+            var result = await Task.WhenAny (task, delayTask).ConfigureAwait (false);
 
+            cancellation.Cancel ();
+            try { await delayTask.ConfigureAwait (false); } catch (OperationCanceledException) { }
+
+            if (result == task) {
+                return await task.ConfigureAwait (false);
+            }
             throw new TimeoutException (message ?? $"The task did not complete within {(int) timeout.TotalMilliseconds}ms.");
         }
     }

@@ -61,22 +61,27 @@ namespace SampleClient
         {
             //LoggerFactory.Creator = className => new TextLogger (Console.Out, className);
 
-            var seederWriter = new MemoryWriter (new NullWriter (), DataSize);
             int port = 37827;
             var seeder = new ClientEngine (
-                new EngineSettings {
-                    AllowedEncryption = EncryptionTypes.PlainText,
+                new EngineSettingsBuilder {
+                    AllowedEncryption = new[] { EncryptionType.PlainText },
+                    DiskCacheBytes = DataSize,
                     ListenPort = port++
-                },
-                seederWriter
+                }.ToSettings ()
             );
+            await seeder.ChangePieceWriterAsync (new NullWriter ());
 
             var downloaders = Enumerable.Range (port, 16).Select (p => {
                 return new ClientEngine (
-                    new EngineSettings { ListenPort = p, AllowedEncryption = EncryptionTypes.PlainText },
-                    new MemoryWriter (new NullWriter (), DataSize)
+                    new EngineSettingsBuilder {
+                        AllowedEncryption = new[] { EncryptionType.PlainText },
+                        DiskCacheBytes = DataSize,
+                        ListenPort = p,
+                    }.ToSettings ()
                 );
             }).ToArray ();
+            foreach (var engine in downloaders)
+                await engine.ChangePieceWriterAsync (new NullWriter ());
 
             Directory.CreateDirectory (DataDir);
             // Generate some fake data on-disk
@@ -102,13 +107,15 @@ namespace SampleClient
             var metadata = await creator.CreateAsync (new TorrentFileSource (DataDir));
 
             // Set up the seeder
-            await seeder.Register (new TorrentManager (Torrent.Load (metadata), DataDir, new TorrentSettings { UploadSlots = 20 }));
+            await seeder.AddAsync (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = 20 }.ToSettings ());
             using (var fileStream = File.OpenRead (Path.Combine (DataDir, "file.data"))) {
                 while (fileStream.Position < fileStream.Length) {
                     var dataRead = new byte[16 * 1024];
                     int offset = (int)fileStream.Position;
                     int read = fileStream.Read (dataRead, 0, dataRead.Length);
-                    await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read);
+                    // FIXME: Implement a custom IPieceWriter to handle this.
+                    // The internal MemoryWriter is limited and isn't a general purpose read/write API
+                    // await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read, false);
                 }
             }
 
@@ -116,10 +123,10 @@ namespace SampleClient
 
             List<Task> tasks = new List<Task> ();
             for (int i = 0; i < downloaders.Length; i++) {
-                await downloaders[i].Register (new TorrentManager (
+                await downloaders[i].AddAsync (
                     Torrent.Load (metadata),
                     Path.Combine (DataDir, "Downloader" + i)
-                ));
+                );
 
                 tasks.Add (RepeatDownload (downloaders[i]));
             }

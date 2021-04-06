@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Modes
             ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, DiskManager);
             TrackerManager = new ManualTrackerManager ();
 
-            int[] fileSizes = {
+            long[] fileSizes = {
                 Piece.BlockSize / 2,
                 Piece.BlockSize * 32,
                 Piece.BlockSize * 2,
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, Manager.Bitfield?.Clone ().SetAll (false));
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new MutableBitField (Manager.PieceCount ()));
         }
 
         [TearDown]

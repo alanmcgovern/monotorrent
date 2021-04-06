@@ -39,7 +39,7 @@ namespace MonoTorrent.Dht
 {
     class TestListener : IDhtListener
     {
-        public event Action<DhtMessage, IPEndPoint> MessageSent;
+        public event Action<byte[], IPEndPoint> MessageSent;
         public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
@@ -56,10 +56,7 @@ namespace MonoTorrent.Dht
             if (SendAsynchronously)
                 await Task.Yield ();
 
-            if (DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), out DhtMessage message))
-                MessageSent?.Invoke (message, endpoint);
-            else
-                throw new Exception ("Could not decode the message");
+            MessageSent?.Invoke (buffer, endpoint);
         }
 
         public void Start ()

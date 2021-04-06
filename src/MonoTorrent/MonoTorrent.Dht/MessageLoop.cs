@@ -60,6 +60,8 @@ namespace MonoTorrent.Dht
 
         internal event Action<object, SendQueryEventArgs> QuerySent;
 
+        internal DhtMessageFactory DhtMessageFactory { get; private set; }
+
         /// <summary>
         ///  The DHT engine which owns this message loop.
         /// </summary>
@@ -68,7 +70,7 @@ namespace MonoTorrent.Dht
         /// <summary>
         /// The listener instance which is used to send/receive messages.
         /// </summary>
-        IDhtListener Listener { get; }
+        IDhtListener Listener { get; set; }
 
         /// <summary>
         /// The number of DHT messages which have been sent and no response has been received.
@@ -105,14 +107,15 @@ namespace MonoTorrent.Dht
         public MessageLoop (DhtEngine engine, IDhtListener listener)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
-            Listener = listener ?? throw new ArgumentNullException (nameof (engine));
+            DhtMessageFactory = new DhtMessageFactory ();
+            Listener = new NullDhtListener ();
             ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>> ();
             SendQueue = new Queue<SendDetails> ();
             Timeout = TimeSpan.FromSeconds (15);
             WaitingResponse = new Dictionary<BEncodedValue, SendDetails> ();
             WaitingResponseTimedOut = new List<SendDetails> ();
 
-            listener.MessageReceived += MessageReceived;
+            SetListener (listener);
             Task sendTask = null;
             DhtEngine.MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (5), () => {
                 if (engine.Disposed)
@@ -137,6 +140,10 @@ namespace MonoTorrent.Dht
         async void MessageReceived (byte[] buffer, IPEndPoint endpoint)
         {
             await DhtEngine.MainLoop;
+
+            // Don't handle new messages if we have already stopped the dht engine.
+            if (Listener.Status == ListenerStatus.NotListening)
+                return;
 
             // I should check the IP address matches as well as the transaction id
             // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
@@ -182,12 +189,19 @@ namespace MonoTorrent.Dht
 
         internal void Start ()
         {
+            DhtMessageFactory = new DhtMessageFactory ();
             if (Listener.Status != ListenerStatus.Listening)
                 Listener.Start ();
         }
 
         internal void Stop ()
         {
+            DhtMessageFactory = new DhtMessageFactory ();
+            SendQueue.Clear ();
+            ReceiveQueue.Clear ();
+            WaitingResponse.Clear ();
+            WaitingResponseTimedOut.Clear ();
+
             if (Listener.Status != ListenerStatus.NotListening)
                 Listener.Stop ();
         }
@@ -251,6 +265,13 @@ namespace MonoTorrent.Dht
                 query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node, query.Destination, (QueryMessage) query.Message, error));
                 EnqueueSend (error, null, source);
             }
+        }
+
+        internal void SetListener (IDhtListener listener)
+        {
+            Listener.MessageReceived -= MessageReceived;
+            Listener = listener ?? new NullDhtListener ();
+            Listener.MessageReceived += MessageReceived;
         }
 
         internal void EnqueueSend (DhtMessage message, Node node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs> tcs = null)

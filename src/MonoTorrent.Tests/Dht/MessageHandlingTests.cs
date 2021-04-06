@@ -16,6 +16,7 @@ namespace MonoTorrent.Dht
         DhtEngine engine;
         Node node;
         TestListener listener;
+        DhtMessageFactory DhtMessageFactory => engine.MessageLoop.DhtMessageFactory;
 
         [SetUp]
         public void Setup ()
@@ -48,7 +49,9 @@ namespace MonoTorrent.Dht
                     pingSuccessful.TrySetResult (!e.TimedOut && e.Response == null && e.Error != null);
             };
 
-            listener.MessageSent += (message, endpoint) => {
+            listener.MessageSent += (data, endpoint) => {
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+
                 // This TransactionId should be registered and it should be pending a response.
                 if (!DhtMessageFactory.IsRegistered (ping.TransactionId) || engine.MessageLoop.PendingQueries != 1)
                     pingSuccessful.TrySetResult (false);
@@ -84,7 +87,9 @@ namespace MonoTorrent.Dht
             listener.SendAsynchronously = asynchronous;
 
             var tcs = new TaskCompletionSource<object> ();
-            listener.MessageSent += (message, endpoint) => {
+            listener.MessageSent += (data, endpoint) => {
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+
                 if (message is Ping && endpoint == node.EndPoint) {
                     var response = new PingResponse (node.Id, message.TransactionId);
                     listener.RaiseMessageReceived (response, endpoint);
@@ -118,7 +123,9 @@ namespace MonoTorrent.Dht
                 TransactionId = (BEncodedNumber) 5
             };
 
-            listener.MessageSent += (message, endpoint) => {
+            listener.MessageSent += (data, endpoint) => {
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+
                 if (message.TransactionId.Equals (ping.TransactionId)) {
                     var response = new PingResponse (node.Id, transactionId);
                     listener.RaiseMessageReceived (response, endpoint);

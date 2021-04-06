@@ -1,10 +1,10 @@
 ﻿//
-// PieceRequest.cs
+// BlockInfo.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2019 Alan McGovern
+// Copyright (C) 2021 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,40 +26,40 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
 using System;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client
 {
-    public class PieceRequest : IEquatable<PieceRequest>
+    public readonly struct BlockInfo : IEquatable<BlockInfo>
     {
         public int PieceIndex { get; }
         public int StartOffset { get; }
         public int RequestLength { get; }
 
-        public PieceRequest (int pieceIndex, int startOffset, int requestLength)
-        {
-            PieceIndex = pieceIndex;
-            StartOffset = startOffset;
-            RequestLength = requestLength;
-        }
+        public BlockInfo (int pieceIndex, int startOffset, int requestLength)
+            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
         public override bool Equals (object obj)
-        {
-            return Equals (obj as PieceRequest);
-        }
+            => obj is BlockInfo req && Equals (req);
 
-        public bool Equals (PieceRequest other)
-        {
-            return other != null
-                       && other.PieceIndex == PieceIndex
-                       && other.StartOffset == StartOffset
-                       && other.RequestLength == RequestLength;
-        }
+        public bool Equals (BlockInfo other)
+            => other.PieceIndex == PieceIndex
+            && other.StartOffset == StartOffset
+            && other.RequestLength == RequestLength;
 
         public override int GetHashCode ()
-        {
-            return PieceIndex;
-        }
+            => PieceIndex;
+
+        public static bool operator == (BlockInfo left, BlockInfo right)
+            => left.Equals (right);
+
+        public static bool operator != (BlockInfo left, BlockInfo right)
+            => !left.Equals (right);
+
+        internal long ToByteOffset (int pieceLength)
+         => (long) PieceIndex * pieceLength + StartOffset;
+
+        public override string ToString ()
+            => $"Piece: {PieceIndex} - Offset {StartOffset / Piece.BlockSize}";
     }
 }

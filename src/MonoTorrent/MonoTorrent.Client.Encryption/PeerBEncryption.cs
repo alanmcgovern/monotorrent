@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Collections.Generic;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
@@ -46,7 +47,7 @@ namespace MonoTorrent.Client.Encryption
 
         InfoHash[] PossibleSKEYs { get; }
 
-        public PeerBEncryption (InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
+        public PeerBEncryption (InfoHash[] possibleSKEYs, IList<EncryptionType> allowedEncryption)
             : base (allowedEncryption)
         {
             InitialData = Array.Empty<byte> ();

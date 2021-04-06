@@ -32,30 +32,33 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
-    public class ByteBufferPool
+    class ByteBufferPool
     {
-        internal struct Releaser : IDisposable
+        internal readonly struct Releaser : IDisposable
         {
-            internal ByteBuffer Buffer;
-            Queue<ByteBuffer> Pool;
+            readonly int counter;
+            internal readonly ByteBuffer Buffer;
+            readonly Queue<ByteBuffer> Pool;
 
             internal Releaser (Queue<ByteBuffer> pool, ByteBuffer buffer)
             {
                 Pool = pool;
                 Buffer = buffer;
+                counter = Buffer.Counter;
             }
 
             public void Dispose ()
             {
-                if (Pool == null)
+                if (Buffer == null)
                     return;
 
-                if (Buffer == null)
-                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
+                lock (Pool) {
+                    if (counter != Buffer.Counter)
+                        throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
 
-                lock (Pool)
+                    Buffer.Counter++;
                     Pool.Enqueue (Buffer);
-                Pool = null;
+                }
             }
         }
 

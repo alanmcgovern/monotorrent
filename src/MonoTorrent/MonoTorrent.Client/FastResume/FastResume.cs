@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
@@ -54,24 +55,11 @@ namespace MonoTorrent.Client
 
         public BitField UnhashedPieces { get; }
 
-        [Obsolete ("This constructor should not be used")]
-        public FastResume ()
-        {
-        }
-
-        [Obsolete ("The constructor overload which takes an 'unhashedPieces' parameter should be used instead of this.")]
-        public FastResume (InfoHash infoHash, BitField bitfield)
+        internal FastResume (InfoHash infoHash, BitField bitfield, BitField unhashedPieces)
         {
             Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
-            Bitfield = bitfield ?? throw new ArgumentNullException (nameof (bitfield));
-            UnhashedPieces = new BitField (Bitfield.Length);
-        }
-
-        public FastResume (InfoHash infoHash, BitField bitfield, BitField unhashedPieces)
-        {
-            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
-            Bitfield = bitfield?.Clone () ?? throw new ArgumentNullException (nameof (bitfield));
-            UnhashedPieces = unhashedPieces?.Clone () ?? throw new ArgumentNullException (nameof (UnhashedPieces));
+            Bitfield = new BitField (bitfield);
+            UnhashedPieces = new BitField (unhashedPieces);
 
             for (int i = 0; i < Bitfield.Length; i++) {
                 if (bitfield[i] && unhashedPieces[i])
@@ -79,7 +67,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public FastResume (BEncodedDictionary dict)
+        internal FastResume (BEncodedDictionary dict)
         {
             CheckVersion (dict);
             CheckContent (dict, InfoHashKey);
@@ -88,15 +76,15 @@ namespace MonoTorrent.Client
 
             Infohash = new InfoHash (((BEncodedString) dict[InfoHashKey]).TextBytes);
 
-            Bitfield = new BitField ((int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
             byte[] data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
-            Bitfield.FromArray (data, 0);
+            Bitfield = new BitField (data, (int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
 
-            UnhashedPieces = new BitField (Bitfield.Length);
             // If we're loading up an older version of the FastResume data then we
             if (dict.ContainsKey (UnhashedPiecesKey)) {
                 data = ((BEncodedString) dict[UnhashedPiecesKey]).TextBytes;
-                UnhashedPieces.FromArray (data, 0);
+                UnhashedPieces = new BitField (data, Bitfield.Length);
+            } else {
+                UnhashedPieces = new BitField (Bitfield.Length);
             }
         }
 
@@ -115,7 +103,7 @@ namespace MonoTorrent.Client
             throw new ArgumentException ($"This FastResume is version {version}, but only version  '1' and '2' are supported");
         }
 
-        public BEncodedDictionary Encode ()
+        public byte[] Encode ()
         {
             return new BEncodedDictionary {
                 { VersionKey, FastResumeVersion },
@@ -123,13 +111,28 @@ namespace MonoTorrent.Client
                 { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
                 { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },
                 { UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) }
-            };
+            }.Encode ();
         }
 
         public void Encode (Stream s)
         {
-            byte[] data = Encode ().Encode ();
+            byte[] data = Encode ();
             s.Write (data, 0, data.Length);
+        }
+
+        public static bool TryLoad (string fastResumeFilePath, out FastResume fastResume)
+        {
+            try {
+                if (File.Exists (fastResumeFilePath)) {
+                    var data = (BEncodedDictionary) BEncodedDictionary.Decode (File.ReadAllBytes (fastResumeFilePath));
+                    fastResume = new FastResume (data);
+                } else {
+                    fastResume = null;
+                }
+            } catch {
+                fastResume = null;
+            }
+            return fastResume != null;
         }
     }
 }

@@ -118,6 +118,7 @@ namespace MonoTorrent.Client.PortForwarding
                     }
                 }
             } finally {
+                Devices = new List<INatDevice> ();
                 RaiseMappingsChangedAsync ();
             }
         }
