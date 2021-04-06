@@ -308,6 +308,7 @@ namespace MonoTorrent.Client
             manager.Engine = null;
             manager.DownloadLimiters.Remove (downloadLimiters);
             manager.UploadLimiters.Remove (uploadLimiters);
+            _ = manager.MaybeDeleteFastResumeAsync ();
             return true;
         }
 

@@ -1001,7 +1001,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async ReusableTask MaybeWriteFastResumeAsync ()
+        public async ReusableTask MaybeWriteFastResumeAsync ()
         {
             if (!Engine.Settings.AutoSaveLoadFastResume ||!HashChecked)
                 return;
