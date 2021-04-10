@@ -167,6 +167,17 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
+        /// When <see cref="EngineSettings.AutoSaveLoadFastResume"/> is true, this setting is used to control how fast
+        /// resume data is maintained, otherwise it has no effect. You can prioritise accuracy (at the risk of requiring full hash checks if an actively downloading
+        /// torrent does not cleanly enter the <see cref="TorrentState.Stopped"/> state) by choosing <see cref="FastResumeMode.Accurate"/>.
+        /// You can prioritise torrent start speed (at the risk of re-downloading a small amount of data) by choosing <see cref="FastResumeMode.BestEffort"/>,
+        /// in which case a recent, not not 100% accurate, copy of the fast resume data will be loaded whenever it is available. if an actively downloading Torrent does not
+        /// cleanly enter the <see cref="TorrentState.Stopped"/> state.
+        /// Defaults to <see cref="FastResumeMode.BestEffort"/>.
+        /// </summary>
+        public FastResumeMode FastResumeMode { get; set; }
+
+        /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
@@ -265,6 +276,7 @@ namespace MonoTorrent.Client
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtPort = settings.DhtPort;
             DiskCacheBytes = settings.DiskCacheBytes;
+            FastResumeMode = settings.FastResumeMode;
             ListenPort = settings.ListenPort;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
@@ -296,7 +308,8 @@ namespace MonoTorrent.Client
                 cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
                 connectionTimeout: ConnectionTimeout,
                 dhtPort: DhtPort,
-                diskCacheBytes: diskCacheBytes,
+                diskCacheBytes: DiskCacheBytes,
+                fastResumeMode: FastResumeMode,
                 listenPort: ListenPort,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,

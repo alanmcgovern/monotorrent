@@ -123,12 +123,6 @@ namespace MonoTorrent.Client
         public int DhtPort { get; } = 0;
 
         /// <summary>
-        /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
-        /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
-        /// </summary>
-        public int ListenPort { get; } = 0;
-
-        /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
         /// is enabled then fast resume data will be written to this when <see cref="TorrentManager.StopAsync"/> or
         /// <see cref="ClientEngine.StopAllAsync"/> is invoked. If fast resume data is available, the data will be loaded
@@ -137,6 +131,23 @@ namespace MonoTorrent.Client
         /// the possibility of loading stale data later.
         /// </summary>
         public string FastResumeCacheDirectory => Path.Combine (CacheDirectory, "fastresume");
+
+        /// <summary>
+        /// When <see cref="EngineSettings.AutoSaveLoadFastResume"/> is true, this setting is used to control how fast
+        /// resume data is maintained, otherwise it has no effect. You can prioritise accuracy (at the risk of requiring full hash checks if an actively downloading
+        /// torrent does not cleanly enter the <see cref="TorrentState.Stopped"/> state) by choosing <see cref="FastResumeMode.Accurate"/>.
+        /// You can prioritise torrent start speed (at the risk of re-downloading a small amount of data) by choosing <see cref="FastResumeMode.BestEffort"/>,
+        /// in which case a recent, not not 100% accurate, copy of the fast resume data will be loaded whenever it is available. if an actively downloading Torrent does not
+        /// cleanly enter the <see cref="TorrentState.Stopped"/> state.
+        /// Defaults to <see cref="FastResumeMode.BestEffort"/>.
+        /// </summary>
+        public FastResumeMode FastResumeMode { get; } = FastResumeMode.BestEffort;
+
+        /// <summary>
+        /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
+        /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
+        /// </summary>
+        public int ListenPort { get; } = 0;
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -198,7 +209,7 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
+        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, FastResumeMode fastResumeMode, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -212,6 +223,7 @@ namespace MonoTorrent.Client
             DiskCacheBytes = diskCacheBytes;
             CacheDirectory = cacheDirectory;
             ConnectionTimeout = connectionTimeout;
+            FastResumeMode = fastResumeMode;
             ListenPort = listenPort;
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
@@ -254,6 +266,7 @@ namespace MonoTorrent.Client
                    && CacheDirectory == other.CacheDirectory
                    && DhtPort == other.DhtPort
                    && DiskCacheBytes == other.DiskCacheBytes
+                   && FastResumeMode == other.FastResumeMode
                    && ListenPort == other.ListenPort
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate
