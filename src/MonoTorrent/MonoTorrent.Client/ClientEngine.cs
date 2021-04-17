@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
     public class ClientEngine : IDisposable
     {
         internal static readonly MainLoop MainLoop = new MainLoop ("Client Engine Loop");
-        static readonly Logger Log = Logger.Create ();
+        static readonly Logger Log = Logger.Create (nameof (ClientEngine));
 
         /// <summary>
         /// An un-seeded random number generator which will not generate the same

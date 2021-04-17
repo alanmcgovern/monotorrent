@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Tracker
 {
     class HTTPTracker : Tracker
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (HTTPTracker));
 
         static readonly Random random = new Random ();
         static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds (10);

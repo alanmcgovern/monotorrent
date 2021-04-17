@@ -44,7 +44,7 @@ namespace MonoTorrent.Tracker.Listeners
 {
     class UdpTrackerListener : TrackerListener, ISocketListener
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (UdpTrackerListener));
 
         public IPEndPoint EndPoint { get; private set; }
 

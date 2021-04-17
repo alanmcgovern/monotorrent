@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.PieceWriters
 {
     class FileStreamBuffer : IDisposable
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (FileStreamBuffer));
 
         internal readonly struct RentedStream : IDisposable
         {

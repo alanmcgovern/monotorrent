@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (TrackerTier));
 
         internal event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         internal event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;

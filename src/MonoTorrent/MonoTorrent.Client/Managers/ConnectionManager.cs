@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionManager
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (ConnectionManager));
 
         struct AsyncConnectState
         {

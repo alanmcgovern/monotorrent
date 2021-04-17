@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Modes
 {
     abstract class Mode
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (Mode));
 
         bool hashingPendingFiles;
 

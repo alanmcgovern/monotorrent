@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Modes
 {
     class StoppingMode : Mode
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (StoppingMode));
 
         public override bool CanAcceptConnections => false;
         public override bool CanHandleMessages => false;

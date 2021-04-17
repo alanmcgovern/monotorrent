@@ -39,7 +39,7 @@ namespace MonoTorrent
 {
     abstract class UdpListener : SocketListener, ISocketMessageListener
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (UdpListener));
 
         public event Action<byte[], IPEndPoint> MessageReceived;
 

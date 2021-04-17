@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
 {
     class ListenManager
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (ListenManager));
 
         ClientEngine Engine { get; set; }
 

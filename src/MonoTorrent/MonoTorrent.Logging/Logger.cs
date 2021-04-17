@@ -44,13 +44,8 @@ namespace MonoTorrent.Logging
         /// </summary>
         public static Func<string, ILogger> Factory { get; set; }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        internal static Logger Create ()
-        {
-            var callingClassName = new StackFrame (1).GetMethod ().ReflectedType.FullName;
-            var writer = Factory?.Invoke (callingClassName);
-            return new Logger (writer);
-        }
+        internal static Logger Create (string name)
+            => new Logger (Factory?.Invoke (name));
 
         ILogger Writer { get; }
 

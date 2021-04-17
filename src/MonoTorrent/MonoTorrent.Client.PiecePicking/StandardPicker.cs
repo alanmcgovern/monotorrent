@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public class StandardPicker : IPiecePicker
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
         readonly Dictionary<int, List<Piece>> duplicates;
         readonly SortList<Piece> requests;

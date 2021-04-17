@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Modes
 {
     class MetadataMode : Mode
     {
-        static readonly Logger logger = Logger.Create ();
+        static readonly Logger logger = Logger.Create (nameof (MetadataMode));
 
         MutableBitField bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
