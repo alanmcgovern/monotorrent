@@ -1006,11 +1006,14 @@ namespace MonoTorrent.Client
             if (!Engine.Settings.AutoSaveLoadFastResume ||!HashChecked)
                 return;
 
+            ClientEngine.MainLoop.CheckThread ();
+            var fastResumeData = SaveFastResume ().Encode ();
+
             await MainLoop.SwitchToThreadpool ();
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHash);
             var parentDirectory = Path.GetDirectoryName (fastResumePath);
             Directory.CreateDirectory (parentDirectory);
-            File.WriteAllBytes (fastResumePath, SaveFastResume ().Encode ());
+            File.WriteAllBytes (fastResumePath, fastResumeData);
         }
 
         internal void SetTrackerManager (ITrackerManager manager)

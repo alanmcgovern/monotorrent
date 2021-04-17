@@ -84,6 +84,11 @@ namespace MonoTorrent.Client.Modes
                     i--;
                 }
             }
+
+            if (counter % 100 == 0) {
+                if (Settings.AutoSaveLoadFastResume && Settings.FastResumeMode == FastResumeMode.BestEffort)
+                    _ = Manager.MaybeWriteFastResumeAsync ();
+            }
         }
 
         internal async Task UpdateSeedingDownloadingState ()
