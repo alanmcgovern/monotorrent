@@ -98,6 +98,7 @@ namespace MonoTorrent.Client.Modes
                 state = TorrentState.Seeding;
                 await Task.WhenAll (
                     Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None).AsTask (),
+                    Manager.MaybeWriteFastResumeAsync ().AsTask (),
                     DiskManager.FlushAsync (Manager)
                 );
                 Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
@@ -106,11 +107,13 @@ namespace MonoTorrent.Client.Modes
                 // Otherwise if we have not downloaded all downloadable files, set the state to Downloading.
                 if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) == Manager.PartialProgressSelector.TrueCount && state == TorrentState.Downloading) {
                     state = TorrentState.Seeding;
-                    await DiskManager.FlushAsync (Manager);
+                    await Task.WhenAll (
+                        Manager.MaybeWriteFastResumeAsync ().AsTask (),
+                        DiskManager.FlushAsync (Manager)
+                    );
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
                 } else if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) < Manager.PartialProgressSelector.TrueCount && state == TorrentState.Seeding) {
                     state = TorrentState.Downloading;
-                    await DiskManager.FlushAsync (Manager);
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Seeding, TorrentState.Downloading));
                 }
             }

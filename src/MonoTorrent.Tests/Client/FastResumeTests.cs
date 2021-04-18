@@ -115,6 +115,7 @@ namespace MonoTorrent.Client
             using var tmpDir = TempDir.Create ();
             using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
                 AutoSaveLoadFastResume = true,
+                FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
             }.ToSettings ());
 
@@ -135,6 +136,7 @@ namespace MonoTorrent.Client
             using var tmpDir = TempDir.Create ();
             using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
                 AutoSaveLoadFastResume = true,
+                FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
             }.ToSettings ());
 
@@ -155,6 +157,7 @@ namespace MonoTorrent.Client
             using var tmpDir = TempDir.Create ();
             using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
                 AutoSaveLoadFastResume = true,
+                FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
             }.ToSettings ());
 
