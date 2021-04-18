@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
                 AutoSaveLoadFastResume = automaticFastResume,
-                CacheDirectory = cacheDirectory,
+                CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location), "test_cache_dir"),
                 DhtPort = dhtPort,
                 ListenPort = listenPort,
             }.ToSettings ();
@@ -124,12 +124,11 @@ namespace MonoTorrent.Client
         public bool AutoSaveLoadMagnetLinkMetadata { get; set; }
 
         /// <summary>
-        /// The directory used to cache any data needed by the engine. Typically used to store a
+        /// The full path to the directory used to cache any data needed by the engine. Typically used to store a
         /// cache of the DHT table to improve bootstrapping speed, any metadata downloaded
-        /// using a magnet link, or fast resume data for individual torrents.
-        /// When <see cref="ToSettings"/> is invoked the value will be converted to a full path
-        /// if it is not already a full path, or will be replaced with
-        /// <see cref="Environment.CurrentDirectory"/> if the value is null or empty.
+        /// using a magnet link, or fast resume data for individual torrents. Must be set to a path
+        /// with read/write permissions. The directory will be created if it doesn't exist.
+        /// Defaults to <see langword="null"/>.
         /// </summary>
         public string CacheDirectory { get; set; }
 
@@ -305,7 +304,7 @@ namespace MonoTorrent.Client
                 autoSaveLoadDhtCache: AutoSaveLoadDhtCache,
                 autoSaveLoadFastResume: AutoSaveLoadFastResume,
                 autoSaveLoadMagnetLinkMetadata: AutoSaveLoadMagnetLinkMetadata,
-                cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
+                cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? null : Path.GetFullPath (CacheDirectory),
                 connectionTimeout: ConnectionTimeout,
                 dhtPort: DhtPort,
                 diskCacheBytes: DiskCacheBytes,

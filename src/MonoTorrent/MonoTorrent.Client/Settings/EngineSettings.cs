@@ -97,10 +97,11 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The full path to the directory used to cache any data needed by the engine. Typically used to store a
         /// cache of the DHT table to improve bootstrapping speed, any metadata downloaded
-        /// using a magnet link, or fast resume data for individual torrents.
-        /// Defaults to a sub-directory of <see cref="Environment.CurrentDirectory"/> called 'cache'
+        /// using a magnet link, or fast resume data for individual torrents. Must be set to a path
+        /// with read/write permissions. The directory will be created if it doesn't exist.
+        /// Defaults to <see langword="null"/>.
         /// </summary>
-        public string CacheDirectory { get; } = Path.Combine (Environment.CurrentDirectory, "cache");
+        public string CacheDirectory { get; } = null;
 
         /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
@@ -130,7 +131,7 @@ namespace MonoTorrent.Client
         /// <see cref="TorrentManager.StartAsync"/> is invoked, any on-disk fast resume data will be deleted to eliminate
         /// the possibility of loading stale data later.
         /// </summary>
-        public string FastResumeCacheDirectory => Path.Combine (CacheDirectory, "fastresume");
+        public string FastResumeCacheDirectory => CacheDirectory == null ? null : Path.Combine (CacheDirectory, "fastresume");
 
         /// <summary>
         /// When <see cref="EngineSettings.AutoSaveLoadFastResume"/> is true, this setting is used to control how fast
@@ -202,7 +203,7 @@ namespace MonoTorrent.Client
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If a magnet link is used
         /// to download a torrent, the downloaded metata will be cached here.
         /// </summary>
-        public string MetadataCacheDirectory => Path.Combine (CacheDirectory, "metadata");
+        public string MetadataCacheDirectory => CacheDirectory == null ? null : Path.Combine (CacheDirectory, "metadata");
 
         public EngineSettings ()
         {
@@ -236,7 +237,7 @@ namespace MonoTorrent.Client
         }
 
         internal string GetDhtNodeCacheFilePath ()
-            => Path.Combine (CacheDirectory, "dht_nodes.cache");
+            => CacheDirectory == null ? null : Path.Combine (CacheDirectory, "dht_nodes.cache");
 
         /// <summary>
         /// Returns the full path to the <see cref="FastResume"/> file for the specified torrent. This is
@@ -245,10 +246,10 @@ namespace MonoTorrent.Client
         /// <param name="infoHash">The infohash of the torrent</param>
         /// <returns></returns>
         public string GetFastResumePath (InfoHash infoHash)
-            => Path.Combine (FastResumeCacheDirectory, $"{infoHash.ToHex ()}.fresume");
+            => FastResumeCacheDirectory == null ? null : Path.Combine (FastResumeCacheDirectory, infoHash.ToHex () + ".fresume");
 
         internal string GetMetadataPath (InfoHash infoHash)
-            => Path.Combine (MetadataCacheDirectory, infoHash.ToHex () + ".torrent");
+            => MetadataCacheDirectory == null ? null : Path.Combine (MetadataCacheDirectory, infoHash.ToHex () + ".torrent");
 
         public override bool Equals (object obj)
             => Equals (obj as EngineSettings);
@@ -287,7 +288,7 @@ namespace MonoTorrent.Client
                    MaximumHalfOpenConnections +
                    ListenPort.GetHashCode () +
                    AllowedEncryption.GetHashCode () +
-                   CacheDirectory.GetHashCode ();
+                   CacheDirectory?.GetHashCode () ?? 0;
         }
     }
 }
