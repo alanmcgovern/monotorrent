@@ -181,7 +181,6 @@ namespace MonoTorrent.Client
 
             PeerId = GeneratePeerId ();
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
-            CheckSettingsAreValid (Settings);
 
             allTorrents = new List<TorrentManager> ();
             publicTorrents = new List<TorrentManager> ();
@@ -680,31 +679,11 @@ namespace MonoTorrent.Client
 
         public async Task UpdateSettingsAsync (EngineSettings settings)
         {
-            await MainLoop.SwitchThread ();
-            CheckSettingsAreValid (settings);
-
             await MainLoop;
 
             var oldSettings = Settings;
             Settings = settings;
             await UpdateSettingsAsync (oldSettings, settings);
-        }
-
-        static void CheckSettingsAreValid (EngineSettings settings)
-        {
-            if (string.IsNullOrEmpty (settings.CacheDirectory))
-                throw new ArgumentException ("EngineSettings.CacheDirectory cannot be null or empty.", nameof (settings));
-
-            if (File.Exists (settings.CacheDirectory))
-                throw new ArgumentException ("EngineSettings.CacheDirectory should be a directory, but a file exists at that path instead. Please delete the file or choose another path", nameof (settings));
-
-            foreach (var directory in new[] { settings.CacheDirectory, settings.MetadataCacheDirectory, settings.FastResumeCacheDirectory }) {
-                try {
-                    Directory.CreateDirectory (directory);
-                } catch (Exception e) {
-                    throw new ArgumentException ($"Could not create a directory at the path {directory}. Please check this path has read/write permissions for this user.", nameof (settings), e);
-                }
-            }
         }
 
         async Task UpdateSettingsAsync (EngineSettings oldSettings, EngineSettings newSettings)
