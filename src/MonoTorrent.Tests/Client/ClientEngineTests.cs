@@ -28,7 +28,6 @@
 
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -152,25 +151,6 @@ namespace MonoTorrent.Client
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
             Assert.AreEqual (0, manager.Peers.AvailablePeers.Count, "#4");
-        }
-
-        [Test]
-        public void CacheDirectory_IsFile_Constructor()
-        {
-            var tmp = TempDir.Create ();
-            var cachePath = Path.Combine (tmp.Path, "test.file");
-            using (var file = File.Create (cachePath)) { }
-            Assert.Throws<ArgumentException> (() => new ClientEngine (new EngineSettingsBuilder { CacheDirectory = cachePath }.ToSettings ()));
-        }
-
-        [Test]
-        public void CacheDirectory_IsFile_UpdateSettings ()
-        {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            var tmp = TempDir.Create ();
-            var cachePath = Path.Combine (tmp.Path, "test.file");
-            using (var file = File.Create (cachePath)) { }
-            Assert.ThrowsAsync<ArgumentException> (() => engine.UpdateSettingsAsync (new EngineSettingsBuilder { CacheDirectory = cachePath }.ToSettings ()));
         }
 
         [Test]

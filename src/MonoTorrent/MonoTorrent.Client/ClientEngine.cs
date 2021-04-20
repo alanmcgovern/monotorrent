@@ -45,6 +45,7 @@ using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Logging;
+using MonoTorrent.Streaming;
 
 namespace MonoTorrent.Client
 {
@@ -240,8 +241,6 @@ namespace MonoTorrent.Client
 
         async Task<TorrentManager> AddAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
         {
-            await MainLoop;
-
             saveDirectory = string.IsNullOrEmpty (saveDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (saveDirectory);
             TorrentManager manager;
             if (magnetLink != null) {
@@ -273,8 +272,6 @@ namespace MonoTorrent.Client
 
         async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
         {
-            await MainLoop;
-
             var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
             await manager.ChangePickerAsync (new StreamingPieceRequester ());
             return manager;
@@ -393,8 +390,6 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public async Task<byte[]> DownloadMetadataAsync (MagnetLink magnetLink, CancellationToken token)
         {
-            await MainLoop;
-
             var manager = new TorrentManager (magnetLink);
             var metadataCompleted = new TaskCompletionSource<byte[]> ();
             using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
