@@ -232,6 +232,12 @@ namespace MonoTorrent.Client
         public Task<TorrentManager> AddAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
             => AddAsync (magnetLink, null, saveDirectory, settings);
 
+        public Task<TorrentManager> AddAsync (string metadataPath, string saveDirectory)
+            => AddAsync (metadataPath, saveDirectory, new TorrentSettings ());
+
+        public async Task<TorrentManager> AddAsync (string metadataPath, string saveDirectory, TorrentSettings settings)
+            => await AddAsync (null, await Torrent.LoadAsync (metadataPath), saveDirectory, settings);
+
         public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory)
             => AddAsync (torrent, saveDirectory, new TorrentSettings ());
 
@@ -264,6 +270,12 @@ namespace MonoTorrent.Client
 
         public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
             => AddStreamingAsync (magnetLink, null, saveDirectory, settings);
+
+        public Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory)
+            => AddStreamingAsync (metadataPath, saveDirectory, new TorrentSettings ());
+
+        public async Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory, TorrentSettings settings)
+            => await AddStreamingAsync (null, await Torrent.LoadAsync (metadataPath), saveDirectory, settings);
 
         public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
             => AddStreamingAsync (torrent, saveDirectory, new TorrentSettings ());
