@@ -271,11 +271,11 @@ namespace MonoTorrent.Client
             TorrentManager manager;
             if (magnetLink != null) {
                 var metadataSaveFilePath = Settings.GetMetadataPath (magnetLink.InfoHash);
-                manager = new TorrentManager (magnetLink, saveDirectory, settings, metadataSaveFilePath);
+                manager = new TorrentManager (this, magnetLink, saveDirectory, settings, metadataSaveFilePath);
                 if (Settings.AutoSaveLoadMagnetLinkMetadata && Torrent.TryLoad (metadataSaveFilePath, out torrent) && torrent.InfoHash == magnetLink.InfoHash)
                     manager.SetMetadata (torrent);
             } else {
-                manager = new TorrentManager (torrent, saveDirectory, settings);
+                manager = new TorrentManager (this, torrent, saveDirectory, settings);
             }
 
             await Register (manager, true);
@@ -349,9 +349,9 @@ namespace MonoTorrent.Client
             ConnectionManager.Remove (manager);
             listenManager.Remove (manager.InfoHash);
 
-            manager.Engine = null;
             manager.DownloadLimiters.Remove (downloadLimiters);
             manager.UploadLimiters.Remove (uploadLimiters);
+            manager.Dispose ();
 
             if (mode.HasFlag (RemoveMode.CacheDataOnly)) {
                 foreach (var path in new [] { Settings.GetFastResumePath (manager.InfoHash), Settings.GetMetadataPath (manager.InfoHash) })
@@ -447,7 +447,7 @@ namespace MonoTorrent.Client
         {
             await MainLoop;
 
-            var manager = new TorrentManager (magnetLink);
+            var manager = new TorrentManager (this, magnetLink);
             var metadataCompleted = new TaskCompletionSource<byte[]> ();
             using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
             manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e);
@@ -503,8 +503,6 @@ namespace MonoTorrent.Client
             Check.Manager (manager);
 
             await MainLoop;
-            if (manager.Engine != null)
-                throw new TorrentException ("This manager has already been registered");
 
             if (Contains (manager.Torrent))
                 throw new TorrentException ("A manager for this torrent has already been registered");
@@ -515,7 +513,6 @@ namespace MonoTorrent.Client
             ConnectionManager.Add (manager);
             listenManager.Add (manager.InfoHash);
 
-            manager.Engine = this;
             manager.MetadataPath = Settings.GetMetadataPath (manager.InfoHash);
             manager.DownloadLimiters.Add (downloadLimiters);
             manager.UploadLimiters.Add (uploadLimiters);

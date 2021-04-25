@@ -44,7 +44,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IDisposable, IEquatable<TorrentManager>, ITorrentData
+    public class TorrentManager : IEquatable<TorrentManager>, ITorrentData
     {
         #region Events
 
@@ -127,7 +127,6 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        bool disposed;
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         Mode mode;
         readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
@@ -153,11 +152,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool Complete => Bitfield.AllTrue;
 
+        internal bool Disposed { get; private set; }
+
         RateLimiter DownloadLimiter { get; set; }
 
         internal RateLimiterGroup DownloadLimiters { get; private set; }
 
-        public ClientEngine Engine { get; internal set; }
+        public ClientEngine Engine { get; }
 
         public Error Error { get; private set; }
 
@@ -364,30 +365,19 @@ namespace MonoTorrent.Client
         #endregion
 
         #region Constructors
-        internal TorrentManager (MagnetLink magnetLink)
-            : this (magnetLink, "", new TorrentSettings (), "")
+        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink)
+            : this (engine, magnetLink, "", new TorrentSettings (), "")
         {
 
         }
 
-        /// <summary>
-        /// Creates a new TorrentManager instance.
-        /// </summary>
-        /// <param name="torrent">The torrent to load in</param>
-        /// <param name="savePath">The directory to save downloaded files to</param>
-        internal TorrentManager (Torrent torrent, string savePath)
-            : this (torrent, savePath, new TorrentSettings ())
+        internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath)
+            : this (engine, torrent, savePath, new TorrentSettings ())
         {
 
         }
 
-        /// <summary>
-        /// Creates a new TorrentManager instance.
-        /// </summary>
-        /// <param name="torrent">The torrent to load in</param>
-        /// <param name="savePath">The directory to save downloaded files to</param>
-        /// <param name="settings">The settings to use for controlling connections</param>
-        internal TorrentManager (Torrent torrent, string savePath, TorrentSettings settings)
+        internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath, TorrentSettings settings)
         {
             Check.Torrent (torrent);
             Check.SavePath (savePath);
@@ -395,6 +385,7 @@ namespace MonoTorrent.Client
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
 
+            Engine = engine;
             InfoHash = torrent.InfoHash;
             Settings = settings;
 
@@ -402,7 +393,7 @@ namespace MonoTorrent.Client
             SetMetadata (torrent);
         }
 
-        internal TorrentManager (InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
+        internal TorrentManager (ClientEngine engine, InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
         {
             Check.InfoHash (infoHash);
             Check.SavePath (savePath);
@@ -412,6 +403,7 @@ namespace MonoTorrent.Client
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
 
+            Engine = engine;
             InfoHash = infoHash;
             Settings = settings;
             this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
@@ -419,7 +411,7 @@ namespace MonoTorrent.Client
             Initialise (savePath, announces);
         }
 
-        internal TorrentManager (MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
+        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
         {
             Check.MagnetLink (magnetLink);
             Check.InfoHash (magnetLink.InfoHash);
@@ -429,6 +421,7 @@ namespace MonoTorrent.Client
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
 
+            Engine = engine;
             InfoHash = magnetLink.InfoHash;
             Settings = settings;
             this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Path.Combine (Environment.CurrentDirectory, "metadata", $"{InfoHash.ToHex ()}.torrent") : Path.GetFullPath (torrentSave);
@@ -499,12 +492,12 @@ namespace MonoTorrent.Client
             ChangePicker (requester);
         }
 
-        public void Dispose ()
+        internal void Dispose ()
         {
-            if (disposed)
+            if (Disposed)
                 return;
 
-            disposed = true;
+            Disposed = true;
         }
 
 
@@ -836,7 +829,7 @@ namespace MonoTorrent.Client
             if (InactivePeerManager.InactivePeerList.Contains (peer.ConnectionUri))
                 return false;
 
-            if (Engine != null && Engine.PeerId.Equals (peer.PeerId))
+            if (Engine.PeerId.Equals (peer.PeerId))
                 return false;
 
             if (Peers.TotalPeers < Settings.MaximumPeerDetails) {
@@ -949,8 +942,8 @@ namespace MonoTorrent.Client
 
         void CheckRegisteredAndDisposed ()
         {
-            if (Engine == null)
-                throw new TorrentException ("This manager has not been registed with an Engine");
+            if (Disposed)
+                throw new InvalidOperationException ("This TorrentManager has been removed from it's Engine.");
             if (Engine.Disposed)
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }

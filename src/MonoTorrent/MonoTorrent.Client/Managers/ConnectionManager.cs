@@ -142,7 +142,7 @@ namespace MonoTorrent.Client
 
             PendingConnects.Remove (state);
             manager.Peers.ConnectingToPeers.Remove (peer);
-            if (manager.Engine == null || !manager.Mode.CanAcceptConnections) {
+            if (manager.Disposed || !manager.Mode.CanAcceptConnections) {
                 manager.Peers.AvailablePeers.Add (peer);
                 connection.Dispose ();
                 return;
