@@ -222,6 +222,11 @@ namespace MonoTorrent.Client
         public bool HasMetadata => Torrent != null;
 
         /// <summary>
+        /// The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <see cref="EngineSettings.MetadataCacheDirectory"/> directory.
+        /// </summary>
+        public string MetadataPath { get; internal set; }
+
+        /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
         /// </summary>
         public bool IsInEndGame => State == TorrentState.Downloading && PieceManager.InEndgameMode;

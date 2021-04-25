@@ -232,11 +232,36 @@ namespace MonoTorrent.Client
         public Task<TorrentManager> AddAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
             => AddAsync (magnetLink, null, saveDirectory, settings);
 
+        public Task<TorrentManager> AddAsync (string metadataPath, string saveDirectory)
+            => AddAsync (metadataPath, saveDirectory, new TorrentSettings ());
+
+        public async Task<TorrentManager> AddAsync (string metadataPath, string saveDirectory, TorrentSettings settings)
+        {
+            var torrent = await Torrent.LoadAsync (metadataPath).ConfigureAwait (false);
+
+            var metadataCachePath = Settings.GetMetadataPath (torrent.InfoHash);
+            Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
+            File.Copy (metadataPath, metadataCachePath, true);
+
+            return await AddAsync (null, torrent, saveDirectory, settings);
+        }
+
         public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory)
             => AddAsync (torrent, saveDirectory, new TorrentSettings ());
 
-        public Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
-            => AddAsync (null, torrent, saveDirectory, settings);
+        public async Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+        {
+            await MainLoop.SwitchThread ();
+            var metadata = new BEncodedDictionary {
+                { "info", BEncodedValue.Decode (torrent.InfoMetadata) }
+            };
+
+            var metadataCachePath = Settings.GetMetadataPath (torrent.InfoHash);
+            Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
+            File.WriteAllBytes (metadataCachePath, metadata.Encode ());
+
+            return await AddAsync (null, torrent, saveDirectory, settings);
+        }
 
         async Task<TorrentManager> AddAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
         {
@@ -265,6 +290,12 @@ namespace MonoTorrent.Client
         public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
             => AddStreamingAsync (magnetLink, null, saveDirectory, settings);
 
+        public Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory)
+            => AddStreamingAsync (metadataPath, saveDirectory, new TorrentSettings ());
+
+        public async Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory, TorrentSettings settings)
+            => await AddStreamingAsync (null, await Torrent.LoadAsync (metadataPath), saveDirectory, settings);
+
         public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
             => AddStreamingAsync (torrent, saveDirectory, new TorrentSettings ());
 
@@ -281,18 +312,27 @@ namespace MonoTorrent.Client
         }
 
         public Task<bool> RemoveAsync (MagnetLink magnetLink)
+            => RemoveAsync (magnetLink, RemoveMode.CacheDataOnly);
+
+        public Task<bool> RemoveAsync (MagnetLink magnetLink, RemoveMode mode)
         {
             magnetLink = magnetLink ?? throw new ArgumentNullException (nameof (magnetLink));
-            return RemoveAsync (magnetLink.InfoHash);
+            return RemoveAsync (magnetLink.InfoHash, mode);
         }
 
         public Task<bool> RemoveAsync (Torrent torrent)
+            => RemoveAsync (torrent, RemoveMode.CacheDataOnly);
+
+        public Task<bool> RemoveAsync (Torrent torrent, RemoveMode mode)
         {
             torrent = torrent ?? throw new ArgumentNullException (nameof (torrent));
-            return RemoveAsync (torrent.InfoHash);
+            return RemoveAsync (torrent.InfoHash, mode);
         }
 
-        public async Task<bool> RemoveAsync (TorrentManager manager)
+        public Task<bool> RemoveAsync (TorrentManager manager)
+            => RemoveAsync (manager, RemoveMode.CacheDataOnly);
+
+        public async Task<bool> RemoveAsync (TorrentManager manager, RemoveMode mode)
         {
             CheckDisposed ();
             Check.Manager (manager);
@@ -312,14 +352,26 @@ namespace MonoTorrent.Client
             manager.Engine = null;
             manager.DownloadLimiters.Remove (downloadLimiters);
             manager.UploadLimiters.Remove (uploadLimiters);
+
+            if (mode.HasFlag (RemoveMode.CacheDataOnly)) {
+                foreach (var path in new [] { Settings.GetFastResumePath (manager.InfoHash), Settings.GetMetadataPath (manager.InfoHash) })
+                    if (File.Exists (path))
+                        File.Delete (path);
+            }
+            if (mode.HasFlag (RemoveMode.DownloadedDataOnly)) {
+                foreach (var path in manager.Files.Select (f => f.FullPath))
+                    if (File.Exists (path))
+                        File.Delete (path);
+                // FIXME: Clear the empty directories.
+            }
             return true;
         }
 
-        async Task<bool> RemoveAsync (InfoHash infohash)
+        async Task<bool> RemoveAsync (InfoHash infohash, RemoveMode mode)
         {
             await MainLoop;
             var manager = allTorrents.FirstOrDefault (t => t.InfoHash == infohash);
-            return manager == null ? false : await RemoveAsync (manager);
+            return manager != null && await RemoveAsync (manager, mode);
         }
 
         public async Task ChangePieceWriterAsync (IPieceWriter writer)
@@ -464,6 +516,7 @@ namespace MonoTorrent.Client
             listenManager.Add (manager.InfoHash);
 
             manager.Engine = this;
+            manager.MetadataPath = Settings.GetMetadataPath (manager.InfoHash);
             manager.DownloadLimiters.Add (downloadLimiters);
             manager.UploadLimiters.Add (uploadLimiters);
             if (DhtEngine != null && manager.Torrent?.Nodes != null && DhtEngine.State != DhtState.Ready) {
