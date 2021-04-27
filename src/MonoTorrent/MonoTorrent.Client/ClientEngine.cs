@@ -447,7 +447,7 @@ namespace MonoTorrent.Client
         {
             await MainLoop;
 
-            var manager = new TorrentManager (this, magnetLink);
+            var manager = new TorrentManager (this, magnetLink, "", new TorrentSettings (), Settings.GetMetadataPath (magnetLink.InfoHash));
             var metadataCompleted = new TaskCompletionSource<byte[]> ();
             using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
             manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e);

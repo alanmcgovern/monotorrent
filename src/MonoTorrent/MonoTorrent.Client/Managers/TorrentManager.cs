@@ -365,11 +365,6 @@ namespace MonoTorrent.Client
         #endregion
 
         #region Constructors
-        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink)
-            : this (engine, magnetLink, "", new TorrentSettings (), "")
-        {
-
-        }
 
         internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath)
             : this (engine, torrent, savePath, new TorrentSettings ())
