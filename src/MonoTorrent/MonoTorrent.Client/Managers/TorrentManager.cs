@@ -153,9 +153,9 @@ namespace MonoTorrent.Client
 
         internal bool Disposed { get; private set; }
 
-        RateLimiter DownloadLimiter { get; set; }
+        RateLimiter DownloadLimiter { get; }
 
-        internal RateLimiterGroup DownloadLimiters { get; private set; }
+        internal RateLimiterGroup DownloadLimiters { get; }
 
         public ClientEngine Engine { get; }
 
@@ -231,7 +231,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool IsInEndGame => State == TorrentState.Downloading && PieceManager.InEndgameMode;
 
-        public ConnectionMonitor Monitor { get; private set; }
+        public ConnectionMonitor Monitor { get; }
 
         /// <summary>
         /// The number of peers that this torrent instance is connected to
@@ -258,24 +258,24 @@ namespace MonoTorrent.Client
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
-        internal MutableBitField PartialProgressSelector { get; set; }
+        internal MutableBitField PartialProgressSelector { get; private set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public PeerManager Peers { get; private set; }
+        public PeerManager Peers { get; }
 
 
         /// <summary>
         /// The piecemanager for this TorrentManager
         /// </summary>
-        public PieceManager PieceManager { get; private set; }
+        public PieceManager PieceManager { get; }
 
 
         /// <summary>
         /// The inactive peer manager for this TorrentManager
         /// </summary>
-        internal InactivePeerManager InactivePeerManager { get; private set; }
+        internal InactivePeerManager InactivePeerManager { get; }
 
         /// <summary>
         /// The download progress in percent (0 -> 100.0) for the files whose priority
@@ -353,9 +353,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public int UploadingTo { get; internal set; }
 
-        RateLimiter UploadLimiter { get; set; }
+        RateLimiter UploadLimiter { get; }
 
-        internal RateLimiterGroup UploadLimiters { get; private set; }
+        internal RateLimiterGroup UploadLimiters { get; }
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
@@ -366,44 +366,34 @@ namespace MonoTorrent.Client
         #region Constructors
 
         internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath, TorrentSettings settings)
+            : this (engine, torrent, null, savePath, settings)
         {
-            Check.Torrent (torrent);
-            Check.SavePath (savePath);
-            Check.Settings (settings);
-
-            MetadataTask = new TaskCompletionSource<Torrent> ();
-            MetadataPath = engine.Settings.GetMetadataPath (torrent.InfoHash);
-
-            Engine = engine;
-            InfoHash = torrent.InfoHash;
-            Settings = settings;
-
-            Initialise (savePath, torrent.AnnounceUrls);
             SetMetadata (torrent);
         }
 
         internal TorrentManager (ClientEngine engine, MagnetLink magnetLink, string savePath, TorrentSettings settings)
+            : this (engine, null, magnetLink, savePath, settings)
         {
-            Check.MagnetLink (magnetLink);
-            Check.InfoHash (magnetLink.InfoHash);
-            Check.SavePath (savePath);
-            Check.Settings (settings);
-
-            MetadataTask = new TaskCompletionSource<Torrent> ();
-            MetadataPath = engine.Settings.GetMetadataPath (magnetLink.InfoHash);
-
-            Engine = engine;
-            InfoHash = magnetLink.InfoHash;
-            Settings = settings;
-            var announces = new List<IList<string>> ();
-            if (magnetLink.AnnounceUrls != null)
-                announces.Add (magnetLink.AnnounceUrls);
-
-            Initialise (savePath, announces);
         }
 
-        void Initialise (string savePath, IList<IList<string>> announces)
+        TorrentManager (ClientEngine engine, Torrent torrent, MagnetLink magnetLink, string savePath, TorrentSettings settings)
         {
+            Engine = engine;
+            Torrent = torrent;
+            InfoHash = magnetLink?.InfoHash ?? torrent.InfoHash;
+            Settings = settings;
+
+            MetadataTask = new TaskCompletionSource<Torrent> ();
+            MetadataPath = engine.Settings.GetMetadataPath (InfoHash);
+
+            var announces = Torrent?.AnnounceUrls;
+            if (announces == null) {
+                announces = new List<IList<string>> ();
+                if (magnetLink.AnnounceUrls != null)
+                    announces.Add (magnetLink.AnnounceUrls);
+            }
+            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false));
+
             MutableBitField = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
             PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
             UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
@@ -413,14 +403,8 @@ namespace MonoTorrent.Client
             InactivePeerManager = new InactivePeerManager (this);
             Peers = new PeerManager ();
             PieceManager = new PieceManager (this);
-            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces, HasMetadata && Torrent.IsPrivate));
 
-            Mode = new StoppedMode (this, null, null, null);
-            CreateRateLimiters ();
-        }
-
-        void CreateRateLimiters ()
-        {
+            mode = new StoppedMode (this, null, null, null);
             DownloadLimiter = new RateLimiter ();
             DownloadLimiters = new RateLimiterGroup {
                 new PauseLimiter(this),
