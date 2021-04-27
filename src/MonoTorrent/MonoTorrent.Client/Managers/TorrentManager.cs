@@ -366,12 +366,6 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath)
-            : this (engine, torrent, savePath, new TorrentSettings ())
-        {
-
-        }
-
         internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath, TorrentSettings settings)
         {
             Check.Torrent (torrent);
