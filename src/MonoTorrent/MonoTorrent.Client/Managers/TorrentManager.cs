@@ -129,7 +129,6 @@ namespace MonoTorrent.Client
 
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         Mode mode;
-        readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         TaskCompletionSource<Torrent> MetadataTask { get; }
@@ -225,7 +224,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <see cref="EngineSettings.MetadataCacheDirectory"/> directory.
         /// </summary>
-        public string MetadataPath { get; internal set; }
+        public string MetadataPath { get; }
 
         /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
@@ -373,6 +372,7 @@ namespace MonoTorrent.Client
             Check.Settings (settings);
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
+            MetadataPath = engine.Settings.GetMetadataPath (torrent.InfoHash);
 
             Engine = engine;
             InfoHash = torrent.InfoHash;
@@ -382,38 +382,19 @@ namespace MonoTorrent.Client
             SetMetadata (torrent);
         }
 
-        internal TorrentManager (ClientEngine engine, InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
-        {
-            Check.InfoHash (infoHash);
-            Check.SavePath (savePath);
-            Check.Settings (settings);
-            Check.TorrentSave (torrentSave);
-            Check.Announces (announces);
-
-            MetadataTask = new TaskCompletionSource<Torrent> ();
-
-            Engine = engine;
-            InfoHash = infoHash;
-            Settings = settings;
-            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
-
-            Initialise (savePath, announces);
-        }
-
-        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
+        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink, string savePath, TorrentSettings settings)
         {
             Check.MagnetLink (magnetLink);
             Check.InfoHash (magnetLink.InfoHash);
             Check.SavePath (savePath);
             Check.Settings (settings);
-            Check.TorrentSave (torrentSave);
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
+            MetadataPath = engine.Settings.GetMetadataPath (magnetLink.InfoHash);
 
             Engine = engine;
             InfoHash = magnetLink.InfoHash;
             Settings = settings;
-            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Path.Combine (Environment.CurrentDirectory, "metadata", $"{InfoHash.ToHex ()}.torrent") : Path.GetFullPath (torrentSave);
             var announces = new List<IList<string>> ();
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
@@ -684,7 +665,7 @@ namespace MonoTorrent.Client
                     hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
-                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave, metadataOnly);
+                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
             } else {
                 StartTime = DateTime.Now;
                 var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
