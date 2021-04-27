@@ -36,15 +36,14 @@ namespace MonoTorrent.Client.Modes
     class InitialSeedingMode : Mode
     {
         readonly BitField zero;
-        readonly InitialSeedUnchoker unchoker;
+
+        new InitialSeedUnchoker Unchoker => (InitialSeedUnchoker) base.Unchoker;
 
         public override TorrentState State => TorrentState.Seeding;
 
         public InitialSeedingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
+            : base (manager, diskManager, connectionManager, settings, new InitialSeedUnchoker (manager))
         {
-            unchoker = new InitialSeedUnchoker (manager);
-            manager.chokeUnchoker = unchoker;
             zero = new MutableBitField (manager.Bitfield.Length);
         }
 
@@ -59,37 +58,37 @@ namespace MonoTorrent.Client.Modes
         protected override void HandleHaveMessage (PeerId id, HaveMessage message)
         {
             base.HandleHaveMessage (id, message);
-            unchoker.ReceivedHave (id, message.PieceIndex);
+            Unchoker.ReceivedHave (id, message.PieceIndex);
         }
 
         protected override void HandleRequestMessage (PeerId id, RequestMessage message)
         {
             base.HandleRequestMessage (id, message);
-            unchoker.SentBlock (id, message.PieceIndex);
+            Unchoker.SentBlock (id, message.PieceIndex);
         }
 
         protected override void HandleNotInterested (PeerId id, NotInterestedMessage message)
         {
             base.HandleNotInterested (id, message);
-            unchoker.ReceivedNotInterested (id);
+            Unchoker.ReceivedNotInterested (id);
         }
 
         public override void HandlePeerConnected (PeerId id)
         {
-            unchoker.PeerConnected (id);
+            Unchoker.PeerConnected (id);
             base.HandlePeerConnected (id);
         }
 
         public override void HandlePeerDisconnected (PeerId id)
         {
             base.HandlePeerDisconnected (id);
-            unchoker.PeerDisconnected (id);
+            Unchoker.PeerDisconnected (id);
         }
 
         public override void Tick (int counter)
         {
             base.Tick (counter);
-            if (unchoker.Complete) {
+            if (Unchoker.Complete) {
                 PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
                 PeerMessage haveAllMessage = new HaveAllMessage ();
                 foreach (PeerId peer in Manager.Peers.ConnectedPeers) {

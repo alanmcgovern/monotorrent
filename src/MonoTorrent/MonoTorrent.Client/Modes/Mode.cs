@@ -57,6 +57,7 @@ namespace MonoTorrent.Client.Modes
         protected DiskManager DiskManager { get; }
         protected TorrentManager Manager { get; }
         protected EngineSettings Settings { get; }
+        protected IUnchoker Unchoker { get; }
 
         public virtual bool CanAcceptConnections => true;
         public virtual bool CanHandleMessages => true;
@@ -64,7 +65,7 @@ namespace MonoTorrent.Client.Modes
         public abstract TorrentState State { get; }
         public CancellationToken Token => Cancellation.Token;
 
-        protected Mode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+        protected Mode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, IUnchoker unchoker = null)
         {
             Cancellation = new CancellationTokenSource ();
             ConnectionManager = connectionManager;
@@ -72,7 +73,7 @@ namespace MonoTorrent.Client.Modes
             Manager = manager;
             Settings = settings;
 
-            manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
+            Unchoker = unchoker ?? new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
         }
 
         public void HandleMessage (PeerId id, PeerMessage message)
@@ -633,19 +634,12 @@ namespace MonoTorrent.Client.Modes
                 Manager.lastCalledInactivePeerManager = DateTime.Now;
             }
 
-            // Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
-            if (Manager.chokeUnchoker == null)
-                Manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (Manager));
-            Manager.chokeUnchoker.UnchokeReview ();
+            Unchoker.UnchokeReview ();
         }
 
         void SeedingLogic (int counter)
         {
-            //Choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
-            if (Manager.chokeUnchoker == null)
-                Manager.chokeUnchoker = new ChokeUnchokeManager (new TorrentManagerUnchokeable (Manager));
-
-            Manager.chokeUnchoker.UnchokeReview ();
+            Unchoker.UnchokeReview ();
         }
 
         protected virtual void SetAmInterestedStatus (PeerId id, bool interesting)

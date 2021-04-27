@@ -129,7 +129,6 @@ namespace MonoTorrent.Client
 
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         Mode mode;
-        internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         TaskCompletionSource<Torrent> MetadataTask { get; }
         #endregion Member Variables
