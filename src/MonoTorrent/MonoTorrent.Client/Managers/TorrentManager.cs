@@ -129,7 +129,6 @@ namespace MonoTorrent.Client
 
         internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
         Mode mode;
-        readonly string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         TaskCompletionSource<Torrent> MetadataTask { get; }
@@ -154,9 +153,9 @@ namespace MonoTorrent.Client
 
         internal bool Disposed { get; private set; }
 
-        RateLimiter DownloadLimiter { get; set; }
+        RateLimiter DownloadLimiter { get; }
 
-        internal RateLimiterGroup DownloadLimiters { get; private set; }
+        internal RateLimiterGroup DownloadLimiters { get; }
 
         public ClientEngine Engine { get; }
 
@@ -225,14 +224,14 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <see cref="EngineSettings.MetadataCacheDirectory"/> directory.
         /// </summary>
-        public string MetadataPath { get; internal set; }
+        public string MetadataPath { get; }
 
         /// <summary>
         /// True if this torrent has activated special processing for the final few pieces
         /// </summary>
         public bool IsInEndGame => State == TorrentState.Downloading && PieceManager.InEndgameMode;
 
-        public ConnectionMonitor Monitor { get; private set; }
+        public ConnectionMonitor Monitor { get; }
 
         /// <summary>
         /// The number of peers that this torrent instance is connected to
@@ -259,24 +258,24 @@ namespace MonoTorrent.Client
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
-        internal MutableBitField PartialProgressSelector { get; set; }
+        internal MutableBitField PartialProgressSelector { get; private set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public PeerManager Peers { get; private set; }
+        public PeerManager Peers { get; }
 
 
         /// <summary>
         /// The piecemanager for this TorrentManager
         /// </summary>
-        public PieceManager PieceManager { get; private set; }
+        public PieceManager PieceManager { get; }
 
 
         /// <summary>
         /// The inactive peer manager for this TorrentManager
         /// </summary>
-        internal InactivePeerManager InactivePeerManager { get; private set; }
+        internal InactivePeerManager InactivePeerManager { get; }
 
         /// <summary>
         /// The download progress in percent (0 -> 100.0) for the files whose priority
@@ -354,9 +353,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public int UploadingTo { get; internal set; }
 
-        RateLimiter UploadLimiter { get; set; }
+        RateLimiter UploadLimiter { get; }
 
-        internal RateLimiterGroup UploadLimiters { get; private set; }
+        internal RateLimiterGroup UploadLimiters { get; }
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
@@ -365,75 +364,36 @@ namespace MonoTorrent.Client
         #endregion
 
         #region Constructors
-        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink)
-            : this (engine, magnetLink, "", new TorrentSettings (), "")
-        {
-
-        }
-
-        internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath)
-            : this (engine, torrent, savePath, new TorrentSettings ())
-        {
-
-        }
 
         internal TorrentManager (ClientEngine engine, Torrent torrent, string savePath, TorrentSettings settings)
+            : this (engine, torrent, null, savePath, settings)
         {
-            Check.Torrent (torrent);
-            Check.SavePath (savePath);
-            Check.Settings (settings);
-
-            MetadataTask = new TaskCompletionSource<Torrent> ();
-
-            Engine = engine;
-            InfoHash = torrent.InfoHash;
-            Settings = settings;
-
-            Initialise (savePath, torrent.AnnounceUrls);
             SetMetadata (torrent);
         }
 
-        internal TorrentManager (ClientEngine engine, InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<IList<string>> announces)
+        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink, string savePath, TorrentSettings settings)
+            : this (engine, null, magnetLink, savePath, settings)
         {
-            Check.InfoHash (infoHash);
-            Check.SavePath (savePath);
-            Check.Settings (settings);
-            Check.TorrentSave (torrentSave);
-            Check.Announces (announces);
-
-            MetadataTask = new TaskCompletionSource<Torrent> ();
-
-            Engine = engine;
-            InfoHash = infoHash;
-            Settings = settings;
-            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Environment.CurrentDirectory : Path.GetFullPath (torrentSave);
-
-            Initialise (savePath, announces);
         }
 
-        internal TorrentManager (ClientEngine engine, MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
+        TorrentManager (ClientEngine engine, Torrent torrent, MagnetLink magnetLink, string savePath, TorrentSettings settings)
         {
-            Check.MagnetLink (magnetLink);
-            Check.InfoHash (magnetLink.InfoHash);
-            Check.SavePath (savePath);
-            Check.Settings (settings);
-            Check.TorrentSave (torrentSave);
+            Engine = engine;
+            Torrent = torrent;
+            InfoHash = magnetLink?.InfoHash ?? torrent.InfoHash;
+            Settings = settings;
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
+            MetadataPath = engine.Settings.GetMetadataPath (InfoHash);
 
-            Engine = engine;
-            InfoHash = magnetLink.InfoHash;
-            Settings = settings;
-            this.torrentSave = string.IsNullOrEmpty (torrentSave) ? Path.Combine (Environment.CurrentDirectory, "metadata", $"{InfoHash.ToHex ()}.torrent") : Path.GetFullPath (torrentSave);
-            var announces = new List<IList<string>> ();
-            if (magnetLink.AnnounceUrls != null)
-                announces.Add (magnetLink.AnnounceUrls);
+            var announces = Torrent?.AnnounceUrls;
+            if (announces == null) {
+                announces = new List<IList<string>> ();
+                if (magnetLink.AnnounceUrls != null)
+                    announces.Add (magnetLink.AnnounceUrls);
+            }
+            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false));
 
-            Initialise (savePath, announces);
-        }
-
-        void Initialise (string savePath, IList<IList<string>> announces)
-        {
             MutableBitField = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
             PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
             UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
@@ -443,14 +403,8 @@ namespace MonoTorrent.Client
             InactivePeerManager = new InactivePeerManager (this);
             Peers = new PeerManager ();
             PieceManager = new PieceManager (this);
-            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces, HasMetadata && Torrent.IsPrivate));
 
-            Mode = new StoppedMode (this, null, null, null);
-            CreateRateLimiters ();
-        }
-
-        void CreateRateLimiters ()
-        {
+            mode = new StoppedMode (this, null, null, null);
             DownloadLimiter = new RateLimiter ();
             DownloadLimiters = new RateLimiterGroup {
                 new PauseLimiter(this),
@@ -695,7 +649,7 @@ namespace MonoTorrent.Client
                     hashing.Resume ();
             } else if (!HasMetadata) {
                 StartTime = DateTime.Now;
-                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, torrentSave, metadataOnly);
+                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
             } else {
                 StartTime = DateTime.Now;
                 var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
