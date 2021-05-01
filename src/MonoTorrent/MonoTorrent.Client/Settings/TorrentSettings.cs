@@ -33,8 +33,7 @@ using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
-    [Serializable]
-    public class TorrentSettings : IEquatable<TorrentSettings>
+    public sealed class TorrentSettings : IEquatable<TorrentSettings>
     {
         /// <summary>
         /// If set to false then the <see cref="DhtEngine"/> registered with the <see cref="ClientEngine" /> will
@@ -94,7 +93,7 @@ namespace MonoTorrent.Client
         /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
         /// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
         /// </summary>
-        internal long ConnectionRetentionFactor => 1024;
+        internal int ConnectionRetentionFactor => 1024;
 
         /// <summary>
         /// The number of peers we should maintain in our internal lists. If we are allowed maintain 100 connections,
