@@ -225,7 +225,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MaximumOpenFiles {
             get => maximumOpenFiles;
-            set => maximumOpenFiles = CheckZeroOrPositive (20);
+            set => maximumOpenFiles = CheckZeroOrPositive (value);
         }
 
         /// <summary>

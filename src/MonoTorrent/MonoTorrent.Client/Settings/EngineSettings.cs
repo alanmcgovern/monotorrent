@@ -40,8 +40,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Represents the Settings which need to be passed to the engine
     /// </summary>
-    [Serializable]
-    public class EngineSettings : IEquatable<EngineSettings>
+    public sealed class EngineSettings : IEquatable<EngineSettings>
     {
         /// <summary>
         /// A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
