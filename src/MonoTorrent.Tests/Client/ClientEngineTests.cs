@@ -29,7 +29,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -43,30 +42,22 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ClientEngineTests
     {
-        TestRig rig;
-        ConnectionPair conn;
-
         [SetUp]
         public void Setup ()
         {
             DhtEngineFactory.Creator = listener => new ManualDhtEngine ();
-
-            rig = TestRig.CreateMultiFile (new TestWriter ());
-            conn = new ConnectionPair ().WithTimeout ();
         }
 
         [TearDown]
         public void Teardown ()
         {
             DhtEngineFactory.Creator = listener => new DhtEngine (listener);
-
-            rig.Dispose ();
-            conn.Dispose ();
         }
 
         [Test]
         public async Task AddPeers_Dht ()
         {
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
             var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
@@ -87,6 +78,7 @@ namespace MonoTorrent.Client
         public async Task AddPeers_Dht_Private ()
         {
             // You can't manually add peers to private torrents
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
             var editor = new TorrentEditor (rig.TorrentDict) {
                 CanEditSecureMetadata = true,
                 Private = true
@@ -112,6 +104,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_LocalPeerDiscovery ()
         {
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
             var localPeer = (ManualLocalPeerListener) rig.Engine.LocalPeerDiscovery;
 
             var tcs = new TaskCompletionSource<LocalPeersAdded> ();
@@ -132,6 +125,7 @@ namespace MonoTorrent.Client
         public async Task AddPeers_LocalPeerDiscovery_Private ()
         {
             // You can't manually add peers to private torrents
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
             var editor = new TorrentEditor (rig.TorrentDict) {
                 CanEditSecureMetadata = true,
                 Private = true
@@ -177,14 +171,24 @@ namespace MonoTorrent.Client
         public void DownloadMetadata_Cancelled ()
         {
             var cts = new CancellationTokenSource ();
-            var task = rig.Engine.DownloadMetadataAsync (new MagnetLink (new InfoHash (new byte[20])), cts.Token);
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var task = engine.DownloadMetadataAsync (new MagnetLink (new InfoHash (new byte[20])), cts.Token);
             cts.Cancel ();
             Assert.ThrowsAsync<OperationCanceledException> (() => task);
         }
 
         [Test]
+        public async Task SaveRestoreState_NoTorrents ()
+        {
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            Assert.AreEqual (engine.Settings, restoredEngine.Settings);
+        }
+
+        [Test]
         public async Task StopTest ()
         {
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
             var hashingState = rig.Manager.WaitForState (TorrentState.Hashing);
             var stoppedState = rig.Manager.WaitForState (TorrentState.Stopped);
 
