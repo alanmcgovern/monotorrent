@@ -38,23 +38,22 @@ namespace MonoTorrent.Client
 {
     static class Serializer
     {
-        internal static EngineSettings DeserializeEngineSettings (byte[] array)
-            => Deserialize<EngineSettingsBuilder> (array).ToSettings ();
+        internal static EngineSettings DeserializeEngineSettings (BEncodedDictionary dictionary)
+            => Deserialize<EngineSettingsBuilder> (dictionary).ToSettings ();
 
-        internal static byte[] Serialize (EngineSettings settings)
+        internal static BEncodedDictionary Serialize (EngineSettings settings)
             => Serialize (new EngineSettingsBuilder (settings));
 
-        internal static TorrentSettings DeserializeTorrentSettings (byte[] array)
-            => Deserialize<TorrentSettingsBuilder> (array).ToSettings ();
+        internal static TorrentSettings DeserializeTorrentSettings (BEncodedDictionary dictionary)
+            => Deserialize<TorrentSettingsBuilder> (dictionary).ToSettings ();
 
-        internal static byte[] Serialize (TorrentSettings settings)
+        internal static BEncodedDictionary Serialize (TorrentSettings settings)
             => Serialize (new TorrentSettingsBuilder (settings));
 
-        static T Deserialize<T> (byte[] array)
+        static T Deserialize<T> (BEncodedDictionary dict)
             where T : new()
         {
             T builder = new T ();
-            var dict = (BEncodedDictionary) BEncodedValue.Decode (array);
             var props = builder.GetType ().GetProperties ();
             foreach (var property in props) {
                 if (!dict.TryGetValue (property.Name, out BEncodedValue value))
@@ -83,7 +82,7 @@ namespace MonoTorrent.Client
             return builder;
         }
 
-        static byte[] Serialize (object builder)
+        static BEncodedDictionary Serialize (object builder)
         {
             var dict = new BEncodedDictionary ();
             var props = builder.GetType ().GetProperties ();
@@ -103,7 +102,7 @@ namespace MonoTorrent.Client
                     dict[property.Name] = convertedValue;
             }
 
-            return dict.Encode ();
+            return dict;
         }
     }
 }

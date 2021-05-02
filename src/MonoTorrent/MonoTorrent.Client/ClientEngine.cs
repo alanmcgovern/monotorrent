@@ -56,11 +56,79 @@ namespace MonoTorrent.Client
         internal static readonly MainLoop MainLoop = new MainLoop ("Client Engine Loop");
         static readonly Logger Log = Logger.Create (nameof (ClientEngine));
 
+        public static async Task<ClientEngine> RestoreStateAsync (string pathToStateFile)
+        {
+            await MainLoop.SwitchThread ();
+            return await RestoreStateAsync (File.ReadAllBytes (pathToStateFile));
+        }
+
+        public static async Task<ClientEngine> RestoreStateAsync (byte[] buffer)
+        {
+            var state = BEncodedValue.Decode<BEncodedDictionary> (buffer);
+            var engineSettings = Serializer.DeserializeEngineSettings ((BEncodedDictionary) state["Settings"]);
+
+            var clientEngine = new ClientEngine (engineSettings);
+            foreach (BEncodedDictionary torrent in (BEncodedList) state["Torrents"]) {
+                var metadataPath = (BEncodedString) torrent["MetadataPath"];
+                var saveDirectory = (BEncodedString) torrent["SaveDirectory"];
+                var streaming = bool.Parse (((BEncodedString) torrent["Streaming"]).Text);
+                var torrentSettings = Serializer.DeserializeTorrentSettings ((BEncodedDictionary) torrent["Settings"]);
+
+                TorrentManager manager;
+                if (streaming)
+                    manager = await clientEngine.AddStreamingAsync (metadataPath.Text, saveDirectory.Text, torrentSettings);
+                else
+                    manager = await clientEngine.AddAsync (metadataPath.Text, saveDirectory.Text, torrentSettings);
+
+                foreach (BEncodedDictionary file in (BEncodedList) torrent["Files"]) {
+                    var torrentFile = manager.Files.Single (t => t.Path == ((BEncodedString) file["Path"]).Text);
+                    await manager.SetFilePriorityAsync (torrentFile, (Priority) Enum.Parse (typeof (Priority), file["Priorty"].ToString ()));
+                    await manager.MoveFileAsync (torrentFile, ((BEncodedString) file["FullPath"]).ToString ());
+                }
+            }
+            return clientEngine;
+        }
+
+        public async Task<byte[]> SaveStateAsync ()
+        {
+            await MainLoop;
+            var state = new BEncodedDictionary ();
+            state[nameof (Settings)] = Serializer.Serialize (Settings);
+            state[nameof (Torrents)] = new BEncodedList (Torrents.Select (t =>
+                new BEncodedDictionary {
+                    { "MetadataPath", (BEncodedString) t.MetadataPath },
+                    { "SaveDirectory", (BEncodedString) t.SavePath },
+                    { "Settings", Serializer.Serialize (t.Settings) },
+                    { "Streaming", (BEncodedString) (t.StreamProvider != null).ToString ()},
+                    { "Files", new BEncodedList (t.Files.Select (file =>
+                        new BEncodedDictionary {
+                            { "FullPath", (BEncodedString) file.FullPath },
+                            { "Path", (BEncodedString) file.Path },
+                            { "Priority", (BEncodedString) file.Priority.ToString () },
+                        }
+                    ))
+                }
+            }));
+
+            foreach (var v in Torrents)
+                await v.MaybeWriteFastResumeAsync ();
+
+            return state.Encode ();
+        }
+
+        public async Task SaveStateAsync (string pathToStateFile)
+        {
+            var state = await SaveStateAsync ();
+            await MainLoop.SwitchThread ();
+            File.WriteAllBytes (pathToStateFile, state);
+        }
+
         /// <summary>
         /// An un-seeded random number generator which will not generate the same
         /// random sequence when the application is restarted.
         /// </summary>
         static readonly Random PeerIdRandomGenerator = new Random ();
+
         #region Global Constants
 
         // This is the number of 16kB requests which can be queued against one peer.
