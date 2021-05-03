@@ -201,6 +201,62 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task SaveRestoreState_OneTorrentFile_ContainingDirectory ()
+        {
+            var pieceLength = Piece.BlockSize * 4;
+            using var tmpDir = TempDir.Create ();
+
+            TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Piece.BlockSize, Piece.BlockSize * 2, Piece.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
+            var metadataFile = Path.Combine (tmpDir.Path, "test.torrent");
+            File.WriteAllBytes (metadataFile, metadata.Encode ());
+
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
+            var torrentManager = await engine.AddAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
+            await torrentManager.SetFilePriorityAsync (torrentManager.Files[0], Priority.High);
+            await torrentManager.MoveFileAsync (torrentManager.Files[1], Path.GetFullPath ("some_fake_path.txt"));
+
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            Assert.AreEqual (engine.Settings, restoredEngine.Settings);
+            Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
+            Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
+            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1String (), restoredEngine.Torrents[0].MagnetLink.ToV1String ());
+
+            Assert.AreEqual (engine.Torrents[0].Files.Count, restoredEngine.Torrents[0].Files.Count);
+            for (int i = 0; i < engine.Torrents.Count; i ++) {
+                Assert.AreEqual (engine.Torrents[0].Files[i].FullPath, restoredEngine.Torrents[0].Files[i].FullPath);
+                Assert.AreEqual (engine.Torrents[0].Files[i].Priority, restoredEngine.Torrents[0].Files[i].Priority);
+            }
+        }
+
+        [Test]
+        public async Task SaveRestoreState_OneTorrentFile_NoContainingDirectory ()
+        {
+            var pieceLength = Piece.BlockSize * 4;
+            using var tmpDir = TempDir.Create ();
+
+            TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Piece.BlockSize, Piece.BlockSize * 2, Piece.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
+            var metadataFile = Path.Combine (tmpDir.Path, "test.torrent");
+            File.WriteAllBytes (metadataFile, metadata.Encode ());
+
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
+            await engine.AddAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
+
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            Assert.AreEqual (engine.Settings, restoredEngine.Settings);
+            Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
+            Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
+            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1String (), restoredEngine.Torrents[0].MagnetLink.ToV1String ());
+
+            Assert.AreEqual (engine.Torrents[0].Files.Count, restoredEngine.Torrents[0].Files.Count);
+            for (int i = 0; i < engine.Torrents.Count; i++) {
+                Assert.AreEqual (engine.Torrents[0].Files[i].FullPath, restoredEngine.Torrents[0].Files[i].FullPath);
+                Assert.AreEqual (engine.Torrents[0].Files[i].Priority, restoredEngine.Torrents[0].Files[i].Priority);
+            }
+        }
+
+        [Test]
         public async Task StopTest ()
         {
             using var rig = TestRig.CreateMultiFile (new TestWriter ());
