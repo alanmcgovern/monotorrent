@@ -68,12 +68,12 @@ namespace MonoTorrent.Client
             var engineSettings = Serializer.DeserializeEngineSettings ((BEncodedDictionary) state["Settings"]);
 
             var clientEngine = new ClientEngine (engineSettings);
-            foreach (BEncodedDictionary torrent in (BEncodedList) state["Torrents"]) {
-                var saveDirectory = ((BEncodedString) torrent["SaveDirectory"]).Text;
+            TorrentManager manager;
+            foreach (BEncodedDictionary torrent in (BEncodedList) state[nameof(clientEngine.Torrents)]) {
+                var saveDirectory = ((BEncodedString) torrent[nameof(manager.SavePath)]).Text;
                 var streaming = bool.Parse (((BEncodedString) torrent["Streaming"]).Text);
-                var torrentSettings = Serializer.DeserializeTorrentSettings ((BEncodedDictionary) torrent["Settings"]);
+                var torrentSettings = Serializer.DeserializeTorrentSettings ((BEncodedDictionary) torrent[nameof(manager.Settings)]);
 
-                TorrentManager manager;
                 if (torrent.ContainsKey (nameof (manager.MetadataPath))) {
                     var metadataPath = (BEncodedString) torrent[nameof (manager.MetadataPath)];
                     if (streaming)
@@ -81,10 +81,11 @@ namespace MonoTorrent.Client
                     else
                         manager = await clientEngine.AddAsync (metadataPath.Text, saveDirectory, torrentSettings);
 
-                    foreach (BEncodedDictionary file in (BEncodedList) torrent["Files"]) {
-                        var torrentFile = manager.Files.Single (t => t.Path == ((BEncodedString) file["Path"]).Text);
-                        await manager.SetFilePriorityAsync (torrentFile, (Priority) Enum.Parse (typeof (Priority), file["Priorty"].ToString ()));
-                        await manager.MoveFileAsync (torrentFile, ((BEncodedString) file["FullPath"]).ToString ());
+                    foreach (BEncodedDictionary file in (BEncodedList) torrent[nameof(manager.Files)]) {
+                        TorrentFileInfo torrentFile;
+                        torrentFile = (TorrentFileInfo) manager.Files.Single (t => t.Path == ((BEncodedString) file[nameof(torrentFile.Path)]).Text);
+                        torrentFile.Priority = (Priority) Enum.Parse (typeof (Priority), file[nameof(torrentFile.Priority)].ToString ());
+                        torrentFile.FullPath = ((BEncodedString) file[nameof(torrentFile.FullPath)]).Text;
                     }
                 } else {
                     var magnetLink = MagnetLink.Parse (torrent[nameof (manager.MagnetLink)].ToString ());
@@ -106,10 +107,10 @@ namespace MonoTorrent.Client
 
             state[nameof (Torrents)] = new BEncodedList (Torrents.Select (t => {
                 var dict = new BEncodedDictionary {
-                    { "SaveDirectory", (BEncodedString) t.SavePath },
-                    { "Settings", Serializer.Serialize (t.Settings) },
-                    { "Streaming", (BEncodedString) (t.StreamProvider != null).ToString ()},
                     { nameof (t.MagnetLink),  (BEncodedString) t.MagnetLink.ToV1String () },
+                    { nameof(t.SavePath), (BEncodedString) t.SavePath },
+                    { nameof(t.Settings), Serializer.Serialize (t.Settings) },
+                    { "Streaming", (BEncodedString) (t.StreamProvider != null).ToString ()},
                 };
 
                 if (t.HasMetadata) {
@@ -325,9 +326,10 @@ namespace MonoTorrent.Client
             var torrent = await Torrent.LoadAsync (metadataPath).ConfigureAwait (false);
 
             var metadataCachePath = Settings.GetMetadataPath (torrent.InfoHash);
-            Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
-            File.Copy (metadataPath, metadataCachePath, true);
-
+            if (metadataPath != metadataCachePath) {
+                Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
+                File.Copy (metadataPath, metadataCachePath, true);
+            }
             return await AddAsync (null, torrent, saveDirectory, settings);
         }
 
