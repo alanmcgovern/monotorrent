@@ -220,6 +220,8 @@ namespace MonoTorrent.Client
 
         public bool HasMetadata => Torrent != null;
 
+        public InfoHash InfoHash => Torrent?.InfoHash ?? MagnetLink.InfoHash;
+
         /// <summary>
         /// The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <see cref="EngineSettings.MetadataCacheDirectory"/> directory.
         /// </summary>
@@ -256,6 +258,8 @@ namespace MonoTorrent.Client
         /// Internal timer used to trigger Local PeerDiscovery announces every <see cref="LocalPeerDiscovery.AnnounceInternal"/> seconds.
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
+
+        public MagnetLink MagnetLink { get; }
 
         internal MutableBitField PartialProgressSelector { get; private set; }
 
@@ -358,8 +362,6 @@ namespace MonoTorrent.Client
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
-        public InfoHash InfoHash { get; }
-
         #endregion
 
         #region Constructors
@@ -378,8 +380,8 @@ namespace MonoTorrent.Client
         TorrentManager (ClientEngine engine, Torrent torrent, MagnetLink magnetLink, string savePath, TorrentSettings settings)
         {
             Engine = engine;
+            MagnetLink = magnetLink ?? new MagnetLink (torrent.InfoHash, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
             Torrent = torrent;
-            InfoHash = magnetLink?.InfoHash ?? torrent.InfoHash;
             Settings = settings;
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
