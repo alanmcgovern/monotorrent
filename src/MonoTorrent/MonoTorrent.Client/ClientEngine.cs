@@ -69,21 +69,29 @@ namespace MonoTorrent.Client
 
             var clientEngine = new ClientEngine (engineSettings);
             foreach (BEncodedDictionary torrent in (BEncodedList) state["Torrents"]) {
-                var metadataPath = (BEncodedString) torrent["MetadataPath"];
-                var saveDirectory = (BEncodedString) torrent["SaveDirectory"];
+                var saveDirectory = ((BEncodedString) torrent["SaveDirectory"]).Text;
                 var streaming = bool.Parse (((BEncodedString) torrent["Streaming"]).Text);
                 var torrentSettings = Serializer.DeserializeTorrentSettings ((BEncodedDictionary) torrent["Settings"]);
 
                 TorrentManager manager;
-                if (streaming)
-                    manager = await clientEngine.AddStreamingAsync (metadataPath.Text, saveDirectory.Text, torrentSettings);
-                else
-                    manager = await clientEngine.AddAsync (metadataPath.Text, saveDirectory.Text, torrentSettings);
+                if (torrent.ContainsKey (nameof (manager.MetadataPath))) {
+                    var metadataPath = (BEncodedString) torrent[nameof (manager.MetadataPath)];
+                    if (streaming)
+                        manager = await clientEngine.AddStreamingAsync (metadataPath.Text, saveDirectory, torrentSettings);
+                    else
+                        manager = await clientEngine.AddAsync (metadataPath.Text, saveDirectory, torrentSettings);
 
-                foreach (BEncodedDictionary file in (BEncodedList) torrent["Files"]) {
-                    var torrentFile = manager.Files.Single (t => t.Path == ((BEncodedString) file["Path"]).Text);
-                    await manager.SetFilePriorityAsync (torrentFile, (Priority) Enum.Parse (typeof (Priority), file["Priorty"].ToString ()));
-                    await manager.MoveFileAsync (torrentFile, ((BEncodedString) file["FullPath"]).ToString ());
+                    foreach (BEncodedDictionary file in (BEncodedList) torrent["Files"]) {
+                        var torrentFile = manager.Files.Single (t => t.Path == ((BEncodedString) file["Path"]).Text);
+                        await manager.SetFilePriorityAsync (torrentFile, (Priority) Enum.Parse (typeof (Priority), file["Priorty"].ToString ()));
+                        await manager.MoveFileAsync (torrentFile, ((BEncodedString) file["FullPath"]).ToString ());
+                    }
+                } else {
+                    var magnetLink = MagnetLink.Parse (torrent[nameof (manager.MagnetLink)].ToString ());
+                    if (streaming)
+                        await clientEngine.AddStreamingAsync (magnetLink, saveDirectory, torrentSettings);
+                    else
+                        await clientEngine.AddAsync (magnetLink, saveDirectory, torrentSettings);
                 }
             }
             return clientEngine;
@@ -92,22 +100,31 @@ namespace MonoTorrent.Client
         public async Task<byte[]> SaveStateAsync ()
         {
             await MainLoop;
-            var state = new BEncodedDictionary ();
-            state[nameof (Settings)] = Serializer.Serialize (Settings);
-            state[nameof (Torrents)] = new BEncodedList (Torrents.Select (t =>
-                new BEncodedDictionary {
-                    { "MetadataPath", (BEncodedString) t.MetadataPath },
+            var state = new BEncodedDictionary {
+                {nameof (Settings), Serializer.Serialize (Settings) },
+            };
+
+            state[nameof (Torrents)] = new BEncodedList (Torrents.Select (t => {
+                var dict = new BEncodedDictionary {
                     { "SaveDirectory", (BEncodedString) t.SavePath },
                     { "Settings", Serializer.Serialize (t.Settings) },
                     { "Streaming", (BEncodedString) (t.StreamProvider != null).ToString ()},
-                    { "Files", new BEncodedList (t.Files.Select (file =>
-                        new BEncodedDictionary {
-                            { "FullPath", (BEncodedString) file.FullPath },
-                            { "Path", (BEncodedString) file.Path },
-                            { "Priority", (BEncodedString) file.Priority.ToString () },
-                        }
-                    ))
+                    { nameof (t.MagnetLink),  (BEncodedString) t.MagnetLink.ToV1String () },
+                };
+
+                if (t.HasMetadata) {
+                    dict[nameof (t.Files)] = new BEncodedList (t.Files.Select (file =>
+                       new BEncodedDictionary {
+                            { nameof(file.FullPath), (BEncodedString) file.FullPath },
+                            { nameof(file.Path), (BEncodedString) file.Path },
+                            { nameof(file.Priority), (BEncodedString) file.Priority.ToString () },
+                       }
+                    ));
+                    dict[nameof (t.MetadataPath)] = (BEncodedString) t.MetadataPath;
+                } else {
                 }
+
+                return dict;
             }));
 
             foreach (var v in Torrents)

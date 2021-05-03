@@ -186,6 +186,21 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task SaveRestoreState_OneMagnetLink ()
+        {
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            await engine.AddAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
+
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            Assert.AreEqual (engine.Settings, restoredEngine.Settings);
+            Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
+            Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
+            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1Uri (), restoredEngine.Torrents[0].MagnetLink.ToV1Uri ());
+            Assert.AreEqual (engine.Torrents[0].Files, restoredEngine.Torrents[0].Files);
+        }
+
+        [Test]
         public async Task StopTest ()
         {
             using var rig = TestRig.CreateMultiFile (new TestWriter ());
