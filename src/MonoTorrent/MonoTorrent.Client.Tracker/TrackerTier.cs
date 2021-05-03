@@ -135,6 +135,7 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
+            Toolbox.Randomize (trackerList);
             Trackers = trackerList.AsReadOnly ();
         }
 

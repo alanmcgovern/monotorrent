@@ -653,8 +653,6 @@ namespace MonoTorrent
                                 for (int k = 0; k < bencodedTier.Count; k++)
                                     tier.Add (bencodedTier[k].ToString ());
 
-                                Toolbox.Randomize (tier);
-
                                 var resultTier = new List<string> ();
                                 for (int k = 0; k < tier.Count; k++)
                                     resultTier.Add (tier[k]);

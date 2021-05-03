@@ -87,6 +87,7 @@ namespace MonoTorrent.Client.Tracker
                     trackerTiers.Add (tier);
                 }
             }
+            Toolbox.Randomize (trackerTiers);
             Tiers = trackerTiers.AsReadOnly ();
         }
 
