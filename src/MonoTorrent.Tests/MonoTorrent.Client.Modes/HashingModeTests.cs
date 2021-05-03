@@ -125,26 +125,41 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PauseResumeHashingMode ()
         {
-            var pieceHashed = new TaskCompletionSource<object> ();
-            Manager.PieceHashed += (o, e) => pieceHashed.TrySetResult (null);
+            var pieceTryHash = new TaskCompletionSource<object> ();
+            var pieceHashed = new TaskCompletionSource<byte[]> ();
+            var secondPieceHashed = new TaskCompletionSource<byte[]> ();
 
-            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
-            Manager.Mode = mode;
+            var writer = new TestWriter ();
+            writer.FilesThatExist.AddRange (Manager.Files);
+            await Manager.Engine.ChangePieceWriterAsync (writer);
+
+            Manager.Engine.DiskManager.GetHashAsyncOverride = (torrentdata, pieceIndex) => {
+                pieceTryHash.TrySetResult (null);
+
+                if (!pieceHashed.Task.IsCompleted)
+                    return pieceHashed.Task.WithTimeout ();
+                if (!secondPieceHashed.Task.IsCompleted)
+                    return secondPieceHashed.Task.WithTimeout ();
+
+                return Task.FromResult (new byte[20]);
+            };
+
+            var hashCheckTask = Manager.HashCheckAsync (false);
+            await pieceTryHash.Task.WithTimeout ();
 
             var pausedEvent = Manager.WaitForState (TorrentState.HashingPaused);
-            mode.Pause ();
+            await Manager.PauseAsync ();
             await pausedEvent.WithTimeout ("#pause");
-            Assert.AreEqual (TorrentState.HashingPaused, mode.State, "#a");
-
-            var hashingTask = mode.WaitForHashingToComplete ();
-            await Task.Delay (50);
-            Assert.IsFalse (pieceHashed.Task.IsCompleted, "#1");
+            Assert.AreEqual (TorrentState.HashingPaused, Manager.State, "#a");
+            pieceHashed.TrySetResult (new byte[20]);
 
             var resumeEvent = Manager.WaitForState (TorrentState.Hashing);
-            mode.Resume ();
+            await Manager.StartAsync ();
             await resumeEvent.WithTimeout ("#resume");
-            Assert.AreEqual (pieceHashed.Task, await Task.WhenAny (pieceHashed.Task, Task.Delay (1000)), "#2");
-            Assert.AreEqual (TorrentState.Hashing, mode.State, "#b");
+            Assert.AreEqual (TorrentState.Hashing, Manager.State, "#b");
+            secondPieceHashed.TrySetResult (new byte[20]);
+
+            await hashCheckTask.WithTimeout ();
         }
 
         [Test]
@@ -215,9 +230,9 @@ namespace MonoTorrent.Client.Modes
         {
             DiskManager.GetHashAsyncOverride = (manager, index) => {
                 if (index >= 0 && index <= 4)
-                    return Manager.Torrent.Pieces.ReadHash (index);
+                    return Task.FromResult (Manager.Torrent.Pieces.ReadHash (index));
 
-                return Enumerable.Repeat ((byte) 255, 20).ToArray ();
+                return Task.FromResult (Enumerable.Repeat ((byte) 255, 20).ToArray ());
             };
             Manager.MutableBitField.SetAll (true);
 
@@ -262,7 +277,7 @@ namespace MonoTorrent.Client.Modes
                 if (pieceHashCount == 3)
                     Manager.StopAsync ().Wait ();
 
-                return Enumerable.Repeat ((byte) 0, 20).ToArray ();
+                return Task.FromResult (Enumerable.Repeat ((byte) 0, 20).ToArray ());
             };
 
             Manager.MutableBitField.SetAll (true);
@@ -288,7 +303,7 @@ namespace MonoTorrent.Client.Modes
                 getHashCount++;
                 if (getHashCount == 2)
                     Manager.PauseAsync ().Wait ();
-                return Enumerable.Repeat ((byte) 0, 20).ToArray ();
+                return Task.FromResult (Enumerable.Repeat ((byte) 0, 20).ToArray ());
             };
 
             var pausedState = Manager.WaitForState (TorrentState.HashingPaused);

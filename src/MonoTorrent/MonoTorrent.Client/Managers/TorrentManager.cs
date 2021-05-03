@@ -638,7 +638,6 @@ namespace MonoTorrent.Client
 
             CheckRegisteredAndDisposed ();
 
-            await Engine.StartAsync ();
             // If the torrent was "paused", then just update the state to Downloading and forcefully
             // make sure the peers begin sending/receiving again
             if (State == TorrentState.Paused) {
@@ -646,14 +645,16 @@ namespace MonoTorrent.Client
             } else if (Mode is HashingMode hashing && !HashChecked) {
                 if (State == TorrentState.HashingPaused)
                     hashing.Resume ();
-            } else if (!HasMetadata) {
-                StartTime = DateTime.Now;
-                Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
             } else {
+                await Engine.StartAsync ();
                 StartTime = DateTime.Now;
-                var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
-                Mode = startingMode;
-                _ = startingMode.WaitForStartingToComplete ();
+                if (!HasMetadata) {
+                    Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
+                } else {
+                    var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                    Mode = startingMode;
+                    _ = startingMode.WaitForStartingToComplete ();
+                }
             }
         }
 

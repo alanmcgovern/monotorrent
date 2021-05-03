@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.Modes
             PausedCompletionSource?.TrySetResult (null);
             PausedCompletionSource = new TaskCompletionSource<object> ();
             Cancellation.Token.Register (() => PausedCompletionSource.TrySetCanceled ());
-            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.HashingPaused, State));
+            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Hashing, State));
         }
 
         public void Resume ()
@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             PausedCompletionSource.TrySetResult (null);
-            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Hashing, State));
+            Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.HashingPaused, State));
         }
 
         public async Task WaitForHashingToComplete ()

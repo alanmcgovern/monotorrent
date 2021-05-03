@@ -198,7 +198,7 @@ namespace MonoTorrent.Client
             manager.Engine.DiskManager.GetHashAsyncOverride = (torrent, pieceIndex) => {
                 first.SetResult (null);
                 second.Task.Wait ();
-                return new byte[20];
+                return Task.FromResult (new byte[20]);
             };
             var hashCheckTask = manager.HashCheckAsync (false);
             await first.Task.WithTimeout ();

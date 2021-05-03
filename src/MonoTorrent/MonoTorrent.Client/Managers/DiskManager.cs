@@ -225,12 +225,12 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal Func<ITorrentData, int, byte[]> GetHashAsyncOverride;
+        internal Func<ITorrentData, int, Task<byte[]>> GetHashAsyncOverride;
 
         internal async ReusableTask<byte[]> GetHashAsync (ITorrentData manager, int pieceIndex)
         {
             if (GetHashAsyncOverride != null)
-                return GetHashAsyncOverride (manager, pieceIndex);
+                return await GetHashAsyncOverride (manager, pieceIndex);
 
             await IOLoop;
 
