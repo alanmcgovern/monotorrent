@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
         public void MoveFilesFail ()
         {
             writer.move = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFilesAsync (data, "root", true));
+            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFilesAsync (data.Files, "root", true));
         }
 
         [Test]

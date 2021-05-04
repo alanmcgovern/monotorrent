@@ -342,26 +342,24 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async Task MoveFileAsync (TorrentFileInfo file, string newPath)
+        internal Task MoveFileAsync (TorrentFileInfo file, string newPath)
+            => MoveFileAsync (file, newPath, false);
+
+        internal async Task MoveFilesAsync (IList<ITorrentFileInfo> files, string newRoot, bool overwrite)
+        {
+            foreach (TorrentFileInfo file in files)
+                await MoveFileAsync (file, Path.Combine (newRoot, file.Path), overwrite);
+        }
+
+        async Task MoveFileAsync (TorrentFileInfo file, string newPath, bool overwrite)
         {
             await IOLoop;
 
             newPath = Path.GetFullPath (newPath);
-            await Cache.Writer.MoveAsync (file, newPath, false);
-            file.FullPath = newPath;
-        }
-
-        internal async Task MoveFilesAsync (ITorrentData manager, string newRoot, bool overwrite)
-        {
-            await IOLoop;
-
-            foreach (TorrentFileInfo file in manager.Files) {
-                string newPath = Path.Combine (newRoot, file.Path);
-                if (await Cache.Writer.ExistsAsync (file)) {
-                    await Cache.Writer.MoveAsync (file, newPath, overwrite);
-                }
-                file.FullPath = newPath;
+            if (newPath != file.FullPath && await Cache.Writer.ExistsAsync (file)) {
+                await Cache.Writer.MoveAsync (file, newPath, false);
             }
+            file.FullPath = newPath;
         }
 
         internal async ReusableTask<bool> ReadAsync (ITorrentData manager, BlockInfo request, byte[] buffer)

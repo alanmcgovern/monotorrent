@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -276,6 +277,104 @@ namespace MonoTorrent.Client
                 count -= 2;
                 Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#5." + diskManager.PendingWriteBytes);
             }
+        }
+
+        [Test]
+        public async Task MoveFile_ConvertsToFullPath()
+        {
+
+            using var writer = new DiskWriter ((file, access) => null);
+            using var manager = new DiskManager (new EngineSettings (), writer);
+
+            var file = TorrentFileInfo.Create (Piece.BlockSize, 123456).Single ();
+            Assert.IsFalse (File.Exists (file.FullPath));
+
+            await manager.MoveFileAsync (file, "NewPath");
+            Assert.AreEqual (Path.GetFullPath ("NewPath"), file.FullPath);
+            Assert.IsFalse (File.Exists (file.FullPath));
+        }
+
+        [Test]
+        public async Task MoveFile_SamePath ()
+        {
+            using var tmp = TempDir.Create ();
+            var file = TorrentFileInfo.Create (Piece.BlockSize, ("file.txt", 123456, Path.Combine (tmp.Path, "orig.txt"))).Single ();
+            File.OpenWrite (file.FullPath).Close ();
+
+            using var writer = new DiskWriter ((file, access) => null);
+            using var manager = new DiskManager (new EngineSettings (), writer);
+
+            await manager.MoveFileAsync (file, file.FullPath);
+            Assert.IsTrue (File.Exists (file.FullPath));
+        }
+
+        [Test]
+        public async Task MoveFile_TargetDirectoryDoesNotExist ()
+        {
+            using var tmp = TempDir.Create ();
+            var file = TorrentFileInfo.Create (Piece.BlockSize, ("file.txt", 123456, Path.Combine (tmp.Path, "orig.txt"))).Single ();
+            File.OpenWrite (file.FullPath).Close ();
+
+            using var writer = new DiskWriter ((file, access) => null);
+            using var manager = new DiskManager (new EngineSettings (), writer);
+
+            var fullPath = Path.Combine (tmp.Path, "New", "Path", "file.txt");
+            await manager.MoveFileAsync (file, fullPath);
+            Assert.AreEqual (fullPath, file.FullPath);
+            Assert.IsTrue (File.Exists (file.FullPath));
+        }
+
+        [Test]
+        public async Task MoveFiles_DoNotOverwrite ()
+        {
+            using var tmp = TempDir.Create ();
+            using var newRoot = TempDir.Create ();
+
+            var file = TorrentFileInfo.Create (Piece.BlockSize, ("file.txt", 123456, Path.Combine (tmp.Path, "sub_dir", "orig.txt"))).Single ();
+            Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
+            File.OpenWrite (file.FullPath).Close ();
+
+            using var writer = new DiskWriter ((file, access) => null);
+            using var manager = new DiskManager (new EngineSettings (), writer);
+
+            await manager.MoveFilesAsync (new[] { file }, newRoot.Path, false);
+            Assert.AreEqual (Path.Combine (newRoot.Path, file.Path), file.FullPath);
+            Assert.IsTrue (File.Exists (file.FullPath));
+        }
+
+        [Test]
+        public async Task MoveFiles_Overwrite ()
+        {
+            using var tmp = TempDir.Create ();
+            using var newRoot = TempDir.Create ();
+
+            var file = TorrentFileInfo.Create (Piece.BlockSize, ("file.txt", 123456, Path.Combine (tmp.Path, "sub_dir", "orig.txt"))).Single ();
+            Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
+            File.OpenWrite (file.FullPath).Close ();
+
+            using var writer = new DiskWriter ((file, access) => null);
+            using var manager = new DiskManager (new EngineSettings (), writer);
+
+            await manager.MoveFilesAsync (new[] { file }, newRoot.Path, true);
+            Assert.AreEqual (Path.Combine (newRoot.Path, file.Path), file.FullPath);
+            Assert.IsTrue (File.Exists (file.FullPath));
+        }
+
+        [Test]
+        public async Task MoveFiles_Overwrite_SameDir ()
+        {
+            using var tmp = TempDir.Create ();
+
+            var file = TorrentFileInfo.Create (Piece.BlockSize, (Path.Combine ("sub_dir", "orig.txt"), 123456, Path.Combine (tmp.Path, "sub_dir", "orig.txt"))).Single ();
+            Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
+            File.OpenWrite (file.FullPath).Close ();
+
+            using var writer = new DiskWriter ((file, access) => null);
+            using var manager = new DiskManager (new EngineSettings (), writer);
+
+            await manager.MoveFilesAsync (new[] { file }, tmp.Path, true);
+            Assert.AreEqual (Path.Combine (tmp.Path, file.Path), file.FullPath);
+            Assert.IsTrue (File.Exists (file.FullPath));
         }
 
         [Test]

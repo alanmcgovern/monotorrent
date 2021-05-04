@@ -565,6 +565,7 @@ namespace MonoTorrent.Client
                 await Engine.DiskManager.MoveFileAsync ((TorrentFileInfo)file, path);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
+                throw;
             }
         }
 
@@ -577,7 +578,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine.DiskManager.MoveFilesAsync (this, newRoot, overWriteExisting);
+                await Engine.DiskManager.MoveFilesAsync (Files, newRoot, overWriteExisting);
                 SavePath = newRoot;
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);

@@ -95,7 +95,10 @@ namespace MonoTorrent.Client.PieceWriters
 
             if (overwrite)
                 File.Delete (newPath);
-            File.Move (file.FullPath, newPath);
+            if (File.Exists (file.FullPath)) {
+                Directory.CreateDirectory (Path.GetDirectoryName (newPath));
+                File.Move (file.FullPath, newPath);
+            }
         }
 
         public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
