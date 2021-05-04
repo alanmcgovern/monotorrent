@@ -339,13 +339,28 @@ namespace MonoTorrent.Client
         public async Task<TorrentManager> AddAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
         {
             await MainLoop.SwitchThread ();
-            var metadata = new BEncodedDictionary {
+
+            var editor = new TorrentEditor (new BEncodedDictionary {
                 { "info", BEncodedValue.Decode (torrent.InfoMetadata) }
-            };
+            });
+            editor.SetCustom ("name", (BEncodedString) torrent.Name);
+
+            if (torrent.AnnounceUrls.Count > 0) {
+                if (torrent.AnnounceUrls.Count == 1 && torrent.AnnounceUrls [0].Count == 1) {
+                    editor.Announce = torrent.AnnounceUrls.Single ().Single ();
+                } else {
+                    foreach (var tier in torrent.AnnounceUrls) {
+                        var list = new List<string> ();
+                        foreach (var tracker in tier)
+                            list.Add (tracker);
+                        editor.Announces.Add (list);
+                    }
+                }
+            }
 
             var metadataCachePath = Settings.GetMetadataPath (torrent.InfoHash);
             Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
-            File.WriteAllBytes (metadataCachePath, metadata.Encode ());
+            File.WriteAllBytes (metadataCachePath, editor.ToDictionary ().Encode ());
 
             return await AddAsync (null, torrent, saveDirectory, settings);
         }
