@@ -95,6 +95,10 @@ Notable features include:
   </Target>
 
   <ItemGroup>
+    <PackageReference Include="docfx.console" Version="2.57.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
     <PackageReference Include="Mono.Nat" Version="[3.0.1,4.0)" />
     <PackageReference Include="ReusableTasks" Version="[2.0.0,3.0)" />

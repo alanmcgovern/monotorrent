@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "MonoTorrent": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Users\\Alan\\.nuget\\packages\\docfx.console\\2.57.2\\tools\\docfx.exe",
+      "commandLineArgs": "\"C:\\Projects\\monotorrent\\src\\MonoTorrent\\docfx.json\" --serve"
+    }
+  }
+}
