@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Interface IBlockCache
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Interface IBlockCache
+   ">
+    <meta name="generator" content="docfx 2.57.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache">
+  
+  
+  <h1 id="MonoTorrent_Client_PieceWriters_IBlockCache" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache" class="text-break">Interface IBlockCache
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.IDisposable.Dispose()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="MonoTorrent.Client.PieceWriters.html">MonoTorrent.Client.PieceWriters</a></h6>
+  <h6><strong>Assembly</strong>: MonoTorrent.dll</h6>
+  <h5 id="MonoTorrent_Client_PieceWriters_IBlockCache_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public interface IBlockCache : IDisposable</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_PieceWriters_IBlockCache_ReadAsync_" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache.ReadAsync*"></a>
+  <h4 id="MonoTorrent_Client_PieceWriters_IBlockCache_ReadAsync_MonoTorrent_Client_ITorrentData_MonoTorrent_Client_BlockInfo_System_Byte___" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache.ReadAsync(MonoTorrent.Client.ITorrentData,MonoTorrent.Client.BlockInfo,System.Byte[])">ReadAsync(ITorrentData, BlockInfo, Byte[])</h4>
+  <div class="markdown level1 summary"><p>Reads data from the cache and flushes it to disk, or reads the data from disk if it is not available in the cache.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">ReusableTask&lt;bool&gt; ReadAsync(ITorrentData torrent, BlockInfo block, byte[] buffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ITorrentData.html">ITorrentData</a></td>
+        <td><span class="parametername">torrent</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a></td>
+        <td><span class="parametername">block</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ReusableTasks.ReusableTask</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PieceWriters_IBlockCache_ReadFromCacheAsync_" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache.ReadFromCacheAsync*"></a>
+  <h4 id="MonoTorrent_Client_PieceWriters_IBlockCache_ReadFromCacheAsync_MonoTorrent_Client_ITorrentData_MonoTorrent_Client_BlockInfo_System_Byte___" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache.ReadFromCacheAsync(MonoTorrent.Client.ITorrentData,MonoTorrent.Client.BlockInfo,System.Byte[])">ReadFromCacheAsync(ITorrentData, BlockInfo, Byte[])</h4>
+  <div class="markdown level1 summary"><p>If the block of data is available in the cache, the data is read into the buffer and the method returns true.
+If the block is unavailable, the buffer will not be modified and the method will return false.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">ReusableTask&lt;bool&gt; ReadFromCacheAsync(ITorrentData torrent, BlockInfo block, byte[] buffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ITorrentData.html">ITorrentData</a></td>
+        <td><span class="parametername">torrent</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a></td>
+        <td><span class="parametername">block</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ReusableTasks.ReusableTask</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PieceWriters_IBlockCache_WriteAsync_" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache.WriteAsync*"></a>
+  <h4 id="MonoTorrent_Client_PieceWriters_IBlockCache_WriteAsync_MonoTorrent_Client_ITorrentData_MonoTorrent_Client_BlockInfo_System_Byte___System_Boolean_" data-uid="MonoTorrent.Client.PieceWriters.IBlockCache.WriteAsync(MonoTorrent.Client.ITorrentData,MonoTorrent.Client.BlockInfo,System.Byte[],System.Boolean)">WriteAsync(ITorrentData, BlockInfo, Byte[], Boolean)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">ReusableTask WriteAsync(ITorrentData torrent, BlockInfo block, byte[] buffer, bool preferSkipCache)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ITorrentData.html">ITorrentData</a></td>
+        <td><span class="parametername">torrent</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a></td>
+        <td><span class="parametername">block</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">preferSkipCache</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ReusableTasks.ReusableTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

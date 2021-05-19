@@ -1,0 +1,958 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class EditableTorrent
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class EditableTorrent
+   ">
+    <meta name="generator" content="docfx 2.57.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="MonoTorrent.EditableTorrent">
+  
+  
+  <h1 id="MonoTorrent_EditableTorrent" data-uid="MonoTorrent.EditableTorrent" class="text-break">Class EditableTorrent
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">EditableTorrent</span></div>
+      <div class="level2"><a class="xref" href="MonoTorrent.TorrentCreator.html">TorrentCreator</a></div>
+      <div class="level2"><a class="xref" href="MonoTorrent.TorrentEditor.html">TorrentEditor</a></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="MonoTorrent.html">MonoTorrent</a></h6>
+  <h6><strong>Assembly</strong>: MonoTorrent.dll</h6>
+  <h5 id="MonoTorrent_EditableTorrent_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract class EditableTorrent</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  
+  
+  <a id="MonoTorrent_EditableTorrent__ctor_" data-uid="MonoTorrent.EditableTorrent.#ctor*"></a>
+  <h4 id="MonoTorrent_EditableTorrent__ctor" data-uid="MonoTorrent.EditableTorrent.#ctor">EditableTorrent()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected EditableTorrent()</code></pre>
+  </div>
+  
+  
+  <a id="MonoTorrent_EditableTorrent__ctor_" data-uid="MonoTorrent.EditableTorrent.#ctor*"></a>
+  <h4 id="MonoTorrent_EditableTorrent__ctor_MonoTorrent_BEncoding_BEncodedDictionary_" data-uid="MonoTorrent.EditableTorrent.#ctor(MonoTorrent.BEncoding.BEncodedDictionary)">EditableTorrent(BEncodedDictionary)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected EditableTorrent(BEncodedDictionary metadata)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">metadata</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Announce_" data-uid="MonoTorrent.EditableTorrent.Announce*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Announce" data-uid="MonoTorrent.EditableTorrent.Announce">Announce</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Announce { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Announces_" data-uid="MonoTorrent.EditableTorrent.Announces*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Announces" data-uid="MonoTorrent.EditableTorrent.Announces">Announces</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;List&lt;string&gt;&gt; Announces { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.String</span>&gt;&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_CanEditSecureMetadata_" data-uid="MonoTorrent.EditableTorrent.CanEditSecureMetadata*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_CanEditSecureMetadata" data-uid="MonoTorrent.EditableTorrent.CanEditSecureMetadata">CanEditSecureMetadata</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected bool CanEditSecureMetadata { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Comment_" data-uid="MonoTorrent.EditableTorrent.Comment*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Comment" data-uid="MonoTorrent.EditableTorrent.Comment">Comment</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Comment { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_CreatedBy_" data-uid="MonoTorrent.EditableTorrent.CreatedBy*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_CreatedBy" data-uid="MonoTorrent.EditableTorrent.CreatedBy">CreatedBy</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string CreatedBy { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Encoding_" data-uid="MonoTorrent.EditableTorrent.Encoding*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Encoding" data-uid="MonoTorrent.EditableTorrent.Encoding">Encoding</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Encoding { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_InfoDict_" data-uid="MonoTorrent.EditableTorrent.InfoDict*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_InfoDict" data-uid="MonoTorrent.EditableTorrent.InfoDict">InfoDict</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected BEncodedDictionary InfoDict { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Metadata_" data-uid="MonoTorrent.EditableTorrent.Metadata*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Metadata" data-uid="MonoTorrent.EditableTorrent.Metadata">Metadata</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected BEncodedDictionary Metadata { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_PieceLength_" data-uid="MonoTorrent.EditableTorrent.PieceLength*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_PieceLength" data-uid="MonoTorrent.EditableTorrent.PieceLength">PieceLength</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long PieceLength { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Private_" data-uid="MonoTorrent.EditableTorrent.Private*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Private" data-uid="MonoTorrent.EditableTorrent.Private">Private</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Private { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_Publisher_" data-uid="MonoTorrent.EditableTorrent.Publisher*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_Publisher" data-uid="MonoTorrent.EditableTorrent.Publisher">Publisher</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Publisher { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_PublisherUrl_" data-uid="MonoTorrent.EditableTorrent.PublisherUrl*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_PublisherUrl" data-uid="MonoTorrent.EditableTorrent.PublisherUrl">PublisherUrl</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string PublisherUrl { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_CheckCanEditSecure_" data-uid="MonoTorrent.EditableTorrent.CheckCanEditSecure*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_CheckCanEditSecure" data-uid="MonoTorrent.EditableTorrent.CheckCanEditSecure">CheckCanEditSecure()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void CheckCanEditSecure()</code></pre>
+  </div>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_GetCustom_" data-uid="MonoTorrent.EditableTorrent.GetCustom*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_GetCustom_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.GetCustom(MonoTorrent.BEncoding.BEncodedString)">GetCustom(BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BEncodedValue GetCustom(BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_GetCustomSecure_" data-uid="MonoTorrent.EditableTorrent.GetCustomSecure*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_GetCustomSecure_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.GetCustomSecure(MonoTorrent.BEncoding.BEncodedString)">GetCustomSecure(BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BEncodedValue GetCustomSecure(BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_GetDictionary_" data-uid="MonoTorrent.EditableTorrent.GetDictionary*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_GetDictionary_MonoTorrent_BEncoding_BEncodedDictionary_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.GetDictionary(MonoTorrent.BEncoding.BEncodedDictionary,MonoTorrent.BEncoding.BEncodedString)">GetDictionary(BEncodedDictionary, BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected BEncodedDictionary GetDictionary(BEncodedDictionary dictionary, BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">dictionary</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_GetLong_" data-uid="MonoTorrent.EditableTorrent.GetLong*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_GetLong_MonoTorrent_BEncoding_BEncodedDictionary_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.GetLong(MonoTorrent.BEncoding.BEncodedDictionary,MonoTorrent.BEncoding.BEncodedString)">GetLong(BEncodedDictionary, BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected long GetLong(BEncodedDictionary dictionary, BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">dictionary</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_GetString_" data-uid="MonoTorrent.EditableTorrent.GetString*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_GetString_MonoTorrent_BEncoding_BEncodedDictionary_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.GetString(MonoTorrent.BEncoding.BEncodedDictionary,MonoTorrent.BEncoding.BEncodedString)">GetString(BEncodedDictionary, BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected string GetString(BEncodedDictionary dictionary, BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">dictionary</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_RemoveCustom_" data-uid="MonoTorrent.EditableTorrent.RemoveCustom*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_RemoveCustom_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.RemoveCustom(MonoTorrent.BEncoding.BEncodedString)">RemoveCustom(BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void RemoveCustom(BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_RemoveCustomSecure_" data-uid="MonoTorrent.EditableTorrent.RemoveCustomSecure*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_RemoveCustomSecure_MonoTorrent_BEncoding_BEncodedString_" data-uid="MonoTorrent.EditableTorrent.RemoveCustomSecure(MonoTorrent.BEncoding.BEncodedString)">RemoveCustomSecure(BEncodedString)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void RemoveCustomSecure(BEncodedString key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_SetCustom_" data-uid="MonoTorrent.EditableTorrent.SetCustom*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_SetCustom_MonoTorrent_BEncoding_BEncodedString_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.EditableTorrent.SetCustom(MonoTorrent.BEncoding.BEncodedString,MonoTorrent.BEncoding.BEncodedValue)">SetCustom(BEncodedString, BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetCustom(BEncodedString key, BEncodedValue value)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">value</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_SetCustomSecure_" data-uid="MonoTorrent.EditableTorrent.SetCustomSecure*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_SetCustomSecure_MonoTorrent_BEncoding_BEncodedString_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.EditableTorrent.SetCustomSecure(MonoTorrent.BEncoding.BEncodedString,MonoTorrent.BEncoding.BEncodedValue)">SetCustomSecure(BEncodedString, BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetCustomSecure(BEncodedString key, BEncodedValue value)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">value</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_SetDictionary_" data-uid="MonoTorrent.EditableTorrent.SetDictionary*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_SetDictionary_MonoTorrent_BEncoding_BEncodedDictionary_MonoTorrent_BEncoding_BEncodedString_MonoTorrent_BEncoding_BEncodedDictionary_" data-uid="MonoTorrent.EditableTorrent.SetDictionary(MonoTorrent.BEncoding.BEncodedDictionary,MonoTorrent.BEncoding.BEncodedString,MonoTorrent.BEncoding.BEncodedDictionary)">SetDictionary(BEncodedDictionary, BEncodedString, BEncodedDictionary)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void SetDictionary(BEncodedDictionary dictionary, BEncodedString key, BEncodedDictionary value)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">dictionary</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">value</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_SetLong_" data-uid="MonoTorrent.EditableTorrent.SetLong*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_SetLong_MonoTorrent_BEncoding_BEncodedDictionary_MonoTorrent_BEncoding_BEncodedString_System_Int64_" data-uid="MonoTorrent.EditableTorrent.SetLong(MonoTorrent.BEncoding.BEncodedDictionary,MonoTorrent.BEncoding.BEncodedString,System.Int64)">SetLong(BEncodedDictionary, BEncodedString, Int64)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void SetLong(BEncodedDictionary dictionary, BEncodedString key, long value)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">dictionary</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td><span class="parametername">value</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_EditableTorrent_SetString_" data-uid="MonoTorrent.EditableTorrent.SetString*"></a>
+  <h4 id="MonoTorrent_EditableTorrent_SetString_MonoTorrent_BEncoding_BEncodedDictionary_MonoTorrent_BEncoding_BEncodedString_System_String_" data-uid="MonoTorrent.EditableTorrent.SetString(MonoTorrent.BEncoding.BEncodedDictionary,MonoTorrent.BEncoding.BEncodedString,System.String)">SetString(BEncodedDictionary, BEncodedString, String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void SetString(BEncodedDictionary dictionary, BEncodedString key, string value)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedDictionary.html">BEncodedDictionary</a></td>
+        <td><span class="parametername">dictionary</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedString.html">BEncodedString</a></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">value</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,874 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class BEncodedList
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class BEncodedList
+   ">
+    <meta name="generator" content="docfx 2.57.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="MonoTorrent.BEncoding.BEncodedList">
+  
+  
+  <h1 id="MonoTorrent_BEncoding_BEncodedList" data-uid="MonoTorrent.BEncoding.BEncodedList" class="text-break">Class BEncodedList
+  </h1>
+  <div class="markdown level0 summary"><p>Class representing a BEncoded list</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></div>
+    <div class="level2"><span class="xref">BEncodedList</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>&gt;</div>
+    <div><span class="xref">System.Collections.Generic.ICollection</span>&lt;<a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>&gt;</div>
+    <div><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>&gt;</div>
+    <div><span class="xref">System.Collections.IEnumerable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Encode">BEncodedValue.Encode()</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Clone__1___0_">BEncodedValue.Clone&lt;T&gt;(T)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode_System_Byte___">BEncodedValue.Decode(Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode_System_Byte___System_Int32_System_Int32_">BEncodedValue.Decode(Byte[], Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode_System_Byte___System_Int32_System_Int32_System_Boolean_">BEncodedValue.Decode(Byte[], Int32, Int32, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode_System_IO_Stream_">BEncodedValue.Decode(Stream)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode_MonoTorrent_BEncoding_RawReader_">BEncodedValue.Decode(RawReader)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode__1_System_Byte___">BEncodedValue.Decode&lt;T&gt;(Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode__1_System_Byte___System_Int32_System_Int32_">BEncodedValue.Decode&lt;T&gt;(Byte[], Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode__1_System_Byte___System_Int32_System_Int32_System_Boolean_">BEncodedValue.Decode&lt;T&gt;(Byte[], Int32, Int32, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode__1_System_IO_Stream_">BEncodedValue.Decode&lt;T&gt;(Stream)</a>
+    </div>
+    <div>
+      <a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Decode__1_MonoTorrent_BEncoding_RawReader_">BEncodedValue.Decode&lt;T&gt;(RawReader)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="MonoTorrent.BEncoding.html">MonoTorrent.BEncoding</a></h6>
+  <h6><strong>Assembly</strong>: MonoTorrent.dll</h6>
+  <h5 id="MonoTorrent_BEncoding_BEncodedList_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class BEncodedList : BEncodedValue, IList&lt;BEncodedValue&gt;, ICollection&lt;BEncodedValue&gt;, IEnumerable&lt;BEncodedValue&gt;, IEnumerable</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList__ctor_" data-uid="MonoTorrent.BEncoding.BEncodedList.#ctor*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList__ctor" data-uid="MonoTorrent.BEncoding.BEncodedList.#ctor">BEncodedList()</h4>
+  <div class="markdown level1 summary"><p>Create a new BEncoded List with default capacity</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BEncodedList()</code></pre>
+  </div>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList__ctor_" data-uid="MonoTorrent.BEncoding.BEncodedList.#ctor*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList__ctor_System_Collections_Generic_IEnumerable_MonoTorrent_BEncoding_BEncodedValue__" data-uid="MonoTorrent.BEncoding.BEncodedList.#ctor(System.Collections.Generic.IEnumerable{MonoTorrent.BEncoding.BEncodedValue})">BEncodedList(IEnumerable&lt;BEncodedValue&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BEncodedList(IEnumerable&lt;BEncodedValue&gt; list)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>&gt;</td>
+        <td><span class="parametername">list</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList__ctor_" data-uid="MonoTorrent.BEncoding.BEncodedList.#ctor*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList__ctor_System_Int32_" data-uid="MonoTorrent.BEncoding.BEncodedList.#ctor(System.Int32)">BEncodedList(Int32)</h4>
+  <div class="markdown level1 summary"><p>Create a new BEncoded List with the supplied capacity</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BEncodedList(int capacity)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">capacity</span></td>
+        <td><p>The initial capacity</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Count_" data-uid="MonoTorrent.BEncoding.BEncodedList.Count*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Count" data-uid="MonoTorrent.BEncoding.BEncodedList.Count">Count</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Count { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_IsReadOnly_" data-uid="MonoTorrent.BEncoding.BEncodedList.IsReadOnly*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_IsReadOnly" data-uid="MonoTorrent.BEncoding.BEncodedList.IsReadOnly">IsReadOnly</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsReadOnly { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Item_" data-uid="MonoTorrent.BEncoding.BEncodedList.Item*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Item_System_Int32_" data-uid="MonoTorrent.BEncoding.BEncodedList.Item(System.Int32)">Item[Int32]</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BEncodedValue this[int index] { get; set; }</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Add_" data-uid="MonoTorrent.BEncoding.BEncodedList.Add*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Add_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.BEncoding.BEncodedList.Add(MonoTorrent.BEncoding.BEncodedValue)">Add(BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Add(BEncodedValue item)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">item</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_AddRange_" data-uid="MonoTorrent.BEncoding.BEncodedList.AddRange*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_AddRange_System_Collections_Generic_IEnumerable_MonoTorrent_BEncoding_BEncodedValue__" data-uid="MonoTorrent.BEncoding.BEncodedList.AddRange(System.Collections.Generic.IEnumerable{MonoTorrent.BEncoding.BEncodedValue})">AddRange(IEnumerable&lt;BEncodedValue&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void AddRange(IEnumerable&lt;BEncodedValue&gt; collection)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>&gt;</td>
+        <td><span class="parametername">collection</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Clear_" data-uid="MonoTorrent.BEncoding.BEncodedList.Clear*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Clear" data-uid="MonoTorrent.BEncoding.BEncodedList.Clear">Clear()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Clear()</code></pre>
+  </div>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Contains_" data-uid="MonoTorrent.BEncoding.BEncodedList.Contains*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Contains_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.BEncoding.BEncodedList.Contains(MonoTorrent.BEncoding.BEncodedValue)">Contains(BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Contains(BEncodedValue item)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">item</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_CopyTo_" data-uid="MonoTorrent.BEncoding.BEncodedList.CopyTo*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_CopyTo_MonoTorrent_BEncoding_BEncodedValue___System_Int32_" data-uid="MonoTorrent.BEncoding.BEncodedList.CopyTo(MonoTorrent.BEncoding.BEncodedValue[],System.Int32)">CopyTo(BEncodedValue[], Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void CopyTo(BEncodedValue[] array, int arrayIndex)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>[]</td>
+        <td><span class="parametername">array</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">arrayIndex</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Encode_" data-uid="MonoTorrent.BEncoding.BEncodedList.Encode*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Encode_System_Byte___System_Int32_" data-uid="MonoTorrent.BEncoding.BEncodedList.Encode(System.Byte[],System.Int32)">Encode(Byte[], Int32)</h4>
+  <div class="markdown level1 summary"><p>Encodes the list to a byte[]</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int Encode(byte[] buffer, int offset)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to encode the list to</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">offset</span></td>
+        <td><p>The offset to start writing the data at</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_Encode_System_Byte___System_Int32_">BEncodedValue.Encode(Byte[], Int32)</a></div>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Equals_" data-uid="MonoTorrent.BEncoding.BEncodedList.Equals*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Equals_System_Object_" data-uid="MonoTorrent.BEncoding.BEncodedList.Equals(System.Object)">Equals(Object)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object obj)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">obj</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.Equals(System.Object)</span></div>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_GetEnumerator_" data-uid="MonoTorrent.BEncoding.BEncodedList.GetEnumerator*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_GetEnumerator" data-uid="MonoTorrent.BEncoding.BEncodedList.GetEnumerator">GetEnumerator()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerator&lt;BEncodedValue&gt; GetEnumerator()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerator</span>&lt;<a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_GetHashCode_" data-uid="MonoTorrent.BEncoding.BEncodedList.GetHashCode*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_GetHashCode" data-uid="MonoTorrent.BEncoding.BEncodedList.GetHashCode">GetHashCode()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.GetHashCode()</span></div>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_IndexOf_" data-uid="MonoTorrent.BEncoding.BEncodedList.IndexOf*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_IndexOf_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.BEncoding.BEncodedList.IndexOf(MonoTorrent.BEncoding.BEncodedValue)">IndexOf(BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int IndexOf(BEncodedValue item)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">item</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Insert_" data-uid="MonoTorrent.BEncoding.BEncodedList.Insert*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Insert_System_Int32_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.BEncoding.BEncodedList.Insert(System.Int32,MonoTorrent.BEncoding.BEncodedValue)">Insert(Int32, BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Insert(int index, BEncodedValue item)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">item</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_LengthInBytes_" data-uid="MonoTorrent.BEncoding.BEncodedList.LengthInBytes*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_LengthInBytes" data-uid="MonoTorrent.BEncoding.BEncodedList.LengthInBytes">LengthInBytes()</h4>
+  <div class="markdown level1 summary"><p>Returns the size of the list in bytes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int LengthInBytes()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html#MonoTorrent_BEncoding_BEncodedValue_LengthInBytes">BEncodedValue.LengthInBytes()</a></div>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_Remove_" data-uid="MonoTorrent.BEncoding.BEncodedList.Remove*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_Remove_MonoTorrent_BEncoding_BEncodedValue_" data-uid="MonoTorrent.BEncoding.BEncodedList.Remove(MonoTorrent.BEncoding.BEncodedValue)">Remove(BEncodedValue)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Remove(BEncodedValue item)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BEncoding.BEncodedValue.html">BEncodedValue</a></td>
+        <td><span class="parametername">item</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_RemoveAt_" data-uid="MonoTorrent.BEncoding.BEncodedList.RemoveAt*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_RemoveAt_System_Int32_" data-uid="MonoTorrent.BEncoding.BEncodedList.RemoveAt(System.Int32)">RemoveAt(Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void RemoveAt(int index)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_ToString_" data-uid="MonoTorrent.BEncoding.BEncodedList.ToString*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_ToString" data-uid="MonoTorrent.BEncoding.BEncodedList.ToString">ToString()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
+  <h3 id="eii">Explicit Interface Implementations
+  </h3>
+  
+  
+  <a id="MonoTorrent_BEncoding_BEncodedList_System_Collections_IEnumerable_GetEnumerator_" data-uid="MonoTorrent.BEncoding.BEncodedList.System#Collections#IEnumerable#GetEnumerator*"></a>
+  <h4 id="MonoTorrent_BEncoding_BEncodedList_System_Collections_IEnumerable_GetEnumerator" data-uid="MonoTorrent.BEncoding.BEncodedList.System#Collections#IEnumerable#GetEnumerator">IEnumerable.GetEnumerator()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IEnumerator IEnumerable.GetEnumerator()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.IEnumerator</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.Collections.Generic.IList&lt;T&gt;</span>
+  </div>
+  <div>
+      <span class="xref">System.Collections.Generic.ICollection&lt;T&gt;</span>
+  </div>
+  <div>
+      <span class="xref">System.Collections.Generic.IEnumerable&lt;T&gt;</span>
+  </div>
+  <div>
+      <span class="xref">System.Collections.IEnumerable</span>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,970 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class EngineSettings
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class EngineSettings
+   ">
+    <meta name="generator" content="docfx 2.57.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="MonoTorrent.Client.EngineSettings">
+  
+  
+  <h1 id="MonoTorrent_Client_EngineSettings" data-uid="MonoTorrent.Client.EngineSettings" class="text-break">Class EngineSettings
+  </h1>
+  <div class="markdown level0 summary"><p>Represents the Settings which need to be passed to the engine</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">EngineSettings</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IEquatable</span>&lt;<a class="xref" href="MonoTorrent.Client.EngineSettings.html">EngineSettings</a>&gt;</div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="MonoTorrent.Client.html">MonoTorrent.Client</a></h6>
+  <h6><strong>Assembly</strong>: MonoTorrent.dll</h6>
+  <h5 id="MonoTorrent_Client_EngineSettings_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class EngineSettings : IEquatable&lt;EngineSettings&gt;</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings__ctor_" data-uid="MonoTorrent.Client.EngineSettings.#ctor*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings__ctor" data-uid="MonoTorrent.Client.EngineSettings.#ctor">EngineSettings()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public EngineSettings()</code></pre>
+  </div>
+  <h3 id="properties">Properties
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AllowedEncryption_" data-uid="MonoTorrent.Client.EngineSettings.AllowedEncryption*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AllowedEncryption" data-uid="MonoTorrent.Client.EngineSettings.AllowedEncryption">AllowedEncryption</h4>
+  <div class="markdown level1 summary"><p>A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
+Connections will be attempted in the same order as they are in the list. Defaults to <span class="xref">MonoTorrent.Client.EncryptionTypes.All</span>,
+which is <a class="xref" href="MonoTorrent.Client.EncryptionType.html#MonoTorrent_Client_EncryptionType_RC4Header">RC4Header</a>, <a class="xref" href="MonoTorrent.Client.EncryptionType.html#MonoTorrent_Client_EncryptionType_RC4Full">RC4Full</a> and <a class="xref" href="MonoTorrent.Client.EncryptionType.html#MonoTorrent_Client_EncryptionType_PlainText">PlainText</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IList&lt;EncryptionType&gt; AllowedEncryption { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.Client.EncryptionType.html">EncryptionType</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AllowHaveSuppression_" data-uid="MonoTorrent.Client.EngineSettings.AllowHaveSuppression*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AllowHaveSuppression" data-uid="MonoTorrent.Client.EngineSettings.AllowHaveSuppression">AllowHaveSuppression</h4>
+  <div class="markdown level1 summary"><p>Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
+which do not already have that piece. A peer will never request a piece they have already downloaded,
+so informing them that we have that piece is not beneficial. Defaults to <span class="xref">false</span>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AllowHaveSuppression { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AllowLocalPeerDiscovery_" data-uid="MonoTorrent.Client.EngineSettings.AllowLocalPeerDiscovery*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AllowLocalPeerDiscovery" data-uid="MonoTorrent.Client.EngineSettings.AllowLocalPeerDiscovery">AllowLocalPeerDiscovery</h4>
+  <div class="markdown level1 summary"><p>True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to <span class="xref">true</span>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AllowLocalPeerDiscovery { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AllowPortForwarding_" data-uid="MonoTorrent.Client.EngineSettings.AllowPortForwarding*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AllowPortForwarding" data-uid="MonoTorrent.Client.EngineSettings.AllowPortForwarding">AllowPortForwarding</h4>
+  <div class="markdown level1 summary"><p>True if the engine should automatically forward ports using any compatible UPnP or NAT-PMP device.
+Defaults to <span class="xref">true</span>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AllowPortForwarding { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AutoSaveLoadDhtCache_" data-uid="MonoTorrent.Client.EngineSettings.AutoSaveLoadDhtCache*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AutoSaveLoadDhtCache" data-uid="MonoTorrent.Client.EngineSettings.AutoSaveLoadDhtCache">AutoSaveLoadDhtCache</h4>
+  <div class="markdown level1 summary"><p>If set to true dht nodes will be implicitly saved when there are no active <a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a> instances in the engine.
+Dht nodes will be restored when the first <a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a> is started. Otherwise dht nodes will not be cached between
+restarts and the <a class="xref" href="MonoTorrent.Dht.DhtEngine.html">DhtEngine</a> will have to bootstrap from scratch each time.
+Defaults to <span class="xref">true</span>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AutoSaveLoadDhtCache { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AutoSaveLoadFastResume_" data-uid="MonoTorrent.Client.EngineSettings.AutoSaveLoadFastResume*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AutoSaveLoadFastResume" data-uid="MonoTorrent.Client.EngineSettings.AutoSaveLoadFastResume">AutoSaveLoadFastResume</h4>
+  <div class="markdown level1 summary"><p>If set to true FastResume data will be implicitly saved after <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_StopAsync">StopAsync()</a> is invoked,
+and will be implicitly loaded before the <a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a> is returned by <a class="xref" href="MonoTorrent.Client.ClientEngine.html#MonoTorrent_Client_ClientEngine_AddAsync_MonoTorrent_MagnetLink_System_String_">AddAsync(MagnetLink, String)</a>
+Otherwise fast resume data will not be saved or restored and <a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a>
+instances will have to perform a full hash check when they start.
+Defaults to <span class="xref">true</span>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AutoSaveLoadFastResume { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_AutoSaveLoadMagnetLinkMetadata_" data-uid="MonoTorrent.Client.EngineSettings.AutoSaveLoadMagnetLinkMetadata*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_AutoSaveLoadMagnetLinkMetadata" data-uid="MonoTorrent.Client.EngineSettings.AutoSaveLoadMagnetLinkMetadata">AutoSaveLoadMagnetLinkMetadata</h4>
+  <div class="markdown level1 summary"><p>This setting affects torrents downloaded using a <a class="xref" href="MonoTorrent.MagnetLink.html">MagnetLink</a>. When enabled, metadata for the torrent will be loaded
+from <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_MetadataCacheDirectory">MetadataCacheDirectory</a>, if it exists, when the <a class="xref" href="MonoTorrent.MagnetLink.html">MagnetLink</a> is added to the engine using
+<a class="xref" href="MonoTorrent.Client.ClientEngine.html#MonoTorrent_Client_ClientEngine_AddAsync_MonoTorrent_MagnetLink_System_String_">AddAsync(MagnetLink, String)</a>. Additionally, metadata will be written to this directory if it is successfully retrieved
+from peers so future downloads can start immediately.
+Defaults to <span class="xref">true</span>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AutoSaveLoadMagnetLinkMetadata { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_CacheDirectory_" data-uid="MonoTorrent.Client.EngineSettings.CacheDirectory*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_CacheDirectory" data-uid="MonoTorrent.Client.EngineSettings.CacheDirectory">CacheDirectory</h4>
+  <div class="markdown level1 summary"><p>The full path to the directory used to cache any data needed by the engine. Typically used to store a
+cache of the DHT table to improve bootstrapping speed, any metadata downloaded
+using a magnet link, or fast resume data for individual torrents.
+Defaults to a sub-directory of <span class="xref">System.Environment.CurrentDirectory</span> called 'cache'</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string CacheDirectory { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_ConnectionTimeout_" data-uid="MonoTorrent.Client.EngineSettings.ConnectionTimeout*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_ConnectionTimeout" data-uid="MonoTorrent.Client.EngineSettings.ConnectionTimeout">ConnectionTimeout</h4>
+  <div class="markdown level1 summary"><p>If a connection attempt does not complete within the given timeout, it will be cancelled so
+a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
+to keep this value within a range of 7-15 seconds unless absolutely necessary.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TimeSpan ConnectionTimeout { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.TimeSpan</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_DhtPort_" data-uid="MonoTorrent.Client.EngineSettings.DhtPort*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_DhtPort" data-uid="MonoTorrent.Client.EngineSettings.DhtPort">DhtPort</h4>
+  <div class="markdown level1 summary"><p>The UDP port used for DHT communications. Use 0 to choose a random available port.
+Choose -1 to disable DHT. Defaults to 0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int DhtPort { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_DiskCacheBytes_" data-uid="MonoTorrent.Client.EngineSettings.DiskCacheBytes*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_DiskCacheBytes" data-uid="MonoTorrent.Client.EngineSettings.DiskCacheBytes">DiskCacheBytes</h4>
+  <div class="markdown level1 summary"><p>Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
+Set to 0 to disable the cache.
+Defaults to 5MB.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int DiskCacheBytes { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_FastResumeCacheDirectory_" data-uid="MonoTorrent.Client.EngineSettings.FastResumeCacheDirectory*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_FastResumeCacheDirectory" data-uid="MonoTorrent.Client.EngineSettings.FastResumeCacheDirectory">FastResumeCacheDirectory</h4>
+  <div class="markdown level1 summary"><p>This is the full path to a sub-directory of <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_CacheDirectory">CacheDirectory</a>. If <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_AutoSaveLoadFastResume">AutoSaveLoadFastResume</a>
+is enabled then fast resume data will be written to this when <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_StopAsync">StopAsync()</a> or
+<a class="xref" href="MonoTorrent.Client.ClientEngine.html#MonoTorrent_Client_ClientEngine_StopAllAsync">StopAllAsync()</a> is invoked. If fast resume data is available, the data will be loaded
+from disk as part of <a class="xref" href="MonoTorrent.Client.ClientEngine.html#MonoTorrent_Client_ClientEngine_AddAsync_MonoTorrent_MagnetLink_System_String_">AddAsync(MagnetLink, String)</a> or <a class="xref" href="MonoTorrent.Client.ClientEngine.html#MonoTorrent_Client_ClientEngine_AddStreamingAsync_MonoTorrent_MagnetLink_System_String_">AddStreamingAsync(MagnetLink, String)</a>. If
+<a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_StartAsync">StartAsync()</a> is invoked, any on-disk fast resume data will be deleted to eliminate
+the possibility of loading stale data later.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string FastResumeCacheDirectory { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_FastResumeMode_" data-uid="MonoTorrent.Client.EngineSettings.FastResumeMode*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_FastResumeMode" data-uid="MonoTorrent.Client.EngineSettings.FastResumeMode">FastResumeMode</h4>
+  <div class="markdown level1 summary"><p>When <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_AutoSaveLoadFastResume">AutoSaveLoadFastResume</a> is true, this setting is used to control how fast
+resume data is maintained, otherwise it has no effect. You can prioritise accuracy (at the risk of requiring full hash checks if an actively downloading
+torrent does not cleanly enter the <a class="xref" href="MonoTorrent.Client.TorrentState.html#MonoTorrent_Client_TorrentState_Stopped">Stopped</a> state) by choosing <a class="xref" href="MonoTorrent.Client.FastResumeMode.html#MonoTorrent_Client_FastResumeMode_Accurate">Accurate</a>.
+You can prioritise torrent start speed (at the risk of re-downloading a small amount of data) by choosing <a class="xref" href="MonoTorrent.Client.FastResumeMode.html#MonoTorrent_Client_FastResumeMode_BestEffort">BestEffort</a>,
+in which case a recent, not not 100% accurate, copy of the fast resume data will be loaded whenever it is available. if an actively downloading Torrent does not
+cleanly enter the <a class="xref" href="MonoTorrent.Client.TorrentState.html#MonoTorrent_Client_TorrentState_Stopped">Stopped</a> state.
+Defaults to <a class="xref" href="MonoTorrent.Client.FastResumeMode.html#MonoTorrent_Client_FastResumeMode_BestEffort">BestEffort</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FastResumeMode FastResumeMode { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.FastResumeMode.html">FastResumeMode</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_ListenPort_" data-uid="MonoTorrent.Client.EngineSettings.ListenPort*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_ListenPort" data-uid="MonoTorrent.Client.EngineSettings.ListenPort">ListenPort</h4>
+  <div class="markdown level1 summary"><p>The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
+available port. Choose -1 to disable listening for incoming connections. Defaults to 0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int ListenPort { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumConnections_" data-uid="MonoTorrent.Client.EngineSettings.MaximumConnections*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumConnections" data-uid="MonoTorrent.Client.EngineSettings.MaximumConnections">MaximumConnections</h4>
+  <div class="markdown level1 summary"><p>The maximum number of concurrent open connections overall. Defaults to 150.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumConnections { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumDiskReadRate_" data-uid="MonoTorrent.Client.EngineSettings.MaximumDiskReadRate*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumDiskReadRate" data-uid="MonoTorrent.Client.EngineSettings.MaximumDiskReadRate">MaximumDiskReadRate</h4>
+  <div class="markdown level1 summary"><p>The maximum disk read speed, in bytes per second. A value of 0 means unlimited. This is
+typically only useful for non-SSD drives to prevent the hashing process from saturating
+the available drive bandwidth. Defaults to 0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumDiskReadRate { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumDiskWriteRate_" data-uid="MonoTorrent.Client.EngineSettings.MaximumDiskWriteRate*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumDiskWriteRate" data-uid="MonoTorrent.Client.EngineSettings.MaximumDiskWriteRate">MaximumDiskWriteRate</h4>
+  <div class="markdown level1 summary"><p>The maximum disk write speed, in bytes per second. A value of 0 means unlimited. This is
+typically only useful for non-SSD drives to prevent the downloading process from saturating
+the available drive bandwidth. If the download speed exceeds the max write rate then the
+download will be throttled. Defaults to 0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumDiskWriteRate { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumDownloadSpeed_" data-uid="MonoTorrent.Client.EngineSettings.MaximumDownloadSpeed*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumDownloadSpeed" data-uid="MonoTorrent.Client.EngineSettings.MaximumDownloadSpeed">MaximumDownloadSpeed</h4>
+  <div class="markdown level1 summary"><p>The maximum download speed, in bytes per second, overall. A value of 0 means unlimited. Defaults to 0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumDownloadSpeed { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumHalfOpenConnections_" data-uid="MonoTorrent.Client.EngineSettings.MaximumHalfOpenConnections*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumHalfOpenConnections" data-uid="MonoTorrent.Client.EngineSettings.MaximumHalfOpenConnections">MaximumHalfOpenConnections</h4>
+  <div class="markdown level1 summary"><p>The maximum number of concurrent connection attempts overall. Defaults to 8.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumHalfOpenConnections { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumOpenFiles_" data-uid="MonoTorrent.Client.EngineSettings.MaximumOpenFiles*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumOpenFiles" data-uid="MonoTorrent.Client.EngineSettings.MaximumOpenFiles">MaximumOpenFiles</h4>
+  <div class="markdown level1 summary"><p>The maximum number of files which can be opened concurrently. On platforms which limit the maximum
+filehandles for a process it can be beneficial to limit the number of open files to prevent
+running out of resources. A value of 0 means unlimited, but this is not recommended. Defaults to 196.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumOpenFiles { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MaximumUploadSpeed_" data-uid="MonoTorrent.Client.EngineSettings.MaximumUploadSpeed*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MaximumUploadSpeed" data-uid="MonoTorrent.Client.EngineSettings.MaximumUploadSpeed">MaximumUploadSpeed</h4>
+  <div class="markdown level1 summary"><p>The maximum upload speed, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumUploadSpeed { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_MetadataCacheDirectory_" data-uid="MonoTorrent.Client.EngineSettings.MetadataCacheDirectory*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_MetadataCacheDirectory" data-uid="MonoTorrent.Client.EngineSettings.MetadataCacheDirectory">MetadataCacheDirectory</h4>
+  <div class="markdown level1 summary"><p>This is the full path to a sub-directory of <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_CacheDirectory">CacheDirectory</a>. If a magnet link is used
+to download a torrent, the downloaded metata will be cached here.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string MetadataCacheDirectory { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_ReportedAddress_" data-uid="MonoTorrent.Client.EngineSettings.ReportedAddress*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_ReportedAddress" data-uid="MonoTorrent.Client.EngineSettings.ReportedAddress">ReportedAddress</h4>
+  <div class="markdown level1 summary"><p>If the IPAddress incoming peer connections are received on differs from the IPAddress the tracker
+Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
+Defaults to <span class="xref">null</span></p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IPEndPoint ReportedAddress { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_Equals_" data-uid="MonoTorrent.Client.EngineSettings.Equals*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_Equals_MonoTorrent_Client_EngineSettings_" data-uid="MonoTorrent.Client.EngineSettings.Equals(MonoTorrent.Client.EngineSettings)">Equals(EngineSettings)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(EngineSettings other)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.EngineSettings.html">EngineSettings</a></td>
+        <td><span class="parametername">other</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_Equals_" data-uid="MonoTorrent.Client.EngineSettings.Equals*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_Equals_System_Object_" data-uid="MonoTorrent.Client.EngineSettings.Equals(System.Object)">Equals(Object)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object obj)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">obj</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.Equals(System.Object)</span></div>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_GetFastResumePath_" data-uid="MonoTorrent.Client.EngineSettings.GetFastResumePath*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_GetFastResumePath_MonoTorrent_InfoHash_" data-uid="MonoTorrent.Client.EngineSettings.GetFastResumePath(MonoTorrent.InfoHash)">GetFastResumePath(InfoHash)</h4>
+  <div class="markdown level1 summary"><p>Returns the full path to the <a class="xref" href="MonoTorrent.Client.FastResume.html">FastResume</a> file for the specified torrent. This is
+where data will be written to, or loaded from, when <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_AutoSaveLoadFastResume">AutoSaveLoadFastResume</a> is enabled.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string GetFastResumePath(InfoHash infoHash)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.InfoHash.html">InfoHash</a></td>
+        <td><span class="parametername">infoHash</span></td>
+        <td><p>The infohash of the torrent</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_EngineSettings_GetHashCode_" data-uid="MonoTorrent.Client.EngineSettings.GetHashCode*"></a>
+  <h4 id="MonoTorrent_Client_EngineSettings_GetHashCode" data-uid="MonoTorrent.Client.EngineSettings.GetHashCode">GetHashCode()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.GetHashCode()</span></div>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IEquatable&lt;T&gt;</span>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

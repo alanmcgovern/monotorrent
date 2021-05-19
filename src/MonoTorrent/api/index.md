@@ -1,2 +1,3 @@
-# PLACEHOLDER
-TODO: Add .NET projects to the *src* folder and run `docfx` to generate **REAL** *API Documentation*!
+# MonoTorrent API documentation
+
+Explore the API and review the documentation available for the various APIs available in the library. If you are looking for examples which use these APIs, take a look [here](/articles/intro.html).

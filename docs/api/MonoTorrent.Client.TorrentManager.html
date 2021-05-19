@@ -1,0 +1,2027 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class TorrentManager
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class TorrentManager
+   ">
+    <meta name="generator" content="docfx 2.57.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="MonoTorrent.Client.TorrentManager">
+  
+  
+  <h1 id="MonoTorrent_Client_TorrentManager" data-uid="MonoTorrent.Client.TorrentManager" class="text-break">Class TorrentManager
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">TorrentManager</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IEquatable</span>&lt;<a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a>&gt;</div>
+    <div><a class="xref" href="MonoTorrent.Client.ITorrentData.html">ITorrentData</a></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="MonoTorrent.Client.html">MonoTorrent.Client</a></h6>
+  <h6><strong>Assembly</strong>: MonoTorrent.dll</h6>
+  <h5 id="MonoTorrent_Client_TorrentManager_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class TorrentManager : IEquatable&lt;TorrentManager&gt;, ITorrentData</code></pre>
+  </div>
+  <h3 id="properties">Properties
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Bitfield_" data-uid="MonoTorrent.Client.TorrentManager.Bitfield*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Bitfield" data-uid="MonoTorrent.Client.TorrentManager.Bitfield">Bitfield</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BitField Bitfield { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BitField.html">BitField</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_CanUseDht_" data-uid="MonoTorrent.Client.TorrentManager.CanUseDht*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_CanUseDht" data-uid="MonoTorrent.Client.TorrentManager.CanUseDht">CanUseDht</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool CanUseDht { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_CanUseLocalPeerDiscovery_" data-uid="MonoTorrent.Client.TorrentManager.CanUseLocalPeerDiscovery*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_CanUseLocalPeerDiscovery" data-uid="MonoTorrent.Client.TorrentManager.CanUseLocalPeerDiscovery">CanUseLocalPeerDiscovery</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool CanUseLocalPeerDiscovery { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Complete_" data-uid="MonoTorrent.Client.TorrentManager.Complete*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Complete" data-uid="MonoTorrent.Client.TorrentManager.Complete">Complete</h4>
+  <div class="markdown level1 summary"><p>Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
+torrent will not be considered to be Complete until they are downloaded.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Complete { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Engine_" data-uid="MonoTorrent.Client.TorrentManager.Engine*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Engine" data-uid="MonoTorrent.Client.TorrentManager.Engine">Engine</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ClientEngine Engine { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ClientEngine.html">ClientEngine</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Error_" data-uid="MonoTorrent.Client.TorrentManager.Error*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Error" data-uid="MonoTorrent.Client.TorrentManager.Error">Error</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Error Error { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.Error.html">Error</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Files_" data-uid="MonoTorrent.Client.TorrentManager.Files*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Files" data-uid="MonoTorrent.Client.TorrentManager.Files">Files</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IList&lt;ITorrentFileInfo&gt; Files { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.Client.ITorrentFileInfo.html">ITorrentFileInfo</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_HashChecked_" data-uid="MonoTorrent.Client.TorrentManager.HashChecked*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_HashChecked" data-uid="MonoTorrent.Client.TorrentManager.HashChecked">HashChecked</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool HashChecked { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_HashFails_" data-uid="MonoTorrent.Client.TorrentManager.HashFails*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_HashFails" data-uid="MonoTorrent.Client.TorrentManager.HashFails">HashFails</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int HashFails { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_HasMetadata_" data-uid="MonoTorrent.Client.TorrentManager.HasMetadata*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_HasMetadata" data-uid="MonoTorrent.Client.TorrentManager.HasMetadata">HasMetadata</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool HasMetadata { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_InfoHash_" data-uid="MonoTorrent.Client.TorrentManager.InfoHash*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_InfoHash" data-uid="MonoTorrent.Client.TorrentManager.InfoHash">InfoHash</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public InfoHash InfoHash { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.InfoHash.html">InfoHash</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_IsInEndGame_" data-uid="MonoTorrent.Client.TorrentManager.IsInEndGame*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_IsInEndGame" data-uid="MonoTorrent.Client.TorrentManager.IsInEndGame">IsInEndGame</h4>
+  <div class="markdown level1 summary"><p>True if this torrent has activated special processing for the final few pieces</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsInEndGame { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_IsInitialSeeding_" data-uid="MonoTorrent.Client.TorrentManager.IsInitialSeeding*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_IsInitialSeeding" data-uid="MonoTorrent.Client.TorrentManager.IsInitialSeeding">IsInitialSeeding</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsInitialSeeding { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_LastDhtAnnounce_" data-uid="MonoTorrent.Client.TorrentManager.LastDhtAnnounce*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_LastDhtAnnounce" data-uid="MonoTorrent.Client.TorrentManager.LastDhtAnnounce">LastDhtAnnounce</h4>
+  <div class="markdown level1 summary"><p>The time the last announce to the DHT occurred</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTime LastDhtAnnounce { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_LastLocalPeerAnnounce_" data-uid="MonoTorrent.Client.TorrentManager.LastLocalPeerAnnounce*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_LastLocalPeerAnnounce" data-uid="MonoTorrent.Client.TorrentManager.LastLocalPeerAnnounce">LastLocalPeerAnnounce</h4>
+  <div class="markdown level1 summary"><p>The time the last announce using Local Peer Discovery occurred</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTime LastLocalPeerAnnounce { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_MagnetLink_" data-uid="MonoTorrent.Client.TorrentManager.MagnetLink*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_MagnetLink" data-uid="MonoTorrent.Client.TorrentManager.MagnetLink">MagnetLink</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public MagnetLink MagnetLink { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.MagnetLink.html">MagnetLink</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_MetadataPath_" data-uid="MonoTorrent.Client.TorrentManager.MetadataPath*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_MetadataPath" data-uid="MonoTorrent.Client.TorrentManager.MetadataPath">MetadataPath</h4>
+  <div class="markdown level1 summary"><p>The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_MetadataCacheDirectory">MetadataCacheDirectory</a> directory.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string MetadataPath { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Monitor_" data-uid="MonoTorrent.Client.TorrentManager.Monitor*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Monitor" data-uid="MonoTorrent.Client.TorrentManager.Monitor">Monitor</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ConnectionMonitor Monitor { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ConnectionMonitor.html">ConnectionMonitor</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_OpenConnections_" data-uid="MonoTorrent.Client.TorrentManager.OpenConnections*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_OpenConnections" data-uid="MonoTorrent.Client.TorrentManager.OpenConnections">OpenConnections</h4>
+  <div class="markdown level1 summary"><p>The number of peers that this torrent instance is connected to</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int OpenConnections { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_PartialProgress_" data-uid="MonoTorrent.Client.TorrentManager.PartialProgress*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_PartialProgress" data-uid="MonoTorrent.Client.TorrentManager.PartialProgress">PartialProgress</h4>
+  <div class="markdown level1 summary"><p>The download progress in percent (0 -&gt; 100.0) for the files whose priority
+is not set to <a class="xref" href="MonoTorrent.Priority.html#MonoTorrent_Priority_DoNotDownload">DoNotDownload</a>. If every file is marked
+as <a class="xref" href="MonoTorrent.Priority.html#MonoTorrent_Priority_DoNotDownload">DoNotDownload</a> then this returns 0. If no file is
+marked as 'DoNotDownload' then this returns the same value as <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_Progress">Progress</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public double PartialProgress { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Double</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Peers_" data-uid="MonoTorrent.Client.TorrentManager.Peers*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Peers" data-uid="MonoTorrent.Client.TorrentManager.Peers">Peers</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PeerManager Peers { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PeerManager.html">PeerManager</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_PieceLength_" data-uid="MonoTorrent.Client.TorrentManager.PieceLength*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_PieceLength" data-uid="MonoTorrent.Client.TorrentManager.PieceLength">PieceLength</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int PieceLength { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_PieceManager_" data-uid="MonoTorrent.Client.TorrentManager.PieceManager*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_PieceManager" data-uid="MonoTorrent.Client.TorrentManager.PieceManager">PieceManager</h4>
+  <div class="markdown level1 summary"><p>The piecemanager for this TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PieceManager PieceManager { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PieceManager.html">PieceManager</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Progress_" data-uid="MonoTorrent.Client.TorrentManager.Progress*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Progress" data-uid="MonoTorrent.Client.TorrentManager.Progress">Progress</h4>
+  <div class="markdown level1 summary"><p>The download progress in percent (0 -&gt; 100.0). This includes all files, even
+if they are marked as <a class="xref" href="MonoTorrent.Priority.html#MonoTorrent_Priority_DoNotDownload">DoNotDownload</a>. This will return
+'100.0' when all files in the torrent have been downloaded.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public double Progress { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Double</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_SavePath_" data-uid="MonoTorrent.Client.TorrentManager.SavePath*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_SavePath" data-uid="MonoTorrent.Client.TorrentManager.SavePath">SavePath</h4>
+  <div class="markdown level1 summary"><p>The directory to download the files to</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string SavePath { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Settings_" data-uid="MonoTorrent.Client.TorrentManager.Settings*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Settings" data-uid="MonoTorrent.Client.TorrentManager.Settings">Settings</h4>
+  <div class="markdown level1 summary"><p>The settings for with this TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TorrentSettings Settings { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.TorrentSettings.html">TorrentSettings</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Size_" data-uid="MonoTorrent.Client.TorrentManager.Size*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Size" data-uid="MonoTorrent.Client.TorrentManager.Size">Size</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long Size { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_StartTime_" data-uid="MonoTorrent.Client.TorrentManager.StartTime*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_StartTime" data-uid="MonoTorrent.Client.TorrentManager.StartTime">StartTime</h4>
+  <div class="markdown level1 summary"><p>The time the torrent manager was started at</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTime StartTime { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_State_" data-uid="MonoTorrent.Client.TorrentManager.State*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_State" data-uid="MonoTorrent.Client.TorrentManager.State">State</h4>
+  <div class="markdown level1 summary"><p>The current state of the TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TorrentState State { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.TorrentState.html">TorrentState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_StreamProvider_" data-uid="MonoTorrent.Client.TorrentManager.StreamProvider*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_StreamProvider" data-uid="MonoTorrent.Client.TorrentManager.StreamProvider">StreamProvider</h4>
+  <div class="markdown level1 summary"><p>When a <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_Torrent">Torrent</a> or <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_MagnetLink">MagnetLink</a> has been added using
+the 'AddStreamingAsync' methods on <a class="xref" href="MonoTorrent.Client.ClientEngine.html">ClientEngine</a> then this property
+will be non-null and streams can be created to access any of the files in the
+torrent while they are downloading. These streams are fully seekable, and if you
+seek to a position which has not been downloaded already the required pieces will
+be prioritised next.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public StreamProvider StreamProvider { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Streaming.StreamProvider.html">StreamProvider</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Torrent_" data-uid="MonoTorrent.Client.TorrentManager.Torrent*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Torrent" data-uid="MonoTorrent.Client.TorrentManager.Torrent">Torrent</h4>
+  <div class="markdown level1 summary"><p>The Torrent contained within this TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Torrent Torrent { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Torrent.html">Torrent</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_TrackerManager_" data-uid="MonoTorrent.Client.TorrentManager.TrackerManager*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_TrackerManager" data-uid="MonoTorrent.Client.TorrentManager.TrackerManager">TrackerManager</h4>
+  <div class="markdown level1 summary"><p>The tracker connection associated with this TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ITrackerManager TrackerManager { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.Tracker.ITrackerManager.html">ITrackerManager</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_UploadingTo_" data-uid="MonoTorrent.Client.TorrentManager.UploadingTo*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_UploadingTo" data-uid="MonoTorrent.Client.TorrentManager.UploadingTo">UploadingTo</h4>
+  <div class="markdown level1 summary"><p>The number of peers that we are currently uploading to</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int UploadingTo { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_AddPeerAsync_" data-uid="MonoTorrent.Client.TorrentManager.AddPeerAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_AddPeerAsync_MonoTorrent_Client_Peer_" data-uid="MonoTorrent.Client.TorrentManager.AddPeerAsync(MonoTorrent.Client.Peer)">AddPeerAsync(Peer)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;bool&gt; AddPeerAsync(Peer peer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.Peer.html">Peer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_AddPeersAsync_" data-uid="MonoTorrent.Client.TorrentManager.AddPeersAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_AddPeersAsync_System_Collections_Generic_IEnumerable_MonoTorrent_Client_Peer__" data-uid="MonoTorrent.Client.TorrentManager.AddPeersAsync(System.Collections.Generic.IEnumerable{MonoTorrent.Client.Peer})">AddPeersAsync(IEnumerable&lt;Peer&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;int&gt; AddPeersAsync(IEnumerable&lt;Peer&gt; peers)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="MonoTorrent.Client.Peer.html">Peer</a>&gt;</td>
+        <td><span class="parametername">peers</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_ChangePickerAsync_" data-uid="MonoTorrent.Client.TorrentManager.ChangePickerAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_ChangePickerAsync_MonoTorrent_Client_PiecePicking_IPieceRequester_" data-uid="MonoTorrent.Client.TorrentManager.ChangePickerAsync(MonoTorrent.Client.PiecePicking.IPieceRequester)">ChangePickerAsync(IPieceRequester)</h4>
+  <div class="markdown level1 summary"><p>Changes the active piece picker. This can be called when the manager is running, or when it is stopped.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ChangePickerAsync(IPieceRequester requester)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPieceRequester.html">IPieceRequester</a></td>
+        <td><span class="parametername">requester</span></td>
+        <td><p>The new picker to use.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_DhtAnnounceAsync_" data-uid="MonoTorrent.Client.TorrentManager.DhtAnnounceAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_DhtAnnounceAsync" data-uid="MonoTorrent.Client.TorrentManager.DhtAnnounceAsync">DhtAnnounceAsync()</h4>
+  <div class="markdown level1 summary"><p>Perform an announce using the <a class="xref" href="MonoTorrent.Client.ClientEngine.html#MonoTorrent_Client_ClientEngine_DhtEngine">DhtEngine</a> to retrieve more peers. The
+returned task completes as soon as the Dht announce begins.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task DhtAnnounceAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Equals_" data-uid="MonoTorrent.Client.TorrentManager.Equals*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Equals_MonoTorrent_Client_TorrentManager_" data-uid="MonoTorrent.Client.TorrentManager.Equals(MonoTorrent.Client.TorrentManager)">Equals(TorrentManager)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(TorrentManager other)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a></td>
+        <td><span class="parametername">other</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_Equals_" data-uid="MonoTorrent.Client.TorrentManager.Equals*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_Equals_System_Object_" data-uid="MonoTorrent.Client.TorrentManager.Equals(System.Object)">Equals(Object)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object obj)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">obj</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.Equals(System.Object)</span></div>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_GetHashCode_" data-uid="MonoTorrent.Client.TorrentManager.GetHashCode*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_GetHashCode" data-uid="MonoTorrent.Client.TorrentManager.GetHashCode">GetHashCode()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.GetHashCode()</span></div>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_GetPeersAsync_" data-uid="MonoTorrent.Client.TorrentManager.GetPeersAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_GetPeersAsync" data-uid="MonoTorrent.Client.TorrentManager.GetPeersAsync">GetPeersAsync()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;List&lt;PeerId&gt;&gt; GetPeersAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="MonoTorrent.Client.PeerId.html">PeerId</a>&gt;&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_HashCheckAsync_" data-uid="MonoTorrent.Client.TorrentManager.HashCheckAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_HashCheckAsync_System_Boolean_" data-uid="MonoTorrent.Client.TorrentManager.HashCheckAsync(System.Boolean)">HashCheckAsync(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Performs a full hash check, ignoring any previously loaded Fast Resume data or previous hash checks.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task HashCheckAsync(bool autoStart)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">autoStart</span></td>
+        <td><p>True if a the TorrentManager should be started as soon as the hashcheck completes.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_LoadFastResume_" data-uid="MonoTorrent.Client.TorrentManager.LoadFastResume*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_LoadFastResume_MonoTorrent_Client_FastResume_" data-uid="MonoTorrent.Client.TorrentManager.LoadFastResume(MonoTorrent.Client.FastResume)">LoadFastResume(FastResume)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void LoadFastResume(FastResume data)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.FastResume.html">FastResume</a></td>
+        <td><span class="parametername">data</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_LocalPeerAnnounceAsync_" data-uid="MonoTorrent.Client.TorrentManager.LocalPeerAnnounceAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_LocalPeerAnnounceAsync" data-uid="MonoTorrent.Client.TorrentManager.LocalPeerAnnounceAsync">LocalPeerAnnounceAsync()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task LocalPeerAnnounceAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_MoveFileAsync_" data-uid="MonoTorrent.Client.TorrentManager.MoveFileAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_MoveFileAsync_MonoTorrent_Client_ITorrentFileInfo_System_String_" data-uid="MonoTorrent.Client.TorrentManager.MoveFileAsync(MonoTorrent.Client.ITorrentFileInfo,System.String)">MoveFileAsync(ITorrentFileInfo, String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task MoveFileAsync(ITorrentFileInfo file, string path)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ITorrentFileInfo.html">ITorrentFileInfo</a></td>
+        <td><span class="parametername">file</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">path</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_MoveFilesAsync_" data-uid="MonoTorrent.Client.TorrentManager.MoveFilesAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_MoveFilesAsync_System_String_System_Boolean_" data-uid="MonoTorrent.Client.TorrentManager.MoveFilesAsync(System.String,System.Boolean)">MoveFilesAsync(String, Boolean)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task MoveFilesAsync(string newRoot, bool overWriteExisting)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">newRoot</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">overWriteExisting</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_PauseAsync_" data-uid="MonoTorrent.Client.TorrentManager.PauseAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_PauseAsync" data-uid="MonoTorrent.Client.TorrentManager.PauseAsync">PauseAsync()</h4>
+  <div class="markdown level1 summary"><p>Pauses the TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task PauseAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_SaveFastResume_" data-uid="MonoTorrent.Client.TorrentManager.SaveFastResume*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_SaveFastResume" data-uid="MonoTorrent.Client.TorrentManager.SaveFastResume">SaveFastResume()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FastResume SaveFastResume()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.FastResume.html">FastResume</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_SetFilePriorityAsync_" data-uid="MonoTorrent.Client.TorrentManager.SetFilePriorityAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_SetFilePriorityAsync_MonoTorrent_Client_ITorrentFileInfo_MonoTorrent_Priority_" data-uid="MonoTorrent.Client.TorrentManager.SetFilePriorityAsync(MonoTorrent.Client.ITorrentFileInfo,MonoTorrent.Priority)">SetFilePriorityAsync(ITorrentFileInfo, Priority)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task SetFilePriorityAsync(ITorrentFileInfo file, Priority priority)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ITorrentFileInfo.html">ITorrentFileInfo</a></td>
+        <td><span class="parametername">file</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Priority.html">Priority</a></td>
+        <td><span class="parametername">priority</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_SetNeedsHashCheckAsync_" data-uid="MonoTorrent.Client.TorrentManager.SetNeedsHashCheckAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_SetNeedsHashCheckAsync" data-uid="MonoTorrent.Client.TorrentManager.SetNeedsHashCheckAsync">SetNeedsHashCheckAsync()</h4>
+  <div class="markdown level1 summary"><p>Marks the <a class="xref" href="MonoTorrent.Client.TorrentManager.html">TorrentManager</a> as needing a full hash check. If <a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_AutoSaveLoadFastResume">AutoSaveLoadFastResume</a>
+is enabled this method will also delete fast resume data from the location specified by
+<a class="xref" href="MonoTorrent.Client.EngineSettings.html#MonoTorrent_Client_EngineSettings_GetFastResumePath_MonoTorrent_InfoHash_">GetFastResumePath(InfoHash)</a>. This can only be invoked when the <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_State">State</a> is
+<a class="xref" href="MonoTorrent.Client.TorrentState.html#MonoTorrent_Client_TorrentState_Stopped">Stopped</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task SetNeedsHashCheckAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_StartAsync_" data-uid="MonoTorrent.Client.TorrentManager.StartAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_StartAsync" data-uid="MonoTorrent.Client.TorrentManager.StartAsync">StartAsync()</h4>
+  <div class="markdown level1 summary"><p>Starts the TorrentManager</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task StartAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_StopAsync_" data-uid="MonoTorrent.Client.TorrentManager.StopAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_StopAsync" data-uid="MonoTorrent.Client.TorrentManager.StopAsync">StopAsync()</h4>
+  <div class="markdown level1 summary"><p>Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task StopAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_StopAsync_" data-uid="MonoTorrent.Client.TorrentManager.StopAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_StopAsync_System_TimeSpan_" data-uid="MonoTorrent.Client.TorrentManager.StopAsync(System.TimeSpan)">StopAsync(TimeSpan)</h4>
+  <div class="markdown level1 summary"><p>Stops the TorrentManager. The returned task completes as soon as the manager has fully stopped. The final
+tracker announce will be limited to the maximum of either 2 seconds or <code data-dev-comment-type="paramref" class="paramref">timeout</code> seconds.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task StopAsync(TimeSpan timeout)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.TimeSpan</span></td>
+        <td><span class="parametername">timeout</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_ToString_" data-uid="MonoTorrent.Client.TorrentManager.ToString*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_ToString" data-uid="MonoTorrent.Client.TorrentManager.ToString">ToString()</h4>
+  <div class="markdown level1 summary"><p>Overrridden. Returns the name of the torrent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_UpdateSettingsAsync_" data-uid="MonoTorrent.Client.TorrentManager.UpdateSettingsAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_UpdateSettingsAsync_MonoTorrent_Client_TorrentSettings_" data-uid="MonoTorrent.Client.TorrentManager.UpdateSettingsAsync(MonoTorrent.Client.TorrentSettings)">UpdateSettingsAsync(TorrentSettings)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task UpdateSettingsAsync(TorrentSettings settings)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.TorrentSettings.html">TorrentSettings</a></td>
+        <td><span class="parametername">settings</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_WaitForMetadataAsync_" data-uid="MonoTorrent.Client.TorrentManager.WaitForMetadataAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_WaitForMetadataAsync" data-uid="MonoTorrent.Client.TorrentManager.WaitForMetadataAsync">WaitForMetadataAsync()</h4>
+  <div class="markdown level1 summary"><p>Waits for the metadata to be available</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task WaitForMetadataAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_TorrentManager_WaitForMetadataAsync_" data-uid="MonoTorrent.Client.TorrentManager.WaitForMetadataAsync*"></a>
+  <h4 id="MonoTorrent_Client_TorrentManager_WaitForMetadataAsync_System_Threading_CancellationToken_" data-uid="MonoTorrent.Client.TorrentManager.WaitForMetadataAsync(System.Threading.CancellationToken)">WaitForMetadataAsync(CancellationToken)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task WaitForMetadataAsync(CancellationToken token)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">token</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="events">Events
+  </h3>
+  
+  
+  <h4 id="MonoTorrent_Client_TorrentManager_ConnectionAttemptFailed" data-uid="MonoTorrent.Client.TorrentManager.ConnectionAttemptFailed">ConnectionAttemptFailed</h4>
+  <div class="markdown level1 summary"><p>This asynchronous event is raised when an outgoing connection to a peer
+could not be established.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event EventHandler&lt;ConnectionAttemptFailedEventArgs&gt; ConnectionAttemptFailed</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span>&lt;<a class="xref" href="MonoTorrent.Client.ConnectionAttemptFailedEventArgs.html">ConnectionAttemptFailedEventArgs</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <h4 id="MonoTorrent_Client_TorrentManager_PeerConnected" data-uid="MonoTorrent.Client.TorrentManager.PeerConnected">PeerConnected</h4>
+  <div class="markdown level1 summary"><p>This asynchronous event is raised whenever a new incoming, or outgoing, connection
+has successfully completed the handshake process and has been fully established.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event EventHandler&lt;PeerConnectedEventArgs&gt; PeerConnected</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span>&lt;<a class="xref" href="MonoTorrent.Client.PeerConnectedEventArgs.html">PeerConnectedEventArgs</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <h4 id="MonoTorrent_Client_TorrentManager_PeerDisconnected" data-uid="MonoTorrent.Client.TorrentManager.PeerDisconnected">PeerDisconnected</h4>
+  <div class="markdown level1 summary"><p>This asynchronous event is raised whenever an established connection has been
+closed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event EventHandler&lt;PeerDisconnectedEventArgs&gt; PeerDisconnected</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span>&lt;<a class="xref" href="MonoTorrent.Client.PeerDisconnectedEventArgs.html">PeerDisconnectedEventArgs</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <h4 id="MonoTorrent_Client_TorrentManager_PeersFound" data-uid="MonoTorrent.Client.TorrentManager.PeersFound">PeersFound</h4>
+  <div class="markdown level1 summary"><p>Raised whenever new peers are discovered and added. The object will be of type
+<a class="xref" href="MonoTorrent.Client.TrackerPeersAdded.html">TrackerPeersAdded</a>, <a class="xref" href="MonoTorrent.Client.PeerExchangePeersAdded.html">PeerExchangePeersAdded</a>, <a class="xref" href="MonoTorrent.Client.LocalPeersAdded.html">LocalPeersAdded</a>
+or <a class="xref" href="MonoTorrent.Client.DhtPeersAdded.html">DhtPeersAdded</a> depending on the source of the new peers.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event EventHandler&lt;PeersAddedEventArgs&gt; PeersFound</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span>&lt;<a class="xref" href="MonoTorrent.Client.PeersAddedEventArgs.html">PeersAddedEventArgs</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <h4 id="MonoTorrent_Client_TorrentManager_PieceHashed" data-uid="MonoTorrent.Client.TorrentManager.PieceHashed">PieceHashed</h4>
+  <div class="markdown level1 summary"><p>This asynchronous event is raised whenever a piece is hashed, either as part of
+regular downloading, or as part of a <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_HashCheckAsync_System_Boolean_">HashCheckAsync(Boolean)</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event EventHandler&lt;PieceHashedEventArgs&gt; PieceHashed</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span>&lt;<a class="xref" href="MonoTorrent.Client.PieceHashedEventArgs.html">PieceHashedEventArgs</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <h4 id="MonoTorrent_Client_TorrentManager_TorrentStateChanged" data-uid="MonoTorrent.Client.TorrentManager.TorrentStateChanged">TorrentStateChanged</h4>
+  <div class="markdown level1 summary"><p>This asynchronous event is raised whenever the TorrentManager changes state.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event EventHandler&lt;TorrentStateChangedEventArgs&gt; TorrentStateChanged</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span>&lt;<a class="xref" href="MonoTorrent.Client.TorrentStateChangedEventArgs.html">TorrentStateChangedEventArgs</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IEquatable&lt;T&gt;</span>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.ITorrentData.html">ITorrentData</a>
+  </div>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.ITorrentDataExtensions.html#MonoTorrent_Client_ITorrentDataExtensions_BlocksPerPiece_MonoTorrent_Client_ITorrentData_System_Int32_">ITorrentDataExtensions.BlocksPerPiece(ITorrentData, Int32)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.ITorrentDataExtensions.html#MonoTorrent_Client_ITorrentDataExtensions_BytesPerPiece_MonoTorrent_Client_ITorrentData_System_Int32_">ITorrentDataExtensions.BytesPerPiece(ITorrentData, Int32)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.ITorrentDataExtensions.html#MonoTorrent_Client_ITorrentDataExtensions_ByteOffsetToPieceIndex_MonoTorrent_Client_ITorrentData_System_Int64_">ITorrentDataExtensions.ByteOffsetToPieceIndex(ITorrentData, Int64)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.ITorrentDataExtensions.html#MonoTorrent_Client_ITorrentDataExtensions_PieceCount_MonoTorrent_Client_ITorrentData_">ITorrentDataExtensions.PieceCount(ITorrentData)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.ITorrentDataExtensions.html#MonoTorrent_Client_ITorrentDataExtensions_PieceIndexToByteOffset_MonoTorrent_Client_ITorrentData_System_Int32_">ITorrentDataExtensions.PieceIndexToByteOffset(ITorrentData, Int32)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

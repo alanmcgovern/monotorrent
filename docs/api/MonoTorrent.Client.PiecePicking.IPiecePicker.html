@@ -1,0 +1,674 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Interface IPiecePicker
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Interface IPiecePicker
+   ">
+    <meta name="generator" content="docfx 2.57.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker">
+  
+  
+  <h1 id="MonoTorrent_Client_PiecePicking_IPiecePicker" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker" class="text-break">Interface IPiecePicker
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="MonoTorrent.Client.PiecePicking.html">MonoTorrent.Client.PiecePicking</a></h6>
+  <h6><strong>Assembly</strong>: MonoTorrent.dll</h6>
+  <h5 id="MonoTorrent_Client_PiecePicking_IPiecePicker_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public interface IPiecePicker</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_AbortRequests_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.AbortRequests*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_AbortRequests_MonoTorrent_Client_PiecePicking_IPeer_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.AbortRequests(MonoTorrent.Client.PiecePicking.IPeer)">AbortRequests(IPeer)</h4>
+  <div class="markdown level1 summary"><p>Cancel all unreceived requests. No further blocks will be requested from this peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">int AbortRequests(IPeer peer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td><p>The peer whose requests will be cancelled.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><p>The number of requests which were cancelled</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_CancelRequests_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.CancelRequests*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_CancelRequests_MonoTorrent_Client_PiecePicking_IPeer_System_Int32_System_Int32_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.CancelRequests(MonoTorrent.Client.PiecePicking.IPeer,System.Int32,System.Int32)">CancelRequests(IPeer, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Cancel all unreceived requests between startIndex and endIndex.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IList&lt;BlockInfo&gt; CancelRequests(IPeer peer, int startIndex, int endIndex)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td><p>The peer to request the block from</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">startIndex</span></td>
+        <td><p>The lowest piece index to consider</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">endIndex</span></td>
+        <td><p>The highest piece index to consider</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a>&gt;</td>
+        <td><p>The list of requests which were cancelled</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_ContinueAnyExistingRequest_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ContinueAnyExistingRequest*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_ContinueAnyExistingRequest_MonoTorrent_Client_PiecePicking_IPeer_System_Int32_System_Int32_System_Int32_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ContinueAnyExistingRequest(MonoTorrent.Client.PiecePicking.IPeer,System.Int32,System.Int32,System.Int32)">ContinueAnyExistingRequest(IPeer, Int32, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Request any unrequested block from a piece owned by this peer, or any other peer, within the specified bounds.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">BlockInfo? ContinueAnyExistingRequest(IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td><p>The peer to request the block from</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">startIndex</span></td>
+        <td><p>The lowest piece index to consider</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">endIndex</span></td>
+        <td><p>The highest piece index to consider</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">maxDuplicateRequests</span></td>
+        <td><p>The maximum number of concurrent duplicate requests</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_ContinueExistingRequest_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ContinueExistingRequest*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_ContinueExistingRequest_MonoTorrent_Client_PiecePicking_IPeer_System_Int32_System_Int32_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ContinueExistingRequest(MonoTorrent.Client.PiecePicking.IPeer,System.Int32,System.Int32)">ContinueExistingRequest(IPeer, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Request the next unrequested block from a piece owned by this peer, within the specified bounds.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">BlockInfo? ContinueExistingRequest(IPeer peer, int startIndex, int endIndex)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td><p>The peer to request the block from</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">startIndex</span></td>
+        <td><p>The lowest piece index to consider</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">endIndex</span></td>
+        <td><p>The highest piece index to consider</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_CurrentReceivedCount_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.CurrentReceivedCount*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_CurrentReceivedCount" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.CurrentReceivedCount">CurrentReceivedCount()</h4>
+  <div class="markdown level1 summary"><p>Returns the number of blocks which have been received f pieces currently being requested.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">int CurrentReceivedCount()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_CurrentRequestCount_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.CurrentRequestCount*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_CurrentRequestCount" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.CurrentRequestCount">CurrentRequestCount()</h4>
+  <div class="markdown level1 summary"><p>Returns the number of pieces currently being requested.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">int CurrentRequestCount()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_ExportActiveRequests_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ExportActiveRequests*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_ExportActiveRequests" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ExportActiveRequests">ExportActiveRequests()</h4>
+  <div class="markdown level1 summary"><p>Returns a list of all</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IList&lt;ActivePieceRequest&gt; ExportActiveRequests()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.Client.PiecePicking.ActivePieceRequest.html">ActivePieceRequest</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_Initialise_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.Initialise*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_Initialise_MonoTorrent_Client_ITorrentData_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.Initialise(MonoTorrent.Client.ITorrentData)">Initialise(ITorrentData)</h4>
+  <div class="markdown level1 summary"><p>Reset all internal state. Called after <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_StartAsync">StartAsync()</a> or <a class="xref" href="MonoTorrent.Client.TorrentManager.html#MonoTorrent_Client_TorrentManager_StopAsync">StopAsync()</a> is invoked.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void Initialise(ITorrentData torrentData)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.ITorrentData.html">ITorrentData</a></td>
+        <td><span class="parametername">torrentData</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_IsInteresting_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.IsInteresting*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_IsInteresting_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_BitField_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.IsInteresting(MonoTorrent.Client.PiecePicking.IPeer,MonoTorrent.BitField)">IsInteresting(IPeer, BitField)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool IsInteresting(IPeer peer, BitField bitfield)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BitField.html">BitField</a></td>
+        <td><span class="parametername">bitfield</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_PickPiece_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.PickPiece*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_PickPiece_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_BitField_System_Collections_Generic_IReadOnlyList_MonoTorrent_Client_PiecePicking_IPeer__System_Int32_System_Int32_System_Int32_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.PickPiece(MonoTorrent.Client.PiecePicking.IPeer,MonoTorrent.BitField,System.Collections.Generic.IReadOnlyList{MonoTorrent.Client.PiecePicking.IPeer},System.Int32,System.Int32,System.Int32)">PickPiece(IPeer, BitField, IReadOnlyList&lt;IPeer&gt;, Int32, Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IList&lt;BlockInfo&gt; PickPiece(IPeer peer, BitField available, IReadOnlyList&lt;IPeer&gt; otherPeers, int count, int startIndex, int endIndex)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.BitField.html">BitField</a></td>
+        <td><span class="parametername">available</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IReadOnlyList</span>&lt;<a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a>&gt;</td>
+        <td><span class="parametername">otherPeers</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">count</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">startIndex</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">endIndex</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_RequestRejected_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.RequestRejected*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_RequestRejected_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_Client_BlockInfo_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.RequestRejected(MonoTorrent.Client.PiecePicking.IPeer,MonoTorrent.Client.BlockInfo)">RequestRejected(IPeer, BlockInfo)</h4>
+  <div class="markdown level1 summary"><p>Called when a <span class="xref">MonoTorrent.Client.Messages.FastPeer.RejectRequestMessage</span> is received from the <code data-dev-comment-type="paramref" class="paramref">peer</code> to indicate
+the <a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a> will not be fulfilled.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void RequestRejected(IPeer peer, BlockInfo request)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a></td>
+        <td><span class="parametername">request</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  
+  
+  <a id="MonoTorrent_Client_PiecePicking_IPiecePicker_ValidatePiece_" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ValidatePiece*"></a>
+  <h4 id="MonoTorrent_Client_PiecePicking_IPiecePicker_ValidatePiece_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_Client_BlockInfo_System_Boolean__System_Collections_Generic_IList_MonoTorrent_Client_PiecePicking_IPeer___" data-uid="MonoTorrent.Client.PiecePicking.IPiecePicker.ValidatePiece(MonoTorrent.Client.PiecePicking.IPeer,MonoTorrent.Client.BlockInfo,System.Boolean@,System.Collections.Generic.IList{MonoTorrent.Client.PiecePicking.IPeer}@)">ValidatePiece(IPeer, BlockInfo, out Boolean, out IList&lt;IPeer&gt;)</h4>
+  <div class="markdown level1 summary"><p>Called when a <span class="xref">MonoTorrent.Client.Messages.Standard.PieceMessage</span> is received from the <code data-dev-comment-type="paramref" class="paramref">peer</code>. Returns true if the
+piece was requested from this peer and should be accepted, otherwise returns false if the piece was not requested from this peer and should
+be discarded.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool ValidatePiece(IPeer peer, BlockInfo request, out bool pieceComplete, out IList&lt;IPeer&gt; peersInvolved)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a></td>
+        <td><span class="parametername">peer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="MonoTorrent.Client.BlockInfo.html">BlockInfo</a></td>
+        <td><span class="parametername">request</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">pieceComplete</span></td>
+        <td><p>True if this was the final block for the piece</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="MonoTorrent.Client.PiecePicking.IPeer.html">IPeer</a>&gt;</td>
+        <td><span class="parametername">peersInvolved</span></td>
+        <td><p>When <code data-dev-comment-type="paramref" class="paramref">pieceComplete</code> is true this is a non-null list of peers used to download the piece. Otherwise this is null.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.html#MonoTorrent_Client_PiecePicking_IPiecePickerExtensions_CancelRequests_MonoTorrent_Client_PiecePicking_IPiecePicker_MonoTorrent_Client_PiecePicking_IPeer_">IPiecePickerExtensions.CancelRequests(IPiecePicker, IPeer)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.html#MonoTorrent_Client_PiecePicking_IPiecePickerExtensions_ContinueAnyExistingRequest_MonoTorrent_Client_PiecePicking_IPiecePicker_MonoTorrent_Client_PiecePicking_IPeer_System_Int32_System_Int32_">IPiecePickerExtensions.ContinueAnyExistingRequest(IPiecePicker, IPeer, Int32, Int32)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.html#MonoTorrent_Client_PiecePicking_IPiecePickerExtensions_PickPiece_MonoTorrent_Client_PiecePicking_IPiecePicker_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_BitField_">IPiecePickerExtensions.PickPiece(IPiecePicker, IPeer, BitField)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.html#MonoTorrent_Client_PiecePicking_IPiecePickerExtensions_PickPiece_MonoTorrent_Client_PiecePicking_IPiecePicker_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_BitField_System_Collections_Generic_IReadOnlyList_MonoTorrent_Client_PiecePicking_IPeer__">IPiecePickerExtensions.PickPiece(IPiecePicker, IPeer, BitField, IReadOnlyList&lt;IPeer&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.html#MonoTorrent_Client_PiecePicking_IPiecePickerExtensions_PickPiece_MonoTorrent_Client_PiecePicking_IPiecePicker_MonoTorrent_Client_PiecePicking_IPeer_MonoTorrent_BitField_System_Collections_Generic_IReadOnlyList_MonoTorrent_Client_PiecePicking_IPeer__System_Int32_">IPiecePickerExtensions.PickPiece(IPiecePicker, IPeer, BitField, IReadOnlyList&lt;IPeer&gt;, Int32)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

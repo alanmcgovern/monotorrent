@@ -1,0 +1,2169 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/Projects/monotorrent/src/MonoTorrent",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.BEncodedDictionary.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.BEncodedDictionary.html",
+          "hash": "RJkYUR6S4i/cuzzX/2YdrHrkFjmKBV1F5irmcaXvI0k="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.BEncodedList.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.BEncodedList.html",
+          "hash": "fhWPIBQKyozuEIc3KlQ/M++rUsxLEXvHAhJczLtsLkc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.BEncodedNumber.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.BEncodedNumber.html",
+          "hash": "CuUlwr+TL9+SGMaYCxPbKIg2e5njMO8qfNDxvhCDyZI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.BEncodedString.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.BEncodedString.html",
+          "hash": "RRAZPkBpco3EAOLtS/cAnbUwTBEAUzDGAnwBNkWZSZE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.BEncodedValue.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.BEncodedValue.html",
+          "hash": "UBPtUmPDFvBTWMJD0d0J3EV7wbqHtvlgAqPI6UOT9So="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.BEncodingException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.BEncodingException.html",
+          "hash": "98OZ9SwMctfp5JJiGElhn/YrF7RJhREaRkrDC58d0uw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.RawReader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.RawReader.html",
+          "hash": "dQw/NIS35LKpXxalcOSX+k2ZSeouC/1pFC0wMY/SIFk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BEncoding.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BEncoding.html",
+          "hash": "PCeLFAZk49lsAris6QsVCxPG4eVbvK6Z7Nhs749NDM4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.BitField.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.BitField.html",
+          "hash": "tDxzAPKu89KUxQ+n2QAfmh5FbB2NzXVOqLrkMeM+l/g="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.AddressRange.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.AddressRange.html",
+          "hash": "P5vMTiTowuT50azg64oaU6Q9rXwqFLyvkxfEXO9SsFU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.AttemptConnectionEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.AttemptConnectionEventArgs.html",
+          "hash": "aLIfIZY8jy+bQOcHlv2q7G+YvnfX5oj3QBKDWztmKAk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.BanList.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.BanList.html",
+          "hash": "kNEUVkIlXQZ/1TRgmp2wkrarBhj/OuYGmrV4YSHPtKU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.BanListParser.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.BanListParser.html",
+          "hash": "WzxGprfJmAxxtEKdbHCh7TKSYQ8SVIw6JSddxcnQ680="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.BlockEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.BlockEventArgs.html",
+          "hash": "MgDgx5NxxplSWHW4Ki4I4+N4Fg4Xy0KMFbrYNYEqWao="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.BlockInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.BlockInfo.html",
+          "hash": "ClV9qwA1jOzDvc8vGssS0BP9Ml8J8jhgdbXd/tRhkEw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ByteBuffer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ByteBuffer.html",
+          "hash": "HxjUiEgj3ZnSOogSdVyv59+31XoTY5tEj06tgGnjzLU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ClientEngine.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ClientEngine.html",
+          "hash": "VaVBvXMGoH51vV/XwKwqFpCPM7e5MLC2f90SCci2KHY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ConnectionAttemptFailedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ConnectionAttemptFailedEventArgs.html",
+          "hash": "bRt3MTPasZpxhPamY1pKkJRSRIfbJApZszEhPANMYIU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ConnectionFailureReason.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ConnectionFailureReason.html",
+          "hash": "Eo1LCI8HiEklJrTYmJeTxgzFqqBsGCU7bbgAnYGWRmk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ConnectionManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ConnectionManager.html",
+          "hash": "WO8A1D32YZwMbfyLRMuRaHpfzzn2kbxbEPLrbKWpk3w="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ConnectionMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ConnectionMonitor.html",
+          "hash": "W0DOOTq341xvG2bWO7s8r0uJzMnQAcEINfK24YanZuQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Connections.ConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Connections.ConnectionFactory.html",
+          "hash": "SVPMqI/NaOWeLVEKDrt5mkN4DQhTe+A903uzLskPZ1Q="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Connections.IConnection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Connections.IConnection.html",
+          "hash": "BK908XrYNO6NsuVDQh7/A14OvrCURIMvmxH5k1gsUH0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Connections.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Connections.html",
+          "hash": "Lzh69+2IonADUIDd+8xKzHQ92UpdALHTeXKJtk/hMN4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.CriticalExceptionEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.CriticalExceptionEventArgs.html",
+          "hash": "wbeQmBCSPf0DNMOof6QaYQkkGr6H9xNXdxKYbE2DO6I="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.DhtPeersAdded.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.DhtPeersAdded.html",
+          "hash": "eKXMqT2ucozWg4hwP9h+P2Ryj+K2YHnkIbhQd/YAHTs="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.DiskManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.DiskManager.html",
+          "hash": "VtZCD9rrfJ81oPZmrunJitPlOIkzPPMhmO6oJ5KWhxI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.EncryptionType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.EncryptionType.html",
+          "hash": "vKpRVmP5t+DdAcQSBDR7eHmxDoax6NNtrmDR6GQ0frI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.EngineSettings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.EngineSettings.html",
+          "hash": "cniX/mHlW8l26QoAh5VdTvU4hGtExriHF1mNq3bP+9g="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.EngineSettingsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.EngineSettingsBuilder.html",
+          "hash": "jtf3N6cjmP3suWz6W1+CVJXRxNg2fW4a8qPP08WQ4ZM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Error.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Error.html",
+          "hash": "AqHU6uD/LZ5xjl482dXv3Aav6HKIFvCap4cDWH7YFbU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.FastResume.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.FastResume.html",
+          "hash": "wv2aRRiVnnDfPi7m0TU6CEsXFlQFeN6JxreQeQlRX2I="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.FastResumeMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.FastResumeMode.html",
+          "hash": "AGXR58HEbzPn/ghGZ2jgHc5SGs+mDzQUhc4FUO9EKzs="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ILocalPeerDiscovery.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ILocalPeerDiscovery.html",
+          "hash": "PBtHWogWpcuKxnySB80QUOTjFkMI42QPtnkA+6eErlU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ITorrentData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ITorrentData.html",
+          "hash": "LDGv00Q0D4HdgPCrvaI4NYywGnC4kJN/FYzzXkE/OTE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ITorrentDataExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ITorrentDataExtensions.html",
+          "hash": "7a2Za8kuzKT75+gXNRJ0Y3ylCE031IYANVWWSapBbyE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ITorrentFileInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ITorrentFileInfo.html",
+          "hash": "jXaohPi9V0u7q9mB6aiwT5cDXyTjWpqY2w/t/3L65FU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.ITorrentFileInfoExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.ITorrentFileInfoExtensions.html",
+          "hash": "xOWpRXI8EjxrGgq8aH+JRhOOfRBggjxc1a5Q9WXoiXM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Listeners.IPeerListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Listeners.IPeerListener.html",
+          "hash": "CZ4AVj156QzYc6EFPmXCkUOaou+G1vhUBollldUMy0s="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Listeners.PeerListenerFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Listeners.PeerListenerFactory.html",
+          "hash": "et6tUSFlKzubKi00Xaj7+mrwVkgJy4E13CSWoqvNBs4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Listeners.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Listeners.html",
+          "hash": "sk1laU/R4xqsBEHovsfGBO85EC/SOqaHrT/IwGSiFRY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.LocalPeerFoundEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.LocalPeerFoundEventArgs.html",
+          "hash": "TVytcnmP4dF2DEAiCuJhTwQXRfHLoH8o8/lXBkoZ/VY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.LocalPeersAdded.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.LocalPeersAdded.html",
+          "hash": "9sWJozZc25D20t/zRT5PpC6BSqjU9tZI0s1AmZRbdfE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.NewConnectionEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.NewConnectionEventArgs.html",
+          "hash": "rZDRs3vrg4/SKNu69+sNNLveHB0Te9fd4WE8OgP4r1k="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Peer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Peer.html",
+          "hash": "M0fl3SKTKPpasxv3Hus0kmpVaBLeCMWFlPe0OgrYaOY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeerAddedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeerAddedEventArgs.html",
+          "hash": "gy/KIu9edeqxeOlZjzJVKNrJ7XjMQMJ/ujr5drxjJEs="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeerConnectedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeerConnectedEventArgs.html",
+          "hash": "82gNbumYe4LS7Nq9OEhyftPJK+v763w8mCyH3CKM5/8="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeerDisconnectedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeerDisconnectedEventArgs.html",
+          "hash": "A3iwV56K3frJJRRkI9+5Ggnb1VCCu312p1wIxTy7Suw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeerExchangePeersAdded.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeerExchangePeersAdded.html",
+          "hash": "mX9aDUoB4EcOpGf5uEailCVhQLrnNwo2t9uSfujel68="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeerId.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeerId.html",
+          "hash": "ucOoptPzHGB3ZuCWvmb3E0pcvcoUnJQZFdke0JD4MQY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeerManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeerManager.html",
+          "hash": "J+e0B82YpY9DlLXeVNRFNwoUW5Ng8nOK6/4TabGL2vc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PeersAddedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PeersAddedEventArgs.html",
+          "hash": "w5JvrVhoGLU9zGhT5eeeRJbRwmVq65HLkrb+efEo5ac="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PieceHashedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PieceHashedEventArgs.html",
+          "hash": "h0nCUgCgZkKumr3efWGAC58f2Vq8XrhtTvmceD1a/MQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PieceManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PieceManager.html",
+          "hash": "YBfvogsDip5Qmh9jfxbOB/vkPlUaWGCLtqc6xBu/MfU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.ActivePieceRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.ActivePieceRequest.html",
+          "hash": "PwEr5LLJaxR8dpTbLXtyxk8Aw0Z6LqQDFnEk5QMRk5E="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.IPeer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.IPeer.html",
+          "hash": "V7IQHH0obP+2Tx1p4vuvLuVS243MNntb4oBLuXskPBE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.IPeerWithMessaging.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.IPeerWithMessaging.html",
+          "hash": "MvMKvd+PJa1g4qqsN1a9RmMG8JLPo2Uzb02tS8euitU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.IPiecePicker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.IPiecePicker.html",
+          "hash": "HxikHJZzwVk7AMnavtXEarLJXSur5spNw56BEySRH34="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.IPiecePickerExtensions.html",
+          "hash": "g44Qh8QhhS9CsZb+iVKI2QVBRH3ViG0T4wDgJhT3p1k="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.IPieceRequester.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.IPieceRequester.html",
+          "hash": "BhnhSLoP8f7q6nCX6kghWMLkyUCgloPf+bGIzM9p/kg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.IgnoringPicker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.IgnoringPicker.html",
+          "hash": "SvARGKTNIAFI6NsBKlFtgWTW2yALOGct3woQkeV6n+c="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.PiecePickerFilter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.PiecePickerFilter.html",
+          "hash": "bbCJw2uSIfSYjgbVNrGmPtd7PW8SLNfE8ekjWID4ulM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.PriorityPicker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.PriorityPicker.html",
+          "hash": "6+wIhyemy2Lz9YX/K/wB3LBk73cvs+mKe3SQj9KQOlw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.RandomisedPicker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.RandomisedPicker.html",
+          "hash": "qw7yaK2q2ouzgZMgiAe6qKBSi6NOzyfY7oAbODA0HVI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.RarestFirstPicker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.RarestFirstPicker.html",
+          "hash": "7+mILxPsNtYjR/yIpXJ59LQXb23qr640n7SBBGfiwcI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.StandardPicker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.StandardPicker.html",
+          "hash": "ddIs2TsnQFoj+fo//L558MM9kQacTM8Cpnb5adCntMo="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.StreamingPieceRequester.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.StreamingPieceRequester.html",
+          "hash": "9BfAF15+pilWrXKXVAx+H7WyCv84pTCc6wOYkivdyfM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PiecePicking.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PiecePicking.html",
+          "hash": "vT65rGDsDcofZw3cEHKpogUUuxArzfHsFKWtPauc85E="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PieceWriters.DiskWriter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PieceWriters.DiskWriter.html",
+          "hash": "bTYa4Pxsx6vun7zG/0liXkFj4IyYUpcyGZP04Q3b0Sg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PieceWriters.IBlockCache.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PieceWriters.IBlockCache.html",
+          "hash": "7CVAsY6RrEFpaHnvPY3AO7l0QpyGNO/U3u+dTD65JZI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PieceWriters.IPieceWriter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PieceWriters.IPieceWriter.html",
+          "hash": "HnwkMWIJvLc9T8bBiu6ZUa3i6xsevb2idrZnJqYQ29c="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PieceWriters.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PieceWriters.html",
+          "hash": "FCuAQ4SMN8S/WNP9PGQwsGCL5t6m6nkldjun7csVdpE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PortForwarding.Mapping.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PortForwarding.Mapping.html",
+          "hash": "9C9rYpULsJXOXF1FV2bfXO0NpNYOUkt+jXDvbs/PpPg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PortForwarding.Mappings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PortForwarding.Mappings.html",
+          "hash": "dWrFs9t9f0oAyhz6UlvQQNmkdpAVoXbEL3zcx+FKVd0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PortForwarding.Protocol.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PortForwarding.Protocol.html",
+          "hash": "s1ckm5G6MroZ3LFaCgAE+UHSvvWHcHoLQXP8V/2qNik="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.PortForwarding.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.PortForwarding.html",
+          "hash": "tOL2eauawQde0KnlfGzy0t2lll0QG1suD+SxHnVr2t0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Reason.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Reason.html",
+          "hash": "pBoi95Oo42zdwgTvHhGoCOM6L5C73YMgT5E8BC9vj9k="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.RemoveMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.RemoveMode.html",
+          "hash": "8TKOXYyHXslLlhY73g1HyYVsGBTYN3ZSN7Vv0LF9ZKI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.StatsUpdateEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.StatsUpdateEventArgs.html",
+          "hash": "9n5KCCawD0kGST1BZolVk/dj/YOcb5dgBoYYwJd3j5Y="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TorrentEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TorrentEventArgs.html",
+          "hash": "yig1BzvSmD53ZKacxeY1BxV6y3kK3A59kA9xE3cvAkk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TorrentManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TorrentManager.html",
+          "hash": "8ZJI//fdu2Og7JB2+bNX7LWXTddjUhB6gY4J4VcuZ3M="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TorrentSettings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TorrentSettings.html",
+          "hash": "AroAadw/T7lNyFREztrw7gFvvUEMTOOQ86OGfHzmFUk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TorrentSettingsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TorrentSettingsBuilder.html",
+          "hash": "Q98CbxtvkBZEz+wFyFMPgnvT+Pxmg9BiNhE/4PDix8s="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TorrentState.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TorrentState.html",
+          "hash": "/ZBYyiyggKCFc0kIOj8RaOtX+L/nuR2JRMWiSDeC98g="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TorrentStateChangedEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TorrentStateChangedEventArgs.html",
+          "hash": "PpOVGkCsJzxE1tiS7p/4xM+JR8ygVWFZ2ODHHA5wiXQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.AnnounceParameters.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.AnnounceParameters.html",
+          "hash": "ccRgpP5TQWMFQHy/EH6KY5OyQQ6lP52RB/AIR3gmYBs="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.AnnounceResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.AnnounceResponse.html",
+          "hash": "kNi7I0RR3mz6VdRr3M5p+inTcu/eZYar0liUxWkZGMk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.AnnounceResponseEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.AnnounceResponseEventArgs.html",
+          "hash": "P5W1bYmtSJH+GmyJ5NNSoAKi5kjzpGCRe8zKVKxUAk4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.ITracker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.ITracker.html",
+          "hash": "oCG6zoQEn2tHCijlkR769LPNP0p23ZkJndxjaj0XuUg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.ITrackerManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.ITrackerManager.html",
+          "hash": "opSFwAwiVW6wy7GcyUSADjnHWz00LqDItkWmh+1EcQ4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.ScrapeParameters.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.ScrapeParameters.html",
+          "hash": "WdPGtZRz7WpWC5DnRZFINzlW62VL3fqKyrHX3OpwFeE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.ScrapeResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.ScrapeResponse.html",
+          "hash": "eKywKytKrXUmKzEj8JIhMoxIS5mawZF42DK0huOOa48="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.ScrapeResponseEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.ScrapeResponseEventArgs.html",
+          "hash": "kaW+/XZ9IYa89L8wOr3I14sqNiDhtYntVusQEJqrktg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.TrackerException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.TrackerException.html",
+          "hash": "9l/K8+ki5RGm24Tc/IGWY4y1/Hy/H59gSg9faHDNsLc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.TrackerFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.TrackerFactory.html",
+          "hash": "N1sWcFnFDvjyKO0o2HpPmO0slM4PNB8RxjzIMfnoYfY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.TrackerResponseEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.TrackerResponseEventArgs.html",
+          "hash": "mfjvkP4JJO7ThT9x9Xtx6m+xXBab+F8slxPeBo0lYuE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.TrackerState.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.TrackerState.html",
+          "hash": "bpcwYzMQCw444xaCThtPYLvkJsVmjTDsihMsdDGPXAg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.TrackerTier.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.TrackerTier.html",
+          "hash": "Uu4n90HcaUqu7SPl9xAkGIfsP9rFRWApmxH9oMquhyg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.Tracker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.Tracker.html",
+          "hash": "Y9Vc9VH3uLW0hNICF/Bx3qmDCH7y7UX19+pXkI0EGLI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.TrackerPeersAdded.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.TrackerPeersAdded.html",
+          "hash": "oo2grRsHTmt4DuC1L/THo4u5Jc2ebH66vLGF+LRRLTQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Client.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Client.html",
+          "hash": "TFw7ATVEIsvrHJQr4DF9KUCQTc7VToT7+gk6THA6G4U="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.ClientApp.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.ClientApp.html",
+          "hash": "NrZUPVleXsBk3qq3g/sGwO3fPv1V7aI7jQEe8Ajs7CE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.DhtEngine.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.DhtEngine.html",
+          "hash": "28Mx8ymTniEcPTaDDopMIZ8UKPW/ElnE2ywvRGQcGvU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.DhtState.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.DhtState.html",
+          "hash": "0JKbomIbXk9oSJYYXHlNJT8nupgQfaIK9WtiW3AamCQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.IDhtEngine.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.IDhtEngine.html",
+          "hash": "2IYjek/I6WpOzl8ksGeaznoJePZjg850pHVm8OyCDtU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.Listeners.DhtListenerFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.Listeners.DhtListenerFactory.html",
+          "hash": "m+Ogq78RmSCKTTv1fdBSSC3CLuFZqngEP4omTKjquSI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.Listeners.IDhtListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.Listeners.IDhtListener.html",
+          "hash": "ESacV8gQYwMKmfnmgDnntX7MXUYDUSNXJw8qdBpLyp8="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.Listeners.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.Listeners.html",
+          "hash": "E8g8CGkLF8Ph7AgC0OO36lXnNkaV4jO4YrIML4b9kQo="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.PeersFoundEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.PeersFoundEventArgs.html",
+          "hash": "uvpsPOX5M11+tMedaV8iN+f28DgmRap+Y4KCSLNBErY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Dht.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Dht.html",
+          "hash": "Qi9dcTL/ylzc62v1iH3oLFofn4sToCC5qv7K3paqB2c="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Direction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Direction.html",
+          "hash": "2RCY+0zrX3QMIQdvAZ1rO2o+xQFU+fvAOIaRf9qH3aw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.EditableTorrent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.EditableTorrent.html",
+          "hash": "ElZnjAoGSR1KnqPpBfz0NocnmYvRAhft7hIHZU75VgU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.FileMapping.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.FileMapping.html",
+          "hash": "2QodJgxGyjdfC9mHOUB5J9qvKuWO2DLbpN9lVOd4QOc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Hashes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Hashes.html",
+          "hash": "YUdVN6mPyNQJGWiptOLBqpvVwvictTp0IgY7l6yEWrQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.IListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.IListener.html",
+          "hash": "2H0cpdUOZR/cIpyTV5lcgqktVEljSSzbXNaV40UUPXk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.ISocketListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.ISocketListener.html",
+          "hash": "kwhQ8xNLGF+l+dL269mLCjxOx0igau2S+kkz900s+7E="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.ISocketMessageListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.ISocketMessageListener.html",
+          "hash": "2h26YoHiIt7wxGHo5HDwqlgObAz1fsp7l1vdTqIo8Ew="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.ITorrentFile.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.ITorrentFile.html",
+          "hash": "YXlW4Ot2f2pBjPRH8uHH2BAPrBXcvcs/ftcUWfb6SJA="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.ITorrentFileSource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.ITorrentFileSource.html",
+          "hash": "0jw3ksAO5CweDuuUw5TuFyQtmv183bUcCh3P7jz7EKU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.InfoHash.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.InfoHash.html",
+          "hash": "cbKVH5i6l7omR4ClAv5aK3AaURk2pM55ZwnplBUgDUY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.ListenerStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.ListenerStatus.html",
+          "hash": "b8R3xc+WhJZeLVi0DIA1kYjuY4+e7sBUQjJjoXtjYXM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Logging.ILogger.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Logging.ILogger.html",
+          "hash": "nxfhJioBJalzguFW5rHY5+CqVWxrkY+gc2sKdseVWVo="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Logging.Logger.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Logging.Logger.html",
+          "hash": "BmXXJQs88IVhwktuTnlewHql9QvXVzM0m6874gDSPXc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Logging.TextLogger.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Logging.TextLogger.html",
+          "hash": "IvyVJxb4FXrej6AqKqMLzLSPM9RTK1WyjNiw3H1x/5w="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Logging.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Logging.html",
+          "hash": "q/PyzmIDuT559RJfI0zNGTUx875dysalFXfWuFVu4Mc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.MagnetLink.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.MagnetLink.html",
+          "hash": "IIHGr1NNGAGS1gsfrA92EKzwUOL9dDhNarVtSyiOtKw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.MutableBitField.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.MutableBitField.html",
+          "hash": "rsshGu1aUnoY+SgjNM5CEFPKyJVTk/DSaNEblxTPp4I="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Priority.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Priority.html",
+          "hash": "jlo8a9iiAL/NOyC7wvJFs66j8EboI4Jri+jvQ5zlPQQ="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Software.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Software.html",
+          "hash": "XAML2LmMODMPEDnfHLrkddqnNa9uGKIc8M7q+A4bG9k="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.SpeedMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.SpeedMonitor.html",
+          "hash": "bOTCG7rRNclVcKMSvSjiNFjGZyasjFyReYJ3Q5xa9O0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Streaming.IUriStream.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Streaming.IUriStream.html",
+          "hash": "yY0sZJwqvxHEm9OlA3FvtBIEQBiTkxTYTdxZdO8w4yw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Streaming.StreamProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Streaming.StreamProvider.html",
+          "hash": "iMdxQ/xobFGfa3dIm+8kU9FRlQzXlN35c6sJnXYzdpY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Streaming.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Streaming.html",
+          "hash": "VRX65TC4F5y9DnA19+zQwA9+l/LsFnb24R/9+Q9Bgkw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Torrent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Torrent.html",
+          "hash": "/FiP/YMtcuLdORfpR5sQQp0ZDLTRgzg6vKG5o9aAYlg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentCreator.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentCreator.html",
+          "hash": "idf3WEfQKy8KKhutTK9zjlLIZD9sE+d014BpMcFB8gs="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentCreatorEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentCreatorEventArgs.html",
+          "hash": "h0A2XIc+JHGLovHdFm0AsGcDcPmgJjOTjq3dPVjc40c="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentEditor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentEditor.html",
+          "hash": "XDbtpcMpA1wGqp8gWVp+ZMF/ZFwo0ztLngzafYVEt1A="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentEvent.html",
+          "hash": "rN5cX8PrBWi9AEvmMxXG54MVXwDZSTY+haZvMEAL+mI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentException.html",
+          "hash": "Z4fUoVM+Qf01ufpoi9opVOyeiQhwfTQXgtSASuEtUTE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentFile.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentFile.html",
+          "hash": "JFisEKB8rYHuF2jVZS5htf7qghurORd1Z4m27CeJwkM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentFileSource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentFileSource.html",
+          "hash": "7c6JVOKpEXEo3f6JcfNaLcXrOnRQbsifoQZVQjNopzw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentWatcher.ITorrentWatcher.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentWatcher.ITorrentWatcher.html",
+          "hash": "oL0uhtjItkfgX+CDKbXKYiP1vIdderFv6DX0xY0xP8s="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentWatcher.TorrentFolderWatcher.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentWatcher.TorrentFolderWatcher.html",
+          "hash": "Jr+VK9a5kbzw6SVFLRMlkbsthG/zo7Vwxl1NfqHD2Xc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentWatcher.TorrentWatcherEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentWatcher.TorrentWatcherEventArgs.html",
+          "hash": "u9y9IHqXp1yyHBJu7CmltVCkKsmVFqFj+TOflHPuRm0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentWatcher.TorrentWatchers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentWatcher.TorrentWatchers.html",
+          "hash": "qDIKDl+2CQ899pKAK87twEZt3Dwj7Lx39a4JgauIFqE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.TorrentWatcher.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.TorrentWatcher.html",
+          "hash": "dD2nSM8kwRseOHcmkc3I8K1BrsGrmj+6K3ST7dWTgGU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.AnnounceEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.AnnounceEventArgs.html",
+          "hash": "QKD5vIswVPMvbW3cTp3zLJWhP3vWwvXLwnOIa7/TsV4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.AnnounceRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.AnnounceRequest.html",
+          "hash": "YpqTwVNchb8BOWRfBybRKXqWcGzTHh3AAG8sWAuhLDI="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.ClientAddressComparer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.ClientAddressComparer.html",
+          "hash": "7DehQMVwd8ZohDGIP9LYXFe2tzRpdFpMDaYPaJ9/bM0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.IPeerComparer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.IPeerComparer.html",
+          "hash": "SUQiyd3h+EQ5nNPU+RCvX73lhAjZwwx5kOU0RNgMrKE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.ITrackable.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.ITrackable.html",
+          "hash": "RMFqncFYY3beHra2Ud/lm1e5AVtRryriBvNKAfarUN8="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.ITrackerItem.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.ITrackerItem.html",
+          "hash": "WUbhXCDcCNA8ajY+VYnzXpzkEnM+kSQgNuVSIHkFcgY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.InfoHashTrackable.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.InfoHashTrackable.html",
+          "hash": "JSZmO0eSkz4dVL8G9WeAplZspd8oO8wG6raXz1PS5mM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.Listeners.ITrackerListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.Listeners.ITrackerListener.html",
+          "hash": "5qLp8deo+uTgKdmrvi2rjW40AdDiivxNsVyt6J0NYjY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.Listeners.TrackerListenerFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.Listeners.TrackerListenerFactory.html",
+          "hash": "BQkQUjXT/7kD/h/jaO9nRVFPIbf4FoA+XAye+EIG9HM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.Listeners.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.Listeners.html",
+          "hash": "bOUQC3ZPJLIE78633NAZj54JFfsJQgTCOEU+gR0RMKw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.Peer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.Peer.html",
+          "hash": "DCpbbvR6wbgV5LSVdkvUO9tMzwRVCJqIDYj9OH7IVKM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.PeerEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.PeerEventArgs.html",
+          "hash": "fAB/0nWBEIx1lDv3uW0tn6P7Zxw1jipJnJzW736b9vM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.PeerIdComparer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.PeerIdComparer.html",
+          "hash": "QIQpa2NRcAMjb1ZLYaSFg2q7BCBUkyab9YsSJ4Lwdxw="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.RequestMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.RequestMonitor.html",
+          "hash": "LTE63J8Yf2c7ZukmFZwmJjri978IcwKBB+rwPswLvYY="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.ScrapeEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.ScrapeEventArgs.html",
+          "hash": "Nb5zW5FT4S9lSiJdTmTtmYL7TFPKW3cyL141rbVDrsM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.TimedOutEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.TimedOutEventArgs.html",
+          "hash": "yw42jIt6arJozXY4ugOyryYOkpXRI7StJEFAb00Z18o="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.TrackerException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.TrackerException.html",
+          "hash": "OLpz9duk72DZFTyDOA9qruWgqIgs0UuRqXTrHed7jqM="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.TrackerRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.TrackerRequest.html",
+          "hash": "gFsiCSuUcVC71Ht8BG6osllnvbwUlsuzcfxZRvldYRE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.TrackerScrapeRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.TrackerScrapeRequest.html",
+          "hash": "ETpXNoH+fcdXImlapx/MCN/w9virb+XBsdkYqd5LnX0="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.TrackerServer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.TrackerServer.html",
+          "hash": "yPAniEqOnpGrfSLg4K2IUWLw8Shu1dhihtuk/WoV2ZU="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.Tracker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.Tracker.html",
+          "hash": "wOOgCRx549oaz3/IP5L/rlEp5IC8KD8CQd5jQtlccXg="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.VersionInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.VersionInfo.html",
+          "hash": "UfRMCuYljvPGKyQPgM4+4iAyluk+kfN0U/VaOQEtnRc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/MonoTorrent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/MonoTorrent.html",
+          "hash": "TaYgzMF6eqXQejEq70LjxhtzVCigI57JUbB0tsZD4I4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "api/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/index.html",
+          "hash": "OEL0RgMiqOB4TFMqxHhsl8VQoG6XrezlukC3+7Nv6W8="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "fpReocRAqH+CErli2/1Ftkxx9wKB3G6020V/EZQrNUg="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/intro.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/intro.html",
+          "hash": "pIi+2eXCkzeD4RLrShfCZ1wZJdaIHagDvYD2s5Fa+Wc="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/selective_downloading.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/selective_downloading.html",
+          "hash": "rbYC+dkmR1lQFqzc7ZrPzcxlu0EdtFW74YweEW92Ug8="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "articles/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "articles/toc.html",
+          "hash": "1eELSxYE2oBjbiVLYMnvDIrPvS8XsF9gzGabk9H97G4="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
+      "type": "Conceptual",
+      "source_relative_path": "index.md",
+      "output": {
+        ".html": {
+          "relative_path": "index.html",
+          "hash": "MMsZnq6m0SK8qdcf9PAAHUzYJk3ONLwRWvl0c+EEFRU="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "WSuRrYiGwKKMbtdG9z8W9fXmLoCyTnGg9AxbPKLXm2Y="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 4,
+          "skipped_file_count": 3
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 169,
+          "skipped_file_count": 169
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
+        "incrementalPhase": "postProcessing",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}
