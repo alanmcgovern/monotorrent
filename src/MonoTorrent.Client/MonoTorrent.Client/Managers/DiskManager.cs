@@ -347,6 +347,9 @@ namespace MonoTorrent.Client
             }
         }
 
+        internal Task MoveFileAsync (ITorrentFileInfo file, string newPath)
+            => MoveFileAsync ((TorrentFileInfo) file, newPath);
+
         internal Task MoveFileAsync (TorrentFileInfo file, string newPath)
             => MoveFileAsync (file, newPath, false);
 

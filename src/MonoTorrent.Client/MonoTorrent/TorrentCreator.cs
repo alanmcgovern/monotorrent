@@ -48,6 +48,8 @@ namespace MonoTorrent
     {
         internal class InputFile : ITorrentFileInfo
         {
+            public string DownloadCompleteFullPath { get; }
+            public string DownloadIncompleteFullPath { get; }
             public string Path { get; set; }
             public string FullPath { get; set; }
             public byte[] MD5 { get; set; }

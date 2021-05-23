@@ -35,6 +35,12 @@ namespace MonoTorrent.Client
 {
     class TorrentFileInfo : ITorrentFileInfo
     {
+        public static string IncompleteFileSuffix => ".!mt";
+
+        public string DownloadCompleteFullPath { get; set; }
+
+        public string DownloadIncompleteFullPath { get; set; }
+
         public string FullPath { get; set; }
 
         ITorrentFile TorrentFile { get; }
@@ -53,15 +59,10 @@ namespace MonoTorrent.Client
 
         public long Length => TorrentFile.Length;
 
-        public TorrentFileInfo (ITorrentFile torrentFile)
-            : this (torrentFile, torrentFile.Path)
-        {
-        }
-
         public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
         {
             TorrentFile = torrentFile;
-            FullPath = fullPath;
+            FullPath = DownloadCompleteFullPath = DownloadIncompleteFullPath = fullPath;
             BitField = new MutableBitField (torrentFile.EndPieceIndex - torrentFile.StartPieceIndex + 1);
         }
 
