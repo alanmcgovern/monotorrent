@@ -203,12 +203,18 @@ namespace MonoTorrent.Client
         /// </summary>
         public string MetadataCacheDirectory => Path.Combine (CacheDirectory, "metadata");
 
+        /// <summary>
+        /// If set to <see langword="true"/> then partially downloaded files will have ".!mt" appended to their filename. When the file is fully downloaded, the ".!mt" suffix will be removed.
+        /// Defaults to <see langword="false"/> as this is a pre-release feature.
+        /// </summary>
+        public bool UsePartialFiles { get; } = false;
+
         public EngineSettings ()
         {
 
         }
 
-        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, FastResumeMode fastResumeMode, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress)
+        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, FastResumeMode fastResumeMode, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, bool usePartialFiles)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -232,6 +238,7 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = maximumOpenFiles;
             MaximumUploadSpeed = maximumUploadSpeed;
             ReportedAddress = reportedAddress;
+            UsePartialFiles = usePartialFiles;
         }
 
         internal string GetDhtNodeCacheFilePath ()
@@ -275,6 +282,7 @@ namespace MonoTorrent.Client
                    && MaximumOpenFiles == other.MaximumOpenFiles
                    && MaximumUploadSpeed == other.MaximumUploadSpeed
                    && ReportedAddress == other.ReportedAddress
+                   && UsePartialFiles == other.UsePartialFiles
                    ;
         }
 

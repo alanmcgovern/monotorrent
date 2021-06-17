@@ -35,6 +35,8 @@ namespace MonoTorrent.Client
 {
     class TorrentFileInfo : ITorrentFileInfo
     {
+        public static string IncompleteFileSuffix => ".!mt";
+
         public string FullPath { get; set; }
 
         ITorrentFile TorrentFile { get; }

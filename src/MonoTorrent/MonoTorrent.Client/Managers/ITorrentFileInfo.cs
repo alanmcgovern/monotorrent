@@ -35,7 +35,6 @@ namespace MonoTorrent.Client
 
     public interface ITorrentFileInfo : ITorrentFile
     {
-        // FIXME: make BitField readonly.
         BitField BitField { get; }
 
         /// <summary>

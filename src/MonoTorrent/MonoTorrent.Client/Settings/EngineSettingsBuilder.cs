@@ -256,6 +256,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public IPEndPoint ReportedAddress { get; set; }
 
+        /// <summary>
+        /// If set to <see langword="true"/> then partially downloaded files will have ".!mt" appended to their filename. When the file is fully downloaded, the ".!mt" suffix will be removed.
+        /// Defaults to <see langword="false"/> as this is a pre-release feature.
+        /// </summary>
+        public bool UsePartialFiles { get; set; }
+
         public EngineSettingsBuilder ()
             : this (new EngineSettings ())
         {
@@ -286,6 +292,7 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadSpeed = settings.MaximumUploadSpeed;
             ReportedAddress = settings.ReportedAddress;
+            UsePartialFiles = settings.UsePartialFiles;
         }
 
         public EngineSettings ToSettings ()
@@ -318,7 +325,8 @@ namespace MonoTorrent.Client
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadSpeed: MaximumUploadSpeed,
-                reportedAddress: ReportedAddress
+                reportedAddress: ReportedAddress,
+                usePartialFiles: UsePartialFiles
             );
         }
 
