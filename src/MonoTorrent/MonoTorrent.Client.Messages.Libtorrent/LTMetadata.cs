@@ -109,8 +109,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
-            using var reader = new RawReader (new MemoryStream (buffer, offset, length, false), false);
-            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (reader);
+            using var reader = new MemoryStream (buffer, offset, length, false);
+            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (reader, false);
             int totalSize = 0;
 
             if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))

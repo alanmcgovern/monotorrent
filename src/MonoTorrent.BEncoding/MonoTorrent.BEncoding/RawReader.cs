@@ -32,7 +32,7 @@ using System.IO;
 
 namespace MonoTorrent.BEncoding
 {
-    public class RawReader : Stream
+    class RawReader : Stream
     {
         readonly Stream input;
         readonly byte[] peeked;

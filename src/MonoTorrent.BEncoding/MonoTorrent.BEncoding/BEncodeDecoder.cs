@@ -13,14 +13,14 @@ namespace MonoTorrent.BEncoding
         internal static BEncodedValue Decode (RawReader reader)
             => Decode (reader, reader.ReadByte ());
 
-        internal static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (RawReader reader)
+        internal static (BEncodedDictionary torrent, byte[] infohash) DecodeTorrent (RawReader reader)
         {
             var torrent = new BEncodedDictionary ();
             if (reader.ReadByte () != 'd')
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             int read;
-            InfoHash infoHash = null;
+            byte[] infoHash = null;
 
             // We can save a few resizes and array copies if we pre-allocate
             // a buffer and then get the memory stream to write to it. We
@@ -44,7 +44,7 @@ namespace MonoTorrent.BEncoding
                     if (InfoKey.Equals (key)) {
                         reader.EndCaptureData ();
                         using var hasher = SHA1.Create ();
-                        infoHash = new InfoHash (hasher.ComputeHash (capturedDataBytes, 0, (int) capturedDataStream.Position));
+                        infoHash = hasher.ComputeHash (capturedDataBytes, 0, (int) capturedDataStream.Position);
                     }
                 } else
                     value = Decode (reader, read);                     // the value is a BEncoded value

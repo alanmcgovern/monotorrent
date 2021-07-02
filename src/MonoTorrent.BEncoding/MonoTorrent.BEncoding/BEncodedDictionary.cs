@@ -84,26 +84,16 @@ namespace MonoTorrent.BEncoding
             return written;
         }
 
-        public static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (byte[] bytes)
-        {
-            return DecodeTorrent (new MemoryStream (bytes));
-        }
-
-        public static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (Stream s)
-        {
-            return DecodeTorrent (new RawReader (s));
-        }
-
+        public static (BEncodedDictionary torrent, byte[] infohash) DecodeTorrent (byte[] bytes)
+            => DecodeTorrent (new MemoryStream (bytes));
 
         /// <summary>
-        /// Special decoding method for torrent files - allows dictionary attributes to be out of order for the
-        /// overall torrent file, but imposes strict rules on the info dictionary.
+        /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
+        /// for torrents which contain dictionaries with misordered keys.
         /// </summary>
         /// <returns></returns>
-        public static (BEncodedDictionary torrent, InfoHash infohash) DecodeTorrent (RawReader reader)
-        {
-            return BEncodeDecoder.DecodeTorrent (reader);
-        }
+        public static (BEncodedDictionary torrent, byte[] infohash) DecodeTorrent (Stream stream)
+            => BEncodeDecoder.DecodeTorrent (new RawReader (stream, false));
 
         #endregion
 

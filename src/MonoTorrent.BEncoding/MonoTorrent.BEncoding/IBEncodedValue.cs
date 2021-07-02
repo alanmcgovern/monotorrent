@@ -33,10 +33,12 @@ using System.IO;
 namespace MonoTorrent.BEncoding
 {
     /// <summary>
-    /// Base interface for all BEncoded values.
+    /// Base class for all BEncoded values.
     /// </summary>
     public abstract class BEncodedValue
     {
+        const bool DefaultStrictDecoding = false;
+
         /// <summary>
         /// Encodes the BEncodedValue into a byte array
         /// </summary>
@@ -50,7 +52,6 @@ namespace MonoTorrent.BEncoding
             return buffer;
         }
 
-
         /// <summary>
         /// Encodes the BEncodedValue into the supplied buffer
         /// </summary>
@@ -61,29 +62,24 @@ namespace MonoTorrent.BEncoding
 
         public static T Clone<T> (T value)
             where T : BEncodedValue
-        {
-            Check.Value (value);
-            return (T) Decode (value.Encode ());
-        }
+            => (T) Decode (value.Encode ());
 
         /// <summary>
         /// Interface for all BEncoded values
         /// </summary>
         /// <param name="data">The byte array containing the BEncoded data</param>
         /// <returns></returns>
-        public static BEncodedValue Decode (byte[] data)
-        {
-            if (data == null)
-                throw new ArgumentNullException (nameof (data));
+        public static BEncodedValue Decode (byte[] buffer)
+            => Decode (buffer, DefaultStrictDecoding);
 
-            using var stream = new RawReader (new MemoryStream (data));
-            return (Decode (stream));
-        }
-
-        internal static BEncodedValue Decode (byte[] buffer, bool strictDecoding)
-        {
-            return Decode (buffer, 0, buffer.Length, strictDecoding);
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="strictDecoding"></param>
+        /// <returns></returns>
+        public static BEncodedValue Decode (byte[] buffer, bool strictDecoding)
+            => Decode (buffer, 0, buffer.Length, strictDecoding);
 
         /// <summary>
         /// Decode BEncoded data in the given byte array
@@ -93,10 +89,16 @@ namespace MonoTorrent.BEncoding
         /// <param name="length">The number of bytes to be decoded</param>
         /// <returns>BEncodedValue containing the data that was in the byte[]</returns>
         public static BEncodedValue Decode (byte[] buffer, int offset, int length)
-        {
-            return Decode (buffer, offset, length, true);
-        }
+            => Decode (buffer, offset, length, DefaultStrictDecoding);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <param name="strictDecoding"></param>
+        /// <returns></returns>
         public static BEncodedValue Decode (byte[] buffer, int offset, int length, bool strictDecoding)
         {
             if (buffer == null)
@@ -108,8 +110,8 @@ namespace MonoTorrent.BEncoding
             if (offset > buffer.Length - length)
                 throw new ArgumentOutOfRangeException (nameof (length));
 
-            using var reader = new RawReader (new MemoryStream (buffer, offset, length), strictDecoding);
-            return (Decode (reader));
+            using var reader = new MemoryStream (buffer, offset, length);
+            return Decode (reader, strictDecoding);
         }
 
 
@@ -119,24 +121,20 @@ namespace MonoTorrent.BEncoding
         /// <param name="stream">The stream containing the BEncoded data</param>
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static BEncodedValue Decode (Stream stream)
+            => Decode (stream, DefaultStrictDecoding);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="strictDecoding"></param>
+        /// <returns></returns>
+        public static BEncodedValue Decode(Stream stream, bool strictDecoding)
         {
             if (stream == null)
                 throw new ArgumentNullException (nameof (stream));
-
-            return Decode (new RawReader (stream));
+            return BEncodeDecoder.Decode (new RawReader (stream, strictDecoding));
         }
-
-
-        /// <summary>
-        /// Decode BEncoded data in the given RawReader
-        /// </summary>
-        /// <param name="reader">The RawReader containing the BEncoded data</param>
-        /// <returns>BEncodedValue containing the data that was in the stream</returns>
-        public static BEncodedValue Decode (RawReader reader)
-        {
-            return BEncodeDecoder.Decode (reader);
-        }
-
 
         /// <summary>
         /// Interface for all BEncoded values
@@ -144,10 +142,15 @@ namespace MonoTorrent.BEncoding
         /// <param name="data">The byte array containing the BEncoded data</param>
         /// <returns></returns>
         public static T Decode<T> (byte[] data) where T : BEncodedValue
-        {
-            return (T) Decode (data);
-        }
+            => Decode<T> (data, DefaultStrictDecoding);
 
+        /// <summary>
+        /// Interface for all BEncoded values
+        /// </summary>
+        /// <param name="data">The byte array containing the BEncoded data</param>
+        /// <returns></returns>
+        public static T Decode<T> (byte[] data, bool strictDecoding) where T : BEncodedValue
+            => (T) Decode (data, strictDecoding);
 
         /// <summary>
         /// Decode BEncoded data in the given byte array
@@ -157,15 +160,10 @@ namespace MonoTorrent.BEncoding
         /// <param name="length">The number of bytes to be decoded</param>
         /// <returns>BEncodedValue containing the data that was in the byte[]</returns>
         public static T Decode<T> (byte[] buffer, int offset, int length) where T : BEncodedValue
-        {
-            return Decode<T> (buffer, offset, length, true);
-        }
+            => Decode<T> (buffer, offset, length, DefaultStrictDecoding);
 
         public static T Decode<T> (byte[] buffer, int offset, int length, bool strictDecoding) where T : BEncodedValue
-        {
-            return (T) Decode (buffer, offset, length, strictDecoding);
-        }
-
+            => (T) Decode (buffer, offset, length, strictDecoding);
 
         /// <summary>
         /// Decode BEncoded data in the given stream 
@@ -173,16 +171,15 @@ namespace MonoTorrent.BEncoding
         /// <param name="stream">The stream containing the BEncoded data</param>
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static T Decode<T> (Stream stream) where T : BEncodedValue
-        {
-            return (T) Decode (stream);
-        }
+            => Decode<T> (stream, DefaultStrictDecoding);
 
-
-        public static T Decode<T> (RawReader reader) where T : BEncodedValue
-        {
-            return (T) Decode (reader);
-        }
-
+        /// <summary>
+        /// Decode BEncoded data in the given stream 
+        /// </summary>
+        /// <param name="stream">The stream containing the BEncoded data</param>
+        /// <returns>BEncodedValue containing the data that was in the stream</returns>
+        public static T Decode<T> (Stream stream, bool strictDecoding) where T : BEncodedValue
+            => (T) Decode (stream, strictDecoding);
 
         /// <summary>
         /// Returns the size of the byte[] needed to encode this BEncodedValue

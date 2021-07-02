@@ -30,8 +30,6 @@
 using System;
 using System.Text;
 
-using MonoTorrent.Client.Messages;
-
 namespace MonoTorrent.BEncoding
 {
     /// <summary>
@@ -39,7 +37,7 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public class BEncodedString : BEncodedValue, IComparable<BEncodedString>
     {
-        internal static readonly BEncodedString Empty = new BEncodedString (Array.Empty<byte> ());
+        public static readonly BEncodedString Empty = new BEncodedString (Array.Empty<byte> ());
 
         public static bool IsNullOrEmpty (BEncodedString value)
         {
@@ -139,26 +137,28 @@ namespace MonoTorrent.BEncoding
             int written = offset;
             written += WriteLengthAsAscii (buffer, written, TextBytes.Length);
             buffer[written++] = (byte) ':';
-            written += Message.Write (buffer, written, TextBytes);
-            return written - offset;
+            Buffer.BlockCopy (TextBytes, 0, buffer, written, TextBytes.Length);
+            return written + TextBytes.Length - offset;
         }
 
         int WriteLengthAsAscii (byte[] buffer, int offset, int asciiLength)
         {
-            if (asciiLength > 100000)
-                return Message.WriteAscii (buffer, offset, TextBytes.Length.ToString ());
-
+            if (asciiLength > 100000) {
+                var data = Encoding.ASCII.GetBytes (TextBytes.Length.ToString ());
+                Buffer.BlockCopy (data, 0, buffer, offset, data.Length);
+                return data.Length;
+            }
             bool hasWritten = false;
             int written = offset;
             for (int remainder = 100000; remainder > 1; remainder /= 10) {
                 if (asciiLength < remainder && !hasWritten)
                     continue;
                 byte resultChar = (byte) ('0' + asciiLength / remainder);
-                written += Message.Write (buffer, written, resultChar);
+                buffer[written++] = resultChar;
                 asciiLength %= remainder;
                 hasWritten = true;
             }
-            written += Message.Write (buffer, written, (byte) ('0' + asciiLength));
+            buffer[written++] = (byte) ('0' + asciiLength);
             return written - offset;
         }
 
@@ -215,14 +215,22 @@ namespace MonoTorrent.BEncoding
                 return false;
 
             BEncodedString other;
-            if (obj is string)
-                other = new BEncodedString ((string) obj);
-            else if (obj is BEncodedString)
-                other = (BEncodedString) obj;
+            if (obj is string str)
+                other = new BEncodedString (str);
+            else if (obj is BEncodedString bString)
+                other = bString;
             else
                 return false;
 
-            return Toolbox.ByteMatch (TextBytes, other.TextBytes);
+            var first = TextBytes;
+            var second = other.TextBytes;
+            if (first.Length != second.Length)
+                return false;
+
+            for (int i = 0; i < first.Length; i++)
+                if (first[i] != second[i])
+                    return false;
+            return true;
         }
 
         public override int GetHashCode ()

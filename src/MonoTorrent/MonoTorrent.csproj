@@ -109,5 +109,13 @@ Notable features include:
       <_Parameter1>MonoTorrent.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+    
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <Folder Include="MonoTorrent.BEncoding\" />
+  </ItemGroup>
 
 </Project>

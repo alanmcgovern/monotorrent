@@ -90,7 +90,7 @@ namespace MonoTorrent.Common
             byte[] data = Encoding.UTF8.GetBytes ("22:this is my test string");
 
             BEncodedString benString = new BEncodedString ("this is my test string");
-            Assert.IsTrue (Toolbox.ByteMatch (data, benString.Encode ()));
+            Assert.IsTrue (ByteMatch (data, benString.Encode ()));
         }
 
         [Test]
@@ -99,7 +99,7 @@ namespace MonoTorrent.Common
             byte[] data = Encoding.UTF8.GetBytes ("0:");
 
             BEncodedString benString = new BEncodedString ("");
-            Assert.IsTrue (Toolbox.ByteMatch (data, benString.Encode ()));
+            Assert.IsTrue (ByteMatch (data, benString.Encode ()));
         }
 
         [Test]
@@ -110,7 +110,7 @@ namespace MonoTorrent.Common
             BEncodedString benString = new BEncodedString ("this is my test string");
             byte[] result = new byte[benString.LengthInBytes ()];
             benString.Encode (result, 0);
-            Assert.IsTrue (Toolbox.ByteMatch (data, result));
+            Assert.IsTrue (ByteMatch (data, result));
         }
 
         [Test]
@@ -165,7 +165,7 @@ namespace MonoTorrent.Common
         {
             byte[] data = Encoding.UTF8.GetBytes ("i12345e");
             BEncodedNumber number = 12345;
-            Assert.IsTrue (Toolbox.ByteMatch (data, number.Encode ()));
+            Assert.IsTrue (ByteMatch (data, number.Encode ()));
         }
 
         [Test]
@@ -174,7 +174,7 @@ namespace MonoTorrent.Common
             byte[] data = Encoding.UTF8.GetBytes ("i0e");
             BEncodedNumber number = 0;
             Assert.AreEqual (3, number.LengthInBytes ());
-            Assert.IsTrue (Toolbox.ByteMatch (data, number.Encode ()));
+            Assert.IsTrue (ByteMatch (data, number.Encode ()));
         }
 
         [Test]
@@ -183,7 +183,7 @@ namespace MonoTorrent.Common
             byte[] data = Encoding.UTF8.GetBytes ("i1230e");
             BEncodedNumber number = 1230;
             Assert.AreEqual (6, number.LengthInBytes ());
-            Assert.IsTrue (Toolbox.ByteMatch (data, number.Encode ()));
+            Assert.IsTrue (ByteMatch (data, number.Encode ()));
         }
 
         [Test]
@@ -192,7 +192,7 @@ namespace MonoTorrent.Common
             byte[] data = Encoding.UTF8.GetBytes ("i-1230e");
             BEncodedNumber number = -1230;
             Assert.AreEqual (7, number.LengthInBytes ());
-            Assert.IsTrue (Toolbox.ByteMatch (data, number.Encode ()));
+            Assert.IsTrue (ByteMatch (data, number.Encode ()));
         }
 
         [Test]
@@ -201,7 +201,7 @@ namespace MonoTorrent.Common
             byte[] data = Encoding.UTF8.GetBytes ("i-123e");
             BEncodedNumber number = -123;
             Assert.AreEqual (6, number.LengthInBytes ());
-            Assert.IsTrue (Toolbox.ByteMatch (data, number.Encode ()));
+            Assert.IsTrue (ByteMatch (data, number.Encode ()));
         }
 
         [Test]
@@ -227,7 +227,7 @@ namespace MonoTorrent.Common
             BEncodedNumber number = 12345;
             byte[] result = new byte[number.LengthInBytes ()];
             number.Encode (result, 0);
-            Assert.IsTrue (Toolbox.ByteMatch (data, result));
+            Assert.IsTrue (ByteMatch (data, result));
         }
 
         [Test]
@@ -277,7 +277,7 @@ namespace MonoTorrent.Common
                 new BEncodedString ("tested")
             };
 
-            Assert.IsTrue (Toolbox.ByteMatch (data, list.Encode ()));
+            Assert.IsTrue (ByteMatch (data, list.Encode ()));
         }
 
         [Test]
@@ -291,7 +291,7 @@ namespace MonoTorrent.Common
             };
             byte[] result = new byte[list.LengthInBytes ()];
             list.Encode (result, 0);
-            Assert.IsTrue (Toolbox.ByteMatch (data, result));
+            Assert.IsTrue (ByteMatch (data, result));
         }
 
         [Test]
@@ -355,7 +355,7 @@ namespace MonoTorrent.Common
             };
             dict.Add ("spam", list);
             Assert.AreEqual (Encoding.UTF8.GetString (data), Encoding.UTF8.GetString (dict.Encode ()));
-            Assert.IsTrue (Toolbox.ByteMatch (data, dict.Encode ()));
+            Assert.IsTrue (ByteMatch (data, dict.Encode ()));
         }
 
         [Test]
@@ -370,7 +370,7 @@ namespace MonoTorrent.Common
             dict.Add ("spam", list);
             byte[] result = new byte[dict.LengthInBytes ()];
             dict.Encode (result, 0);
-            Assert.IsTrue (Toolbox.ByteMatch (data, result));
+            Assert.IsTrue (ByteMatch (data, result));
         }
 
         [Test]
@@ -420,7 +420,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void DecodeDictionary_OutOfOrder_DefaultIsNotStrict()
+        public void DecodeDictionary_OutOfOrder_DefaultIsNotStrict ()
         {
             string benString = "d1:b1:b1:a1:ae";
             var dict = (BEncodedDictionary) BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString));
@@ -541,7 +541,7 @@ namespace MonoTorrent.Common
 
             var good_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (good));
             var bad_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (bad));
-            Assert.IsTrue (Toolbox.ByteMatch (good_result.torrent.Encode (), bad_result.torrent.Encode ()));
+            Assert.IsTrue (ByteMatch (good_result.torrent.Encode (), bad_result.torrent.Encode ()));
             Assert.AreNotEqual (good_result.infohash, bad_result.infohash);
         }
 
@@ -556,7 +556,7 @@ namespace MonoTorrent.Common
             };
 
             var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
-            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.torrent.Encode ()));
+            Assert.IsTrue (ByteMatch (dict.Encode (), result.torrent.Encode ()));
         }
 
 
@@ -568,8 +568,17 @@ namespace MonoTorrent.Common
             };
 
             var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
-            Assert.IsTrue (Toolbox.ByteMatch (dict.Encode (), result.torrent.Encode ()));
+            Assert.IsTrue (ByteMatch (dict.Encode (), result.torrent.Encode ()));
         }
 
+        static bool ByteMatch (byte[] first, byte[] second)
+        {
+            if (first.Length != second.Length)
+                return false;
+            for (int i = 0; i < first.Length; i++)
+                if (first[i] != second[i])
+                    return false;
+            return true;
+        }
     }
 }
