@@ -29,7 +29,7 @@
 
 using System;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     public readonly struct ActivePieceRequest : IEquatable<ActivePieceRequest>
     {

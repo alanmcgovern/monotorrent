@@ -1,10 +1,10 @@
-﻿//
-// PiecePickerFilter.cs
+//
+// NullPicker.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,51 +27,71 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
-    public abstract class PiecePickerFilter : IPiecePicker
+    class NullPicker : IPiecePicker
     {
-        protected IPiecePicker Next { get; }
-
-        protected PiecePickerFilter (IPiecePicker picker)
-            => Next = picker;
-
         public int AbortRequests (IPeer peer)
-            => Next.AbortRequests (peer);
+        {
+            return 0;
+        }
 
         public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
-            => Next.CancelRequests (peer, startIndex, endIndex);
+        {
+            return Array.Empty<BlockInfo> ();
+        }
 
         public BlockInfo? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
-            => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests);
+        {
+            return null;
+        }
 
         public BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
-            => Next.ContinueExistingRequest (peer, startIndex, endIndex);
+        {
+            return null;
+        }
 
         public int CurrentReceivedCount ()
-            => Next.CurrentReceivedCount ();
+        {
+            return 0;
+        }
 
         public int CurrentRequestCount ()
-            => Next.CurrentRequestCount();
+        {
+            return 0;
+        }
 
         public IList<ActivePieceRequest> ExportActiveRequests ()
-            => Next.ExportActiveRequests ();
+        {
+            return Array.Empty<ActivePieceRequest> ();
+        }
 
-        public virtual void Initialise (ITorrentData torrentData)
-            => Next.Initialise (torrentData);
+        public void Initialise (ITorrentData torrentData)
+        {
+        }
 
-        public virtual bool IsInteresting (IPeer peer, BitField bitfield)
-            => Next.IsInteresting (peer, bitfield);
+        public bool IsInteresting (IPeer peer, BitField bitfield)
+        {
+            return false;
+        }
 
-        public virtual IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
-            => Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+        public IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        {
+            return Array.Empty<BlockInfo> ();
+        }
 
-        public void RequestRejected (IPeer peer, BlockInfo request)
-            => Next.RequestRejected (peer, request);
+        public void RequestRejected (IPeer peer, BlockInfo rejectedRequest)
+        {
+        }
 
         public bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved)
-            => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
+        {
+            pieceComplete = false;
+            peersInvolved = null;
+            return false;
+        }
     }
 }

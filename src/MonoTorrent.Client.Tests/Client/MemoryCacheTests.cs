@@ -36,6 +36,7 @@ using ReusableTasks;
 using NUnit.Framework;
 using System;
 using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -128,8 +129,8 @@ namespace MonoTorrent.Client.PieceWriters
         [SetUp]
         public void Setup ()
         {
-            var pieceLength = Piece.BlockSize * 8;
-            var files = TorrentFileInfo.Create (pieceLength, ("Relative/Path.txt", Piece.BlockSize * 5, "Full/Path/Relative/Path.txt"));
+            var pieceLength = Constants.BlockSize * 8;
+            var files = TorrentFileInfo.Create (pieceLength, ("Relative/Path.txt", Constants.BlockSize * 5, "Full/Path/Relative/Path.txt"));
             torrent = new TorrentData {
                 Files = files,
                 PieceLength = pieceLength,
@@ -137,7 +138,7 @@ namespace MonoTorrent.Client.PieceWriters
             };
 
             writer = new MemoryWriter ();
-            cache = new MemoryCache (Piece.BlockSize * 4, writer);
+            cache = new MemoryCache (Constants.BlockSize * 4, writer);
         }
 
         [Test]
@@ -145,21 +146,21 @@ namespace MonoTorrent.Client.PieceWriters
         {
             // Write 4 blocks to the stream and then verify they can all be read
             for (int i = 0; i < 4; i++) {
-                var buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
-                await cache.WriteAsync (torrent, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer, false);
+                var buffer = Enumerable.Repeat ((byte) (i + 1), Constants.BlockSize).ToArray ();
+                await cache.WriteAsync (torrent, new BlockInfo (0, Constants.BlockSize * i, Constants.BlockSize), buffer, false);
             }
 
-            Assert.AreEqual (Piece.BlockSize * 4, cache.CacheUsed, "#1a");
+            Assert.AreEqual (Constants.BlockSize * 4, cache.CacheUsed, "#1a");
             Assert.AreEqual (0, writer.Writes.Count, "#1b");
             Assert.AreEqual (0, writer.Reads.Count, "#1c");
 
             // Read them all back out and verify them
             for (int i = 0; i < 4; i++) {
-                var buffer = new byte[Piece.BlockSize];
-                await cache.ReadAsync (torrent, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer);
+                var buffer = new byte[Constants.BlockSize];
+                await cache.ReadAsync (torrent, new BlockInfo (0, Constants.BlockSize * i, Constants.BlockSize), buffer);
                 Assert.IsTrue (buffer.All (t => t == (byte) (i + 1)), "#2." + i);
             }
-            Assert.AreEqual (Piece.BlockSize * 4, cache.CacheHits, "#3");
+            Assert.AreEqual (Constants.BlockSize * 4, cache.CacheHits, "#3");
             Assert.AreEqual (0, cache.CacheMisses, "#4");
             Assert.AreEqual (4, writer.Writes.Count, "#5");
         }
@@ -168,13 +169,13 @@ namespace MonoTorrent.Client.PieceWriters
         public async Task OverFillBuffer ()
         {
             var writer = new MemoryWriter ();
-            var cache = new MemoryCache (Piece.BlockSize, writer);
+            var cache = new MemoryCache (Constants.BlockSize, writer);
 
             // Write 4 blocks to the stream and then verify they can all be read
             for (int i = 0; i < 4; i++) {
-                var buffer = Enumerable.Repeat ((byte) (i + 1), Piece.BlockSize).ToArray ();
-                await cache.WriteAsync (torrent, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer, false);
-                Assert.AreEqual (Piece.BlockSize, cache.CacheUsed, "#0");
+                var buffer = Enumerable.Repeat ((byte) (i + 1), Constants.BlockSize).ToArray ();
+                await cache.WriteAsync (torrent, new BlockInfo (0, Constants.BlockSize * i, Constants.BlockSize), buffer, false);
+                Assert.AreEqual (Constants.BlockSize, cache.CacheUsed, "#0");
             }
 
             Assert.AreEqual (3, writer.Writes.Count, "#1b");
@@ -182,12 +183,12 @@ namespace MonoTorrent.Client.PieceWriters
 
             // Read them all back out and verify them
             for (int i = 0; i < 4; i++) {
-                var buffer = new byte[Piece.BlockSize];
-                await cache.ReadAsync (torrent, new BlockInfo (0, Piece.BlockSize * i, Piece.BlockSize), buffer);
+                var buffer = new byte[Constants.BlockSize];
+                await cache.ReadAsync (torrent, new BlockInfo (0, Constants.BlockSize * i, Constants.BlockSize), buffer);
                 Assert.IsTrue (buffer.All (t => t == (byte) (i + 1)), "#2." + i);
             }
-            Assert.AreEqual (Piece.BlockSize, cache.CacheHits, "#3");
-            Assert.AreEqual (Piece.BlockSize * 3, cache.CacheMisses, "#4");
+            Assert.AreEqual (Constants.BlockSize, cache.CacheHits, "#3");
+            Assert.AreEqual (Constants.BlockSize * 3, cache.CacheMisses, "#4");
             Assert.AreEqual (4, writer.Writes.Count, "#5");
             Assert.AreEqual (0, cache.CacheUsed, "#6");
         }
@@ -295,11 +296,11 @@ namespace MonoTorrent.Client.PieceWriters
         [Test]
         public async Task ReadWriteBlock ()
         {
-            var buffer = Enumerable.Repeat ((byte) 55, Piece.BlockSize).ToArray ();
-            await cache.WriteAsync (torrent, new BlockInfo (0, 0, Piece.BlockSize), buffer, false);
+            var buffer = Enumerable.Repeat ((byte) 55, Constants.BlockSize).ToArray ();
+            await cache.WriteAsync (torrent, new BlockInfo (0, 0, Constants.BlockSize), buffer, false);
 
-            buffer = new byte[Piece.BlockSize];
-            await cache.ReadAsync (torrent, new BlockInfo (0, 0, Piece.BlockSize), buffer);
+            buffer = new byte[Constants.BlockSize];
+            await cache.ReadAsync (torrent, new BlockInfo (0, 0, Constants.BlockSize), buffer);
             Assert.IsTrue (buffer.All (t => t == 55));
         }
 
@@ -307,15 +308,15 @@ namespace MonoTorrent.Client.PieceWriters
         public async Task ReadWriteBlockChangeOriginal ()
         {
             var writer = new MemoryWriter ();
-            var cache = new MemoryCache (Piece.BlockSize, writer);
+            var cache = new MemoryCache (Constants.BlockSize, writer);
 
-            var buffer = Enumerable.Repeat ((byte) 5, Piece.BlockSize).ToArray ();
-            await cache.WriteAsync (torrent, new BlockInfo (0, 0, Piece.BlockSize), buffer, false);
+            var buffer = Enumerable.Repeat ((byte) 5, Constants.BlockSize).ToArray ();
+            await cache.WriteAsync (torrent, new BlockInfo (0, 0, Constants.BlockSize), buffer, false);
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = 0;
 
-            buffer = new byte[Piece.BlockSize];
-            await cache.ReadAsync (torrent, new BlockInfo (0, 0, Piece.BlockSize), buffer);
+            buffer = new byte[Constants.BlockSize];
+            await cache.ReadAsync (torrent, new BlockInfo (0, 0, Constants.BlockSize), buffer);
             Assert.IsTrue (buffer.All (t => t == 5), "#2");
             Assert.IsTrue (writer.Writes.Single ().buffer.All (t => t == 5), "#3");
         }

@@ -46,12 +46,12 @@ namespace MonoTorrent.Client
         [Test]
         public void BlocksPerPiece ()
         {
-            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 2, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (0));
-            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (1));
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4 + 1, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (2));
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 5 - 1, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (2));
+            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 2, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (0));
+            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (1));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4 + 1, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (2));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 5 - 1, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (2));
 
-            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.BlocksPerPiece (0));
+            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (0));
 
             Assert.AreEqual (142, new Data { Size = 16 * 1024 * 1024, PieceLength = 2318336 }.BlocksPerPiece (0));
         }
@@ -59,39 +59,39 @@ namespace MonoTorrent.Client
         [Test]
         public void ByteOffsetToPieceIndex ()
         {
-            Assert.AreEqual (0, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (0));
-            Assert.AreEqual (0, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (1));
-            Assert.AreEqual (0, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 2 - 1));
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 2));
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 2 + 1));
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 3 - 1));
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 3));
-            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 4));
+            Assert.AreEqual (0, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (0));
+            Assert.AreEqual (0, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (1));
+            Assert.AreEqual (0, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 2 - 1));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 2));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 2 + 1));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 3 - 1));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 3));
+            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 4));
 
-            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.ByteOffsetToPieceIndex (Piece.BlockSize * 4));
+            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 4));
         }
 
         [Test]
         public void BytesPerPiece ()
         {
-            Assert.AreEqual (Piece.BlockSize * 2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (0));
-            Assert.AreEqual (Piece.BlockSize * 2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (1));
+            Assert.AreEqual (Constants.BlockSize * 2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (0));
+            Assert.AreEqual (Constants.BlockSize * 2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (1));
 
-            Assert.AreEqual (1, new Data { Size = Piece.BlockSize * 4 + 1, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (2));
-            Assert.AreEqual (Piece.BlockSize - 1, new Data { Size = Piece.BlockSize * 5 - 1, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (2));
+            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4 + 1, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (2));
+            Assert.AreEqual (Constants.BlockSize - 1, new Data { Size = Constants.BlockSize * 5 - 1, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (2));
 
-            Assert.AreEqual (Piece.BlockSize * 2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.BytesPerPiece (2));
+            Assert.AreEqual (Constants.BlockSize * 2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (2));
         }
 
         [Test]
         public void PieceCount ()
         {
-            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 2 + 1, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
-            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4 - 1, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
-            Assert.AreEqual (2, new Data { Size = Piece.BlockSize * 4, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
-            Assert.AreEqual (3, new Data { Size = Piece.BlockSize * 4 + 1, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 2 + 1, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4 - 1, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (3, new Data { Size = Constants.BlockSize * 4 + 1, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
 
-            Assert.AreEqual (262144, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Piece.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (262144, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
         }
     }
 }

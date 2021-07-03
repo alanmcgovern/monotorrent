@@ -188,10 +188,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SaveRestoreState_OneInMemoryTorrent ()
         {
-            var pieceLength = Piece.BlockSize * 4;
+            var pieceLength = Constants.BlockSize * 4;
             using var tmpDir = TempDir.Create ();
 
-            var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Piece.BlockSize, Piece.BlockSize * 2, Piece.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
+            var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
 
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
             var torrentManager = await engine.AddAsync (torrent, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
@@ -231,10 +231,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SaveRestoreState_OneTorrentFile_ContainingDirectory ()
         {
-            var pieceLength = Piece.BlockSize * 4;
+            var pieceLength = Constants.BlockSize * 4;
             using var tmpDir = TempDir.Create ();
 
-            TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Piece.BlockSize, Piece.BlockSize * 2, Piece.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
+            TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
             var metadataFile = Path.Combine (tmpDir.Path, "test.torrent");
             File.WriteAllBytes (metadataFile, metadata.Encode ());
 
@@ -261,10 +261,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SaveRestoreState_OneTorrentFile_NoContainingDirectory ()
         {
-            var pieceLength = Piece.BlockSize * 4;
+            var pieceLength = Constants.BlockSize * 4;
             using var tmpDir = TempDir.Create ();
 
-            TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Piece.BlockSize, Piece.BlockSize * 2, Piece.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
+            TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
             var metadataFile = Path.Combine (tmpDir.Path, "test.torrent");
             File.WriteAllBytes (metadataFile, metadata.Encode ());
 

@@ -31,7 +31,7 @@ using System;
 using System.Collections.Generic;
 
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client.Messages
 {

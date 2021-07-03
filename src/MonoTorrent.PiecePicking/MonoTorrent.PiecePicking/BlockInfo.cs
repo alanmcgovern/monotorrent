@@ -28,7 +28,7 @@
 
 using System;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.PiecePicking
 {
     public readonly struct BlockInfo : IEquatable<BlockInfo>
     {
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         public static bool operator != (BlockInfo left, BlockInfo right)
             => !left.Equals (right);
 
-        internal long ToByteOffset (int pieceLength)
+        public long ToByteOffset (int pieceLength)
          => (long) PieceIndex * pieceLength + StartOffset;
 
         public override string ToString ()

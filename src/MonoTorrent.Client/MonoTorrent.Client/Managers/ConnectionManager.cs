@@ -39,6 +39,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Logging;
+using MonoTorrent.PiecePicking;
 
 using ReusableTasks;
 
@@ -263,7 +264,7 @@ namespace MonoTorrent.Client
                         releaser = NetworkIO.BufferPool.Rent (1, out ByteBuffer _);
                     } else if (id.AmRequestingPiecesCount > 0 && releaser.Buffer == null) {
                         releaser.Dispose ();
-                        releaser = NetworkIO.BufferPool.Rent (Piece.BlockSize, out ByteBuffer _);
+                        releaser = NetworkIO.BufferPool.Rent (Constants.BlockSize, out ByteBuffer _);
                     }
                     PeerMessage message = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager, releaser.Buffer).ConfigureAwait (false);
                     HandleReceivedMessage (id, torrentManager, message);

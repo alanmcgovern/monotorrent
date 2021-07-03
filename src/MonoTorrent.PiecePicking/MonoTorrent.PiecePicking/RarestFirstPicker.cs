@@ -29,7 +29,7 @@
 
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     public class RarestFirstPicker : PiecePickerFilter
     {

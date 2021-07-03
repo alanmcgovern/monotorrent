@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
 
         const int SmallMessageBufferSize = 256;
         const int MediumMessageBufferSize = 2048;
-        const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
+        const int LargeMessageBufferSize = Constants.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
         Queue<ByteBuffer> LargeMessageBuffers { get; }
         Queue<ByteBuffer> MassiveBuffers { get; }

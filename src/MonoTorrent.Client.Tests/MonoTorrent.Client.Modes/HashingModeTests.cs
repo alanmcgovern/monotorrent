@@ -56,12 +56,12 @@ namespace MonoTorrent.Client.Modes
             TrackerManager = new ManualTrackerManager ();
 
             long[] fileSizes = {
-                Piece.BlockSize / 2,
-                Piece.BlockSize * 32,
-                Piece.BlockSize * 2,
-                Piece.BlockSize * 13,
+                Constants.BlockSize / 2,
+                Constants.BlockSize * 32,
+                Constants.BlockSize * 2,
+                Constants.BlockSize * 13,
             };
-            Manager = TestRig.CreateMultiFileManager (fileSizes, Piece.BlockSize * 2, writer: PieceWriter);
+            Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2, writer: PieceWriter);
             Manager.SetTrackerManager (TrackerManager);
 
             Settings = Manager.Engine.Settings;

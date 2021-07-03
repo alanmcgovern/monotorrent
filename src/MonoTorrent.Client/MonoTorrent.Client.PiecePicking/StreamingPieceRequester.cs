@@ -31,6 +31,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using MonoTorrent.PiecePicking;
+
 namespace MonoTorrent.Client.PiecePicking
 {
     public class StreamingPieceRequester : IStreamingPieceRequester

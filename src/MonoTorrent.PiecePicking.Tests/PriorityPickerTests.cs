@@ -31,9 +31,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using MonoTorrent.Client;
+
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     [TestFixture]
     public class PriorityPickerTests
@@ -84,7 +86,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         static TestTorrentData CreateSingleFile ()
         {
-            int pieceLength = Piece.BlockSize * 16;
+            int pieceLength = 1024 * 16 * 16;
             var size = pieceLength * 32 + 123;
             var files = TorrentFileInfo.Create (pieceLength, ("Single", size, "full/path/Single"));
             return new TestTorrentData {
@@ -96,7 +98,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         static TestTorrentData CreateMultiFile ()
         {
-            int pieceLength = Piece.BlockSize * 16;
+            int pieceLength = 1024 * 16 * 16;
 
             long[] sizes = {
                 pieceLength * 10,

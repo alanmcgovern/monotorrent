@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
         [Test]
         public void IgnoreNullMonitors ()
         {
-            var blockSize = Piece.BlockSize - 1234;
+            var blockSize = Constants.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
                 DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer(blockSize))
             };
@@ -127,7 +127,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task CountPieceMessageBlockLengthAsData ()
         {
-            var blockSize = Piece.BlockSize - 1234;
+            var blockSize = Constants.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
                 DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (blockSize))
             };

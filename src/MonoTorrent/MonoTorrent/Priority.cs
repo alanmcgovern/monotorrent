@@ -1,10 +1,10 @@
 ﻿//
-// ITorrentFileInfo.cs
+// Enums.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,33 +26,16 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-using System.Diagnostics;
-using System.Threading;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
-
-    public interface ITorrentFileInfo : ITorrentFile
+    public enum Priority
     {
-        // FIXME: make BitField readonly.
-        BitField BitField { get; }
-
-        /// <summary>
-        /// The full path to the file on disk. Can be modified by calling <see cref="TorrentManager.MoveFileAsync(ITorrentFileInfo, string)" />
-        /// or <see cref="TorrentManager.MoveFilesAsync(string, bool)"/>.
-        /// </summary>
-        string FullPath { get; }
-
-        /// <summary>
-        /// The priority of the file when downloading. Can be modified by calling <see cref="TorrentManager.SetFilePriorityAsync(ITorrentFileInfo, Priority)"/>
-        /// </summary>
-        Priority Priority { get; }
-    }
-
-    public static class ITorrentFileInfoExtensions
-    {
-        public static long BytesDownloaded (this ITorrentFileInfo info)
-            => (long) (info.BitField.PercentComplete * info.Length / 100.0);
+        DoNotDownload = 0,
+        Lowest = 1,
+        Low = 2,
+        Normal = 4,
+        High = 8,
+        Highest = 16,
+        Immediate = 32
     }
 }

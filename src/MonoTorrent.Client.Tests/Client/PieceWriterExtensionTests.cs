@@ -16,7 +16,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Offset_FirstFile ()
         {
-            var pieceLength = Piece.BlockSize;
+            var pieceLength = Constants.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024);
             Assert.AreEqual (0, files.FindFileByOffset (0));
             Assert.AreEqual (0, files.FindFileByOffset (1023));
@@ -26,50 +26,50 @@ namespace MonoTorrent.Client
         [Test]
         public void Offset_LastFile ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize);
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize));
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize + 1));
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize);
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Constants.BlockSize));
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Constants.BlockSize + 1));
         }
 
         [Test]
         public void Offset_EmptyFileAtEnd ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0);
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize * 2 - 1));
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize, 0);
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Constants.BlockSize * 2 - 1));
         }
 
         [Test]
         public void Offset_TwoEmptyFilesAtEnd ()
         {
-            var pieceLength = Piece.BlockSize;
+            var pieceLength = Constants.BlockSize;
             // If two files start at the same offset (which zero length files do), then the files are ordered based on
             // their length. This way zero length files are never the last file, unless the whole torrent is empty. Which is nonsense :p
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0, 0);
-            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Piece.BlockSize * 2 - 1));
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize, 0, 0);
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Constants.BlockSize * 2 - 1));
         }
 
         [Test]
         public void Offset_TwoPiecesHaveEmptyFilesAtEnd ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Piece.BlockSize, 0);
-            Assert.AreEqual (files.Length - 2, files.FindFileByOffset (Piece.BlockSize));
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Constants.BlockSize, 0);
+            Assert.AreEqual (files.Length - 2, files.FindFileByOffset (Constants.BlockSize));
             Assert.AreEqual (0, files.FindFileByOffset (0));
         }
 
         [Test]
         public void Offset_Invalid ()
         {
-            var files = TorrentFileInfo.Create (Piece.BlockSize, 1024);
-            Assert.Less (files.FindFileByOffset (Piece.BlockSize * 5), 0);
+            var files = TorrentFileInfo.Create (Constants.BlockSize, 1024);
+            Assert.Less (files.FindFileByOffset (Constants.BlockSize * 5), 0);
         }
 
         [Test]
         public void PieceIndex_FirstFile ()
         {
-            var pieceLength = Piece.BlockSize;
+            var pieceLength = Constants.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024);
             Assert.AreEqual (0, files.FindFileByPieceIndex (0));
         }
@@ -77,16 +77,16 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceIndex_LastFile ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize);
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize);
             Assert.AreEqual (files.Length - 1, files.FindFileByPieceIndex (1));
         }
 
         [Test]
         public void PieceIndex_OverlappingFiles ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, Piece.BlockSize - 1, Piece.BlockSize, Piece.BlockSize);
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, Constants.BlockSize - 1, Constants.BlockSize, Constants.BlockSize);
             Assert.AreEqual (0, files.FindFileByPieceIndex (0));
             Assert.AreEqual (1, files.FindFileByPieceIndex (1));
         }
@@ -94,8 +94,8 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceIndex_OverlappingFiles2 ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, Piece.BlockSize + 1, Piece.BlockSize, Piece.BlockSize);
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, Constants.BlockSize + 1, Constants.BlockSize, Constants.BlockSize);
             Assert.AreEqual (0, files.FindFileByPieceIndex (0));
             Assert.AreEqual (0, files.FindFileByPieceIndex (1));
             Assert.AreEqual (1, files.FindFileByPieceIndex (2));
@@ -104,24 +104,24 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceIndex_EmptyFileAtEnd ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0);
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize, 0);
             Assert.AreEqual (files.Length - 2, files.FindFileByPieceIndex (1));
         }
 
         [Test]
         public void PieceIndex_TwoEmptyFilesAtEnd ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Piece.BlockSize, 0, 0);
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize, 0, 0);
             Assert.AreEqual (files.Length - 3, files.FindFileByPieceIndex (1));
         }
 
         [Test]
         public void PieceIndex_TwoPiecesHaveEmptyFilesAtEnd ()
         {
-            var pieceLength = Piece.BlockSize;
-            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Piece.BlockSize, 0);
+            var pieceLength = Constants.BlockSize;
+            var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Constants.BlockSize, 0);
             Assert.AreEqual (files.Length - 2, files.FindFileByPieceIndex (1));
             Assert.AreEqual (0, files.FindFileByPieceIndex (0));
         }
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceIndex_Invalid()
         {
-            var files = TorrentFileInfo.Create (Piece.BlockSize, 1024);
+            var files = TorrentFileInfo.Create (Constants.BlockSize, 1024);
             Assert.Less (files.FindFileByPieceIndex (1), 0);
         }
 

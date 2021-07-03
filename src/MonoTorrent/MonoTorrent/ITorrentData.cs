@@ -29,7 +29,7 @@
 
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
     public interface ITorrentData
     {
@@ -54,10 +54,10 @@ namespace MonoTorrent.Client
         public static int BlocksPerPiece (this ITorrentData self, int pieceIndex)
         {
             if (pieceIndex < self.PieceCount () - 1)
-                return (Piece.BlockSize - 1 + self.PieceLength) / Piece.BlockSize;
+                return (Constants.BlockSize - 1 + self.PieceLength) / Constants.BlockSize;
 
             var remainder = self.Size - self.PieceIndexToByteOffset (pieceIndex);
-            return (int) ((remainder + Piece.BlockSize - 1) / Piece.BlockSize);
+            return (int) ((remainder + Constants.BlockSize - 1) / Constants.BlockSize);
         }
 
         public static int BytesPerPiece (this ITorrentData self, int pieceIndex)

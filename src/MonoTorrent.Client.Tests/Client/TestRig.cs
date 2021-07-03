@@ -300,7 +300,7 @@ namespace MonoTorrent.Client
                 long size = Torrent.Size;
                 while (size > 0) {
                     count++;
-                    size -= Piece.BlockSize;
+                    size -= Constants.BlockSize;
                 }
                 return count;
             }

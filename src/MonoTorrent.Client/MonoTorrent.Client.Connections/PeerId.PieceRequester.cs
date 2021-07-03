@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client
 {
@@ -90,7 +90,7 @@ namespace MonoTorrent.Client
                 // Make sure we have at least one whole piece
                 count = Math.Max (count, 1);
 
-                return count * (pieceLength / Piece.BlockSize);
+                return count * (pieceLength / Constants.BlockSize);
             } else {
                 return 1;
             }

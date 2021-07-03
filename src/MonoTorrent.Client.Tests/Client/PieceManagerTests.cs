@@ -47,9 +47,9 @@ namespace MonoTorrent.Client.PiecePicking
             public int PieceLength { get; set; }
             public long Size { get; set; }
 
-            public int BlocksPerPiece => PieceLength / Piece.BlockSize;
+            public int BlocksPerPiece => PieceLength / Constants.BlockSize;
             public int PieceCount => (int) Math.Ceiling ((double) Size / PieceLength);
-            public int TotalBlocks => (int) Math.Ceiling ((double) Size / Piece.BlockSize);
+            public int TotalBlocks => (int) Math.Ceiling ((double) Size / Constants.BlockSize);
         }
 
         PeerId peer;

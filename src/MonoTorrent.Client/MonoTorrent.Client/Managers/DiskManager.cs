@@ -37,6 +37,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.PiecePicking;
 
 using ReusableTasks;
 
@@ -265,12 +266,12 @@ namespace MonoTorrent.Client
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             int startOffset = incrementalHash.NextOffsetToHash;
             int endOffset = manager.BytesPerPiece (pieceIndex);
-            using (BufferPool.Rent (Piece.BlockSize, out byte[] hashBuffer)) {
+            using (BufferPool.Rent (Constants.BlockSize, out byte[] hashBuffer)) {
                 try {
                     SHA1 hasher = incrementalHash.Hasher;
 
                     while (startOffset != endOffset) {
-                        int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
+                        int count = (int) Math.Min (Constants.BlockSize, endOffset - startOffset);
                         if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false))
                             return null;
                         startOffset += count;
@@ -446,9 +447,9 @@ namespace MonoTorrent.Client
         async ReusableTask TryIncrementallyHashFromMemory (ITorrentData torrent, int pieceIndex, IncrementalHashData incrementalHash)
         {
             var sizeOfPiece = torrent.BytesPerPiece (pieceIndex);
-            using var releaser = BufferPool.Rent (Piece.BlockSize, out byte[] buffer);
+            using var releaser = BufferPool.Rent (Constants.BlockSize, out byte[] buffer);
             while (incrementalHash.NextOffsetToHash < sizeOfPiece) {
-                var remaining = Math.Min (Piece.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);
+                var remaining = Math.Min (Constants.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);
                 if (await Cache.ReadFromCacheAsync (torrent, new BlockInfo (pieceIndex, incrementalHash.NextOffsetToHash, remaining), buffer)) {
                     incrementalHash.Hasher.TransformBlock (buffer, 0, remaining, buffer, 0);
                     incrementalHash.NextOffsetToHash += remaining;

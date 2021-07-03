@@ -30,6 +30,7 @@
 using System;
 
 using ReusableTasks;
+using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client.PieceWriters
 {

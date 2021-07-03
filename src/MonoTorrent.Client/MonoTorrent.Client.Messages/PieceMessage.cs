@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The index of the block from the piece which was requested.
         /// </summary>
-        internal int BlockIndex => StartOffset / Piece.BlockSize;
+        internal int BlockIndex => StartOffset / Constants.BlockSize;
 
         /// <summary>
         /// The length of the message in bytes

@@ -29,8 +29,7 @@
 
 using System;
 using System.Collections.Generic;
-
-using MonoTorrent.Client;
+using System.Linq;
 
 using NUnit.Framework;
 
@@ -76,7 +75,7 @@ namespace MonoTorrent.Common
         {
             BitField bf2 = new BitField (initialByteValues, initalValues.Length);
             Assert.AreEqual (bf, bf2, "#1");
-            Assert.AreEqual (Toolbox.Count (initalValues, b => b), bf2.TrueCount, "#1");
+            Assert.AreEqual (initalValues.Count (b => b), bf2.TrueCount, "#1");
         }
 
         [Test]
@@ -85,20 +84,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < initalValues.Length; i++)
                 Assert.AreEqual (initalValues[i], bf[i], "#1:{0}", i);
 
-            Assert.AreEqual (Toolbox.Count (initalValues, b => b), bf.TrueCount, "#1");
-        }
-
-        [Ignore ("This is deliberately broken to work around bugs in azureus")]
-        public void InvalidBitfieldTest ()
-        {
-            // Set each of the 4 trailing bits to 1 to force a decode error
-            for (byte i = 8; i > 0; i /= 2) {
-                try {
-                    initialByteValues[1] += i;
-                    bf = new MutableBitField (initialByteValues, initalValues.Length);
-                    Assert.Fail ("The bitfield was corrupt but decoded correctly: Loop {0}", i);
-                } catch (MessageException) { initialByteValues[1] -= i; }
-            }
+            Assert.AreEqual (initalValues.Count (b => b), bf.TrueCount, "#1");
         }
 
         [Test]
@@ -347,7 +333,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < bf.Length; i++)
                 Assert.AreEqual (!initalValues[i], bf[i], "#1");
 
-            Assert.AreEqual (Toolbox.Count (initalValues, b => !b), bf.TrueCount, "#2");
+            Assert.AreEqual (initalValues.Count (b => !b), bf.TrueCount, "#2");
         }
 
         [Test]

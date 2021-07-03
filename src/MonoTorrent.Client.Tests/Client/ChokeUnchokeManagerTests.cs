@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Unchoking
                 unchokeable.UploadingTo++;
                 p.AmAllowedFastPieces.Add (1);
                 p.SupportsFastPeer = true;
-                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Constants.BlockSize));
             });
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.Unchoking
                 p.AmChoking = false;
                 unchokeable.UploadingTo++;
                 p.SupportsFastPeer = true;
-                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Constants.BlockSize));
             });
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);
@@ -215,7 +215,7 @@ namespace MonoTorrent.Client.Unchoking
                 // This will always be empty during normal downloading.
                 p.AmAllowedFastPieces.Add (1);
                 p.SupportsFastPeer = false;
-                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Piece.BlockSize));
+                p.MessageQueue.Enqueue (new PieceMessage (1, 0, Constants.BlockSize));
             });
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
             Assert.AreEqual (1, unchokeable.UploadingTo);

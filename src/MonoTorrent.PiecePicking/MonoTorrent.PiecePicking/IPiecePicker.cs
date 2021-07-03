@@ -29,10 +29,7 @@
 
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
-
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     public interface IPiecePicker
     {

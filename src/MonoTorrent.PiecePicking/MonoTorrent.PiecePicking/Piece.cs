@@ -30,7 +30,7 @@
 using System;
 using System.Diagnostics;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.PiecePicking
 {
     [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
     class Piece : IComparable<Piece>

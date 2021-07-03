@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.PieceWriters
         [SetUp]
         public void Setup ()
         {
-            var pieceLength = Piece.BlockSize * 2;
+            var pieceLength = Constants.BlockSize * 2;
             Temp = Path.GetTempPath () + "monotorrent_tests";
 
             var files = TorrentFileInfo.Create (pieceLength,

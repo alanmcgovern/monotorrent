@@ -41,6 +41,7 @@ using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Logging;
+using MonoTorrent.PiecePicking;
 
 using ReusableTasks;
 

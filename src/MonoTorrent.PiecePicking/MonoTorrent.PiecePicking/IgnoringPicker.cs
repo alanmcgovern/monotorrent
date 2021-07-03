@@ -1,5 +1,5 @@
 //
-// RandomisedPicker.cs
+// IgnoringPicker.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,35 +27,46 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
-    public class RandomisedPicker : PiecePickerFilter
+    public class IgnoringPicker : PiecePickerFilter
     {
-        Random Random { get; }
+        readonly BitField Bitfield;
+        readonly MutableBitField Temp;
 
-        public RandomisedPicker (IPiecePicker picker)
+        public static IPiecePicker Wrap(IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
+        {
+            var result = picker;
+            foreach (var bf in ignoringBitfields)
+                result = new IgnoringPicker (bf, result);
+            return result;
+        }
+
+        public IgnoringPicker (BitField bitfield, IPiecePicker picker)
             : base (picker)
         {
-            Random = new Random ();
+            Bitfield = bitfield;
+            Temp = new MutableBitField (bitfield.Length);
         }
+
+        public override bool IsInteresting (IPeer peer, BitField bitfield)
+            => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
+            && base.IsInteresting (peer, Temp);
 
         public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
         {
-            if (available.AllFalse)
-                return null;
-
-            // If there's only one piece to choose then there isn't any midpoint.
-            if (endIndex - startIndex < 2 || count > 1)
+            // Invert 'bitfield' and AND it with the peers bitfield
+            // Any pieces which are 'true' in the bitfield will not be downloaded
+            if (Bitfield.AllFalse)
                 return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
 
-            // If there are two or more pieces to choose, ensure we always start *at least* one
-            // piece beyond the start index.
-            int midpoint = Random.Next (startIndex + 1, endIndex);
-            return base.PickPiece (peer, available, otherPeers, count, midpoint, endIndex) ??
-                   base.PickPiece (peer, available, otherPeers, count, startIndex, midpoint);
+            Temp.From (available).NAnd (Bitfield);
+            if (Temp.AllFalse)
+                return null;
+
+            return base.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
         }
     }
 }

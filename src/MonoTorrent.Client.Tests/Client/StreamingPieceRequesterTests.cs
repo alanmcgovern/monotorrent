@@ -33,6 +33,7 @@ using System.Linq;
 
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.PiecePicking;
 
 using NUnit.Framework;
 
@@ -43,8 +44,8 @@ namespace MonoTorrent.Client.PiecePicking
     {
         class TorrentData : ITorrentData
         {
-            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (Piece.BlockSize * 8, 1024 * 1024 * 8);
-            public int PieceLength  => Piece.BlockSize * 8;
+            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (Constants.BlockSize * 8, 1024 * 1024 * 8);
+            public int PieceLength  => Constants.BlockSize * 8;
             public long Size => Files[0].Length;
         }
 

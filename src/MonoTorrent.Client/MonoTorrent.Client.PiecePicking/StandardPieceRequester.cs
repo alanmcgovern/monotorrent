@@ -29,6 +29,8 @@
 
 using System.Collections.Generic;
 
+using MonoTorrent.PiecePicking;
+
 namespace MonoTorrent.Client.PiecePicking
 {
     class StandardPieceRequester : IPieceRequester

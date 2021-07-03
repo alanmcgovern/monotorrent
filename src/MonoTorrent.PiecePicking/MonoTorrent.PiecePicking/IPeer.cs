@@ -27,10 +27,9 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     public interface IPeer
     {

@@ -28,18 +28,14 @@
 
 
 using System;
-using System.Collections.Generic;
 
-using MonoTorrent.Client.PiecePicking;
-
+using MonoTorrent.PiecePicking;
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     static class IPieceWriterExtensions
     {
-        
-
         public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, byte[] buffer)
         {
             var count = request.RequestLength;
@@ -58,7 +54,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             while (totalRead < count) {
                 int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
-                fileToRead = Math.Min (fileToRead, Piece.BlockSize);
+                fileToRead = Math.Min (fileToRead, Constants.BlockSize);
 
                 if (fileToRead != await writer.ReadAsync (files[i], offset, buffer, totalRead, fileToRead))
                     return totalRead;
@@ -88,7 +84,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             while (totalWritten < count) {
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
-                fileToWrite = Math.Min (fileToWrite, Piece.BlockSize);
+                fileToWrite = Math.Min (fileToWrite, Constants.BlockSize);
 
                 await writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
                 offset += fileToWrite;

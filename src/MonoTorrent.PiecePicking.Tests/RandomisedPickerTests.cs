@@ -29,9 +29,11 @@
 
 using System.Collections.Generic;
 
+using MonoTorrent.Client;
+
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     [TestFixture]
     public class RandomisedPickerTests

@@ -31,13 +31,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Logging;
+// using MonoTorrent.Logging;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     public class StandardPicker : IPiecePicker
     {
-        static readonly Logger logger = Logger.Create (nameof(StandardPicker));
+        // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
         readonly Dictionary<int, List<Piece>> duplicates;
         readonly SortList<Piece> requests;
@@ -194,7 +194,7 @@ namespace MonoTorrent.Client.PiecePicking
             peersInvolved = null;
 
             if (pIndex < 0) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
+                //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
 
@@ -242,15 +242,15 @@ namespace MonoTorrent.Client.PiecePicking
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf (piece.Blocks, request.StartOffset, request.RequestLength);
             if (blockIndex == -1 || !peer.Equals (piece.Blocks[blockIndex].RequestedOff)) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No block ", request.PieceIndex, request.StartOffset, peer);
+                //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No block ", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             if (piece.Blocks[blockIndex].Received) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Already received.", request.PieceIndex, request.StartOffset, peer);
+                //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Already received.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             if (!piece.Blocks[blockIndex].Requested) {
-                logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Not requested.", request.PieceIndex, request.StartOffset, peer);
+                //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Not requested.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             peer.AmRequestingPiecesCount--;
@@ -338,7 +338,7 @@ namespace MonoTorrent.Client.PiecePicking
 
         BlockInfo? GetFromList (IPeer peer, BitField bitfield, IList<int> pieces)
         {
-            if (!peer.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
+            if (!peer.SupportsFastPeer)
                 return null;
 
             for (int i = 0; i < pieces.Count; i++) {

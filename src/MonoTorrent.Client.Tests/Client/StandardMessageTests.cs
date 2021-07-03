@@ -61,8 +61,8 @@ namespace MonoTorrent.Client.Messages
 
             torrentData = new TestTorrentData {
                 Files = new List<ITorrentFileInfo> (),
-                PieceLength = 16 * Piece.BlockSize,
-                Size = 40 * 16 * Piece.BlockSize,
+                PieceLength = 16 * Constants.BlockSize,
+                Size = 40 * 16 * Constants.BlockSize,
             };
         }
 
@@ -238,16 +238,16 @@ namespace MonoTorrent.Client.Messages
         [Test]
         public void PieceEncoding ()
         {
-            PieceMessage message = new PieceMessage (15, 10, Piece.BlockSize) {
-                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (Piece.BlockSize))
+            PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize) {
+                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (Constants.BlockSize))
             };
             message.Encode (buffer, offset);
         }
         [Test]
         public void PieceDecoding ()
         {
-            PieceMessage message = new PieceMessage (15, 10, Piece.BlockSize) {
-                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (Piece.BlockSize))
+            PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize) {
+                DataReleaser = new ByteBufferPool.Releaser (null, new ByteBuffer (Constants.BlockSize))
             };
             EncodeDecode (message);
         }

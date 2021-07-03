@@ -27,11 +27,7 @@
 //
 
 
-using System;
-
-using MonoTorrent.Client.PiecePicking;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.PiecePicking
 {
     /// <summary>
     ///

@@ -30,16 +30,18 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Client;
+
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     [TestFixture]
     public class RarestFirstPickerTests
     {
         class TestTorrentData : ITorrentData
         {
-            public int BlocksPerPiece => PieceLength / Piece.BlockSize;
+            public int BlocksPerPiece => PieceLength / Constants.BlockSize;
             public IList<ITorrentFileInfo> Files { get; set; }
             public int PieceLength { get; set; }
             public int Pieces => (int) Math.Ceiling ((double) Size / PieceLength);
@@ -56,7 +58,7 @@ namespace MonoTorrent.Client.PiecePicking
         [SetUp]
         public void Setup ()
         {
-            int pieceLength = 16 * Piece.BlockSize;
+            int pieceLength = 16 * Constants.BlockSize;
             int pieces = 40;
             int size = pieces * pieceLength;
 
@@ -72,7 +74,7 @@ namespace MonoTorrent.Client.PiecePicking
             picker.Initialise (torrentData);
 
             peer = PeerId.CreateNull (pieces);
-            peer.MutableBitField.SetAll (true);
+            peer.BitField.SetAll (true);
 
             peers = new List<PeerId> ();
             for (int i = 0; i < 5; i++)
@@ -84,7 +86,7 @@ namespace MonoTorrent.Client.PiecePicking
         {
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < (i * 5) + 5; j++)
-                    peers[i].MutableBitField[j] = true;
+                    peers[i].BitField[j] = true;
 
             // No pieces should be selected, but we can check what was requested.
             picker.PickPiece (peer, peer.BitField, peers, 1, 0, peer.BitField.Length - 1);
@@ -123,7 +125,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             // Every other peer has all pieces except for piece '2'.
             for (int i = 0; i < 5; i++)
-                peers[i].MutableBitField.SetAll (true).Set (i, false);
+                peers[i].BitField.SetAll (true).Set (i, false);
 
             // Ensure that pieces which were not in the 'available' bitfield were not offered
             // as suggestions.
