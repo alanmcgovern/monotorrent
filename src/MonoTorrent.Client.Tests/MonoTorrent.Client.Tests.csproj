@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="AsyncVoidMethodBuilder.cs" />
+    <Compile Include="..\MonoTorrent.Client\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="AsyncVoidMethodBuilder.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+    <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
   </ItemGroup>
 
 </Project>

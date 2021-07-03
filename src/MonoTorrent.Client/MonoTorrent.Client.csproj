@@ -106,16 +106,12 @@ Notable features include:
     
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>MonoTorrent.Tests</_Parameter1>
+      <_Parameter1>MonoTorrent.Client.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
     
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
-  </ItemGroup>
-    
-  <ItemGroup>
-    <Folder Include="MonoTorrent.BEncoding\" />
   </ItemGroup>
 
 </Project>
