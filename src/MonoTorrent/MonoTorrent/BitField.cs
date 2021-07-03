@@ -53,7 +53,7 @@ namespace MonoTorrent
 
         public bool AllTrue => TrueCount == Length;
 
-        internal int LengthInBytes => (Length + 7) / 8;
+        public int LengthInBytes => (Length + 7) / 8;
 
         public double PercentComplete => (double) TrueCount / Length * 100.0;
 
@@ -325,7 +325,7 @@ namespace MonoTorrent
                 yield return Get (i);
         }
 
-        internal int CountTrue (BitField selector)
+        public int CountTrue (BitField selector)
         {
             if (selector == null)
                 throw new ArgumentNullException (nameof (selector));
@@ -410,14 +410,14 @@ namespace MonoTorrent
             return this;
         }
 
-        internal byte[] ToByteArray ()
+        public byte[] ToByteArray ()
         {
             byte[] data = new byte[LengthInBytes];
             ToByteArray (data, 0);
             return data;
         }
 
-        internal void ToByteArray (byte[] buffer, int offset)
+        public void ToByteArray (byte[] buffer, int offset)
         {
             if (buffer == null)
                 throw new ArgumentNullException (nameof (buffer));
@@ -478,7 +478,9 @@ namespace MonoTorrent
 
         void Check (BitField value)
         {
-            MonoTorrent.Check.Value (value);
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+
             if (Length != value.Length)
                 throw new ArgumentException ("BitFields are of different lengths", nameof (value));
         }

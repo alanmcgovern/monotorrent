@@ -23,6 +23,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.BEncoding", "Mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.BEncoding.Tests", "MonoTorrent.BEncoding.Tests\MonoTorrent.BEncoding.Tests.csproj", "{36B77F86-EB2F-442D-8EFE-F74623A10EB1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{FA1E561B-2882-46B4-B2FE-677CABABDEFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Tests", "MonoTorrent.Tests\MonoTorrent.Tests.csproj", "{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +61,14 @@ Global
 		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
