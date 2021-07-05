@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Initialised && Requester.Picker.ValidatePiece (id, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
+            if (Initialised && Requester.ValidatePiece (id, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), out pieceComplete, out peersInvolved)) {
                 id.LastBlockReceived.Restart ();
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
             id.Peer.IsSeeder = id.BitField.AllTrue;
 
             // If the peer is a seeder it may still be un-interesting if some files are marked as 'DoNotDownload'
-            return Requester.Picker.IsInteresting (id, id.BitField);
+            return Requester.IsInteresting (id, id.BitField);
         }
 
         internal void AddPieceRequests (PeerId id)
@@ -136,7 +136,7 @@ namespace MonoTorrent.Client
                 return 0;
 
             await ClientEngine.MainLoop;
-            return Requester.Picker.CurrentRequestCount (); ;
+            return Requester.CurrentRequestCount ();
         }
 
         internal void PieceHashed (int pieceIndex)
@@ -148,13 +148,13 @@ namespace MonoTorrent.Client
         internal void CancelRequests (PeerId id)
         {
             if (Initialised)
-                Requester.Picker.CancelRequests (id, 0, Manager.PieceCount () - 1);
+                Requester.CancelRequests (id, 0, Manager.PieceCount () - 1);
         }
 
         internal void RequestRejected (PeerId id, BlockInfo pieceRequest)
         {
             if (Initialised)
-                Requester.Picker.RequestRejected (id, pieceRequest);
+                Requester.RequestRejected (id, pieceRequest);
         }
     }
 }

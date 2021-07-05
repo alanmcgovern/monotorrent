@@ -29,12 +29,11 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client;
-using MonoTorrent.Client.PiecePicking;
+using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Streaming
 {

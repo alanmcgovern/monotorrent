@@ -38,6 +38,7 @@ using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.PiecePicking;
 using MonoTorrent.Streaming;
 
 using ReusableTasks;

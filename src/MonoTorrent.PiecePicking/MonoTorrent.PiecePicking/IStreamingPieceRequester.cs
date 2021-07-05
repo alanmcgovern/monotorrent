@@ -26,7 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     // FIXME: Eventually make this public API so custom streaming requesters
     // can be trivially integrated with the engine. Are these two the only
@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.PiecePicking
     /// <summary>
     /// Allows files to be accessed while they are downloading
     /// </summary>
-    interface IStreamingPieceRequester : IPieceRequester
+    public interface IStreamingPieceRequester : IPieceRequester
     {
         /// <summary>
         /// Cancel any pending requests and then issue new requests so we immediately download pieces from the new high

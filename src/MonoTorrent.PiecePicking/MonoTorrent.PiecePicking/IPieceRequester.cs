@@ -29,9 +29,7 @@
 
 using System.Collections.Generic;
 
-using MonoTorrent.PiecePicking;
-
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     /// <summary>
     /// Allows an IPiecePicker implementation to create piece requests for
@@ -45,11 +43,6 @@ namespace MonoTorrent.Client.PiecePicking
         /// has entered 'endgame mode' as defined by the bittorrent specification.
         /// </summary>
         bool InEndgameMode { get; }
-
-        /// <summary>
-        /// The underlying <see cref="IPiecePicker"/> used to create piece requests and validate piece messages when they are received.
-        /// </summary>
-        IPiecePicker Picker { get; }
 
         /// <summary>
         /// Should enqueue piece requests for any peer who is has capacity.
@@ -67,6 +60,24 @@ namespace MonoTorrent.Client.PiecePicking
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="blockInfo"></param>
+        /// <param name="pieceComplete"></param>
+        /// <param name="peersInvolved"></param>
+        /// <returns></returns>
+        bool ValidatePiece (IPeer peer, BlockInfo blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="bitField"></param>
+        /// <returns></returns>
+        bool IsInteresting (IPeer peer, BitField bitField);
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="torrentData">The files, size and piecelength for the torrent.</param>
         /// <param name="ignorableBitfields"> These bitfields represent pieces which have successfully
         /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
@@ -76,5 +87,11 @@ namespace MonoTorrent.Client.PiecePicking
         /// you created and the <paramref name="ignorableBitfields"/>. This will wrap your picker in several <see cref="IgnoringPicker"/>
         /// so the engine can enforce that these pieces will not be requested a second time.</param>
         void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignorableBitfields);
+
+        IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex);
+
+        void RequestRejected (IPeer peer, BlockInfo pieceRequest);
+
+        int CurrentRequestCount ();
     }
 }

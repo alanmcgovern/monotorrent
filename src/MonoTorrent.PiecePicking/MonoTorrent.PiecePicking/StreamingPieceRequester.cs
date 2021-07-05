@@ -262,5 +262,20 @@ namespace MonoTorrent.Client.PiecePicking
         {
             HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
         }
+
+        public bool ValidatePiece (IPeer peer, BlockInfo blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved)
+            => Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+
+        public bool IsInteresting (IPeer peer, BitField bitfield)
+            => Picker.IsInteresting (peer, bitfield);
+
+        public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
+            => Picker.CancelRequests (peer, startIndex, endIndex);
+
+        public void RequestRejected (IPeer peer, BlockInfo pieceRequest)
+            => Picker.RequestRejected (peer, pieceRequest);
+
+        public int CurrentRequestCount ()
+            => Picker.CurrentRequestCount ();
     }
 }
