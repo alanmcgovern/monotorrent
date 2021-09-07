@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.PieceWriters
                         data.Stream.Dispose ();
                         data.Stream = StreamCreator(file, FileAccess.ReadWrite);
                     }
-                    await SetLengthAsync (data.Stream, file.Length);
+                    data.Stream.SetLength (file.Length);
                 }
             }
 
@@ -154,12 +154,6 @@ namespace MonoTorrent.Client.PieceWriters
             MaybeRemoveOldestStream ();
 
             return new RentedStream (data.Stream, releaser);
-        }
-
-        static async ReusableTask SetLengthAsync(Stream stream, long length)
-        {
-            await new ThreadSwitcher ();
-            stream.SetLength (length);
         }
 
         async void MaybeRemoveOldestStream ()
