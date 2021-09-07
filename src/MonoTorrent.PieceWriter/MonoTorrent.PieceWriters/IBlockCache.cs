@@ -30,12 +30,31 @@
 using System;
 
 using ReusableTasks;
-using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     public interface IBlockCache : IDisposable
     {
+        /// <summary>
+        /// This event is raised every time a block is successfully read from the cache
+        /// </summary>
+        event EventHandler<BlockInfo> ReadFromCache;
+        /// <summary>
+        /// This event is raised every time a block cannot be read from the cache, and is read from
+        /// the underlying <see cref="IPieceWriter"/> instead.
+        /// </summary>
+        event EventHandler<BlockInfo> ReadThroughCache;
+
+        /// <summary>
+        /// This event is raised when a block is written to the cache.
+        /// </summary>
+        event EventHandler<BlockInfo> WrittenToCache;
+        /// <summary>
+        /// This event is raised when a new block is written directly by the underlying <see cref="IPieceWriter"/>,
+        /// or when a block is removed from the cache and is written by the underlying <see cref="IPieceWriter"/>.
+        /// </summary>
+        event EventHandler<BlockInfo> WrittenThroughCache;
+
         /// <summary>
         /// Reads data from the cache and flushes it to disk, or reads the data from disk if it is not available in the cache.
         /// </summary>

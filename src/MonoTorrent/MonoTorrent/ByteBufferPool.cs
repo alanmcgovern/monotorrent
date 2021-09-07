@@ -30,14 +30,14 @@
 using System;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
-    class ByteBufferPool
+    public class ByteBufferPool
     {
-        internal readonly struct Releaser : IDisposable
+        public readonly struct Releaser : IDisposable
         {
             readonly int counter;
-            internal readonly ByteBuffer Buffer;
+            public readonly ByteBuffer Buffer;
             readonly Queue<ByteBuffer> Pool;
 
             internal Releaser (Queue<ByteBuffer> pool, ByteBuffer buffer)
@@ -89,14 +89,14 @@ namespace MonoTorrent.Client
             AllocateBuffers (AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
-        internal Releaser Rent (int minCapacity, out byte[] buffer)
+        public Releaser Rent (int minCapacity, out byte[] buffer)
         {
             var result = Rent (minCapacity, out ByteBuffer dataBuffer);
             buffer = dataBuffer.Data;
             return result;
         }
 
-        internal Releaser Rent (int minCapacity, out ByteBuffer buffer)
+        public Releaser Rent (int minCapacity, out ByteBuffer buffer)
         {
             if (minCapacity <= SmallMessageBufferSize)
                 return Rent (SmallMessageBuffers, SmallMessageBufferSize, out buffer);

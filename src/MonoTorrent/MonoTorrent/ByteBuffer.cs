@@ -30,7 +30,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
     public sealed class ByteBuffer
     {
@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
         internal int Counter { get; set; }
         public byte[] Data { get; }
 
-        internal SocketAsyncEventArgs Args { get; set; }
+        public SocketAsyncEventArgs Args { get; set; }
 
         public ByteBuffer (int size)
         {

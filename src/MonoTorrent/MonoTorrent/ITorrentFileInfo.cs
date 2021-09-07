@@ -27,14 +27,10 @@
 //
 
 
-using System.Diagnostics;
-using System.Threading;
-
 namespace MonoTorrent
 {
     public interface ITorrentFileInfo : ITorrentFile
     {
-        // FIXME: make BitField readonly.
         BitField BitField { get; }
 
         /// <summary>

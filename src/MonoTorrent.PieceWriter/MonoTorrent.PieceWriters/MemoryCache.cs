@@ -31,12 +31,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-using MonoTorrent.PiecePicking;
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-    partial class MemoryCache : IBlockCache
+    public partial class MemoryCache : IBlockCache
     {
         readonly struct CachedBlock : IEquatable<CachedBlock>
         {
@@ -77,9 +76,17 @@ namespace MonoTorrent.Client.PieceWriters
                 => Block.GetHashCode ();
         }
 
+        public event EventHandler<BlockInfo> ReadFromCache;
+        public event EventHandler<BlockInfo> ReadThroughCache;
+
+        public event EventHandler<BlockInfo> WrittenToCache;
+        public event EventHandler<BlockInfo> WrittenThroughCache;
+
         long cacheHits;
         long cacheMisses;
         long cacheUsed;
+
+        ByteBufferPool BufferPool { get; }
 
         /// <summary>
         /// The number of bytes which were read from the cache when fulfilling a Read request.
@@ -106,23 +113,18 @@ namespace MonoTorrent.Client.PieceWriters
         /// </summary>
         public int Capacity { get; set; }
 
-        internal SpeedMonitor ReadMonitor { get; }
+        public IPieceWriter Writer { get; set; }
 
-        internal SpeedMonitor WriteMonitor { get; }
-
-        internal IPieceWriter Writer { get; set; }
-
-        internal MemoryCache (int capacity, IPieceWriter writer)
+        public MemoryCache (ByteBufferPool bufferPool, int capacity, IPieceWriter writer)
         {
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException (nameof (capacity));
 
+            BufferPool = bufferPool;
             Capacity = capacity;
             Writer = writer ?? throw new ArgumentNullException (nameof (writer));
 
             CachedBlocks = new Dictionary<ITorrentData, List<CachedBlock>> ();
-            ReadMonitor = new SpeedMonitor ();
-            WriteMonitor = new SpeedMonitor ();
         }
 
         public async ReusableTask<bool> ReadAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
@@ -153,6 +155,7 @@ namespace MonoTorrent.Client.PieceWriters
                         FlushBlockAsync (torrent, blocks, cached);
                     }
                     Interlocked.Add (ref cacheHits, block.RequestLength);
+                    ReadFromCache?.Invoke (this, block);
                     return ReusableTask.FromResult(true);
                 }
             }
@@ -202,11 +205,12 @@ namespace MonoTorrent.Client.PieceWriters
                 }
 
                 if (!cache.HasValue) {
-                    cache = new CachedBlock (block, DiskManager.BufferPool.Rent (block.RequestLength, out byte[] _));
+                    cache = new CachedBlock (block, BufferPool.Rent (block.RequestLength, out byte[] _));
                     blocks.Add (cache.Value);
                     Interlocked.Add (ref cacheUsed, block.RequestLength);
                 }
                 Buffer.BlockCopy (buffer, 0, cache.Value.Buffer, 0, block.RequestLength);
+                WrittenToCache?.Invoke (this, block);
             }
         }
 
@@ -220,13 +224,13 @@ namespace MonoTorrent.Client.PieceWriters
 
         ReusableTask<int> ReadFromFilesAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
         {
-            ReadMonitor.AddDelta (block.RequestLength);
+            ReadThroughCache?.Invoke (this, block);
             return Writer.ReadFromFilesAsync (torrent, block, buffer);
         }
 
         ReusableTask WriteToFilesAsync (ITorrentData torrent, BlockInfo block, byte[] buffer)
         {
-            WriteMonitor.AddDelta (block.RequestLength);
+            WrittenThroughCache?.Invoke (this, block);
             return Writer.WriteToFilesAsync (torrent, block, buffer);
         }
 

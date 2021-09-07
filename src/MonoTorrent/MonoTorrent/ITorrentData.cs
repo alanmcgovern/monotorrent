@@ -39,7 +39,7 @@ namespace MonoTorrent
         IList<ITorrentFileInfo> Files { get; }
 
         /// <summary>
-        /// The size, in bytes, of each piece
+        /// The size, in bytes, of each piece. The final piece may be smaller.
         /// </summary>
         int PieceLength { get; }
 

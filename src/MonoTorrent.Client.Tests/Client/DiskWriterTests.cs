@@ -91,9 +91,9 @@ namespace MonoTorrent.Client.PieceWriters
         {
             var streams = new List<ManualStream> ();
             var streamCreated = new ReusableTaskCompletionSource<bool> ();
-            Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> creator = (file, access) => {
+            Func<ITorrentFileInfo, FileAccess, Stream> creator = (file, access) => {
                 var s = new ManualStream (file, access);
-                s.WriteTcs = new ReusableTaskCompletionSource<int> ();
+                s.WriteTcs = new TaskCompletionSource<int> ();
                 streams.Add (s);
                 streamCreated.SetResult (true);
                 return s;

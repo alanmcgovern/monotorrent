@@ -30,59 +30,69 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-    class ManualStream : ITorrentFileStream
+    class ManualStream : Stream
     {
-        public bool CanWrite { get; private set; }
+        bool canWrite;
+        long length;
+        long position;
+
+        public override bool CanSeek => true;
+        public override bool CanRead => true;
+        public override bool CanWrite => canWrite;
 
         public bool Disposed { get; private set; }
 
-        public long Length { get; private set; }
+        public override long Length => length;
 
-        public long Position { get; private set; }
+        public override long Position {
+            get => position;
+            set => position = value;
+        }
 
-        public ReusableTaskCompletionSource<int> WriteTcs { get; set; }
+        public override void SetLength (long value)
+        {
+            length = value;
+        }
+
+        public TaskCompletionSource<int> WriteTcs { get; set; }
 
         public ManualStream (ITorrentFileInfo file, FileAccess access)
         {
-            CanWrite = access.HasFlag (FileAccess.Write);
+            canWrite = access.HasFlag (FileAccess.Write);
         }
 
-        public void Dispose ()
+        protected override void Dispose (bool disposing)
         {
             Disposed = true;
-            WriteTcs?.SetException (new ObjectDisposedException (nameof (ManualStream)));
+            WriteTcs?.TrySetException (new ObjectDisposedException (nameof (ManualStream)));
         }
 
-        public ReusableTask FlushAsync ()
+        public override void Flush ()
         {
-            throw new System.NotImplementedException ();
+            
         }
 
-        public ReusableTask<int> ReadAsync (byte[] buffer, int offset, int count)
+        public override int Read (byte[] buffer, int offset, int count)
         {
-            throw new System.NotImplementedException ();
+            return 0;
         }
 
-        public ReusableTask SeekAsync (long position)
+        public override long Seek (long offset, SeekOrigin origin)
         {
-            Position = position;
-            return ReusableTask.CompletedTask;
+            position = offset;
+            return offset;
         }
 
-        public ReusableTask SetLengthAsync (long length)
-        {
-            throw new System.NotImplementedException ();
-        }
-
-        public async ReusableTask WriteAsync (byte[] buffer, int offset, int count)
+        public override void Write (byte[] buffer, int offset, int count)
         {
             if (WriteTcs != null)
-                await WriteTcs.Task;
+                WriteTcs.Task.GetAwaiter ().GetResult ();
         }
     }
 }

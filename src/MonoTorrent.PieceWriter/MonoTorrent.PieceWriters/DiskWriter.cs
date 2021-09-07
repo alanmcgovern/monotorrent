@@ -38,8 +38,8 @@ namespace MonoTorrent.Client.PieceWriters
     {
         static readonly int DefaultMaxOpenFiles = 196;
 
-        static readonly Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> DefaultStreamCreator =
-            (file, access) => new TorrentFileStream (file.FullPath, access);
+        static readonly Func<ITorrentFileInfo, FileAccess, Stream> DefaultStreamCreator =
+            (file, access) => new FileStream (file.FullPath, FileMode.OpenOrCreate, access, FileShare.ReadWrite, 1, FileOptions.RandomAccess);
 
         SemaphoreSlim Limiter { get; set; }
 
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator)
+        public DiskWriter (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator)
             : this (streamCreator, DefaultMaxOpenFiles)
         {
 
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxOpenFiles)
+        public DiskWriter (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator, int maxOpenFiles)
         {
             StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
             Limiter = new SemaphoreSlim (maxOpenFiles);
@@ -103,8 +103,10 @@ namespace MonoTorrent.Client.PieceWriters
 
         public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File (file);
-            Check.Buffer (buffer);
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
+            if (buffer is null)
+                throw new ArgumentNullException (nameof (buffer));
 
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
@@ -112,21 +114,23 @@ namespace MonoTorrent.Client.PieceWriters
             using (await Limiter.EnterAsync ()) {
                 using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
-                await MainLoop.SwitchToThreadpool ();
+                await SwitchToThreadpool ();
                 if (rented.Stream.Length < offset + count)
                     return 0;
 
                 if (rented.Stream.Position != offset)
-                    await rented.Stream.SeekAsync (offset);
+                    rented.Stream.Seek (offset, SeekOrigin.Begin);
 
-                return await rented.Stream.ReadAsync (buffer, bufferOffset, count);
+                return rented.Stream.Read (buffer, bufferOffset, count);
             }
         }
 
         public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            Check.File (file);
-            Check.Buffer (buffer);
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
+            if (buffer is null)
+                throw new ArgumentNullException(nameof(buffer));
 
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
@@ -139,15 +143,20 @@ namespace MonoTorrent.Client.PieceWriters
                 // synchronously before the asynchronous Write is performed.
                 //
                 // We also want the Seek operation to execute on the threadpool.
-                await MainLoop.SwitchToThreadpool ();
-                await rented.Stream.SeekAsync (offset).ConfigureAwait (false);
-                await rented.Stream.WriteAsync (buffer, bufferOffset, count).ConfigureAwait (false);
+                await SwitchToThreadpool ();
+                rented.Stream.Seek (offset, SeekOrigin.Begin);
+                rented.Stream.Write (buffer, bufferOffset, count);
             }
         }
 
-        internal void UpdateMaximumOpenFiles (int maximumOpenFiles)
+        public void UpdateMaximumOpenFiles (int maximumOpenFiles)
         {
             Limiter = new SemaphoreSlim (maximumOpenFiles);
+        }
+
+        internal static ThreadSwitcher SwitchToThreadpool ()
+        {
+            return new ThreadSwitcher ();
         }
     }
 }

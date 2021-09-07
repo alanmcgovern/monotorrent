@@ -100,6 +100,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public long CacheBytesUsed => Cache.CacheUsed;
 
+        SpeedMonitor WriterReadMonitor { get; } = new SpeedMonitor ();
+        SpeedMonitor WriterWriteMonitor { get; } = new SpeedMonitor ();
+
         /// <summary>
         /// True if the object has been disposed.
         /// </summary>
@@ -128,7 +131,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being read per second.
         /// </summary>
-        public long ReadRate => Cache.ReadMonitor.Rate;
+        public long ReadRate => WriterReadMonitor.Rate;
 
         /// <summary>
         /// The settings object passed to the ClientEngine, used to get the current read/write limits.
@@ -148,7 +151,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The amount of data, in bytes, being written per second.
         /// </summary>
-        public long WriteRate => Cache.WriteMonitor.Rate;
+        public long WriteRate => WriterWriteMonitor.Rate;
 
         /// <summary>
         /// Total bytes read from the cache.
@@ -158,12 +161,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The total bytes which have been read. Excludes bytes read from the cache.
         /// </summary>
-        public long TotalBytesRead => Cache.ReadMonitor.Total;
+        public long TotalBytesRead => WriterReadMonitor.Total;
 
         /// <summary>
         /// The total number of bytes which have been written. Excludes bytes written to the cache.
         /// </summary>
-        public long TotalBytesWritten => Cache.WriteMonitor.Total;
+        public long TotalBytesWritten => WriterWriteMonitor.Total;
 
         ValueStopwatch UpdateTimer;
 
@@ -185,7 +188,9 @@ namespace MonoTorrent.Client
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             writer ??= new DiskWriter (settings.MaximumOpenFiles);
-            Cache = new MemoryCache (settings.DiskCacheBytes, writer);
+            Cache = new MemoryCache (BufferPool, settings.DiskCacheBytes, writer);
+            Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
+            Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
         }
 
         internal void ChangePieceWriter (IPieceWriter writer)
@@ -545,8 +550,8 @@ namespace MonoTorrent.Client
         {
             UpdateTimer.Restart ();
 
-            Cache.ReadMonitor.Tick (delta);
-            Cache.WriteMonitor.Tick (delta);
+            WriterReadMonitor.Tick (delta);
+            WriterWriteMonitor.Tick (delta);
 
             WriteLimiter.UpdateChunks (Settings.MaximumDiskWriteRate, WriteRate);
             ReadLimiter.UpdateChunks (Settings.MaximumDiskReadRate, ReadRate);

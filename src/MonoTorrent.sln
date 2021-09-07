@@ -27,13 +27,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent", "MonoTorrent\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Tests", "MonoTorrent.Tests\MonoTorrent.Tests.csproj", "{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.PiecePicking", "MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj", "{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PiecePicking", "MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj", "{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.PiecePicking.Tests", "MonoTorrent.PiecePicking.Tests\MonoTorrent.PiecePicking.Tests.csproj", "{8CE2C458-D0A9-428F-A749-4949AA113EEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PiecePicking.Tests", "MonoTorrent.PiecePicking.Tests\MonoTorrent.PiecePicking.Tests.csproj", "{8CE2C458-D0A9-428F-A749-4949AA113EEC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8790FB34-68AA-4A1A-A339-0E1DAAB3E180}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{2BB64148-15EE-4BD9-A48D-1CC8A14D7AC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.PieceWriter", "MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj", "{8B4CF0BD-7B6E-460D-811E-A728293EC89B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +87,10 @@ Global
 		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

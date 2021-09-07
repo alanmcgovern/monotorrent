@@ -33,22 +33,18 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-using MonoTorrent.Logging;
-
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     class FileStreamBuffer : IDisposable
     {
-        static readonly Logger logger = Logger.Create (nameof (FileStreamBuffer));
-
         internal readonly struct RentedStream : IDisposable
         {
-            internal readonly ITorrentFileStream Stream;
+            internal readonly Stream Stream;
             readonly ReusableExclusiveSemaphore.Releaser Releaser;
 
-            public RentedStream (ITorrentFileStream stream, ReusableExclusiveSemaphore.Releaser releaser)
+            public RentedStream (Stream stream, ReusableExclusiveSemaphore.Releaser releaser)
             {
                 Stream = stream;
                 Releaser = releaser;
@@ -64,7 +60,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             public long LastUsedStamp = Stopwatch.GetTimestamp ();
             public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
-            public ITorrentFileStream Stream;
+            public Stream Stream;
         }
 
         // A list of currently open filestreams. Note: The least recently used is at position 0
@@ -73,11 +69,11 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int Count { get; private set; }
 
-        Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> StreamCreator { get; }
+        Func<ITorrentFileInfo, FileAccess, Stream> StreamCreator { get; }
 
         Dictionary<ITorrentFileInfo, StreamData> Streams { get; }
 
-        internal FileStreamBuffer (Func<ITorrentFileInfo, FileAccess, ITorrentFileStream> streamCreator, int maxStreams)
+        internal FileStreamBuffer (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator, int maxStreams)
         {
             StreamCreator = streamCreator;
             MaxStreams = maxStreams;
@@ -129,7 +125,6 @@ namespace MonoTorrent.Client.PieceWriters
             if (data.Stream != null) {
                 // If we are requesting write access and the current stream does not have it
                 if (((access & FileAccess.Write) == FileAccess.Write) && !data.Stream.CanWrite) {
-                    logger.InfoFormatted ("Didn't have write permission for {0} - reopening", file.Path);
                     data.Stream.Dispose ();
                     data.Stream = null;
                     Count--;
@@ -151,7 +146,7 @@ namespace MonoTorrent.Client.PieceWriters
                         data.Stream.Dispose ();
                         data.Stream = StreamCreator(file, FileAccess.ReadWrite);
                     }
-                    await data.Stream.SetLengthAsync (file.Length);
+                    await SetLengthAsync (data.Stream, file.Length);
                 }
             }
 
@@ -161,11 +156,16 @@ namespace MonoTorrent.Client.PieceWriters
             return new RentedStream (data.Stream, releaser);
         }
 
+        static async ReusableTask SetLengthAsync(Stream stream, long length)
+        {
+            await new ThreadSwitcher ();
+            stream.SetLength (length);
+        }
+
         async void MaybeRemoveOldestStream ()
         {
             if (MaxStreams != 0 && Count > MaxStreams) {
                 var oldest = Streams.OrderBy (t => t.Value.LastUsedStamp).Where (t => t.Value.Stream != null).FirstOrDefault ();
-                logger.InfoFormatted ("Opening filestream: {0}", oldest.Key.FullPath);
 
                 using (await oldest.Value.Locker.EnterAsync ()) {
                     oldest.Value.Stream.Dispose ();

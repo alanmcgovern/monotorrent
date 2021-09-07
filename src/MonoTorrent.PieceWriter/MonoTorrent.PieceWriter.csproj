@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ReusableTasks" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent\IListExtensions.cs" Link="IListExtensions.cs" />
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent\SemaphoreSlimExtensions.cs" Link="SemaphoreSlimExtensions.cs" />
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent\TorrentFileExtensions.cs" Link="TorrentFileExtensions.cs" />
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\ThreadSwitcher.cs" Link="ThreadSwitcher.cs" />
+    <Compile Include="..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
+  </ItemGroup>
+
+  
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -28,7 +28,7 @@
 
 using System;
 
-namespace MonoTorrent.PiecePicking
+namespace MonoTorrent
 {
     public readonly struct BlockInfo : IEquatable<BlockInfo>
     {
@@ -60,6 +60,6 @@ namespace MonoTorrent.PiecePicking
          => (long) PieceIndex * pieceLength + StartOffset;
 
         public override string ToString ()
-            => $"Piece: {PieceIndex} - Offset {StartOffset / Piece.BlockSize}";
+            => $"Piece: {PieceIndex} - Offset {StartOffset / Constants.BlockSize}";
     }
 }

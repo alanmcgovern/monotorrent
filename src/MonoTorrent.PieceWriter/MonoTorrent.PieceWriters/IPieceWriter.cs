@@ -29,7 +29,6 @@
 
 using System;
 
-using MonoTorrent.PiecePicking;
 using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
