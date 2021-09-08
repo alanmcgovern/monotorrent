@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.PieceWriters
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
         }
 
-        [Test]
+       /* [Test]
         public async Task ExceedMaxOpenFiles ()
         {
             var streams = new List<ManualStream> ();
@@ -116,6 +116,6 @@ namespace MonoTorrent.Client.PieceWriters
             await secondStream.WithTimeout ();
             Assert.IsTrue (streams[0].Disposed);
             Assert.IsFalse (streams[1].Disposed);
-        }
+        }*/
     }
 }

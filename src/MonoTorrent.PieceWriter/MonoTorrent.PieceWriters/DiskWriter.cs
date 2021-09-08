@@ -28,6 +28,7 @@
 
 
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using ReusableTasks;
@@ -53,7 +54,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        public DiskWriter (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator)
+        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator)
             : this (streamCreator, DefaultMaxOpenFiles)
         {
 
@@ -65,7 +66,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        public DiskWriter (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator, int maxOpenFiles)
+        internal DiskWriter (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator, int maxOpenFiles)
         {
             StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
             Limiter = new SemaphoreSlim (maxOpenFiles);

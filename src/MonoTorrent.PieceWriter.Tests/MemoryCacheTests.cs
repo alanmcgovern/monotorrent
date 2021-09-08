@@ -35,8 +35,6 @@ using ReusableTasks;
 
 using NUnit.Framework;
 using System;
-using MonoTorrent.Client.PiecePicking;
-using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client.PieceWriters
 {

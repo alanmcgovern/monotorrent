@@ -35,6 +35,7 @@ using NUnit.Framework;
 
 namespace MonoTorrent.Client.Modes
 {
+
     [TestFixture]
     public class StoppedModeTests
     {
