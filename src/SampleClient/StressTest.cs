@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.Client;
-using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.PieceWriter;
 using MonoTorrent.Tracker.Listeners;
 
 using ReusableTasks;

@@ -106,7 +106,7 @@ Notable features include:
     
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>MonoTorrent.Client.Tests</_Parameter1>
+      <_Parameter1>Tests.$(AssemblyName)</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
     

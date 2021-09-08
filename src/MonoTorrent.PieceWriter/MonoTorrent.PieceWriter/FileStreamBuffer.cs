@@ -35,7 +35,7 @@ using System.Linq;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.PieceWriter
 {
     class FileStreamBuffer : IDisposable
     {

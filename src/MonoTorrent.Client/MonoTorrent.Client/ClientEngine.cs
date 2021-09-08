@@ -39,12 +39,12 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.PiecePicking;
-using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Logging;
+using MonoTorrent.PieceWriter;
 
 namespace MonoTorrent.Client
 {

@@ -1,4 +1,4 @@
-//
+﻿//
 // IPieceWriter.cs
 //
 // Authors:
@@ -31,7 +31,7 @@ using System;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.PieceWriter
 {
     static class IPieceWriterExtensions
     {
@@ -94,15 +94,5 @@ namespace MonoTorrent.Client.PieceWriters
                 }
             }
         }
-    }
-
-    public interface IPieceWriter : IDisposable
-    {
-        ReusableTask CloseAsync (ITorrentFileInfo file);
-        ReusableTask<bool> ExistsAsync (ITorrentFileInfo file);
-        ReusableTask FlushAsync (ITorrentFileInfo file);
-        ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
     }
 }

@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
 </Project>

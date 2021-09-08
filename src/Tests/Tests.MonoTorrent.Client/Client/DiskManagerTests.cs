@@ -34,9 +34,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.PiecePicking;
-using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.PiecePicking;
+using MonoTorrent.PieceWriter;
 
 using NUnit.Framework;
 

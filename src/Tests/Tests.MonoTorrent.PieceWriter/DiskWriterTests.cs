@@ -32,10 +32,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using MonoTorrent.Client;
+
 using NUnit.Framework;
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.PieceWriter
 {
     public class DiskWriterTests
     {

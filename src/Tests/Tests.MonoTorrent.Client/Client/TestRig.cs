@@ -40,8 +40,8 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Listeners;
-using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.PieceWriter;
 
 using ReusableTasks;
 

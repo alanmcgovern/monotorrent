@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.PieceWriter;
 
 using ReusableTasks;
 

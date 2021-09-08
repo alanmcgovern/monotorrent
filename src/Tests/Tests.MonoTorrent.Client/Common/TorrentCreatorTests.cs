@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.PieceWriter;
 
 using NUnit.Framework;
 

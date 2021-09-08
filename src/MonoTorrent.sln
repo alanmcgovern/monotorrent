@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31423.177
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Client", "MonoTorrent.Client\MonoTorrent.Client.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Client.Tests", "MonoTorrent.Client.Tests\MonoTorrent.Client.Tests.csproj", "{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.Client", "Tests\Tests.MonoTorrent.Client\Tests.MonoTorrent.Client.csproj", "{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleClient", "SampleClient\SampleClient.csproj", "{9CC2CC3A-4041-4857-AF8B-D58745FD3066}"
 EndProject
@@ -21,15 +21,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.BEncoding", "MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj", "{5D8AA8FE-05DB-4D6F-A330-941733087821}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.BEncoding.Tests", "MonoTorrent.BEncoding.Tests\MonoTorrent.BEncoding.Tests.csproj", "{36B77F86-EB2F-442D-8EFE-F74623A10EB1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.BEncoding", "Tests\Tests.MonoTorrent.BEncoding\Tests.MonoTorrent.BEncoding.csproj", "{36B77F86-EB2F-442D-8EFE-F74623A10EB1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{FA1E561B-2882-46B4-B2FE-677CABABDEFB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Tests", "MonoTorrent.Tests\MonoTorrent.Tests.csproj", "{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent", "Tests\Tests.MonoTorrent\Tests.MonoTorrent.csproj", "{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PiecePicking", "MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj", "{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PiecePicking.Tests", "MonoTorrent.PiecePicking.Tests\MonoTorrent.PiecePicking.Tests.csproj", "{8CE2C458-D0A9-428F-A749-4949AA113EEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.PiecePicking", "Tests\Tests.MonoTorrent.PiecePicking\Tests.MonoTorrent.PiecePicking.csproj", "{8CE2C458-D0A9-428F-A749-4949AA113EEC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8790FB34-68AA-4A1A-A339-0E1DAAB3E180}"
 EndProject
@@ -37,7 +37,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{2BB6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PieceWriter", "MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj", "{8B4CF0BD-7B6E-460D-811E-A728293EC89B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.PieceWriter.Tests", "MonoTorrent.PieceWriter.Tests\MonoTorrent.PieceWriter.Tests.csproj", "{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.PieceWriter", "Tests\Tests.MonoTorrent.PieceWriter\Tests.MonoTorrent.PieceWriter.csproj", "{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

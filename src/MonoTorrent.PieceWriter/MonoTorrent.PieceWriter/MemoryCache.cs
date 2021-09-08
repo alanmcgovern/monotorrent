@@ -33,7 +33,7 @@ using System.Threading;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.PieceWriter
 {
     public partial class MemoryCache : IBlockCache
     {

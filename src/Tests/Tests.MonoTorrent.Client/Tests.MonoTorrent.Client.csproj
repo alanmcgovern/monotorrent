@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="AsyncVoidMethodBuilder.cs" />
-    <Compile Include="..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
+    <Compile Include="..\..\MonoTorrent.Client\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="AsyncVoidMethodBuilder.cs" />
+    <Compile Include="..\..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,8 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
-    <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
   </ItemGroup>
 
 </Project>

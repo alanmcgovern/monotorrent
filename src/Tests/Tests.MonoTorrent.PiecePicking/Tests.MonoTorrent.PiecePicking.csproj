@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="TorrentFileInfo.cs" />
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="TorrentFile.cs" />
-    <Compile Include="..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="TorrentFileInfo.cs" />
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="TorrentFile.cs" />
+    <Compile Include="..\..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 </Project>

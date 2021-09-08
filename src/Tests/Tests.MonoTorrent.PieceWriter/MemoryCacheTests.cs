@@ -35,8 +35,9 @@ using ReusableTasks;
 
 using NUnit.Framework;
 using System;
+using MonoTorrent.Client;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.PieceWriter
 {
     class MemoryWriter : IPieceWriter
     {

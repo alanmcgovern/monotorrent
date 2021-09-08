@@ -34,7 +34,7 @@ using System.Text;
 
 using Microsoft.Win32.SafeHandles;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.PieceWriter
 {
     static class NtfsSparseFile
     {

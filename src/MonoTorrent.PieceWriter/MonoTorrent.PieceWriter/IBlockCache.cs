@@ -31,7 +31,7 @@ using System;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.PieceWriters
+namespace MonoTorrent.PieceWriter
 {
     public interface IBlockCache : IDisposable
     {

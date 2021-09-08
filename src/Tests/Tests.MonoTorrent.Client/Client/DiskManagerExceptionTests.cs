@@ -31,8 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.PiecePicking;
+using MonoTorrent.PieceWriter;
 
 using NUnit.Framework;
 using ReusableTasks;
