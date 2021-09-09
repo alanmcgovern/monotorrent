@@ -30,6 +30,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
+using System.Web;
 
 using MonoTorrent.BEncoding;
 
@@ -154,7 +155,7 @@ namespace MonoTorrent.Tracker
                 Response.Add (FailureKey, (BEncodedString) ("mandatory announce parameter " + field + " in query missing"));
                 return null;
             }
-            byte[] hash = UriHelper.UrlDecode (Parameters["info_hash"]);
+            byte[] hash = HttpUtility.UrlDecodeToBytes (Parameters["info_hash"]);
             if (hash.Length != 20) {
                 Response.Add (FailureKey, (BEncodedString) (
                     $"infohash was {hash.Length} bytes long, it must be 20 bytes long."));

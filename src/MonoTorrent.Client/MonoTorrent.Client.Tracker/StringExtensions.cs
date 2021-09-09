@@ -28,6 +28,7 @@
 
 
 using System.Text;
+using System.Web;
 
 namespace MonoTorrent
 {
@@ -36,13 +37,9 @@ namespace MonoTorrent
         static readonly Encoding UTF8 = Encoding.UTF8;
 
         public static string UrlEncodeUTF8 (this string str)
-        {
-            return UriHelper.UrlEncode (UTF8.GetBytes (str));
-        }
+            => HttpUtility.UrlEncode (str, UTF8);
 
         public static string UrlDecodeUTF8 (this string str)
-        {
-            return UTF8.GetString (UriHelper.UrlDecode (str));
-        }
+            => HttpUtility.UrlDecode (str, Encoding.UTF8);
     }
 }

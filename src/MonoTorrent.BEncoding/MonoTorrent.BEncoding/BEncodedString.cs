@@ -28,7 +28,9 @@
 
 
 using System;
+using System.ComponentModel;
 using System.Text;
+using System.Web;
 
 namespace MonoTorrent.BEncoding
 {
@@ -44,14 +46,20 @@ namespace MonoTorrent.BEncoding
             return (value?.TextBytes.Length ?? 0) == 0;
         }
 
-        public static BEncodedString FromUrlEncodedString (string urlEncodedValue)
+        public static BEncodedString UrlDecode (string urlEncodedValue)
         {
             if (urlEncodedValue == null)
                 return null;
             if (urlEncodedValue.Length == 0)
                 return Empty;
-            return new BEncodedString (UriHelper.UrlDecode (urlEncodedValue));
+            return new BEncodedString (HttpUtility.UrlDecodeToBytes (urlEncodedValue, Encoding.UTF8));
         }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Use 'UrlDecode' instead'")]
+        public static BEncodedString FromUrlEncodedString (string urlEncodedValue)
+        => UrlDecode (urlEncodedValue);
+
 
         /// <summary>
         /// The value of the BEncodedString interpreted as a UTF-8 string. If the underlying bytes
@@ -244,7 +252,7 @@ namespace MonoTorrent.BEncoding
 
         public string UrlEncode ()
         {
-            return UriHelper.UrlEncode (TextBytes);
+            return HttpUtility.UrlEncode (TextBytes);
         }
 
         public string ToHex ()
