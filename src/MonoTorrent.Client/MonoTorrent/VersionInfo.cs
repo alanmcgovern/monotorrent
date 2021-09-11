@@ -33,11 +33,6 @@ namespace MonoTorrent
 {
     public static class VersionInfo
     {
-        /// <summary>
-        /// Protocol string for version 1.0 of Bittorrent Protocol
-        /// </summary>
-        internal static readonly string ProtocolStringV100 = "BitTorrent protocol";
-
         internal static string ClientIdentifier { get; }= "MO";
 
         /// <summary>
@@ -46,6 +41,7 @@ namespace MonoTorrent
         internal static string ClientVersion { get; private set; }
 
         internal static string DhtClientVersion { get; private set; }
+        internal static string ProtocolStringV100 => Constants.ProtocolStringV100;
 
         /// <summary>
         /// The full version of this library in the form 'A.B.C'.

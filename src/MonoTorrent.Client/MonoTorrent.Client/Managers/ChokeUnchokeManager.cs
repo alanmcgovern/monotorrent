@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages.FastPeer;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {

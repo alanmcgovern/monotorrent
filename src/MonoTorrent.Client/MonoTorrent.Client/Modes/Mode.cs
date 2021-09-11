@@ -36,9 +36,9 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages.FastPeer;
+using MonoTorrent.Messages.Libtorrent;
+using MonoTorrent.Messages;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Logging;
 using MonoTorrent.PiecePicking;
@@ -222,10 +222,10 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleLtMetadataMessage (PeerId id, LTMetadata message)
         {
-            if (message.MetadataMessageType == LTMetadata.eMessageType.Request) {
+            if (message.MetadataMessageType == LTMetadata.MessageType.Request) {
                 id.MessageQueue.Enqueue (Manager.HasMetadata
-                    ? new LTMetadata (id, LTMetadata.eMessageType.Data, message.Piece, Manager.Torrent.InfoMetadata)
-                    : new LTMetadata (id, LTMetadata.eMessageType.Reject, message.Piece));
+                    ? new LTMetadata (id.ExtensionSupports, LTMetadata.MessageType.Data, message.Piece, Manager.Torrent.InfoMetadata)
+                    : new LTMetadata (id.ExtensionSupports, LTMetadata.MessageType.Reject, message.Piece));
             }
         }
 
@@ -420,7 +420,7 @@ namespace MonoTorrent.Client.Modes
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
             // otherwise send back a reject request message
-            else if (id.SupportsFastPeer && ClientEngine.SupportsFastPeer) {
+            else if (id.SupportsFastPeer) {
                 if (id.AmAllowedFastPieces.Contains (message.PieceIndex)) {
                     Interlocked.Increment (ref id.isRequestingPiecesCount);
                     id.MessageQueue.Enqueue (m);
@@ -467,7 +467,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void AppendExtendedHandshake (PeerId id, MessageBundle bundle)
         {
-            if (id.SupportsLTMessages && ClientEngine.SupportsExtended)
+            if (id.SupportsLTMessages)
                 bundle.Messages.Add (new ExtendedHandshakeMessage (Manager.Torrent?.IsPrivate ?? false, Manager.HasMetadata ? Manager.Torrent.InfoMetadata.Length : (int?) null, Settings.ListenPort));
         }
 
@@ -475,7 +475,7 @@ namespace MonoTorrent.Client.Modes
         {
             // Now we will enqueue a FastPiece message for each piece we will allow the peer to download
             // even if they are choked
-            if (ClientEngine.SupportsFastPeer && id.SupportsFastPeer)
+            if (id.SupportsFastPeer)
                 for (int i = 0; i < id.AmAllowedFastPieces.Count; i++)
                     bundle.Messages.Add (new AllowedFastMessage (id.AmAllowedFastPieces[i]));
 
@@ -483,7 +483,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
-            if (id.SupportsFastPeer && ClientEngine.SupportsFastPeer) {
+            if (id.SupportsFastPeer) {
                 if (Manager.Bitfield.AllFalse)
                     bundle.Messages.Add (new HaveNoneMessage ());
 

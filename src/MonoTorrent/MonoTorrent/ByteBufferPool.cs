@@ -34,6 +34,9 @@ namespace MonoTorrent
 {
     public class ByteBufferPool
     {
+        public static ByteBufferPool Default = new ByteBufferPool (createSocketAsyncArgs: false);
+        public static ByteBufferPool DefaultWithSocketAsyncArgs = new ByteBufferPool (createSocketAsyncArgs: true);
+
         public readonly struct Releaser : IDisposable
         {
             readonly int counter;
@@ -73,11 +76,15 @@ namespace MonoTorrent
         Queue<ByteBuffer> MediumMessageBuffers { get; }
         Queue<ByteBuffer> SmallMessageBuffers { get; }
 
+        bool CreateSocketAsyncArgs { get; }
+
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
-        public ByteBufferPool ()
+        public ByteBufferPool (bool createSocketAsyncArgs)
         {
+            CreateSocketAsyncArgs = createSocketAsyncArgs;
+
             LargeMessageBuffers = new Queue<ByteBuffer> ();
             MassiveBuffers = new Queue<ByteBuffer> ();
             MediumMessageBuffers = new Queue<ByteBuffer> ();
@@ -114,7 +121,7 @@ namespace MonoTorrent
                     else
                         MassiveBuffers.Enqueue (buffer);
 
-                buffer = new ByteBuffer(minCapacity);
+                buffer = new ByteBuffer (minCapacity, CreateSocketAsyncArgs);
                 return new Releaser (MassiveBuffers, buffer);
             }
         }
@@ -132,7 +139,7 @@ namespace MonoTorrent
         void AllocateBuffers (int count, Queue<ByteBuffer> bufferQueue, int bufferSize)
         {
             while (count-- > 0)
-                bufferQueue.Enqueue (new ByteBuffer (bufferSize));
+                bufferQueue.Enqueue (new ByteBuffer (bufferSize, CreateSocketAsyncArgs));
         }
     }
 }

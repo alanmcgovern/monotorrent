@@ -14,7 +14,6 @@
     <Compile Include="..\MonoTorrent.Client\MonoTorrent\SemaphoreSlimExtensions.cs" Link="SemaphoreSlimExtensions.cs" />
     <Compile Include="..\MonoTorrent.Client\MonoTorrent\TorrentFileExtensions.cs" Link="TorrentFileExtensions.cs" />
     <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\ThreadSwitcher.cs" Link="ThreadSwitcher.cs" />
-    <Compile Include="..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
   </ItemGroup>
 
   

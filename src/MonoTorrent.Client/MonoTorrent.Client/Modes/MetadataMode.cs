@@ -37,9 +37,9 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages.FastPeer;
+using MonoTorrent.Messages.Libtorrent;
+using MonoTorrent.Messages;
 using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.Modes
@@ -136,7 +136,7 @@ namespace MonoTorrent.Client.Modes
             base.HandleLtMetadataMessage (id, message);
 
             switch (message.MetadataMessageType) {
-                case LTMetadata.eMessageType.Data:
+                case LTMetadata.MessageType.Data:
                     // If we've already received everything successfully, do nothing!
                     if (bitField.AllTrue)
                         return;
@@ -203,13 +203,13 @@ namespace MonoTorrent.Client.Modes
                     }
                     RequestNextNeededPiece (id);
                     break;
-                case LTMetadata.eMessageType.Reject:
+                case LTMetadata.MessageType.Reject:
                     //TODO
                     //Think to what we do in this situation
                     //for moment nothing ;)
                     //reject or flood?
                     break;
-                case LTMetadata.eMessageType.Request://ever done in base class but needed to avoid default
+                case LTMetadata.MessageType.Request://ever done in base class but needed to avoid default
                     break;
                 default:
                     throw new MessageException ($"Invalid messagetype in LTMetadata: {message.MetadataMessageType}");
@@ -217,27 +217,27 @@ namespace MonoTorrent.Client.Modes
 
         }
 
-        protected override void HandleAllowedFastMessage (PeerId id, Messages.FastPeer.AllowedFastMessage message)
+        protected override void HandleAllowedFastMessage (PeerId id, AllowedFastMessage message)
         {
             // Disregard these when in metadata mode as we can't request regular pieces anyway
         }
 
-        protected override void HandleHaveAllMessage (PeerId id, Messages.FastPeer.HaveAllMessage message)
+        protected override void HandleHaveAllMessage (PeerId id, HaveAllMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveMessage (PeerId id, Messages.Standard.HaveMessage message)
+        protected override void HandleHaveMessage (PeerId id, HaveMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveNoneMessage (PeerId id, Messages.FastPeer.HaveNoneMessage message)
+        protected override void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleInterestedMessage (PeerId id, Messages.Standard.InterestedMessage message)
+        protected override void HandleInterestedMessage (PeerId id, InterestedMessage message)
         {
             // Nothing
         }
@@ -252,14 +252,14 @@ namespace MonoTorrent.Client.Modes
                 pieceToRequest++;
 
             pieceToRequest = pieceToRequest % bitField.Length;
-            var m = new LTMetadata (id, LTMetadata.eMessageType.Request, pieceToRequest++);
+            var m = new LTMetadata (id.ExtensionSupports, LTMetadata.MessageType.Request, pieceToRequest++);
             id.MessageQueue.Enqueue (m);
             requestTimeout = DateTime.Now.Add (timeout);
         }
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
-            if (ClientEngine.SupportsFastPeer && id.SupportsFastPeer)
+            if (id.SupportsFastPeer)
                 bundle.Messages.Add (new HaveNoneMessage ());
             // If the fast peer extensions are not supported we must not send a
             // bitfield message because we don't know how many pieces the torrent

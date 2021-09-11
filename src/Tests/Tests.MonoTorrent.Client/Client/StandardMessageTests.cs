@@ -31,7 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -239,7 +239,7 @@ namespace MonoTorrent.Client.Messages
         public void PieceEncoding ()
         {
             PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize) {
-                DataReleaser = new ByteBufferPool ().Rent (Constants.BlockSize, out ByteBuffer _)
+                DataReleaser = new ByteBufferPool (false).Rent (Constants.BlockSize, out ByteBuffer _)
             };
             message.Encode (buffer, offset);
         }
@@ -247,7 +247,7 @@ namespace MonoTorrent.Client.Messages
         public void PieceDecoding ()
         {
             PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize) {
-                DataReleaser = new ByteBufferPool ().Rent (Constants.BlockSize, out ByteBuffer _)
+                DataReleaser = new ByteBufferPool (false).Rent (Constants.BlockSize, out ByteBuffer _)
             };
             EncodeDecode (message);
         }

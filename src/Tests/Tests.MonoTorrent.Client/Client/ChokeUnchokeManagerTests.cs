@@ -31,8 +31,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages.FastPeer;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 

@@ -32,7 +32,7 @@ using System;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Tracker;
 
-namespace MonoTorrent.Client.Messages.UdpTracker
+namespace MonoTorrent.Messages.UdpTracker
 {
     class AnnounceMessage : UdpTrackerMessage
     {
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write (buffer, written, ConnectionId);
             written += Write (buffer, written, Action);
             written += Write (buffer, written, TransactionId);
-            written += Write (buffer, written, InfoHash.Hash, 0, InfoHash.Hash.Length);
+            written += Write (buffer, written, InfoHash.UnsafeAsArray (), 0, InfoHash.UnsafeAsArray ().Length);
             written += Write (buffer, written, PeerId.TextBytes);
             written += Write (buffer, written, Downloaded);
             written += Write (buffer, written, Left);

@@ -34,7 +34,7 @@ using System.Net;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 using MonoTorrent.Client.RateLimiters;
 
 using ReusableTasks;

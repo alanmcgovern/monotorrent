@@ -31,8 +31,7 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
+using MonoTorrent.Messages;
 
 using ReusableTasks;
 
@@ -135,7 +134,7 @@ namespace MonoTorrent.Client.Encryption
         bool MatchSKEY (byte[] torrentHash)
         {
             for (int i = 0; i < PossibleSKEYs.Length; i++) {
-                byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].Hash);
+                byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].UnsafeAsArray ());
                 byte[] req3 = Hash (Req3Bytes, S);
 
                 bool match = true;

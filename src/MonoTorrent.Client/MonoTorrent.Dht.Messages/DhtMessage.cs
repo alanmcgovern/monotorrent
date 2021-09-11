@@ -29,6 +29,7 @@
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Dht.Messages
 {

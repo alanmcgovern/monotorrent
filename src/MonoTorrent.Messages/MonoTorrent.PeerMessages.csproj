@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+  </ItemGroup>
+
+</Project>

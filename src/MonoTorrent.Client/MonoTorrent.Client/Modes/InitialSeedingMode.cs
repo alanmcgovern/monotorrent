@@ -28,8 +28,8 @@
 
 
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages.FastPeer;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.Modes
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
-            if (ClientEngine.SupportsFastPeer && id.SupportsFastPeer)
+            if (id.SupportsFastPeer)
                 bundle.Messages.Add (new HaveNoneMessage ());
             else
                 bundle.Messages.Add (new BitfieldMessage (zero));
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.Modes
                 PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
                 PeerMessage haveAllMessage = new HaveAllMessage ();
                 foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
-                    PeerMessage message = ClientEngine.SupportsFastPeer && peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
+                    PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
                     peer.MessageQueue.Enqueue (message);
                 }
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);

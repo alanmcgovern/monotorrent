@@ -38,9 +38,9 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages.FastPeer;
+using MonoTorrent.Messages.Libtorrent;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
+            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHash, new string ('g', 20), Constants.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.TorrentDict.LengthInBytes (), 5555);
             exHand.Supports.Add (LTMetadata.Support);
@@ -110,13 +110,13 @@ namespace MonoTorrent.Client.Modes
             // 2) Send all our metadata requests
             int length = (rig.TorrentDict.LengthInBytes () + 16383) / 16384;
             for (int i = 0; i < length; i++)
-                await PeerIO.SendMessageAsync (connection, encryptor, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Request, i, null));
+                await PeerIO.SendMessageAsync (connection, encryptor, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Request, i, null));
             // 3) Receive all the metadata chunks
             PeerMessage m;
             var stream = new MemoryStream ();
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is LTMetadata metadata) {
-                    if (metadata.MetadataMessageType == LTMetadata.eMessageType.Data) {
+                    if (metadata.MetadataMessageType == LTMetadata.MessageType.Data) {
                         stream.Write (metadata.MetadataPiece, 0, metadata.MetadataPiece.Length);
                         length--;
                     }
@@ -286,7 +286,7 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
+            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), Constants.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.InfoMetadata.Length, 5555);
             exHand.Supports.Add (LTMetadata.Support);
@@ -302,12 +302,12 @@ namespace MonoTorrent.Client.Modes
             while (unrequestedPieces.Count > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is ExtendedHandshakeMessage ex) {
                     Assert.IsNull (ex.MetadataSize);
-                    Assert.AreEqual (ClientEngine.DefaultMaxPendingRequests, ex.MaxRequests);
+                    Assert.AreEqual (Constants.DefaultMaxPendingRequests, ex.MaxRequests);
                 } else if (m is HaveNoneMessage) {
                     receivedHaveNone = true;
                 } else if (m is LTMetadata metadata) {
-                    if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request) {
-                        metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, metadata.Piece, buffer);
+                    if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
+                        metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, buffer);
                         await PeerIO.SendMessageAsync (connection, encryptor, metadata);
                         unrequestedPieces.Remove (metadata.Piece);
 
@@ -315,7 +315,7 @@ namespace MonoTorrent.Client.Modes
                         // The purpose here is to ensure that duplicate pieces don't reset our data or cause the event
                         // to be emitted multiple times.
                         if (unrequestedPieces.Count > 0) {
-                            metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, 0, buffer);
+                            metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, 0, buffer);
                             await PeerIO.SendMessageAsync (connection, encryptor, metadata);
                         }
 

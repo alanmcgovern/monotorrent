@@ -34,7 +34,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.PiecePicking;
 

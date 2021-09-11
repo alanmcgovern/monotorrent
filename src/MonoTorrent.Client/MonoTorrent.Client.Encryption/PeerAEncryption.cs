@@ -31,7 +31,7 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages;
+using MonoTorrent.Messages;
 
 using ReusableTasks;
 
@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Encryption
             byte[] req1 = Hash (Req1Bytes, S);
 
             // ... HASH('req2', SKEY)
-            byte[] req2 = Hash (Req2Bytes, SKEY.Hash);
+            byte[] req2 = Hash (Req2Bytes, SKEY.UnsafeAsArray ());
 
             // ... HASH('req3', S)
             byte[] req3 = Hash (Req3Bytes, S);

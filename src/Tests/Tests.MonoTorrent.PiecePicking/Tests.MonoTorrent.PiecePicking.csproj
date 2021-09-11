@@ -8,7 +8,6 @@
   <ItemGroup>
     <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="TorrentFileInfo.cs" />
     <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="TorrentFile.cs" />
-    <Compile Include="..\..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
   </ItemGroup>
 
   <ItemGroup>

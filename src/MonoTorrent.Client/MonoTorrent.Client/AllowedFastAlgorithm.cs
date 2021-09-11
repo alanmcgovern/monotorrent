@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy (BitConverter.GetBytes (ip2), 0, hashBuffer, 0, 4);
 
             // 5) Copy the infohash into the hashbuffer
-            Buffer.BlockCopy (infohash.Hash, 0, hashBuffer, 4, 20);
+            Buffer.BlockCopy (infohash.UnsafeAsArray (), 0, hashBuffer, 4, 20);
 
             // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
             // Then return that result

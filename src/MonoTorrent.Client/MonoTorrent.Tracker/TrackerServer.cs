@@ -260,7 +260,7 @@ namespace MonoTorrent.Tracker
             lock (Torrents) {
                 if (!Torrents.TryGetValue (e.InfoHash, out manager)) {
                     if (AllowUnregisteredTorrents) {
-                        Add (new InfoHashTrackable (BitConverter.ToString (e.InfoHash.Hash), e.InfoHash));
+                        Add (new InfoHashTrackable (e.InfoHash.ToHex (), e.InfoHash));
                         manager = Torrents[e.InfoHash];
                     } else {
                         e.Response.Add (TrackerRequest.FailureKey, (BEncodedString) "The requested torrent is not registered with this tracker");
@@ -332,7 +332,7 @@ namespace MonoTorrent.Tracker
                     { "incomplete", new BEncodedNumber (manager.Incomplete) },
                     { "name", new BEncodedString (manager.Trackable.Name) }
                 };
-                files.Add (new BEncodedString (e.InfoHashes[i].Hash), dict);
+                files.Add (new BEncodedString (e.InfoHashes[i].UnsafeAsArray ()), dict);
             }
             RaisePeerScraped (new ScrapeEventArgs (managers));
             if (files.Count > 0)

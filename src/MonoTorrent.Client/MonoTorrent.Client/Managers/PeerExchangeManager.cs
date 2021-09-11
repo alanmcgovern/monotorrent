@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
                 droppedPeers[i].CompactPeer (dropped, i * 6);
 
             droppedPeers.RemoveRange (0, len);
-            id.MessageQueue.Enqueue (new PeerExchangeMessage (id, added, addedDotF, dropped));
+            id.MessageQueue.Enqueue (new PeerExchangeMessage (id.ExtensionSupports, added, addedDotF, dropped));
         }
 
         public void Dispose ()

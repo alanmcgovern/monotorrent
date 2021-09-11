@@ -318,7 +318,7 @@ namespace MonoTorrent.Client.Tracker
             if (files.Count != 1)
                 throw new TrackerException ("The scrape response contained unexpected data");
 
-            var d = (BEncodedDictionary) files[new BEncodedString (infoHash.Hash)];
+            var d = (BEncodedDictionary) files[new BEncodedString (infoHash.UnsafeAsArray ())];
             foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d) {
                 switch (kp.Key.ToString ()) {
                     case ("complete"):

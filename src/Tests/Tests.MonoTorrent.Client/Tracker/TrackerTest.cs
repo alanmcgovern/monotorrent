@@ -167,7 +167,7 @@ namespace MonoTorrent.Tracker
             var files = (BEncodedDictionary) result["files"];
 
             Assert.AreEqual (1, files.Count, "#1");
-            Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Hash)), "#1");
+            Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.UnsafeAsArray ())), "#1");
         }
 
         [Test]
@@ -180,7 +180,7 @@ namespace MonoTorrent.Tracker
             var files = (BEncodedDictionary) result["files"];
             Assert.AreEqual (rig.Trackables.Count, files.Count, "#1");
             foreach (var trackable in rig.Trackables)
-                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Hash)), "#2");
+                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.UnsafeAsArray ())), "#2");
         }
 
         [Test]
@@ -217,7 +217,7 @@ namespace MonoTorrent.Tracker
 
         private InfoHash Clone (InfoHash p)
         {
-            return new InfoHash ((byte[]) p.Hash.Clone ());
+            return InfoHash.UrlDecode (p.UrlEncode ());
         }
     }
 }

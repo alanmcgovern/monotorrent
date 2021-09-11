@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
                 await connectTask.WithTimeout ();
 
                 c.Dispose ();
-                Assert.AreEqual (0, await c.ReceiveAsync (new ByteBuffer (123), 0, 123).WithTimeout ());
+                Assert.AreEqual (0, await c.ReceiveAsync (new ByteBuffer (123, true), 0, 123).WithTimeout ());
             } finally {
                 listener.Stop ();
             }
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client
                 await connectTask.WithTimeout ();
 
                 c.Dispose ();
-                Assert.AreEqual (0, await c.SendAsync (new ByteBuffer (123), 0, 123).WithTimeout ());
+                Assert.AreEqual (0, await c.SendAsync (new ByteBuffer (123, true), 0, 123).WithTimeout ());
             } finally {
                 listener.Stop ();
             }

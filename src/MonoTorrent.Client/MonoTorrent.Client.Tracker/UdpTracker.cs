@@ -33,7 +33,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Messages.UdpTracker;
+using MonoTorrent.Messages.UdpTracker;
 
 using ReusableTasks;
 
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
-                var infohashes = new List<byte[]> { parameters.InfoHash.Hash };
+                var infohashes = new List<byte[]> { parameters.InfoHash.UnsafeAsArray () };
                 var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
                 var response = (ScrapeResponseMessage) await SendAndReceiveAsync (message);
 

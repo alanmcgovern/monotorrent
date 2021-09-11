@@ -62,8 +62,7 @@ namespace MonoTorrent.Client.Connections
         static SocketAsyncEventArgs GetSocketAsyncEventArgs (ByteBuffer buffer)
         {
             if (buffer != null) {
-                if (buffer.Args == null) {
-                    buffer.Args = new SocketAsyncEventArgs ();
+                if (buffer.Args.Buffer == null) {
                     buffer.Args.SetBuffer (buffer.Data, 0, buffer.Data.Length);
                     buffer.Args.Completed += Handler;
                 }

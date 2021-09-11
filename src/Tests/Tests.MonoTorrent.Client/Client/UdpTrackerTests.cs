@@ -36,7 +36,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Messages.UdpTracker;
+using MonoTorrent.Messages.UdpTracker;
 using MonoTorrent.Tracker.Listeners;
 
 using NUnit.Framework;

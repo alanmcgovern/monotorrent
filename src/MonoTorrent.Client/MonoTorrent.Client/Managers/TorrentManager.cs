@@ -33,7 +33,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;

@@ -111,11 +111,8 @@ Notable features include:
   </ItemGroup>
     
   <ItemGroup>
-    <Compile Include="..\MonoTorrent\MonoTorrent\Constants.cs" Link="Constants.cs" />
-  </ItemGroup>
-    
-  <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.PeerMessages.csproj" />
     <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
     <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />

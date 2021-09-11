@@ -29,7 +29,7 @@
 
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client.Messages.UdpTracker
+namespace MonoTorrent.Messages.UdpTracker
 {
     class ScrapeMessage : UdpTrackerMessage
     {

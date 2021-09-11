@@ -38,11 +38,19 @@ namespace MonoTorrent
         internal int Counter { get; set; }
         public byte[] Data { get; }
 
-        public SocketAsyncEventArgs Args { get; set; }
+        public SocketAsyncEventArgs Args { get; }
 
         public ByteBuffer (int size)
+            : this (size, false)
+        {
+
+        }
+
+        public ByteBuffer (int size, bool createSocketAsyncArgs)
         {
             Data = size == 0 ? Array.Empty<byte> () : new byte[size];
+            if (createSocketAsyncArgs)
+                Args = new SocketAsyncEventArgs ();
         }
     }
 }

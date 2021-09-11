@@ -32,7 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 

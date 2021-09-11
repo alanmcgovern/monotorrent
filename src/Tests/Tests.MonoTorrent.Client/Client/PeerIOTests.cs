@@ -31,7 +31,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task UnknownMessage ()
         {
-            var data = new ByteBuffer (20);
+            var data = new ByteBuffer (20, true);
             Message.Write (data.Data, 0, 16);
             for (int i = 4; i < 16; i++)
                 data.Data[i] = byte.MaxValue;
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
         {
             var blockSize = Constants.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize) {
-                DataReleaser = new ByteBufferPool ().Rent (blockSize, out ByteBuffer _)
+                DataReleaser = new ByteBufferPool (false).Rent (blockSize, out ByteBuffer _)
             };
 
             Assert.DoesNotThrowAsync (() => {
@@ -128,9 +128,8 @@ namespace MonoTorrent.Client
         public async Task CountPieceMessageBlockLengthAsData ()
         {
             var blockSize = Constants.BlockSize - 1234;
-            var msg = new PieceMessage (0, 0, blockSize) {
-                DataReleaser = new ByteBufferPool ().Rent (blockSize, out ByteBuffer _)
-            };
+            var msg = new PieceMessage (0, 0, blockSize);
+            msg.DataReleaser = new ByteBufferPool (false).Rent (blockSize, out ByteBuffer _);
 
             var protocolSize = msg.ByteLength - blockSize;
             await Task.WhenAll (

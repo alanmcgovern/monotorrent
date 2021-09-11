@@ -34,7 +34,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 

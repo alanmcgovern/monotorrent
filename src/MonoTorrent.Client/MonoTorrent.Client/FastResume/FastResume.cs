@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
         {
             return new BEncodedDictionary {
                 { VersionKey, FastResumeVersion },
-                { InfoHashKey, new BEncodedString(Infohash.Hash) },
+                { InfoHashKey, new BEncodedString(Infohash.UnsafeAsArray ()) },
                 { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
                 { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },
                 { UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) }

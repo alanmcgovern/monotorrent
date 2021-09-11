@@ -27,7 +27,7 @@
 //
 
 
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {

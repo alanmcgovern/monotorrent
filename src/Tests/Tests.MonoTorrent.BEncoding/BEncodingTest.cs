@@ -477,8 +477,8 @@ namespace MonoTorrent.Common
         [Test]
         public void BEncodedString_FromUrlEncodedString ()
         {
-            Assert.AreEqual (null, BEncodedString.FromUrlEncodedString (null));
-            Assert.AreEqual (new BEncodedString (), BEncodedString.FromUrlEncodedString (""));
+            Assert.AreEqual (null, BEncodedString.UrlDecode (null));
+            Assert.AreEqual (new BEncodedString (), BEncodedString.UrlDecode (""));
         }
 
         [Test]

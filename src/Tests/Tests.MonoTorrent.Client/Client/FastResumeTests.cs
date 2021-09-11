@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
         {
             var v1Data = new BEncodedDictionary {
                 { FastResume.VersionKey, (BEncodedNumber)1 },
-                { FastResume.InfoHashKey, new BEncodedString(InfoHash.Hash) },
+                { FastResume.InfoHashKey, new BEncodedString(InfoHash.UnsafeAsArray ()) },
                 { FastResume.BitfieldKey, new BEncodedString(new MutableBitField (10).SetAll (true).ToByteArray ()) },
                 { FastResume.BitfieldLengthKey, (BEncodedNumber)10 },
             };
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
         {
             var v1Data = new BEncodedDictionary {
                 { FastResume.VersionKey, (BEncodedNumber)1 },
-                { FastResume.InfoHashKey, new BEncodedString(InfoHash.Hash) },
+                { FastResume.InfoHashKey, new BEncodedString(InfoHash.UnsafeAsArray ()) },
                 { FastResume.BitfieldKey, new BEncodedString(new MutableBitField (10).SetAll (false).Set (0, true).ToByteArray ()) },
                 { FastResume.BitfieldLengthKey, (BEncodedNumber)10 },
                 { FastResume.UnhashedPiecesKey, new BEncodedString (new MutableBitField (10).SetAll (true).Set (0, false).ToByteArray ()) },

@@ -149,13 +149,9 @@ namespace MonoTorrent.Client
 
         #region Global Constants
 
-        // This is the number of 16kB requests which can be queued against one peer.
-        internal static readonly int DefaultMaxPendingRequests = 256;
         public static readonly bool SupportsInitialSeed = false;
         public static readonly bool SupportsLocalPeerDiscovery = true;
         public static readonly bool SupportsWebSeed = true;
-        public static readonly bool SupportsExtended = true;
-        public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = true;
         public static readonly bool SupportsDht = true;

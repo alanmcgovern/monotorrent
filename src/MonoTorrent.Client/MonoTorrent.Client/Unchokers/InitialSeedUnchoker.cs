@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {

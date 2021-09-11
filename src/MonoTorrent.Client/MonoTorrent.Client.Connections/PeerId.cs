@@ -34,7 +34,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
@@ -191,7 +191,7 @@ namespace MonoTorrent.Client
             SuggestedPieces = new List<int> ();
 
             MaxPendingRequests = PieceManager.NormalRequestAmount;
-            MaxSupportedPendingRequests = ClientEngine.DefaultMaxPendingRequests;
+            MaxSupportedPendingRequests = Constants.DefaultMaxPendingRequests;
             MessageQueue = new MessageQueue ();
             ExtensionSupports = new ExtensionSupports ();
             Monitor = new ConnectionMonitor ();

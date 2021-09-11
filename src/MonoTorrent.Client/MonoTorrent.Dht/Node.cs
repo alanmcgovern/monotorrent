@@ -34,7 +34,7 @@ using System.Net;
 using System.Text;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Messages;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Dht
 {

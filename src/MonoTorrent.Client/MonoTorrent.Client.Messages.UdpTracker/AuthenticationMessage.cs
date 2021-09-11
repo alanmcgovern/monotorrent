@@ -30,7 +30,7 @@
 using System;
 using System.Text;
 
-namespace MonoTorrent.Client.Messages.UdpTracker
+namespace MonoTorrent.Messages.UdpTracker
 {
     class AuthenticationMessage : Message
     {

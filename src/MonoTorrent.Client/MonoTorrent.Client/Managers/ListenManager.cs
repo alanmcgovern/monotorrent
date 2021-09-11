@@ -34,10 +34,11 @@ using System.Threading.Tasks;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
-using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Messages;
 using MonoTorrent.Logging;
 
 using ReusableTasks;
+using System.Linq;
 
 namespace MonoTorrent.Client
 {
@@ -114,7 +115,7 @@ namespace MonoTorrent.Client
         async ReusableTask<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager man = null;
-            if (message.ProtocolString != VersionInfo.ProtocolStringV100)
+            if (message.ProtocolString != Constants.ProtocolStringV100)
                 return false;
 
             // If we're forcing encrypted connections and this is in plain-text, close it!
