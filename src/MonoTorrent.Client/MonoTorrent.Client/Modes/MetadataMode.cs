@@ -153,7 +153,7 @@ namespace MonoTorrent.Client.Modes
                         using (SHA1 hasher = HashAlgoFactory.SHA1 ())
                             hash = hasher.ComputeHash (Stream);
 
-                        if (!Manager.InfoHash.Equals (hash)) {
+                        if (Manager.InfoHash != new InfoHash (hash)) {
                             bitField.SetAll (false);
                         } else {
                             Stream.Position = 0;

@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
             var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
             await NetworkIO.SendAsync (pair.Outgoing, data, 0, 20);
 
-            Assert.ThrowsAsync<ProtocolException> (async () => await task, "#1");
+            Assert.ThrowsAsync<MessageException> (async () => await task, "#1");
         }
 
         [Test]
