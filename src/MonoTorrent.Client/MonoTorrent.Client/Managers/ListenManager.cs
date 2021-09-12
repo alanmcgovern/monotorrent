@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
         async ReusableTask<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager man = null;
-            if (message.ProtocolString != Constants.ProtocolStringV100)
+            if (message.ProtocolString != VersionInfo.ProtocolStringV100)
                 return false;
 
             // If we're forcing encrypted connections and this is in plain-text, close it!

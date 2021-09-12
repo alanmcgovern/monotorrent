@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.Encryption
                 await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
                 message.Decode (buffer.Data, 0, HandshakeMessage.HandshakeLength);
 
-                if (message.ProtocolString == Constants.ProtocolStringV100) {
+                if (message.ProtocolString == VersionInfo.ProtocolStringV100) {
                     if (supportsPlainText)
                         return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, message);
                 } else if (supportsRC4Header || supportsRC4Full) {
