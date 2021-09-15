@@ -108,7 +108,7 @@ namespace MonoTorrent.Dht
 
         public bool Equals (NodeId other)
         {
-            return other != null && Toolbox.ByteMatch (Bytes, other.Bytes);
+            return this == other;
         }
 
         public override int GetHashCode ()

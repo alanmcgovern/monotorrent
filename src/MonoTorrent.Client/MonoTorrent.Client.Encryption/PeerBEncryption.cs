@@ -84,8 +84,9 @@ namespace MonoTorrent.Client.Encryption
 
             DoDecrypt (verifyBytes, 20, 14); // ENCRYPT(VC, ...
 
-            if (!Toolbox.ByteMatch (verifyBytes, 20, VerificationConstant, 0, VerificationConstant.Length))
-                throw new EncryptionException ("Verification constant was invalid");
+            for (int i = 0; i < VerificationConstant.Length; i++)
+                if (verifyBytes[i + 20] != VerificationConstant[i])
+                    throw new EncryptionException ("Verification constant was invalid");
 
             Array.Copy (verifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
 

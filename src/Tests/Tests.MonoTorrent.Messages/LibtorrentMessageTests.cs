@@ -101,8 +101,8 @@ namespace MonoTorrent.Messages
 
             byte[] buffer = message.Encode ();
             PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, 0, buffer.Length, null);
-            Assert.IsTrue (Toolbox.ByteMatch (peer, m.Added), "#1");
-            Assert.IsTrue (Toolbox.ByteMatch (supports, m.AddedDotF), "#1");
+            CollectionAssert.AreEqual (peer, m.Added, "#1");
+            CollectionAssert.AreEqual (supports, m.AddedDotF, "#1");
         }
 
         [Test]

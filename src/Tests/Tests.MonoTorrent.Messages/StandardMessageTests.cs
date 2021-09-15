@@ -146,11 +146,11 @@ namespace MonoTorrent.Client.Messages
         public void HandshakeEncoding ()
         {
             byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
-            int length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", VersionInfo.ProtocolStringV100, false, false).Encode (buffer, offset);
+            int length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100, false, false).Encode (buffer, offset);
 
             Console.WriteLine (BitConverter.ToString (buffer, offset, length));
             byte[] peerId = Encoding.ASCII.GetBytes ("12312312345645645678");
-            byte[] protocolVersion = Encoding.ASCII.GetBytes (VersionInfo.ProtocolStringV100);
+            byte[] protocolVersion = Encoding.ASCII.GetBytes (Constants.ProtocolStringV100);
             Assert.AreEqual (19, buffer[offset], "1");
             Assert.IsTrue (Toolbox.ByteMatch (protocolVersion, 0, buffer, offset + 1, 19), "2");
             Assert.IsTrue (Toolbox.ByteMatch (new byte[8], 0, buffer, offset + 20, 8), "3");
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client.Messages
             Assert.IsTrue (Toolbox.ByteMatch (peerId, 0, buffer, offset + 48, 20), "5");
             Assert.AreEqual (length, HandshakeMessage.HandshakeLength, "6");
 
-            length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", VersionInfo.ProtocolStringV100, true, false).Encode (buffer, offset);
+            length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100, true, false).Encode (buffer, offset);
             Assert.AreEqual (BitConverter.ToString (buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38", "#7");
         }
 
@@ -166,7 +166,7 @@ namespace MonoTorrent.Client.Messages
         public void HandshakeDecoding ()
         {
             byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
-            HandshakeMessage orig = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", VersionInfo.ProtocolStringV100);
+            HandshakeMessage orig = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100);
             orig.Encode (buffer, offset);
             HandshakeMessage dec = new HandshakeMessage ();
             dec.Decode (buffer, offset, HandshakeMessage.HandshakeLength);
