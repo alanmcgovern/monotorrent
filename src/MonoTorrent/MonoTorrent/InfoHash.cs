@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Web;
 
 namespace MonoTorrent
 {
@@ -47,48 +48,49 @@ namespace MonoTorrent
                 Base32DecodeTable[table[i]] = (byte) i;
         }
 
-        internal byte[] Hash { get; }
+        readonly byte[] hash;
 
         public InfoHash (byte[] infoHash)
         {
-            Check.InfoHash (infoHash);
+            if (infoHash is null)
+                throw new ArgumentNullException (nameof (infoHash));
+
             if (infoHash.Length != 20)
                 throw new ArgumentException ("InfoHash must be exactly 20 bytes long", nameof (infoHash));
-            Hash = (byte[]) infoHash.Clone ();
+            hash = (byte[]) infoHash.Clone ();
         }
 
         public override bool Equals (object obj)
-        {
-            return Equals (obj as InfoHash);
-        }
-
-        public bool Equals (byte[] other)
-        {
-            return other != null && other.Length == 20 && Toolbox.ByteMatch (Hash, other);
-        }
+            => Equals (obj as InfoHash);
 
         public bool Equals (InfoHash other)
-        {
-            return this == other;
-        }
+            => this == other;
 
+        // Equality is based generally on checking 20 positions, checking 4 should be enough
+        // for the hashcode as infohashes are randomly distributed.
         public override int GetHashCode ()
-        {
-            // Equality is based generally on checking 20 positions, checking 4 should be enough
-            // for the hashcode as infohashes are randomly distributed.
-            return Hash[0] | (Hash[1] << 8) | (Hash[2] << 16) | (Hash[3] << 24);
-        }
+            => hash[0] | (hash[1] << 8) | (hash[2] << 16) | (hash[3] << 24);
 
+        /// <summary>
+        /// Returns the underlying byte[]. If the byte[] is modified you will corrupt the
+        /// underlying datastructure.
+        /// </summary>
+        /// <returns></returns>
+        public byte[] UnsafeAsArray ()
+            => hash;
+
+        /// <summary>
+        /// Duplicates the underlying byte[] and returns the copy.
+        /// </summary>
+        /// <returns></returns>
         public byte[] ToArray ()
-        {
-            return (byte[]) Hash.Clone ();
-        }
+            => (byte[]) hash.Clone ();
 
         public string ToHex ()
         {
             var sb = new StringBuilder (40);
-            for (int i = 0; i < Hash.Length; i++) {
-                string hex = Hash[i].ToString ("X");
+            for (int i = 0; i < hash.Length; i++) {
+                string hex = hash[i].ToString ("X");
                 if (hex.Length != 2)
                     sb.Append ("0");
                 sb.Append (hex);
@@ -97,9 +99,7 @@ namespace MonoTorrent
         }
 
         public string UrlEncode ()
-        {
-            return UriHelper.UrlEncode (Hash);
-        }
+            => HttpUtility.UrlEncode (hash);
 
         public static bool operator == (InfoHash left, InfoHash right)
         {
@@ -107,7 +107,13 @@ namespace MonoTorrent
                 return right is null;
             if (right is null)
                 return false;
-            return Toolbox.ByteMatch (left.Hash, right.Hash);
+
+            var leftHash = left.hash;
+            var rightHash = right.hash;
+            for (int i = 0; i < leftHash.Length && i < rightHash.Length; i++)
+                if (leftHash[i] != rightHash[i])
+                    return false;
+            return true;
         }
 
         public static bool operator != (InfoHash left, InfoHash right)
@@ -117,7 +123,9 @@ namespace MonoTorrent
 
         public static InfoHash FromBase32 (string infoHash)
         {
-            Check.InfoHash (infoHash);
+            if (infoHash is null)
+                throw new ArgumentNullException (nameof (infoHash));
+
             if (infoHash.Length != 32)
                 throw new ArgumentException ("InfoHash must be a base32 encoded 32 character string", nameof (infoHash));
 
@@ -143,7 +151,9 @@ namespace MonoTorrent
 
         public static InfoHash FromHex (string infoHash)
         {
-            Check.InfoHash (infoHash);
+            if (infoHash is null)
+                throw new ArgumentNullException (nameof (infoHash));
+
             if (infoHash.Length != 40)
                 throw new ArgumentException ("InfoHash must be 40 characters long", nameof (infoHash));
 
@@ -156,8 +166,9 @@ namespace MonoTorrent
 
         public static InfoHash UrlDecode (string infoHash)
         {
-            infoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
-            return new InfoHash (UriHelper.UrlDecode (infoHash));
+            if (infoHash is null)
+                throw new ArgumentNullException (nameof (infoHash));
+            return new InfoHash (HttpUtility.UrlDecodeToBytes (infoHash));
         }
     }
 }

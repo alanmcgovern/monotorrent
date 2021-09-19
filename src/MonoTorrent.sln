@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29609.76
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31423.177
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Client", "MonoTorrent.Client\MonoTorrent.Client.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Tests", "MonoTorrent.Tests\MonoTorrent.Tests.csproj", "{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.Client", "Tests\Tests.MonoTorrent.Client\Tests.MonoTorrent.Client.csproj", "{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleClient", "SampleClient\SampleClient.csproj", "{9CC2CC3A-4041-4857-AF8B-D58745FD3066}"
 EndProject
@@ -18,6 +18,30 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		Directory.Build.props = Directory.Build.props
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.BEncoding", "MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj", "{5D8AA8FE-05DB-4D6F-A330-941733087821}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.BEncoding", "Tests\Tests.MonoTorrent.BEncoding\Tests.MonoTorrent.BEncoding.csproj", "{36B77F86-EB2F-442D-8EFE-F74623A10EB1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{FA1E561B-2882-46B4-B2FE-677CABABDEFB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent", "Tests\Tests.MonoTorrent\Tests.MonoTorrent.csproj", "{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PiecePicking", "MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj", "{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.PiecePicking", "Tests\Tests.MonoTorrent.PiecePicking\Tests.MonoTorrent.PiecePicking.csproj", "{8CE2C458-D0A9-428F-A749-4949AA113EEC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8790FB34-68AA-4A1A-A339-0E1DAAB3E180}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{2BB64148-15EE-4BD9-A48D-1CC8A14D7AC4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.PieceWriter", "MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj", "{8B4CF0BD-7B6E-460D-811E-A728293EC89B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.PieceWriter", "Tests\Tests.MonoTorrent.PieceWriter\Tests.MonoTorrent.PieceWriter.csproj", "{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Messages", "MonoTorrent.Messages\MonoTorrent.Messages.csproj", "{79271733-DC12-4DB1-8A34-3843EEBE9DD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.MonoTorrent.Messages", "Tests\Tests.MonoTorrent.Messages\Tests.MonoTorrent.Messages.csproj", "{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,9 +69,60 @@ Global
 		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D8AA8FE-05DB-4D6F-A330-941733087821}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D8AA8FE-05DB-4D6F-A330-941733087821}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D8AA8FE-05DB-4D6F-A330-941733087821}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D8AA8FE-05DB-4D6F-A330-941733087821}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36B77F86-EB2F-442D-8EFE-F74623A10EB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA1E561B-2882-46B4-B2FE-677CABABDEFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E41A2606-AA2A-484A-9F1A-0C749C9B7F52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CE2C458-D0A9-428F-A749-4949AA113EEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B4CF0BD-7B6E-460D-811E-A728293EC89B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79271733-DC12-4DB1-8A34-3843EEBE9DD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79271733-DC12-4DB1-8A34-3843EEBE9DD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79271733-DC12-4DB1-8A34-3843EEBE9DD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79271733-DC12-4DB1-8A34-3843EEBE9DD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
+		{9CC2CC3A-4041-4857-AF8B-D58745FD3066} = {2BB64148-15EE-4BD9-A48D-1CC8A14D7AC4}
+		{7A647552-B5F0-419F-9395-4DC24990ED20} = {2BB64148-15EE-4BD9-A48D-1CC8A14D7AC4}
+		{603EDA39-A83F-48BE-A97A-193C28CAAE86} = {2BB64148-15EE-4BD9-A48D-1CC8A14D7AC4}
+		{36B77F86-EB2F-442D-8EFE-F74623A10EB1} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
+		{08D34B26-FDF5-4AFA-B0A3-2475CCA6EB7E} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
+		{8CE2C458-D0A9-428F-A749-4949AA113EEC} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
+		{BAE86E51-93A0-499D-A4ED-3519DEB5E4DF} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
+		{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FDCCD363-7E21-4AA3-9373-5DCB46A67AD1}

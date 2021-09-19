@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <NoWarn>1701;1702;1591;0419</NoWarn>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <GitVersionFile>version.txt</GitVersionFile>
+    <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
+    <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
+    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
+
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha.unstable</MonoTorrentReleaseSuffix>
+    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
+
+    <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
+    <PackDependsOn>$(PackDependsOn)</PackDependsOn>
+  </PropertyGroup>
+
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' ">
+    <PropertyGroup>
+      <Version>0.0.0.1</Version>
+      <AssemblyVersion>$(Version)</AssemblyVersion>
+      <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
+      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)-Debug</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <!-- Restore success is in the .nuget.g.props file generated as part of msbuild /t:Restore. We do not -->
+  <!-- want this logic to run if restore hasn't been executed as the 'GitVersion' target won't exist.   -->
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' " DependsOnTargets="GitVersion">
+    <PropertyGroup>
+      <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) == ''">$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
+      <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) != ''">$(GitBaseVersion)</MonoTorrentFileVersion>
+
+      <PaddedSemVerPatch>$([System.String]::Format('{0:0000}', $([System.Int32]::Parse('$(GitSemVerPatch)'))))</PaddedSemVerPatch>
+      <MonoTorrentReleaseSuffix Condition="$(MonoTorrentReleaseSuffix) != ''">$(MonoTorrentReleaseSuffix).rev$(PaddedSemVerPatch)</MonoTorrentReleaseSuffix>
+      <MonoTorrentInformationalVersion>$(MonoTorrentFileVersion)-$(GitBranch)+$(GitCommit)</MonoTorrentInformationalVersion>
+
+      <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(MonoTorrentABIVersion)</AssemblyVersion>
+      <FileVersion Condition="'$(FileVersion)' == ''">$(MonoTorrentFileVersion)</FileVersion>
+      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(MonoTorrentInformationalVersion)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies
+      to ensure our GitInfo related properties have been calculated correctly. -->
+  <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
+    <PropertyGroup>
+      <Authors>Alan McGovern,Olivier Dufour</Authors>
+      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links.
+Notable features include:
+-Encryption
+-Dht
+-Peer Exchange (uTorrent style)
+-Local Peer Discovery
+-Web Seeding (getright style)
+-Magnet Links / Metadata download
+-IPV6
+-FAST Extensions
+-Sparse files (NTFS file system)
+-Multi-tracker torrents
+-Compact tracker responses
+-IP Address white listing / black listing
+-Fast Resume
+-Initial Seeding (super seeding)
+-Selective downloading
+-Prioritised downloading
+-Full bittorrent tracker
+-Dynamic request queue size
+-Memory Cache
+-Endgame mode
+-Per torrent and global rate limiting
+-Individual file relocation</PackageDescription>
+      <PackageLicenseFile>LICENSE</PackageLicenseFile>
+      <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
+      <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+      <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
+      <PackageTags>bittorrent;torrent;library;tracker;dht;c#;csharp;dotnet;.NET;p2p</PackageTags>
+
+      <IncludeSource>true</IncludeSource>
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+      <RepositoryType>git</RepositoryType>
+      <RepositoryBranch>$(GitBranch)</RepositoryBranch>
+      <RepositoryCommit>$(GitSha)</RepositoryCommit>
+      <RepositoryUrl>https://github.com/mono/monotorrent</RepositoryUrl>
+
+      <Copyright>Alan McGovern, Gregor Burger</Copyright>
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
+    <PackageReference Include="Mono.Nat" Version="[3.0.1,4.0)" />
+    <PackageReference Include="ReusableTasks" Version="[2.0.0,3.0)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE" Pack="true" PackagePath="/" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Tests.$(AssemblyName)</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+    
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
+    <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
+    <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\Arrays.cs" Link="Arrays.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
+  </ItemGroup>
+
+</Project>

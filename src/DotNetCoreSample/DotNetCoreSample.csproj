@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+    <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
+    <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
   </ItemGroup>
 
   <ItemGroup>

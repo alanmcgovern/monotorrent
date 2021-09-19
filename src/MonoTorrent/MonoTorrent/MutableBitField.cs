@@ -80,10 +80,10 @@ namespace MonoTorrent
         public new MutableBitField SetAll (bool value)
             => (MutableBitField) base.SetAll (value);
 
-        internal MutableBitField SetTrue (int index)
+        public MutableBitField SetTrue (int index)
             => (MutableBitField) base.Set (index, true);
 
-        internal new MutableBitField SetTrue ((int startPiece, int endPiece) range)
+        public new MutableBitField SetTrue ((int startPiece, int endPiece) range)
             => (MutableBitField) base.SetTrue (range);
 
         public new MutableBitField Xor (BitField value)

@@ -3,8 +3,14 @@
 
   <PropertyGroup>
     <LangVersion>8.0</LangVersion>
-	<DebugType>portable</DebugType>
-	<DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Tests.$(AssemblyName)</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>
