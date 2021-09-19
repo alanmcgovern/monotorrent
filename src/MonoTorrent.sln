@@ -16,7 +16,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5463E3E7-8513-41A9-B6C2-E67CCBFA8E5E}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.BEncoding", "MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj", "{5D8AA8FE-05DB-4D6F-A330-941733087821}"
@@ -41,7 +40,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.PieceWrit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Messages", "MonoTorrent.Messages\MonoTorrent.Messages.csproj", "{79271733-DC12-4DB1-8A34-3843EEBE9DD8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.MonoTorrent.Messages", "Tests\Tests.MonoTorrent.Messages\Tests.MonoTorrent.Messages.csproj", "{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.Messages", "Tests\Tests.MonoTorrent.Messages\Tests.MonoTorrent.Messages.csproj", "{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
