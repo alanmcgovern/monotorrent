@@ -623,10 +623,10 @@ namespace MonoTorrent.Client
 
                 // FIXME: Is this the best place to futz with actually moving files?
                 if (!Engine.Settings.UsePartialFiles) {
-                    downloadIncompleteFullPath = downloadCompleteFullPath;
-
                     if (File.Exists (downloadIncompleteFullPath) && !File.Exists (downloadCompleteFullPath))
                         File.Move (downloadIncompleteFullPath, downloadCompleteFullPath);
+
+                    downloadIncompleteFullPath = downloadCompleteFullPath;
                 }
 
                 var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
@@ -877,24 +877,14 @@ namespace MonoTorrent.Client
 
                 // If we're only hashing 1 piece then we can start moving files now. This occurs when a torrent
                 // is actively downloading.
-                if (totalToHash == 1) {
-                    if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath)
-                        _ = Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath);
-                    else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath)
-                        _ = Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath);
-                }
+                if (totalToHash == 1)
+                    _ = RefreshPartialDownloadFilePaths (i, 1);
             }
 
             // If we're hashing many pieces, wait for the final piece to be hashed, then start trying to move files.
             // This occurs when we're hash checking, or loading, torrents.
-            if (totalToHash > 1 && piecesHashed == totalToHash) {
-                for (int i = 0; i < files.Count; i++) {
-                    if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath)
-                        _ = Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath);
-                    else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath)
-                        _ = Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath);
-                }
-            }
+            if (totalToHash > 1 && piecesHashed == totalToHash)
+                _ = RefreshPartialDownloadFilePaths (0, files.Count);
 
             if (hashPassed) {
                 List<PeerId> connected = Peers.ConnectedPeers;
@@ -902,6 +892,26 @@ namespace MonoTorrent.Client
                     connected[i].IsAllowedFastPieces.Remove (index);
             }
             PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
+        }
+
+        internal async ReusableTask UpdateUsePartialFiles (bool usePartialFiles)
+        {
+            foreach (TorrentFileInfo file in Files)
+                file.DownloadIncompleteFullPath = file.DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
+            await RefreshPartialDownloadFilePaths (0, Files.Count);
+        }
+
+        internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count)
+        {
+            var files = Files;
+            var tasks = new List<Task> ();
+            for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
+                if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath)
+                    tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath));
+                else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath)
+                    tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath));
+            }
+            await Task.WhenAll (tasks).ConfigureAwait (false);
         }
 
         internal void RaiseTorrentStateChanged (TorrentStateChangedEventArgs e)

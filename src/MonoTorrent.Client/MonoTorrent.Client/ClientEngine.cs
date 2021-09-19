@@ -867,6 +867,10 @@ namespace MonoTorrent.Client
 
             ConnectionManager.Settings = newSettings;
 
+            if (oldSettings.UsePartialFiles != newSettings.UsePartialFiles) {
+                foreach (var manager in Torrents)
+                    await manager.UpdateUsePartialFiles (newSettings.UsePartialFiles);
+            }
             if (oldSettings.AllowPortForwarding != newSettings.AllowPortForwarding) {
                 if (newSettings.AllowPortForwarding)
                     await PortForwarder.StartAsync (CancellationToken.None);
