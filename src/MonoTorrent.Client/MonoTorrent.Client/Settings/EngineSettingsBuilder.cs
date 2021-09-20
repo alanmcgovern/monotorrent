@@ -48,7 +48,8 @@ namespace MonoTorrent.Client
             bool automaticFastResume = false,
             int dhtPort = -1,
             int listenPort = -1,
-            string cacheDirectory = null)
+            string cacheDirectory = null,
+            bool usePartialFiles = false)
         {
             return new EngineSettingsBuilder {
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
@@ -57,6 +58,7 @@ namespace MonoTorrent.Client
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location), "test_cache_dir"),
                 DhtPort = dhtPort,
                 ListenPort = listenPort,
+                UsePartialFiles = usePartialFiles,
             }.ToSettings ();
         }
 
