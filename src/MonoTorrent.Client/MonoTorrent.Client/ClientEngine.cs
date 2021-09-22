@@ -494,7 +494,7 @@ namespace MonoTorrent.Client
             if (infoHash == null)
                 return false;
 
-            return publicTorrents.Exists (m => m.InfoHash.Equals (infoHash));
+            return allTorrents.Exists (m => m.InfoHash.Equals (infoHash));
         }
 
         public bool Contains (Torrent torrent)
@@ -602,7 +602,7 @@ namespace MonoTorrent.Client
 
             await MainLoop;
 
-            if (Contains (manager.Torrent))
+            if (Contains (manager.InfoHash))
                 throw new TorrentException ("A manager for this torrent has already been registered");
 
             allTorrents.Add (manager);

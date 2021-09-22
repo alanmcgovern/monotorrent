@@ -208,6 +208,15 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void DownloadMetadata_SameTwice ()
+        {
+            var link = MagnetLink.Parse ("magnet:?xt=urn:btih:1234512345123451234512345123451234512345");
+            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var first = engine.DownloadMetadataAsync (link, CancellationToken.None);
+            Assert.ThrowsAsync<TorrentException> (() => engine.DownloadMetadataAsync (link, CancellationToken.None));
+        }
+
+        [Test]
         public async Task SaveRestoreState_NoTorrents ()
         {
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
