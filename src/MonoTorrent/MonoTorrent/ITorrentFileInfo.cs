@@ -31,13 +31,25 @@ namespace MonoTorrent
 {
     public interface ITorrentFileInfo : ITorrentFile
     {
+        /// <summary>
+        /// The <see cref="BitField"/> tracking which pieces of this file have been downloaded.
+        /// </summary>
         BitField BitField { get; }
 
         /// <summary>
-        /// The full path to the file on disk. Can be modified by calling <see cref="TorrentManager.MoveFileAsync(ITorrentFileInfo, string)" />
-        /// or <see cref="TorrentManager.MoveFilesAsync(string, bool)"/>.
+        /// If the file is currently being downloaded, this will be the same as <see cref="DownloadIncompleteFullPath"/>. Otherwise it will be <see cref="DownloadCompleteFullPath"/>
         /// </summary>
         string FullPath { get; }
+
+        /// <summary>
+        /// The file will exist at this path after it has been fully downloaded. Can be modified by calling <see cref="TorrentManager.MoveFileAsync(ITorrentFileInfo, string)" />
+        /// </summary>
+        string DownloadCompleteFullPath { get; }
+
+        /// <summary>
+        /// The file will exist at this path when it is partially downloaded. This value may be the same as <see cref="DownloadCompleteFullPath"/>.
+        /// </summary>
+        string DownloadIncompleteFullPath { get; }
 
         /// <summary>
         /// The priority of the file when downloading. Can be modified by calling <see cref="TorrentManager.SetFilePriorityAsync(ITorrentFileInfo, Priority)"/>

@@ -31,10 +31,29 @@ namespace MonoTorrent
 {
     public interface ITorrentFile
     {
+        /// <summary>
+        /// The relative path to the file within the torrent.
+        /// </summary>
         string Path { get; }
+
+        /// <summary>
+        /// The first piece which contains data for this file
+        /// </summary>
         int StartPieceIndex { get; }
+
+        /// <summary>
+        /// The last piece which contains data for this file.
+        /// </summary>
         int EndPieceIndex { get; }
+
+        /// <summary>
+        /// The size of this file in bytes.
+        /// </summary>
         long Length { get; }
+
+        /// <summary>
+        /// The offset, relative to the first byte in the torrent, where this file begins.
+        /// </summary>
         long OffsetInTorrent { get; }
     }
 }

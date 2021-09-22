@@ -48,7 +48,8 @@ namespace MonoTorrent.Client
             bool automaticFastResume = false,
             int dhtPort = -1,
             int listenPort = -1,
-            string cacheDirectory = null)
+            string cacheDirectory = null,
+            bool usePartialFiles = false)
         {
             return new EngineSettingsBuilder {
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
@@ -57,6 +58,7 @@ namespace MonoTorrent.Client
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location), "test_cache_dir"),
                 DhtPort = dhtPort,
                 ListenPort = listenPort,
+                UsePartialFiles = usePartialFiles,
             }.ToSettings ();
         }
 
@@ -256,6 +258,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public IPEndPoint ReportedAddress { get; set; }
 
+        /// <summary>
+        /// If set to <see langword="true"/> then partially downloaded files will have ".!mt" appended to their filename. When the file is fully downloaded, the ".!mt" suffix will be removed.
+        /// Defaults to <see langword="false"/> as this is a pre-release feature.
+        /// </summary>
+        public bool UsePartialFiles { get; set; }
+
         public EngineSettingsBuilder ()
             : this (new EngineSettings ())
         {
@@ -286,6 +294,7 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadSpeed = settings.MaximumUploadSpeed;
             ReportedAddress = settings.ReportedAddress;
+            UsePartialFiles = settings.UsePartialFiles;
         }
 
         public EngineSettings ToSettings ()
@@ -318,7 +327,8 @@ namespace MonoTorrent.Client
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadSpeed: MaximumUploadSpeed,
-                reportedAddress: ReportedAddress
+                reportedAddress: ReportedAddress,
+                usePartialFiles: UsePartialFiles
             );
         }
 

@@ -563,7 +563,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine.DiskManager.MoveFileAsync ((TorrentFileInfo)file, path);
+                await Engine.DiskManager.MoveFileAsync (file, path);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
                 throw;
@@ -617,9 +617,24 @@ namespace MonoTorrent.Client
 
             // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
             // should be set to 'true' for each piece as all files are being downloaded.
-            Files = Torrent.Files.Select (file =>
-                new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
-            ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
+            Files = Torrent.Files.Select (file => {
+                var downloadCompleteFullPath = Path.Combine (savePath, file.Path);
+                var downloadIncompleteFullPath = downloadCompleteFullPath + TorrentFileInfo.IncompleteFileSuffix;
+
+                // FIXME: Is this the best place to futz with actually moving files?
+                if (!Engine.Settings.UsePartialFiles) {
+                    if (File.Exists (downloadIncompleteFullPath) && !File.Exists (downloadCompleteFullPath))
+                        File.Move (downloadIncompleteFullPath, downloadCompleteFullPath);
+
+                    downloadIncompleteFullPath = downloadCompleteFullPath;
+                }
+
+                var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
+                return new TorrentFileInfo (file, currentPath) {
+                    DownloadCompleteFullPath = downloadCompleteFullPath,
+                    DownloadIncompleteFullPath = downloadIncompleteFullPath
+                };
+            }).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
 
             PieceManager.Initialise ();
             MetadataTask.SetResult (Torrent);
@@ -857,8 +872,19 @@ namespace MonoTorrent.Client
 
             var files = Files;
             var fileIndex = files.FindFileByPieceIndex (index);
-            for (int i = fileIndex; i < files.Count && files[i].StartPieceIndex <= index; i++)
+            for (int i = fileIndex; i < files.Count && files[i].StartPieceIndex <= index; i++) {
                 ((MutableBitField) files[i].BitField)[index - files[i].StartPieceIndex] = hashPassed;
+
+                // If we're only hashing 1 piece then we can start moving files now. This occurs when a torrent
+                // is actively downloading.
+                if (totalToHash == 1)
+                    _ = RefreshPartialDownloadFilePaths (i, 1);
+            }
+
+            // If we're hashing many pieces, wait for the final piece to be hashed, then start trying to move files.
+            // This occurs when we're hash checking, or loading, torrents.
+            if (totalToHash > 1 && piecesHashed == totalToHash)
+                _ = RefreshPartialDownloadFilePaths (0, files.Count);
 
             if (hashPassed) {
                 List<PeerId> connected = Peers.ConnectedPeers;
@@ -866,6 +892,26 @@ namespace MonoTorrent.Client
                     connected[i].IsAllowedFastPieces.Remove (index);
             }
             PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
+        }
+
+        internal async ReusableTask UpdateUsePartialFiles (bool usePartialFiles)
+        {
+            foreach (TorrentFileInfo file in Files)
+                file.DownloadIncompleteFullPath = file.DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
+            await RefreshPartialDownloadFilePaths (0, Files.Count);
+        }
+
+        internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count)
+        {
+            var files = Files;
+            var tasks = new List<Task> ();
+            for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
+                if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath)
+                    tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath));
+                else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath)
+                    tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath));
+            }
+            await Task.WhenAll (tasks).ConfigureAwait (false);
         }
 
         internal void RaiseTorrentStateChanged (TorrentStateChangedEventArgs e)
@@ -916,7 +962,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
             for (int i = 0; i < Torrent.Pieces.Count; i++)
-                OnPieceHashed (i, data.Bitfield[i], i, Torrent.Pieces.Count);
+                OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.Pieces.Count);
             UnhashedPieces.From (data.UnhashedPieces);
 
             HashChecked = true;

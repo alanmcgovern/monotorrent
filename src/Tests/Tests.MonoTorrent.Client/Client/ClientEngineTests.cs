@@ -168,6 +168,36 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task UsePartialFiles_InitiallyOff_ToggleOn ()
+        {
+            var pieceLength = Constants.BlockSize * 4;
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: false));
+            var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
+
+            var manager = await engine.AddAsync (torrent, "");
+            Assert.AreEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+
+            var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = true }.ToSettings ();
+            await engine.UpdateSettingsAsync (settings);
+            Assert.AreNotEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+        }
+
+        [Test]
+        public async Task UsePartialFiles_InitiallyOn_ToggleOff ()
+        {
+            var pieceLength = Constants.BlockSize * 4;
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: true));
+            var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
+
+            var manager = await engine.AddAsync (torrent, "");
+            Assert.AreNotEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+
+            var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = false }.ToSettings ();
+            await engine.UpdateSettingsAsync (settings);
+            Assert.AreEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+        }
+
+        [Test]
         public void DownloadMetadata_Cancelled ()
         {
             var cts = new CancellationTokenSource ();
