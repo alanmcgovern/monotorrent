@@ -34,24 +34,14 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
 using MonoTorrent.Messages;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class HttpConnection : IPeerConnection
+    sealed class HttpPeerConnection : IPeerConnection
     {
-        static int webSeedId;
-
-        internal static BEncodedString CreatePeerId ()
-        {
-            string peerId = "-WebSeed-";
-            peerId += Interlocked.Increment (ref webSeedId).ToString ().PadLeft (20 - peerId.Length, '0');
-            return peerId;
-        }
-
         class HttpRequestData
         {
             public readonly RequestMessage Request;
@@ -76,25 +66,27 @@ namespace MonoTorrent.Client.Connections
 
         public bool CanReconnect => false;
 
-        public bool Connected => true;
+        public bool Disposed { get; set; }
 
-        internal TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds (10);
+        IHttpRequest Requester { get; set; }
+
+        public TimeSpan ConnectionTimeout {
+            get; set;
+        }
 
         HttpRequestData CurrentRequest { get; set; }
 
         Stream DataStream { get; set; }
 
-        int DataStreamCount { get; set; }
+        long DataStreamCount { get; set; }
 
         WebResponse DataStreamResponse { get; set; }
-
-        bool Disposed { get; set; }
 
         EndPoint IPeerConnection.EndPoint => null;
 
         public bool IsIncoming => false;
 
-        public TorrentManager Manager { get; set; }
+        ITorrentData TorrentData { get; set; }
 
         AutoResetEvent ReceiveWaiter { get; } = new AutoResetEvent (false);
 
@@ -104,20 +96,17 @@ namespace MonoTorrent.Client.Connections
 
         public Uri Uri { get; }
 
-        Queue<KeyValuePair<WebRequest, int>> WebRequests { get; } = new Queue<KeyValuePair<WebRequest, int>> ();
+        Queue<(Uri fileUri, long startOffset, long count)> WebRequests { get; } = new Queue<(Uri fileUri, long startOffset, long count)> ();
 
         #endregion
 
 
         #region Constructors
 
-        public HttpConnection (Uri uri)
+        public HttpPeerConnection (ITorrentData torrentData, Uri uri)
         {
-            if (uri == null)
-                throw new ArgumentNullException (nameof (uri));
-            if (!string.Equals (uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) && !string.Equals (uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException ("Scheme is not http or https");
-
+            ConnectionTimeout = TimeSpan.FromSeconds (10);
+            TorrentData = torrentData ?? throw new ArgumentNullException (nameof (torrentData));
             Uri = uri;
         }
 
@@ -220,14 +209,14 @@ namespace MonoTorrent.Client.Connections
             // Finally, if we have had no datastream what we need to do is execute the next web request in our list,
             // and then begin reading data from that stream.
             while (WebRequests.Count > 0) {
-                KeyValuePair<WebRequest, int> r = WebRequests.Dequeue ();
-                using var cts = new CancellationTokenSource (ConnectionTimeout);
-                using (cts.Token.Register (() => r.Key.Abort ())) {
-                    DataStreamResponse = await r.Key.GetResponseAsync ();
-                    DataStream = DataStreamResponse.GetResponseStream ();
-                    DataStreamCount = r.Value;
-                    return await ReceiveAsync (buffer, offset, count) + written;
-                }
+                var rr = WebRequests.Dequeue ();
+
+                Requester?.Dispose ();
+                Requester = HttpRequestFactory.Create ();
+                Requester.ConnectionTimeout = ConnectionTimeout;
+                DataStream = await Requester.GetStreamAsync (rr.fileUri, rr.startOffset, rr.count);
+                DataStreamCount = rr.count;
+                return await ReceiveAsync (buffer, offset, count) + written;
             }
 
             // If we reach this point it means that we processed all webrequests and still ended up receiving *less* data than we required,
@@ -275,16 +264,16 @@ namespace MonoTorrent.Client.Connections
             Uri uri = Uri;
 
             if (Uri.OriginalString.EndsWith ("/"))
-                uri = new Uri (uri, $"{Manager.Torrent.Name}/");
+                uri = new Uri (uri, $"{TorrentData.Name}/");
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            long startOffset = new BlockInfo (start.PieceIndex, start.StartOffset, start.RequestLength).ToByteOffset (Manager.PieceLength);
-            long endOffset = new BlockInfo (end.PieceIndex, end.StartOffset, end.RequestLength).ToByteOffset (Manager.PieceLength) + end.RequestLength;
+            long startOffset = new BlockInfo (start.PieceIndex, start.StartOffset, start.RequestLength).ToByteOffset (TorrentData.PieceLength);
+            long endOffset = new BlockInfo (end.PieceIndex, end.StartOffset, end.RequestLength).ToByteOffset (TorrentData.PieceLength) + end.RequestLength;
 
-            foreach (TorrentFile file in Manager.Torrent.Files) {
+            foreach (var file in TorrentData.Files) {
                 Uri u = uri;
-                if (Manager.Torrent.Files.Count > 1)
+                if (TorrentData.Files.Count > 1)
                     u = new Uri (u, file.Path);
                 if (endOffset == 0)
                     break;
@@ -296,17 +285,13 @@ namespace MonoTorrent.Client.Connections
                 }
                 // We want data from the end of the current file and from the next few files
                 else if (endOffset >= file.Length) {
-                    var request = (HttpWebRequest) WebRequest.Create (u);
-                    request.AddRange (startOffset, file.Length - 1);
-                    WebRequests.Enqueue (new KeyValuePair<WebRequest, int> (request, (int) (file.Length - startOffset)));
+                    WebRequests.Enqueue ((u, startOffset, file.Length - startOffset));
                     startOffset = 0;
                     endOffset -= file.Length;
                 }
                 // All the data we want is from within this file
                 else {
-                    var request = (HttpWebRequest) WebRequest.Create (u);
-                    request.AddRange (startOffset, endOffset - 1);
-                    WebRequests.Enqueue (new KeyValuePair<WebRequest, int> (request, (int) (endOffset - startOffset)));
+                    WebRequests.Enqueue ((u, startOffset, endOffset - startOffset));
                     endOffset = 0;
                 }
             }
@@ -319,6 +304,7 @@ namespace MonoTorrent.Client.Connections
 
             Disposed = true;
 
+            Requester?.Dispose ();
             SendResult?.TrySetCanceled ();
             DataStreamResponse?.Dispose ();
             DataStream?.Dispose ();

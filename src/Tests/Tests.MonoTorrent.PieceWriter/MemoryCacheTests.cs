@@ -48,6 +48,8 @@ namespace MonoTorrent.PieceWriter
         public List<(ITorrentFileInfo file, long offset, byte[] buffer)> Reads = new List<(ITorrentFileInfo file, long offset, byte[] buffer)> ();
         public List<(ITorrentFileInfo file, long offset, byte[] buffer)> Writes = new List<(ITorrentFileInfo file, long offset, byte[] buffer)> ();
 
+        public int MaximumOpenFiles { get; }
+
         public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             Closes.Add (file);
@@ -91,6 +93,11 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.FromResult (0);
         }
 
+        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+        {
+            return ReusableTask.CompletedTask;
+        }
+
         public virtual ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             var actualData = new byte[count];
@@ -115,6 +122,8 @@ namespace MonoTorrent.PieceWriter
     class TorrentData : ITorrentData
     {
         public IList<ITorrentFileInfo> Files { get; set; }
+        public InfoHash InfoHash => new InfoHash (new byte[20]);
+        public string Name => "Test Torrent";
         public int PieceLength { get; set; }
         public long Size { get; set; }
     }

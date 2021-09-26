@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            IPeerConnection connection = ConnectionFactory.Create (peer.ConnectionUri);
+            var connection = PeerConnectionFactory.Create (peer.ConnectionUri);
             if (connection == null || peer.AllowedEncryption.Count == 0)
                 return;
 

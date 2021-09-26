@@ -33,13 +33,12 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Logging;
 
 namespace MonoTorrent
 {
-    abstract class UdpListener : SocketListener, ISocketMessageListener
+    public abstract class UdpListener : SocketListener, ISocketMessageListener
     {
-        static readonly Logger logger = Logger.Create (nameof (UdpListener));
+        // static readonly Logger logger = Logger.Create (nameof (UdpListener));
 
         public event Action<byte[], IPEndPoint> MessageReceived;
 
@@ -56,7 +55,7 @@ namespace MonoTorrent
                 if (endpoint.Address != IPAddress.Any)
                     await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
             } catch (Exception ex) {
-                logger.Exception (ex, "UdpListener could not send message");
+                //logger.Exception (ex, "UdpListener could not send message");
             }
         }
 
@@ -65,7 +64,7 @@ namespace MonoTorrent
             UdpClient client = Client = new UdpClient (OriginalEndPoint);
             EndPoint = (IPEndPoint) client.Client.LocalEndPoint;
             token.Register (() => {
-                client.SafeDispose ();
+                client.Dispose ();
                 Client = null;
             });
 

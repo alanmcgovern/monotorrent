@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Messages;
 using MonoTorrent.PiecePicking;
@@ -41,7 +42,7 @@ namespace MonoTorrent.Client
         int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
         bool IPeer.CanRequestMorePieces {
             get {
-                if (Connection is Connections.HttpConnection) {
+                if (Connection is HttpPeerConnection) {
                     return AmRequestingPiecesCount == 0;
                 } else {
                     if (MaxPendingRequests < 20)
@@ -83,7 +84,7 @@ namespace MonoTorrent.Client
 
         int IPeer.PreferredRequestAmount (int pieceLength)
         {
-            if (Connection is Connections.HttpConnection) {
+            if (Connection is HttpPeerConnection) {
                 // How many whole pieces fit into 2MB
                 var count = (2 * 1024 * 1024) / pieceLength;
 

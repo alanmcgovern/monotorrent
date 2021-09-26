@@ -1,4 +1,5 @@
 .DS_Store
+.vs/
 bin/
 obj/
 /src/MonoTorrent.sln.DotSettings.user

@@ -1,5 +1,5 @@
 //
-// IPV4Connection.cs
+// IPV6Connection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,24 +28,48 @@
 
 
 using System;
+using System.IO;
 using System.Net;
-using System.Net.Sockets;
+using System.Threading;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class IPV4Connection : SocketConnection
+    public sealed class HttpRequest : IHttpRequest
     {
-        public IPV4Connection (Uri uri)
-            : base (uri)
-        {
+        public TimeSpan ConnectionTimeout { get; set; }
 
+        WebResponse Response { get; set; }
+
+        Stream Stream { get; set; }
+
+        public HttpRequest ()
+        {
+            ConnectionTimeout = TimeSpan.FromSeconds (10);
         }
 
-        public IPV4Connection (Socket socket, bool incoming)
-            : base (socket, incoming)
+        public void Dispose ()
         {
-            var endpoint = (IPEndPoint) socket.RemoteEndPoint;
-            Uri = new Uri ($"ipv4://{endpoint.Address}{':'}{endpoint.Port}");
+            Response?.Dispose ();
+            Stream?.Dispose ();
+        }
+
+        public async ReusableTask<Stream> GetStreamAsync (Uri uri, long fileOffset, long count)
+        {
+            Response?.Dispose ();
+            Stream?.Dispose ();
+
+            var request = (HttpWebRequest) WebRequest.Create (uri);
+            request.AddRange (fileOffset, fileOffset + count - 1);
+
+            using var cts = new CancellationTokenSource (ConnectionTimeout);
+            using (cts.Token.Register (() => request.Abort ())) {
+                Response = await request.GetResponseAsync ();
+                Stream = Response.GetResponseStream ();
+            }
+
+            return Stream;
         }
     }
 }

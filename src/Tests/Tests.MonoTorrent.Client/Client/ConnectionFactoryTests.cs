@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using MonoTorrent.Client.Connections;
 
@@ -7,19 +8,21 @@ using NUnit.Framework;
 namespace MonoTorrent.Client
 {
     [TestFixture]
-    public class ConnectionFactoryTests
+    public class PeerConnectionFactoryTests
     {
-        [Test]
-        public void InvalidPort ()
+        class TorrentData : ITorrentData
         {
-            Assert.IsNull (ConnectionFactory.Create (new Uri ("ipv4://127.0.1.2")));
+            public IList<ITorrentFileInfo> Files { get; }
+            public InfoHash InfoHash { get; }
+            public string Name { get; }
+            public int PieceLength { get; }
+            public long Size { get; }
         }
 
         [Test]
-        public void Http ()
+        public void InvalidPort ()
         {
-            Assert.IsNotNull (ConnectionFactory.Create (new Uri ("http://127.0.1.2")));
-            Assert.IsNotNull (ConnectionFactory.Create (new Uri ("https://127.0.1.2")));
+            Assert.IsNull (PeerConnectionFactory.Create (new Uri ("ipv4://127.0.1.2")));
         }
     }
 }

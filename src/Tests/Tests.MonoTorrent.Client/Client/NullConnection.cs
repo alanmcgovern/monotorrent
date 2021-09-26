@@ -43,9 +43,9 @@ namespace MonoTorrent.Client
 
         public byte[] AddressBytes => new byte[] { 1, 2, 3, 4 };
 
-        public bool Connected => true;
-
         public bool CanReconnect => false;
+
+        public bool Disposed => false;
 
         public bool IsIncoming { get; }
 

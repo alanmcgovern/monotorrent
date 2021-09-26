@@ -56,6 +56,26 @@ namespace MonoTorrent.PieceWriter
         event EventHandler<BlockInfo> WrittenThroughCache;
 
         /// <summary>
+        /// The number of bytes read from the cache.
+        /// </summary>
+        long CacheHits { get; }
+
+        /// <summary>
+        /// The number of bytes currently used by the cache.
+        /// </summary>
+        long CacheUsed { get; }
+
+        /// <summary>
+        /// The capacity of the cache, in bytes.
+        /// </summary>
+        long Capacity { get; }
+
+        /// <summary>
+        /// Pieces will be written to this <see cref="IPieceWriter"/> when they are evicted from the cache.
+        /// </summary>
+        IPieceWriter Writer { get; }
+
+        /// <summary>
         /// Reads data from the cache and flushes it to disk, or reads the data from disk if it is not available in the cache.
         /// </summary>
         /// <param name="torrent"></param>
@@ -73,6 +93,15 @@ namespace MonoTorrent.PieceWriter
         /// <param name="buffer"></param>
         /// <returns></returns>
         ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, byte[] buffer);
+
+        /// <summary>
+        /// Set the max capacity, in bytes.
+        /// </summary>
+        /// <param name="capacity"></param>
+        /// <returns></returns>
+        ReusableTask SetCapacityAsync (long capacity);
+
+        ReusableTask SetWriterAsync (IPieceWriter writer);
 
         /// <summary>
         /// 

@@ -31,7 +31,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Listeners
 {
-    class DhtListener : UdpListener, IDhtListener
+    public class DhtListener : UdpListener, IDhtListener
     {
         public DhtListener (IPEndPoint endpoint)
             : base (endpoint)

@@ -41,6 +41,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Dht.Listeners;
 using MonoTorrent.PieceWriter;
 
 using ReusableTasks;
@@ -57,6 +58,8 @@ namespace MonoTorrent.Client
         /// this is the list of paths we have read from
         /// </summary>
         public List<string> Paths = new List<string> ();
+
+        public int MaximumOpenFiles { get; }
 
         public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
@@ -100,6 +103,11 @@ namespace MonoTorrent.Client
         }
 
         public ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
+        {
+            return ReusableTask.CompletedTask;
+        }
+
+        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
             return ReusableTask.CompletedTask;
         }
@@ -157,7 +165,7 @@ namespace MonoTorrent.Client
     {
         public byte[] AddressBytes => ((IPEndPoint) EndPoint).Address.GetAddressBytes ();
         public bool CanReconnect => false;
-        public bool Connected { get; private set; } = true;
+        public bool Disposed { get; private set; } = false;
         public EndPoint EndPoint => new IPEndPoint (IPAddress.Parse (Uri.Host), Uri.Port);
         public bool IsIncoming { get; }
         public int? ManualBytesReceived { get; set; }
@@ -196,7 +204,7 @@ namespace MonoTorrent.Client
         {
             ReadStream.Dispose ();
             WriteStream.Dispose ();
-            Connected = false;
+            Disposed = true;
         }
 
         public async ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
@@ -225,7 +233,7 @@ namespace MonoTorrent.Client
 
     class CustomListener : IPeerConnectionListener
     {
-        public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
         public ListenerStatus Status { get; private set; }
@@ -244,8 +252,7 @@ namespace MonoTorrent.Client
 
         public void Add (TorrentManager manager, IPeerConnection connection)
         {
-            var p = new Peer ("", new Uri ("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
-            ConnectionReceived?.Invoke (this, new NewConnectionEventArgs (p, connection, manager));
+            ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, manager.InfoHash));
         }
     }
 
@@ -393,9 +400,9 @@ namespace MonoTorrent.Client
             this.tier = trackers;
             MetadataMode = metadataMode;
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
-            PeerListenerFactory.Creator = endpoint => new CustomListener ();
-            LocalPeerDiscoveryFactory.Creator = port => new ManualLocalPeerListener ();
-            Dht.Listeners.DhtListenerFactory.Creator = endpoint => new Dht.Listeners.NullDhtListener ();
+            PeerListenerFactory.Register (endpoint => new CustomListener ());
+            LocalPeerDiscoveryFactory.Register (port => new ManualLocalPeerListener ());
+            DhtListenerFactory.Register (endpoint => new NullDhtListener ());
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
                 dhtPort: 12345,
@@ -404,7 +411,7 @@ namespace MonoTorrent.Client
             ));
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);
-            Engine.DiskManager.ChangePieceWriter (writer);
+            Engine.DiskManager.SetWriterAsync (writer).GetAwaiter ().GetResult ();
             Writer = writer;
 
             RecreateManager ().Wait ();

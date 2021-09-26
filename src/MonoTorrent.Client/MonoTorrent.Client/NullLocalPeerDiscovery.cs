@@ -51,6 +51,9 @@ namespace MonoTorrent.Client
         public IPEndPoint EndPoint => null;
         public ListenerStatus Status => ListenerStatus.NotListening;
 
+        public TimeSpan MinimumAnnounceInternal { get; }
+        public TimeSpan AnnounceInternal { get; }
+
         public Task Announce (InfoHash infoHash)
         {
             return Task.CompletedTask;

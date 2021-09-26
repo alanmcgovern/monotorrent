@@ -1,11 +1,8 @@
 # Remove the line below if you want to inherit .editorconfig settings from higher directories
 root = true
 
-# C# files
-[*.cs]
-
+[*]
 #### Core EditorConfig Options ####
-
 # Indentation and spacing
 indent_size = 4
 indent_style = space
@@ -14,7 +11,14 @@ trim_trailing_whitespace  = true
 
 # New line preferences
 end_of_line = crlf
-insert_final_newline = false
+insert_final_newline = true
+
+# MSBuild related files
+[*.{csproj,props,targets}]
+indent_size = 2
+
+# C# files
+[*.cs]
 
 #### .NET Coding Conventions ####
 

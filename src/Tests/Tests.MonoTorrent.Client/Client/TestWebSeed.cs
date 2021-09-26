@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Modes;
 using MonoTorrent.Messages;
 
 using NUnit.Framework;
@@ -52,7 +53,7 @@ namespace MonoTorrent.Client
         bool partialData;
         public readonly int Count = 5;
         TestRig rig;
-        HttpConnection connection;
+        IPeerConnection connection;
         HttpListener listener;
         //private RequestMessage m;
         public string ListenerURL;
@@ -92,8 +93,7 @@ namespace MonoTorrent.Client
 
             rig = TestRig.CreateMultiFile ();
 
-            connection = new HttpConnection (new Uri (ListenerURL));
-            connection.Manager = rig.Manager;
+            connection = new HttpPeerConnection (rig.Manager, new Uri (ListenerURL));
             rig.Manager.UnhashedPieces.SetAll (false);
 
             id = new PeerId (new Peer ("this is my id", connection.Uri), connection, new MutableBitField (rig.Manager.PieceCount ()).SetAll (true));
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
         {
             var ids = new HashSet<BEncodedString> ();
             for (int i = 0; i < 20; i++) {
-                var id = HttpConnection.CreatePeerId ();
+                var id = Mode.CreatePeerId ();
                 Assert.AreEqual (20, id.TextBytes.Length, "#1");
                 Assert.IsTrue (ids.Add (id), "#2");
             }
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client
         [Test]
         public void TestInactiveServer ()
         {
-            connection.ConnectionTimeout = TimeSpan.FromMilliseconds (100);
+            ((HttpPeerConnection) connection).ConnectionTimeout = TimeSpan.FromMilliseconds (100);
             listener.Stop ();
 
             Assert.ThrowsAsync<WebException> (ReceiveFirst);
@@ -363,8 +363,7 @@ namespace MonoTorrent.Client
             rig.Torrent.HttpSeeds.Add (new Uri($"{ListenerURL}File1.exe"));
 
             Uri url = rig.Torrent.HttpSeeds[0];
-            connection = new HttpConnection (url);
-            connection.Manager = rig.Manager;
+            connection = new HttpPeerConnection (rig.Manager, url);
             rig.Manager.UnhashedPieces.SetAll (false);
 
             id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, new MutableBitField (rig.Manager.PieceCount ()).SetAll (true));

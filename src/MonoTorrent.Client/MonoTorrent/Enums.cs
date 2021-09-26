@@ -83,13 +83,6 @@ namespace MonoTorrent.Client.Tracker
 
 namespace MonoTorrent
 {
-    public enum ListenerStatus
-    {
-        Listening,
-        PortNotFree,
-        NotListening
-    }
-
     public enum Direction
     {
         None,

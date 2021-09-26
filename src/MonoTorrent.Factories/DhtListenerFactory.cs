@@ -34,7 +34,10 @@ namespace MonoTorrent.Dht.Listeners
 {
     public static class DhtListenerFactory
     {
-        internal static Func<IPEndPoint, IDhtListener> Creator = (endpoint) => new DhtListener (endpoint);
+        static Func<IPEndPoint, IDhtListener> Creator = (endpoint) => new DhtListener (endpoint);
+
+        public static void Register (Func<IPEndPoint, IDhtListener> creator)
+            => Creator = creator ?? throw new ArgumentNullException (nameof (creator));
 
         /// <summary>
         /// Creates a listener which binds to IPAddress.Any and listens for incoming UDP requests on the given local port.
@@ -55,7 +58,7 @@ namespace MonoTorrent.Dht.Listeners
         public static IDhtListener CreateUdp (IPAddress address, int port)
         {
             if (port == -1)
-                return new NullDhtListener ();
+                return null;
             return CreateUdp (new IPEndPoint (address, port));
         }
 

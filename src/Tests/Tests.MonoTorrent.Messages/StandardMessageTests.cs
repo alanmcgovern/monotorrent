@@ -43,6 +43,8 @@ namespace MonoTorrent.Client.Messages
         class TestTorrentData : ITorrentData
         {
             public IList<ITorrentFileInfo> Files { get; set; }
+            public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public string Name => "Test Torrent";
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }

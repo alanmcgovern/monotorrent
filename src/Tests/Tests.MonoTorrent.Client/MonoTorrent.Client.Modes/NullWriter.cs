@@ -12,6 +12,8 @@ namespace MonoTorrent.Client
 {
     public class NullWriter : IPieceWriter
     {
+        public int MaximumOpenFiles { get; }
+
         public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
@@ -39,6 +41,11 @@ namespace MonoTorrent.Client
         public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.FromResult (0);
+        }
+
+        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+        {
+            return ReusableTask.CompletedTask;
         }
 
         public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)

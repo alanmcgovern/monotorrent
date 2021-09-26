@@ -1,10 +1,10 @@
-﻿//
-// SocketListener.cs
+//
+// IPeerConnection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,19 +27,31 @@
 //
 
 
+using System;
 using System.Net;
 
-namespace MonoTorrent
+using ReusableTasks;
+
+namespace MonoTorrent.Client.Connections
 {
-    abstract class SocketListener : Listener, ISocketListener
+    public interface IPeerConnection : IDisposable
     {
-        public IPEndPoint EndPoint { get; protected set; }
+        byte[] AddressBytes { get; }
 
-        protected IPEndPoint OriginalEndPoint { get; set; }
+        bool CanReconnect { get; }
 
-        protected SocketListener (IPEndPoint endPoint)
-        {
-            EndPoint = OriginalEndPoint = endPoint;
-        }
+        bool Disposed { get; }
+
+        bool IsIncoming { get; }
+
+        EndPoint EndPoint { get; }
+
+        ReusableTask ConnectAsync ();
+
+        ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count);
+
+        ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count);
+
+        Uri Uri { get; }
     }
 }

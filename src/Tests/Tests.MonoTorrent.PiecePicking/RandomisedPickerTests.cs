@@ -41,6 +41,8 @@ namespace MonoTorrent.PiecePicking
         class TestTorrentData : ITorrentData
         {
             public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
+            public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public string Name => "Test Torrent";
             public int PieceLength { get; } = 64 * 1024;
             public long Size { get; } = 64 * 1024 * 40;
         }

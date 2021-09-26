@@ -1,10 +1,10 @@
-//
-// Listener.cs
+﻿//
+// HttpRequestFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2021 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,52 +28,23 @@
 
 
 using System;
-using System.Threading;
 
-namespace MonoTorrent
+namespace MonoTorrent.Client.Connections
 {
-    abstract class Listener : IListener
+    public static class HttpRequestFactory
     {
-        public event EventHandler<EventArgs> StatusChanged;
+        static Func<IHttpRequest> httpCreator = () => new HttpRequest ();
 
-        CancellationTokenSource Cancellation { get; set; }
-        public ListenerStatus Status { get; private set; }
+        public static void Register (Func<IHttpRequest> creator)
+            => httpCreator = creator ?? throw new ArgumentNullException (nameof (creator));
 
-        protected Listener ()
+        public static IHttpRequest Create ()
         {
-            Status = ListenerStatus.NotListening;
-        }
-
-        void RaiseStatusChanged (ListenerStatus status)
-        {
-            Status = status;
-            StatusChanged?.InvokeAsync (this, EventArgs.Empty);
-        }
-
-        public void Start ()
-        {
-            if (Status == ListenerStatus.Listening)
-                return;
-
-            Cancellation?.Cancel ();
-            Cancellation = new CancellationTokenSource ();
-            Cancellation.Token.Register (() => RaiseStatusChanged (ListenerStatus.NotListening));
-
             try {
-                Start (Cancellation.Token);
-                RaiseStatusChanged (ListenerStatus.Listening);
+                return httpCreator ();
             } catch {
-                RaiseStatusChanged (ListenerStatus.PortNotFree);
+                return null;
             }
-
-        }
-
-        protected abstract void Start (CancellationToken token);
-
-        public void Stop ()
-        {
-            Cancellation?.Cancel ();
-            Cancellation = null;
         }
     }
 }

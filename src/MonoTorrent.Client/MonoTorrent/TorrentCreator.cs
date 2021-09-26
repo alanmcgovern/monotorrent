@@ -482,7 +482,7 @@ namespace MonoTorrent
 
         protected virtual IPieceWriter CreateReader ()
         {
-            return new DiskWriter ();
+            return PieceWriterFactory.CreatePieceWriter (10);
         }
 
         void CreateSingleFileTorrent (BEncodedDictionary dictionary, IList<InputFile> mappings)

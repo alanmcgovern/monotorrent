@@ -1,5 +1,5 @@
-//
-// IPV6Connection.cs
+﻿//
+// IHttpPeerConnection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,24 +28,17 @@
 
 
 using System;
-using System.Net;
-using System.Net.Sockets;
+using System.IO;
+using System.Threading.Tasks;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class IPV6Connection : SocketConnection
+    public interface IHttpRequest : IDisposable
     {
-        public IPV6Connection (Uri uri)
-            : base (uri)
-        {
+        TimeSpan ConnectionTimeout { get; set; }
 
-        }
-
-        public IPV6Connection (Socket socket, bool incoming)
-            : base (socket, incoming)
-        {
-            var endpoint = (IPEndPoint) socket.RemoteEndPoint;
-            Uri = new Uri ($"ipv6://{endpoint.Address}{':'}{endpoint.Port}");
-        }
+        ReusableTask<Stream> GetStreamAsync (Uri uri, long startOffset, long count);
     }
 }

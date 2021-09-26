@@ -40,11 +40,8 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
-    class LocalPeerDiscovery : SocketListener, ILocalPeerDiscovery
+    public class LocalPeerDiscovery : SocketListener, ILocalPeerDiscovery
     {
-        internal static TimeSpan AnnounceInternal => TimeSpan.FromMinutes (5);
-        internal static TimeSpan MinimumAnnounceInternal => TimeSpan.FromMinutes (1);
-
         /// <summary>
         /// The IPAddress and port of the IPV4 multicast group.
         /// </summary>
@@ -59,6 +56,9 @@ namespace MonoTorrent.Client
         /// This asynchronous event is raised whenever a peer is discovered.
         /// </summary>
         public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
+
+        public TimeSpan AnnounceInternal => TimeSpan.FromMinutes (5);
+        public TimeSpan MinimumAnnounceInternal => TimeSpan.FromMinutes (1);
 
         /// <summary>
         /// When we send Announce we should embed the current <see cref="EngineSettings.ListenPort"/> as it is dynamic.
@@ -89,13 +89,13 @@ namespace MonoTorrent.Client
         /// </summary>
         UdpClient UdpClient { get; set; }
 
-        internal LocalPeerDiscovery (int listenPort)
+        public LocalPeerDiscovery (int listenPort)
             : base (new IPEndPoint (IPAddress.Any, MulticastAddressV4.Port))
         {
             ListenPort = listenPort;
 
             lock (Random)
-                Cookie = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
+                Cookie = $"MT-{Random.Next (1, int.MaxValue)}";
             BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastAddressV4.Address}:{MulticastAddressV4.Port}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
             PendingAnnounces = new Queue<InfoHash> ();
             RateLimiterTask = Task.CompletedTask;
@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
         {
             // Ensure this doesn't run on the UI thread as the networking calls can do some (partially) blocking operations.
             // Specifically 'NetworkInterface.GetAllNetworkInterfaces' is synchronous and can take hundreds of milliseconds.
-            await MainLoop.SwitchToThreadpool ();
+            await SwitchToThreadpool ();
 
             await RateLimiterTask;
 
@@ -184,7 +184,7 @@ namespace MonoTorrent.Client
                     var infoHash = InfoHash.FromHex (hashString.Split (' ').Last ());
                     var uri = new Uri ($"ipv4://{result.RemoteEndPoint.Address}{':'}{portcheck}");
 
-                    PeerFound?.InvokeAsync (this, new LocalPeerFoundEventArgs (infoHash, uri));
+                    PeerFound?.Invoke (this, new LocalPeerFoundEventArgs (infoHash, uri));
                 } catch (FileNotFoundException) {
                     throw;
                 } catch {
@@ -198,7 +198,7 @@ namespace MonoTorrent.Client
             UdpClient = new UdpClient (OriginalEndPoint);
             EndPoint = (IPEndPoint) UdpClient.Client.LocalEndPoint;
 
-            token.Register (() => UdpClient.SafeDispose ());
+            token.Register (() => UdpClient.Dispose ());
 
             // enumerating all active IP interfaces and joining their multicast group, so we can reliably listen
             // on systems with multiple NIC
@@ -225,5 +225,8 @@ namespace MonoTorrent.Client
 
             ReceiveAsync (UdpClient, token);
         }
+
+        static ThreadSwitcher SwitchToThreadpool ()
+            => new ThreadSwitcher ();
     }
 }

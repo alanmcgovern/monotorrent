@@ -14,7 +14,7 @@
     <Compile Include="..\MonoTorrent.Client\MonoTorrent\TorrentFileExtensions.cs" Link="TorrentFileExtensions.cs" />
     <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\ThreadSwitcher.cs" Link="ThreadSwitcher.cs" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>

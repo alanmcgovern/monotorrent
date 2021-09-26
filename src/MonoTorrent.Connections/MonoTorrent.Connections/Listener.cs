@@ -1,10 +1,10 @@
-﻿//
-// NullPeerListener.cs
+//
+// Listener.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,28 +28,52 @@
 
 
 using System;
+using System.Threading;
 
-using MonoTorrent.Client.Connections;
-
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent
 {
-    class NullPeerListener : IPeerConnectionListener
+    public abstract class Listener : IListener
     {
-#pragma warning disable 0067
-        public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
         public event EventHandler<EventArgs> StatusChanged;
-#pragma warning restore 0067
 
-        public ListenerStatus Status => ListenerStatus.NotListening;
+        CancellationTokenSource Cancellation { get; set; }
+        public ListenerStatus Status { get; private set; }
+
+        protected Listener ()
+        {
+            Status = ListenerStatus.NotListening;
+        }
+
+        void RaiseStatusChanged (ListenerStatus status)
+        {
+            Status = status;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
+        }
 
         public void Start ()
         {
-            
+            if (Status == ListenerStatus.Listening)
+                return;
+
+            Cancellation?.Cancel ();
+            Cancellation = new CancellationTokenSource ();
+            Cancellation.Token.Register (() => RaiseStatusChanged (ListenerStatus.NotListening));
+
+            try {
+                Start (Cancellation.Token);
+                RaiseStatusChanged (ListenerStatus.Listening);
+            } catch {
+                RaiseStatusChanged (ListenerStatus.PortNotFree);
+            }
+
         }
+
+        protected abstract void Start (CancellationToken token);
 
         public void Stop ()
         {
-            
+            Cancellation?.Cancel ();
+            Cancellation = null;
         }
     }
 }

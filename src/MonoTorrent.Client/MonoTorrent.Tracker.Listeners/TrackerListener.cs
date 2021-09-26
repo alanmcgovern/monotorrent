@@ -35,10 +35,13 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners
 {
-    abstract class TrackerListener : Listener, ITrackerListener
+    abstract class TrackerListener : ITrackerListener
     {
+        public ListenerStatus Status { get; private set; }
+
         public event EventHandler<TrackerScrapeRequest> ScrapeReceived;
         public event EventHandler<AnnounceRequest> AnnounceReceived;
+        public event EventHandler<EventArgs> StatusChanged;
 
         protected TrackerListener ()
         {
@@ -101,9 +104,19 @@ namespace MonoTorrent.Tracker.Listeners
             AnnounceReceived?.Invoke (this, e);
         }
 
+        protected void RaiseStatusChanged (ListenerStatus status)
+        {
+            Status = status;
+            StatusChanged?.Invoke (this, EventArgs.Empty);
+        }
+
         protected void RaiseScrapeReceived (TrackerScrapeRequest e)
         {
             ScrapeReceived?.Invoke (this, e);
         }
+
+        public abstract void Start ();
+
+        public abstract void Stop ();
     }
 }

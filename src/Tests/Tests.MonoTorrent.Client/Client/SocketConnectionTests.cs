@@ -40,8 +40,8 @@ namespace MonoTorrent.Client
 {
     public class SocketConnectionTests
     {
-        SocketConnection Incoming;
-        SocketConnection Outgoing;
+        IPeerConnection Incoming;
+        IPeerConnection Outgoing;
 
         [SetUp]
         public void Setup ()
@@ -54,8 +54,8 @@ namespace MonoTorrent.Client
 
             var s1b = socketListener.AcceptSocket ();
 
-            Incoming = new IPV4Connection (s1a, true);
-            Outgoing = new IPV4Connection (s1b, false);
+            Incoming = new SocketPeerConnection (s1a, true);
+            Outgoing = new SocketPeerConnection (s1b, false);
             socketListener.Stop ();
         }
 

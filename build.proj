@@ -1,61 +1,61 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="15.0">
 
-  <PropertyGroup>
-    <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
-    <CI Condition="'$(CI)' == '' ">false</CI>
+    <PropertyGroup>
+        <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
+        <CI Condition="'$(CI)' == '' ">false</CI>
 
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Out Condition=" '$(Out)' == '' ">$(MSBuildThisFileDirectory)out</Out>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Out Condition=" '$(Out)' == '' ">$(MSBuildThisFileDirectory)out</Out>
 
-    <MSBuildCommonProperties>$(MSBuildCommonProperties);Deterministic=true</MSBuildCommonProperties>
-  </PropertyGroup>
+        <MSBuildCommonProperties>$(MSBuildCommonProperties);Deterministic=true</MSBuildCommonProperties>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <SolutionFile Include="src/MonoTorrent.sln">
-      <Configuration>$(Configuration)</Configuration>
-    </SolutionFile>
-    <PackFile Include="src/MonoTorrent/MonoTorrent.csproj">
-      <Configuration>$(Configuration)</Configuration>
-    </PackFile>
-  </ItemGroup>
+    <ItemGroup>
+        <SolutionFile Include="src/MonoTorrent.sln">
+            <Configuration>$(Configuration)</Configuration>
+        </SolutionFile>
+        <PackFile Include="src/MonoTorrent/MonoTorrent.csproj">
+            <Configuration>$(Configuration)</Configuration>
+        </PackFile>
+    </ItemGroup>
 
-  <Target Name="Build" DependsOnTargets="$(BuildDependsOn)">
-    <Error Text="You have not restored the solution. Run &quot;msbuild /restore&quot; to restore and compile, or run &quot;msbuild /t:Restore&quot; if you just want to restore."
-      Condition="! Exists ('src\MonoTorrent\obj\project.assets.json')" />
+    <Target Name="Build" DependsOnTargets="$(BuildDependsOn)">
+        <Error Text="You have not restored the solution. Run &quot;msbuild /restore&quot; to restore and compile, or run &quot;msbuild /t:Restore&quot; if you just want to restore."
+          Condition="! Exists ('src\MonoTorrent\obj\project.assets.json')" />
 
-    <MSBuild
-      Projects="@(SolutionFile)"
-      Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
-      Targets="Build"
+        <MSBuild
+          Projects="@(SolutionFile)"
+          Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+          Targets="Build"
     />
-  </Target>
+    </Target>
 
-  <Target Name="Clean">
-    <MSBuild
-        Projects="@(SolutionFile)"
-        Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
-        Targets="Clean"
+    <Target Name="Clean">
+        <MSBuild
+            Projects="@(SolutionFile)"
+            Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+            Targets="Clean"
     />
-  </Target>
+    </Target>
 
-  <Target Name="Pack">
-    <MakeDir Directories="$(Out)" />
-    <MSBuild
-        Projects="@(PackFile)"
-        Properties="$(MSBuildCommonProperties);Configuration=%(PackFile.Configuration);PackageOutputPath=$(Out)"
-        Targets="Pack"
+    <Target Name="Pack">
+        <MakeDir Directories="$(Out)" />
+        <MSBuild
+            Projects="@(PackFile)"
+            Properties="$(MSBuildCommonProperties);Configuration=%(PackFile.Configuration);PackageOutputPath=$(Out)"
+            Targets="Pack"
     />
 
-  </Target>
+    </Target>
 
-  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+    <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
 
-  <Target Name="Restore">
-    <MSBuild
-      Projects="@(SolutionFile)"
-      Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
-      Targets="Restore"
+    <Target Name="Restore">
+        <MSBuild
+          Projects="@(SolutionFile)"
+          Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+          Targets="Restore"
     />
-  </Target>
+    </Target>
 
 </Project>

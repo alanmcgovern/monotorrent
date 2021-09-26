@@ -71,7 +71,11 @@ namespace MonoTorrent.Tracker
             return base.Handle (c, d.ClientAddress, false);
         }
 
-        protected override void Start (CancellationToken token)
+        public override void Start ()
+        {
+
+        }
+        public override void Stop ()
         {
 
         }

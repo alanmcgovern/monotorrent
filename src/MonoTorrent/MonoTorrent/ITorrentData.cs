@@ -38,6 +38,13 @@ namespace MonoTorrent
         /// </summary>
         IList<ITorrentFileInfo> Files { get; }
 
+        InfoHash InfoHash { get; }
+
+        /// <summary>
+        /// The name of the Torrent.
+        /// </summary>
+        string Name { get; }
+
         /// <summary>
         /// The size, in bytes, of each piece. The final piece may be smaller.
         /// </summary>

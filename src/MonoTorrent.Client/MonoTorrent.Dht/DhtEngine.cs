@@ -87,7 +87,7 @@ namespace MonoTorrent.Dht
         /// </summary>
         /// <param name="listenerEndpoint">The IPAddresss/port which the engine should listen on</param>
         public DhtEngine (IPEndPoint listenerEndpoint)
-            : this (new DhtListener (listenerEndpoint))
+            : this (DhtListenerFactory.CreateUdp (listenerEndpoint))
         {
         }
 
