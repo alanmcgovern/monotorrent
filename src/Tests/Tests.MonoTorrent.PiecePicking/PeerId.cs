@@ -34,18 +34,19 @@ namespace MonoTorrent.PiecePicking
         public int AmRequestingPiecesCount { get; set; }
         BitField IPeer.BitField => BitField;
         public MutableBitField BitField { get; private set; }
-        public bool CanRequestMorePieces { get; }
+        public bool CanRequestMorePieces { get; } = true;
         public long DownloadSpeed { get; }
         public List<int> IsAllowedFastPieces { get; } = new List<int> ();
         public bool IsChoking { get; set; } = true;
         public bool IsSeeder { get; }
-        public int MaxPendingRequests { get; }
+        public int MaxPendingRequests { get; } = 256;
         public int RepeatedHashFails { get; set; }
         public List<int> SuggestedPieces { get; } = new List<int> ();
         public bool SupportsFastPeer { get; set; }
         public int TotalHashFails { get; set; }
         public bool CanCancelRequests { get; }
 
+        public List<BlockInfo> Requests { get; } = new List<BlockInfo> ();
         public void EnqueueCancellation (BlockInfo request)
         {
             throw new NotImplementedException ();
@@ -58,17 +59,17 @@ namespace MonoTorrent.PiecePicking
 
         public void EnqueueRequest (BlockInfo request)
         {
-            throw new NotImplementedException ();
+            Requests.Add (request);
         }
 
         public void EnqueueRequests (IList<BlockInfo> requests)
         {
-            throw new NotImplementedException ();
+            Requests.AddRange (requests);
         }
 
         public int PreferredRequestAmount (int pieceLength)
         {
-            throw new NotImplementedException ();
+            return 1;
         }
     }
 }

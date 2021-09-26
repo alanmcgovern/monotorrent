@@ -31,13 +31,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages;
-using MonoTorrent.PiecePicking;
+using MonoTorrent.Client;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     [TestFixture]
     public class StreamingPieceRequesterTests
@@ -65,7 +63,7 @@ namespace MonoTorrent.Client.PiecePicking
             requester.AddRequests (peer, Array.Empty<IPeerWithMessaging> ());
             Assert.AreEqual (2, peer.AmRequestingPiecesCount);
 
-            var requests = GetRequests (peer);
+            var requests = peer.Requests;
             Assert.AreEqual (2, requests.Count);
             Assert.IsTrue (requests.All (r => r.PieceIndex == 0));
         }
@@ -85,26 +83,9 @@ namespace MonoTorrent.Client.PiecePicking
             requester.AddRequests (peer, Array.Empty<IPeerWithMessaging> ());
             Assert.AreEqual (4, peer.AmRequestingPiecesCount);
 
-            var requests = GetRequests (peer);
+            var requests = peer.Requests;
             Assert.AreEqual (4, requests.Count);
             Assert.IsTrue (requests.All (r => r.PieceIndex == 3));
         }
-
-        static List<RequestMessage> GetRequests (PeerId peer)
-        {
-            List<RequestMessage> results = new List<RequestMessage> ();
-            while (peer.MessageQueue.QueueLength > 0) {
-                var message = peer.MessageQueue.TryDequeue ();
-                if (message is RequestMessage r) {
-                    results.Add (r);
-                } else if (message is RequestBundle bundle) {
-                    foreach (var inner in bundle.ToRequestMessages ())
-                        if (inner is RequestMessage req)
-                            results.Add (req);
-                }
-            }
-            return results;
-        }
-
     }
 }

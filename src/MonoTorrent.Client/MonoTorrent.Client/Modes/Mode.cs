@@ -39,7 +39,6 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Messages.FastPeer;
 using MonoTorrent.Messages.Libtorrent;
 using MonoTorrent.Messages;
-using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Logging;
 using MonoTorrent.PiecePicking;
 

@@ -39,7 +39,6 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Messages;
-using MonoTorrent.Client.PiecePicking;
 
 using NUnit.Framework;
 

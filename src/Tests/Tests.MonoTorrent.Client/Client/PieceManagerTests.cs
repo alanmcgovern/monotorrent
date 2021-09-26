@@ -29,14 +29,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Messages;
+using MonoTorrent.Client;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.PiecePicking
 {
     [TestFixture]
     public class PieceManagerTests
