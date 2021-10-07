@@ -60,7 +60,7 @@ namespace MonoTorrent.Logging
                 Writer.Info (message);
         }
 
-        internal void Info (IConnection connection, string message)
+        internal void Info (IPeerConnection connection, string message)
         {
             if (Writer != null)
                 Writer.Info ($"{connection.Uri}: {message}");
@@ -96,13 +96,13 @@ namespace MonoTorrent.Logging
                 Writer.Info (string.Format (format, p1, p2));
         }
 
-        internal void InfoFormatted (IConnection connection, string formatString, int p1)
+        internal void InfoFormatted (IPeerConnection connection, string formatString, int p1)
         {
             if (Writer != null)
                 Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1)}");
         }
 
-        internal void InfoFormatted (IConnection connection, string formatString, object p1)
+        internal void InfoFormatted (IPeerConnection connection, string formatString, object p1)
         {
             if (Writer != null)
                 Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1)}");

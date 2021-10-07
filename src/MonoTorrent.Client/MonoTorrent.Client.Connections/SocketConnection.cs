@@ -36,7 +36,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    class SocketConnection : IConnection
+    class SocketConnection : IPeerConnection
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Connections
 
         public bool Connected => Socket.Connected;
 
-        EndPoint IConnection.EndPoint => EndPoint;
+        EndPoint IPeerConnection.EndPoint => EndPoint;
 
         public IPEndPoint EndPoint { get; }
 

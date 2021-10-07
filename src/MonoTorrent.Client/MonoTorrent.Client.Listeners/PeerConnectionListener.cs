@@ -39,11 +39,11 @@ namespace MonoTorrent.Client.Listeners
     /// <summary>
     /// Accepts incoming connections and passes them off to the right TorrentManager
     /// </summary>
-    sealed class PeerListener : SocketListener, IPeerListener
+    sealed class PeerConnectionListener : SocketListener, IPeerConnectionListener
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
 
-        public PeerListener (IPEndPoint endpoint)
+        public PeerConnectionListener (IPEndPoint endpoint)
             : base (endpoint)
         {
         }
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.Listeners
                 if (e.SocketError != SocketError.Success)
                     throw new SocketException ((int) e.SocketError);
 
-                IConnection connection;
+                IPeerConnection connection;
                 if (socket.AddressFamily == AddressFamily.InterNetwork)
                     connection = new IPV4Connection (socket, true);
                 else

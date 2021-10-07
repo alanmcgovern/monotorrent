@@ -1,10 +1,10 @@
-﻿//
-// IPeerListener.cs
+//
+// IConnection.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2019 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,11 +28,30 @@
 
 
 using System;
+using System.Net;
 
-namespace MonoTorrent.Client.Listeners
+using ReusableTasks;
+
+namespace MonoTorrent.Client.Connections
 {
-    public interface IPeerListener : IListener
+    public interface IPeerConnection : IDisposable
     {
-        event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        byte[] AddressBytes { get; }
+
+        bool Connected { get; }
+
+        bool CanReconnect { get; }
+
+        bool IsIncoming { get; }
+
+        EndPoint EndPoint { get; }
+
+        ReusableTask ConnectAsync ();
+
+        ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count);
+
+        ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count);
+
+        Uri Uri { get; }
     }
 }

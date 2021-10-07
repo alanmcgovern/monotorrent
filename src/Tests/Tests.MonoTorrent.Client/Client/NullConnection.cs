@@ -36,7 +36,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    public class NullConnection : IConnection
+    public class NullConnection : IPeerConnection
     {
         public static NullConnection Incoming = new NullConnection (true);
         public static NullConnection Outgoing = new NullConnection (false);

@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
 
         ClientEngine Engine { get; set; }
 
-        IPeerListener Listener { get; set; }
+        IPeerConnectionListener Listener { get; set; }
 
         InfoHash[] SKeys { get; set; }
 
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
             SKeys = clone;
         }
 
-        public void SetListener (IPeerListener listener)
+        public void SetListener (IPeerConnectionListener listener)
         {
             Listener.ConnectionReceived -= ConnectionReceived;
             Listener = listener ?? new NullPeerListener ();
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTask<bool> HandleHandshake (Peer peer, IConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
+        async ReusableTask<bool> HandleHandshake (Peer peer, IPeerConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager man = null;
             if (message.ProtocolString != VersionInfo.ProtocolStringV100)

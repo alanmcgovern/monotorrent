@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
     {
         const int MaxMessageLength = Constants.BlockSize * 4;
 
-        public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IConnection connection, IEncryption decryptor)
+        public static async ReusableTask<HandshakeMessage> ReceiveHandshakeAsync (IPeerConnection connection, IEncryption decryptor)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -60,17 +60,17 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor)
+        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor)
         {
             return ReceiveMessageAsync (connection, decryptor, null, null, null, null);
         }
 
-        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
+        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
             return ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, null);
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, ByteBuffer buffer)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, ByteBuffer buffer)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -119,12 +119,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message)
+        public static ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, PeerMessage message)
         {
             return SendMessageAsync (connection, encryptor, message, null, null, null);
         }
 
-        public static async ReusableTask SendMessageAsync (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ByteBuffer buffer = null)
+        public static async ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ByteBuffer buffer = null)
         {
             await MainLoop.SwitchToThreadpool ();
 

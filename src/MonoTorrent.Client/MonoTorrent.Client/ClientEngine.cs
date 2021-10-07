@@ -202,7 +202,7 @@ namespace MonoTorrent.Client
 
         public bool Disposed { get; private set; }
 
-        internal IPeerListener Listener { get; set; }
+        internal IPeerConnectionListener Listener { get; set; }
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 

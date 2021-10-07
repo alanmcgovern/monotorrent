@@ -34,13 +34,13 @@ namespace MonoTorrent.Client.Listeners
 {
     public static class PeerListenerFactory
     {
-        internal static Func<IPEndPoint, IPeerListener> Creator = endpoint => new PeerListener (endpoint);
+        internal static Func<IPEndPoint, IPeerConnectionListener> Creator = endpoint => new PeerConnectionListener (endpoint);
         /// <summary>
         /// Creates a listener which binds to IPAddress.Any and listens for incoming TCP requests on the given local port.
         /// </summary>
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
-        public static IPeerListener CreateTcp (int port)
+        public static IPeerConnectionListener CreateTcp (int port)
         {
             return CreateTcp (IPAddress.Any, port);
         }
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.Listeners
         /// <param name="address">The local IP address to bind to.</param>
         /// <param name="port">The local port to bind to.</param>
         /// <returns></returns>
-        public static IPeerListener CreateTcp (IPAddress address, int port)
+        public static IPeerConnectionListener CreateTcp (IPAddress address, int port)
         {
             if (port == -1)
                 return new NullPeerListener ();
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Listeners
         /// </summary>
         /// <param name="endpoint">The local endpoint to bind to.</param>
         /// <returns></returns>
-        public static IPeerListener CreateTcp (IPEndPoint endpoint)
+        public static IPeerConnectionListener CreateTcp (IPEndPoint endpoint)
         {
             return Creator (endpoint);
         }
