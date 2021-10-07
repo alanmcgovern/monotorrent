@@ -35,7 +35,6 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using MonoTorrent.Client.PiecePicking;
 
 using NUnit.Framework;
 

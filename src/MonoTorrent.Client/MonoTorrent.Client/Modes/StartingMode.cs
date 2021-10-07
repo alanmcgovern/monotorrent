@@ -28,11 +28,8 @@
 
 
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client.Modes
 {

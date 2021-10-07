@@ -38,7 +38,6 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
-using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
@@ -405,7 +404,7 @@ namespace MonoTorrent.Client
             await MainLoop;
 
             var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
-            await manager.ChangePickerAsync (new StreamingPieceRequester ());
+            await manager.ChangePickerAsync (PieceRequesterFactory.CreateStreamingPieceRequester (manager));
             return manager;
         }
 

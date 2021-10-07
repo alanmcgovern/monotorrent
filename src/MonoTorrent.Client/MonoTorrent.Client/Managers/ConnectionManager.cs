@@ -36,10 +36,8 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Messages;
-using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Logging;
-using MonoTorrent.PiecePicking;
 
 using ReusableTasks;
 

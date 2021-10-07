@@ -35,7 +35,6 @@ using System.Threading.Tasks;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Messages;
-using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client
@@ -65,7 +64,7 @@ namespace MonoTorrent.Client
         {
             Manager = manager;
             PendingHashCheckPieces = new MutableBitField (1);
-            Requester = new StandardPieceRequester ();
+            Requester = PieceRequesterFactory.CreateStandardPieceRequester (manager);
         }
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
