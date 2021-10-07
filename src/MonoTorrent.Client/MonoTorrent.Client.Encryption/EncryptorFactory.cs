@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.Encryption
 
         static TimeSpan Timeout => Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (10);
 
-        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys)
+        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys)
         {
             if (!connection.IsIncoming)
                 throw new Exception ("oops");
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Encryption
             return await DoCheckIncomingConnectionAsync (connection, allowedEncryption, sKeys).ConfigureAwait (false);
         }
 
-        static async ReusableTask<EncryptorResult> DoCheckIncomingConnectionAsync (IConnection connection, IList<EncryptionType> preferredEncryption, InfoHash[] sKeys)
+        static async ReusableTask<EncryptorResult> DoCheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> preferredEncryption, InfoHash[] sKeys)
         {
             bool supportsRC4Header = preferredEncryption.Contains (EncryptionType.RC4Header);
             bool supportsRC4Full = preferredEncryption.Contains (EncryptionType.RC4Full);
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException ("Invalid handshake received and no decryption works");
         }
 
-        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake = null)
+        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake = null)
         {
             if (connection.IsIncoming)
                 throw new Exception ("oops");
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.Encryption
             return await DoCheckOutgoingConnectionAsync (connection, allowedEncryption, infoHash, handshake).ConfigureAwait (false);
         }
 
-        static async ReusableTask<EncryptorResult> DoCheckOutgoingConnectionAsync (IConnection connection, IList<EncryptionType> preferredEncryption, InfoHash infoHash, HandshakeMessage handshake)
+        static async ReusableTask<EncryptorResult> DoCheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> preferredEncryption, InfoHash infoHash, HandshakeMessage handshake)
         {
             bool supportsRC4Header = preferredEncryption.Contains (EncryptionType.RC4Header);
             bool supportsRC4Full = preferredEncryption.Contains (EncryptionType.RC4Full);

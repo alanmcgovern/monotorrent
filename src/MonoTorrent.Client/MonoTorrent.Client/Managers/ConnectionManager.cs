@@ -52,14 +52,14 @@ namespace MonoTorrent.Client
 
         struct AsyncConnectState
         {
-            public AsyncConnectState (TorrentManager manager, IConnection connection, ValueStopwatch timer)
+            public AsyncConnectState (TorrentManager manager, IPeerConnection connection, ValueStopwatch timer)
             {
                 Manager = manager;
                 Connection = connection;
                 Timer = timer;
             }
 
-            public readonly IConnection Connection;
+            public readonly IPeerConnection Connection;
             public readonly TorrentManager Manager;
             public readonly ValueStopwatch Timer;
         }
@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            IConnection connection = ConnectionFactory.Create (peer.ConnectionUri);
+            IPeerConnection connection = ConnectionFactory.Create (peer.ConnectionUri);
             if (connection == null || peer.AllowedEncryption.Count == 0)
                 return;
 
@@ -250,7 +250,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async void ReceiveMessagesAsync (IConnection connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
+        internal async void ReceiveMessagesAsync (IPeerConnection connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
         {
             await MainLoop.SwitchToThreadpool ();
 

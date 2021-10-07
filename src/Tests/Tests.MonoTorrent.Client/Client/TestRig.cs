@@ -153,7 +153,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class CustomConnection : IConnection
+    public class CustomConnection : IPeerConnection
     {
         public byte[] AddressBytes => ((IPEndPoint) EndPoint).Address.GetAddressBytes ();
         public bool CanReconnect => false;
@@ -223,7 +223,7 @@ namespace MonoTorrent.Client
             => Name;
     }
 
-    class CustomListener : IPeerListener
+    class CustomListener : IPeerConnectionListener
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
         public event EventHandler<EventArgs> StatusChanged;
@@ -242,7 +242,7 @@ namespace MonoTorrent.Client
             StatusChanged?.Invoke (this, EventArgs.Empty);
         }
 
-        public void Add (TorrentManager manager, IConnection connection)
+        public void Add (TorrentManager manager, IPeerConnection connection)
         {
             var p = new Peer ("", new Uri ("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
             ConnectionReceived?.Invoke (this, new NewConnectionEventArgs (p, connection, manager));
@@ -332,7 +332,7 @@ namespace MonoTorrent.Client
         readonly int piecelength;
         readonly string[][] tier;
 
-        public void AddConnection (IConnection connection)
+        public void AddConnection (IPeerConnection connection)
         {
             Listener.Add (connection.IsIncoming ? null : Manager, connection);
         }

@@ -41,7 +41,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    sealed class HttpConnection : IConnection
+    sealed class HttpConnection : IPeerConnection
     {
         static int webSeedId;
 
@@ -90,7 +90,7 @@ namespace MonoTorrent.Client.Connections
 
         bool Disposed { get; set; }
 
-        EndPoint IConnection.EndPoint => null;
+        EndPoint IPeerConnection.EndPoint => null;
 
         public bool IsIncoming => false;
 

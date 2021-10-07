@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     public sealed class PeerConnectedEventArgs : TorrentEventArgs
     {
         /// <summary>
-        /// <see cref="Direction.Incoming"/> if the connection was received by the <see cref="IPeerListener"/> associated
+        /// <see cref="Direction.Incoming"/> if the connection was received by the <see cref="IPeerConnectionListener"/> associated
         /// with the active <see cref="ClientEngine"/>, otherwise <see cref="Direction.Outgoing"/> if the
         /// connection was created by the active <see cref="TorrentManager"/>
         /// </summary>

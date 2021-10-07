@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Connections
     public static class ConnectionFactory
     {
         static readonly object locker = new object ();
-        static readonly Dictionary<string, Func<Uri, IConnection>> trackerTypes = new Dictionary<string, Func<Uri, IConnection>> ();
+        static readonly Dictionary<string, Func<Uri, IPeerConnection>> trackerTypes = new Dictionary<string, Func<Uri, IPeerConnection>> ();
 
         static ConnectionFactory ()
         {
@@ -52,17 +52,17 @@ namespace MonoTorrent.Client.Connections
             if (connectionType == null)
                 throw new ArgumentNullException (nameof (connectionType));
 
-            RegisterTypeForProtocol (protocol, uri => (IConnection) Activator.CreateInstance (connectionType, uri));
+            RegisterTypeForProtocol (protocol, uri => (IPeerConnection) Activator.CreateInstance (connectionType, uri));
         }
 
-        static void RegisterTypeForProtocol (string protocol, Func<Uri, IConnection> creator)
+        static void RegisterTypeForProtocol (string protocol, Func<Uri, IPeerConnection> creator)
         {
             lock (locker)
                 trackerTypes[protocol] = creator;
         }
 
 
-        public static IConnection Create (Uri connectionUri)
+        public static IPeerConnection Create (Uri connectionUri)
         {
             if (connectionUri == null)
                 throw new ArgumentNullException (nameof (connectionUri));
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Connections
             if (connectionUri.Scheme == "ipv4" && connectionUri.Port == -1)
                 return null;
 
-            Func<Uri, IConnection> creator;
+            Func<Uri, IPeerConnection> creator;
             lock (locker)
                 if (!trackerTypes.TryGetValue (connectionUri.Scheme, out creator))
                     return null;

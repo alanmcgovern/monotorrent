@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
 
         internal long BytesDownloadedAtLastReview { get; set; } = 0;
         internal long BytesUploadedAtLastReview { get; set; } = 0;
-        internal IConnection Connection { get; }
+        internal IPeerConnection Connection { get; }
         internal double LastReviewDownloadRate { get; set; } = 0;
         internal double LastReviewUploadRate { get; set; } = 0;
         internal bool FirstReviewPeriod { get; set; }
@@ -199,7 +199,7 @@ namespace MonoTorrent.Client
             InitializeTyrant ();
         }
 
-        internal PeerId (Peer peer, IConnection connection, MutableBitField bitfield)
+        internal PeerId (Peer peer, IPeerConnection connection, MutableBitField bitfield)
             : this (peer)
         {
             Connection = connection ?? throw new ArgumentNullException (nameof (connection));

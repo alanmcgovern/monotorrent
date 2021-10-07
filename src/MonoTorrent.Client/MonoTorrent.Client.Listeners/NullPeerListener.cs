@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Client.Listeners
 {
-    class NullPeerListener : IPeerListener
+    class NullPeerListener : IPeerConnectionListener
     {
 #pragma warning disable 0067
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
