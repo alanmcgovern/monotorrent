@@ -38,8 +38,8 @@ namespace MonoTorrent.Client.Connections
     public static class PeerConnectionFactory
     {
         static readonly Dictionary<string, Func<Uri, IPeerConnection>> connectionCreator = new Dictionary<string, Func<Uri, IPeerConnection>> {
-            { ConnectionType.IPv4, uri => new SocketPeerConnection (uri, SocketConnectorFactory.Create ()) },
-            { ConnectionType.IPv6, uri => new SocketPeerConnection (uri, SocketConnectorFactory.Create ()) }
+            { "ipv4", uri => new SocketPeerConnection (uri, SocketConnectorFactory.Create ()) },
+            { "ipv6", uri => new SocketPeerConnection (uri, SocketConnectorFactory.Create ()) }
         };
 
         /// <summary>
