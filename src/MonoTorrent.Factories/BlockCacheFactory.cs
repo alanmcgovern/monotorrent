@@ -1,5 +1,5 @@
 ﻿//
-// PieceWriterFactory.cs
+// BlockCacheFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -31,17 +31,21 @@ using System;
 
 namespace MonoTorrent.PieceWriter
 {
-    public static class PieceWriterFactory
+    public static class BlockCacheFactory
     {
-        static Func<int, IPieceWriter> Creator = maxOpenFiles => new DiskWriter (maxOpenFiles);
+        static Func<IPieceWriter, long, ByteBufferPool, IBlockCache> Creator = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
 
-        public static void Register (Func<IPieceWriter> creator)
-            => Creator = maxOpenFiles => creator ();
+        public static void Register (Func<IPieceWriter, IBlockCache> creator)
+            => Creator = (writer, capacity, cache) => creator (writer);
 
-        public static void Register(Func<int, IPieceWriter> creator)
+        public static void Register (Func<IPieceWriter, long, IBlockCache> creator)
+            => Creator = (writer, capacity, cache) => creator (writer, capacity);
+
+        public static void Register (Func<IPieceWriter, long, ByteBufferPool, IBlockCache> creator)
             => Creator = creator ?? throw new ArgumentNullException (nameof (creator));
 
-        public static IPieceWriter Create (int maximumOpenFiles)
-            => Creator (maximumOpenFiles);
+        public static IBlockCache Create (IPieceWriter writer, long capacity, ByteBufferPool bufferPool)
+            => Creator (writer, capacity, bufferPool);
+
     }
 }
