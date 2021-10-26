@@ -18,6 +18,7 @@
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
     <PackDependsOn>$(PackDependsOn)</PackDependsOn>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' ">
@@ -114,10 +115,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
-    <ProjectReference Include="..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" />
-    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" PrivateAssets="all" />
   </ItemGroup>
 
+   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'All'))" />
+    </ItemGroup>
+  </Target>
 </Project>

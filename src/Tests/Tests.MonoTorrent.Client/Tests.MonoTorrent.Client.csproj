@@ -10,9 +10,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
   <ItemGroup>
