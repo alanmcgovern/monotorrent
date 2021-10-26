@@ -4,7 +4,7 @@
   <PropertyGroup>
     <NoWarn>1701;1702;1591;0419</NoWarn>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <MonoTorrentABIVersion>1.0.0.0</MonoTorrentABIVersion>
+    <MonoTorrentABIVersion>2.0.0.0</MonoTorrentABIVersion>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
@@ -77,6 +77,7 @@
         -Per torrent and global rate limiting
         -Individual file relocation
       </PackageDescription>
+      <PackageId>MonoTorrent</PackageId>
       <PackageLicenseFile>LICENSE</PackageLicenseFile>
       <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
       <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

@@ -14,7 +14,7 @@
         <SolutionFile Include="src/MonoTorrent.sln">
             <Configuration>$(Configuration)</Configuration>
         </SolutionFile>
-        <PackFile Include="src/MonoTorrent/MonoTorrent.csproj">
+        <PackFile Include="src/MonoTorrent.Client/MonoTorrent.Client.csproj">
             <Configuration>$(Configuration)</Configuration>
         </PackFile>
     </ItemGroup>
