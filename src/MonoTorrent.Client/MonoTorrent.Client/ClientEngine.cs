@@ -268,7 +268,6 @@ namespace MonoTorrent.Client
             Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
 
             DiskManager = new DiskManager (Settings);
-            DiskManager.ChangePieceWriter (new DiskWriter (Settings.MaximumOpenFiles));
 
             ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
             listenManager = new ListenManager (this);
@@ -291,10 +290,10 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort);
+            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort) ?? new NullPeerListener ();
             listenManager.SetListener (Listener);
 
-            DhtListener = DhtListenerFactory.CreateUdp (settings.DhtPort);
+            DhtListener = DhtListenerFactory.CreateUdp (settings.DhtPort) ?? new NullDhtListener ();
             DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
@@ -478,7 +477,7 @@ namespace MonoTorrent.Client
             await MainLoop;
             if (IsRunning)
                 throw new InvalidOperationException ("You must stop all active downloads before changing the piece writer used to write data to disk.");
-            DiskManager.ChangePieceWriter (writer);
+            await DiskManager.SetWriterAsync (writer);
         }
 
         void CheckDisposed ()
@@ -883,8 +882,7 @@ namespace MonoTorrent.Client
                 else if (oldSettings.DhtPort > 0)
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, oldSettings.DhtPort), CancellationToken.None);
 
-                DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort);
-
+                DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort) ?? new NullDhtListener ();
                 if (oldSettings.DhtPort == -1)
                     await RegisterDht (DhtEngineFactory.Create (DhtListener));
                 else if (newSettings.DhtPort == -1)
@@ -908,7 +906,7 @@ namespace MonoTorrent.Client
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None);
 
                 Listener.Stop ();
-                Listener = PeerListenerFactory.CreateTcp (newSettings.ListenPort);
+                Listener = PeerListenerFactory.CreateTcp (newSettings.ListenPort) ?? new NullPeerListener ();
                 listenManager.SetListener (Listener);
 
                 if (IsRunning) {
@@ -928,7 +926,7 @@ namespace MonoTorrent.Client
 
             if ((oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) ||
                 (oldSettings.ListenPort != newSettings.ListenPort)) {
-                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery && localPort > 0 ? new LocalPeerDiscovery (localPort) : null);
+                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery && localPort > 0 ? LocalPeerDiscoveryFactory.Create (localPort) : null);
             }
         }
 

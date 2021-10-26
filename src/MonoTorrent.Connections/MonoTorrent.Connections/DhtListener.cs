@@ -1,8 +1,8 @@
-﻿//
-// ILocalPeerDiscovery.cs
+//
+// DhtListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2019 Alan McGovern
 //
@@ -27,23 +27,16 @@
 //
 
 
-using System;
-using System.Threading.Tasks;
+using System.Net;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Dht.Listeners
 {
-    public interface ILocalPeerDiscovery : ISocketListener
+    public class DhtListener : UdpListener, IDhtListener
     {
-        /// <summary>
-        /// This event is raised whenever a peer is discovered.
-        /// </summary>
-        event EventHandler<LocalPeerFoundEventArgs> PeerFound;
+        public DhtListener (IPEndPoint endpoint)
+            : base (endpoint)
+        {
 
-        /// <summary>
-        /// Send an announce request for this InfoHash to all available network adapters.
-        /// </summary>
-        /// <param name="infoHash"></param>
-        /// <returns></returns>
-        Task Announce (InfoHash infoHash);
+        }
     }
 }

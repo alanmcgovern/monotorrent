@@ -111,11 +111,11 @@ namespace MonoTorrent.PieceWriter
         /// <summary>
         /// The size of the in memory cache, in bytes.
         /// </summary>
-        public int Capacity { get; set; }
+        public long Capacity { get; private set; }
 
-        public IPieceWriter Writer { get; set; }
+        public IPieceWriter Writer { get; private set; }
 
-        public MemoryCache (ByteBufferPool bufferPool, int capacity, IPieceWriter writer)
+        public MemoryCache (ByteBufferPool bufferPool, long capacity, IPieceWriter writer)
         {
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException (nameof (capacity));
@@ -171,6 +171,18 @@ namespace MonoTorrent.PieceWriter
                 Interlocked.Add (ref cacheUsed, -cached.Block.RequestLength);
                 blocks.Remove (cached);
             }
+        }
+
+        public ReusableTask SetCapacityAsync (long capacity)
+        {
+            Capacity = capacity;
+            return ReusableTask.CompletedTask;
+        }
+
+        public ReusableTask SetWriterAsync (IPieceWriter writer)
+        {
+            Writer = writer;
+            return ReusableTask.CompletedTask;
         }
 
         public async ReusableTask WriteAsync (ITorrentData torrent, BlockInfo block, byte[] buffer, bool preferSkipCache)

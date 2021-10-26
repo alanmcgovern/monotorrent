@@ -46,7 +46,7 @@ namespace MonoTorrent.PieceWriter
 
         SemaphoreSlim Limiter { get; set; }
 
-        public int OpenFiles => StreamCache.Count;
+        public int MaximumOpenFiles => StreamCache.Count;
 
         readonly FileStreamBuffer StreamCache;
 
@@ -152,14 +152,13 @@ namespace MonoTorrent.PieceWriter
             }
         }
 
-        public void UpdateMaximumOpenFiles (int maximumOpenFiles)
+        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
             Limiter = new SemaphoreSlim (maximumOpenFiles);
+            return ReusableTask.CompletedTask;
         }
 
-        internal static ThreadSwitcher SwitchToThreadpool ()
-        {
-            return new ThreadSwitcher ();
-        }
+        static ThreadSwitcher SwitchToThreadpool ()
+            => new ThreadSwitcher ();
     }
 }

@@ -1,10 +1,10 @@
 ﻿//
-// NullPeerListener.cs
+// SocketListener.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,29 +27,19 @@
 //
 
 
-using System;
+using System.Net;
 
-using MonoTorrent.Client.Connections;
-
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent
 {
-    class NullPeerListener : IPeerConnectionListener
+    public abstract class SocketListener : Listener, ISocketListener
     {
-#pragma warning disable 0067
-        public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
-        public event EventHandler<EventArgs> StatusChanged;
-#pragma warning restore 0067
+        public IPEndPoint EndPoint { get; protected set; }
 
-        public ListenerStatus Status => ListenerStatus.NotListening;
+        protected IPEndPoint OriginalEndPoint { get; set; }
 
-        public void Start ()
+        protected SocketListener (IPEndPoint endPoint)
         {
-            
-        }
-
-        public void Stop ()
-        {
-            
+            EndPoint = OriginalEndPoint = endPoint;
         }
     }
 }

@@ -83,29 +83,31 @@ namespace MonoTorrent.Client
             Listener.ConnectionReceived += ConnectionReceived;
         }
 
-        async void ConnectionReceived (object sender, NewConnectionEventArgs e)
+        async void ConnectionReceived (object sender, PeerConnectionEventArgs e)
         {
             await ClientEngine.MainLoop;
+            var peer = new Peer ("", e.Connection.Uri, EncryptionTypes.All);
+
             try {
-                if (Engine.ConnectionManager.ShouldBanPeer (e.Peer)) {
+                if (Engine.ConnectionManager.ShouldBanPeer (peer)) {
                     e.Connection.Dispose ();
                     return;
                 }
-
                 if (!e.Connection.IsIncoming) {
-                    var id = new PeerId (e.Peer, e.Connection, new MutableBitField (e.TorrentManager.Bitfield.Length).SetAll (false));
+                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+                    var id = new PeerId (peer, e.Connection, new MutableBitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
 
-                    Engine.ConnectionManager.ProcessNewOutgoingConnection (e.TorrentManager, id);
+                    Engine.ConnectionManager.ProcessNewOutgoingConnection (manager, id);
                     return;
                 }
 
                 logger.Info (e.Connection, "ConnectionReceived");
 
-                var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (e.Peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
+                var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys);
-                if (!await HandleHandshake (e.Peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
+                if (!await HandleHandshake (peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch {
                 e.Connection.Dispose ();

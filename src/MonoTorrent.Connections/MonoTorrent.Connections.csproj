@@ -5,7 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\ThreadSwitcher.cs" Link="ThreadSwitcher.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 

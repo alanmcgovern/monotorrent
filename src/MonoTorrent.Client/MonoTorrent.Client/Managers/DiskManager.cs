@@ -172,7 +172,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The piece writer used to read/write data
         /// </summary>
-        MemoryCache Cache { get; }
+        IBlockCache Cache { get; }
 
         internal DiskManager (EngineSettings settings, IPieceWriter writer = null)
         {
@@ -186,16 +186,14 @@ namespace MonoTorrent.Client
 
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
-            writer ??= new DiskWriter (settings.MaximumOpenFiles);
-            Cache = new MemoryCache (BufferPool, settings.DiskCacheBytes, writer);
+            writer ??= PieceWriterFactory.Create (settings.MaximumOpenFiles);
+            Cache = BlockCacheFactory.Create (writer, settings.DiskCacheBytes, BufferPool);
             Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
             Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
         }
 
-        internal void ChangePieceWriter (IPieceWriter writer)
-        {
-            Cache.Writer = writer;
-        }
+        internal async ReusableTask SetWriterAsync (IPieceWriter writer)
+            => await Cache.SetWriterAsync (writer);
 
         void IDisposable.Dispose ()
         {
@@ -569,12 +567,12 @@ namespace MonoTorrent.Client
             var oldSettings = Settings;
             Settings = settings;
 
-            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles && Cache.Writer is DiskWriter dr) {
-                dr.UpdateMaximumOpenFiles (settings.MaximumOpenFiles);
+            if (oldSettings.MaximumOpenFiles != settings.MaximumOpenFiles) {
+                await Cache.Writer.SetMaximumOpenFilesAsync (settings.MaximumOpenFiles);
             }
 
             if (oldSettings.DiskCacheBytes != settings.DiskCacheBytes) {
-                Cache.Capacity = settings.DiskCacheBytes;
+                await Cache.SetCapacityAsync (settings.DiskCacheBytes);
             }
         }
     }

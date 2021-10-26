@@ -38,6 +38,9 @@ namespace MonoTorrent.Client
         public ListenerStatus Status { get; private set; }
 
         public IPEndPoint EndPoint { get; set; }
+        public TimeSpan AnnounceInternal { get; }
+
+        public TimeSpan MinimumAnnounceInternal { get; }
 
         public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
         public event EventHandler<EventArgs> StatusChanged;

@@ -1,5 +1,5 @@
-//
-// IPieceWriter.cs
+﻿//
+// IHttpPeerConnection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,18 +28,17 @@
 
 
 using System;
+using System.IO;
+using System.Threading.Tasks;
 
 using ReusableTasks;
 
-namespace MonoTorrent.PieceWriter
+namespace MonoTorrent.Client.Connections
 {
-    public interface IPieceWriter : IDisposable
+    public interface IHttpRequest : IDisposable
     {
-        ReusableTask CloseAsync (ITorrentFileInfo file);
-        ReusableTask<bool> ExistsAsync (ITorrentFileInfo file);
-        ReusableTask FlushAsync (ITorrentFileInfo file);
-        ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
+        TimeSpan ConnectionTimeout { get; set; }
+
+        ReusableTask<Stream> GetStreamAsync (Uri uri, long startOffset, long count);
     }
 }

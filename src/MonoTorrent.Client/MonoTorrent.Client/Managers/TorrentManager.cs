@@ -142,7 +142,7 @@ namespace MonoTorrent.Client
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
-        public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate);
+        public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate) && Engine != null;
 
         /// <summary>
         /// Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
@@ -161,6 +161,9 @@ namespace MonoTorrent.Client
         public Error Error { get; private set; }
 
         public IList<ITorrentFileInfo> Files { get; private set; }
+
+        string ITorrentData.Name => Torrent == null ? null : Torrent.Name;
+
         public int PieceLength => Torrent == null ? -1 : Torrent.PieceLength;
         public long Size => Torrent == null ? -1 : Torrent.Size;
 
@@ -680,7 +683,7 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
-            if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.MinimumAnnounceInternal)) {
+            if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > Engine.LocalPeerDiscovery.MinimumAnnounceInternal)) {
                 LastLocalPeerAnnounce = DateTime.Now;
                 LastLocalPeerAnnounceTimer.Restart ();
                 await Engine?.LocalPeerDiscovery.Announce (InfoHash);

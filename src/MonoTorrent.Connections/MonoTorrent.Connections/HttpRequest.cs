@@ -1,5 +1,5 @@
 //
-// IConnection.cs
+// HttpRequest.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,30 +28,48 @@
 
 
 using System;
+using System.IO;
 using System.Net;
+using System.Threading;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    public interface IPeerConnection : IDisposable
+    public sealed class HttpRequest : IHttpRequest
     {
-        byte[] AddressBytes { get; }
+        public TimeSpan ConnectionTimeout { get; set; }
 
-        bool Connected { get; }
+        WebResponse Response { get; set; }
 
-        bool CanReconnect { get; }
+        Stream Stream { get; set; }
 
-        bool IsIncoming { get; }
+        public HttpRequest ()
+        {
+            ConnectionTimeout = TimeSpan.FromSeconds (10);
+        }
 
-        EndPoint EndPoint { get; }
+        public void Dispose ()
+        {
+            Response?.Dispose ();
+            Stream?.Dispose ();
+        }
 
-        ReusableTask ConnectAsync ();
+        public async ReusableTask<Stream> GetStreamAsync (Uri uri, long fileOffset, long count)
+        {
+            Response?.Dispose ();
+            Stream?.Dispose ();
 
-        ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count);
+            var request = (HttpWebRequest) WebRequest.Create (uri);
+            request.AddRange (fileOffset, fileOffset + count - 1);
 
-        ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count);
+            using var cts = new CancellationTokenSource (ConnectionTimeout);
+            using (cts.Token.Register (() => request.Abort ())) {
+                Response = await request.GetResponseAsync ();
+                Stream = Response.GetResponseStream ();
+            }
 
-        Uri Uri { get; }
+            return Stream;
+        }
     }
 }

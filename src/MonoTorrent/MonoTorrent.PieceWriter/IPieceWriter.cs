@@ -1,10 +1,10 @@
 //
-// DhtListener.cs
+// IPieceWriter.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2019 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,16 +27,23 @@
 //
 
 
-using System.Net;
+using System;
+using System.Threading.Tasks;
 
-namespace MonoTorrent.Dht.Listeners
+using ReusableTasks;
+
+namespace MonoTorrent.PieceWriter
 {
-    class DhtListener : UdpListener, IDhtListener
+    public interface IPieceWriter : IDisposable
     {
-        public DhtListener (IPEndPoint endpoint)
-            : base (endpoint)
-        {
+        int MaximumOpenFiles { get; }
 
-        }
+        ReusableTask CloseAsync (ITorrentFileInfo file);
+        ReusableTask<bool> ExistsAsync (ITorrentFileInfo file);
+        ReusableTask FlushAsync (ITorrentFileInfo file);
+        ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite);
+        ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
+        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
+        ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles);
     }
 }

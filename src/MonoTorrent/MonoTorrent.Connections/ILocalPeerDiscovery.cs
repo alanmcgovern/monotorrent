@@ -1,8 +1,8 @@
 ﻿//
-// IPeerListener.cs
+// ILocalPeerDiscovery.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
 // Copyright (C) 2019 Alan McGovern
 //
@@ -28,11 +28,25 @@
 
 
 using System;
+using System.Threading.Tasks;
 
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Client
 {
-    public interface IPeerConnectionListener : IListener
+    public interface ILocalPeerDiscovery : ISocketListener
     {
-        event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        TimeSpan MinimumAnnounceInternal { get; }
+        TimeSpan AnnounceInternal { get; }
+
+        /// <summary>
+        /// This event is raised whenever a peer is discovered.
+        /// </summary>
+        event EventHandler<LocalPeerFoundEventArgs> PeerFound;
+
+        /// <summary>
+        /// Send an announce request for this InfoHash to all available network adapters.
+        /// </summary>
+        /// <param name="infoHash"></param>
+        /// <returns></returns>
+        Task Announce (InfoHash infoHash);
     }
 }

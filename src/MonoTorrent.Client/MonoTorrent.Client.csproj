@@ -51,30 +51,32 @@
   <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
     <PropertyGroup>
       <Authors>Alan McGovern,Olivier Dufour</Authors>
-      <PackageDescription>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links.
-Notable features include:
--Encryption
--Dht
--Peer Exchange (uTorrent style)
--Local Peer Discovery
--Web Seeding (getright style)
--Magnet Links / Metadata download
--IPV6
--FAST Extensions
--Sparse files (NTFS file system)
--Multi-tracker torrents
--Compact tracker responses
--IP Address white listing / black listing
--Fast Resume
--Initial Seeding (super seeding)
--Selective downloading
--Prioritised downloading
--Full bittorrent tracker
--Dynamic request queue size
--Memory Cache
--Endgame mode
--Per torrent and global rate limiting
--Individual file relocation</PackageDescription>
+      <PackageDescription>
+        MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links.
+        Notable features include:
+        -Encryption
+        -Dht
+        -Peer Exchange (uTorrent style)
+        -Local Peer Discovery
+        -Web Seeding (getright style)
+        -Magnet Links / Metadata download
+        -IPV6
+        -FAST Extensions
+        -Sparse files (NTFS file system)
+        -Multi-tracker torrents
+        -Compact tracker responses
+        -IP Address white listing / black listing
+        -Fast Resume
+        -Initial Seeding (super seeding)
+        -Selective downloading
+        -Prioritised downloading
+        -Full bittorrent tracker
+        -Dynamic request queue size
+        -Memory Cache
+        -Endgame mode
+        -Per torrent and global rate limiting
+        -Individual file relocation
+      </PackageDescription>
       <PackageLicenseFile>LICENSE</PackageLicenseFile>
       <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
       <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -103,18 +105,17 @@ Notable features include:
   <ItemGroup>
     <Content Include="..\..\LICENSE" Pack="true" PackagePath="/" />
   </ItemGroup>
-    
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Tests.$(AssemblyName)</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
-    
+
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+    <ProjectReference Include="..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" />
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
-    <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
-    <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 

@@ -1,10 +1,10 @@
 ﻿//
-// SocketListener.cs
+// IPeerListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,19 +27,14 @@
 //
 
 
-using System.Net;
+using System;
 
-namespace MonoTorrent
+using MonoTorrent.Client.Connections;
+
+namespace MonoTorrent.Client.Listeners
 {
-    abstract class SocketListener : Listener, ISocketListener
+    public interface IPeerConnectionListener : IListener
     {
-        public IPEndPoint EndPoint { get; protected set; }
-
-        protected IPEndPoint OriginalEndPoint { get; set; }
-
-        protected SocketListener (IPEndPoint endPoint)
-        {
-            EndPoint = OriginalEndPoint = endPoint;
-        }
+        event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
     }
 }

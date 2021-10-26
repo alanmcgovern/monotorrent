@@ -37,6 +37,8 @@ namespace MonoTorrent.Tracker.Listeners
 {
     class HttpTrackerListener : TrackerListener
     {
+        CancellationTokenSource Cancellation { get; set; }
+
         public bool IncompleteAnnounce { get; set; }
 
         public bool IncompleteScrape { get; set; }
@@ -66,8 +68,11 @@ namespace MonoTorrent.Tracker.Listeners
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
-        protected override void Start (CancellationToken token)
+        public override void Start ()
         {
+            Cancellation?.Cancel ();
+            Cancellation = new CancellationTokenSource ();
+            var token = Cancellation.Token;
             var listener = new HttpListener ();
             token.Register (() => listener.Close ());
 
@@ -76,6 +81,13 @@ namespace MonoTorrent.Tracker.Listeners
                 listener.Prefixes.Add (Prefix.Remove (Prefix.Length - "/announce/".Length) + "/scrape/");
             listener.Start ();
             GetContextAsync (listener, token);
+            RaiseStatusChanged (ListenerStatus.Listening);
+        }
+
+        public override void Stop ()
+        {
+            Cancellation?.Cancel ();
+            RaiseStatusChanged (ListenerStatus.NotListening);
         }
 
         async void GetContextAsync (HttpListener listener, CancellationToken token)

@@ -47,6 +47,8 @@ namespace MonoTorrent.Client
 
             public List<ITorrentFileInfo> FlushedFiles = new List<ITorrentFileInfo> ();
 
+            public int MaximumOpenFiles { get; }
+
             public ReusableTask CloseAsync (ITorrentFileInfo file)
             {
                 if (close)
@@ -94,11 +96,18 @@ namespace MonoTorrent.Client
                     throw new Exception ("write");
                 return ReusableTask.CompletedTask;
             }
+
+            public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+            {
+                return ReusableTask.CompletedTask;
+            }
         }
 
         class TestTorrentData : ITorrentData
         {
             public IList<ITorrentFileInfo> Files { get; set; }
+            public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public string Name => "Test Torrent";
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }

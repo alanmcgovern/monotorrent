@@ -179,9 +179,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
 
-            Assert.IsTrue (Peer.Connection.Connected, "#1");
             Manager.HandlePeerConnected (Peer);
-            Assert.IsTrue (Peer.Connection.Connected, "#2");
 
             // ConnectionManager should add the PeerId to the Connected list whenever
             // an outgoing connection is made, or an incoming one is received.

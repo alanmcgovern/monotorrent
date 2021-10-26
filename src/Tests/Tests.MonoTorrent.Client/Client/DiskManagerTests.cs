@@ -44,6 +44,8 @@ namespace MonoTorrent.Client
 {
     class TestPieceWriter : IPieceWriter
     {
+        public int MaximumOpenFiles { get; }
+
         public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
@@ -73,6 +75,11 @@ namespace MonoTorrent.Client
             return ReusableTask.FromResult (0);
         }
 
+        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+        {
+            return ReusableTask.CompletedTask;
+        }
+
         public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.CompletedTask;
@@ -87,6 +94,8 @@ namespace MonoTorrent.Client
             public byte[][] Data { get; set; }
             public IList<ITorrentFileInfo> Files { get; set; }
             public byte[][] Hashes { get; set; }
+            public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public string Name => "Test Torrent";
             public int PieceLength { get; set; }
             public long Size { get; set; }
         }
@@ -99,6 +108,8 @@ namespace MonoTorrent.Client
 
             public List<ITorrentFileInfo> ClosedFiles = new List<ITorrentFileInfo> ();
             public List<ITorrentFileInfo> ExistsFiles = new List<ITorrentFileInfo> ();
+
+            public int MaximumOpenFiles { get; }
 
             public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
             {
@@ -148,6 +159,11 @@ namespace MonoTorrent.Client
 
             public void Dispose ()
             {
+            }
+
+            public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+            {
+                return ReusableTask.CompletedTask;
             }
         }
 

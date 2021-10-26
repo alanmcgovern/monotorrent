@@ -1,10 +1,10 @@
-//
-// IPV6Connection.cs
+﻿//
+// BlockCacheFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2021 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,24 +28,24 @@
 
 
 using System;
-using System.Net;
-using System.Net.Sockets;
 
-namespace MonoTorrent.Client.Connections
+namespace MonoTorrent.PieceWriter
 {
-    sealed class IPV6Connection : SocketConnection
+    public static class BlockCacheFactory
     {
-        public IPV6Connection (Uri uri)
-            : base (uri)
-        {
+        static Func<IPieceWriter, long, ByteBufferPool, IBlockCache> Creator = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
 
-        }
+        public static void Register (Func<IPieceWriter, IBlockCache> creator)
+            => Creator = (writer, capacity, cache) => creator (writer);
 
-        public IPV6Connection (Socket socket, bool incoming)
-            : base (socket, incoming)
-        {
-            var endpoint = (IPEndPoint) socket.RemoteEndPoint;
-            Uri = new Uri ($"ipv6://{endpoint.Address}{':'}{endpoint.Port}");
-        }
+        public static void Register (Func<IPieceWriter, long, IBlockCache> creator)
+            => Creator = (writer, capacity, cache) => creator (writer, capacity);
+
+        public static void Register (Func<IPieceWriter, long, ByteBufferPool, IBlockCache> creator)
+            => Creator = creator ?? throw new ArgumentNullException (nameof (creator));
+
+        public static IBlockCache Create (IPieceWriter writer, long capacity, ByteBufferPool bufferPool)
+            => Creator (writer, capacity, bufferPool);
+
     }
 }

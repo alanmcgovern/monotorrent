@@ -29,17 +29,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
+using MonoTorrent.Logging;
+using MonoTorrent.Messages;
 using MonoTorrent.Messages.FastPeer;
 using MonoTorrent.Messages.Libtorrent;
-using MonoTorrent.Messages;
-using MonoTorrent.Logging;
 using MonoTorrent.PiecePicking;
 
 using ReusableTasks;
@@ -380,7 +378,7 @@ namespace MonoTorrent.Client.Modes
 
             bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, message.PieceIndex);
             Manager.OnPieceHashed (message.PieceIndex, result, 1, 1);
-            Manager.PieceManager.PieceHashed(message.PieceIndex);
+            Manager.PieceManager.PieceHashed (message.PieceIndex);
             if (!result)
                 Manager.HashFails++;
 
@@ -515,7 +513,7 @@ namespace MonoTorrent.Client.Modes
             // had been skipped in the original hashcheck.
             _ = TryHashPendingFilesAsync ();
 
-            if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > LocalPeerDiscovery.AnnounceInternal)) {
+            if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > Manager.Engine.LocalPeerDiscovery.AnnounceInternal)) {
                 _ = Manager.LocalPeerAnnounceAsync ();
             }
 
@@ -597,15 +595,14 @@ namespace MonoTorrent.Client.Modes
         {
             if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.DownloadSpeed < Manager.Settings.WebSeedSpeedTrigger) {
                 foreach (Uri uri in Manager.Torrent.HttpSeeds) {
-                    BEncodedString peerId = HttpConnection.CreatePeerId ();
+                    BEncodedString peerId = CreatePeerId ();
 
                     var peer = new Peer (peerId, uri);
 
-                    var connection = (HttpConnection) ConnectionFactory.Create (uri);
+                    var connection = new HttpPeerConnection (Manager, uri);
                     // Unsupported connection type.
                     if (connection == null)
                         continue;
-                    connection.Manager = Manager;
 
                     var id = new PeerId (peer, connection, new MutableBitField (Manager.Bitfield.Length).SetAll (true));
                     id.Encryptor = PlainTextEncryption.Instance;
@@ -726,6 +723,15 @@ namespace MonoTorrent.Client.Modes
         public void Dispose ()
         {
             Cancellation.Cancel ();
+        }
+
+
+        static int webSeedId;
+        internal static BEncodedString CreatePeerId ()
+        {
+            string peerId = "-WebSeed-";
+            peerId += Interlocked.Increment (ref webSeedId).ToString ().PadLeft (20 - peerId.Length, '0');
+            return peerId;
         }
     }
 }

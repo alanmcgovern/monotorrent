@@ -31,12 +31,15 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+
+using MonoTorrent.Connections;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Connections
 {
-    class SocketConnection : IPeerConnection
+    public sealed class SocketPeerConnection : IPeerConnection
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
@@ -44,12 +47,6 @@ namespace MonoTorrent.Client.Connections
         /// This stores a reusable 'SocketAsyncEventArgs' for every byte[] owned by ClientEngine.BufferPool
         /// </summary>
         static readonly Dictionary<byte[], SocketAsyncEventArgs> bufferCache = new Dictionary<byte[], SocketAsyncEventArgs> ();
-
-        /// <summary>
-        /// This stores reusable 'SocketAsyncEventArgs' for arbitrary byte[], or for when we are connecting
-        /// to a peer and do not have a byte[] buffer to send/receive from.
-        /// </summary>
-        static readonly Queue<SocketAsyncEventArgs> otherCache = new Queue<SocketAsyncEventArgs> ();
 
         /// <summary>
         /// Where possible we will use a SocketAsyncEventArgs object which has already had
@@ -61,24 +58,11 @@ namespace MonoTorrent.Client.Connections
         /// <returns></returns>
         static SocketAsyncEventArgs GetSocketAsyncEventArgs (ByteBuffer buffer)
         {
-            if (buffer != null) {
-                if (buffer.Args.Buffer == null) {
-                    buffer.Args.SetBuffer (buffer.Data, 0, buffer.Data.Length);
-                    buffer.Args.Completed += Handler;
-                }
-                return buffer.Args;
-            } else {
-                SocketAsyncEventArgs args;
-                lock (bufferCache) {
-                    if (otherCache.Count == 0) {
-                        args = new SocketAsyncEventArgs ();
-                        args.Completed += Handler;
-                    } else {
-                        args = otherCache.Dequeue ();
-                    }
-                }
-                return args;
+            if (buffer.Args.Buffer == null) {
+                buffer.Args.SetBuffer (buffer.Data, 0, buffer.Data.Length);
+                buffer.Args.Completed += Handler;
             }
+            return buffer.Args;
         }
 
         #region Member Variables
@@ -87,7 +71,11 @@ namespace MonoTorrent.Client.Connections
 
         public bool CanReconnect => !IsIncoming;
 
-        public bool Connected => Socket.Connected;
+        CancellationTokenSource ConnectCancellation { get; }
+
+        ISocketConnector Connector { get; }
+
+        public bool Disposed { get; private set; }
 
         EndPoint IPeerConnection.EndPoint => EndPoint;
 
@@ -99,36 +87,43 @@ namespace MonoTorrent.Client.Connections
 
         ReusableTaskCompletionSource<int> SendTcs { get; }
 
-        Socket Socket { get; }
+        Socket Socket { get; set; }
 
-        public Uri Uri { get; protected set; }
+        public Uri Uri { get; }
 
         #endregion
 
 
         #region Constructors
 
-        protected SocketConnection (Uri uri)
-            : this (new Socket ((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp),
-                  new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port), false)
-
+        public SocketPeerConnection (Socket socket, bool isIncoming)
+            : this (null, null, socket, isIncoming)
         {
+
+        }
+
+        public SocketPeerConnection (Uri uri, ISocketConnector connector)
+            : this (uri, connector, null, false)
+        {
+
+        }
+
+        SocketPeerConnection (Uri uri, ISocketConnector connector, Socket socket, bool isIncoming)
+        {
+            if (uri == null) {
+                var endpoint = (IPEndPoint) socket.RemoteEndPoint;
+                uri = new Uri ($"{(socket.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6") }://{endpoint.Address}{':'}{endpoint.Port}");
+            }
+
+            ConnectCancellation = new CancellationTokenSource ();
+            Connector = connector;
+            EndPoint = new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port);
+            IsIncoming = isIncoming;
+            Socket = socket;
             Uri = uri;
-        }
 
-        protected SocketConnection (Socket socket, bool isIncoming)
-            : this (socket, (IPEndPoint) socket.RemoteEndPoint, isIncoming)
-        {
-
-        }
-
-        SocketConnection (Socket socket, IPEndPoint endpoint, bool isIncoming)
-        {
             ReceiveTcs = new ReusableTaskCompletionSource<int> ();
             SendTcs = new ReusableTaskCompletionSource<int> ();
-            Socket = socket;
-            EndPoint = endpoint;
-            IsIncoming = isIncoming;
         }
 
         static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
@@ -140,16 +135,6 @@ namespace MonoTorrent.Client.Connections
             int transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
             e.UserToken = null;
-
-            // If the 'SocketAsyncEventArgs' was used to connect, or if it was using a buffer
-            // *not* managed by our BufferPool, then we should put it back in the 'other' cache.
-            if (e.Buffer == null) {
-                lock (bufferCache) {
-                    if (e.Buffer != null)
-                        e.SetBuffer (null, 0, 0);
-                    otherCache.Enqueue (e);
-                }
-            }
 
             if (error != SocketError.Success)
                 tcs.SetException (new SocketException ((int) error));
@@ -164,15 +149,11 @@ namespace MonoTorrent.Client.Connections
 
         public async ReusableTask ConnectAsync ()
         {
-            var tcs = new ReusableTaskCompletionSource<int> ();
-            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (null);
-            args.RemoteEndPoint = EndPoint;
-            args.UserToken = tcs;
-
-            if (!Socket.ConnectAsync (args))
-                tcs.SetResult (0);
-
-            await tcs.Task;
+            Socket = await Connector.ConnectAsync (Uri, ConnectCancellation.Token);
+            if (Disposed) {
+                Socket.Dispose ();
+                throw new SocketException ((int) SocketError.Shutdown);
+            }
         }
 
         public ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
@@ -229,7 +210,9 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose ()
         {
-            Socket.Dispose ();
+            Disposed = true;
+            ConnectCancellation.Cancel ();
+            Socket?.Dispose ();
         }
 
 #endregion

@@ -1,10 +1,10 @@
 ﻿//
-// NullPeerListener.cs
+// PieceWriterFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2021 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,27 +29,19 @@
 
 using System;
 
-using MonoTorrent.Client.Connections;
-
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.PieceWriter
 {
-    class NullPeerListener : IPeerConnectionListener
+    public static class PieceWriterFactory
     {
-#pragma warning disable 0067
-        public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
-        public event EventHandler<EventArgs> StatusChanged;
-#pragma warning restore 0067
+        static Func<int, IPieceWriter> Creator = maxOpenFiles => new DiskWriter (maxOpenFiles);
 
-        public ListenerStatus Status => ListenerStatus.NotListening;
+        public static void Register (Func<IPieceWriter> creator)
+            => Creator = maxOpenFiles => creator ();
 
-        public void Start ()
-        {
-            
-        }
+        public static void Register(Func<int, IPieceWriter> creator)
+            => Creator = creator ?? throw new ArgumentNullException (nameof (creator));
 
-        public void Stop ()
-        {
-            
-        }
+        public static IPieceWriter Create (int maximumOpenFiles)
+            => Creator (maximumOpenFiles);
     }
 }

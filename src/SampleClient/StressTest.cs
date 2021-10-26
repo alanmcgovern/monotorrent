@@ -16,6 +16,8 @@ namespace SampleClient
 {
     class NullWriter : IPieceWriter
     {
+        public int MaximumOpenFiles => 0;
+
         public ReusableTask CloseAsync (ITorrentFileInfo file)
         {
             return ReusableTask.CompletedTask;
@@ -43,6 +45,11 @@ namespace SampleClient
         public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return ReusableTask.FromResult (0);
+        }
+
+        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+        {
+            return ReusableTask.CompletedTask;
         }
 
         public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)

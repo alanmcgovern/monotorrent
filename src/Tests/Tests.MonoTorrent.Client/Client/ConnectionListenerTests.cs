@@ -31,6 +31,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Listeners;
 
 using NUnit.Framework;
@@ -79,9 +80,9 @@ namespace MonoTorrent.Client
             Assert.IsTrue (tcs.Task.Wait (1000));
         }
 
-        Task<NewConnectionEventArgs> AcceptSocket ()
+        Task<PeerConnectionEventArgs> AcceptSocket ()
         {
-            var tcs = new TaskCompletionSource<NewConnectionEventArgs> ();
+            var tcs = new TaskCompletionSource<PeerConnectionEventArgs> ();
             listener.ConnectionReceived += (o, e) => tcs.TrySetResult (e);
             return tcs.Task;
         }
