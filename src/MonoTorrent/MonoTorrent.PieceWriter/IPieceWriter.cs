@@ -36,7 +36,7 @@ namespace MonoTorrent.PieceWriter
 {
     public interface IPieceWriter : IDisposable
     {
-        public int MaximumOpenFiles { get; }
+        int MaximumOpenFiles { get; }
 
         ReusableTask CloseAsync (ITorrentFileInfo file);
         ReusableTask<bool> ExistsAsync (ITorrentFileInfo file);
