@@ -1,5 +1,5 @@
 //
-// IPV6Connection.cs
+// HttpRequest.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
