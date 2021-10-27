@@ -380,29 +380,26 @@ namespace MonoTorrent.Client
             return manager;
         }
 
-        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory)
-            => AddStreamingAsync (magnetLink, saveDirectory, new TorrentSettings ());
+        public async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory)
+            => await MakeStreamingAsync (await AddAsync (magnetLink, saveDirectory));
 
-        public Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
-            => AddStreamingAsync (magnetLink, null, saveDirectory, settings);
+        public async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, string saveDirectory, TorrentSettings settings)
+            => await MakeStreamingAsync (await AddAsync (magnetLink, saveDirectory, settings));
 
-        public Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory)
-            => AddStreamingAsync (metadataPath, saveDirectory, new TorrentSettings ());
+        public async Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory)
+            => await MakeStreamingAsync (await AddAsync (metadataPath, saveDirectory));
 
         public async Task<TorrentManager> AddStreamingAsync (string metadataPath, string saveDirectory, TorrentSettings settings)
-            => await AddStreamingAsync (null, await Torrent.LoadAsync (metadataPath), saveDirectory, settings);
+            => await MakeStreamingAsync (await AddAsync (metadataPath, saveDirectory, settings));
 
-        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
-            => AddStreamingAsync (torrent, saveDirectory, new TorrentSettings ());
+        public async Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory)
+            => await MakeStreamingAsync (await AddAsync (torrent, saveDirectory));
 
-        public Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
-            => AddStreamingAsync (null, torrent, saveDirectory, settings);
+        public async Task<TorrentManager> AddStreamingAsync (Torrent torrent, string saveDirectory, TorrentSettings settings)
+            => await MakeStreamingAsync (await AddAsync (torrent, saveDirectory, settings));
 
-        async Task<TorrentManager> AddStreamingAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        async Task<TorrentManager> MakeStreamingAsync (TorrentManager manager)
         {
-            await MainLoop;
-
-            var manager = await AddAsync (magnetLink, torrent, saveDirectory, settings);
             await manager.ChangePickerAsync (PieceRequesterFactory.CreateStreamingPieceRequester (manager));
             return manager;
         }
