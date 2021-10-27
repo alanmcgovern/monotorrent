@@ -186,7 +186,9 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task SaveRestoreState_OneInMemoryTorrent ()
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task SaveRestoreState_OneInMemoryTorrent (bool addStreaming)
         {
             var pieceLength = Piece.BlockSize * 4;
             using var tmpDir = TempDir.Create ();
@@ -194,7 +196,12 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Piece.BlockSize, Piece.BlockSize * 2, Piece.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
 
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
-            var torrentManager = await engine.AddAsync (torrent, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
+            TorrentManager torrentManager;
+            if (addStreaming)
+                torrentManager = await engine.AddStreamingAsync (torrent, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
+            else
+                torrentManager = await engine.AddAsync (torrent, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
+
             await torrentManager.SetFilePriorityAsync (torrentManager.Files[0], Priority.High);
             await torrentManager.MoveFileAsync (torrentManager.Files[1], Path.GetFullPath ("some_fake_path.txt"));
 
@@ -214,10 +221,15 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task SaveRestoreState_OneMagnetLink ()
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task SaveRestoreState_OneMagnetLink (bool addStreaming)
         {
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            await engine.AddAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
+            if (addStreaming)
+                await engine.AddStreamingAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
+            else
+                await engine.AddAsync(new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
 
             var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
@@ -239,7 +251,7 @@ namespace MonoTorrent.Client
             File.WriteAllBytes (metadataFile, metadata.Encode ());
 
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
-            var torrentManager = await engine.AddAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
+            var torrentManager = await engine.AddStreamingAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
             await torrentManager.SetFilePriorityAsync (torrentManager.Files[0], Priority.High);
             await torrentManager.MoveFileAsync (torrentManager.Files[1], Path.GetFullPath ("some_fake_path.txt"));
 
@@ -269,7 +281,7 @@ namespace MonoTorrent.Client
             File.WriteAllBytes (metadataFile, metadata.Encode ());
 
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
-            await engine.AddAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
+            await engine.AddStreamingAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
 
             var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
