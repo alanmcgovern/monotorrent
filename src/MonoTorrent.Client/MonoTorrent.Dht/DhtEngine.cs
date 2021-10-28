@@ -82,15 +82,6 @@ namespace MonoTorrent.Dht
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new DhtEngine which listens for connections on the given endpoint
-        /// </summary>
-        /// <param name="listenerEndpoint">The IPAddresss/port which the engine should listen on</param>
-        public DhtEngine (IPEndPoint listenerEndpoint)
-            : this (DhtListenerFactory.CreateUdp (listenerEndpoint))
-        {
-        }
-
         public DhtEngine (IDhtListener listener)
         {
             if (listener == null)

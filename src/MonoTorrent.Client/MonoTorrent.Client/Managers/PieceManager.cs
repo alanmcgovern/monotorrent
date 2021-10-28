@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
         {
             Manager = manager;
             PendingHashCheckPieces = new MutableBitField (1);
-            Requester = PieceRequesterFactory.CreateStandardPieceRequester (manager);
+            Requester = manager.Engine.Factories.CreatePieceRequester (manager);
         }
 
         internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)

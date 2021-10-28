@@ -599,7 +599,7 @@ namespace MonoTorrent.Client.Modes
 
                     var peer = new Peer (peerId, uri);
 
-                    var connection = new HttpPeerConnection (Manager, uri);
+                    var connection = new HttpPeerConnection (Manager, Manager.Engine.Factories.CreateHttpRequest, uri);
                     // Unsupported connection type.
                     if (connection == null)
                         continue;

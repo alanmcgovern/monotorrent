@@ -174,7 +174,7 @@ namespace MonoTorrent.Client
         /// </summary>
         IBlockCache Cache { get; }
 
-        internal DiskManager (EngineSettings settings, IPieceWriter writer = null)
+        internal DiskManager (EngineSettings settings, Factories factories, IPieceWriter writer = null)
         {
             ReadLimiter = new RateLimiter ();
             ReadQueue = new Queue<BufferedIO> ();
@@ -186,8 +186,8 @@ namespace MonoTorrent.Client
 
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
-            writer ??= PieceWriterFactory.Create (settings.MaximumOpenFiles);
-            Cache = BlockCacheFactory.Create (writer, settings.DiskCacheBytes, BufferPool);
+            writer ??= factories.CreatePieceWriter (settings.MaximumOpenFiles);
+            Cache = factories.CreateBlockCache (writer, settings.DiskCacheBytes, BufferPool);
             Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
             Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
         }

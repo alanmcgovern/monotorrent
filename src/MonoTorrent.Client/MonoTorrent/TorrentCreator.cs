@@ -131,11 +131,20 @@ namespace MonoTorrent
 
         internal TimeSpan CreationTime { get; set; }
 
+        Factories.PieceWriterCreator PieceWriterCreator { get; }
+
         public TorrentCreator ()
+            : this(Factories.Default.CreatePieceWriter)
+        {
+
+        }
+
+        public TorrentCreator (Factories.PieceWriterCreator pieceWriterCreator)
         {
             GetrightHttpSeeds = new List<string> ();
             CanEditSecureMetadata = true;
             CreatedBy = $"MonoTorrent {VersionInfo.Version}";
+            PieceWriterCreator = pieceWriterCreator;
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
@@ -302,7 +311,7 @@ namespace MonoTorrent
             var filledBuffers = new AsyncProducerConsumerQueue<(byte[], int, InputFile)> (emptyBuffers.Capacity + 1);
 
             // This is the IPieceWriter which we'll use to get our filestream. Each thread gets it's own writer.
-            using IPieceWriter writer = CreateReader ();
+            using IPieceWriter writer = PieceWriterCreator (3);
 
             // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
             // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
@@ -478,11 +487,6 @@ namespace MonoTorrent
             var info = (BEncodedDictionary) dictionary["info"];
             List<BEncodedValue> files = mappings.ConvertAll (ToFileInfoDict);
             info.Add ("files", new BEncodedList (files));
-        }
-
-        protected virtual IPieceWriter CreateReader ()
-        {
-            return PieceWriterFactory.Create (10);
         }
 
         void CreateSingleFileTorrent (BEncodedDictionary dictionary, IList<InputFile> mappings)

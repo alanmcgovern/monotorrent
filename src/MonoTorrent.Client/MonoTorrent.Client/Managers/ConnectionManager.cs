@@ -72,6 +72,8 @@ namespace MonoTorrent.Client
 
         internal DiskManager DiskManager { get; }
 
+        Factories Factories { get; }
+
         internal BEncodedString LocalPeerId { get; }
 
         /// <summary>
@@ -97,14 +99,14 @@ namespace MonoTorrent.Client
         List<AsyncConnectState> PendingConnects { get; }
 
         internal EngineSettings Settings { get; set; }
-
         internal List<TorrentManager> Torrents { get; set; }
 
-        internal ConnectionManager (BEncodedString localPeerId, EngineSettings settings, DiskManager diskManager)
+        internal ConnectionManager (BEncodedString localPeerId, EngineSettings settings, Factories factories, DiskManager diskManager)
         {
             DiskManager = diskManager ?? throw new ArgumentNullException (nameof (diskManager));
             LocalPeerId = localPeerId ?? throw new ArgumentNullException (nameof (localPeerId));
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
+            Factories = factories ?? throw new ArgumentNullException (nameof (factories));
 
             PendingConnects = new List<AsyncConnectState> ();
             Torrents = new List<TorrentManager> ();
@@ -123,7 +125,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            var connection = PeerConnectionFactory.Create (peer.ConnectionUri);
+            var connection = Factories.CreatePeerConnection (peer.ConnectionUri);
             if (connection == null || peer.AllowedEncryption.Count == 0)
                 return;
 

@@ -136,7 +136,7 @@ namespace MonoTorrent.Client
             };
 
             writer = new ExceptionWriter ();
-            diskManager = new DiskManager (new EngineSettings (), writer);
+            diskManager = new DiskManager (new EngineSettings (), Factories.Default, writer);
         }
 
         [Test]
