@@ -106,7 +106,7 @@ namespace SampleClient
             trackerListener.Start ();
 
             // Create the torrent file for the fake data
-            var creator = new TorrentCreator ();
+            var creator = new TorrentCreator (Factories.Default.CreatePieceWriter);
             creator.Announces.Add (new List<string> ());
             creator.Announces [0].Add ("http://127.0.0.1:25611/announce");
 

@@ -213,7 +213,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < fileData.Files.Count; i++)
                 writer.Data.Add (fileData.Files[i], fileData.Data[i]);
 
-            diskManager = new DiskManager (new EngineSettingsBuilder { DiskCacheBytes = 0 }.ToSettings (), writer);
+            diskManager = new DiskManager (new EngineSettingsBuilder { DiskCacheBytes = 0 }.ToSettings (), Factories.Default, writer);
         }
 
         [Test]
@@ -336,7 +336,7 @@ namespace MonoTorrent.Client
         {
 
             using var writer = new TestPieceWriter ();
-            using var manager = new DiskManager (new EngineSettings (), writer);
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             var file = TorrentFileInfo.Create (Constants.BlockSize, 123456).Single ();
             Assert.IsFalse (File.Exists (file.FullPath));
@@ -354,7 +354,7 @@ namespace MonoTorrent.Client
             File.OpenWrite (file.FullPath).Close ();
 
             using var writer = new TestPieceWriter ();
-            using var manager = new DiskManager (new EngineSettings (), writer);
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFileAsync (file, file.FullPath);
             Assert.IsTrue (File.Exists (file.FullPath));
@@ -368,7 +368,7 @@ namespace MonoTorrent.Client
             File.OpenWrite (file.FullPath).Close ();
 
             using var writer = new TestPieceWriter ();
-            using var manager = new DiskManager (new EngineSettings (), writer);
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             var fullPath = Path.Combine (tmp.Path, "New", "Path", "file.txt");
             await manager.MoveFileAsync (file, fullPath);
@@ -387,7 +387,7 @@ namespace MonoTorrent.Client
             File.OpenWrite (file.FullPath).Close ();
 
             using var writer = new TestPieceWriter ();
-            using var manager = new DiskManager (new EngineSettings (), writer);
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFilesAsync (new[] { file }, newRoot.Path, false);
             Assert.AreEqual (Path.Combine (newRoot.Path, file.Path), file.FullPath);
@@ -405,7 +405,7 @@ namespace MonoTorrent.Client
             File.OpenWrite (file.FullPath).Close ();
 
             using var writer = new TestPieceWriter ();
-            using var manager = new DiskManager (new EngineSettings (), writer);
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFilesAsync (new[] { file }, newRoot.Path, true);
             Assert.AreEqual (Path.Combine (newRoot.Path, file.Path), file.FullPath);
@@ -422,7 +422,7 @@ namespace MonoTorrent.Client
             File.OpenWrite (file.FullPath).Close ();
 
             using var writer = new TestPieceWriter ();
-            using var manager = new DiskManager (new EngineSettings (), writer);
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFilesAsync (new[] { file }, tmp.Path, true);
             Assert.AreEqual (Path.Combine (tmp.Path, file.Path), file.FullPath);

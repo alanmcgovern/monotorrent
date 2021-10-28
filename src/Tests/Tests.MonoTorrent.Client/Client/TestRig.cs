@@ -400,15 +400,16 @@ namespace MonoTorrent.Client
             this.tier = trackers;
             MetadataMode = metadataMode;
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
-            PeerListenerFactory.Register (endpoint => new CustomListener ());
-            LocalPeerDiscoveryFactory.Register (port => new ManualLocalPeerListener ());
-            DhtListenerFactory.Register (endpoint => new NullDhtListener ());
+            var factories = Factories.Default
+                .WithDhtListenerCreator (port => new NullDhtListener ())
+                .WithLocalPeerDiscoveryCreator (port => new ManualLocalPeerListener ())
+                .WithPeerConnectionListenerCreator (endpoint => new CustomListener ());
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
                 dhtPort: 12345,
                 cacheDirectory: cacheDir,
                 listenPort: 12345
-            ));
+            ), factories);
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);
             Engine.DiskManager.SetWriterAsync (writer).GetAwaiter ().GetResult ();

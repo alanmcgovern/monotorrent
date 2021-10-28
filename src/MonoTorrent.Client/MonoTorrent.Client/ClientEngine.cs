@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -202,6 +203,8 @@ namespace MonoTorrent.Client
 
         public bool Disposed { get; private set; }
 
+        internal Factories Factories { get; }
+
         internal IPeerConnectionListener Listener { get; set; }
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
@@ -252,8 +255,15 @@ namespace MonoTorrent.Client
         }
 
         public ClientEngine (EngineSettings settings)
+            : this (settings, Factories.Default)
+        {
+
+        }
+
+        public ClientEngine (EngineSettings settings, Factories factories)
         {
             settings = settings ?? throw new ArgumentNullException (nameof (settings));
+            Factories = factories ?? throw new ArgumentNullException (nameof (factories));
 
             // This is just a sanity check to make sure the ReusableTasks.dll assembly is
             // loadable.
@@ -267,9 +277,9 @@ namespace MonoTorrent.Client
             publicTorrents = new List<TorrentManager> ();
             Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
 
-            DiskManager = new DiskManager (Settings);
+            DiskManager = new DiskManager (Settings, Factories);
 
-            ConnectionManager = new ConnectionManager (PeerId, Settings, DiskManager);
+            ConnectionManager = new ConnectionManager (PeerId, Settings, Factories, DiskManager);
             listenManager = new ListenManager (this);
             PortForwarder = new MonoNatPortForwarder ();
 
@@ -290,15 +300,15 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            Listener = PeerListenerFactory.CreateTcp (settings.ListenPort) ?? new NullPeerListener ();
+            Listener = (settings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, settings.ListenPort))) ?? new NullPeerListener ();
             listenManager.SetListener (Listener);
 
-            DhtListener = DhtListenerFactory.CreateUdp (settings.DhtPort) ?? new NullDhtListener ();
+            DhtListener = (settings.DhtPort == -1 ? null : Factories.CreateDhtListener (new IPEndPoint (IPAddress.Any, settings.DhtPort))) ?? new NullDhtListener ();
             DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
 
-            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery && settings.ListenPort > 0 ? LocalPeerDiscoveryFactory.Create (settings.ListenPort) : null);
+            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery && settings.ListenPort >= 0 ? Factories.CreateLocalPeerDiscovery (settings.ListenPort) : null);
         }
 
         #endregion
@@ -400,7 +410,7 @@ namespace MonoTorrent.Client
 
         async Task<TorrentManager> MakeStreamingAsync (TorrentManager manager)
         {
-            await manager.ChangePickerAsync (PieceRequesterFactory.CreateStreamingPieceRequester (manager));
+            await manager.ChangePickerAsync (Factories.CreateStreamingPieceRequester (manager));
             return manager;
         }
 
@@ -879,7 +889,7 @@ namespace MonoTorrent.Client
                 else if (oldSettings.DhtPort > 0)
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, oldSettings.DhtPort), CancellationToken.None);
 
-                DhtListener = DhtListenerFactory.CreateUdp (newSettings.DhtPort) ?? new NullDhtListener ();
+                DhtListener = (newSettings.DhtPort == -1 ? null : Factories.CreateDhtListener (new IPEndPoint (IPAddress.Any, newSettings.DhtPort))) ?? new NullDhtListener ();
                 if (oldSettings.DhtPort == -1)
                     await RegisterDht (DhtEngineFactory.Create (DhtListener));
                 else if (newSettings.DhtPort == -1)
@@ -903,7 +913,7 @@ namespace MonoTorrent.Client
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None);
 
                 Listener.Stop ();
-                Listener = PeerListenerFactory.CreateTcp (newSettings.ListenPort) ?? new NullPeerListener ();
+                Listener = (newSettings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, newSettings.ListenPort))) ?? new NullPeerListener ();
                 listenManager.SetListener (Listener);
 
                 if (IsRunning) {
@@ -923,7 +933,7 @@ namespace MonoTorrent.Client
 
             if ((oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) ||
                 (oldSettings.ListenPort != newSettings.ListenPort)) {
-                RegisterLocalPeerDiscovery (newSettings.AllowLocalPeerDiscovery && localPort > 0 ? LocalPeerDiscoveryFactory.Create (localPort) : null);
+                RegisterLocalPeerDiscovery (!newSettings.AllowLocalPeerDiscovery || localPort <= 0 ? null : Factories.CreateLocalPeerDiscovery(localPort));
             }
         }
 

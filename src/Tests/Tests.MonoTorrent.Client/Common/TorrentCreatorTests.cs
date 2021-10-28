@@ -15,11 +15,9 @@ namespace MonoTorrent.Common
 {
     public class TestTorrentCreator : TorrentCreator
     {
-        protected override IPieceWriter CreateReader ()
+        public TestTorrentCreator ()
+            : base (t => new TestWriter { DontWrite = true })
         {
-            TestWriter writer = new TestWriter ();
-            writer.DontWrite = true;
-            return writer;
         }
     }
 
@@ -196,7 +194,7 @@ namespace MonoTorrent.Common
                 var source = new CustomFileSource (new List<FileMapping> {
                     new FileMapping("a", "../../dest1"),
                 });
-                new TorrentCreator ().Create (source);
+                new TorrentCreator (files => new DiskWriter (files)).Create (source);
             });
         }
 
@@ -209,7 +207,7 @@ namespace MonoTorrent.Common
                     new FileMapping ("b", "dest2"),
                     new FileMapping ("c", "dest1"),
                 });
-                new TorrentCreator ().Create (source);
+                new TorrentCreator (Factories.Default.CreatePieceWriter).Create (source);
             });
         }
 

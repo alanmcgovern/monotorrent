@@ -56,8 +56,8 @@ namespace MonoTorrent.Client.Modes
             conn = new ConnectionPair ().WithTimeout ();
             Settings = new EngineSettings ();
             PieceWriter = new TestWriter ();
-            DiskManager = new DiskManager (Settings, PieceWriter);
-            ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, DiskManager);
+            DiskManager = new DiskManager (Settings, Factories.Default, PieceWriter);
+            ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, Factories.Default, DiskManager);
             TrackerManager = new ManualTrackerManager ();
 
             long[] fileSizes = {
