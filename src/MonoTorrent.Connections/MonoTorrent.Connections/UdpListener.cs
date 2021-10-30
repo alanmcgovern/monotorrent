@@ -51,12 +51,12 @@ namespace MonoTorrent
 
         public async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
-            try {
-                if (endpoint.Address != IPAddress.Any)
-                    await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
-            } catch (Exception ex) {
-                //logger.Exception (ex, "UdpListener could not send message");
-            }
+            if (Status == ListenerStatus.NotListening)
+                throw new InvalidOperationException ("You must invoke StartAsync before sending or receiving a message with this listener.");
+            if (Status == ListenerStatus.PortNotFree)
+                throw new InvalidOperationException ($"The listener could not bind to ${EndPoint}. Choose a new listening endpoint.");
+
+            await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
         }
 
         protected override void Start (CancellationToken token)
