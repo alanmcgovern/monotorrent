@@ -127,7 +127,7 @@ namespace MonoTorrent.Dht
                     while (ReceiveQueue.Count > 0)
                         ReceiveMessage ();
 
-                    TimeoutMessage ();
+                    TimeoutMessages ();
                 } catch (Exception ex) {
                     Debug.WriteLine ("Error in DHT main loop:");
                     Debug.WriteLine (ex);
@@ -183,7 +183,11 @@ namespace MonoTorrent.Dht
                     WaitingResponse.Add (details.Message.TransactionId, details);
 
                 byte[] buffer = details.Message.Encode ();
-                await Listener.SendAsync (buffer, details.Destination);
+                try {
+                    await Listener.SendAsync (buffer, details.Destination);
+                } catch {
+                    TimeoutMessage (details);
+                }
             }
         }
 
@@ -206,22 +210,26 @@ namespace MonoTorrent.Dht
                 Listener.Stop ();
         }
 
-        void TimeoutMessage ()
+        void TimeoutMessages ()
         {
             foreach (KeyValuePair<BEncodedValue, SendDetails> v in WaitingResponse) {
                 if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
                     WaitingResponseTimedOut.Add (v.Value);
             }
 
-            foreach (SendDetails v in WaitingResponseTimedOut) {
+            foreach (SendDetails v in WaitingResponseTimedOut)
+                TimeoutMessage (v);
+
+            WaitingResponseTimedOut.Clear ();
+        }
+
+        void TimeoutMessage (SendDetails v)
+        {
                 DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
                 WaitingResponse.Remove (v.Message.TransactionId);
 
                 v.CompletionSource?.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage) v.Message));
                 RaiseMessageSent (v.Node, v.Destination, (QueryMessage) v.Message);
-            }
-
-            WaitingResponseTimedOut.Clear ();
         }
 
         void ReceiveMessage ()

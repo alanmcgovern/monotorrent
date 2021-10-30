@@ -194,7 +194,10 @@ namespace MonoTorrent.Dht
         {
             var initTask = new InitialiseTask (this, nodes);
             await initTask.ExecuteAsync ();
-            RaiseStateChanged (DhtState.Ready);
+            if (RoutingTable.NeedsBootstrap)
+                RaiseStateChanged (DhtState.NotReady);
+            else
+                RaiseStateChanged (DhtState.Ready);
         }
 
         internal void RaisePeersFound (NodeId infoHash, IList<Peer> peers)
