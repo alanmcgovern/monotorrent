@@ -57,6 +57,15 @@ namespace MonoTorrent.Dht
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 4));
         }
 
+        [Test]
+        public async Task InitialiseFailure ()
+        {
+            listener.MessageSent += (o, e) => throw new Exception ("Force failure");
+            await engine.StartAsync ();
+            Assert.AreEqual (DhtState.Initialising, engine.State);
+            await engine.WaitForState (DhtState.NotReady).WithTimeout (10000);
+        }
+
         int counter;
         [Test]
         public async Task SendQueryTaskTimeout ()
