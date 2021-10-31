@@ -106,7 +106,7 @@ namespace MonoTorrent.Client
                 logger.Info (e.Connection, "ConnectionReceived");
 
                 var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories);
                 if (!await HandleHandshake (peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch {

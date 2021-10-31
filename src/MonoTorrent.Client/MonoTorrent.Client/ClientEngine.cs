@@ -304,7 +304,7 @@ namespace MonoTorrent.Client
             listenManager.SetListener (Listener);
 
             DhtListener = (settings.DhtPort == -1 ? null : Factories.CreateDhtListener (new IPEndPoint (IPAddress.Any, settings.DhtPort))) ?? new NullDhtListener ();
-            DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener);
+            DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener, Factories);
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
 
@@ -891,7 +891,7 @@ namespace MonoTorrent.Client
 
                 DhtListener = (newSettings.DhtPort == -1 ? null : Factories.CreateDhtListener (new IPEndPoint (IPAddress.Any, newSettings.DhtPort))) ?? new NullDhtListener ();
                 if (oldSettings.DhtPort == -1)
-                    await RegisterDht (DhtEngineFactory.Create (DhtListener));
+                    await RegisterDht (DhtEngineFactory.Create (DhtListener, Factories));
                 else if (newSettings.DhtPort == -1)
                     await RegisterDht (new NullDhtEngine ());
 

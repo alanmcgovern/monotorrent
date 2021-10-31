@@ -46,19 +46,18 @@ namespace MonoTorrent.Client
     {
         internal static ByteBufferPool BufferPool { get; } = ByteBufferPool.Default;
 
-        static readonly ICache<IncrementalHashData> IncrementalHashCache = new Cache<IncrementalHashData> (true);
+        readonly ICache<IncrementalHashData> IncrementalHashCache = new Cache<IncrementalHashData> ();
 
         readonly Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> ();
 
         class IncrementalHashData : ICacheable
         {
-            public readonly SHA1 Hasher;
+            public SHA1 Hasher;
             public int NextOffsetToHash;
             public ReusableExclusiveSemaphore Locker;
 
             public IncrementalHashData ()
             {
-                Hasher = HashAlgoFactory.SHA1 ();
                 Locker = new ReusableExclusiveSemaphore ();
                 Initialise ();
             }
@@ -106,6 +105,8 @@ namespace MonoTorrent.Client
         /// True if the object has been disposed.
         /// </summary>
         bool Disposed { get; set; }
+
+        Factories Factories { get; }
 
         /// <summary>
         /// The number of bytes pending being read as the <see cref="EngineSettings.MaximumDiskReadRate"/> rate limit is being exceeded.
@@ -184,6 +185,7 @@ namespace MonoTorrent.Client
 
             UpdateTimer = ValueStopwatch.StartNew ();
 
+            Factories = factories ?? throw new ArgumentNullException (nameof (factories));
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             writer ??= factories.CreatePieceWriter (settings.MaximumOpenFiles);
@@ -255,6 +257,7 @@ namespace MonoTorrent.Client
                 // If we have no partial hash data for this piece we could be doing a full
                 // hash check, so let's create a IncrementalHashData for our piece!
                 incrementalHash = IncrementalHashCache.Dequeue ();
+                incrementalHash.Hasher ??= Factories.CreateSHA1 ();
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -406,6 +409,7 @@ namespace MonoTorrent.Client
                 int pieceIndex = request.PieceIndex;
                 if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
                     incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
+                    incrementalHash.Hasher ??= Factories.CreateSHA1 ();
                 }
 
                 ReusableTaskCompletionSource<bool> tcs = null;

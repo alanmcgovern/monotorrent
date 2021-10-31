@@ -46,7 +46,7 @@ namespace MonoTorrent.Dht
         [SetUp]
         public void Setup ()
         {
-            manager = new TokenManager ();
+            manager = new TokenManager (Client.Factories.Default);
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 25));
             token = manager.GenerateToken (node);
         }

@@ -83,6 +83,12 @@ namespace MonoTorrent.Dht
         #region Constructors
 
         public DhtEngine (IDhtListener listener)
+            : this (listener, Factories.Default)
+        {
+
+        }
+
+        public DhtEngine (IDhtListener listener, Factories factories)
         {
             if (listener == null)
                 throw new ArgumentNullException (nameof (listener));
@@ -91,7 +97,7 @@ namespace MonoTorrent.Dht
             MessageLoop = new MessageLoop (this, listener);
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
-            TokenManager = new TokenManager ();
+            TokenManager = new TokenManager (factories);
             Torrents = new Dictionary<NodeId, List<Node>> ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {

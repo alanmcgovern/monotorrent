@@ -46,8 +46,8 @@ namespace MonoTorrent.Client.Encryption
 
         InfoHash[] PossibleSKEYs { get; }
 
-        public PeerBEncryption (InfoHash[] possibleSKEYs, IList<EncryptionType> allowedEncryption)
-            : base (allowedEncryption)
+        public PeerBEncryption (Factories factories, InfoHash[] possibleSKEYs, IList<EncryptionType> allowedEncryption)
+            : base (factories, allowedEncryption)
         {
             InitialData = Array.Empty<byte> ();
             PossibleSKEYs = possibleSKEYs;

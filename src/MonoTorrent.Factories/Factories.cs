@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 
 using MonoTorrent.Client.Connections;
@@ -25,6 +26,9 @@ namespace MonoTorrent.Client
         public delegate IPieceWriter PieceWriterCreator (int maxOpenFiles);
         public delegate ISocketConnector SocketConnectorCreator ();
         public delegate IStreamingPieceRequester StreamingPieceRequesterCreator (ITorrentData torrentData);
+
+        public delegate MD5 MD5Creator ();
+        public delegate SHA1 SHA1Creator ();
     }
 
     public partial class Factories
@@ -42,8 +46,15 @@ namespace MonoTorrent.Client
         static readonly SocketConnectorCreator DefaultSocketConnectorCreator;
         static readonly StreamingPieceRequesterCreator DefaultStreamingPieceRequesterCreator;
 
+        static readonly MD5Creator DefaultMD5Creator;
+        static readonly SHA1Creator DefaultSHA1Creator;
+
+
         static Factories ()
         {
+            DefaultMD5Creator = () => MD5.Create ();
+            DefaultSHA1Creator = () => SHA1.Create ();
+
             DefaultBlockCacheCreator = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
             DefaultDhtListenerCreator = endpoint => new DhtListener (endpoint);
             DefaultHttpRequestCreator = () => new HttpRequest ();
@@ -74,6 +85,9 @@ namespace MonoTorrent.Client
         public SocketConnectorCreator CreateSocketConnector { get; private set; }
         public StreamingPieceRequesterCreator CreateStreamingPieceRequester { get; private set; }
 
+        public MD5Creator CreateMD5 { get; private set; }
+        public SHA1Creator CreateSHA1 { get; private set; }
+
         public Factories ()
         {
             CreateBlockCache = DefaultBlockCacheCreator;
@@ -86,6 +100,9 @@ namespace MonoTorrent.Client
             CreatePieceWriter = DefaultPieceWriterCreator;
             CreateSocketConnector = DefaultSocketConnectorCreator;
             CreateStreamingPieceRequester = DefaultStreamingPieceRequesterCreator;
+
+            CreateMD5 = DefaultMD5Creator;
+            CreateSHA1 = DefaultSHA1Creator;
         }
 
         public Factories WithBlockCacheCreator (BlockCacheCreator creator)
@@ -113,6 +130,13 @@ namespace MonoTorrent.Client
         {
             var dupe = MemberwiseClone ();
             dupe.CreateLocalPeerDiscovery = creator ?? DefaultLocalPeerDiscoveryCreator;
+            return dupe;
+        }
+
+        public Factories WithMD5Creator (MD5Creator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.CreateMD5 = creator ?? DefaultMD5Creator;
             return dupe;
         }
 
@@ -147,6 +171,12 @@ namespace MonoTorrent.Client
         {
             var dupe = MemberwiseClone ();
             dupe.CreatePieceWriter = creator ?? DefaultPieceWriterCreator;
+            return dupe;
+        }
+        public Factories WithSHA1Creator (SHA1Creator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.CreateSHA1 = creator ?? DefaultSHA1Creator;
             return dupe;
         }
 

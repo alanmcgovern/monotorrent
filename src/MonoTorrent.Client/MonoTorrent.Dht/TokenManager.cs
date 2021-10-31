@@ -30,6 +30,7 @@
 using System.Security.Cryptography;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 
 namespace MonoTorrent.Dht
 {
@@ -40,9 +41,9 @@ namespace MonoTorrent.Dht
         readonly RandomNumberGenerator random;
         readonly SHA1 sha1;
 
-        public TokenManager ()
+        public TokenManager (Factories factories)
         {
-            sha1 = HashAlgoFactory.SHA1 ();
+            sha1 = factories.CreateSHA1 ();
             random = new RNGCryptoServiceProvider ();
             currentSecret = new byte[10];
             previousSecret = new byte[10];

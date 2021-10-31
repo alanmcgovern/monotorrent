@@ -44,14 +44,14 @@ namespace MonoTorrent.Client.Encryption
     {
         public byte[] InitialPayload { get; }
 
-        public PeerAEncryption (InfoHash InfoHash, IList<EncryptionType> allowedEncryption)
-            : this (InfoHash, allowedEncryption, null)
+        public PeerAEncryption (Factories factories, InfoHash InfoHash, IList<EncryptionType> allowedEncryption)
+            : this (factories, InfoHash, allowedEncryption, null)
         {
 
         }
 
-        public PeerAEncryption (InfoHash InfoHash, IList<EncryptionType> allowedEncryption, byte[] initialPayload)
-            : base (allowedEncryption)
+        public PeerAEncryption (Factories factories, InfoHash InfoHash, IList<EncryptionType> allowedEncryption, byte[] initialPayload)
+            : base (factories, allowedEncryption)
         {
             if (allowedEncryption.Contains (EncryptionType.PlainText))
                 throw new NotSupportedException ("'PlainText' is an unsupported RC4 encryption type.");

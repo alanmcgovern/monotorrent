@@ -57,17 +57,17 @@ namespace MonoTorrent.Client.Encryption
 
         static TimeSpan Timeout => Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (10);
 
-        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys)
+        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys, Factories factories)
         {
             if (!connection.IsIncoming)
                 throw new Exception ("oops");
 
             using var cts = new CancellationTokenSource (Timeout);
             using CancellationTokenRegistration registration = cts.Token.Register (connection.Dispose);
-            return await DoCheckIncomingConnectionAsync (connection, allowedEncryption, sKeys).ConfigureAwait (false);
+            return await DoCheckIncomingConnectionAsync (connection, allowedEncryption, sKeys, factories).ConfigureAwait (false);
         }
 
-        static async ReusableTask<EncryptorResult> DoCheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> preferredEncryption, InfoHash[] sKeys)
+        static async ReusableTask<EncryptorResult> DoCheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> preferredEncryption, InfoHash[] sKeys, Factories factories)
         {
             bool supportsRC4Header = preferredEncryption.Contains (EncryptionType.RC4Header);
             bool supportsRC4Full = preferredEncryption.Contains (EncryptionType.RC4Full);
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Encryption
                     // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
                     await MainLoop.SwitchToThreadpool ();
 
-                    var encSocket = new PeerBEncryption (sKeys, preferredEncryption);
+                    var encSocket = new PeerBEncryption (factories, sKeys, preferredEncryption);
                     await encSocket.HandshakeAsync (connection, buffer.Data, 0, HandshakeMessage.HandshakeLength).ConfigureAwait (false);
                     if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                         throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");
@@ -115,17 +115,17 @@ namespace MonoTorrent.Client.Encryption
             throw new EncryptionException ("Invalid handshake received and no decryption works");
         }
 
-        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake = null)
+        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake, Factories factories)
         {
             if (connection.IsIncoming)
                 throw new Exception ("oops");
 
             using var cts = new CancellationTokenSource (Timeout);
             using CancellationTokenRegistration registration = cts.Token.Register (connection.Dispose);
-            return await DoCheckOutgoingConnectionAsync (connection, allowedEncryption, infoHash, handshake).ConfigureAwait (false);
+            return await DoCheckOutgoingConnectionAsync (connection, allowedEncryption, infoHash, handshake, factories).ConfigureAwait (false);
         }
 
-        static async ReusableTask<EncryptorResult> DoCheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> preferredEncryption, InfoHash infoHash, HandshakeMessage handshake)
+        static async ReusableTask<EncryptorResult> DoCheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> preferredEncryption, InfoHash infoHash, HandshakeMessage handshake, Factories factories)
         {
             bool supportsRC4Header = preferredEncryption.Contains (EncryptionType.RC4Header);
             bool supportsRC4Full = preferredEncryption.Contains (EncryptionType.RC4Full);
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client.Encryption
             // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
             await MainLoop.SwitchToThreadpool ();
             if (preferredEncryption[0] != EncryptionType.PlainText) {
-                var encSocket = new PeerAEncryption (infoHash, preferredEncryption, handshake?.Encode ());
+                var encSocket = new PeerAEncryption (factories, infoHash, preferredEncryption, handshake?.Encode ());
                 await encSocket.HandshakeAsync (connection).ConfigureAwait (false);
                 if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                     throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");

@@ -113,10 +113,10 @@ namespace MonoTorrent.Client.Encryption
 
         #endregion
 
-        protected EncryptedSocket (IList<EncryptionType> allowedEncryption)
+        protected EncryptedSocket (Factories factories, IList<EncryptionType> allowedEncryption)
         {
             random = RandomNumberGenerator.Create ();
-            hasher = HashAlgoFactory.SHA1 ();
+            hasher = factories.CreateSHA1 ();
 
             X = new byte[20];
             random.GetBytes (X);
