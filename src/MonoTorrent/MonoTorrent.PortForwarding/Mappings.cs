@@ -30,11 +30,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MonoTorrent.Client.PortForwarding
+namespace MonoTorrent.PortForwarding
 {
     public sealed class Mappings
     {
-        internal static readonly Mappings Empty = new Mappings ();
+        public static readonly Mappings Empty = new Mappings ();
 
         /// <summary>
         /// A list of mappings which have been successfully created
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PortForwarding
         /// </summary>
         public IReadOnlyList<Mapping> Failed { get; }
 
-        internal Mappings ()
+        public Mappings ()
         {
             Created = Pending = Failed = Array.AsReadOnly (Array.Empty<Mapping> ());
         }
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.PortForwarding
             Failed = failed;
         }
 
-        internal Mappings Remove (Mapping mapping, out bool wasCreated)
+        public Mappings Remove (Mapping mapping, out bool wasCreated)
         {
             wasCreated = Created.Contains (mapping);
             var created = Created.Contains (mapping) ? Created.Except (new[] { mapping }).ToArray () : Created;
@@ -75,12 +75,12 @@ namespace MonoTorrent.Client.PortForwarding
             return new Mappings (created, pending, failed);
         }
 
-        internal Mappings WithAllPending ()
+        public Mappings WithAllPending ()
         {
             return new Mappings (Array.Empty<Mapping> (), Array.AsReadOnly (Created.Concat (Pending).Concat (Failed).ToArray ()), Array.Empty<Mapping> ());
         }
 
-        internal Mappings WithCreated (Mapping mapping)
+        public Mappings WithCreated (Mapping mapping)
         {
             var created = !Created.Contains (mapping) ? Array.AsReadOnly (Created.Concat (new[] { mapping }).ToArray ()) : Created;
             var failed = Failed.Contains (mapping) ? Array.AsReadOnly (Failed.Where (t => t != mapping).ToArray ()) : Failed;
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.PortForwarding
             return new Mappings (created, pending, failed);
         }
 
-        internal Mappings WithFailed (Mapping mapping)
+        public Mappings WithFailed (Mapping mapping)
         {
             var created = Created.Contains (mapping) ? Array.AsReadOnly (Created.Where (t => t != mapping).ToArray ()) : Created;
             var failed = !Failed.Contains (mapping) ? Array.AsReadOnly (Failed.Concat (new[] { mapping }).ToArray ()) : Failed;
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.PortForwarding
             return new Mappings (created, pending, failed);
         }
 
-        internal Mappings WithPending (Mapping mapping)
+        public Mappings WithPending (Mapping mapping)
         {
             var created = Created.Contains (mapping) ? Array.AsReadOnly (Created.Where (t => t != mapping).ToArray ()) : Created;
             var failed = Failed.Contains (mapping) ? Array.AsReadOnly (Failed.Where (t => t != mapping).ToArray ()) : Failed;

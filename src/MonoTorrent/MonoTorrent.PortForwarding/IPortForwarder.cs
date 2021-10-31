@@ -31,9 +31,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MonoTorrent.Client.PortForwarding
+namespace MonoTorrent.PortForwarding
 {
-    interface IPortForwarder
+    public interface IPortForwarder
     {
         event EventHandler MappingsChanged;
 

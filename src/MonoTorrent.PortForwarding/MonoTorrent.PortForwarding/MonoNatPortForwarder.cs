@@ -34,26 +34,34 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mono.Nat;
 
-namespace MonoTorrent.Client.PortForwarding
+using MonoTorrent.Client;
+
+namespace MonoTorrent.PortForwarding
 {
-    class MonoNatPortForwarder : IPortForwarder
+    public class MonoNatPortForwarder : IPortForwarder
     {
+
         public event EventHandler MappingsChanged;
 
         public bool Active => NatUtility.IsSearching;
 
         IReadOnlyList<INatDevice> Devices { get; set; }
 
+        SemaphoreSlim Locker { get; } = new SemaphoreSlim (1);
+
         public Mappings Mappings { get; private set; }
 
         public MonoNatPortForwarder ()
         {
             Devices = new List<INatDevice> ();
-            Mappings = new Mappings ();
+            Mappings = Mappings.Empty;
 
             NatUtility.DeviceFound += async (o, e) => {
-                await ClientEngine.MainLoop;
-                Devices = Devices.Concat (new[] { e.Device }).ToArray ();
+                using (await Locker.EnterAsync ()) {
+                    if (Devices.Contains (e.Device))
+                        return;
+                    Devices = Devices.Concat (new[] { e.Device }).ToArray ();
+                }
 
                 foreach (var mapping in Mappings.Pending)
                     await CreateOrFailMapping (e.Device, mapping);
@@ -64,28 +72,29 @@ namespace MonoTorrent.Client.PortForwarding
 
         public async Task RegisterMappingAsync (Mapping mapping)
         {
-            await ClientEngine.MainLoop;
+            using (await Locker.EnterAsync ()) {
+                Mappings = Mappings.WithPending (mapping);
+                if (!Active)
+                    return;
 
-            Mappings = Mappings.WithPending (mapping);
-            if (!Active)
-                return;
-
-            foreach (var device in Devices)
-                await CreateOrFailMapping (device, mapping);
+                foreach (var device in Devices)
+                    await CreateOrFailMapping (device, mapping);
+            }
             RaiseMappingsChangedAsync ();
         }
 
         public async Task UnregisterMappingAsync (Mapping mapping, CancellationToken token)
         {
-            await ClientEngine.MainLoop;
-            Mappings = Mappings.Remove (mapping, out bool wasCreated);
-            if (!Active)
-                return;
+            using (await Locker.EnterAsync ()) {
+                Mappings = Mappings.Remove (mapping, out bool wasCreated);
+                if (!Active)
+                    return;
 
-            if (wasCreated) {
-                foreach (var device in Devices) {
-                    token.ThrowIfCancellationRequested ();
-                    await DeletePortMapping (device, mapping);
+                if (wasCreated) {
+                    foreach (var device in Devices) {
+                        token.ThrowIfCancellationRequested ();
+                        await DeletePortMapping (device, mapping);
+                    }
                 }
             }
             RaiseMappingsChangedAsync ();
@@ -93,9 +102,11 @@ namespace MonoTorrent.Client.PortForwarding
 
         public async Task StartAsync (CancellationToken token)
         {
-            if (!Active) {
-                await MainLoop.SwitchToThreadpool ();
-                NatUtility.StartDiscovery (NatProtocol.Pmp, NatProtocol.Upnp);
+            using (await Locker.EnterAsync ()) {
+                if (!Active) {
+                    await new ThreadSwitcher ();
+                    NatUtility.StartDiscovery (NatProtocol.Pmp, NatProtocol.Upnp);
+                }
             }
         }
 
@@ -104,22 +115,25 @@ namespace MonoTorrent.Client.PortForwarding
 
         public async Task StopAsync (bool removeExisting, CancellationToken token)
         {
-            NatUtility.StopDiscovery ();
+            using (await Locker.EnterAsync ()) {
 
-            var created = Mappings.Created;
-            Mappings = Mappings.WithAllPending ();
-            try {
-                if (removeExisting) {
-                    foreach (var mapping in created) {
-                        foreach (var device in Devices) {
-                            token.ThrowIfCancellationRequested ();
-                            await DeletePortMapping (device, mapping);
+                NatUtility.StopDiscovery ();
+
+                var created = Mappings.Created;
+                Mappings = Mappings.WithAllPending ();
+                try {
+                    if (removeExisting) {
+                        foreach (var mapping in created) {
+                            foreach (var device in Devices) {
+                                token.ThrowIfCancellationRequested ();
+                                await DeletePortMapping (device, mapping);
+                            }
                         }
                     }
+                } finally {
+                    Devices = new List<INatDevice> ();
+                    RaiseMappingsChangedAsync ();
                 }
-            } finally {
-                Devices = new List<INatDevice> ();
-                RaiseMappingsChangedAsync ();
             }
         }
 
@@ -156,7 +170,7 @@ namespace MonoTorrent.Client.PortForwarding
         async void RaiseMappingsChangedAsync ()
         {
             if (MappingsChanged != null) {
-                await MainLoop.SwitchThread ();
+                await new ThreadSwitcher ();
                 MappingsChanged.Invoke (this, EventArgs.Empty);
             }
         }

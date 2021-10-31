@@ -28,20 +28,36 @@
 
 using System;
 
-namespace MonoTorrent.Client.PortForwarding
+namespace MonoTorrent.PortForwarding
 {
     public sealed class Mapping : IEquatable<Mapping>
     {
+        /// <summary>
+        /// Connections made to the <see cref="PublicPort"/> port will be forwarded to the <see cref="PrivatePort"/>.
+        /// </summary>
         public int PublicPort { get; }
+
+        /// <summary>
+        /// The internal port bound by a local socket/listener.
+        /// </summary>
         public int PrivatePort { get; }
+
+        /// <summary>
+        /// The protocol which has been mapped.
+        /// </summary>
         public Protocol Protocol { get; }
 
-        internal Mapping (Protocol protocol, int port)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="protocol"></param>
+        /// <param name="port"></param>
+        public Mapping (Protocol protocol, int port)
             : this (protocol, port, port)
         {
         }
 
-        internal Mapping (Protocol protocol, int privatePort, int publicPort)
+        public Mapping (Protocol protocol, int privatePort, int publicPort)
         {
             Protocol = protocol;
             PrivatePort = privatePort;

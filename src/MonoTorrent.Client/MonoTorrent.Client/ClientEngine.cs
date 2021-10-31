@@ -39,12 +39,12 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
-using MonoTorrent.Client.PortForwarding;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;
+using MonoTorrent.PortForwarding;
 
 namespace MonoTorrent.Client
 {
@@ -281,7 +281,7 @@ namespace MonoTorrent.Client
 
             ConnectionManager = new ConnectionManager (PeerId, Settings, Factories, DiskManager);
             listenManager = new ListenManager (this);
-            PortForwarder = new MonoNatPortForwarder ();
+            PortForwarder = Factories.CreatePortForwarder ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (TickLength), delegate {
                 if (IsRunning && !Disposed)

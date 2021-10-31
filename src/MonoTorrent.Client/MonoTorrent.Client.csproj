@@ -100,7 +100,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
-    <PackageReference Include="Mono.Nat" Version="[3.0.1,4.0)" />
+    <PackageReference Include="Mono.Nat" Version="[3.0.1,4.0)" ReferenceOutputAssembly="false" />
     <PackageReference Include="ReusableTasks" Version="[2.0.0,3.0)" />
   </ItemGroup>
 
@@ -123,7 +123,7 @@
 
    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
     <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'All'))" />
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'All'))" />
     </ItemGroup>
   </Target>
 </Project>
