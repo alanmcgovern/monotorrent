@@ -2,10 +2,17 @@
 <Project>
 
   <PropertyGroup>
+    <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
+    <CI Condition="'$(CI)' == '' ">false</CI>
+
     <LangVersion>8.0</LangVersion>
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Deterministic>true</Deterministic>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <RestoreLockedMode Condition="$(CI) and '$(RestoreLockedMode)' == ''">true</RestoreLockedMode>
   </PropertyGroup>
 
   <ItemGroup>

@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.PortForwarding\MonoTorrent.PortForwarding.csproj" />
     <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 

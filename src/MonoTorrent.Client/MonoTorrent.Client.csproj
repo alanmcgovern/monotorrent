@@ -6,8 +6,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <MonoTorrentABIVersion>2.0.0.0</MonoTorrentABIVersion>
 
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-
     <GitVersionFile>version.txt</GitVersionFile>
     <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
     <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
@@ -100,8 +98,6 @@
 
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
-    <PackageReference Include="Mono.Nat" Version="[3.0.0,4.0)" ExcludeAssets="compile" />
-    <PackageReference Include="ReusableTasks" Version="[2.0.0,3.0)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -119,6 +115,11 @@
     <ProjectReference Include="..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ReusableTasks" Version="[2.0,3.0)" />
+    <PackageReference Include="Mono.Nat" Version="[3.0,4.0)" ExcludeAssets="compile" />
   </ItemGroup>
 
    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">

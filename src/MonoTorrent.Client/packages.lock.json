@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "dependencies": {
+    ".NETStandard,Version=v2.0": {
+      "GitInfo": {
+        "type": "Direct",
+        "requested": "[2.0.34, )",
+        "resolved": "2.0.34",
+        "contentHash": "/Jn0eIpmmUlNeblGw4GV+z8QSRHaas5nMu9x1AyQOAo8mip6qVy3BgujBCF0QdsrNzPspeV0jol4EGPQj0mqNw=="
+      },
+      "Mono.Nat": {
+        "type": "Direct",
+        "requested": "[3.0.0, 4.0.0)",
+        "resolved": "3.0.0",
+        "contentHash": "LgRC8/8plJfvr1nCPmyHNIwP4fs346doMA/UVDZvFN0RfGJdyD2uS7Dl1AydxjVLrIvad8ghozI0vYFWcfPeYQ=="
+      },
+      "NETStandard.Library": {
+        "type": "Direct",
+        "requested": "[2.0.3, )",
+        "resolved": "2.0.3",
+        "contentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
+      "ReusableTasks": {
+        "type": "Direct",
+        "requested": "[2.0.0, 3.0.0)",
+        "resolved": "2.0.0",
+        "contentHash": "HWb7Yy7dQfWPh0V4X42ounPkrzUvL6gB7bwshX7EqBDCl879iBQIS0TRrXFXKOTO2dNJxaEfXnAbX8Fzv3U7Cw=="
+      },
+      "Microsoft.NETCore.Platforms": {
+        "type": "Transitive",
+        "resolved": "1.1.0",
+        "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
+      },
+      "monotorrent": {
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.0, 3.0.0)"
+        }
+      },
+      "monotorrent.bencoding": {
+        "type": "Project"
+      },
+      "monotorrent.factories": {
+        "type": "Project"
+      },
+      "monotorrent.messages": {
+        "type": "Project",
+        "dependencies": {
+          "MonoTorrent": "1.0.0",
+          "MonoTorrent.BEncoding": "1.0.0"
+        }
+      }
+    }
+  }
+}

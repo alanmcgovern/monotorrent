@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "dependencies": {
+    ".NETCoreApp,Version=v3.1": {
+      "Mono.Nat": {
+        "type": "Direct",
+        "requested": "[3.0.1, )",
+        "resolved": "3.0.1",
+        "contentHash": "TLaz/q4i81y5nRyqBlJO2JS73JRyB1y6uhcgxhiyIn3MMIgH1mlTOPZNX7uUB0XYg6+7Igp4tFAqf/u+Unc3tw=="
+      },
+      "ReusableTasks": {
+        "type": "Direct",
+        "requested": "[2.0.0, )",
+        "resolved": "2.0.0",
+        "contentHash": "HWb7Yy7dQfWPh0V4X42ounPkrzUvL6gB7bwshX7EqBDCl879iBQIS0TRrXFXKOTO2dNJxaEfXnAbX8Fzv3U7Cw=="
+      },
+      "monotorrent": {
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.0, 3.0.0)"
+        }
+      },
+      "monotorrent.bencoding": {
+        "type": "Project"
+      },
+      "monotorrent.client": {
+        "type": "Project",
+        "dependencies": {
+          "Mono.Nat": "[3.0.0, 4.0.0)",
+          "ReusableTasks": "[2.0.0, 3.0.0)"
+        }
+      },
+      "monotorrent.factories": {
+        "type": "Project"
+      },
+      "monotorrent.piecewriter": {
+        "type": "Project",
+        "dependencies": {
+          "MonoTorrent": "1.0.0"
+        }
+      }
+    }
+  }
+}
