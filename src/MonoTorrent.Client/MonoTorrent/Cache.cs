@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent
@@ -39,22 +40,22 @@ namespace MonoTorrent
     }
 
     class Cache<T> : ICache<T>
-        where T : class, ICacheable, new()
+        where T : class, ICacheable
     {
-        readonly bool autoCreate;
         readonly Queue<T> cache;
+        readonly Func<T> Creator;
 
         public int Count => cache.Count;
 
         public Cache ()
-            : this (false)
+            : this (() => default)
         {
 
         }
 
-        public Cache (bool autoCreate)
+        public Cache (Func<T> creator)
         {
-            this.autoCreate = autoCreate;
+            Creator = creator;
             cache = new Queue<T> ();
         }
 
@@ -63,12 +64,9 @@ namespace MonoTorrent
             if (cache.Count > 0)
                 return cache.Dequeue ();
 
-            if (autoCreate) {
-                var instance = new T ();
-                instance.Initialise ();
-                return instance;
-            }
-            return null;
+            var instance = Creator ();
+            instance?.Initialise ();
+            return instance;
         }
 
         public void Enqueue (T instance)

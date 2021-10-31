@@ -26,7 +26,7 @@ namespace MonoTorrent.Common
         [Test]
         public void Dequeue_WithAutocreate ()
         {
-            var cache = new Cache<Cacheable> (true).Synchronize ();
+            var cache = new Cache<Cacheable> (() => new Cacheable ()).Synchronize ();
             Assert.AreEqual (0, cache.Count);
             Assert.IsTrue (cache.Dequeue ().Initialised == 1);
         }
@@ -45,7 +45,7 @@ namespace MonoTorrent.Common
         public void UseTwice ()
         {
             // Should be initialised twice.
-            var cache = new Cache<Cacheable> (true);
+            var cache = new Cache<Cacheable> (() => new Cacheable ());
             var item = cache.Dequeue ();
             Assert.AreEqual (1, item.Initialised);
 

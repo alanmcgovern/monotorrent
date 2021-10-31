@@ -46,18 +46,19 @@ namespace MonoTorrent.Client
     {
         internal static ByteBufferPool BufferPool { get; } = ByteBufferPool.Default;
 
-        readonly ICache<IncrementalHashData> IncrementalHashCache = new Cache<IncrementalHashData> ();
+        readonly ICache<IncrementalHashData> IncrementalHashCache;
 
         readonly Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> ();
 
         class IncrementalHashData : ICacheable
         {
-            public SHA1 Hasher;
+            public readonly SHA1 Hasher;
             public int NextOffsetToHash;
             public ReusableExclusiveSemaphore Locker;
 
-            public IncrementalHashData ()
+            public IncrementalHashData (SHA1 hasher)
             {
+                Hasher = hasher;
                 Locker = new ReusableExclusiveSemaphore ();
                 Initialise ();
             }
@@ -192,6 +193,7 @@ namespace MonoTorrent.Client
             Cache = factories.CreateBlockCache (writer, settings.DiskCacheBytes, BufferPool);
             Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
             Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
+            IncrementalHashCache = new Cache<IncrementalHashData> (() => new IncrementalHashData (Factories.CreateSHA1 ()));
         }
 
         internal async ReusableTask SetWriterAsync (IPieceWriter writer)
@@ -257,7 +259,6 @@ namespace MonoTorrent.Client
                 // If we have no partial hash data for this piece we could be doing a full
                 // hash check, so let's create a IncrementalHashData for our piece!
                 incrementalHash = IncrementalHashCache.Dequeue ();
-                incrementalHash.Hasher ??= Factories.CreateSHA1 ();
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -409,7 +410,6 @@ namespace MonoTorrent.Client
                 int pieceIndex = request.PieceIndex;
                 if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
                     incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
-                    incrementalHash.Hasher ??= Factories.CreateSHA1 ();
                 }
 
                 ReusableTaskCompletionSource<bool> tcs = null;
