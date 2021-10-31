@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Nat" Version="3.0.1" />
+    <PackageReference Include="Mono.Nat" Version="[3.0.0,4.0)" />
   </ItemGroup>
 
   <ItemGroup>

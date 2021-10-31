@@ -100,7 +100,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
-    <PackageReference Include="Mono.Nat" Version="[3.0.1,4.0)" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Mono.Nat" Version="[3.0.0,4.0)" ExcludeAssets="compile" />
     <PackageReference Include="ReusableTasks" Version="[2.0.0,3.0)" />
   </ItemGroup>
 
