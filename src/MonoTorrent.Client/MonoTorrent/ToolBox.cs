@@ -36,7 +36,7 @@ namespace MonoTorrent
     static class AsyncInvoker<T>
         where T : EventArgs
     {
-        static readonly ICache<AsyncInvokerState> Cache = new Cache<AsyncInvokerState> (true).Synchronize ();
+        static readonly ICache<AsyncInvokerState> Cache = new Cache<AsyncInvokerState> (() => new AsyncInvokerState ()).Synchronize ();
 
         class AsyncInvokerState : ICacheable
         {
