@@ -131,20 +131,20 @@ namespace MonoTorrent
 
         internal TimeSpan CreationTime { get; set; }
 
-        Factories.PieceWriterCreator PieceWriterCreator { get; }
+        Factories Factories { get; }
 
         public TorrentCreator ()
-            : this(Factories.Default.CreatePieceWriter)
+            : this (Factories.Default)
         {
 
         }
 
-        public TorrentCreator (Factories.PieceWriterCreator pieceWriterCreator)
+        public TorrentCreator (Factories factories)
         {
             GetrightHttpSeeds = new List<string> ();
             CanEditSecureMetadata = true;
             CreatedBy = $"MonoTorrent {VersionInfo.Version}";
-            PieceWriterCreator = pieceWriterCreator;
+            Factories = factories;
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
@@ -311,7 +311,7 @@ namespace MonoTorrent
             var filledBuffers = new AsyncProducerConsumerQueue<(byte[], int, InputFile)> (emptyBuffers.Capacity + 1);
 
             // This is the IPieceWriter which we'll use to get our filestream. Each thread gets it's own writer.
-            using IPieceWriter writer = PieceWriterCreator (3);
+            using IPieceWriter writer = Factories.CreatePieceWriter (3);
 
             // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
             // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
@@ -409,8 +409,8 @@ namespace MonoTorrent
         {
             await MainLoop.SwitchToThreadpool ();
 
-            using MD5 md5Hasher = StoreMD5 ? HashAlgoFactory.MD5 () : null;
-            using SHA1 shaHasher = HashAlgoFactory.SHA1 ();
+            using MD5 md5Hasher = StoreMD5 ? Factories.CreateMD5 () : null;
+            using SHA1 shaHasher = Factories.CreateSHA1 ();
 
             md5Hasher?.Initialize ();
             shaHasher?.Initialize ();

@@ -13,14 +13,6 @@ using NUnit.Framework;
 
 namespace MonoTorrent.Common
 {
-    public class TestTorrentCreator : TorrentCreator
-    {
-        public TestTorrentCreator ()
-            : base (t => new TestWriter { DontWrite = true })
-        {
-        }
-    }
-
     [TestFixture]
     public class TorrentCreatorTests
     {
@@ -33,25 +25,17 @@ namespace MonoTorrent.Common
         readonly BEncodedString CustomValue = "My custom value";
 
         List<List<string>> announces;
-        TestTorrentCreator creator;
+        TorrentCreator creator;
         List<TorrentCreator.InputFile> files;
 
-        [OneTimeSetUp]
-        public void FixtureSetup ()
-        {
-            HashAlgoFactory.SHA1Builder = () => new SHA1Fake ();
-        }
-
-        [OneTimeTearDown]
-        public void FixtureTeardown ()
-        {
-            HashAlgoFactory.SHA1Builder = () => SHA1.Create ();
-        }
+        Factories TestFactories => Factories.Default
+            .WithSHA1Creator (() => new SHA1Fake ())
+            .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true });
 
         [SetUp]
         public void Setup ()
         {
-            creator = new TestTorrentCreator ();
+            creator = new TorrentCreator (TestFactories);
             announces = new List<List<string>> {
                 new List<string> (new[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }),
                 new List<string> (new[] { "http://tier2.com/announce1", "http://tier2.com/announce2" })
@@ -85,7 +69,7 @@ namespace MonoTorrent.Common
         [Test]
         public void AutoSelectPieceLength ()
         {
-            var torrentCreator = new TestTorrentCreator ();
+            var torrentCreator = new TorrentCreator (TestFactories);
             Assert.DoesNotThrowAsync (() => torrentCreator.CreateAsync ("name", files, CancellationToken.None));
         }
 
@@ -194,7 +178,7 @@ namespace MonoTorrent.Common
                 var source = new CustomFileSource (new List<FileMapping> {
                     new FileMapping("a", "../../dest1"),
                 });
-                new TorrentCreator (files => new DiskWriter (files)).Create (source);
+                new TorrentCreator (Factories.Default.WithPieceWriterCreator (files => new DiskWriter (files))).Create (source);
             });
         }
 
@@ -207,7 +191,7 @@ namespace MonoTorrent.Common
                     new FileMapping ("b", "dest2"),
                     new FileMapping ("c", "dest1"),
                 });
-                new TorrentCreator (Factories.Default.CreatePieceWriter).Create (source);
+                new TorrentCreator (Factories.Default).Create (source);
             });
         }
 

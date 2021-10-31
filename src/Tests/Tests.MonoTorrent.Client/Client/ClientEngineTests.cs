@@ -45,13 +45,13 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            DhtEngineFactory.Creator = listener => new ManualDhtEngine ();
+            DhtEngineFactory.Creator = (listener, factories) => new ManualDhtEngine ();
         }
 
         [TearDown]
         public void Teardown ()
         {
-            DhtEngineFactory.Creator = listener => new DhtEngine (listener);
+            DhtEngineFactory.Creator = (listener, factories) => new DhtEngine (listener);
         }
 
         [Test]

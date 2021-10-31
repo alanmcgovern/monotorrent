@@ -37,14 +37,13 @@ namespace MonoTorrent.Client
     static class AllowedFastAlgorithm
     {
         static readonly int AllowedFastPieceCount = 10;
-        static readonly SHA1 hasher = HashAlgoFactory.SHA1 ();
 
-        internal static List<int> Calculate (byte[] addressBytes, InfoHash infohash, uint numberOfPieces)
+        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHash infohash, uint numberOfPieces)
         {
-            return Calculate (addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
+            return Calculate (hasher, addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
         }
 
-        internal static List<int> Calculate (byte[] addressBytes, InfoHash infohash, int count, uint numberOfPieces)
+        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHash infohash, int count, uint numberOfPieces)
         {
             byte[] hashBuffer = new byte[24];                // The hash buffer to be used in hashing
             var results = new List<int> (count);  // The results array which will be returned
@@ -67,8 +66,7 @@ namespace MonoTorrent.Client
             // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
             // Then return that result
             while (true) {
-                lock (hasher)
-                    hashBuffer = hasher.ComputeHash (hashBuffer);
+                hashBuffer = hasher.ComputeHash (hashBuffer);
 
                 for (int i = 0; i < 20; i += 4) {
                     uint result = (uint) IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (hashBuffer, i));

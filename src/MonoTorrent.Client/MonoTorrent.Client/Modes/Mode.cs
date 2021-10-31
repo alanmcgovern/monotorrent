@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
@@ -50,6 +51,7 @@ namespace MonoTorrent.Client.Modes
 
         bool hashingPendingFiles;
 
+        SHA1 AllowedFastHasher { get; set; }
         protected CancellationTokenSource Cancellation { get; }
         protected ConnectionManager ConnectionManager { get; }
         protected DiskManager DiskManager { get; }
@@ -189,8 +191,10 @@ namespace MonoTorrent.Client.Modes
             id.SupportsLTMessages = message.SupportsExtendedMessaging;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
-            if (id.SupportsFastPeer && Manager != null && Manager.HasMetadata)
-                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (id.AddressBytes, Manager.InfoHash, (uint) Manager.Torrent.Pieces.Count);
+            if (id.SupportsFastPeer && Manager != null && Manager.HasMetadata) {
+                AllowedFastHasher ??= Manager.Engine.Factories.CreateSHA1 ();
+                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHash, (uint) Manager.Torrent.Pieces.Count);
+            }
         }
 
         protected virtual async void HandlePeerExchangeMessage (PeerId id, PeerExchangeMessage message)
