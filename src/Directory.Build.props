@@ -23,8 +23,4 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <ItemGroup Condition="$(OptimizeAsyncVoid) != 'false'">
-    <Compile Include="$(MSBuildThisFileDirectory)MonoTorrent.Client\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" />
-  </ItemGroup>
-
 </Project>

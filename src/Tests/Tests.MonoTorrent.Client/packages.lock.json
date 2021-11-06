@@ -38,6 +38,12 @@
           "System.Xml.XmlDocument": "4.3.0"
         }
       },
+      "ReusableTasks": {
+        "type": "Direct",
+        "requested": "[2.0.1, 3.0.0)",
+        "resolved": "2.0.1",
+        "contentHash": "sWXqkdpUMxdBcO1GH3eX7cSW3ZdF+AdtpQifMf/LrgkDgEpQ5uIlhKdf8dfD2ZN8lprcv8Sa8EwiTSv8nCFVAQ=="
+      },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
         "resolved": "16.4.0",
@@ -179,11 +185,6 @@
         "type": "Transitive",
         "resolved": "5.0.0",
         "contentHash": "c5JVjuVAm4f7E9Vj+v09Z9s2ZsqFDjBpcsyS3M9xRo0bEdm/LVZSzLxxNvfvAwRiiE8nwe1h2G4OwiwlzFKXlA=="
-      },
-      "ReusableTasks": {
-        "type": "Transitive",
-        "resolved": "2.0.0",
-        "contentHash": "HWb7Yy7dQfWPh0V4X42ounPkrzUvL6gB7bwshX7EqBDCl879iBQIS0TRrXFXKOTO2dNJxaEfXnAbX8Fzv3U7Cw=="
       },
       "runtime.native.System": {
         "type": "Transitive",
@@ -787,7 +788,7 @@
       "monotorrent": {
         "type": "Project",
         "dependencies": {
-          "ReusableTasks": "[2.0.0, 3.0.0)"
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.bencoding": {
@@ -796,43 +797,52 @@
       "monotorrent.client": {
         "type": "Project",
         "dependencies": {
-          "Mono.Nat": "[3.0.0, 4.0.0)"
+          "Mono.Nat": "[3.0.0, 4.0.0)",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.connections": {
         "type": "Project",
         "dependencies": {
           "MonoTorrent": "1.0.0",
-          "MonoTorrent.Messages": "1.0.0"
+          "MonoTorrent.Messages": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.factories": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
       },
       "monotorrent.messages": {
         "type": "Project",
         "dependencies": {
           "MonoTorrent": "1.0.0",
-          "MonoTorrent.BEncoding": "1.0.0"
+          "MonoTorrent.BEncoding": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.piecepicking": {
         "type": "Project",
         "dependencies": {
-          "MonoTorrent": "1.0.0"
+          "MonoTorrent": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.piecewriter": {
         "type": "Project",
         "dependencies": {
-          "MonoTorrent": "1.0.0"
+          "MonoTorrent": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.portforwarding": {
         "type": "Project",
         "dependencies": {
           "Mono.Nat": "[3.0.0, 4.0.0)",
-          "MonoTorrent": "1.0.0"
+          "MonoTorrent": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       }
     },
@@ -858,6 +868,12 @@
         "resolved": "3.15.1",
         "contentHash": "gqy0llGjhJYq9ebFvtbmBcF/MY8z5kcTIxYs+eXwp2d4Ntha8pSPxUzryvBm7H46VbWI6FS5/XNbxwiQpe88vQ=="
       },
+      "ReusableTasks": {
+        "type": "Direct",
+        "requested": "[2.0.1, 3.0.0)",
+        "resolved": "2.0.1",
+        "contentHash": "sWXqkdpUMxdBcO1GH3eX7cSW3ZdF+AdtpQifMf/LrgkDgEpQ5uIlhKdf8dfD2ZN8lprcv8Sa8EwiTSv8nCFVAQ=="
+      },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
         "resolved": "16.4.0",
@@ -868,15 +884,10 @@
         "resolved": "3.0.0",
         "contentHash": "LgRC8/8plJfvr1nCPmyHNIwP4fs346doMA/UVDZvFN0RfGJdyD2uS7Dl1AydxjVLrIvad8ghozI0vYFWcfPeYQ=="
       },
-      "ReusableTasks": {
-        "type": "Transitive",
-        "resolved": "2.0.0",
-        "contentHash": "HWb7Yy7dQfWPh0V4X42ounPkrzUvL6gB7bwshX7EqBDCl879iBQIS0TRrXFXKOTO2dNJxaEfXnAbX8Fzv3U7Cw=="
-      },
       "monotorrent": {
         "type": "Project",
         "dependencies": {
-          "ReusableTasks": "[2.0.0, 3.0.0)"
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.bencoding": {
@@ -885,43 +896,52 @@
       "monotorrent.client": {
         "type": "Project",
         "dependencies": {
-          "Mono.Nat": "[3.0.0, 4.0.0)"
+          "Mono.Nat": "[3.0.0, 4.0.0)",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.connections": {
         "type": "Project",
         "dependencies": {
           "MonoTorrent": "1.0.0",
-          "MonoTorrent.Messages": "1.0.0"
+          "MonoTorrent.Messages": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.factories": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
       },
       "monotorrent.messages": {
         "type": "Project",
         "dependencies": {
           "MonoTorrent": "1.0.0",
-          "MonoTorrent.BEncoding": "1.0.0"
+          "MonoTorrent.BEncoding": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.piecepicking": {
         "type": "Project",
         "dependencies": {
-          "MonoTorrent": "1.0.0"
+          "MonoTorrent": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.piecewriter": {
         "type": "Project",
         "dependencies": {
-          "MonoTorrent": "1.0.0"
+          "MonoTorrent": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       },
       "monotorrent.portforwarding": {
         "type": "Project",
         "dependencies": {
           "Mono.Nat": "[3.0.0, 4.0.0)",
-          "MonoTorrent": "1.0.0"
+          "MonoTorrent": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       }
     }
