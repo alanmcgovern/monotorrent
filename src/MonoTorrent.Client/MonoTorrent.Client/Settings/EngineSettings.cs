@@ -270,7 +270,7 @@ namespace MonoTorrent.Client
                    && AutoSaveLoadFastResume == other.AutoSaveLoadFastResume
                    && AutoSaveLoadMagnetLinkMetadata == other.AutoSaveLoadMagnetLinkMetadata
                    && CacheDirectory == other.CacheDirectory
-                   && DhtEndPoint == other.DhtEndPoint
+                   && Equals (DhtEndPoint, other.DhtEndPoint)
                    && DiskCacheBytes == other.DiskCacheBytes
                    && FastResumeMode == other.FastResumeMode
                    && ListenPort == other.ListenPort
