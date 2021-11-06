@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
         public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
         public event EventHandler<EventArgs> StatusChanged;
 
-        public Task Announce (InfoHash infoHash, int listeningPort)
+        public Task Announce (InfoHash infoHash, IPEndPoint listeningPort)
             => Task.CompletedTask;
 
         public void RaisePeerFound (InfoHash infoHash, Uri uri)

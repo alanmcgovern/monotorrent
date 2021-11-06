@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
         public TimeSpan MinimumAnnounceInternal { get; }
         public TimeSpan AnnounceInternal { get; }
 
-        public Task Announce (InfoHash infoHash, int listeningPort)
+        public Task Announce (InfoHash infoHash, IPEndPoint listeningPort)
         {
             return Task.CompletedTask;
         }

@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
@@ -48,6 +49,6 @@ namespace MonoTorrent.Client
         /// <param name="infoHash"></param>
         /// <param name="listeningPort">The TCP port used to accept incoming connections.</param>
         /// <returns></returns>
-        Task Announce (InfoHash infoHash, int listeningPort);
+        Task Announce (InfoHash infoHash, IPEndPoint listeningPort);
     }
 }
