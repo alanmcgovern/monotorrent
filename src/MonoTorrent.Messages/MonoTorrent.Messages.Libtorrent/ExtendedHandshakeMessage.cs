@@ -52,7 +52,7 @@ namespace MonoTorrent.Messages.Libtorrent
                 Create ().LengthInBytes () + 4 + 1 + 1;
 
         /// <summary>
-        /// The maximum number of concurrent 16kB <see cref="RequestMessage"/>s which can be sent to this peer. Defaults to <see cref="ClientEngine.DefaultMaxPendingRequests"/> requests.
+        /// The maximum number of concurrent 16kB <see cref="RequestMessage"/>s which can be sent to this peer. Defaults to <see cref="Constants.DefaultMaxPendingRequests"/> requests.
         /// </summary>
         public int MaxRequests { get; set; } = Constants.DefaultMaxPendingRequests;
 

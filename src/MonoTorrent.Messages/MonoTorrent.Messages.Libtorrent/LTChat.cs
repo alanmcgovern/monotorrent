@@ -50,7 +50,7 @@ namespace MonoTorrent.Messages.Libtorrent
 
         /// <summary>
         /// </summary>
-        /// <param name="messageId"></param>
+        /// <param name="supportedExtensions"></param>
         /// <param name="message"></param>
         public LTChat (ExtensionSupports supportedExtensions, string message)
             : this ()

@@ -87,7 +87,7 @@ namespace MonoTorrent.PiecePicking
         IList<ActivePieceRequest> ExportActiveRequests ();
 
         /// <summary>
-        /// Reset all internal state. Called after <see cref="TorrentManager.StartAsync()"/> or <see cref="TorrentManager.StopAsync()"/> is invoked.
+        /// Reset all internal state.
         /// </summary>
         /// <param name="torrentData"></param>
         void Initialise (ITorrentData torrentData);
@@ -101,7 +101,7 @@ namespace MonoTorrent.PiecePicking
         bool IsInteresting (IPeer peer, BitField bitfield);
 
         /// <summary>
-        /// Called when a <see cref="RejectRequestMessage"/> is received from the <paramref name="peer"/> to indicate
+        /// Called when a piece request has been rejected by a <paramref name="peer"/>, which indicates
         /// the <see cref="BlockInfo"/> will not be fulfilled.
         /// </summary>
         /// <param name="peer"></param>
@@ -121,7 +121,7 @@ namespace MonoTorrent.PiecePicking
         IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex);
 
         /// <summary>
-        /// Called when a <see cref="PieceMessage"/> is received from the <paramref name="peer"/>. Returns true if the
+        /// Called when a piece is received from the <paramref name="peer"/>. Returns true if the
         /// piece was requested from this peer and should be accepted, otherwise returns false if the piece was not requested from this peer and should
         /// be discarded.
         /// </summary>

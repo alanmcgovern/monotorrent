@@ -42,7 +42,7 @@ namespace MonoTorrent
         string FullPath { get; }
 
         /// <summary>
-        /// The file will exist at this path after it has been fully downloaded. Can be modified by calling <see cref="TorrentManager.MoveFileAsync(ITorrentFileInfo, string)" />
+        /// The file will exist at this path after it has been fully downloaded.
         /// </summary>
         string DownloadCompleteFullPath { get; }
 
@@ -52,7 +52,7 @@ namespace MonoTorrent
         string DownloadIncompleteFullPath { get; }
 
         /// <summary>
-        /// The priority of the file when downloading. Can be modified by calling <see cref="TorrentManager.SetFilePriorityAsync(ITorrentFileInfo, Priority)"/>
+        /// The priority of the file when downloading.
         /// </summary>
         Priority Priority { get; }
     }

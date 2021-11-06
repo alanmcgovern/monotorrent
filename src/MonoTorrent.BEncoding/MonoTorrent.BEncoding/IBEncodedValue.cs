@@ -67,7 +67,7 @@ namespace MonoTorrent.BEncoding
         /// <summary>
         /// Interface for all BEncoded values
         /// </summary>
-        /// <param name="data">The byte array containing the BEncoded data</param>
+        /// <param name="buffer">The byte array containing the BEncoded data</param>
         /// <returns></returns>
         public static BEncodedValue Decode (byte[] buffer)
             => Decode (buffer, DefaultStrictDecoding);
@@ -148,6 +148,7 @@ namespace MonoTorrent.BEncoding
         /// Interface for all BEncoded values
         /// </summary>
         /// <param name="data">The byte array containing the BEncoded data</param>
+        /// <param name="strictDecoding"></param>
         /// <returns></returns>
         public static T Decode<T> (byte[] data, bool strictDecoding) where T : BEncodedValue
             => (T) Decode (data, strictDecoding);
@@ -177,6 +178,7 @@ namespace MonoTorrent.BEncoding
         /// Decode BEncoded data in the given stream 
         /// </summary>
         /// <param name="stream">The stream containing the BEncoded data</param>
+        /// <param name="strictDecoding"></param>
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static T Decode<T> (Stream stream, bool strictDecoding) where T : BEncodedValue
             => (T) Decode (stream, strictDecoding);

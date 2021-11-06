@@ -8,7 +8,6 @@
     <Compile Include="..\Tests.MonoTorrent.Client\TaskExtensions.cs" Link="TaskExtensions.cs" />
     <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="TorrentFileInfo.cs" />
     <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="TorrentFile.cs" />
-    <Compile Include="..\..\MonoTorrent.Client\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="AsyncVoidMethodBuilder.cs" />
   </ItemGroup>
 
   <ItemGroup>

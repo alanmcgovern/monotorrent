@@ -796,8 +796,7 @@
       "monotorrent.client": {
         "type": "Project",
         "dependencies": {
-          "Mono.Nat": "[3.0.0, 4.0.0)",
-          "ReusableTasks": "[2.0.0, 3.0.0)"
+          "Mono.Nat": "[3.0.0, 4.0.0)"
         }
       },
       "monotorrent.connections": {
@@ -808,10 +807,7 @@
         }
       },
       "monotorrent.factories": {
-        "type": "Project",
-        "dependencies": {
-          "MonoTorrent.PortForwarding": "1.0.0"
-        }
+        "type": "Project"
       },
       "monotorrent.messages": {
         "type": "Project",
@@ -889,8 +885,7 @@
       "monotorrent.client": {
         "type": "Project",
         "dependencies": {
-          "Mono.Nat": "[3.0.0, 4.0.0)",
-          "ReusableTasks": "[2.0.0, 3.0.0)"
+          "Mono.Nat": "[3.0.0, 4.0.0)"
         }
       },
       "monotorrent.connections": {
@@ -901,10 +896,7 @@
         }
       },
       "monotorrent.factories": {
-        "type": "Project",
-        "dependencies": {
-          "MonoTorrent.PortForwarding": "1.0.0"
-        }
+        "type": "Project"
       },
       "monotorrent.messages": {
         "type": "Project",

@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
         public TimeSpan MinimumAnnounceInternal => TimeSpan.FromMinutes (1);
 
         /// <summary>
-        /// When we send Announce we should embed the current <see cref="EngineSettings.ListenPort"/> as it is dynamic.
+        /// When we send Announce we should embed the current port used to listen for incoming connections.
         /// </summary>
         string BaseSearchString { get; }
 

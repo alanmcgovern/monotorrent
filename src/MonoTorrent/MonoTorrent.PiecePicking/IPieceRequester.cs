@@ -82,10 +82,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="ignorableBitfields"> These bitfields represent pieces which have successfully
         /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
         /// pieces which have not yet been hash checked by the library and so it is not known whether they should be requested or not.
-        /// After creating an <see cref="IPiecePicker"/>, you should call
-        /// <see cref="IgnoringPicker.Wrap(IPiecePicker, IEnumerable{BitField})"/> passing the <see cref="IPiecePicker"/>
-        /// you created and the <paramref name="ignorableBitfields"/>. This will wrap your picker in several <see cref="IgnoringPicker"/>
-        /// so the engine can enforce that these pieces will not be requested a second time.</param>
+        /// </param>
         void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignorableBitfields);
 
         IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex);

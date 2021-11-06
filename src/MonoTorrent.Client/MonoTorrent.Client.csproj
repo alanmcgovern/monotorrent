@@ -117,7 +117,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ReusableTasks" Version="[2.0,3.0)" />
     <PackageReference Include="Mono.Nat" Version="[3.0,4.0)" ExcludeAssets="compile" />
   </ItemGroup>
 

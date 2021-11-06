@@ -373,7 +373,6 @@ namespace MonoTorrent.Client
             var fullPath = Path.Combine (tmp.Path, "New", "Path", "file.txt");
             await manager.MoveFileAsync (file, fullPath);
             Assert.AreEqual (fullPath, file.FullPath);
-            /// FIXME: Assert.IsTrue (File.Exists (file.FullPath));
         }
 
         [Test]

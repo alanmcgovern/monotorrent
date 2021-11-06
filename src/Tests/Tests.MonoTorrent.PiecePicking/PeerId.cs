@@ -12,8 +12,7 @@ namespace MonoTorrent.PiecePicking
 
         /// <summary>
         /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
-        /// The peer will have <see cref="MessageQueue.ProcessingQueue"/>, <see cref="IsChoking"/> and <see cref="AmChoking"/>
-        /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
+        /// A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
         /// <param name="bitfieldLength"></param>
         /// <param name="seeder">True if the returned peer should be treated as a seeder (the bitfield will have all pieces set to 'true')</param>

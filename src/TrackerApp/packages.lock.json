@@ -21,13 +21,15 @@
         }
       },
       "monotorrent.bencoding": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.0, 3.0.0)"
+        }
       },
       "monotorrent.client": {
         "type": "Project",
         "dependencies": {
-          "Mono.Nat": "[3.0.0, 4.0.0)",
-          "ReusableTasks": "[2.0.0, 3.0.0)"
+          "Mono.Nat": "[3.0.0, 4.0.0)"
         }
       }
     },

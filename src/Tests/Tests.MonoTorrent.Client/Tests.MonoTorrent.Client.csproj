@@ -6,10 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\MonoTorrent.Client\System.Runtime.CompilerServices\AsyncVoidMethodBuilder.cs" Link="AsyncVoidMethodBuilder.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" />
@@ -21,7 +17,7 @@
     <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="$(TargetFramework) == 'net472'">
     <Reference Include="System.Web" />
   </ItemGroup>
 

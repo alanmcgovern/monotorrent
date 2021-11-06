@@ -258,7 +258,7 @@ namespace MonoTorrent.Client
         public DateTime LastLocalPeerAnnounce { get; private set; }
 
         /// <summary>
-        /// Internal timer used to trigger Local PeerDiscovery announces every <see cref="LocalPeerDiscovery.AnnounceInternal"/> seconds.
+        /// Internal timer used to trigger Local PeerDiscovery announces every interval.
         /// </summary>
         internal ValueStopwatch LastLocalPeerAnnounceTimer;
 
