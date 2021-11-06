@@ -236,6 +236,8 @@ namespace MonoTorrent.Client
         public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
+        public IPEndPoint LocalEndPoint => null;
+
         public ListenerStatus Status { get; private set; }
 
         public void Start ()
@@ -319,7 +321,7 @@ namespace MonoTorrent.Client
 
         public ClientEngine Engine { get; }
 
-        public CustomListener Listener => (CustomListener) Engine.Listener;
+        public CustomListener Listener => (CustomListener) Engine.PeerListener;
 
         public TorrentManager Manager { get; set; }
 
@@ -402,11 +404,11 @@ namespace MonoTorrent.Client
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
             var factories = Factories.Default
                 .WithDhtListenerCreator (port => new NullDhtListener ())
-                .WithLocalPeerDiscoveryCreator (port => new ManualLocalPeerListener ())
+                .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ());
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
-                dhtPort: 12345,
+                dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
                 cacheDirectory: cacheDir,
                 listenPort: 12345
             ), factories);

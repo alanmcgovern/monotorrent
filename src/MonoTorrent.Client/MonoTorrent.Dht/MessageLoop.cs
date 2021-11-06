@@ -37,6 +37,8 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Dht
 {
     class MessageLoop
@@ -104,7 +106,7 @@ namespace MonoTorrent.Dht
         /// </summary>
         List<SendDetails> WaitingResponseTimedOut { get; }
 
-        public MessageLoop (DhtEngine engine, IDhtListener listener)
+        public MessageLoop (DhtEngine engine)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
             DhtMessageFactory = new DhtMessageFactory ();
@@ -115,7 +117,6 @@ namespace MonoTorrent.Dht
             WaitingResponse = new Dictionary<BEncodedValue, SendDetails> ();
             WaitingResponseTimedOut = new List<SendDetails> ();
 
-            SetListener (listener);
             Task sendTask = null;
             DhtEngine.MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (5), () => {
                 if (engine.Disposed)
@@ -275,8 +276,9 @@ namespace MonoTorrent.Dht
             }
         }
 
-        internal void SetListener (IDhtListener listener)
+        internal async ReusableTask SetListener (IDhtListener listener)
         {
+            await DhtEngine.MainLoop;
             Listener.MessageReceived -= MessageReceived;
             Listener = listener ?? new NullDhtListener ();
             Listener.MessageReceived += MessageReceived;

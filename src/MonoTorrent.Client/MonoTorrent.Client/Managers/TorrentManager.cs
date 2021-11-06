@@ -686,7 +686,8 @@ namespace MonoTorrent.Client
             if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > Engine.LocalPeerDiscovery.MinimumAnnounceInternal)) {
                 LastLocalPeerAnnounce = DateTime.Now;
                 LastLocalPeerAnnounceTimer.Restart ();
-                await Engine?.LocalPeerDiscovery.Announce (InfoHash);
+                if (Engine.PeerListener.LocalEndPoint != null && Engine.PeerListener.LocalEndPoint.Port > 0)
+                    await Engine?.LocalPeerDiscovery.Announce (InfoHash, Engine.PeerListener.LocalEndPoint.Port);
             }
         }
 

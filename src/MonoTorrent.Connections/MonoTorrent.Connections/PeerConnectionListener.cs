@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.Listeners
             });
 
             listener.Bind (OriginalEndPoint);
-            EndPoint = (IPEndPoint) listener.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint) listener.LocalEndPoint;
 
             listener.Listen (6);
 

@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net;
 
 using MonoTorrent.Client.Connections;
 
@@ -35,6 +36,8 @@ namespace MonoTorrent.Client.Listeners
 {
     public interface IPeerConnectionListener : IListener
     {
+        IPEndPoint LocalEndPoint { get; }
+
         event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
     }
 }

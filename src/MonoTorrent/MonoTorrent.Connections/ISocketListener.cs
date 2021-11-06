@@ -33,6 +33,6 @@ namespace MonoTorrent
 {
     public interface ISocketListener : IListener
     {
-        IPEndPoint EndPoint { get; }
+        IPEndPoint LocalEndPoint { get; }
     }
 }

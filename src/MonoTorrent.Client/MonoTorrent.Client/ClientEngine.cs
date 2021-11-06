@@ -205,7 +205,7 @@ namespace MonoTorrent.Client
 
         internal Factories Factories { get; }
 
-        internal IPeerConnectionListener Listener { get; set; }
+        internal IPeerConnectionListener PeerListener { get; set; }
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -300,15 +300,17 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            Listener = (settings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, settings.ListenPort))) ?? new NullPeerListener ();
-            listenManager.SetListener (Listener);
+            PeerListener = (settings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, settings.ListenPort))) ?? new NullPeerListener ();
+            listenManager.SetListener (PeerListener);
 
-            DhtListener = (settings.DhtPort == -1 ? null : Factories.CreateDhtListener (new IPEndPoint (IPAddress.Any, settings.DhtPort))) ?? new NullDhtListener ();
-            DhtEngine = settings.DhtPort == -1 ? new NullDhtEngine () : DhtEngineFactory.Create (DhtListener, Factories);
+            DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
+            DhtEngine = settings.DhtEndPoint == null ? new NullDhtEngine () : DhtEngineFactory.Create (Factories);
+            DhtEngine.SetListenerAsync (DhtListener).GetAwaiter ().GetResult ();
+
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
 
-            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery && settings.ListenPort >= 0 ? Factories.CreateLocalPeerDiscovery (settings.ListenPort) : null);
+            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery ? Factories.CreateLocalPeerDiscovery () : null);
         }
 
         #endregion
@@ -410,7 +412,7 @@ namespace MonoTorrent.Client
 
         async Task<TorrentManager> MakeStreamingAsync (TorrentManager manager)
         {
-            await manager.ChangePickerAsync (Factories.CreateStreamingPieceRequester (manager));
+            await manager.ChangePickerAsync (Factories.CreateStreamingPieceRequester ());
             return manager;
         }
 
@@ -527,11 +529,10 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
-                Listener.Stop ();
+                PeerListener.Stop ();
                 listenManager.SetListener (null);
 
                 DhtListener.Stop ();
-                DhtEngine.SetListener (null);
                 DhtEngine.Dispose ();
 
                 DiskManager.Dispose ();
@@ -774,19 +775,17 @@ namespace MonoTorrent.Client
             if (!IsRunning) {
                 IsRunning = true;
 
-                Listener.Start ();
+                PeerListener.Start ();
                 LocalPeerDiscovery.Start ();
                 await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
                 if (Settings.AllowPortForwarding)
                     await PortForwarder.StartAsync (CancellationToken.None);
 
-                if (Listener is ISocketListener socketListener)
-                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, socketListener.EndPoint.Port));
-                else
-                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort));
+                if (PeerListener.LocalEndPoint != null)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port));
 
-                if (DhtListener.EndPoint != null)
-                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.EndPoint.Port));
+                if (DhtListener.LocalEndPoint != null)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
         }
 
@@ -796,7 +795,13 @@ namespace MonoTorrent.Client
             // If all the torrents are stopped, stop ticking
             IsRunning = allTorrents.Exists (m => m.State != TorrentState.Stopped);
             if (!IsRunning) {
-                Listener.Stop ();
+                if (PeerListener.LocalEndPoint != null)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port), CancellationToken.None);
+
+                if (DhtListener.LocalEndPoint != null)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port), CancellationToken.None);
+
+                PeerListener.Stop ();
                 LocalPeerDiscovery.Stop ();
 
                 if (Settings.AllowPortForwarding)
@@ -804,8 +809,6 @@ namespace MonoTorrent.Client
 
                 await MaybeSaveDhtNodes ();
                 await DhtEngine.StopAsync ();
-                await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, Settings.ListenPort), CancellationToken.None);
-                await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, Settings.DhtPort), CancellationToken.None);
             }
         }
 
@@ -883,57 +886,51 @@ namespace MonoTorrent.Client
                     await PortForwarder.StopAsync (removeExistingMappings: true, CancellationToken.None);
             }
 
-            if (oldSettings.DhtPort != newSettings.DhtPort) {
-                if (DhtListener.EndPoint != null)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.EndPoint.Port), CancellationToken.None);
-                else if (oldSettings.DhtPort > 0)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, oldSettings.DhtPort), CancellationToken.None);
+            if (oldSettings.DhtEndPoint != newSettings.DhtEndPoint) {
+                if (DhtListener.LocalEndPoint != null)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port), CancellationToken.None);
+                DhtListener.Stop ();
 
-                DhtListener = (newSettings.DhtPort == -1 ? null : Factories.CreateDhtListener (new IPEndPoint (IPAddress.Any, newSettings.DhtPort))) ?? new NullDhtListener ();
-                if (oldSettings.DhtPort == -1)
-                    await RegisterDht (DhtEngineFactory.Create (DhtListener, Factories));
-                else if (newSettings.DhtPort == -1)
+                if (newSettings.DhtEndPoint == null) {
+                    DhtListener = new NullDhtListener ();
                     await RegisterDht (new NullDhtEngine ());
+                } else {
+                    DhtListener = Factories.CreateDhtListener (Settings.DhtEndPoint) ?? new NullDhtListener ();
+                    if (IsRunning)
+                        DhtListener.Start ();
 
-                DhtEngine.SetListener (DhtListener);
+                    if (oldSettings.DhtEndPoint == null) {
+                        var dht = DhtEngineFactory.Create (Factories);
+                        await dht.SetListenerAsync (DhtListener);
+                        await RegisterDht (dht);
 
-                if (IsRunning) {
-                    DhtListener.Start ();
-                    if (Listener is ISocketListener newDhtListener)
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, newDhtListener.EndPoint.Port));
-                    else
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, newSettings.DhtPort));
+                    } else {
+                        await DhtEngine.SetListenerAsync (DhtListener);
+                    }
                 }
+
+                if (DhtListener.LocalEndPoint != null)
+                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
 
             if (oldSettings.ListenPort != newSettings.ListenPort) {
-                if (Listener is ISocketListener oldListener)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldListener.EndPoint.Port), CancellationToken.None);
-                else if (oldSettings.ListenPort > 0)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, oldSettings.ListenPort), CancellationToken.None);
+                if (PeerListener.LocalEndPoint != null)
+                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port), CancellationToken.None);
 
-                Listener.Stop ();
-                Listener = (newSettings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, newSettings.ListenPort))) ?? new NullPeerListener ();
-                listenManager.SetListener (Listener);
+                PeerListener.Stop ();
+                PeerListener = (newSettings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, newSettings.ListenPort))) ?? new NullPeerListener ();
+                listenManager.SetListener (PeerListener);
 
                 if (IsRunning) {
-                    Listener.Start ();
+                    PeerListener.Start ();
                     // The settings could say to listen at port 0, which means 'choose one dynamically'
-                    if (Listener is ISocketListener peerListener)
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, peerListener.EndPoint.Port));
-                    else
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, newSettings.ListenPort));
+                    if (PeerListener.LocalEndPoint != null)
+                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port));
                 }
             }
 
-            // This depends on the Listener binding to it's local port.
-            var localPort = newSettings.ListenPort;
-            if (Listener is ISocketListener newListener)
-                localPort = newListener.EndPoint.Port;
-
-            if ((oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) ||
-                (oldSettings.ListenPort != newSettings.ListenPort)) {
-                RegisterLocalPeerDiscovery (!newSettings.AllowLocalPeerDiscovery || localPort <= 0 ? null : Factories.CreateLocalPeerDiscovery(localPort));
+            if (oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) {
+                RegisterLocalPeerDiscovery (!newSettings.AllowLocalPeerDiscovery ? null : Factories.CreateLocalPeerDiscovery());
             }
         }
 

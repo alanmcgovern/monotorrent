@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Connections
 
         public bool Disposed { get; set; }
 
-        Factories.HttpRequestCreator RequestCreator { get; }
+        Factories RequestCreator { get; }
 
         IHttpRequest Requester { get; set; }
 
@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Connections
 
         #region Constructors
 
-        public HttpPeerConnection (ITorrentData torrentData, Factories.HttpRequestCreator requestCreator, Uri uri)
+        public HttpPeerConnection (ITorrentData torrentData, Factories requestCreator, Uri uri)
         {
             ConnectionTimeout = TimeSpan.FromSeconds (10);
             RequestCreator = requestCreator;
@@ -215,7 +215,7 @@ namespace MonoTorrent.Client.Connections
                 var rr = WebRequests.Dequeue ();
 
                 Requester?.Dispose ();
-                Requester = RequestCreator ();
+                Requester = RequestCreator.CreateHttpRequest ();
                 Requester.ConnectionTimeout = ConnectionTimeout;
                 DataStream = await Requester.GetStreamAsync (rr.fileUri, rr.startOffset, rr.count);
                 DataStreamCount = rr.count;

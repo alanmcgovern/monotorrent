@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     {
         public ListenerStatus Status { get; private set; }
 
-        public IPEndPoint EndPoint { get; set; }
+        public IPEndPoint LocalEndPoint { get; set; }
         public TimeSpan AnnounceInternal { get; }
 
         public TimeSpan MinimumAnnounceInternal { get; }
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
         public event EventHandler<LocalPeerFoundEventArgs> PeerFound;
         public event EventHandler<EventArgs> StatusChanged;
 
-        public Task Announce (InfoHash infoHash)
+        public Task Announce (InfoHash infoHash, int listeningPort)
             => Task.CompletedTask;
 
         public void RaisePeerFound (InfoHash infoHash, Uri uri)

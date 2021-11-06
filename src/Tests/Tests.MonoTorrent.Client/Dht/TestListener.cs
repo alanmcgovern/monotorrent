@@ -45,7 +45,7 @@ namespace MonoTorrent.Dht
 
         public bool SendAsynchronously { get; set; }
 
-        public IPEndPoint EndPoint { get; private set; } = new IPEndPoint (IPAddress.Loopback, 0);
+        public IPEndPoint LocalEndPoint { get; private set; } = new IPEndPoint (IPAddress.Loopback, 0);
         public ListenerStatus Status { get; private set; }
 
         public void RaiseMessageReceived (DhtMessage message, IPEndPoint endpoint)

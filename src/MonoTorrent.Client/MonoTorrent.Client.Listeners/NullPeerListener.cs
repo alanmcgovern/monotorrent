@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net;
 
 using MonoTorrent.Client.Connections;
 
@@ -39,6 +40,8 @@ namespace MonoTorrent.Client.Listeners
         public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
         public event EventHandler<EventArgs> StatusChanged;
 #pragma warning restore 0067
+
+        public IPEndPoint LocalEndPoint => null;
 
         public ListenerStatus Status => ListenerStatus.NotListening;
 

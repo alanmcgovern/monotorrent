@@ -54,7 +54,7 @@ namespace MonoTorrent
             if (Status == ListenerStatus.NotListening)
                 throw new InvalidOperationException ("You must invoke StartAsync before sending or receiving a message with this listener.");
             if (Status == ListenerStatus.PortNotFree)
-                throw new InvalidOperationException ($"The listener could not bind to ${EndPoint}. Choose a new listening endpoint.");
+                throw new InvalidOperationException ($"The listener could not bind to ${LocalEndPoint}. Choose a new listening endpoint.");
 
             await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
         }
@@ -62,7 +62,7 @@ namespace MonoTorrent
         protected override void Start (CancellationToken token)
         {
             UdpClient client = Client = new UdpClient (OriginalEndPoint);
-            EndPoint = (IPEndPoint) client.Client.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint) client.Client.LocalEndPoint;
             token.Register (() => {
                 client.Dispose ();
                 Client = null;

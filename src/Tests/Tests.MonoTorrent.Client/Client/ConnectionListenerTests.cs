@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 10; i++) {
                 using TcpClient c = new TcpClient (AddressFamily.InterNetwork);
                 var task = AcceptSocket ();
-                c.Connect (listener.EndPoint);
+                c.Connect (listener.LocalEndPoint);
                 if (await Task.WhenAny (Task.Delay (1000), task) != task)
                     Assert.Fail ("Failed to establish a connection");
                 (await task).Connection.Dispose ();
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         public void PortNotFree ()
         {
             var tcs = new TaskCompletionSource<object> ();
-            var otherListener = new PeerConnectionListener (listener.EndPoint);
+            var otherListener = new PeerConnectionListener (listener.LocalEndPoint);
             otherListener.StatusChanged += (o, e) => tcs.SetResult (null);
             otherListener.Start ();
             Assert.AreEqual (ListenerStatus.PortNotFree, otherListener.Status);

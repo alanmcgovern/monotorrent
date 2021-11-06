@@ -33,13 +33,13 @@ namespace MonoTorrent
 {
     public abstract class SocketListener : Listener, ISocketListener
     {
-        public IPEndPoint EndPoint { get; protected set; }
+        public IPEndPoint LocalEndPoint { get; protected set; }
 
         protected IPEndPoint OriginalEndPoint { get; set; }
 
         protected SocketListener (IPEndPoint endPoint)
         {
-            EndPoint = OriginalEndPoint = endPoint;
+            LocalEndPoint = OriginalEndPoint = endPoint;
         }
     }
 }
