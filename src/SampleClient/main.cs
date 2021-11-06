@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,11 +48,11 @@ namespace SampleClient
                 // so it can be reloaded later.
                 AutoSaveLoadMagnetLinkMetadata = true,
 
-                // Use a fixed port to accept incoming connections from other peers.
-                ListenPort = 55123,
+                // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
+                ListenEndPoint = new IPEndPoint (IPAddress.Any, 55123),
 
-                // Use a random port for DHT communications.
-                DhtPort = 55123,
+                // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
+                DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
             };
             using var engine = new ClientEngine (settingBuilder.ToSettings ());
 

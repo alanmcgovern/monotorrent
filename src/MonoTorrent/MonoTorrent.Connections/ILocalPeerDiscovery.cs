@@ -28,11 +28,12 @@
 
 
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
-    public interface ILocalPeerDiscovery : ISocketListener
+    public interface ILocalPeerDiscovery : IListener
     {
         TimeSpan MinimumAnnounceInternal { get; }
         TimeSpan AnnounceInternal { get; }
@@ -46,7 +47,8 @@ namespace MonoTorrent.Client
         /// Send an announce request for this InfoHash to all available network adapters.
         /// </summary>
         /// <param name="infoHash"></param>
+        /// <param name="listeningPort">The TCP port used to accept incoming connections.</param>
         /// <returns></returns>
-        Task Announce (InfoHash infoHash);
+        Task Announce (InfoHash infoHash, IPEndPoint listeningPort);
     }
 }

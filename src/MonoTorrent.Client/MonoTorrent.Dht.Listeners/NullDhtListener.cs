@@ -45,7 +45,7 @@ namespace MonoTorrent.Dht.Listeners
 
         }
 
-        public IPEndPoint EndPoint { get; }
+        public IPEndPoint LocalEndPoint { get; }
 
         public ListenerStatus Status { get; } = ListenerStatus.NotListening;
 

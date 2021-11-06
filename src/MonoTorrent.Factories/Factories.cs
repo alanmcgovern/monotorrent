@@ -19,14 +19,14 @@ namespace MonoTorrent.Client
         public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, ByteBufferPool buffer);
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
         public delegate IHttpRequest HttpRequestCreator ();
-        public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator (int port);
+        public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
         public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
-        public delegate IPieceRequester PieceRequesterCreator (ITorrentData torrentData);
+        public delegate IPieceRequester PieceRequesterCreator ();
         public delegate IPieceWriter PieceWriterCreator (int maxOpenFiles);
         public delegate IPortForwarder PortForwarderCreator ();
         public delegate ISocketConnector SocketConnectorCreator ();
-        public delegate IStreamingPieceRequester StreamingPieceRequesterCreator (ITorrentData torrentData);
+        public delegate IStreamingPieceRequester StreamingPieceRequesterCreator ();
 
         public delegate MD5 MD5Creator ();
         public delegate SHA1 SHA1Creator ();
@@ -36,137 +36,172 @@ namespace MonoTorrent.Client
     {
         public static Factories Default { get; } = new Factories ();
 
-        public BlockCacheCreator CreateBlockCache { get; private set; }
-        public DhtListenerCreator CreateDhtListener { get; private set; }
-        public HttpRequestCreator CreateHttpRequest { get; private set; }
-        public LocalPeerDiscoveryCreator CreateLocalPeerDiscovery { get; private set; }
-        public ReadOnlyDictionary<string, PeerConnectionCreator> PeerConnectionCreators { get; private set; }
-        public PeerConnectionListenerCreator CreatePeerConnectionListener { get; private set; }
-        public PieceRequesterCreator CreatePieceRequester { get; private set; }
-        public PieceWriterCreator CreatePieceWriter { get; private set; }
-        public PortForwarderCreator CreatePortForwarder { get; private set; }
-        public SocketConnectorCreator CreateSocketConnector { get; private set; }
-        public StreamingPieceRequesterCreator CreateStreamingPieceRequester { get; private set; }
+        BlockCacheCreator BlockCacheFunc { get; set; }
+        DhtListenerCreator DhtListenerFunc { get; set; }
+        HttpRequestCreator HttpRequestFunc { get; set; }
+        LocalPeerDiscoveryCreator LocalPeerDiscoveryFunc { get; set; }
+        ReadOnlyDictionary<string, PeerConnectionCreator> PeerConnectionFuncs { get; set; }
+        PeerConnectionListenerCreator PeerConnectionListenerFunc { get; set; }
+        PieceRequesterCreator PieceRequesterFunc { get; set; }
+        PieceWriterCreator PieceWriterFunc { get; set; }
+        PortForwarderCreator PortForwarderFunc { get; set; }
+        SocketConnectorCreator SocketConnectorFunc { get; set; }
+        StreamingPieceRequesterCreator StreamingPieceRequesterFunc { get; set; }
 
-        public MD5Creator CreateMD5 { get; private set; }
-        public SHA1Creator CreateSHA1 { get; private set; }
+        MD5Creator MD5Func { get; set; }
+        SHA1Creator SHA1Func { get; set; }
 
         public Factories ()
         {
-            CreateMD5 = () => MD5.Create ();
-            CreateSHA1 = () => SHA1.Create ();
+            MD5Func = () => MD5.Create ();
+            SHA1Func = () => SHA1.Create ();
 
-            CreateBlockCache = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
-            CreateDhtListener = endpoint => new DhtListener (endpoint);
-            CreateHttpRequest = () => new HttpRequest ();
-            CreateLocalPeerDiscovery = port => new LocalPeerDiscovery (port);
-            PeerConnectionCreators = new ReadOnlyDictionary<string, PeerConnectionCreator> (
+            BlockCacheFunc = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
+            DhtListenerFunc = endpoint => new DhtListener (endpoint);
+            HttpRequestFunc = () => new HttpRequest ();
+            LocalPeerDiscoveryFunc = () => new LocalPeerDiscovery ();
+            PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (
                 new Dictionary<string, PeerConnectionCreator> {
                 { "ipv4", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
                 { "ipv6", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
                 }
             );
-            CreatePeerConnectionListener = endPoint => new PeerConnectionListener (endPoint);
-            CreatePieceRequester = torrentData => new StandardPieceRequester ();
-            CreatePieceWriter = maxOpenFiles => new DiskWriter (maxOpenFiles);
-            CreatePortForwarder = () => new MonoNatPortForwarder ();
-            CreateSocketConnector = () => new SocketConnector ();
-            CreateStreamingPieceRequester = torrentData => new StreamingPieceRequester ();
+            PeerConnectionListenerFunc = endPoint => new PeerConnectionListener (endPoint);
+            PieceRequesterFunc = () => new StandardPieceRequester ();
+            PieceWriterFunc = maxOpenFiles => new DiskWriter (maxOpenFiles);
+            PortForwarderFunc = () => new MonoNatPortForwarder ();
+            SocketConnectorFunc = () => new SocketConnector ();
+            StreamingPieceRequesterFunc = () => new StreamingPieceRequester ();
         }
 
+        public IBlockCache CreateBlockCache (IPieceWriter writer, long capacity, ByteBufferPool buffer)
+            => BlockCacheFunc (writer, capacity, buffer);
         public Factories WithBlockCacheCreator (BlockCacheCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateBlockCache = creator ?? Default.CreateBlockCache;
+            dupe.BlockCacheFunc = creator ?? Default.BlockCacheFunc;
             return dupe;
         }
 
+        public IDhtListener CreateDhtListener (IPEndPoint endPoint)
+            => DhtListenerFunc (endPoint);
         public Factories WithDhtListenerCreator (DhtListenerCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateDhtListener = creator ?? Default.CreateDhtListener;
+            dupe.DhtListenerFunc = creator ?? Default.DhtListenerFunc;
             return dupe;
         }
 
+        public IHttpRequest CreateHttpRequest ()
+            => HttpRequestFunc ();
         public Factories WithHttpRequestCreator (HttpRequestCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateHttpRequest = creator ?? Default.CreateHttpRequest;
+            dupe.HttpRequestFunc = creator ?? Default.HttpRequestFunc;
             return dupe;
         }
 
+        public ILocalPeerDiscovery CreateLocalPeerDiscovery ()
+            => LocalPeerDiscoveryFunc ();
         public Factories WithLocalPeerDiscoveryCreator (LocalPeerDiscoveryCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateLocalPeerDiscovery = creator ?? Default.CreateLocalPeerDiscovery;
+            dupe.LocalPeerDiscoveryFunc = creator ?? Default.LocalPeerDiscoveryFunc;
             return dupe;
         }
 
+        public MD5 CreateMD5 ()
+            => MD5Func ();
         public Factories WithMD5Creator (MD5Creator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateMD5 = creator ?? Default.CreateMD5;
+            dupe.MD5Func = creator ?? Default.MD5Func;
             return dupe;
         }
 
+        public IPeerConnection CreatePeerConnection (Uri uri)
+        {
+            try {
+                if (PeerConnectionFuncs.TryGetValue (uri.Scheme, out var creator))
+                    return creator (uri);
+            } catch {
+
+            }
+            return null;
+        }
         public Factories WithPeerConnectionCreator (string scheme, PeerConnectionCreator creator)
         {
-            var dict = new Dictionary<string, PeerConnectionCreator> (PeerConnectionCreators);
+            var dict = new Dictionary<string, PeerConnectionCreator> (PeerConnectionFuncs);
             if (creator == null)
                 dict.Remove (scheme);
             else
                 dict[scheme] = creator;
 
             var dupe = MemberwiseClone ();
-            dupe.PeerConnectionCreators = new ReadOnlyDictionary<string, PeerConnectionCreator> (dict);
+            dupe.PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (dict);
             return dupe;
         }
 
+        public IPeerConnectionListener CreatePeerConnectionListener (IPEndPoint endPoint)
+            => PeerConnectionListenerFunc (endPoint);
         public Factories WithPeerConnectionListenerCreator(PeerConnectionListenerCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreatePeerConnectionListener = creator ?? Default.CreatePeerConnectionListener;
+            dupe.PeerConnectionListenerFunc = creator ?? Default.PeerConnectionListenerFunc;
             return dupe;
         }
 
+        public IPieceRequester CreatePieceRequester ()
+            => PieceRequesterFunc ();
         public Factories WithPieceRequesterCreator (PieceRequesterCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreatePieceRequester = creator ?? Default.CreatePieceRequester;
+            dupe.PieceRequesterFunc = creator ?? Default.PieceRequesterFunc;
             return dupe;
         }
 
+        public IPieceWriter CreatePieceWriter (int maxOpenFiles)
+            => PieceWriterFunc (maxOpenFiles);
         public Factories WithPieceWriterCreator (PieceWriterCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreatePieceWriter = creator ?? Default.CreatePieceWriter;
+            dupe.PieceWriterFunc = creator ?? Default.PieceWriterFunc;
             return dupe;
         }
+
+        public IPortForwarder CreatePortForwarder ()
+            => PortForwarderFunc ();
         public Factories WithPortForwarderCreator (PortForwarderCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreatePortForwarder = creator ?? Default.CreatePortForwarder;
+            dupe.PortForwarderFunc = creator ?? Default.PortForwarderFunc;
             return dupe;
         }
 
+        public SHA1 CreateSHA1 ()
+            => SHA1Func ();
         public Factories WithSHA1Creator (SHA1Creator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateSHA1 = creator ?? Default.CreateSHA1;
+            dupe.SHA1Func = creator ?? Default.SHA1Func;
             return dupe;
         }
 
-        public Factories WithSocketConnectionCreator(SocketConnectorCreator creator)
+        public ISocketConnector CreateSocketConnector ()
+            => SocketConnectorFunc ();
+        public Factories WithSocketConnectorCreator(SocketConnectorCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateSocketConnector = creator ?? Default.CreateSocketConnector;
+            dupe.SocketConnectorFunc = creator ?? Default.SocketConnectorFunc;
             return dupe;
         }
 
+        public IStreamingPieceRequester CreateStreamingPieceRequester ()
+            => StreamingPieceRequesterFunc ();
         public Factories WithStreamingPieceRequesterCreator (StreamingPieceRequesterCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.CreateStreamingPieceRequester = creator ?? Default.CreateStreamingPieceRequester;
+            dupe.StreamingPieceRequesterFunc = creator ?? Default.StreamingPieceRequesterFunc;
             return dupe;
         }
         new Factories MemberwiseClone ()

@@ -70,12 +70,10 @@ namespace MonoTorrent.Client
         /// </summary>
         string Cookie { get; }
 
-        int ListenPort { get; }
-
         /// <summary>
         /// We glob together announces so that we don't iterate the network interfaces too frequently.
         /// </summary>
-        Queue<InfoHash> PendingAnnounces { get; }
+        Queue<(InfoHash, IPEndPoint)> PendingAnnounces { get; }
 
         /// <summary>
         /// Set to true when we're processing the pending announce queue.
@@ -89,15 +87,13 @@ namespace MonoTorrent.Client
         /// </summary>
         UdpClient UdpClient { get; set; }
 
-        public LocalPeerDiscovery (int listenPort)
+        public LocalPeerDiscovery ()
             : base (new IPEndPoint (IPAddress.Any, MulticastAddressV4.Port))
         {
-            ListenPort = listenPort;
-
             lock (Random)
                 Cookie = $"MT-{Random.Next (1, int.MaxValue)}";
             BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastAddressV4.Address}:{MulticastAddressV4.Port}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
-            PendingAnnounces = new Queue<InfoHash> ();
+            PendingAnnounces = new Queue<(InfoHash, IPEndPoint)> ();
             RateLimiterTask = Task.CompletedTask;
         }
 
@@ -105,11 +101,12 @@ namespace MonoTorrent.Client
         /// Send an announce request for this InfoHash.
         /// </summary>
         /// <param name="infoHash"></param>
+        /// <param name="listeningPort"></param>
         /// <returns></returns>
-        public Task Announce (InfoHash infoHash)
+        public Task Announce (InfoHash infoHash, IPEndPoint listeningPort)
         {
             lock (PendingAnnounces) {
-                PendingAnnounces.Enqueue (infoHash);
+                PendingAnnounces.Enqueue ((infoHash, listeningPort));
                 if (!ProcessingAnnounces) {
                     ProcessingAnnounces = true;
                     ProcessQueue ();
@@ -132,6 +129,7 @@ namespace MonoTorrent.Client
 
             while (true) {
                 InfoHash infoHash = null;
+                IPEndPoint endPoint = null;
                 lock (PendingAnnounces) {
                     if (PendingAnnounces.Count == 0) {
                         // Enforce a minimum delay before the next announce to avoid killing CPU by iterating network interfaces.
@@ -139,10 +137,10 @@ namespace MonoTorrent.Client
                         ProcessingAnnounces = false;
                         break;
                     }
-                    infoHash = PendingAnnounces.Dequeue ();
+                    (infoHash, endPoint) = PendingAnnounces.Dequeue ();
                 }
 
-                string message = string.Format (BaseSearchString, ListenPort, infoHash.ToHex ());
+                string message = string.Format (BaseSearchString, endPoint.Port, infoHash.ToHex ());
                 byte[] data = Encoding.ASCII.GetBytes (message);
 
                 foreach (var nic in nics) {
@@ -195,8 +193,10 @@ namespace MonoTorrent.Client
 
         protected override void Start (CancellationToken token)
         {
+            base.Start (token);
+
             UdpClient = new UdpClient (OriginalEndPoint);
-            EndPoint = (IPEndPoint) UdpClient.Client.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint) UdpClient.Client.LocalEndPoint;
 
             token.Register (() => UdpClient.Dispose ());
 

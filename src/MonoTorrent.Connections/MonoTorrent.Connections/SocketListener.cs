@@ -28,18 +28,24 @@
 
 
 using System.Net;
+using System.Threading;
 
 namespace MonoTorrent
 {
     public abstract class SocketListener : Listener, ISocketListener
     {
-        public IPEndPoint EndPoint { get; protected set; }
+        public IPEndPoint LocalEndPoint { get; protected set; }
 
         protected IPEndPoint OriginalEndPoint { get; set; }
 
         protected SocketListener (IPEndPoint endPoint)
         {
-            EndPoint = OriginalEndPoint = endPoint;
+            OriginalEndPoint = endPoint;
+        }
+
+        protected override void Start (CancellationToken token)
+        {
+            token.Register (() => LocalEndPoint = null);
         }
     }
 }

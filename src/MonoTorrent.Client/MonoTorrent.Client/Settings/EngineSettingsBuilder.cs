@@ -46,8 +46,8 @@ namespace MonoTorrent.Client
             bool allowLocalPeerDiscovery = false,
             bool allowPortForwarding = false,
             bool automaticFastResume = false,
-            int dhtPort = -1,
-            int listenPort = -1,
+            IPEndPoint dhtEndPoint = null,
+            IPEndPoint listenEndPoint = null,
             string cacheDirectory = null,
             bool usePartialFiles = false)
         {
@@ -56,16 +56,14 @@ namespace MonoTorrent.Client
                 AllowPortForwarding = allowPortForwarding,
                 AutoSaveLoadFastResume = automaticFastResume,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location), "test_cache_dir"),
-                DhtPort = dhtPort,
-                ListenPort = listenPort,
+                DhtEndPoint = dhtEndPoint,
+                ListenEndPoint = listenEndPoint,
                 UsePartialFiles = usePartialFiles,
             }.ToSettings ();
         }
 
         TimeSpan connectionTimeout;
-        int dhtPort;
         int diskCacheBytes;
-        int listenPort;
         int maximumConnections;
         int maximumDiskReadRate;
         int maximumDiskWriteRate;
@@ -163,10 +161,7 @@ namespace MonoTorrent.Client
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
         /// Choose -1 to disable DHT. Defaults to 0.
         /// </summary>
-        public int DhtPort {
-            get => dhtPort;
-            set => dhtPort = CheckPort (value);
-        }
+        public IPEndPoint DhtEndPoint { get; set; }
 
         /// <summary>
         /// When <see cref="EngineSettings.AutoSaveLoadFastResume"/> is true, this setting is used to control how fast
@@ -183,10 +178,7 @@ namespace MonoTorrent.Client
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
-        public int ListenPort {
-            get => listenPort;
-            set => listenPort = CheckPort (value);
-        }
+        public IPEndPoint ListenEndPoint { get; set; }
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -282,10 +274,10 @@ namespace MonoTorrent.Client
             AutoSaveLoadMagnetLinkMetadata = settings.AutoSaveLoadMagnetLinkMetadata;
             CacheDirectory = settings.CacheDirectory;
             ConnectionTimeout = settings.ConnectionTimeout;
-            DhtPort = settings.DhtPort;
+            DhtEndPoint = settings.DhtEndPoint;
             DiskCacheBytes = settings.DiskCacheBytes;
             FastResumeMode = settings.FastResumeMode;
-            ListenPort = settings.ListenPort;
+            ListenEndPoint = settings.ListenEndPoint;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
             MaximumDiskWriteRate = settings.MaximumDiskWriteRate;
@@ -316,10 +308,10 @@ namespace MonoTorrent.Client
                 autoSaveLoadMagnetLinkMetadata: AutoSaveLoadMagnetLinkMetadata,
                 cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
                 connectionTimeout: ConnectionTimeout,
-                dhtPort: DhtPort,
+                dhtEndPoint: DhtEndPoint,
                 diskCacheBytes: DiskCacheBytes,
                 fastResumeMode: FastResumeMode,
-                listenPort: ListenPort,
+                listenEndPoint: ListenEndPoint,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,
                 maximumDiskWriteRate: MaximumDiskWriteRate,

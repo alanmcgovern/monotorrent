@@ -684,9 +684,12 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
 
             if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > Engine.LocalPeerDiscovery.MinimumAnnounceInternal)) {
-                LastLocalPeerAnnounce = DateTime.Now;
-                LastLocalPeerAnnounceTimer.Restart ();
-                await Engine?.LocalPeerDiscovery.Announce (InfoHash);
+                if (Engine.PeerListener.LocalEndPoint != null) {
+                    LastLocalPeerAnnounce = DateTime.Now;
+                    LastLocalPeerAnnounceTimer.Restart ();
+
+                    await Engine?.LocalPeerDiscovery.Announce (InfoHash, Engine.PeerListener.LocalEndPoint);
+                }
             }
         }
 

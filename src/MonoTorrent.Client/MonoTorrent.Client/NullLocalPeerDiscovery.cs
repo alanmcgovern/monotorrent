@@ -48,13 +48,13 @@ namespace MonoTorrent.Client
 #pragma warning restore 0067
 
 
-        public IPEndPoint EndPoint => null;
+        public IPEndPoint LocalEndPoint => null;
         public ListenerStatus Status => ListenerStatus.NotListening;
 
         public TimeSpan MinimumAnnounceInternal { get; }
         public TimeSpan AnnounceInternal { get; }
 
-        public Task Announce (InfoHash infoHash)
+        public Task Announce (InfoHash infoHash, IPEndPoint listeningPort)
         {
             return Task.CompletedTask;
         }

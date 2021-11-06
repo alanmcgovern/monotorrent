@@ -82,19 +82,16 @@ namespace MonoTorrent.Dht
 
         #region Constructors
 
-        public DhtEngine (IDhtListener listener)
-            : this (listener, Factories.Default)
+        public DhtEngine ()
+            : this (Factories.Default)
         {
 
         }
 
-        public DhtEngine (IDhtListener listener, Factories factories)
+        public DhtEngine (Factories factories)
         {
-            if (listener == null)
-                throw new ArgumentNullException (nameof (listener));
-
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
-            MessageLoop = new MessageLoop (this, listener);
+            MessageLoop = new MessageLoop (this);
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
             TokenManager = new TokenManager (factories);
@@ -318,8 +315,8 @@ namespace MonoTorrent.Dht
             await tcs.Task;
         }
 
-        public void SetListener (IDhtListener listener)
-            =>  MessageLoop.SetListener (listener);
+        public async Task SetListenerAsync (IDhtListener listener)
+            =>  await MessageLoop.SetListener (listener);
 
         #endregion Methods
     }

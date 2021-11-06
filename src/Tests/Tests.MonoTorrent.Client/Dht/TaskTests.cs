@@ -49,11 +49,12 @@ namespace MonoTorrent.Dht
         readonly BEncodedString transactionId = "aa";
 
         [SetUp]
-        public void Setup ()
+        public async Task Setup ()
         {
             counter = 0;
             listener = new TestListener ();
-            engine = new DhtEngine (listener);
+            engine = new DhtEngine ();
+            await engine.SetListenerAsync (listener);
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 4));
         }
 

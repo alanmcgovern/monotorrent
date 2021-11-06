@@ -78,9 +78,9 @@ namespace MonoTorrent.Dht
             return Task.FromResult (new byte[0]);
         }
 
-        public void SetListener (IDhtListener listener)
+        public Task SetListenerAsync (IDhtListener listener)
         {
-
+            return Task.CompletedTask;
         }
 
         public Task StartAsync ()

@@ -19,11 +19,12 @@ namespace MonoTorrent.Dht
         DhtMessageFactory DhtMessageFactory => engine.MessageLoop.DhtMessageFactory;
 
         [SetUp]
-        public void Setup ()
+        public async Task Setup ()
         {
             listener = new TestListener ();
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
-            engine = new DhtEngine (listener);
+            engine = new DhtEngine ();
+            await engine.SetListenerAsync (listener);
             //engine.Add(node);
         }
 

@@ -46,7 +46,7 @@ namespace MonoTorrent.Tracker.Listeners
     {
         static readonly Logger logger = Logger.Create (nameof (UdpTrackerListener));
 
-        public IPEndPoint EndPoint { get; private set; }
+        public IPEndPoint LocalEndPoint { get; private set; }
 
         IPEndPoint OriginalEndPoint { get; }
 
@@ -64,7 +64,7 @@ namespace MonoTorrent.Tracker.Listeners
         public UdpTrackerListener (IPEndPoint endPoint)
         {
             ConnectionIDs = new Dictionary<IPAddress, long> ();
-            EndPoint = OriginalEndPoint = endPoint;
+            OriginalEndPoint = endPoint;
         }
 
         /// <summary>
@@ -77,10 +77,12 @@ namespace MonoTorrent.Tracker.Listeners
 
             var token = Cancellation.Token;
             var listener = new UdpClient (OriginalEndPoint);
-            token.Register (() => listener.Dispose ());
+            token.Register (() => {
+                LocalEndPoint = null;
+                listener.Dispose ();
+            });
 
-
-            EndPoint = (IPEndPoint) listener.Client.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint) listener.Client.LocalEndPoint;
 
             ReceiveAsync (listener, token);
             RaiseStatusChanged (ListenerStatus.Listening);

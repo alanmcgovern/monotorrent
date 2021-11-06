@@ -116,10 +116,10 @@ namespace MonoTorrent.Client
         public int DiskCacheBytes { get; } = 5 * 1024 * 1024;
 
         /// <summary>
-        /// The UDP port used for DHT communications. Use 0 to choose a random available port.
-        /// Choose -1 to disable DHT. Defaults to 0.
+        /// The UDP port used for DHT communications. Set the port to 0 to choose a random available port.
+        /// Set to null to disable DHT. Defaults to IPAddress.Any with port 0.
         /// </summary>
-        public int DhtPort { get; } = 0;
+        public IPEndPoint DhtEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
 
         /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
@@ -143,10 +143,10 @@ namespace MonoTorrent.Client
         public FastResumeMode FastResumeMode { get; } = FastResumeMode.BestEffort;
 
         /// <summary>
-        /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
-        /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
+        /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
+        /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any with port 0.
         /// </summary>
-        public int ListenPort { get; } = 0;
+        public IPEndPoint ListenEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -214,7 +214,12 @@ namespace MonoTorrent.Client
 
         }
 
-        internal EngineSettings (IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding, bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory, TimeSpan connectionTimeout, int dhtPort, int diskCacheBytes, FastResumeMode fastResumeMode, int listenPort, int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections, int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, bool usePartialFiles)
+        internal EngineSettings (
+            IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
+            bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
+            TimeSpan connectionTimeout, IPEndPoint dhtEndPoint, int diskCacheBytes, FastResumeMode fastResumeMode, IPEndPoint listenEndPoint,
+            int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections,
+            int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, bool usePartialFiles)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -224,12 +229,12 @@ namespace MonoTorrent.Client
             AutoSaveLoadDhtCache = autoSaveLoadDhtCache;
             AutoSaveLoadFastResume = autoSaveLoadFastResume;
             AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata;
-            DhtPort = dhtPort;
+            DhtEndPoint = dhtEndPoint;
             DiskCacheBytes = diskCacheBytes;
             CacheDirectory = cacheDirectory;
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
-            ListenPort = listenPort;
+            ListenEndPoint = listenEndPoint;
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
             MaximumDiskWriteRate = maximumDiskWriteRate;
@@ -270,10 +275,10 @@ namespace MonoTorrent.Client
                    && AutoSaveLoadFastResume == other.AutoSaveLoadFastResume
                    && AutoSaveLoadMagnetLinkMetadata == other.AutoSaveLoadMagnetLinkMetadata
                    && CacheDirectory == other.CacheDirectory
-                   && DhtPort == other.DhtPort
+                   && Equals (DhtEndPoint, other.DhtEndPoint)
                    && DiskCacheBytes == other.DiskCacheBytes
                    && FastResumeMode == other.FastResumeMode
-                   && ListenPort == other.ListenPort
+                   && Equals(ListenEndPoint, other.ListenEndPoint)
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate
                    && MaximumDiskWriteRate == other.MaximumDiskWriteRate
@@ -292,7 +297,7 @@ namespace MonoTorrent.Client
                    MaximumDownloadSpeed +
                    MaximumUploadSpeed +
                    MaximumHalfOpenConnections +
-                   ListenPort.GetHashCode () +
+                   ListenEndPoint?.GetHashCode () ?? 0 +
                    AllowedEncryption.GetHashCode () +
                    CacheDirectory.GetHashCode ();
         }

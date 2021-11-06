@@ -71,6 +71,15 @@ namespace MonoTorrent.Client
                     property.SetValue (builder, (int) ((BEncodedNumber) value).Number);
                 } else if (property.PropertyType == typeof (IPAddress)) {
                     property.SetValue (builder, IPAddress.Parse (((BEncodedString) value).Text));
+                } else if (property.PropertyType == typeof(IPEndPoint)) {
+                    var list = (BEncodedList) value;
+                    IPEndPoint endPoint = null;
+                    if (list.Count == 2) {
+                        var ipAddress = (BEncodedString) list.Single (t => t is BEncodedString);
+                        var port = (BEncodedNumber) list.Single (t => t is BEncodedNumber);
+                        endPoint = new IPEndPoint (IPAddress.Parse (ipAddress.Text), (int) port.Number);
+                    }
+                    property.SetValue (builder, endPoint);
                 } else if (property.PropertyType == typeof (IList<EncryptionType>)) {
                     var list = (IList<EncryptionType>) property.GetValue (builder);
                     list.Clear ();
@@ -93,11 +102,15 @@ namespace MonoTorrent.Client
                     string value => new BEncodedString (value),
                     TimeSpan value => new BEncodedNumber (value.Ticks),
                     IPAddress value => new BEncodedString (value.ToString ()),
+                    IPEndPoint value => new BEncodedList { (BEncodedString) value.Address.ToString (), (BEncodedNumber) value.Port },
                     int value => new BEncodedNumber (value),
                     FastResumeMode value => new BEncodedString (value.ToString ()),
                     null => null,
                     { } => throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}"),
                 };
+                // Ensure default values aren't accidentally propagated.
+                if (property.PropertyType == typeof (IPEndPoint) && convertedValue == null)
+                    convertedValue = new BEncodedList ();
                 if (convertedValue != null)
                     dict[property.Name] = convertedValue;
             }
