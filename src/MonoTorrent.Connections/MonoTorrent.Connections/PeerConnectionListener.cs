@@ -50,6 +50,8 @@ namespace MonoTorrent.Client.Listeners
 
         protected override void Start (CancellationToken token)
         {
+            base.Start (token);
+
             var listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var connectArgs = new SocketAsyncEventArgs ();
             token.Register (() => {

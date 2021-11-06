@@ -28,6 +28,7 @@
 
 
 using System.Net;
+using System.Threading;
 
 namespace MonoTorrent
 {
@@ -39,7 +40,12 @@ namespace MonoTorrent
 
         protected SocketListener (IPEndPoint endPoint)
         {
-            LocalEndPoint = OriginalEndPoint = endPoint;
+            OriginalEndPoint = endPoint;
+        }
+
+        protected override void Start (CancellationToken token)
+        {
+            token.Register (() => LocalEndPoint = null);
         }
     }
 }

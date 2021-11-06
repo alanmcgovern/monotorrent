@@ -61,6 +61,8 @@ namespace MonoTorrent
 
         protected override void Start (CancellationToken token)
         {
+            base.Start (token);
+
             UdpClient client = Client = new UdpClient (OriginalEndPoint);
             LocalEndPoint = (IPEndPoint) client.Client.LocalEndPoint;
             token.Register (() => {

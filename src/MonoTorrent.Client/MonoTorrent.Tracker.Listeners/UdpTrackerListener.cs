@@ -64,7 +64,7 @@ namespace MonoTorrent.Tracker.Listeners
         public UdpTrackerListener (IPEndPoint endPoint)
         {
             ConnectionIDs = new Dictionary<IPAddress, long> ();
-            LocalEndPoint = OriginalEndPoint = endPoint;
+            OriginalEndPoint = endPoint;
         }
 
         /// <summary>
@@ -77,8 +77,10 @@ namespace MonoTorrent.Tracker.Listeners
 
             var token = Cancellation.Token;
             var listener = new UdpClient (OriginalEndPoint);
-            token.Register (() => listener.Dispose ());
-
+            token.Register (() => {
+                LocalEndPoint = null;
+                listener.Dispose ();
+            });
 
             LocalEndPoint = (IPEndPoint) listener.Client.LocalEndPoint;
 
