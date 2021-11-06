@@ -44,11 +44,6 @@ namespace MonoTorrent.Client.Connections
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
         /// <summary>
-        /// This stores a reusable 'SocketAsyncEventArgs' for every byte[] owned by ClientEngine.BufferPool
-        /// </summary>
-        static readonly Dictionary<byte[], SocketAsyncEventArgs> bufferCache = new Dictionary<byte[], SocketAsyncEventArgs> ();
-
-        /// <summary>
         /// Where possible we will use a SocketAsyncEventArgs object which has already had
         /// 'SetBuffer(byte[],int,int)' invoked on it for the given byte[]. Reusing these is
         /// much more efficient than constantly calling SetBuffer on a different 'SocketAsyncEventArgs'
@@ -162,11 +157,9 @@ namespace MonoTorrent.Client.Connections
             args.SetBuffer (offset, count);
             args.UserToken = ReceiveTcs;
 
-#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             AsyncFlowControl? control = null;
             if (!ExecutionContext.IsFlowSuppressed ())
                 control = ExecutionContext.SuppressFlow ();
-#endif
 
             try {
                 if (!Socket.ReceiveAsync (args))
@@ -174,9 +167,7 @@ namespace MonoTorrent.Client.Connections
             } catch (ObjectDisposedException) {
                 ReceiveTcs.SetResult (0);
             } finally {
-#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
-#endif
             }
 
             return ReceiveTcs.Task;
@@ -188,11 +179,9 @@ namespace MonoTorrent.Client.Connections
             args.SetBuffer (offset, count);
             args.UserToken = SendTcs;
 
-#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             AsyncFlowControl? control = null;
             if (!ExecutionContext.IsFlowSuppressed ())
                 control = ExecutionContext.SuppressFlow ();
-#endif
 
             try {
                 if (!Socket.SendAsync (args))
@@ -200,9 +189,7 @@ namespace MonoTorrent.Client.Connections
             } catch (ObjectDisposedException) {
                 SendTcs.SetResult (0);
             } finally {
-#if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
                 control?.Undo ();
-#endif
             }
 
             return SendTcs.Task;
