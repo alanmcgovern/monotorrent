@@ -36,8 +36,8 @@ namespace MonoTorrent.Client.Tracker
     {
         static readonly Dictionary<string, Func<Uri, ITracker>> trackerTypes = new Dictionary<string, Func<Uri, ITracker>> {
             { "udp", uri => new UdpTracker (uri) },
-            { "http", uri => new HTTPTracker (uri) },
-            { "https", uri => new HTTPTracker (uri) },
+            { "http", uri => new HTTPTracker (uri, Factories.Default.CreateHttpClient) },
+            { "https", uri => new HTTPTracker (uri, Factories.Default.CreateHttpClient) },
         };
 
         public static void Register (string protocol, Type trackerType)

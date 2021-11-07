@@ -158,10 +158,18 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void TestPartialData ()
+        public async Task TestPartialData ()
         {
             partialData = true;
-            Assert.ThrowsAsync<WebException> (ReceiveFirst);
+            bool success = false;
+            try {
+                await ReceiveFirst ();
+                success = true;
+            } catch {
+
+            }
+            // We can't assert on the exception type as it's an internal type.
+            Assert.IsFalse (success);
         }
 
         [Test]
@@ -170,7 +178,7 @@ namespace MonoTorrent.Client
             ((HttpPeerConnection) connection).ConnectionTimeout = TimeSpan.FromMilliseconds (100);
             listener.Stop ();
 
-            Assert.ThrowsAsync<WebException> (ReceiveFirst);
+            Assert.ThrowsAsync<TaskCanceledException> (ReceiveFirst);
         }
 
         [Test]

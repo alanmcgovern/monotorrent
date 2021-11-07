@@ -34,7 +34,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
-    abstract class Tracker : ITracker
+    public abstract class Tracker : ITracker
     {
         public bool CanAnnounce { get; protected set; }
         public bool CanScrape { get; protected set; }
