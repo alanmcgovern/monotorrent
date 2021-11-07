@@ -72,7 +72,7 @@ namespace SampleClient
                 new EngineSettingsBuilder {
                     AllowedEncryption = new[] { EncryptionType.PlainText },
                     DiskCacheBytes = DataSize,
-                    ListenPort = port++
+                    ListenEndPoint = new IPEndPoint(IPAddress.Any, port++)
                 }.ToSettings ()
             );
             await seeder.ChangePieceWriterAsync (new NullWriter ());
@@ -82,7 +82,7 @@ namespace SampleClient
                     new EngineSettingsBuilder {
                         AllowedEncryption = new[] { EncryptionType.PlainText },
                         DiskCacheBytes = DataSize,
-                        ListenPort = p,
+                        ListenEndPoint = new IPEndPoint (IPAddress.Any, p),
                     }.ToSettings ()
                 );
             }).ToArray ();

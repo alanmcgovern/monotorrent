@@ -300,7 +300,7 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            PeerListener = (settings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, settings.ListenPort))) ?? new NullPeerListener ();
+            PeerListener = (settings.ListenEndPoint == null ? null : Factories.CreatePeerConnectionListener (settings.ListenEndPoint)) ?? new NullPeerListener ();
             listenManager.SetListener (PeerListener);
 
             DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
@@ -692,7 +692,7 @@ namespace MonoTorrent.Client
                 if (!manager.CanUseDht)
                     continue;
 
-                DhtEngine.Announce (manager.InfoHash, Settings.ListenPort);
+                DhtEngine.Announce (manager.InfoHash, Settings.ListenEndPoint?.Port ?? -1);
                 DhtEngine.GetPeers (manager.InfoHash);
             }
         }
@@ -913,12 +913,12 @@ namespace MonoTorrent.Client
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
 
-            if (oldSettings.ListenPort != newSettings.ListenPort) {
+            if (!Equals(oldSettings.ListenEndPoint, newSettings.ListenEndPoint)) {
                 if (PeerListener.LocalEndPoint != null)
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port), CancellationToken.None);
 
                 PeerListener.Stop ();
-                PeerListener = (newSettings.ListenPort == -1 ? null : Factories.CreatePeerConnectionListener (new IPEndPoint (IPAddress.Any, newSettings.ListenPort))) ?? new NullPeerListener ();
+                PeerListener = (newSettings.ListenEndPoint == null ? null : Factories.CreatePeerConnectionListener (newSettings.ListenEndPoint)) ?? new NullPeerListener ();
                 listenManager.SetListener (PeerListener);
 
                 if (IsRunning) {

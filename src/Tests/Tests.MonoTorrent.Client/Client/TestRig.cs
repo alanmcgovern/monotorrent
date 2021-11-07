@@ -410,7 +410,7 @@ namespace MonoTorrent.Client
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
                 cacheDirectory: cacheDir,
-                listenPort: 12345
+                listenEndPoint: new IPEndPoint(IPAddress.Any, 12345)
             ), factories);
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);

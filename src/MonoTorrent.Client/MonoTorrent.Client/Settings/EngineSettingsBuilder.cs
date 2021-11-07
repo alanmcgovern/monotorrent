@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
             bool allowPortForwarding = false,
             bool automaticFastResume = false,
             IPEndPoint dhtEndPoint = null,
-            int listenPort = -1,
+            IPEndPoint listenEndPoint = null,
             string cacheDirectory = null,
             bool usePartialFiles = false)
         {
@@ -57,14 +57,13 @@ namespace MonoTorrent.Client
                 AutoSaveLoadFastResume = automaticFastResume,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location), "test_cache_dir"),
                 DhtEndPoint = dhtEndPoint,
-                ListenPort = listenPort,
+                ListenEndPoint = listenEndPoint,
                 UsePartialFiles = usePartialFiles,
             }.ToSettings ();
         }
 
         TimeSpan connectionTimeout;
         int diskCacheBytes;
-        int listenPort;
         int maximumConnections;
         int maximumDiskReadRate;
         int maximumDiskWriteRate;
@@ -179,10 +178,7 @@ namespace MonoTorrent.Client
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
-        public int ListenPort {
-            get => listenPort;
-            set => listenPort = CheckPort (value);
-        }
+        public IPEndPoint ListenEndPoint { get; set; }
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -281,7 +277,7 @@ namespace MonoTorrent.Client
             DhtEndPoint = settings.DhtEndPoint;
             DiskCacheBytes = settings.DiskCacheBytes;
             FastResumeMode = settings.FastResumeMode;
-            ListenPort = settings.ListenPort;
+            ListenEndPoint = settings.ListenEndPoint;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
             MaximumDiskWriteRate = settings.MaximumDiskWriteRate;
@@ -315,7 +311,7 @@ namespace MonoTorrent.Client
                 dhtEndPoint: DhtEndPoint,
                 diskCacheBytes: DiskCacheBytes,
                 fastResumeMode: FastResumeMode,
-                listenPort: ListenPort,
+                listenEndPoint: ListenEndPoint,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,
                 maximumDiskWriteRate: MaximumDiskWriteRate,

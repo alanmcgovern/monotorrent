@@ -49,7 +49,7 @@ namespace SampleClient
                 AutoSaveLoadMagnetLinkMetadata = true,
 
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenPort = 55123,
+                ListenEndPoint = new IPEndPoint (IPAddress.Any, 55123),
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
                 DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
