@@ -14,11 +14,13 @@
     <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.PortForwarding\MonoTorrent.PortForwarding.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
     <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">
     <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
 </Project>

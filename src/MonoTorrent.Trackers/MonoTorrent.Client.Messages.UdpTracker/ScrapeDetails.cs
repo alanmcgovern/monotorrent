@@ -1,5 +1,5 @@
 //
-// ErrorMessage.cs
+// ScrapeDetails.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,43 +27,19 @@
 //
 
 
-using System.Text;
-
 namespace MonoTorrent.Messages.UdpTracker
 {
-    class ErrorMessage : UdpTrackerMessage
+    public class ScrapeDetails
     {
-        public override int ByteLength => 4 + 4 + Encoding.ASCII.GetByteCount (Error);
-        public string Error { get; private set; }
+        public int Complete { get; }
+        public int Leeches { get; }
+        public int Seeds { get; }
 
-        public ErrorMessage ()
-            : this (0, "")
+        public ScrapeDetails (int seeds, int leeches, int complete)
         {
-        }
-
-        public ErrorMessage (int transactionId, string error)
-            : base (3, transactionId)
-        {
-            Error = error;
-        }
-
-        public override void Decode (byte[] buffer, int offset, int length)
-        {
-            if (Action != ReadInt (buffer, ref offset))
-                ThrowInvalidActionException ();
-            TransactionId = ReadInt (buffer, ref offset);
-            Error = ReadString (buffer, ref offset, length - offset);
-        }
-
-        public override int Encode (byte[] buffer, int offset)
-        {
-            int written = offset;
-
-            written += Write (buffer, written, Action);
-            written += Write (buffer, written, TransactionId);
-            written += WriteAscii (buffer, written, Error);
-
-            return written - offset;
+            Complete = complete;
+            Leeches = leeches;
+            Seeds = seeds;
         }
     }
 }

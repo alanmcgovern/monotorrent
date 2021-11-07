@@ -27,11 +27,13 @@
 //
 
 
+using System;
+
 using MonoTorrent.Client;
 
 namespace MonoTorrent.Messages.UdpTracker
 {
-    abstract class UdpTrackerMessage : Message
+    public abstract class UdpTrackerMessage : Message
     {
         public int Action { get; }
         public int TransactionId { get; protected set; }
@@ -69,7 +71,7 @@ namespace MonoTorrent.Messages.UdpTracker
                     m = new ErrorMessage ();
                     break;
                 default:
-                    throw new ProtocolException ($"Invalid udp message received: {buffer[offset]}");
+                    throw new InvalidOperationException ($"Invalid udp message received: {buffer[offset]}");
             }
 
             try {

@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.Tracker
     {
         public InfoHash InfoHash { get; }
 
-        internal ScrapeParameters (InfoHash infoHash)
+        public ScrapeParameters (InfoHash infoHash)
         {
             InfoHash = infoHash;
         }

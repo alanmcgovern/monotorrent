@@ -48,6 +48,8 @@ namespace MonoTorrent.Client.Tracker
 
         public SemaphoreSlim  AnnounceLimiter { get; }
 
+        Factories Factories { get; }
+
         /// <summary>
         /// If this is set to 'true' then <see cref="AddTrackerAsync(ITracker)"/>,
         /// <see cref="AddTrackerAsync(Uri)"/> and <see cref="RemoveTrackerAsync(ITracker)"/> will throw an
@@ -68,19 +70,20 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
+        /// <param name="factories"></param>
         /// <param name="requestFactory">The factory used to create tracker requests. Typically a <see cref="TorrentManager"/> instance.</param>
         /// <param name="announces">The list of tracker tiers</param>
         /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
-        internal TrackerManager (ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
+        internal TrackerManager (Factories factories, ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
         {
             AnnounceLimiter = new SemaphoreSlim (10);
-
+            Factories = factories;
             RequestFactory = requestFactory;
             Private = isPrivate;
 
             var trackerTiers = new List<TrackerTier> ();
             foreach (var announceTier in announces) {
-                var tier = new TrackerTier (announceTier);
+                var tier = new TrackerTier (factories, announceTier);
                 if (tier.Trackers.Count > 0) {
                     tier.AnnounceComplete += RaiseAnnounceComplete;
                     tier.ScrapeComplete += RaiseScrapeComplete;
@@ -115,7 +118,7 @@ namespace MonoTorrent.Client.Tracker
             if (Private)
                 throw new InvalidOperationException ("Cannot add trackers to a private Torrent");
 
-            var tracker = TrackerFactory.Create (trackerUri);
+            var tracker = Factories.CreateTracker (trackerUri);
             if (tracker != null)
                 return AddTrackerAsync (tracker);
             else

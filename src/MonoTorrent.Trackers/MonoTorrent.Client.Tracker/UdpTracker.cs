@@ -40,12 +40,12 @@ using ReusableTasks;
 namespace MonoTorrent.Client.Tracker
 {
     [DebuggerDisplay("{" + nameof(Uri)+ "}")]
-    class UdpTracker : Tracker
+    public class UdpTracker : Tracker
     {
         Task<long> ConnectionIdTask { get; set; }
         ValueStopwatch LastConnected;
         int MaxRetries { get; } = 3;
-        internal TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
+        public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
 
         public UdpTracker (Uri announceUrl)
             : base (announceUrl)
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client.Tracker
                 // Calling the UdpClient ctor which takes a hostname, or calling the Connect method,
                 // results in a synchronous DNS resolve. Ensure we're on a threadpool thread to avoid
                 // blocking.
-                await MainLoop.SwitchToThreadpool ();
+                await new ThreadSwitcher ();
                 using var udpClient = new UdpClient (Uri.Host, Uri.Port);
                 using (cts.Token.Register (() => udpClient.Dispose ())) {
                     SendAsync (udpClient, msg, cts.Token);
@@ -166,20 +166,17 @@ namespace MonoTorrent.Client.Tracker
             throw new OperationCanceledException ("The tracker did not respond.");
         }
 
-        void SendAsync (UdpClient client, UdpTrackerMessage msg, CancellationToken token)
+        async void SendAsync (UdpClient client, UdpTrackerMessage msg, CancellationToken token)
         {
             byte[] buffer = msg.Encode ();
-            client.Send (buffer, buffer.Length);
-
-            ClientEngine.MainLoop.QueueTimeout (RetryDelay, () => {
-                try {
-                    if (!token.IsCancellationRequested)
-                        client.Send (buffer, buffer.Length);
-                    return !token.IsCancellationRequested;
-                } catch {
-                    return false;
+            try {
+                do {
+                    client.Send (buffer, buffer.Length);
+                    await Task.Delay (RetryDelay, token);
                 }
-            });
+                while (!token.IsCancellationRequested);
+            } catch {
+            }
         }
     }
 }

@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
         public ManualTrackerManager (Uri tracker)
             : this ()
         {
-            Tiers.Add (new TrackerTier (TrackerFactory.Create (tracker)));
+            Tiers.Add (new TrackerTier (Factories.Default.CreateTracker (tracker)));
         }
 
         public ReusableTask AddTrackerAsync (ITracker tracker)
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
 
         public ReusableTask AddTrackerAsync (Uri trackerUri)
         {
-            return AddTrackerAsync (TrackerFactory.Create (trackerUri));
+            return AddTrackerAsync (Factories.Default.CreateTracker (trackerUri));
         }
 
         public ReusableTask<bool> RemoveTrackerAsync (ITracker tracker)
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public void RaiseAnnounceComplete (ITracker tracker, bool successful, IList<Peer> peers)
+        public void RaiseAnnounceComplete (ITracker tracker, bool successful, IList<PeerInfo> peers)
             => AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, successful, peers));
 
         public void RaiseScrapeComplete (ITracker tracker, bool successful)

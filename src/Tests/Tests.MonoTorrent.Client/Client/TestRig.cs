@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
                 throw new TrackerException ("Deliberately failing announce request", null);
 
             AnnounceParameters.Add (parameters);
-            return ReusableTask.FromResult (new AnnounceResponse (peers, null, null));
+            return ReusableTask.FromResult (new AnnounceResponse (peers.Select (t => new PeerInfo (t.ConnectionUri, t.PeerId?.TextBytes)).ToArray (), null, null));
         }
 
         protected override ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
@@ -405,7 +405,9 @@ namespace MonoTorrent.Client
             var factories = Factories.Default
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
-                .WithPeerConnectionListenerCreator (endpoint => new CustomListener ());
+                .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
+                .WithTrackerCreator("custom", uri => new CustomTracker (uri))
+                ;
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
@@ -419,11 +421,6 @@ namespace MonoTorrent.Client
 
             RecreateManager ().Wait ();
             MetadataPath = Path.Combine (Engine.Settings.MetadataCacheDirectory, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
-        }
-
-        static TestRig ()
-        {
-            TrackerFactory.Register ("custom", uri => new CustomTracker (uri));
         }
 
         private static void AddAnnounces (BEncodedDictionary dict, string[][] tiers)

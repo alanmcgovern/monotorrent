@@ -31,13 +31,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Connections;
 using MonoTorrent.Logging;
 
 using ReusableTasks;
@@ -49,19 +47,16 @@ namespace MonoTorrent.Client.Tracker
         static readonly Logger logger = Logger.Create (nameof (HTTPTracker));
 
         static readonly Random random = new Random ();
-        static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds (10);
 
-        internal BEncodedString TrackerId { get; set; }
+        public BEncodedString TrackerId { get; internal set; }
 
-        internal BEncodedString Key { get; set; }
+        public BEncodedString Key { get; set; }
 
-        internal TimeSpan RequestTimeout { get; set; } = DefaultRequestTimeout;
+        public Uri ScrapeUri { get; }
 
-        internal Uri ScrapeUri { get; }
+        HttpClient Client { get; }
 
-        Factories.HttpClientCreator HttpClientCreator { get; }
-
-        public HTTPTracker (Uri announceUrl, Factories.HttpClientCreator httpClientCreator)
+        public HTTPTracker (Uri announceUrl, HttpClient client)
             : base (announceUrl)
         {
             string uri = announceUrl.OriginalString;
@@ -74,11 +69,12 @@ namespace MonoTorrent.Client.Tracker
             CanScrape = ScrapeUri != null;
             Status = TrackerState.Unknown;
 
-            HttpClientCreator = httpClientCreator;
+            Client = client;
 
             // Use a random integer prefixed by our identifier.
             lock (random)
-                Key = new BEncodedString ($"{VersionInfo.ClientVersion}-{random.Next (1, int.MaxValue)}");
+                // FIXME: Key = new BEncodedString ($"{VersionInfo.ClientVersion}-{random.Next (1, int.MaxValue)}");
+                Key = new BEncodedString ($"MO-{random.Next (1, int.MaxValue)}");
         }
 
         protected override async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
@@ -86,26 +82,19 @@ namespace MonoTorrent.Client.Tracker
             // WebRequest.Create can be a comparatively slow operation as reported
             // by profiling. Switch this to the threadpool so the querying of default
             // proxies, and any DNS requests, are definitely not run on the main thread.
-            await MainLoop.SwitchToThreadpool ();
+            await new ThreadSwitcher ();
 
             // Clear out previous failure state
             FailureMessage = "";
             WarningMessage = "";
-            var peers = new List<Peer> ();
+            var peers = new List<PeerInfo> ();
 
             Uri announceString = CreateAnnounceString (parameters);
-            using var client = HttpClientCreator ();
-            client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
-
             HttpResponseMessage response;
-
-            // Ensure the supplied 'token' causes the request to be cancelled too.
-            using var cts = new CancellationTokenSource (RequestTimeout);
-            using var registration = token.Register (cts.Cancel);
 
             try {
                 Status = TrackerState.Connecting;
-                response = await client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead,  cts.Token);
+                response = await Client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead,  token);
             } catch (Exception ex) {
                 Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
@@ -113,7 +102,7 @@ namespace MonoTorrent.Client.Tracker
             }
 
             try {
-                using var responseRegistration = cts.Token.Register (() => response.Dispose ());
+                using var responseRegistration = token.Register (() => response.Dispose ());
                 using (response) {
                     peers = await AnnounceReceivedAsync (response).ConfigureAwait (false);
                     logger.InfoFormatted ("Tracker {0} sent {1} peers", Uri, peers.Count);
@@ -132,7 +121,7 @@ namespace MonoTorrent.Client.Tracker
             // WebRequest.Create can be a comparatively slow operation as reported
             // by profiling. Switch this to the threadpool so the querying of default
             // proxies, and any DNS requests, are definitely not run on the main thread.
-            await MainLoop.SwitchToThreadpool ();
+            await new ThreadSwitcher ();
 
             string url = ScrapeUri.OriginalString;
             // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
@@ -141,16 +130,10 @@ namespace MonoTorrent.Client.Tracker
             else
                 url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
 
-            using var client = HttpClientCreator ();
-            client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
-
             HttpResponseMessage response;
 
-            // Ensure the supplied 'token' causes the request to be cancelled too.
-            using var cts = new CancellationTokenSource (RequestTimeout);
-            using var registration = token.Register (cts.Cancel);
             try {
-                response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                response = await Client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, token);
             } catch (Exception ex) {
                 Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
@@ -158,7 +141,7 @@ namespace MonoTorrent.Client.Tracker
             }
 
             try {
-                using var responseRegistration = cts.Token.Register (() => response.Dispose ());
+                using var responseRegistration = token.Register (() => response.Dispose ());
                 using (response)
                     await ScrapeReceivedAsync (parameters.InfoHash, response).ConfigureAwait (false);
                 Status = TrackerState.Ok;
@@ -174,7 +157,7 @@ namespace MonoTorrent.Client.Tracker
         {
             var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
-             .Add ("peer_id", parameters.PeerId.UrlEncode ())
+             .Add ("peer_id", ((BEncodedString)parameters.PeerId).UrlEncode ())
              .Add ("port", parameters.Port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)
@@ -248,18 +231,18 @@ namespace MonoTorrent.Client.Tracker
             return Uri.GetHashCode ();
         }
 
-        async Task<List<Peer>> AnnounceReceivedAsync (HttpResponseMessage response)
+        async Task<List<PeerInfo>> AnnounceReceivedAsync (HttpResponseMessage response)
         {
-            await MainLoop.SwitchToThreadpool ();
+            await new ThreadSwitcher ();
 
             BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
-            var peers = new List<Peer> ();
+            var peers = new List<PeerInfo> ();
             HandleAnnounce (dict, peers);
             Status = TrackerState.Ok;
             return peers;
         }
 
-        void HandleAnnounce (BEncodedDictionary dict, List<Peer> peers)
+        void HandleAnnounce (BEncodedDictionary dict, List<PeerInfo> peers)
         {
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                 switch (keypair.Key.Text) {
@@ -289,9 +272,9 @@ namespace MonoTorrent.Client.Tracker
 
                     case ("peers"):
                         if (keypair.Value is BEncodedList)          // Non-compact response
-                            peers.AddRange (Peer.Decode ((BEncodedList) keypair.Value));
+                            peers.AddRange (PeerDecoder.Decode ((BEncodedList) keypair.Value));
                         else if (keypair.Value is BEncodedString)   // Compact response
-                            peers.AddRange (Peer.Decode ((BEncodedString) keypair.Value));
+                            peers.AddRange (PeerDecoder.Decode ((BEncodedString) keypair.Value));
                         break;
 
                     case ("failure reason"):
@@ -311,7 +294,7 @@ namespace MonoTorrent.Client.Tracker
 
         async Task ScrapeReceivedAsync (InfoHash infoHash, HttpResponseMessage response)
         {
-            await MainLoop.SwitchToThreadpool ();
+            await new ThreadSwitcher ();
 
             BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
 

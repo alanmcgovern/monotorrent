@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Tracker
             return new AnnounceParameters (Manager.Monitor.DataBytesDownloaded,
                                           Manager.Monitor.DataBytesUploaded,
                                           bytesLeft,
-                                          clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId,
+                                          clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId.TextBytes,
                                           ip, port, supportsEncryption);
         }
 

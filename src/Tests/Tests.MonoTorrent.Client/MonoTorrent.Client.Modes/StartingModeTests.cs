@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task Announce ()
         {
-            await TrackerManager.AddTrackerAsync (TrackerFactory.Create (new Uri ("http://1.1.1.1")));
+            await TrackerManager.AddTrackerAsync (Factories.Default.CreateTracker (new Uri ("http://1.1.1.1")));
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;

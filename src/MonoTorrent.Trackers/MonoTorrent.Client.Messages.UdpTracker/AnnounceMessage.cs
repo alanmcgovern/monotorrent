@@ -34,7 +34,7 @@ using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Messages.UdpTracker
 {
-    class AnnounceMessage : UdpTrackerMessage
+    public class AnnounceMessage : UdpTrackerMessage
     {
         public override int ByteLength => 8 + 4 + 4 + 20 + 20 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 2;
 

@@ -1,10 +1,10 @@
-﻿//
-// AnnounceResponse.cs
+//
+// AuthenticationMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,32 +28,35 @@
 
 
 using System;
-using System.Collections.Generic;
+using System.Text;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Messages.UdpTracker
 {
-    public class AnnounceResponse
+    public class AuthenticationMessage : Message
     {
-        /// <summary>
-        /// The failure message returned by the tracker.
-        /// </summary>
-        public string FailureMessage { get; }
+        byte usernameLength;
+        string username;
+        byte[] password;
 
-        /// <summary>
-        /// The list of peers returned by the tracker.
-        /// </summary>
-        public IList<Peer> Peers { get; }
+        public override int ByteLength => 4 + usernameLength + 8;
 
-        /// <summary>
-        /// The warning message returned by the tracker.
-        /// </summary>
-        public string WarningMessage { get; }
-
-        public AnnounceResponse (IList<Peer> peers, string warningMessage, string failureMessage)
+        public override void Decode (byte[] buffer, int offset, int length)
         {
-            Peers = peers ?? Array.Empty<Peer> ();
-            WarningMessage = warningMessage;
-            FailureMessage = failureMessage;
+            usernameLength = buffer[offset];
+            offset++;
+            username = Encoding.ASCII.GetString (buffer, offset, usernameLength);
+            offset += usernameLength;
+            password = new byte[8];
+            Buffer.BlockCopy (buffer, offset, password, 0, password.Length);
+        }
+
+        public override int Encode (byte[] buffer, int offset)
+        {
+            int written = Write (buffer, offset, usernameLength);
+            byte[] name = Encoding.ASCII.GetBytes (username);
+            written += Write (buffer, offset, name, 0, name.Length);
+            written += Write (buffer, offset, password, 0, password.Length);
+            return written;
         }
     }
 }

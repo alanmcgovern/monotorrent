@@ -34,21 +34,21 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent.Messages.UdpTracker
 {
-    class AnnounceResponseMessage : UdpTrackerMessage
+    public class AnnounceResponseMessage : UdpTrackerMessage
     {
         public override int ByteLength => (4 * 5 + Peers.Count * 6);
         public TimeSpan Interval { get; private set; }
         public int Leechers { get; private set; }
-        public List<Peer> Peers { get; private set; }
+        public List<PeerInfo> Peers { get; private set; }
         public int Seeders { get; private set; }
 
         public AnnounceResponseMessage ()
-            : this (0, TimeSpan.Zero, 0, 0, new List<Peer> ())
+            : this (0, TimeSpan.Zero, 0, 0, new List<PeerInfo> ())
         {
 
         }
 
-        public AnnounceResponseMessage (int transactionId, TimeSpan interval, int leechers, int seeders, List<Peer> peers)
+        public AnnounceResponseMessage (int transactionId, TimeSpan interval, int leechers, int seeders, List<PeerInfo> peers)
             : base (1, transactionId)
         {
             Interval = interval;
@@ -66,7 +66,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Leechers = ReadInt (buffer, offset + 12);
             Seeders = ReadInt (buffer, offset + 16);
 
-            IList<Peer> peers = Peer.FromCompact (buffer, 20);
+            IList<PeerInfo> peers = PeerInfo.FromCompact (buffer, 20);
             Peers.AddRange (peers);
         }
 
