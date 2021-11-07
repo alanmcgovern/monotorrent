@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
+using DotProxify;
 using MonoTorrent;
 using MonoTorrent.Client;
 
@@ -29,6 +30,10 @@ namespace SampleClient
 
         static async Task MainAsync (string[] args, CancellationToken token)
         {
+            using var socks5 = new MonoTorrent.Connections.Proxy.Socks5 (Factories.Default, new IPEndPoint (IPAddress.Loopback, 1080));
+            // This starts a local HTTP listener so HTTP(s) requests can be tunneled through the socks proxy.
+            socks5.Initialize ();
+
             // Give an example of how settings can be modified for the engine.
             var settingBuilder = new EngineSettingsBuilder {
                 // Allow the engine to automatically forward ports using upnp/nat-pmp (if a compatible router is available)
@@ -54,7 +59,7 @@ namespace SampleClient
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
                 DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
             };
-            using var engine = new ClientEngine (settingBuilder.ToSettings ());
+            using var engine = new ClientEngine (settingBuilder.ToSettings (), socks5.Factories);
 
             Task task;
             if (args.Length == 1 && args[0] == "--vlc") {
