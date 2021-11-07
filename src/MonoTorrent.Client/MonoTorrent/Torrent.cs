@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -406,42 +407,20 @@ namespace MonoTorrent
         /// <summary>
         /// Loads a .torrent file from the specified URL
         /// </summary>
+        /// <param name="client">The HttpClient used to download the url</param>
         /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="location">The path to download the .torrent to before it gets loaded</param>
+        /// <param name="savePath">The path to download the .torrent to before it gets loaded</param>
         /// <returns></returns>
-        public static Torrent Load (Uri url, string location)
+        public static async Task<Torrent> LoadAsync (HttpClient client, Uri url, string savePath)
         {
-            Check.Url (url);
-            Check.Location (location);
-
             try {
-                using var client = new WebClient ();
-                client.DownloadFile (url, location);
+                File.WriteAllBytes (savePath, await client.GetByteArrayAsync (url));
             } catch (Exception ex) {
-                File.Delete (location);
+                File.Delete (savePath);
                 throw new TorrentException ("Could not download .torrent file from the specified url", ex);
             }
 
-            return Load (location);
-        }
-
-        /// <summary>
-        /// Loads a .torrent file from the specified URL
-        /// </summary>
-        /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="location">The path to download the .torrent to before it gets loaded</param>
-        /// <returns></returns>
-        public static async Task<Torrent> LoadAsync (Uri url, string location)
-        {
-            try {
-                using var client = new WebClient ();
-                await client.DownloadFileTaskAsync (url, location).ConfigureAwait (false);
-            } catch (Exception ex) {
-                File.Delete (location);
-                throw new TorrentException ("Could not download .torrent file from the specified url", ex);
-            }
-
-            return await LoadAsync (location).ConfigureAwait (false);
+            return await LoadAsync (savePath).ConfigureAwait (false);
         }
 
         /// <summary>
@@ -508,28 +487,6 @@ namespace MonoTorrent
         }
 
         /// <summary>
-        /// Loads a .torrent file from the specified URL. A return value indicates
-        /// whether the operation was successful.
-        /// </summary>
-        /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="location">The path to download the .torrent to before it gets loaded</param>
-        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
-        /// <returns>True if successful</returns>
-        public static bool TryLoad (Uri url, string location, out Torrent torrent)
-        {
-            Check.Url (url);
-            Check.Location (location);
-
-            try {
-                torrent = Load (url, location);
-            } catch {
-                torrent = null;
-            }
-
-            return torrent != null;
-        }
-
-        /// <summary>
         /// Called from either Load(stream) or Load(string).
         /// </summary>
         /// <param name="stream"></param>
@@ -541,8 +498,8 @@ namespace MonoTorrent
             Check.Path (path);
 
             try {
-                var decoded = BEncodedDictionary.DecodeTorrent (stream);
-                return LoadCore (decoded.torrent, new InfoHash (decoded.infohash));
+                (var torrent, var infohash) = BEncodedDictionary.DecodeTorrent (stream);
+                return LoadCore (torrent, new InfoHash (infohash));
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
             }

@@ -37,13 +37,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Connections;
 using MonoTorrent.Logging;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Tracker
 {
-    class HTTPTracker : Tracker
+    public class HTTPTracker : Tracker
     {
         static readonly Logger logger = Logger.Create (nameof (HTTPTracker));
 
@@ -58,7 +59,9 @@ namespace MonoTorrent.Client.Tracker
 
         internal Uri ScrapeUri { get; }
 
-        public HTTPTracker (Uri announceUrl)
+        Factories.HttpClientCreator HttpClientCreator { get; }
+
+        public HTTPTracker (Uri announceUrl, Factories.HttpClientCreator httpClientCreator)
             : base (announceUrl)
         {
             string uri = announceUrl.OriginalString;
@@ -70,6 +73,8 @@ namespace MonoTorrent.Client.Tracker
             CanAnnounce = true;
             CanScrape = ScrapeUri != null;
             Status = TrackerState.Unknown;
+
+            HttpClientCreator = httpClientCreator;
 
             // Use a random integer prefixed by our identifier.
             lock (random)
@@ -89,7 +94,7 @@ namespace MonoTorrent.Client.Tracker
             var peers = new List<Peer> ();
 
             Uri announceString = CreateAnnounceString (parameters);
-            using var client = new HttpClient ();
+            using var client = HttpClientCreator ();
             client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
             HttpResponseMessage response;
@@ -136,7 +141,7 @@ namespace MonoTorrent.Client.Tracker
             else
                 url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
 
-            using var client = new HttpClient ();
+            using var client = HttpClientCreator ();
             client.DefaultRequestHeaders.Add ("User-Agent", VersionInfo.ClientVersion);
 
             HttpResponseMessage response;
