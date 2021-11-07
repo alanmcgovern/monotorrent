@@ -41,6 +41,7 @@ using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections;
 using MonoTorrent.Dht;
 using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;

@@ -53,6 +53,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Trackers", "Mon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.MonoTorrent.Trackers", "Tests\Tests.MonoTorrent.Trackers\Tests.MonoTorrent.Trackers.csproj", "{F5C549C8-E036-4087-B3E0-E8A8D54DA2CC}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Socks5", "MonoTorrent.Socks5\MonoTorrent.Socks5.csproj", "{47BBC475-FA82-4CE1-9458-206C4747071D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -131,6 +133,10 @@ Global
 		{F224B004-8709-4C49-BF76-D14A04CD52CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F224B004-8709-4C49-BF76-D14A04CD52CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F224B004-8709-4C49-BF76-D14A04CD52CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47BBC475-FA82-4CE1-9458-206C4747071D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47BBC475-FA82-4CE1-9458-206C4747071D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47BBC475-FA82-4CE1-9458-206C4747071D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47BBC475-FA82-4CE1-9458-206C4747071D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{513A5224-ABFE-4DD9-8042-042A9FF3AE0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{513A5224-ABFE-4DD9-8042-042A9FF3AE0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{513A5224-ABFE-4DD9-8042-042A9FF3AE0C}.Release|Any CPU.ActiveCfg = Release|Any CPU

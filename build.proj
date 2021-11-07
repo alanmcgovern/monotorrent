@@ -12,10 +12,13 @@
 
     <ItemGroup>
         <SolutionFile Include="src/MonoTorrent.sln">
-            <Configuration>$(Configuration)</Configuration>
+          <Configuration>$(Configuration)</Configuration>
         </SolutionFile>
         <PackFile Include="src/MonoTorrent.Client/MonoTorrent.Client.csproj">
-            <Configuration>$(Configuration)</Configuration>
+          <Configuration>$(Configuration)</Configuration>
+        </PackFile>
+        <PackFile Include="src/MonoTorrent.Socks5/MonoTorrent.Socks5.csproj">
+          <Configuration>$(Configuration)</Configuration>
         </PackFile>
     </ItemGroup>
 
@@ -32,18 +35,18 @@
 
     <Target Name="Clean">
         <MSBuild
-            Projects="@(SolutionFile)"
-            Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
-            Targets="Clean"
+          Projects="@(SolutionFile)"
+          Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+          Targets="Clean"
     />
     </Target>
 
     <Target Name="Pack">
         <MakeDir Directories="$(Out)" />
         <MSBuild
-            Projects="@(PackFile)"
-            Properties="$(MSBuildCommonProperties);Configuration=%(PackFile.Configuration);PackageOutputPath=$(Out)"
-            Targets="Pack"
+          Projects="@(PackFile)"
+          Properties="$(MSBuildCommonProperties);Configuration=%(PackFile.Configuration);PackageOutputPath=$(Out)"
+          Targets="Pack"
     />
 
     </Target>
