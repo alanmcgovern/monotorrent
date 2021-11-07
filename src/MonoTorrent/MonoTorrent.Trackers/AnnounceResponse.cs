@@ -1,5 +1,5 @@
-//
-// Enums.cs
+﻿//
+// AnnounceResponse.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,46 +27,33 @@
 //
 
 
-namespace MonoTorrent.Dht
-{
-    public enum DhtState
-    {
-        NotReady,
-        Initialising,
-        Ready
-    }
-}
+using System;
+using System.Collections.Generic;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
-    public enum TorrentState
+    public class AnnounceResponse
     {
-        Stopped,
-        Paused,
-        Starting,
-        Downloading,
-        Seeding,
-        Hashing,
-        HashingPaused,
-        Stopping,
-        Error,
-        Metadata
-    }
-}
+        /// <summary>
+        /// The failure message returned by the tracker.
+        /// </summary>
+        public string FailureMessage { get; }
 
-namespace MonoTorrent
-{
-    public enum Direction
-    {
-        None,
-        Incoming,
-        Outgoing
-    }
+        /// <summary>
+        /// The list of peers returned by the tracker.
+        /// </summary>
+        public IList<PeerInfo> Peers { get; }
 
-    enum PeerListType
-    {
-        NascentPeers,
-        CandidatePeers,
-        OptimisticUnchokeCandidatePeers
+        /// <summary>
+        /// The warning message returned by the tracker.
+        /// </summary>
+        public string WarningMessage { get; }
+
+        public AnnounceResponse (IList<PeerInfo> peers, string warningMessage, string failureMessage)
+        {
+            Peers = peers ?? Array.Empty<PeerInfo> ();
+            WarningMessage = warningMessage;
+            FailureMessage = failureMessage;
+        }
     }
 }

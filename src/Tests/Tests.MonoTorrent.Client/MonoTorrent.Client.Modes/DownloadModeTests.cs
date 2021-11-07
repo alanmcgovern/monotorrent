@@ -167,7 +167,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             await TrackerManager.AddTrackerAsync (new Uri ("http://test.tracker"));
-            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new[] { new Peer ("One", new Uri ("ipv4://1.1.1.1:1111")), new Peer ("Two", new Uri ("ipv4://2.2.2.2:2222")) });
+            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new[] { new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), new BEncodedString ("One").TextBytes), new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), new BEncodedString("Two").TextBytes) });
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (2, addedArgs.NewPeers, "#1");

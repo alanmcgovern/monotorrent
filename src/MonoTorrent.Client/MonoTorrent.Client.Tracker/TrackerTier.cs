@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 using MonoTorrent.Logging;
@@ -118,7 +119,7 @@ namespace MonoTorrent.Client.Tracker
 
         ScrapeResponse LastScrapeResponse { get; set; } = new ScrapeResponse (0, 0, 0);
 
-        internal TrackerTier (IEnumerable<string> trackerUrls)
+        internal TrackerTier (Factories factories, IEnumerable<string> trackerUrls)
         {
             var trackerList = new List<ITracker> ();
             foreach (string trackerUrl in trackerUrls) {
@@ -127,7 +128,7 @@ namespace MonoTorrent.Client.Tracker
                     continue;
                 }
 
-                ITracker tracker = TrackerFactory.Create (result);
+                ITracker tracker = factories.CreateTracker (result);
                 if (tracker != null) {
                     trackerList.Add (tracker);
                 } else {

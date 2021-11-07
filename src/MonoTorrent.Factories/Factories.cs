@@ -12,6 +12,7 @@ using MonoTorrent.Dht.Listeners;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.PortForwarding;
+using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
@@ -28,6 +29,7 @@ namespace MonoTorrent.Client
         public delegate IPortForwarder PortForwarderCreator ();
         public delegate ISocketConnector SocketConnectorCreator ();
         public delegate IStreamingPieceRequester StreamingPieceRequesterCreator ();
+        public delegate ITracker TrackerCreator (Uri uri);
 
         public delegate MD5 MD5Creator ();
         public delegate SHA1 SHA1Creator ();
@@ -49,6 +51,8 @@ namespace MonoTorrent.Client
         SocketConnectorCreator SocketConnectorFunc { get; set; }
         StreamingPieceRequesterCreator StreamingPieceRequesterFunc { get; set; }
 
+        ReadOnlyDictionary<string, TrackerCreator> TrackerFuncs { get; set; }
+
         MD5Creator MD5Func { get; set; }
         SHA1Creator SHA1Func { get; set; }
 
@@ -59,12 +63,18 @@ namespace MonoTorrent.Client
 
             BlockCacheFunc = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
-            HttpClientFunc = () => new HttpClient ();
+            HttpClientFunc = () => {
+                var client = new HttpClient ();
+                //FIXME: Move GitInfo everyhwere
+                client.DefaultRequestHeaders.Add ("User-Agent", /*VersionInfo.ClientVersion*/ "test test test");
+                client.Timeout = TimeSpan.FromSeconds (30);
+                return client;
+            };
             LocalPeerDiscoveryFunc = () => new LocalPeerDiscovery ();
             PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (
                 new Dictionary<string, PeerConnectionCreator> {
-                { "ipv4", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
-                { "ipv6", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
+                    { "ipv4", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
+                    { "ipv6", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
                 }
             );
             PeerConnectionListenerFunc = endPoint => new PeerConnectionListener (endPoint);
@@ -73,6 +83,13 @@ namespace MonoTorrent.Client
             PortForwarderFunc = () => new MonoNatPortForwarder ();
             SocketConnectorFunc = () => new SocketConnector ();
             StreamingPieceRequesterFunc = () => new StreamingPieceRequester ();
+            TrackerFuncs = new ReadOnlyDictionary<string, TrackerCreator> (
+                new Dictionary<string, TrackerCreator> {
+                    { "http", uri => new HTTPTracker (uri, HttpClientFunc ()) },
+                    { "https", uri => new HTTPTracker (uri, HttpClientFunc ()) },
+                    { "udp", uri => new UdpTracker (uri) },
+                }
+            );
         }
 
         public IBlockCache CreateBlockCache (IPieceWriter writer, long capacity, ByteBufferPool buffer)
@@ -132,6 +149,9 @@ namespace MonoTorrent.Client
         public Factories WithPeerConnectionCreator (string scheme, PeerConnectionCreator creator)
         {
             var dict = new Dictionary<string, PeerConnectionCreator> (PeerConnectionFuncs);
+            if (creator == null && Default.PeerConnectionFuncs.ContainsKey (scheme))
+                creator = Default.PeerConnectionFuncs[scheme];
+
             if (creator == null)
                 dict.Remove (scheme);
             else
@@ -202,6 +222,32 @@ namespace MonoTorrent.Client
         {
             var dupe = MemberwiseClone ();
             dupe.StreamingPieceRequesterFunc = creator ?? Default.StreamingPieceRequesterFunc;
+            return dupe;
+        }
+
+        public ITracker CreateTracker (Uri uri)
+        {
+            try {
+                if (TrackerFuncs.TryGetValue (uri.Scheme, out var creator))
+                    return creator (uri);
+            } catch {
+
+            }
+            return null;
+        }
+        public Factories WithTrackerCreator (string scheme, TrackerCreator creator)
+        {
+            var dict = new Dictionary<string, TrackerCreator> (TrackerFuncs);
+            if (creator == null && Default.TrackerFuncs.ContainsKey (scheme))
+                creator = Default.TrackerFuncs[scheme];
+
+            if (creator == null)
+                dict.Remove (scheme);
+            else
+                dict[scheme] = creator;
+
+            var dupe = MemberwiseClone ();
+            dupe.TrackerFuncs = new ReadOnlyDictionary<string, TrackerCreator> (dict);
             return dupe;
         }
         new Factories MemberwiseClone ()

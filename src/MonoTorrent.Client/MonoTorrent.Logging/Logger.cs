@@ -28,14 +28,12 @@
 
 
 using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Logging
 {
-    public class Logger
+    class Logger
     {
         internal static Logger Create (string name)
             => new Logger (LoggerFactory.Create (name));

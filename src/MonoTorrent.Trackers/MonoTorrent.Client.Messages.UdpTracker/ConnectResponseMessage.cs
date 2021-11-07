@@ -1,5 +1,5 @@
 //
-// ScrapeDetails.cs
+// ConnectResponseMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -29,17 +29,41 @@
 
 namespace MonoTorrent.Messages.UdpTracker
 {
-    class ScrapeDetails
+    public class ConnectResponseMessage : UdpTrackerMessage
     {
-        public int Complete { get; }
-        public int Leeches { get; }
-        public int Seeds { get; }
+        public long ConnectionId { get; private set; }
 
-        public ScrapeDetails (int seeds, int leeches, int complete)
+        public ConnectResponseMessage ()
+            : this (0, 0)
         {
-            Complete = complete;
-            Leeches = leeches;
-            Seeds = seeds;
+
+        }
+
+        public ConnectResponseMessage (int transactionId, long connectionId)
+            : base (0, transactionId)
+        {
+            ConnectionId = connectionId;
+        }
+
+        public override int ByteLength => 8 + 4 + 4;
+
+        public override void Decode (byte[] buffer, int offset, int length)
+        {
+            if (Action != ReadInt (buffer, ref offset))
+                ThrowInvalidActionException ();
+            TransactionId = ReadInt (buffer, ref offset);
+            ConnectionId = ReadLong (buffer, ref offset);
+        }
+
+        public override int Encode (byte[] buffer, int offset)
+        {
+            int written = offset;
+
+            written += Write (buffer, written, Action);
+            written += Write (buffer, written, TransactionId);
+            written += Write (buffer, written, ConnectionId);
+
+            return written - offset;
         }
     }
 }

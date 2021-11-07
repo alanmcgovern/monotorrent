@@ -396,7 +396,7 @@ namespace MonoTorrent.Client
                 if (magnetLink.AnnounceUrls != null)
                     announces.Add (magnetLink.AnnounceUrls);
             }
-            SetTrackerManager (new TrackerManager (new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false));
+            SetTrackerManager (new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false));
 
             MutableBitField = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
             PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
@@ -1041,7 +1041,7 @@ namespace MonoTorrent.Client
             if (e.Successful) {
                 await ClientEngine.MainLoop;
 
-                int count = AddPeers (e.Peers, true);
+                int count = AddPeers (e.Peers.Select (t => new Peer (t.PeerId, t.Uri)).ToArray (), true);
                 RaisePeersFound (new TrackerPeersAdded (this, count, e.Peers.Count, e.Tracker));
             }
         }

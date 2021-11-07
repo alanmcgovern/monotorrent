@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
         protected override ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
         {
-            return ReusableTask.FromResult (new AnnounceResponse (new List<Peer> (), null, null));
+            return ReusableTask.FromResult (new AnnounceResponse (new List<PeerInfo> (), null, null));
         }
 
         protected override ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
@@ -99,11 +99,14 @@ namespace MonoTorrent.Client
         TrackerManager trackerManager;
         IList<List<CustomTracker>> trackers;
 
+        Factories Factories { get; set; }
+
         [SetUp]
         public void Setup ()
         {
-            TrackerFactory.Register ("custom", uri => new CustomTracker (uri));
-            trackerManager = new TrackerManager (new RequestFactory (), trackerUrls, true);
+            Factories = Factories.Default
+                .WithTrackerCreator ("custom", uri => new CustomTracker (uri));
+            trackerManager = new TrackerManager (Factories, new RequestFactory (), trackerUrls, true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
@@ -322,7 +325,7 @@ namespace MonoTorrent.Client
                 new List<string> { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
             };
 
-            var manager = new TrackerManager (new RequestFactory (), tiers, false);
+            var manager = new TrackerManager (Factories.Default, new RequestFactory (), tiers, false);
             Assert.AreEqual (0, manager.Tiers.Count, "#1");
         }
     }

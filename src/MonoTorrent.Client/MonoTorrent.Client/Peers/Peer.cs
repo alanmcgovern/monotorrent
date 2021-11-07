@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 
@@ -43,6 +44,12 @@ namespace MonoTorrent.Client
         /// The number of times this peer has had it's connection closed
         /// </summary>
         internal int CleanedUpCount { get; set; }
+
+        internal static IList<Peer> Decode (BEncodedString peers)
+            => PeerDecoder.Decode (peers).Select (t => new Peer (t.PeerId, t.Uri)).ToArray ();
+
+        internal static IList<Peer> Decode (BEncodedList l)
+            => PeerDecoder.Decode (l).Select (t => new Peer (t.PeerId, t.Uri)).ToArray ();
 
         /// <summary>
         /// The URI used to make an outgoing connection to this peer.
@@ -128,19 +135,6 @@ namespace MonoTorrent.Client
             return PeerId?.GetHashCode () ?? ConnectionUri.GetHashCode ();
         }
 
-        internal byte[] CompactPeer ()
-        {
-            byte[] data = new byte[6];
-            CompactPeer (data, 0);
-            return data;
-        }
-
-        internal void CompactPeer (byte[] data, int offset)
-        {
-            Buffer.BlockCopy (IPAddress.Parse (ConnectionUri.Host).GetAddressBytes (), 0, data, offset, 4);
-            Message.Write (data, offset + 4, (short) ConnectionUri.Port);
-        }
-
         internal void HashedPiece (bool succeeded)
         {
             if (succeeded && RepeatedHashFails > 0)
@@ -157,83 +151,17 @@ namespace MonoTorrent.Client
             return ConnectionUri.ToString ();
         }
 
-        public static IList<Peer> Decode (BEncodedList peers)
-        {
-            var list = new List<Peer> (peers.Count);
-            foreach (BEncodedValue value in peers) {
-                try {
-                    if (value is BEncodedDictionary)
-                        list.Add (DecodeFromDict ((BEncodedDictionary) value));
-                    else if (value is BEncodedString)
-                        foreach (Peer p in Decode ((BEncodedString) value))
-                            list.Add (p);
-                } catch {
-                    // If something is invalid and throws an exception, ignore it
-                    // and continue decoding the rest of the peers
-                }
-            }
-            return list;
-        }
+        internal byte[] CompactPeer ()
+            => PeerInfo.CompactPeer (ConnectionUri);
 
-        static Peer DecodeFromDict (BEncodedDictionary dict)
-        {
-            BEncodedString peerId;
-
-            if (dict.ContainsKey ("peer id"))
-                peerId = (BEncodedString) dict["peer id"];
-            else if (dict.ContainsKey ("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
-                peerId = (BEncodedString) dict["peer_id"];
-            else
-                peerId = BEncodedString.Empty;
-
-            var connectionUri = new Uri ($"ipv4://{dict["ip"]}:{dict["port"]}");
-            return new Peer (peerId, connectionUri, EncryptionTypes.All);
-        }
-
-        public static IList<Peer> Decode (BEncodedString peers)
-        {
-            return FromCompact (peers.TextBytes, 0);
-        }
+        internal void CompactPeer (byte[] buffer, int offset)
+            => PeerInfo.CompactPeer (ConnectionUri, buffer, offset);
 
         internal static BEncodedList Encode (IEnumerable<Peer> peers)
         {
             var list = new BEncodedList ();
             foreach (Peer p in peers)
-                list.Add ((BEncodedString) p.CompactPeer ());
-            return list;
-        }
-
-        internal static IList<Peer> FromCompact (byte[] data, int offset)
-        {
-            // "Compact Response" peers are encoded in network byte order. 
-            // IP's are the first four bytes
-            // Ports are the following 2 bytes
-            byte[] byteOrderedData = data;
-            int i = offset;
-            ushort port;
-            var sb = new StringBuilder (27);
-            var list = new List<Peer> ((byteOrderedData.Length / 6) + 1);
-            while ((i + 5) < byteOrderedData.Length) {
-                sb.Remove (0, sb.Length);
-
-                sb.Append ("ipv4://");
-                sb.Append (byteOrderedData[i++]);
-                sb.Append ('.');
-                sb.Append (byteOrderedData[i++]);
-                sb.Append ('.');
-                sb.Append (byteOrderedData[i++]);
-                sb.Append ('.');
-                sb.Append (byteOrderedData[i++]);
-
-                port = (ushort) IPAddress.NetworkToHostOrder (BitConverter.ToInt16 (byteOrderedData, i));
-                i += 2;
-                sb.Append (':');
-                sb.Append (port);
-
-                var uri = new Uri (sb.ToString ());
-                list.Add (new Peer ("", uri, EncryptionTypes.All));
-            }
-
+                list.Add ((BEncodedString) PeerInfo.CompactPeer (p.ConnectionUri));
             return list;
         }
     }

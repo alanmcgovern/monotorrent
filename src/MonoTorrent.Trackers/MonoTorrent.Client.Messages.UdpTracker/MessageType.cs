@@ -1,10 +1,10 @@
 //
-// Enums.cs
+// MessageType.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,46 +27,11 @@
 //
 
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Messages.UdpTracker
 {
-    public enum DhtState
+    public enum MessageType
     {
-        NotReady,
-        Initialising,
-        Ready
-    }
-}
-
-namespace MonoTorrent.Client
-{
-    public enum TorrentState
-    {
-        Stopped,
-        Paused,
-        Starting,
-        Downloading,
-        Seeding,
-        Hashing,
-        HashingPaused,
-        Stopping,
-        Error,
-        Metadata
-    }
-}
-
-namespace MonoTorrent
-{
-    public enum Direction
-    {
-        None,
-        Incoming,
-        Outgoing
-    }
-
-    enum PeerListType
-    {
-        NascentPeers,
-        CandidatePeers,
-        OptimisticUnchokeCandidatePeers
+        Request,
+        Response
     }
 }

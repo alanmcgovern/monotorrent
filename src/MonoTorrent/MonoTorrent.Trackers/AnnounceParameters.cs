@@ -27,10 +27,6 @@
 //
 
 
-using System.Runtime.InteropServices;
-using System.Threading;
-using MonoTorrent.BEncoding;
-
 namespace MonoTorrent.Client.Tracker
 {
     public sealed class AnnounceParameters
@@ -41,19 +37,19 @@ namespace MonoTorrent.Client.Tracker
         public TorrentEvent ClientEvent { get; private set; }
         public InfoHash InfoHash { get; private set; }
         public string IPAddress { get; private set; }
-        public BEncodedString PeerId { get; private set; }
+        public byte[] PeerId { get; private set; }
         public int Port { get; private set; }
         public bool RequireEncryption { get; private set; }
         public bool SupportsEncryption { get; private set; }
 
-        internal AnnounceParameters ()
+        public AnnounceParameters ()
         {
 
         }
 
-        internal AnnounceParameters (long bytesDownloaded, long bytesUploaded, long bytesLeft,
+        public AnnounceParameters (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
-                           BEncodedString peerId, string ipAddress, int port, bool supportsEncryption)
+                           byte[] peerId, string ipAddress, int port, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;
@@ -67,7 +63,7 @@ namespace MonoTorrent.Client.Tracker
             SupportsEncryption = supportsEncryption;
         }
 
-        internal AnnounceParameters WithBytesDownloaded (long bytesDownloaded)
+        public AnnounceParameters WithBytesDownloaded (long bytesDownloaded)
         {
             var clone = this;
             if (bytesDownloaded != BytesDownloaded) {
@@ -77,7 +73,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithBytesLeft (long bytesLeft)
+        public AnnounceParameters WithBytesLeft (long bytesLeft)
         {
             var clone = this;
             if (bytesLeft != BytesLeft) {
@@ -87,7 +83,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithBytesUploaded (long bytesUploaded)
+        public AnnounceParameters WithBytesUploaded (long bytesUploaded)
         {
             var clone = this;
             if (bytesUploaded != BytesUploaded) {
@@ -97,7 +93,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithClientEvent (TorrentEvent clientEvent)
+        public AnnounceParameters WithClientEvent (TorrentEvent clientEvent)
         {
             var clone = this;
             if (clientEvent != ClientEvent) {
@@ -107,7 +103,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithInfoHash (InfoHash infoHash)
+        public AnnounceParameters WithInfoHash (InfoHash infoHash)
         {
             var clone = this;
             if (infoHash != InfoHash) {
@@ -117,7 +113,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithIPAddress (string ipAddress)
+        public AnnounceParameters WithIPAddress (string ipAddress)
         {
             var clone = this;
             if (ipAddress != IPAddress) {
@@ -127,7 +123,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithPeerId (BEncodedString peerId)
+        public AnnounceParameters WithPeerId (byte[] peerId)
         {
             var clone = this;
             if (!peerId.Equals (PeerId)) {
@@ -137,7 +133,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithPort (int port)
+        public AnnounceParameters WithPort (int port)
         {
             var clone = this;
             if (port != Port) {
@@ -147,7 +143,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithRequireEncryption (bool requireEncryption)
+        public AnnounceParameters WithRequireEncryption (bool requireEncryption)
         {
             var clone = this;
             if (requireEncryption != RequireEncryption) {
@@ -157,7 +153,7 @@ namespace MonoTorrent.Client.Tracker
             return clone;
         }
 
-        internal AnnounceParameters WithSupportsEncryption (bool supportsEncryption)
+        public AnnounceParameters WithSupportsEncryption (bool supportsEncryption)
         {
             var clone = this;
             if (supportsEncryption != SupportsEncryption) {

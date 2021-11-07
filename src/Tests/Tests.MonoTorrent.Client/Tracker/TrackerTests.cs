@@ -31,6 +31,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Tracker.Listeners;
 
@@ -76,9 +78,9 @@ namespace MonoTorrent.Tracker
             for (int i = 0; i < 20; i++) {
                 InfoHash infoHash = new InfoHash (new byte[20]);
                 r.NextBytes (infoHash.UnsafeAsArray ());
-                TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
+                TrackerTier tier = new TrackerTier (Factories.Default, new[] { uri.ToString () });
                 var parameters = new AnnounceParameters (0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new string ('1', 20), "", 1411, false);
+                                                                       infoHash, false, new BEncodedString (new string ('1', 20)).TextBytes, "", 1411, false);
                 Assert.IsTrue (tier.ActiveTracker.CanScrape);
                 await tier.Trackers[0].AnnounceAsync (parameters, CancellationToken.None);
             }
@@ -92,7 +94,7 @@ namespace MonoTorrent.Tracker
             for (int i = 0; i < 20; i++) {
                 InfoHash infoHash = new InfoHash (new byte[20]);
                 r.NextBytes (infoHash.UnsafeAsArray ());
-                TrackerTier tier = new TrackerTier (new[] { uri.ToString () });
+                TrackerTier tier = new TrackerTier (Factories.Default, new[] { uri.ToString () });
                 var parameters = new ScrapeParameters (infoHash);
                 await tier.Trackers[0].ScrapeAsync (parameters, CancellationToken.None);
             }

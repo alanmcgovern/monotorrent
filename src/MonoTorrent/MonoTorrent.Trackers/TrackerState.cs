@@ -1,10 +1,10 @@
-//
-// MessageType.cs
+﻿//
+// TrackerState.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2021 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,12 +26,29 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-namespace MonoTorrent.Messages.UdpTracker
+namespace MonoTorrent.Client.Tracker
 {
-    enum MessageType
+    public enum TrackerState
     {
-        Request,
-        Response
+        /// <summary>
+        /// A request has not been sent yet.
+        /// </summary>
+        Unknown,
+        /// <summary>
+        /// Currently sending a request.
+        /// </summary>
+        Connecting,
+        /// <summary>
+        /// The most recent request completed successfully.
+        /// </summary>
+        Ok,
+        /// <summary>
+        /// The tracker was unreachable/offline.
+        /// </summary>
+        Offline,
+        /// <summary>
+        /// The tracker was reachable but the response it sent was invalid.
+        /// </summary>
+        InvalidResponse
     }
 }

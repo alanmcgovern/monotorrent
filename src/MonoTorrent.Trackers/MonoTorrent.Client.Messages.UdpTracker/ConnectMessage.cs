@@ -1,5 +1,5 @@
 //
-// ConnectResponseMessage.cs
+// ConnectMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,41 +27,38 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Messages.UdpTracker
 {
-    class ConnectResponseMessage : UdpTrackerMessage
+    public class ConnectMessage : UdpTrackerMessage
     {
+        public const long InitialiseConnectionId = 0x41727101980;
         public long ConnectionId { get; private set; }
 
-        public ConnectResponseMessage ()
-            : this (0, 0)
+        public ConnectMessage ()
+            : base (0, DateTime.Now.GetHashCode ())
         {
-
-        }
-
-        public ConnectResponseMessage (int transactionId, long connectionId)
-            : base (0, transactionId)
-        {
-            ConnectionId = connectionId;
+            ConnectionId = InitialiseConnectionId; // Init connectionId as per spec
         }
 
         public override int ByteLength => 8 + 4 + 4;
 
         public override void Decode (byte[] buffer, int offset, int length)
         {
+            ConnectionId = ReadLong (buffer, ref offset);
             if (Action != ReadInt (buffer, ref offset))
                 ThrowInvalidActionException ();
             TransactionId = ReadInt (buffer, ref offset);
-            ConnectionId = ReadLong (buffer, ref offset);
         }
 
         public override int Encode (byte[] buffer, int offset)
         {
             int written = offset;
 
+            written += Write (buffer, written, ConnectionId);
             written += Write (buffer, written, Action);
             written += Write (buffer, written, TransactionId);
-            written += Write (buffer, written, ConnectionId);
 
             return written - offset;
         }

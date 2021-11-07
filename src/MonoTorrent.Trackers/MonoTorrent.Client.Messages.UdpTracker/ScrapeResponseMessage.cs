@@ -31,7 +31,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Messages.UdpTracker
 {
-    class ScrapeResponseMessage : UdpTrackerMessage
+    public class ScrapeResponseMessage : UdpTrackerMessage
     {
         public override int ByteLength => 8 + (Scrapes.Count * 12);
         public List<ScrapeDetails> Scrapes { get; }

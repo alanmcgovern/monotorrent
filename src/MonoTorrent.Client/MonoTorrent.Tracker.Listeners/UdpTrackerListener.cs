@@ -162,7 +162,7 @@ namespace MonoTorrent.Tracker.Listeners
                 TimeSpan interval = TimeSpan.Zero;
                 int leechers = 0;
                 int seeders = 0;
-                var peers = new List<MonoTorrent.Client.Peer> ();
+                var peers = new List<PeerInfo> ();
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("complete"):
@@ -179,9 +179,9 @@ namespace MonoTorrent.Tracker.Listeners
 
                         case ("peers"):
                             if (keypair.Value is BEncodedList)          // Non-compact response
-                                peers.AddRange (MonoTorrent.Client.Peer.Decode ((BEncodedList) keypair.Value));
+                                peers.AddRange (PeerDecoder.Decode ((BEncodedList) keypair.Value));
                             else if (keypair.Value is BEncodedString)   // Compact response
-                                peers.AddRange (MonoTorrent.Client.Peer.Decode ((BEncodedString) keypair.Value));
+                                peers.AddRange (PeerDecoder.Decode ((BEncodedString) keypair.Value));
                             break;
 
                         default:
