@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Security.Cryptography;
+using System.Net.Http;
 
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Listeners;
@@ -18,7 +19,7 @@ namespace MonoTorrent.Client
     {
         public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, ByteBufferPool buffer);
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
-        public delegate IHttpRequest HttpRequestCreator ();
+        public delegate HttpClient HttpClientCreator ();
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
         public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
@@ -38,8 +39,8 @@ namespace MonoTorrent.Client
 
         BlockCacheCreator BlockCacheFunc { get; set; }
         DhtListenerCreator DhtListenerFunc { get; set; }
-        HttpRequestCreator HttpRequestFunc { get; set; }
         LocalPeerDiscoveryCreator LocalPeerDiscoveryFunc { get; set; }
+        HttpClientCreator HttpClientFunc { get; set; }
         ReadOnlyDictionary<string, PeerConnectionCreator> PeerConnectionFuncs { get; set; }
         PeerConnectionListenerCreator PeerConnectionListenerFunc { get; set; }
         PieceRequesterCreator PieceRequesterFunc { get; set; }
@@ -58,7 +59,7 @@ namespace MonoTorrent.Client
 
             BlockCacheFunc = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
-            HttpRequestFunc = () => new HttpRequest ();
+            HttpClientFunc = () => new HttpClient ();
             LocalPeerDiscoveryFunc = () => new LocalPeerDiscovery ();
             PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (
                 new Dictionary<string, PeerConnectionCreator> {
@@ -91,13 +92,12 @@ namespace MonoTorrent.Client
             dupe.DhtListenerFunc = creator ?? Default.DhtListenerFunc;
             return dupe;
         }
-
-        public IHttpRequest CreateHttpRequest ()
-            => HttpRequestFunc ();
-        public Factories WithHttpRequestCreator (HttpRequestCreator creator)
+        public HttpClient CreateHttpClient ()
+            => HttpClientFunc ();
+        public Factories WithHttpClientCreator (HttpClientCreator creator)
         {
             var dupe = MemberwiseClone ();
-            dupe.HttpRequestFunc = creator ?? Default.HttpRequestFunc;
+            dupe.HttpClientFunc = creator ?? Default.HttpClientFunc;
             return dupe;
         }
 

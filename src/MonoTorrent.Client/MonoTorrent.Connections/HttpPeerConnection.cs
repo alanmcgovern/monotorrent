@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -70,7 +71,7 @@ namespace MonoTorrent.Client.Connections
 
         Factories RequestCreator { get; }
 
-        IHttpRequest Requester { get; set; }
+        HttpClient Requester { get; set; }
 
         public TimeSpan ConnectionTimeout {
             get; set;
@@ -215,9 +216,11 @@ namespace MonoTorrent.Client.Connections
                 var rr = WebRequests.Dequeue ();
 
                 Requester?.Dispose ();
-                Requester = RequestCreator.CreateHttpRequest ();
-                Requester.ConnectionTimeout = ConnectionTimeout;
-                DataStream = await Requester.GetStreamAsync (rr.fileUri, rr.startOffset, rr.count);
+                Requester = RequestCreator.CreateHttpClient ();
+                var msg = new HttpRequestMessage (HttpMethod.Get, rr.fileUri);
+                msg.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue (rr.startOffset, rr.startOffset + rr.count - 1);
+                Requester.Timeout = ConnectionTimeout;
+                DataStream = await (await Requester.SendAsync (msg)).Content.ReadAsStreamAsync ();
                 DataStreamCount = rr.count;
                 return await ReceiveAsync (buffer, offset, count) + written;
             }
