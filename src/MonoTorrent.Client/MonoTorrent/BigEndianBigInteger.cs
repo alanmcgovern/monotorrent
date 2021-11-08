@@ -139,7 +139,7 @@ namespace MonoTorrent
         public BigEndianBigInteger (byte[] value)
         {
 #if NETSTANDARD2_1
-            Value = new BigInteger (littleEndianArray, true, true);
+            Value = new BigInteger (value, true, true);
 #else
             Value = OptimisedCtor (value);
 #endif

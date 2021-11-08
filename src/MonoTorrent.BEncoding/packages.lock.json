@@ -22,6 +22,14 @@
         "resolved": "1.1.0",
         "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
       }
+    },
+    ".NETStandard,Version=v2.1": {
+      "GitInfo": {
+        "type": "Direct",
+        "requested": "[2.0.34, )",
+        "resolved": "2.0.34",
+        "contentHash": "/Jn0eIpmmUlNeblGw4GV+z8QSRHaas5nMu9x1AyQOAo8mip6qVy3BgujBCF0QdsrNzPspeV0jol4EGPQj0mqNw=="
+      }
     }
   }
 }

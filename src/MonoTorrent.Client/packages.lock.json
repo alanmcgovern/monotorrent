@@ -66,6 +66,58 @@
           "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       }
+    },
+    ".NETStandard,Version=v2.1": {
+      "GitInfo": {
+        "type": "Direct",
+        "requested": "[2.0.34, )",
+        "resolved": "2.0.34",
+        "contentHash": "/Jn0eIpmmUlNeblGw4GV+z8QSRHaas5nMu9x1AyQOAo8mip6qVy3BgujBCF0QdsrNzPspeV0jol4EGPQj0mqNw=="
+      },
+      "Mono.Nat": {
+        "type": "Direct",
+        "requested": "[3.0.0, 4.0.0)",
+        "resolved": "3.0.0",
+        "contentHash": "LgRC8/8plJfvr1nCPmyHNIwP4fs346doMA/UVDZvFN0RfGJdyD2uS7Dl1AydxjVLrIvad8ghozI0vYFWcfPeYQ=="
+      },
+      "ReusableTasks": {
+        "type": "Direct",
+        "requested": "[2.0.1, 3.0.0)",
+        "resolved": "2.0.1",
+        "contentHash": "sWXqkdpUMxdBcO1GH3eX7cSW3ZdF+AdtpQifMf/LrgkDgEpQ5uIlhKdf8dfD2ZN8lprcv8Sa8EwiTSv8nCFVAQ=="
+      },
+      "monotorrent": {
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
+      "monotorrent.bencoding": {
+        "type": "Project"
+      },
+      "monotorrent.factories": {
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
+      "monotorrent.messages": {
+        "type": "Project",
+        "dependencies": {
+          "MonoTorrent": "1.0.0",
+          "MonoTorrent.BEncoding": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
+      "monotorrent.trackers": {
+        "type": "Project",
+        "dependencies": {
+          "MonoTorrent": "1.0.0",
+          "MonoTorrent.BEncoding": "1.0.0",
+          "MonoTorrent.Messages": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      }
     }
   }
 }
