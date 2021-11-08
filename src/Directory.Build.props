@@ -17,6 +17,15 @@
     <RestoreLockedMode Condition="$(CI) and '$(RestoreLockedMode)' == ''">true</RestoreLockedMode>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GitVersionFile>version.txt</GitVersionFile>
+    <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
+    <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
+    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
+
+    <MonoTorrentABIVersion>2.0.0.0</MonoTorrentABIVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Tests.$(AssemblyName)</_Parameter1>

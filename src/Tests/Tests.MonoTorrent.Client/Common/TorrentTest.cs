@@ -64,7 +64,7 @@ namespace MonoTorrent.Common
                 { "comment.utf-8", new BEncodedString ("my big long comment") },
                 { "comment", new BEncodedString ("my big long comment") },
                 { "azureus_properties", new BEncodedDictionary () }, //FIXME: What is this?
-                { "created by", new BEncodedString ($"MonoTorrent/{VersionInfo.ClientVersion}") },
+                { "created by", new BEncodedString ($"MonoTorrent/{GitInfoHelper.ClientVersion}") },
                 { "encoding", new BEncodedString ("UTF-8") },
                 { "info", CreateInfoDict () },
                 { "private", new BEncodedString ("1") },
@@ -210,7 +210,7 @@ namespace MonoTorrent.Common
         [Test]
         public void CreatedBy ()
         {
-            Assert.AreEqual (torrent.CreatedBy, $"MonoTorrent/{VersionInfo.ClientVersion}");
+            Assert.AreEqual (torrent.CreatedBy, $"MonoTorrent/{GitInfoHelper.ClientVersion}");
         }
 
         [Test]

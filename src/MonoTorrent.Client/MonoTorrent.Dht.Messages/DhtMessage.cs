@@ -41,7 +41,7 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString TransactionIdKey = "t";
         static readonly BEncodedString VersionKey = "v";
         static readonly BEncodedString MessageTypeKey = "y";
-        static readonly BEncodedString DhtVersion = VersionInfo.DhtClientVersion;
+        static readonly BEncodedString DhtVersion = GitInfoHelper.DhtClientVersion;
 
         protected BEncodedDictionary properties = new BEncodedDictionary ();
 

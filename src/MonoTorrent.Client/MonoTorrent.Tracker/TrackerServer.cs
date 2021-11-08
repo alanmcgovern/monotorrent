@@ -145,7 +145,7 @@ namespace MonoTorrent.Tracker
             // Generate an ID which shows that this is monotorrent, and the version, and then a unique(ish) integer.
             if (trackerId == null) {
                 lock (Random)
-                    trackerId = $"{VersionInfo.ClientVersion}-{Random.Next (1, int.MaxValue)}";
+                    trackerId = $"{GitInfoHelper.ClientVersion}-{Random.Next (1, int.MaxValue)}";
             }
             TrackerId = trackerId;
 

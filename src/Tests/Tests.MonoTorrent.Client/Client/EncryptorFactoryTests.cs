@@ -161,8 +161,8 @@ namespace MonoTorrent.Client.Encryption
 
         async Task Handshake (IList<EncryptionType> outgoingEncryption, IList<EncryptionType> incomingEncryption, bool appendInitialPayload)
         {
-            var handshakeIn = new HandshakeMessage (InfoHash, IncomingId, VersionInfo.ProtocolStringV100);
-            var handshakeOut = new HandshakeMessage (InfoHash, OutgoingId, VersionInfo.ProtocolStringV100);
+            var handshakeIn = new HandshakeMessage (InfoHash, IncomingId, Constants.ProtocolStringV100);
+            var handshakeOut = new HandshakeMessage (InfoHash, OutgoingId, Constants.ProtocolStringV100);
 
             var incomingTask = EncryptorFactory.CheckIncomingConnectionAsync (Incoming, incomingEncryption, SKeys, Factories.Default);
             var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, InfoHash, appendInitialPayload ? handshakeOut : null, Factories.Default);

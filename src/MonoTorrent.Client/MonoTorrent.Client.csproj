@@ -3,47 +3,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <MonoTorrentABIVersion>2.0.0.0</MonoTorrentABIVersion>
-
-    <GitVersionFile>version.txt</GitVersionFile>
-    <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
-    <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
-    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
-
-    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha.unstable</MonoTorrentReleaseSuffix>
-    <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
-    <PackDependsOn>$(PackDependsOn)</PackDependsOn>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' ">
-    <PropertyGroup>
-      <Version>0.0.0.1</Version>
-      <AssemblyVersion>$(Version)</AssemblyVersion>
-      <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
-      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)-Debug</InformationalVersion>
-    </PropertyGroup>
-  </Target>
-
-  <!-- Restore success is in the .nuget.g.props file generated as part of msbuild /t:Restore. We do not -->
-  <!-- want this logic to run if restore hasn't been executed as the 'GitVersion' target won't exist.   -->
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' " DependsOnTargets="GitVersion">
-    <PropertyGroup>
-      <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) == ''">$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
-      <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) != ''">$(GitBaseVersion)</MonoTorrentFileVersion>
-
-      <PaddedSemVerPatch>$([System.String]::Format('{0:0000}', $([System.Int32]::Parse('$(GitSemVerPatch)'))))</PaddedSemVerPatch>
-      <MonoTorrentReleaseSuffix Condition="$(MonoTorrentReleaseSuffix) != ''">$(MonoTorrentReleaseSuffix).rev$(PaddedSemVerPatch)</MonoTorrentReleaseSuffix>
-      <MonoTorrentInformationalVersion>$(MonoTorrentFileVersion)-$(GitBranch)+$(GitCommit)</MonoTorrentInformationalVersion>
-
-      <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(MonoTorrentABIVersion)</AssemblyVersion>
-      <FileVersion Condition="'$(FileVersion)' == ''">$(MonoTorrentFileVersion)</FileVersion>
-      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(MonoTorrentInformationalVersion)</InformationalVersion>
-    </PropertyGroup>
-  </Target>
-
+  <ItemGroup>
+    <PackageReference Include="Mono.Nat" Version="[3.0,4.0)" ExcludeAssets="compile" />
+  </ItemGroup>
+  
   <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies
       to ensure our GitInfo related properties have been calculated correctly. -->
   <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
@@ -96,17 +64,7 @@
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="..\..\LICENSE" Pack="true" PackagePath="/" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Tests.$(AssemblyName)</_Parameter1>
-    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
@@ -115,10 +73,6 @@
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Mono.Nat" Version="[3.0,4.0)" ExcludeAssets="compile" />
   </ItemGroup>
 
    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">

@@ -155,7 +155,7 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleHandshakeMessage (PeerId id, HandshakeMessage message)
         {
-            if (!message.ProtocolString.Equals (VersionInfo.ProtocolStringV100)) {
+            if (!message.ProtocolString.Equals (Constants.ProtocolStringV100)) {
                 logger.InfoFormatted (id.Connection, "Invalid protocol in handshake: {0}", message.ProtocolString);
                 throw new ProtocolException ("Invalid protocol string");
             }
