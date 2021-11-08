@@ -3,6 +3,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <NoWarn>0436;$(NoWarn)</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup>

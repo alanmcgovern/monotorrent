@@ -2,6 +2,15 @@
   "version": 1,
   "dependencies": {
     ".NETStandard,Version=v2.0": {
+      "DotProxify": {
+        "type": "Direct",
+        "requested": "[0.0.0.2, )",
+        "resolved": "0.0.0.2",
+        "contentHash": "oXvfStKJftUrKLFn3CR182oTS5w9tAFxfViEke5W5h3xuoiswrcREt6aK530DBc2CTN94w2orxse1Y2PyB6/Yw==",
+        "dependencies": {
+          "ReusableTasks": "2.0.0"
+        }
+      },
       "GitInfo": {
         "type": "Direct",
         "requested": "[2.0.34, )",
@@ -28,6 +37,11 @@
         "resolved": "1.1.0",
         "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
       },
+      "Mono.Nat": {
+        "type": "Transitive",
+        "resolved": "3.0.0",
+        "contentHash": "LgRC8/8plJfvr1nCPmyHNIwP4fs346doMA/UVDZvFN0RfGJdyD2uS7Dl1AydxjVLrIvad8ghozI0vYFWcfPeYQ=="
+      },
       "monotorrent": {
         "type": "Project",
         "dependencies": {
@@ -37,11 +51,41 @@
       "monotorrent.bencoding": {
         "type": "Project"
       },
+      "monotorrent.client": {
+        "type": "Project",
+        "dependencies": {
+          "Mono.Nat": "[3.0.0, 4.0.0)",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
+      "monotorrent.connections": {
+        "type": "Project",
+        "dependencies": {
+          "MonoTorrent": "1.0.0",
+          "MonoTorrent.Messages": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
+      "monotorrent.factories": {
+        "type": "Project",
+        "dependencies": {
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
       "monotorrent.messages": {
         "type": "Project",
         "dependencies": {
           "MonoTorrent": "1.0.0",
           "MonoTorrent.BEncoding": "1.0.0",
+          "ReusableTasks": "[2.0.1, 3.0.0)"
+        }
+      },
+      "monotorrent.trackers": {
+        "type": "Project",
+        "dependencies": {
+          "MonoTorrent": "1.0.0",
+          "MonoTorrent.BEncoding": "1.0.0",
+          "MonoTorrent.Messages": "1.0.0",
           "ReusableTasks": "[2.0.1, 3.0.0)"
         }
       }

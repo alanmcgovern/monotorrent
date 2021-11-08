@@ -28,10 +28,6 @@
 
 namespace MonoTorrent.PiecePicking
 {
-    // FIXME: Eventually make this public API so custom streaming requesters
-    // can be trivially integrated with the engine. Are these two the only
-    // methods needed?
-
     /// <summary>
     /// Allows files to be accessed while they are downloading
     /// </summary>

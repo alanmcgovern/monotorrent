@@ -190,7 +190,7 @@ namespace MonoTorrent.Client
 
             try {
                 // Create a handshake message to send to the peer
-                var handshake = new HandshakeMessage (manager.InfoHash, LocalPeerId, VersionInfo.ProtocolStringV100);
+                var handshake = new HandshakeMessage (manager.InfoHash, LocalPeerId, Constants.ProtocolStringV100);
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, preferredEncryption, manager.InfoHash, handshake, manager.Engine.Factories);
                 id.Decryptor = result.Decryptor;
@@ -385,7 +385,7 @@ namespace MonoTorrent.Client
                 id.LastBlockReceived.Restart ();
 
                 // Send our handshake now that we've decided to keep the connection
-                var handshake = new HandshakeMessage (manager.InfoHash, manager.Engine.PeerId, VersionInfo.ProtocolStringV100);
+                var handshake = new HandshakeMessage (manager.InfoHash, manager.Engine.PeerId, Constants.ProtocolStringV100);
                 await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
 
                 manager.HandlePeerConnected (id);

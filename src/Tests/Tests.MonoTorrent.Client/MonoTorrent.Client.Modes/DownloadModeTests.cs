@@ -217,7 +217,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
-            var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte)15, 20).ToArray ()), "peerid", VersionInfo.ProtocolStringV100);
+            var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte)15, 20).ToArray ()), "peerid", Constants.ProtocolStringV100);
 
             Assert.Throws<TorrentException> (() => Manager.Mode.HandleMessage (peer, handshake));
         }
@@ -242,7 +242,7 @@ namespace MonoTorrent.Client.Modes
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length);
             peer.Peer.PeerId = null;
-            var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+            var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             manager.Mode.HandleMessage (peer, handshake);
             Assert.AreEqual (handshake.PeerId, peer.PeerID);
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
             peer.Peer.PeerId = null;
-            var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+            var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Manager.Mode.HandleMessage (peer, handshake);
             Assert.AreEqual (handshake.PeerId, peer.PeerID);
@@ -269,7 +269,7 @@ namespace MonoTorrent.Client.Modes
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length);
-            var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+            var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Assert.Throws<TorrentException> (() => manager.Mode.HandleMessage (peer, handshake));
         }
@@ -279,7 +279,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
-            var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), VersionInfo.ProtocolStringV100, false);
+            var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Assert.DoesNotThrow (() => Manager.Mode.HandleMessage (peer, handshake));
             Assert.AreEqual (peer.PeerID, handshake.PeerId);

@@ -73,8 +73,7 @@ namespace MonoTorrent.Client.Tracker
 
             // Use a random integer prefixed by our identifier.
             lock (random)
-                // FIXME: Key = new BEncodedString ($"{VersionInfo.ClientVersion}-{random.Next (1, int.MaxValue)}");
-                Key = new BEncodedString ($"MO-{random.Next (1, int.MaxValue)}");
+                Key = new BEncodedString ($"{GitInfoHelper.ClientVersion}-{random.Next (1, int.MaxValue)}");
         }
 
         protected override async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)

@@ -938,7 +938,7 @@ namespace MonoTorrent.Client
         {
             var sb = new StringBuilder (20);
             sb.Append ("-");
-            sb.Append (VersionInfo.ClientVersion);
+            sb.Append (GitInfoHelper.ClientVersion);
             sb.Append ("-");
 
             // Create and use a single Random instance which *does not* use a seed so that

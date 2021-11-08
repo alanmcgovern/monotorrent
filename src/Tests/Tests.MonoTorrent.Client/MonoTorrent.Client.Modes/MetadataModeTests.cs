@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
+            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHash, new string ('g', 20), Constants.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.TorrentDict.LengthInBytes (), 5555);
             exHand.Supports.Add (LTMetadata.Support);
@@ -286,7 +286,7 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), VersionInfo.ProtocolStringV100, true, true);
+            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), Constants.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.InfoMetadata.Length, 5555);
             exHand.Supports.Add (LTMetadata.Support);
