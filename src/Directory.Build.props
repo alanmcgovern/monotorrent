@@ -21,7 +21,7 @@
     <GitVersionFile>version.txt</GitVersionFile>
     <GitIgnoreBranchVersion>true</GitIgnoreBranchVersion>
     <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
-    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version.txt'))\</GitCommitsRelativeTo>
+    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', '$(GitVersionFile)'))\</GitCommitsRelativeTo>
 
     <MonoTorrentABIVersion>2.0.0.0</MonoTorrentABIVersion>
   </PropertyGroup>

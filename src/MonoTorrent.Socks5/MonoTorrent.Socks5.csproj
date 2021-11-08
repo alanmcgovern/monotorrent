@@ -1,13 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', 'version_socks5.txt'))\</GitCommitsRelativeTo>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <GitVersionFile>version_socks5.txt</GitVersionFile>
+    <GitCommitsRelativeTo>$([MSBuild]::GetDirectoryNameOfFileAbove ('$(MSBuildThisFileDirectory)', '$(GitVersionFile)git'))\</GitCommitsRelativeTo>
+
+    <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput)</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="DotProxify" Version="0.0.0.2" />
-    <PackageReference Include="MonoTorrent" Version="[3.0,4.0)" ExcludeAssets="build" />
+    <PackageReference Include="MonoTorrent" Version="3.0" ExcludeAssets="build" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +26,45 @@
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'All'))" />
     </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies
+      to ensure our GitInfo related properties have been calculated correctly. -->
+  <Target Name="SetPackProperties" DependsOnTargets="SetAssemblyVersion">
+    <PropertyGroup>
+      <Authors>Alan McGovern</Authors>
+      <PackageDescription>
+        MonoTorrent.Socks5 offers SOCKS 5 proxy support for MonoTorrent.
+        Notable features include:
+        - HTTP(s) Tracker support
+        - Peer connection support
+
+        Pending features:
+        - UDP tracker support
+        - DHT support
+      </PackageDescription>
+      <PackageId>MonoTorrent.Socks5</PackageId>
+      <PackageLicenseFile>LICENSE</PackageLicenseFile>
+      <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
+      <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+      <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
+      <PackageTags>bittorrent;torrent;library;tracker;dht;c#;csharp;dotnet;.NET;p2p;socks;proxy;socks5</PackageTags>
+
+      <IncludeSource>true</IncludeSource>
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+      <RepositoryType>git</RepositoryType>
+      <RepositoryBranch>$(GitBranch)</RepositoryBranch>
+      <RepositoryCommit>$(GitSha)</RepositoryCommit>
+      <RepositoryUrl>https://github.com/mono/monotorrent</RepositoryUrl>
+
+      <Copyright>Alan McGovern</Copyright>
+    </PropertyGroup>
   </Target>
 
 </Project>
