@@ -14,7 +14,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
-    <RestoreLockedMode Condition="$(CI) and '$(RestoreLockedMode)' == ''">true</RestoreLockedMode>
+    <RestoreLockedMode Condition="$(CI) and '$(RestoreLockedMode)' == ''">false</RestoreLockedMode>
   </PropertyGroup>
 
   <PropertyGroup>
