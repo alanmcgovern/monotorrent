@@ -2,12 +2,6 @@
   "version": 1,
   "dependencies": {
     ".NETCoreApp,Version=v3.1": {
-      "GitInfo": {
-        "type": "Direct",
-        "requested": "[2.0.34, )",
-        "resolved": "2.0.34",
-        "contentHash": "/Jn0eIpmmUlNeblGw4GV+z8QSRHaas5nMu9x1AyQOAo8mip6qVy3BgujBCF0QdsrNzPspeV0jol4EGPQj0mqNw=="
-      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[16.4.0, )",
@@ -805,12 +799,6 @@
       }
     },
     ".NETFramework,Version=v4.7.2": {
-      "GitInfo": {
-        "type": "Direct",
-        "requested": "[2.0.34, )",
-        "resolved": "2.0.34",
-        "contentHash": "/Jn0eIpmmUlNeblGw4GV+z8QSRHaas5nMu9x1AyQOAo8mip6qVy3BgujBCF0QdsrNzPspeV0jol4EGPQj0mqNw=="
-      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[16.4.0, )",
