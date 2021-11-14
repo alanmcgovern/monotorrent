@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
     static class PeerDecoder
     {

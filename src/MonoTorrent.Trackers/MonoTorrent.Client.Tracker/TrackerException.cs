@@ -29,7 +29,7 @@
 
 using System;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public class TrackerException : Exception
     {

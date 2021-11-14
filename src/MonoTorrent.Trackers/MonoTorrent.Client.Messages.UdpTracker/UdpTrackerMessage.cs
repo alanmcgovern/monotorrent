@@ -29,8 +29,6 @@
 
 using System;
 
-using MonoTorrent.Client;
-
 namespace MonoTorrent.Messages.UdpTracker
 {
     public abstract class UdpTrackerMessage : Message

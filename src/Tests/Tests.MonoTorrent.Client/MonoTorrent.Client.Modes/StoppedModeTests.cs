@@ -29,7 +29,8 @@
 
 using System;
 
-using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Connections;
+using MonoTorrent.Trackers;
 
 using NUnit.Framework;
 

@@ -30,11 +30,9 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Messages;
-
-namespace MonoTorrent.Client.Messages
+namespace MonoTorrent.Messages.Peer
 {
-    public class RequestBundle : PeerMessage
+    class RequestBundle : PeerMessage
     {
         MutableRequestMessage Message { get; }
         IList<BlockInfo> Requests { get; }

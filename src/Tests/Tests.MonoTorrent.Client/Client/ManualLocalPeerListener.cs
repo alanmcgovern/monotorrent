@@ -31,6 +31,9 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
+
 namespace MonoTorrent.Client
 {
     class ManualLocalPeerListener : ILocalPeerDiscovery

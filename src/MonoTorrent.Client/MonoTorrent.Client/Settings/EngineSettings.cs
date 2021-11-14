@@ -33,6 +33,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 
+using MonoTorrent.Connections;
 using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client

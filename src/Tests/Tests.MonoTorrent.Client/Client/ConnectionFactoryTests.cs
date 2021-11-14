@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Connections;
-
 using NUnit.Framework;
 
 namespace MonoTorrent.Client

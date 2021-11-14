@@ -33,6 +33,7 @@ using System.Linq;
 using System.Net;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Connections;
 
 namespace MonoTorrent.Client
 {

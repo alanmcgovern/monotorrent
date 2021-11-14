@@ -26,10 +26,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages.FastPeer;
-using MonoTorrent.Messages;
+using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.FastPeer;
 
 namespace MonoTorrent.Client.Modes
 {

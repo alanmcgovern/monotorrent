@@ -34,9 +34,9 @@ using System.Net;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Tracker.Listeners;
+using MonoTorrent.Connections.Tracker;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Trackers
 {
     public class CustomComparer : IPeerComparer
     {

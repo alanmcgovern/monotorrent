@@ -30,8 +30,6 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client;
-
 namespace MonoTorrent.Messages.UdpTracker
 {
     public class AnnounceResponseMessage : UdpTrackerMessage

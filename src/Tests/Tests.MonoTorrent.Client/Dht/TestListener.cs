@@ -31,8 +31,8 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht

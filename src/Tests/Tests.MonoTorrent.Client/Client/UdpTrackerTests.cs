@@ -37,11 +37,12 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Messages.UdpTracker;
-using MonoTorrent.Tracker.Listeners;
+using MonoTorrent.Connections.Tracker;
 
 using NUnit.Framework;
+using MonoTorrent.Client;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     [TestFixture]
     public class UdpTrackerTests
@@ -53,7 +54,7 @@ namespace MonoTorrent.Client.Tracker
             TorrentEvent.Completed, InfoHash, false, PeerId, null, 1515, false);
 
         readonly ScrapeParameters scrapeParams = new ScrapeParameters (new InfoHash (new byte[20]));
-        MonoTorrent.Tracker.TrackerServer server;
+        TrackerServer server;
         UdpTracker tracker;
         IgnoringListener listener;
         List<BEncodedString> keys;
@@ -63,7 +64,7 @@ namespace MonoTorrent.Client.Tracker
         public void FixtureSetup ()
         {
             listener = new IgnoringListener (0);
-            listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceRequest e) {
+            listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
                 keys.Add (e.Key);
             };
             listener.Start ();
@@ -73,7 +74,7 @@ namespace MonoTorrent.Client.Tracker
         public void Setup ()
         {
             keys = new List<BEncodedString> ();
-            server = new MonoTorrent.Tracker.TrackerServer ();
+            server = new TrackerServer ();
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener (listener);
 
@@ -223,7 +224,7 @@ namespace MonoTorrent.Client.Tracker
                 .WithBytesLeft (456)
                 .WithBytesUploaded (789);
 
-            var announceArgsTask = new TaskCompletionSource<MonoTorrent.Tracker.AnnounceEventArgs> ();
+            var announceArgsTask = new TaskCompletionSource<AnnounceEventArgs> ();
             server.PeerAnnounced += (o, e) => announceArgsTask.TrySetResult (e);
             await tracker.AnnounceAsync (announceparams, CancellationToken.None);
 
@@ -239,11 +240,11 @@ namespace MonoTorrent.Client.Tracker
         [Test]
         public async Task AnnounceTest_GetPeers ()
         {
-            var trackable = new MonoTorrent.Tracker.InfoHashTrackable ("Test", InfoHash);
+            var trackable = new InfoHashTrackable ("Test", InfoHash);
             server.Add (trackable);
-            var manager = (MonoTorrent.Tracker.SimpleTorrentManager) server.GetTrackerItem (trackable);
+            var manager = (SimpleTorrentManager) server.GetTrackerItem (trackable);
             foreach (var p in peerEndpoints)
-                manager.Add (new MonoTorrent.Tracker.Peer (p, p));
+                manager.Add (new Peer (p, p));
 
             var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None);
             var endpoints = response.Peers.Select (t => new IPEndPoint (IPAddress.Parse (t.Uri.Host), t.Uri.Port)).ToArray ();

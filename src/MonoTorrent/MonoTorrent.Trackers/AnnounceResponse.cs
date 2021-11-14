@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public class AnnounceResponse
     {

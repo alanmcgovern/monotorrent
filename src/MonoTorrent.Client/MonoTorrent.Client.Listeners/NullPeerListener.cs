@@ -30,7 +30,8 @@
 using System;
 using System.Net;
 
-using MonoTorrent.Client.Connections;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 
 namespace MonoTorrent.Client.Listeners
 {

@@ -37,7 +37,7 @@ using MonoTorrent.Messages.UdpTracker;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     [DebuggerDisplay("{" + nameof(Uri)+ "}")]
     public class UdpTracker : Tracker

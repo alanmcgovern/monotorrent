@@ -32,7 +32,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Trackers;
 using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.Modes

@@ -31,10 +31,10 @@ using System;
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages.Libtorrent;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
+using MonoTorrent.Messages.Peer.Libtorrent;
 
 namespace MonoTorrent.Client
 {

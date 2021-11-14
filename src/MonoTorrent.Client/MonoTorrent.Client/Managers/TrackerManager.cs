@@ -30,13 +30,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client;
+
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     /// <summary>
     /// Represents the connection to a tracker that an TorrentManager has

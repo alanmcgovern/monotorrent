@@ -29,7 +29,7 @@
 
 using System;
 
-using MonoTorrent.Client.Connections;
+using MonoTorrent.Connections.Peer;
 
 namespace MonoTorrent.Logging
 {

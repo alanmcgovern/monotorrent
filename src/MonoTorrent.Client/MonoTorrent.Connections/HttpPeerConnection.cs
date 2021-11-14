@@ -35,11 +35,13 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client;
 using MonoTorrent.Messages;
+using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Connections
+namespace MonoTorrent.Connections.Peer
 {
     sealed class HttpPeerConnection : IPeerConnection
     {

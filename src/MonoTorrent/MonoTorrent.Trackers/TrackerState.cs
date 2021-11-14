@@ -26,7 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public enum TrackerState
     {

@@ -32,7 +32,7 @@ using System.Threading;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public interface ITracker
     {

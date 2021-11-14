@@ -33,8 +33,10 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Messages;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
+using MonoTorrent.Messages.Peer;
 
 using NUnit.Framework;
 

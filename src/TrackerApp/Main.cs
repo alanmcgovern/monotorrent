@@ -33,8 +33,8 @@ using System.IO;
 
 using MonoTorrent;
 using MonoTorrent.TorrentWatcher;
-using MonoTorrent.Tracker;
-using MonoTorrent.Tracker.Listeners;
+using MonoTorrent.Trackers;
+using MonoTorrent.Connections.Tracker;
 
 using TrackerApp;
 

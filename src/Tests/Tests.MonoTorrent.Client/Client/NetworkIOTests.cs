@@ -32,7 +32,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.RateLimiters;
 
 using NUnit.Framework;

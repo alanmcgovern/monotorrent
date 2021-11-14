@@ -40,7 +40,7 @@ using MonoTorrent.Logging;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public class HTTPTracker : Tracker
     {

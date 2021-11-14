@@ -31,9 +31,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using MonoTorrent.BEncoding;
-using MonoTorrent.Messages.Libtorrent;
-using MonoTorrent.Messages;
+using MonoTorrent.Connections;
+using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Trackers;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.Modes

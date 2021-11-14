@@ -28,7 +28,7 @@
 
 using System;
 
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Trackers;
 
 namespace MonoTorrent.Client
 {

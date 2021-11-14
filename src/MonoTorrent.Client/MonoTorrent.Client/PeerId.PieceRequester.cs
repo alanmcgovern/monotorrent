@@ -30,9 +30,8 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client

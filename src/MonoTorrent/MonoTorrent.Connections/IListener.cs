@@ -29,7 +29,7 @@
 
 using System;
 
-namespace MonoTorrent
+namespace MonoTorrent.Connections
 {
     public interface IListener
     {

@@ -32,9 +32,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Mono.Nat;
 
-using MonoTorrent.Client;
+using Mono.Nat;
 
 namespace MonoTorrent.PortForwarding
 {

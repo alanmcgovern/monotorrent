@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.Client;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Tracker;
 using MonoTorrent.PieceWriter;
-using MonoTorrent.Tracker.Listeners;
+using MonoTorrent.Trackers;
 
 using ReusableTasks;
 
@@ -99,7 +101,7 @@ namespace SampleClient
             }
 
             var trackerListener = TrackerListenerFactory.CreateHttp (IPAddress.Parse ("127.0.0.1"), 25611);
-            var tracker = new MonoTorrent.Tracker.TrackerServer {
+            var tracker = new TrackerServer {
                 AllowUnregisteredTorrents = true
             };
             tracker.RegisterListener (trackerListener);

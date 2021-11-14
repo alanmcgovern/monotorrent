@@ -28,10 +28,10 @@
 
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Connections;
+using MonoTorrent.Trackers;
 
 using NUnit.Framework;
 

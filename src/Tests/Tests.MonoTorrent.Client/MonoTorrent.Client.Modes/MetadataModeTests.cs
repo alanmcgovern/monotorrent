@@ -36,11 +36,10 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages.FastPeer;
-using MonoTorrent.Messages.Libtorrent;
-using MonoTorrent.Messages;
+using MonoTorrent.Connections.Peer.Encryption;
+using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages.Peer.Libtorrent;
 
 using NUnit.Framework;
 

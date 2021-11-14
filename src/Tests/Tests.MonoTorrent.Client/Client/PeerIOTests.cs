@@ -29,9 +29,9 @@
 
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages;
+using MonoTorrent.Messages.Peer;
 
 using NUnit.Framework;
 

@@ -29,12 +29,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
 

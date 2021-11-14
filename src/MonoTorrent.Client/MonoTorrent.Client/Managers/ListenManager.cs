@@ -28,17 +28,16 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Listeners;
-using MonoTorrent.Messages;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Logging;
+using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
-using System.Linq;
 
 namespace MonoTorrent.Client
 {

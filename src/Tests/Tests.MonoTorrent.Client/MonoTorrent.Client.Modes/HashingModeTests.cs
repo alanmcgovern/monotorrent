@@ -32,6 +32,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using MonoTorrent.Connections;
+using MonoTorrent.Trackers;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client.Modes

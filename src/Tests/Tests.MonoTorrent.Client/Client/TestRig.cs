@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -38,11 +37,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Listeners;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Dht;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.PieceWriter;
+using MonoTorrent.Trackers;
 
 using ReusableTasks;
 
@@ -113,7 +112,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    class CustomTracker : MonoTorrent.Client.Tracker.Tracker
+    class CustomTracker : Tracker
     {
         public List<DateTime> AnnouncedAt = new List<DateTime> ();
         public List<AnnounceParameters> AnnounceParameters = new List<AnnounceParameters> ();

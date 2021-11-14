@@ -30,8 +30,8 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Connections.Peer;
 
 using ReusableTasks;
 

@@ -31,7 +31,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace MonoTorrent
+namespace MonoTorrent.Connections
 {
     public interface ISocketMessageListener : ISocketListener
     {

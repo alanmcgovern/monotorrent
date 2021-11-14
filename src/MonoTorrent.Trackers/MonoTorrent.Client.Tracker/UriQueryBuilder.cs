@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace MonoTorrent
+namespace MonoTorrent.Trackers
 {
     [DebuggerDisplay ("{" + nameof (ToUri) + " ()}")]
-    public class UriQueryBuilder
+    class UriQueryBuilder
     {
         readonly UriBuilder builder;
         readonly Dictionary<string, string> queryParams;

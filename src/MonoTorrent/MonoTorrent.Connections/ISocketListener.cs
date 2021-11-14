@@ -29,7 +29,7 @@
 
 using System.Net;
 
-namespace MonoTorrent
+namespace MonoTorrent.Connections
 {
     public interface ISocketListener : IListener
     {

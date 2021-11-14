@@ -30,7 +30,7 @@
 using System.Net;
 using System.Threading;
 
-namespace MonoTorrent
+namespace MonoTorrent.Connections
 {
     public abstract class SocketListener : Listener, ISocketListener
     {

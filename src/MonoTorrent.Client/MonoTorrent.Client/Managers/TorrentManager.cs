@@ -33,12 +33,13 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MonoTorrent.Messages;
+
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.Streaming;
+using MonoTorrent.Trackers;
 
 using ReusableTasks;
 

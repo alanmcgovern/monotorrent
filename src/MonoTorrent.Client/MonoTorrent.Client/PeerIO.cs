@@ -28,14 +28,12 @@
 
 
 using System;
-using System.Linq;
 using System.Net;
 
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
+using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
 

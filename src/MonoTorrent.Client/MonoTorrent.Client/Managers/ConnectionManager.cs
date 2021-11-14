@@ -32,12 +32,12 @@ using System.Collections.Generic;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Logging;
+using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
 

@@ -27,7 +27,10 @@
 //
 
 
-namespace MonoTorrent.Client.Tracker
+using MonoTorrent.Client;
+using MonoTorrent.Connections;
+
+namespace MonoTorrent.Trackers
 {
     class TrackerRequestFactory : ITrackerRequestFactory
     {

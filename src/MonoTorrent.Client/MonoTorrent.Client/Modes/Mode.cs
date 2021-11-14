@@ -29,17 +29,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Encryption;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages;
-using MonoTorrent.Messages.FastPeer;
-using MonoTorrent.Messages.Libtorrent;
+using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages.Peer.Libtorrent;
 using MonoTorrent.PiecePicking;
 
 using ReusableTasks;

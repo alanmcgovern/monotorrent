@@ -32,7 +32,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Connections;
+using MonoTorrent.Connections.Peer;
 
 using NUnit.Framework;
 

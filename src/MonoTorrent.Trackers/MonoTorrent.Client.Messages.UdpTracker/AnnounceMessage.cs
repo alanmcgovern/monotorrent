@@ -30,7 +30,7 @@
 using System;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Trackers;
 
 namespace MonoTorrent.Messages.UdpTracker
 {

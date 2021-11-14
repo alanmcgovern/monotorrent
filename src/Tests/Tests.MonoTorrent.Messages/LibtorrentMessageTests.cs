@@ -28,7 +28,8 @@
 
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Messages.Libtorrent;
+using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
 
 using NUnit.Framework;
 

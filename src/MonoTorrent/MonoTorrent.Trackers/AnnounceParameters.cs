@@ -27,7 +27,7 @@
 //
 
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public sealed class AnnounceParameters
     {

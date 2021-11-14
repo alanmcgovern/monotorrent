@@ -34,7 +34,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Trackers;
 
 using NUnit.Framework;
 
@@ -42,7 +42,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    class DefaultTracker : Tracker.Tracker
+    class DefaultTracker : Tracker
     {
         public DefaultTracker ()
             : base (new Uri ("http://tracker:5353/announce"))

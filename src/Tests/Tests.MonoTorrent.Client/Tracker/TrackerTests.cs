@@ -33,12 +33,12 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Tracker.Listeners;
+using MonoTorrent.Trackers;
+using MonoTorrent.Connections.Tracker;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Trackers
 {
     [TestFixture]
     public class TrackerTests

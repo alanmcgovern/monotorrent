@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-
-using MonoTorrent.Client;
 
 namespace MonoTorrent
 {

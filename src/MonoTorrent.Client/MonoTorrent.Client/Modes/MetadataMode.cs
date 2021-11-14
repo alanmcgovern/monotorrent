@@ -28,19 +28,17 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages.FastPeer;
-using MonoTorrent.Messages.Libtorrent;
-using MonoTorrent.Messages;
 using MonoTorrent.Logging;
+using MonoTorrent.Messages;
+using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages.Peer.Libtorrent;
 
 namespace MonoTorrent.Client.Modes
 {

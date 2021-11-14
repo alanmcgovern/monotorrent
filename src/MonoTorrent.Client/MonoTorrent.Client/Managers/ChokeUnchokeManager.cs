@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Messages.FastPeer;
-using MonoTorrent.Messages;
+using MonoTorrent.Messages.Peer;
 
 namespace MonoTorrent.Client
 {

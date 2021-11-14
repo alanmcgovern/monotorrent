@@ -32,11 +32,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Client;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Trackers
 {
     public class ManualTrackerManager : ITrackerManager
     {

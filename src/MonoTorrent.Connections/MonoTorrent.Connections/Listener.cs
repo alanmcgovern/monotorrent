@@ -30,7 +30,7 @@
 using System;
 using System.Threading;
 
-namespace MonoTorrent
+namespace MonoTorrent.Connections
 {
     public abstract class Listener : IListener
     {

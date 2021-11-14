@@ -33,13 +33,12 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Logging;
 
-namespace MonoTorrent
+namespace MonoTorrent.Connections
 {
     public abstract class UdpListener : SocketListener, ISocketMessageListener
     {
-        // static readonly Logger logger = Logger.Create (nameof (UdpListener));
-
         public event Action<byte[], IPEndPoint> MessageReceived;
 
         UdpClient Client { get; set; }

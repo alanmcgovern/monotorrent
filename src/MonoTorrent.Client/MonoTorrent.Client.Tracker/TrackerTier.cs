@@ -29,14 +29,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
+using MonoTorrent.Client;
 using MonoTorrent.Logging;
 
 using ReusableTasks;
 
-namespace MonoTorrent.Client.Tracker
+namespace MonoTorrent.Trackers
 {
     public class TrackerTier
     {

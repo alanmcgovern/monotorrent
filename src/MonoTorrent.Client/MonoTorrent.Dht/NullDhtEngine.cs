@@ -31,7 +31,7 @@ using System;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
 {

@@ -32,7 +32,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
     struct ThreadSwitcher : INotifyCompletion
     {
