@@ -4,9 +4,8 @@ using System.Net.Http;
 
 using DotProxify;
 
-using MonoTorrent.Client;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Tracker;
+using MonoTorrent.Connections.Peer;
+using MonoTorrent.Trackers;
 
 namespace MonoTorrent.Connections.Proxy
 {
