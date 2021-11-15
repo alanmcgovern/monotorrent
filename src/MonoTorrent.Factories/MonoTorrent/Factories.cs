@@ -42,7 +42,7 @@ using MonoTorrent.PieceWriter;
 using MonoTorrent.PortForwarding;
 using MonoTorrent.Trackers;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent
 {
     public partial class Factories
     {
