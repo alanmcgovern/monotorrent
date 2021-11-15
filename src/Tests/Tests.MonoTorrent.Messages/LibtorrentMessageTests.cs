@@ -28,12 +28,10 @@
 
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.Libtorrent;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Messages
+namespace MonoTorrent.Messages.Peer.Libtorrent
 {
     [TestFixture]
     public class LibtorrentMessageTests

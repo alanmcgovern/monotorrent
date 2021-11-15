@@ -33,7 +33,7 @@ using System.Linq;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent
 {
     [TestFixture]
     public class BitFieldTest

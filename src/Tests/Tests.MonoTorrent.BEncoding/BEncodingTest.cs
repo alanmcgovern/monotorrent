@@ -34,7 +34,7 @@ using MonoTorrent.BEncoding;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.BEncoding
 {
 
     /// <summary>

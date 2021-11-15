@@ -31,12 +31,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using MonoTorrent.Messages;
-using MonoTorrent.Messages.Peer;
-
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.Messages
+namespace MonoTorrent.Messages.Peer
 {
     [TestFixture]
     public class StandardMessageTests
