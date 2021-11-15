@@ -34,7 +34,6 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 
-using MonoTorrent.Trackers;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
@@ -94,8 +93,7 @@ namespace MonoTorrent.Client
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
             HttpClientFunc = () => {
                 var client = new HttpClient ();
-                //FIXME: Move GitInfo everyhwere
-                client.DefaultRequestHeaders.Add ("User-Agent", /*VersionInfo.ClientVersion*/ "test test test");
+                client.DefaultRequestHeaders.Add ("User-Agent", GitInfoHelper.ClientVersion);
                 client.Timeout = TimeSpan.FromSeconds (30);
                 return client;
             };
