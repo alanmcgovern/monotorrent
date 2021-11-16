@@ -67,7 +67,8 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (args);
             };
 
-            dht.RaisePeersFound (manager.InfoHash, new[] { rig.CreatePeer (false).Peer });
+            var peer = rig.CreatePeer (false).Peer;
+            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.TextBytes)  });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -94,7 +95,8 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (args);
             };
 
-            dht.RaisePeersFound (manager.InfoHash, new[] { rig.CreatePeer (false).Peer });
+            var peer = rig.CreatePeer (false).Peer;
+            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.TextBytes)  });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");

@@ -1,10 +1,10 @@
 //
-// PeersFoundEventArgs.cs
+// IDhtEngine.cs
 //
 // Authors:
-//   Olivier Dufour <olivier.duff@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Olivier Dufour
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,21 +29,27 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
-using MonoTorrent.Client;
+using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
 {
-    public class PeersFoundEventArgs : EventArgs
+    public interface IDhtEngine : IDisposable
     {
-        public IList<Peer> Peers { get; }
-        public InfoHash InfoHash { get; }
+        event EventHandler<PeersFoundEventArgs> PeersFound;
+        event EventHandler StateChanged;
 
-        internal PeersFoundEventArgs (InfoHash infoHash, IList<Peer> peers)
-        {
-            InfoHash = infoHash;
-            Peers = new ReadOnlyCollection<Peer> (peers);
-        }
+        bool Disposed { get; }
+        DhtState State { get; }
+
+        void Add (IEnumerable<byte[]> nodes);
+        void Announce (InfoHash infohash, int port);
+        void GetPeers (InfoHash infohash);
+        Task<byte[]> SaveNodesAsync ();
+        Task SetListenerAsync (IDhtListener listener);
+        Task StartAsync ();
+        Task StartAsync (byte[] initialNodes);
+        Task StopAsync ();
     }
 }

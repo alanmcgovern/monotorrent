@@ -621,7 +621,7 @@ namespace MonoTorrent.Client
             manager.UploadLimiters.Add (uploadLimiters);
             if (DhtEngine != null && manager.Torrent?.Nodes != null && DhtEngine.State != DhtState.Ready) {
                 try {
-                    DhtEngine.Add (manager.Torrent.Nodes);
+                    DhtEngine.Add (manager.Torrent.Nodes.OfType<BEncodedString> ().Select (t => t.TextBytes));
                 } catch {
                     // FIXME: Should log this somewhere, though it's not critical
                 }
@@ -673,7 +673,7 @@ namespace MonoTorrent.Client
                 return;
 
             if (manager.CanUseDht) {
-                int successfullyAdded = await manager.AddPeersAsync (e.Peers);
+                int successfullyAdded = await manager.AddPeersAsync (e.Peers.Select (p => new Peer (p.PeerId, p.Uri)));
                 manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
             } else {
                 // This is only used for unit testing to validate that even if the DHT engine

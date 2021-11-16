@@ -107,7 +107,7 @@ namespace MonoTorrent.Dht
 
         #region Methods
 
-        public void Add (BEncodedList nodes)
+        public void Add (IEnumerable<byte[]> nodes)
         {
             // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
@@ -193,7 +193,7 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged (DhtState.Ready);
         }
 
-        internal void RaisePeersFound (NodeId infoHash, IList<Peer> peers)
+        internal void RaisePeersFound (NodeId infoHash, IList<PeerInfo> peers)
         {
             PeersFound?.Invoke (this, new PeersFoundEventArgs (new InfoHash (infoHash.Bytes), peers));
         }

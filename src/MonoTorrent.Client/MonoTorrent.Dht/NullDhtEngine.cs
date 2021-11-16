@@ -28,9 +28,9 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
 using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
@@ -53,7 +53,7 @@ namespace MonoTorrent.Dht
 
         public DhtState State => DhtState.NotReady;
 
-        public void Add (BEncodedList nodes)
+        public void Add (IEnumerable<byte[]> nodes)
         {
 
         }

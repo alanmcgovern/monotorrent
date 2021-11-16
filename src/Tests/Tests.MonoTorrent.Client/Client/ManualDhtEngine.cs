@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         public event EventHandler StateChanged;
 
-        public void Add (BEncodedList nodes)
+        public void Add (IEnumerable<byte[]> nodes)
         {
 
         }
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public void RaisePeersFound (InfoHash infoHash, IList<Peer> peers)
+        public void RaisePeersFound (InfoHash infoHash, IList<PeerInfo> peers)
             => PeersFound?.Invoke (this, new PeersFoundEventArgs (infoHash, peers));
 
         public void RaiseStateChanged (DhtState newState)
