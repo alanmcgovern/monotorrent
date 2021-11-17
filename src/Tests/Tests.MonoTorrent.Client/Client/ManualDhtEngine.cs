@@ -39,7 +39,9 @@ namespace MonoTorrent.Client
 {
     public class ManualDhtEngine : IDhtEngine
     {
+        public TimeSpan AnnounceInterval { get; }
         public bool Disposed { get; private set; }
+        public TimeSpan MinimumAnnounceInterval { get; }
         public DhtState State { get; private set; }
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;

@@ -40,7 +40,9 @@ namespace MonoTorrent.Dht
         event EventHandler<PeersFoundEventArgs> PeersFound;
         event EventHandler StateChanged;
 
+        TimeSpan AnnounceInterval { get; }
         bool Disposed { get; }
+        TimeSpan MinimumAnnounceInterval { get; }
         DhtState State { get; }
 
         void Add (IEnumerable<byte[]> nodes);

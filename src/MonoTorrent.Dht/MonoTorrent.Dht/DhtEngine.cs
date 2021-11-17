@@ -50,8 +50,8 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
-        public static readonly TimeSpan AnnounceInternal = TimeSpan.FromMinutes (10);
-        public static readonly TimeSpan MinimumAnnounceInterval = TimeSpan.FromMinutes (3);
+        static readonly TimeSpan DefaultAnnounceInternal = TimeSpan.FromMinutes (10);
+        static readonly TimeSpan DefaultMinimumAnnounceInterval = TimeSpan.FromMinutes (3);
 
         #region Events
 
@@ -68,7 +68,12 @@ namespace MonoTorrent.Dht
 
         #region Properties
 
+        public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
+
         public bool Disposed { get; private set; }
+
+        public TimeSpan MinimumAnnounceInterval => DefaultMinimumAnnounceInterval;
+
         public DhtState State { get; private set; }
 
         internal TimeSpan BucketRefreshTimeout { get; set; }

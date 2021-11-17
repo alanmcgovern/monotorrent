@@ -522,7 +522,7 @@ namespace MonoTorrent.Client.Modes
                 _ = Manager.LocalPeerAnnounceAsync ();
             }
 
-            if (Manager.CanUseDht && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Dht.DhtEngine.AnnounceInternal)) {
+            if (Manager.CanUseDht && Manager.Engine != null && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Manager.Engine.DhtEngine.AnnounceInterval)) {
                 Manager.DhtAnnounce ();
             }
 

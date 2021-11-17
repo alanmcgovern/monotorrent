@@ -49,7 +49,9 @@ namespace MonoTorrent.Dht
         }
 #pragma warning restore 0067
 
+        public TimeSpan AnnounceInterval { get; }
         public bool Disposed => false;
+        public TimeSpan MinimumAnnounceInterval { get; }
 
         public DhtState State => DhtState.NotReady;
 
