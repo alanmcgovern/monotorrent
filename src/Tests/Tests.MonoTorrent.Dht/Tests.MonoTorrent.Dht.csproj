@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\Arrays.cs" Link="Arrays.cs" />
+    <Compile Include="..\Tests.MonoTorrent.Client\TaskExtensions.cs" Link="TaskExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent.Dht\MonoTorrent.Dht.csproj" />
+  </ItemGroup>
+
+</Project>

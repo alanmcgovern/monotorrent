@@ -402,11 +402,13 @@ namespace MonoTorrent.Client
             MetadataMode = metadataMode;
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
             var factories = Factories.Default
+                .WithDhtCreator (() => new ManualDhtEngine ())
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
                 .WithTrackerCreator("custom", uri => new CustomTracker (uri))
                 ;
+
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),

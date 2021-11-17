@@ -1,10 +1,10 @@
 //
-// Enums.cs
+// PeersFoundEventArgs.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Olivier Dufour <olivier.duff@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Olivier Dufour
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,36 +27,21 @@
 //
 
 
-namespace MonoTorrent.Client
-{
-    public enum TorrentState
-    {
-        Stopped,
-        Paused,
-        Starting,
-        Downloading,
-        Seeding,
-        Hashing,
-        HashingPaused,
-        Stopping,
-        Error,
-        Metadata
-    }
-}
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
-namespace MonoTorrent
+namespace MonoTorrent.Dht
 {
-    public enum Direction
+    public class PeersFoundEventArgs : EventArgs
     {
-        None,
-        Incoming,
-        Outgoing
-    }
+        public IList<PeerInfo> Peers { get; }
+        public InfoHash InfoHash { get; }
 
-    enum PeerListType
-    {
-        NascentPeers,
-        CandidatePeers,
-        OptimisticUnchokeCandidatePeers
+        public PeersFoundEventArgs (InfoHash infoHash, IList<PeerInfo> peers)
+        {
+            InfoHash = infoHash;
+            Peers = new ReadOnlyCollection<PeerInfo> (peers);
+        }
     }
 }

@@ -1,10 +1,10 @@
-//
-// PeersFoundEventArgs.cs
+﻿//
+// MessageLoop.cs
 //
 // Authors:
-//   Olivier Dufour <olivier.duff@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Olivier Dufour
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,22 +28,33 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Net;
+using System.Threading.Tasks;
 
-using MonoTorrent.Client;
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
 {
-    public class PeersFoundEventArgs : EventArgs
+    class NullDhtListener : IDhtListener
     {
-        public IList<Peer> Peers { get; }
-        public InfoHash InfoHash { get; }
+        public IPEndPoint LocalEndPoint { get; }
+        public ListenerStatus Status { get; } = ListenerStatus.NotListening;
 
-        internal PeersFoundEventArgs (InfoHash infoHash, IList<Peer> peers)
+        public event Action<byte[], IPEndPoint> MessageReceived;
+        public event EventHandler<EventArgs> StatusChanged;
+
+        public Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {
-            InfoHash = infoHash;
-            Peers = new ReadOnlyCollection<Peer> (peers);
+            return Task.CompletedTask;
+        }
+
+        public void Start ()
+        {
+        }
+
+        public void Stop ()
+        {
         }
     }
 }

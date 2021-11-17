@@ -36,6 +36,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Dht;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.Streaming;
@@ -707,10 +708,10 @@ namespace MonoTorrent.Client
 
         internal void DhtAnnounce ()
         {
-            if (CanUseDht && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Dht.DhtEngine.MinimumAnnounceInterval)) {
+            if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
-                Engine?.DhtEngine.GetPeers (InfoHash);
+                Engine.DhtEngine.GetPeers (InfoHash);
             }
         }
 

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -49,8 +50,8 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
-        internal static readonly TimeSpan AnnounceInternal = TimeSpan.FromMinutes (10);
-        internal static readonly TimeSpan MinimumAnnounceInterval = TimeSpan.FromMinutes (3);
+        static readonly TimeSpan DefaultAnnounceInternal = TimeSpan.FromMinutes (10);
+        static readonly TimeSpan DefaultMinimumAnnounceInterval = TimeSpan.FromMinutes (3);
 
         #region Events
 
@@ -67,7 +68,12 @@ namespace MonoTorrent.Dht
 
         #region Properties
 
+        public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
+
         public bool Disposed { get; private set; }
+
+        public TimeSpan MinimumAnnounceInterval => DefaultMinimumAnnounceInterval;
+
         public DhtState State { get; private set; }
 
         internal TimeSpan BucketRefreshTimeout { get; set; }
@@ -82,18 +88,18 @@ namespace MonoTorrent.Dht
         #region Constructors
 
         public DhtEngine ()
-            : this (Factories.Default)
+            : this (SHA1.Create ())
         {
 
         }
 
-        public DhtEngine (Factories factories)
+        public DhtEngine (SHA1 hasher)
         {
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
             MessageLoop = new MessageLoop (this);
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
-            TokenManager = new TokenManager (factories);
+            TokenManager = new TokenManager (hasher);
             Torrents = new Dictionary<NodeId, List<Node>> ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {
@@ -107,7 +113,7 @@ namespace MonoTorrent.Dht
 
         #region Methods
 
-        public void Add (BEncodedList nodes)
+        public void Add (IEnumerable<byte[]> nodes)
         {
             // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
@@ -141,7 +147,8 @@ namespace MonoTorrent.Dht
         public async void Announce (InfoHash infoHash, int port)
         {
             CheckDisposed ();
-            Check.InfoHash (infoHash);
+            if (infoHash == null)
+                throw new ArgumentNullException (nameof (infoHash));
 
             try {
                 await MainLoop;
@@ -172,7 +179,8 @@ namespace MonoTorrent.Dht
         public async void GetPeers (InfoHash infoHash)
         {
             CheckDisposed ();
-            Check.InfoHash (infoHash);
+            if (infoHash == null)
+                throw new ArgumentNullException(nameof (infoHash));
 
             try {
                 await MainLoop;
@@ -193,7 +201,7 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged (DhtState.Ready);
         }
 
-        internal void RaisePeersFound (NodeId infoHash, IList<Peer> peers)
+        internal void RaisePeersFound (NodeId infoHash, IList<PeerInfo> peers)
         {
             PeersFound?.Invoke (this, new PeersFoundEventArgs (new InfoHash (infoHash.Bytes), peers));
         }

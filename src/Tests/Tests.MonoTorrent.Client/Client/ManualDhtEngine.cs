@@ -39,13 +39,15 @@ namespace MonoTorrent.Client
 {
     public class ManualDhtEngine : IDhtEngine
     {
+        public TimeSpan AnnounceInterval { get; }
         public bool Disposed { get; private set; }
+        public TimeSpan MinimumAnnounceInterval { get; }
         public DhtState State { get; private set; }
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         public event EventHandler StateChanged;
 
-        public void Add (BEncodedList nodes)
+        public void Add (IEnumerable<byte[]> nodes)
         {
 
         }
@@ -63,7 +65,7 @@ namespace MonoTorrent.Client
 
         }
 
-        public void RaisePeersFound (InfoHash infoHash, IList<Peer> peers)
+        public void RaisePeersFound (InfoHash infoHash, IList<PeerInfo> peers)
             => PeersFound?.Invoke (this, new PeersFoundEventArgs (infoHash, peers));
 
         public void RaiseStateChanged (DhtState newState)

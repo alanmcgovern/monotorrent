@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.PortForwarding\MonoTorrent.PortForwarding.csproj" PrivateAssets="all" />

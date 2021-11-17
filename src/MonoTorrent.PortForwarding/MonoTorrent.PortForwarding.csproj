@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\ThreadSwitcher.cs" Link="ThreadSwitcher.cs" />
     <Compile Include="..\MonoTorrent.Client\MonoTorrent\SemaphoreSlimExtensions.cs" Link="SemaphoreSlimExtensions.cs" />
   </ItemGroup>
 

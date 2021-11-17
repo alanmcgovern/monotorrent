@@ -3,14 +3,13 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <NoWarn>0436;$(NoWarn)</NoWarn>
-
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Dht\MonoTorrent.Dht.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />

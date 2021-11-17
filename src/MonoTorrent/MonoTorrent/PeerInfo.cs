@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent
 {
-    public class PeerInfo
+    public class PeerInfo : IEquatable<PeerInfo>
     {
         public byte[] PeerId { get; }
 
@@ -42,6 +42,23 @@ namespace MonoTorrent
 
         public PeerInfo (Uri uri, byte[] peerId)
             => (Uri, PeerId) = (uri ?? throw new ArgumentNullException (nameof (peerId)), peerId ?? Array.Empty<byte> ());
+
+        public override bool Equals (object obj)
+            => Equals (obj as PeerInfo);
+
+        public bool Equals (PeerInfo other)
+        {
+            if (other == null || !Uri.Equals (other.Uri) || PeerId.Length != other.PeerId.Length)
+                return false;
+
+            for (int i = 0; i < PeerId.Length; i++)
+                if (PeerId[i] != other.PeerId[i])
+                    return false;
+            return true;
+        }
+
+        public override int GetHashCode ()
+            => Uri.GetHashCode ();
 
         public byte[] CompactPeer ()
             => CompactPeer (Uri);
@@ -70,14 +87,29 @@ namespace MonoTorrent
 
         public static IList<PeerInfo> FromCompact (byte[] data, int offset)
         {
+            var sb = new StringBuilder (27);
+            var list = new List<PeerInfo> ((data.Length / 6) + 1);
+            FromCompact (data, offset, sb, list);
+            return list;
+        }
+
+        public static IList<PeerInfo> FromCompact (IEnumerable<byte[]> data)
+        {
+            var sb = new StringBuilder (27);
+            var list = new List<PeerInfo> ();
+            foreach (var buffer in data)
+                FromCompact (buffer, 0, sb, list);
+            return list;
+        }
+
+        static void FromCompact (byte[] data, int offset, StringBuilder sb, List<PeerInfo> list)
+        {
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes
             // Ports are the following 2 bytes
             byte[] byteOrderedData = data;
             int i = offset;
             ushort port;
-            var sb = new StringBuilder (27);
-            var list = new List<PeerInfo> ((byteOrderedData.Length / 6) + 1);
             while ((i + 5) < byteOrderedData.Length) {
                 sb.Remove (0, sb.Length);
 
@@ -98,8 +130,6 @@ namespace MonoTorrent
                 var uri = new Uri (sb.ToString ());
                 list.Add (new PeerInfo (uri, Array.Empty<byte> ()));
             }
-
-            return list;
         }
     }
 }

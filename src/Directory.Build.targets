@@ -15,6 +15,13 @@
   <ItemGroup Condition="$(UseGitInfo)">
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
     <Compile Include="$(MSBuildThisFileDirectory)GitInfoHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ICacheable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cache.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EnsureThreadPool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MainLoop.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" />
   </ItemGroup>
 
 

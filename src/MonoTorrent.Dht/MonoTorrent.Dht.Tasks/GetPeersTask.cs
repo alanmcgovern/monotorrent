@@ -28,9 +28,10 @@
 
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client;
+using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
@@ -39,7 +40,7 @@ namespace MonoTorrent.Dht.Tasks
     {
         const int MaxPeers = 128;
 
-        HashSet<Peer> FoundPeers { get; }
+        HashSet<PeerInfo> FoundPeers { get; }
 
         DhtEngine Engine { get; }
         NodeId InfoHash { get; }
@@ -54,7 +55,7 @@ namespace MonoTorrent.Dht.Tasks
         {
             Engine = engine;
             InfoHash = infohash;
-            FoundPeers = new HashSet<Peer> ();
+            FoundPeers = new HashSet<PeerInfo> ();
         }
 
         public async Task<IEnumerable<Node>> ExecuteAsync ()
@@ -81,7 +82,7 @@ namespace MonoTorrent.Dht.Tasks
                 // The response had some actual peers
                 if (response.Values != null) {
                     // We have actual peers!
-                    var peers = Peer.Decode (response.Values);
+                    var peers = PeerInfo.FromCompact (response.Values.OfType<BEncodedString> ().Select (t => t.TextBytes));
                     Engine.RaisePeersFound (InfoHash, peers);
                     foreach (var peer in peers)
                         FoundPeers.Add (peer);

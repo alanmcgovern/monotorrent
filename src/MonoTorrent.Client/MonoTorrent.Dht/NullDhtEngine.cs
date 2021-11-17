@@ -28,9 +28,9 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
 using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
@@ -49,11 +49,13 @@ namespace MonoTorrent.Dht
         }
 #pragma warning restore 0067
 
+        public TimeSpan AnnounceInterval { get; }
         public bool Disposed => false;
+        public TimeSpan MinimumAnnounceInterval { get; }
 
         public DhtState State => DhtState.NotReady;
 
-        public void Add (BEncodedList nodes)
+        public void Add (IEnumerable<byte[]> nodes)
         {
 
         }

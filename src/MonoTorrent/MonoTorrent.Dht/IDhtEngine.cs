@@ -1,10 +1,10 @@
 //
-// Enums.cs
+// IDhtEngine.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,36 +27,31 @@
 //
 
 
-namespace MonoTorrent.Client
-{
-    public enum TorrentState
-    {
-        Stopped,
-        Paused,
-        Starting,
-        Downloading,
-        Seeding,
-        Hashing,
-        HashingPaused,
-        Stopping,
-        Error,
-        Metadata
-    }
-}
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace MonoTorrent
-{
-    public enum Direction
-    {
-        None,
-        Incoming,
-        Outgoing
-    }
+using MonoTorrent.Connections.Dht;
 
-    enum PeerListType
+namespace MonoTorrent.Dht
+{
+    public interface IDhtEngine : IDisposable
     {
-        NascentPeers,
-        CandidatePeers,
-        OptimisticUnchokeCandidatePeers
+        event EventHandler<PeersFoundEventArgs> PeersFound;
+        event EventHandler StateChanged;
+
+        TimeSpan AnnounceInterval { get; }
+        bool Disposed { get; }
+        TimeSpan MinimumAnnounceInterval { get; }
+        DhtState State { get; }
+
+        void Add (IEnumerable<byte[]> nodes);
+        void Announce (InfoHash infohash, int port);
+        void GetPeers (InfoHash infohash);
+        Task<byte[]> SaveNodesAsync ();
+        Task SetListenerAsync (IDhtListener listener);
+        Task StartAsync ();
+        Task StartAsync (byte[] initialNodes);
+        Task StopAsync ();
     }
 }

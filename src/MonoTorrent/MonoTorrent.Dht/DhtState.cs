@@ -1,10 +1,10 @@
-//
-// IDhtEngine.cs
+﻿//
+// DhtState.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,29 +27,12 @@
 //
 
 
-using System;
-using System.Threading.Tasks;
-
-using MonoTorrent.BEncoding;
-using MonoTorrent.Connections.Dht;
-
 namespace MonoTorrent.Dht
 {
-    public interface IDhtEngine : IDisposable
+    public enum DhtState
     {
-        event EventHandler<PeersFoundEventArgs> PeersFound;
-        event EventHandler StateChanged;
-
-        bool Disposed { get; }
-        DhtState State { get; }
-
-        void Add (BEncodedList nodes);
-        void Announce (InfoHash infohash, int port);
-        void GetPeers (InfoHash infohash);
-        Task<byte[]> SaveNodesAsync ();
-        Task SetListenerAsync (IDhtListener listener);
-        Task StartAsync ();
-        Task StartAsync (byte[] initialNodes);
-        Task StopAsync ();
+        NotReady,
+        Initialising,
+        Ready
     }
 }

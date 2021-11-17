@@ -144,6 +144,13 @@ namespace MonoTorrent.Dht
                 yield return FromCompactNode (buffer, i);
         }
 
+        internal static IEnumerable<Node> FromCompactNode (IEnumerable<byte[]> nodes)
+        {
+            foreach (var rawNode in nodes)
+                foreach (var node in FromCompactNode (rawNode))
+                    yield return node;
+        }
+
         internal static IEnumerable<Node> FromCompactNode (BEncodedString nodes)
         {
             return FromCompactNode (nodes.TextBytes);
