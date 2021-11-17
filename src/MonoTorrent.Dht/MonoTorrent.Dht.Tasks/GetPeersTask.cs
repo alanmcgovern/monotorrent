@@ -32,7 +32,6 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks

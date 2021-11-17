@@ -37,6 +37,7 @@ using System.Security.Cryptography;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Dht;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.PortForwarding;
@@ -47,6 +48,7 @@ namespace MonoTorrent
     public partial class Factories
     {
         public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, ByteBufferPool buffer);
+        public delegate IDhtEngine DhtCreator ();
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
         public delegate HttpClient HttpClientCreator ();
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
@@ -68,6 +70,7 @@ namespace MonoTorrent
         public static Factories Default { get; } = new Factories ();
 
         BlockCacheCreator BlockCacheFunc { get; set; }
+        DhtCreator DhtFunc { get; set; }
         DhtListenerCreator DhtListenerFunc { get; set; }
         LocalPeerDiscoveryCreator LocalPeerDiscoveryFunc { get; set; }
         HttpClientCreator HttpClientFunc { get; set; }
@@ -90,6 +93,7 @@ namespace MonoTorrent
             SHA1Func = () => SHA1.Create ();
 
             BlockCacheFunc = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
+            DhtFunc = () => new DhtEngine (SHA1Func ());
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
             HttpClientFunc = () => {
                 var client = new HttpClient ();
@@ -125,6 +129,15 @@ namespace MonoTorrent
         {
             var dupe = MemberwiseClone ();
             dupe.BlockCacheFunc = creator ?? Default.BlockCacheFunc;
+            return dupe;
+        }
+
+        public IDhtEngine CreateDht ()
+            => DhtFunc ();
+        public Factories WithDhtCreator (DhtCreator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.DhtFunc = creator ?? Default.DhtFunc;
             return dupe;
         }
 

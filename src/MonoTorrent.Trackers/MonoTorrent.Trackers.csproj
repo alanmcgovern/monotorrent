@@ -6,9 +6,7 @@
 
   <ItemGroup>
     <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\Peers\PeerDecoder.cs" Link="MonoTorrent.Client.Tracker\PeerDecoder.cs" />
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\ThreadSwitcher.cs" Link="ThreadSwitcher.cs" />
     <Compile Include="..\MonoTorrent.Client\MonoTorrent.Logging\Logger.cs" Link="Logger.cs" />
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent\ValueStopwatch.cs" Link="ValueStopwatch.cs" />
   </ItemGroup>
 
   <ItemGroup>

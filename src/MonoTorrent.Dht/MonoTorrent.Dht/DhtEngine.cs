@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -49,8 +50,8 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
-        internal static readonly TimeSpan AnnounceInternal = TimeSpan.FromMinutes (10);
-        internal static readonly TimeSpan MinimumAnnounceInterval = TimeSpan.FromMinutes (3);
+        public static readonly TimeSpan AnnounceInternal = TimeSpan.FromMinutes (10);
+        public static readonly TimeSpan MinimumAnnounceInterval = TimeSpan.FromMinutes (3);
 
         #region Events
 
@@ -82,18 +83,18 @@ namespace MonoTorrent.Dht
         #region Constructors
 
         public DhtEngine ()
-            : this (Factories.Default)
+            : this (SHA1.Create ())
         {
 
         }
 
-        public DhtEngine (Factories factories)
+        public DhtEngine (SHA1 hasher)
         {
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
             MessageLoop = new MessageLoop (this);
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
-            TokenManager = new TokenManager (factories);
+            TokenManager = new TokenManager (hasher);
             Torrents = new Dictionary<NodeId, List<Node>> ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {
@@ -141,7 +142,8 @@ namespace MonoTorrent.Dht
         public async void Announce (InfoHash infoHash, int port)
         {
             CheckDisposed ();
-            Check.InfoHash (infoHash);
+            if (infoHash == null)
+                throw new ArgumentNullException (nameof (infoHash));
 
             try {
                 await MainLoop;
@@ -172,7 +174,8 @@ namespace MonoTorrent.Dht
         public async void GetPeers (InfoHash infoHash)
         {
             CheckDisposed ();
-            Check.InfoHash (infoHash);
+            if (infoHash == null)
+                throw new ArgumentNullException(nameof (infoHash));
 
             try {
                 await MainLoop;

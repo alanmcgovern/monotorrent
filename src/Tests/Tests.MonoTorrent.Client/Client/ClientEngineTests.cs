@@ -42,18 +42,6 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ClientEngineTests
     {
-        [SetUp]
-        public void Setup ()
-        {
-            DhtEngineFactory.Creator = (factories) => new ManualDhtEngine ();
-        }
-
-        [TearDown]
-        public void Teardown ()
-        {
-            DhtEngineFactory.Creator = (factories) => new DhtEngine (factories);
-        }
-
         [Test]
         public async Task AddPeers_Dht ()
         {

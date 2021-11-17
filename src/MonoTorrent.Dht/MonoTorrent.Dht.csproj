@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
 </Project>

@@ -304,7 +304,7 @@ namespace MonoTorrent.Client
             listenManager.SetListener (PeerListener);
 
             DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
-            DhtEngine = settings.DhtEndPoint == null ? new NullDhtEngine () : DhtEngineFactory.Create (Factories);
+            DhtEngine = (settings.DhtEndPoint == null ? null : Factories.CreateDht ()) ?? new NullDhtEngine ();
             DhtEngine.SetListenerAsync (DhtListener).GetAwaiter ().GetResult ();
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
@@ -900,7 +900,7 @@ namespace MonoTorrent.Client
                         DhtListener.Start ();
 
                     if (oldSettings.DhtEndPoint == null) {
-                        var dht = DhtEngineFactory.Create (Factories);
+                        var dht = Factories.CreateDht ();
                         await dht.SetListenerAsync (DhtListener);
                         await RegisterDht (dht);
 

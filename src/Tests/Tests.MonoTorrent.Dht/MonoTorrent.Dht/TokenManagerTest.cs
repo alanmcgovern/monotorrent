@@ -29,6 +29,7 @@
 //
 
 using System.Net;
+using System.Security.Cryptography;
 
 using MonoTorrent.BEncoding;
 
@@ -46,7 +47,7 @@ namespace MonoTorrent.Dht
         [SetUp]
         public void Setup ()
         {
-            manager = new TokenManager (Factories.Default);
+            manager = new TokenManager (SHA1.Create ());
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 25));
             token = manager.GenerateToken (node);
         }
