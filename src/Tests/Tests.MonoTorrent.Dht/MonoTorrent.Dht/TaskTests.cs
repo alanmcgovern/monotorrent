@@ -59,11 +59,18 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
+        [Repeat(10)]
         public async Task InitialiseFailure ()
         {
-            listener.MessageSent += (o, e) => throw new Exception ("Force failure");
+            // Block until we've checked the status moved to Initializing
+            var errorSource = new TaskCompletionSource<object> ();
+            listener.MessageSent += (o, e) => errorSource.Task.GetAwaiter ().GetResult ();
+
             await engine.StartAsync ();
             Assert.AreEqual (DhtState.Initialising, engine.State);
+
+            // Then set an error and make sure the engine state moves to 'NotReady'
+            errorSource.SetException (new Exception ());
             await engine.WaitForState (DhtState.NotReady).WithTimeout (10000);
         }
 
