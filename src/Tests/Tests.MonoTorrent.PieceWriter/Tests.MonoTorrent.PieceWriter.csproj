@@ -5,14 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Tests.MonoTorrent.Client\TaskExtensions.cs" Link="TaskExtensions.cs" />
-    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="TorrentFileInfo.cs" />
-    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="TorrentFile.cs" />
+    <ProjectReference Include="..\..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" />
-    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
+    <Compile Include="..\Tests.MonoTorrent.Client\TaskExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
 </Project>

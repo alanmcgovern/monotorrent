@@ -5,15 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent\SemaphoreSlimExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
     <PackageReference Include="Mono.Nat" Version="[3.0.0,4.0)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent\SemaphoreSlimExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
 </Project>

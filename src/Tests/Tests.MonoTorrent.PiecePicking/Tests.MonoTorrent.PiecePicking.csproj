@@ -5,13 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="TorrentFileInfo.cs" />
-    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="TorrentFile.cs" />
+    <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent.Client\Managers\TorrentFileInfo.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\TorrentFile.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
-    <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
-    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
-  </ItemGroup>
 </Project>

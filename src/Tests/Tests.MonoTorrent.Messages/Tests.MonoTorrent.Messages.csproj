@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\Arrays.cs" Link="Arrays.cs" />
+    <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
+    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\Arrays.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
 </Project>

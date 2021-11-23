@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
-  
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
+  </ItemGroup>
+
   <ItemGroup Condition="$(TargetFramework) == 'net472'">
     <Reference Include="System.Web" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   
-  <ItemGroup>
-    <ProjectReference Include="..\..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
-  </ItemGroup>
-
 </Project>
