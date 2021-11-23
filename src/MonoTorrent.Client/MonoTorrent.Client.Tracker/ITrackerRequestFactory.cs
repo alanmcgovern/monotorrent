@@ -31,7 +31,7 @@ namespace MonoTorrent.Trackers
 {
     interface ITrackerRequestFactory
     {
-        AnnounceParameters CreateAnnounce (TorrentEvent clientEvent);
-        ScrapeParameters CreateScrape ();
+        AnnounceRequest CreateAnnounce (TorrentEvent clientEvent);
+        ScrapeRequest CreateScrape ();
     }
 }

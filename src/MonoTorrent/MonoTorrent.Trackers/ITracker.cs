@@ -79,17 +79,17 @@ namespace MonoTorrent.Trackers
         /// <summary>
         /// Send an announce request to the tracker.
         /// </summary>
-        /// <param name="parameters"></param>
+        /// <param name="requestParameters"></param>
         /// <param name="token">The token used to cancel the request.</param>
         /// <returns></returns>
-        ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters parameters, CancellationToken token);
+        ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest requestParameters, CancellationToken token);
 
         /// <summary>
         /// Send a scrape request to the tracker.
         /// </summary>
-        /// <param name="parameters"></param>
+        /// <param name="requestParameters"></param>
         /// <param name="token">The token used to cancel the request.</param>
         /// <returns></returns>
-        ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeParameters parameters, CancellationToken token);
+        ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest requestParameters, CancellationToken token);
     }
 }

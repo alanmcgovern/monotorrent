@@ -1,10 +1,10 @@
 ﻿//
-// ScrapeResponse.cs
+// ITrackerListener.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,20 +26,19 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-namespace MonoTorrent.Trackers
+
+using System;
+
+using MonoTorrent.TrackerServer;
+
+namespace MonoTorrent.Connections.TrackerServer
 {
-    public class ScrapeResponse : TrackerResponse
+    /// <summary>
+    /// Listens for incoming Announce or Scrape requests and sends the response back.
+    /// </summary>
+    public interface ITrackerListener : IListener
     {
-        public ScrapeResponse (
-            TrackerState state,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
-        {
-        }
+        event EventHandler<ScrapeRequest> ScrapeReceived;
+        event EventHandler<AnnounceRequest> AnnounceReceived;
     }
 }

@@ -1,8 +1,8 @@
 ﻿//
-// AnnounceResponse.cs
+// IPeerComparer.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2006 Alan McGovern
 //
@@ -27,38 +27,20 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
-    public class AnnounceResponse : TrackerResponse
+    /// <summary>
+    /// Returns one of the properties from a peers <see cref="AnnounceRequest"/>, or a value derived from
+    /// properties on the <see cref="AnnounceRequest"/>, to use when comparing peers.
+    /// </summary>
+    public interface IPeerComparer
     {
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// Returns one of the properties from the <see cref="AnnounceRequest"/> object, or a value derived from
+        /// properties on the <see cref="AnnounceRequest"/> object, to use when comparing peers.
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
-
-        public TimeSpan MinUpdateInterval { get; }
-
-        public TimeSpan UpdateInterval { get; }
-
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
-        {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
-        }
+        /// <param name="parameters">The data sent as part of the Announce request</param>
+        /// <returns></returns>
+        object GetKey (AnnounceRequest parameters);
     }
 }

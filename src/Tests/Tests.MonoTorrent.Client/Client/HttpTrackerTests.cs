@@ -35,24 +35,26 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client;
 using MonoTorrent.Connections.Tracker;
+using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.Trackers;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
     [TestFixture]
     public class HttpTrackerTests
     {
-        AnnounceParameters announceParams;
-        ScrapeParameters scrapeParams;
+        MonoTorrent.Trackers.AnnounceRequest announceParams;
+        MonoTorrent.Trackers.ScrapeRequest scrapeParams;
         TrackerServer server;
         HttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
         Uri AnnounceUrl => new Uri ($"{ListeningPrefix}announce");
         HttpClient client;
-        HTTPTracker tracker;
+        HttpTrackerConnection trackerConnection;
+        Tracker tracker;
 
         InfoHash infoHash;
         BEncodedString peerId;
@@ -85,18 +87,19 @@ namespace MonoTorrent.Trackers
             };
             server.RegisterListener (listener);
             client = new HttpClient ();
-            tracker = new HTTPTracker (AnnounceUrl, client);
+            trackerConnection = new HttpTrackerConnection (AnnounceUrl, client);
+            tracker = new Tracker (trackerConnection);
 
             var infoHashBytes = new[] { ' ', '%', '&', '?', '&', '&', '?', '5', '1', '=' }
                         .Select (t => (byte) t);
 
             infoHash = new InfoHash (infoHashBytes.Concat (infoHashBytes).ToArray ());
-            announceParams = new AnnounceParameters ()
+            announceParams = new MonoTorrent.Trackers.AnnounceRequest ()
                 .WithPort (5555)
                 .WithPeerId (peerId.TextBytes)
                 .WithInfoHash (infoHash);
 
-            scrapeParams = new ScrapeParameters (new InfoHash (new byte[20]));
+            scrapeParams = new MonoTorrent.Trackers.ScrapeRequest (infoHash);
         }
 
         [TearDown]
@@ -113,29 +116,24 @@ namespace MonoTorrent.Trackers
         }
 
         [Test]
-        public void CanAnnouceOrScrapeTest ()
+        public void CanAnnounceOrScrapeTest ()
         {
-            HTTPTracker t = (HTTPTracker) Factories.Default.CreateTracker (new Uri ("http://mytracker.com/myurl"));
+            HttpTrackerConnection t = new HttpTrackerConnection (new Uri ("http://mytracker.com/myurl"), new HttpClient ());
             Assert.IsFalse (t.CanScrape, "#1");
-            Assert.IsTrue (t.CanAnnounce, "#1b");
 
-            t = (HTTPTracker) Factories.Default.CreateTracker (new Uri ("http://mytracker.com/announce/yeah"));
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/yeah"), new HttpClient ());
             Assert.IsFalse (t.CanScrape, "#2");
-            Assert.IsTrue (t.CanAnnounce, "#2b");
 
-            t = (HTTPTracker) Factories.Default.CreateTracker (new Uri ("http://mytracker.com/announce"));
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce"), new HttpClient ());
             Assert.IsTrue (t.CanScrape, "#3");
-            Assert.IsTrue (t.CanAnnounce, "#3b");
             Assert.AreEqual (t.ScrapeUri, new Uri ("http://mytracker.com/scrape"));
 
-            t = (HTTPTracker) Factories.Default.CreateTracker (new Uri ("http://mytracker.com/announce/yeah/announce"));
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/yeah/announce"), new HttpClient ());
             Assert.IsTrue (t.CanScrape, "#4");
-            Assert.IsTrue (t.CanAnnounce, "#4b");
             Assert.AreEqual ("http://mytracker.com/announce/yeah/scrape", t.ScrapeUri.ToString (), "#4c");
 
-            t = (HTTPTracker) Factories.Default.CreateTracker (new Uri ("http://mytracker.com/announce/"));
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/"), new HttpClient ());
             Assert.IsTrue (t.CanScrape, "#5");
-            Assert.IsTrue (t.CanAnnounce, "#5b");
             Assert.AreEqual (t.ScrapeUri, new Uri ("http://mytracker.com/scrape/"));
         }
 
@@ -143,7 +141,7 @@ namespace MonoTorrent.Trackers
         public async Task Announce ()
         {
             await tracker.AnnounceAsync (announceParams, CancellationToken.None);
-            Assert.IsTrue (StringComparer.OrdinalIgnoreCase.Equals (keys[0], tracker.Key), "#2");
+            Assert.IsTrue (StringComparer.OrdinalIgnoreCase.Equals (keys[0], trackerConnection.Key), "#2");
         }
 
         [Test]
@@ -167,22 +165,25 @@ namespace MonoTorrent.Trackers
         public async Task Announce_Incomplete ()
         {
             listener.IncompleteAnnounce = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceParams, CancellationToken.None).AsTask ());
+            var response = await tracker.AnnounceAsync (announceParams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.InvalidResponse, tracker.Status);
+            Assert.AreEqual (TrackerState.InvalidResponse, response.State);
 
             listener.IncompleteAnnounce = false;
-            await tracker.AnnounceAsync (announceParams, CancellationToken.None);
+            response = await tracker.AnnounceAsync (announceParams, CancellationToken.None);
             Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
-        public void Announce_Timeout ()
+        public async Task Announce_Timeout ()
         {
             TaskCompletionSource<bool> s = new TaskCompletionSource<bool> ();
             listener.AnnounceReceived += (o, e) => s.Task.Wait ();
             client.Timeout = TimeSpan.FromMilliseconds (1);
             try {
-                Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceParams, CancellationToken.None).WithTimeout ());
+                var response = await tracker.AnnounceAsync (announceParams, CancellationToken.None).WithTimeout ();
+                Assert.AreEqual (TrackerState.Offline, response.State);
             } finally {
                 s.SetResult (true);
             }
@@ -193,8 +194,9 @@ namespace MonoTorrent.Trackers
         public async Task KeyTest ()
         {
             // Set a key which uses characters which need escaping.
-            tracker = (HTTPTracker) Factories.Default.CreateTracker (AnnounceUrl);
-            tracker.Key = peerId;
+            trackerConnection = new HttpTrackerConnection (AnnounceUrl, new HttpClient ());
+            tracker = new Tracker (trackerConnection);
+            trackerConnection.Key = peerId;
 
             await tracker.AnnounceAsync (announceParams, CancellationToken.None);
             Assert.AreEqual (peerId, keys[0], "#1");
@@ -204,8 +206,9 @@ namespace MonoTorrent.Trackers
         public async Task NullKeyTest ()
         {
             // Set a key which uses characters which need escaping.
-            tracker = (HTTPTracker) Factories.Default.CreateTracker (AnnounceUrl);
-            tracker.Key = null;
+            trackerConnection = new HttpTrackerConnection (AnnounceUrl, new HttpClient ());
+            tracker = new Tracker (trackerConnection);
+            trackerConnection.Key = null;
 
             await tracker.AnnounceAsync (announceParams, CancellationToken.None);
             Assert.AreEqual (null, keys[0], "#1");
@@ -219,26 +222,26 @@ namespace MonoTorrent.Trackers
             infoHash = new InfoHash (Enumerable.Repeat ((byte) 1, 20).ToArray ());
             var trackable = new InfoHashTrackable ("Test", infoHash);
             server.Add (trackable);
-            scrapeParams = new ScrapeParameters (infoHash);
+            scrapeParams = new MonoTorrent.Trackers.ScrapeRequest (infoHash);
 
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (0, tracker.Complete, "#1");
             Assert.AreEqual (0, tracker.Incomplete, "#2");
             Assert.AreEqual (0, tracker.Downloaded, "#3");
 
-            await tracker.AnnounceAsync (new AnnounceParameters (0, 0, 100, TorrentEvent.Started, infoHash, false, new BEncodedString ("peer1").TextBytes, null, 1, false), CancellationToken.None);
+            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 100, TorrentEvent.Started, infoHash, false, new BEncodedString ("peer1").TextBytes, null, 1, false), CancellationToken.None);
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (0, tracker.Complete, "#4");
             Assert.AreEqual (1, tracker.Incomplete, "#5");
             Assert.AreEqual (0, tracker.Downloaded, "#6");
 
-            await tracker.AnnounceAsync (new AnnounceParameters (0, 0, 0, TorrentEvent.Started, infoHash, false, new BEncodedString ("peer2").TextBytes, null, 2, false), CancellationToken.None);
+            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Started, infoHash, false, new BEncodedString ("peer2").TextBytes, null, 2, false), CancellationToken.None);
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (1, tracker.Complete, "#7");
             Assert.AreEqual (1, tracker.Incomplete, "#8");
             Assert.AreEqual (0, tracker.Downloaded, "#9");
 
-            await tracker.AnnounceAsync (new AnnounceParameters (0, 0, 0, TorrentEvent.Completed, infoHash, false, new BEncodedString ("peer3").TextBytes, null, 3, false), CancellationToken.None);
+            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Completed, infoHash, false, new BEncodedString ("peer3").TextBytes, null, 3, false), CancellationToken.None);
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (2, tracker.Complete, "#10");
             Assert.AreEqual (1, tracker.Incomplete, "#11");
@@ -250,22 +253,27 @@ namespace MonoTorrent.Trackers
         {
             listener.IncompleteScrape = true;
             client.Timeout = TimeSpan.FromHours (1);
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ());
+            var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.InvalidResponse, tracker.Status);
+            Assert.AreEqual (TrackerState.InvalidResponse, response.State);
 
             listener.IncompleteScrape = false;
-            await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
+            response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
+            Assert.IsNotNull (tracker.WarningMessage);
+            Assert.IsNotNull (response.WarningMessage);
         }
 
         [Test]
-        public void Scrape_Timeout ()
+        public async Task Scrape_Timeout ()
         {
             var tcs = new TaskCompletionSource<bool> ();
             listener.ScrapeReceived += (o, e) => tcs.Task.Wait ();
             client.Timeout = TimeSpan.FromMilliseconds (1);
             try {
-                Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ());
+                var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ();
+                Assert.AreEqual (TrackerState.Offline, response.State);
             } finally {
                 tcs.SetResult (true);
             }
@@ -276,11 +284,11 @@ namespace MonoTorrent.Trackers
         public async Task TrackerId ()
         {
             // Null until the server side tracker sends us the value
-            Assert.IsNull (tracker.TrackerId, "#1");
+            Assert.IsNull (trackerConnection.TrackerId, "#1");
             await tracker.AnnounceAsync (announceParams, CancellationToken.None);
 
             // Now we have the value, the next announce should contain it
-            Assert.AreEqual (trackerId, tracker.TrackerId, "#2");
+            Assert.AreEqual (trackerId, trackerConnection.TrackerId, "#2");
 
             var argsTask = new TaskCompletionSource<AnnounceRequest> ();
             listener.AnnounceReceived += (o, e) => argsTask.TrySetResult (e);

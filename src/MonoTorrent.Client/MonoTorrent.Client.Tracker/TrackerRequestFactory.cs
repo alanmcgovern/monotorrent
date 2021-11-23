@@ -41,7 +41,7 @@ namespace MonoTorrent.Trackers
             Manager = manager;
         }
 
-        public AnnounceParameters CreateAnnounce (TorrentEvent clientEvent)
+        public AnnounceRequest CreateAnnounce (TorrentEvent clientEvent)
         {
             ClientEngine engine = Manager.Engine;
 
@@ -68,16 +68,16 @@ namespace MonoTorrent.Trackers
             if (Manager.HasMetadata)
                 bytesLeft = (long) ((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
 
-            return new AnnounceParameters (Manager.Monitor.DataBytesDownloaded,
+            return new AnnounceRequest (Manager.Monitor.DataBytesDownloaded,
                                           Manager.Monitor.DataBytesUploaded,
                                           bytesLeft,
                                           clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId.TextBytes,
                                           ip, port, supportsEncryption);
         }
 
-        public ScrapeParameters CreateScrape ()
+        public ScrapeRequest CreateScrape ()
         {
-            return new ScrapeParameters (Manager.InfoHash);
+            return new ScrapeRequest (Manager.InfoHash);
         }
     }
 }

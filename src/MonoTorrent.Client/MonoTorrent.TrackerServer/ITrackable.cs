@@ -1,8 +1,8 @@
-﻿//
-// AnnounceResponse.cs
+//
+// IPAddressComparer.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2006 Alan McGovern
 //
@@ -27,38 +27,21 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
-    public class AnnounceResponse : TrackerResponse
+    /// <summary>
+    /// The tracker monitors peers for any ITrackable item
+    /// </summary>
+    public interface ITrackable
     {
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// The infohash of the torrent being tracked
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        InfoHash InfoHash { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
-
-        public TimeSpan UpdateInterval { get; }
-
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
-        {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
-        }
+        /// <summary>
+        /// The name of the torrent being tracked
+        /// </summary>
+        string Name { get; }
     }
 }

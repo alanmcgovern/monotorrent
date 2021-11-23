@@ -31,7 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-using MonoTorrent.Client;
 using MonoTorrent.Logging;
 
 using ReusableTasks;
@@ -117,7 +116,7 @@ namespace MonoTorrent.Trackers
             internal set => LastScrape = ValueStopwatch.WithTime (value);
         }
 
-        ScrapeResponse LastScrapeResponse { get; set; } = new ScrapeResponse (0, 0, 0);
+        ScrapeResponse LastScrapeResponse { get; set; } = new ScrapeResponse (TrackerState.Unknown);
 
         internal TrackerTier (Factories factories, IEnumerable<string> trackerUrls)
         {
@@ -145,7 +144,7 @@ namespace MonoTorrent.Trackers
             Trackers = Array.AsReadOnly (new [] { tracker });
         }
 
-        internal async ReusableTask AnnounceAsync (AnnounceParameters args, CancellationToken token)
+        internal async ReusableTask AnnounceAsync (AnnounceRequest args, CancellationToken token)
         {
             // Bail out if we're announcing too frequently for this tracker tier.
             if (args.ClientEvent == TorrentEvent.None && !CanSendAnnounce)
@@ -180,7 +179,7 @@ namespace MonoTorrent.Trackers
             logger.Error ("Could not announce to any tracker");
         }
 
-        internal async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceParameters args, ITracker tracker, CancellationToken token)
+        internal async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest args, ITracker tracker, CancellationToken token)
         {
             if (!SentStartedEvent)
                 args = args.WithClientEvent (TorrentEvent.Started);
@@ -203,7 +202,7 @@ namespace MonoTorrent.Trackers
             }
         }
 
-        async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters args, ITracker tracker, CancellationToken token)
+        async ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceRequest args, ITracker tracker, CancellationToken token)
         {
             var response = await tracker.AnnounceAsync (args, token);
             ActiveTrackerIndex = Trackers.IndexOf (tracker);
@@ -211,7 +210,7 @@ namespace MonoTorrent.Trackers
             return response;
         }
 
-        internal async ReusableTask ScrapeAsync (ScrapeParameters args, CancellationToken token)
+        internal async ReusableTask ScrapeAsync (ScrapeRequest args, CancellationToken token)
         {
             if (!CanSendScrape)
                 return;
@@ -230,7 +229,7 @@ namespace MonoTorrent.Trackers
             }
         }
 
-        internal async ReusableTask ScrapeAsync (ScrapeParameters args, ITracker tracker, CancellationToken token)
+        internal async ReusableTask ScrapeAsync (ScrapeRequest args, ITracker tracker, CancellationToken token)
         {
             try {
                 LastScrapeResponse = await tracker.ScrapeAsync (args, token);

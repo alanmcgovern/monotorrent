@@ -1,8 +1,8 @@
-﻿//
-// AnnounceResponse.cs
+//
+// TrackerRequest.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2006 Alan McGovern
 //
@@ -28,37 +28,40 @@
 
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Net;
 
-namespace MonoTorrent.Trackers
+using MonoTorrent.BEncoding;
+
+namespace MonoTorrent.TrackerServer
 {
-    public class AnnounceResponse : TrackerResponse
+    public abstract class TrackerRequest : EventArgs
     {
+        public static readonly string FailureKey = "failure reason";
+        public static readonly string WarningKey = "warning message";
+
+        public abstract bool IsValid { get; }
+
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// The raw (url-encoded) key/value pairs from the original query string
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        public NameValueCollection Parameters { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
+        /// <summary>
+        /// The BEncodedDictionary which will be sent back to the client who initiated this request
+        /// </summary>
+        public BEncodedDictionary Response { get; }
 
-        public TimeSpan UpdateInterval { get; }
+        /// <summary>
+        /// The IPAddress for the remote client who initiated this request.
+        /// </summary>
+        public IPAddress RemoteAddress { get; protected set; }
 
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+        protected TrackerRequest (NameValueCollection parameters, IPAddress remoteAddress)
         {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
+            Parameters = parameters;
+            RemoteAddress = remoteAddress;
+            Response = new BEncodedDictionary ();
         }
     }
 }

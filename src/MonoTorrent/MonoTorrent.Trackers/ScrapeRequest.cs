@@ -1,10 +1,10 @@
-﻿//
-// AnnounceResponse.cs
+//
+// ScrapeRequest.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,38 +27,15 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-
 namespace MonoTorrent.Trackers
 {
-    public class AnnounceResponse : TrackerResponse
+    public sealed class ScrapeRequest
     {
-        /// <summary>
-        /// The list of peers returned by the tracker.
-        /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        public InfoHash InfoHash { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
-
-        public TimeSpan UpdateInterval { get; }
-
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+        public ScrapeRequest (InfoHash infoHash)
         {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
+            InfoHash = infoHash;
         }
     }
 }

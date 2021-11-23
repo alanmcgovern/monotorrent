@@ -1,5 +1,5 @@
-﻿//
-// AnnounceResponse.cs
+//
+// ITracker.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,37 +28,40 @@
 
 
 using System;
-using System.Collections.Generic;
+using System.Threading;
 
-namespace MonoTorrent.Trackers
+using MonoTorrent.Trackers;
+
+using ReusableTasks;
+
+namespace MonoTorrent.Connections.Tracker
 {
-    public class AnnounceResponse : TrackerResponse
+    public interface ITrackerConnection
     {
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// True if the tracker supports Scrape requests.
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        bool CanScrape { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
+        /// <summary>
+        /// The uri for the tracker
+        /// </summary>
+        Uri Uri { get; }
 
-        public TimeSpan UpdateInterval { get; }
+        /// <summary>
+        /// Send an announce request to the tracker.
+        /// </summary>
+        /// <param name="requestParameters"></param>
+        /// <param name="token">The token used to cancel the request.</param>
+        /// <returns></returns>
+        ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest requestParameters, CancellationToken token);
 
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
-        {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
-        }
+        /// <summary>
+        /// Send a scrape request to the tracker.
+        /// </summary>
+        /// <param name="requestParameters"></param>
+        /// <param name="token">The token used to cancel the request.</param>
+        /// <returns></returns>
+        ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest requestParameters, CancellationToken token);
     }
 }

@@ -40,6 +40,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Tracker;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.Trackers;
 
@@ -112,35 +113,36 @@ namespace MonoTorrent.Client
         }
     }
 
-    class CustomTracker : Tracker
+    class CustomTracker : ITrackerConnection
     {
         public List<DateTime> AnnouncedAt = new List<DateTime> ();
-        public List<AnnounceParameters> AnnounceParameters = new List<AnnounceParameters> ();
+        public List<AnnounceRequest> AnnounceParameters = new List<AnnounceRequest> ();
         public List<DateTime> ScrapedAt = new List<DateTime> ();
 
         public bool FailAnnounce;
         public bool FailScrape;
 
+        public bool CanScrape => true;
+        public Uri Uri { get; }
+
         readonly List<Peer> peers = new List<Peer> ();
 
         public CustomTracker (Uri uri)
-            : base (uri)
         {
-            CanAnnounce = true;
-            CanScrape = true;
+            Uri = uri;
         }
 
-        protected override ReusableTask<AnnounceResponse> DoAnnounceAsync (AnnounceParameters parameters, CancellationToken token)
+        public ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
         {
             AnnouncedAt.Add (DateTime.Now);
             if (FailAnnounce)
                 throw new TrackerException ("Deliberately failing announce request", null);
 
             AnnounceParameters.Add (parameters);
-            return ReusableTask.FromResult (new AnnounceResponse (peers.Select (t => new PeerInfo (t.ConnectionUri, t.PeerId?.TextBytes)).ToArray (), null, null));
+            return ReusableTask.FromResult (new AnnounceResponse (TrackerState.Ok, peers: peers.Select (t => new PeerInfo (t.ConnectionUri, t.PeerId?.TextBytes)).ToArray ()));
         }
 
-        protected override ReusableTask<ScrapeResponse> DoScrapeAsync (ScrapeParameters parameters, CancellationToken token)
+        public ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest parameters, CancellationToken token)
         {
             ScrapedAt.Add (DateTime.Now);
             if (FailScrape)
@@ -406,7 +408,7 @@ namespace MonoTorrent.Client
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
-                .WithTrackerCreator("custom", uri => new CustomTracker (uri))
+                .WithTrackerCreator("custom", uri => new Tracker (new CustomTracker (uri)))
                 ;
 
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (

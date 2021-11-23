@@ -31,12 +31,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
-using System.Threading;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Connections.Tracker;
+using MonoTorrent.Connections.TrackerServer;
 
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
     public class CustomComparer : IPeerComparer
     {

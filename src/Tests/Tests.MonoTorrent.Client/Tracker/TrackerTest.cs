@@ -35,7 +35,7 @@ using MonoTorrent.BEncoding;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
     [TestFixture]
     public class TrackerTest

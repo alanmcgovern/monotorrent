@@ -32,9 +32,9 @@ using System.Diagnostics;
 using System.IO;
 
 using MonoTorrent;
+using MonoTorrent.Connections.TrackerServer;
 using MonoTorrent.TorrentWatcher;
-using MonoTorrent.Trackers;
-using MonoTorrent.Connections.Tracker;
+using MonoTorrent.TrackerServer;
 
 using TrackerApp;
 

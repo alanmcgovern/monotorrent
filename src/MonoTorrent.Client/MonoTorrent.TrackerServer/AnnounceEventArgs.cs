@@ -1,10 +1,10 @@
-﻿//
-// ScrapeResponse.cs
+//
+// AnnounceEventArgs.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,20 +26,15 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-namespace MonoTorrent.Trackers
+
+namespace MonoTorrent.TrackerServer
 {
-    public class ScrapeResponse : TrackerResponse
+    public sealed class AnnounceEventArgs : PeerEventArgs
     {
-        public ScrapeResponse (
-            TrackerState state,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+        public AnnounceEventArgs (Peer peer, ITrackerItem torrent)
+            : base (peer, torrent)
         {
+
         }
     }
 }

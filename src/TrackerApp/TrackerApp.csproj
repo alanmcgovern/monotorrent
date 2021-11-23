@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
     <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
+    <ProjectReference Include="..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
   

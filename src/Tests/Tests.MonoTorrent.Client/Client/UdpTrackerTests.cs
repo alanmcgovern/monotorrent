@@ -36,11 +36,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Messages.UdpTracker;
 using MonoTorrent.Connections.Tracker;
+using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.Messages.UdpTracker;
+using MonoTorrent.TrackerServer;
 
 using NUnit.Framework;
-using MonoTorrent.Client;
 
 namespace MonoTorrent.Trackers
 {
@@ -50,12 +51,13 @@ namespace MonoTorrent.Trackers
         static readonly byte[] PeerId = Enumerable.Repeat ((byte) 255, 20).ToArray ();
         static readonly InfoHash InfoHash = new InfoHash (Enumerable.Repeat ((byte) 254, 20).ToArray ());
 
-        AnnounceParameters announceparams = new AnnounceParameters (100, 50, int.MaxValue,
+        AnnounceRequest announceparams = new AnnounceRequest (100, 50, int.MaxValue,
             TorrentEvent.Completed, InfoHash, false, PeerId, null, 1515, false);
 
-        readonly ScrapeParameters scrapeParams = new ScrapeParameters (new InfoHash (new byte[20]));
-        TrackerServer server;
-        UdpTracker tracker;
+        readonly ScrapeRequest scrapeParams = new ScrapeRequest (new InfoHash (new byte[20]));
+        TrackerServer.TrackerServer server;
+        UdpTrackerConnection trackerConnection;
+        Tracker tracker;
         IgnoringListener listener;
         List<BEncodedString> keys;
         List<IPEndPoint> peerEndpoints;
@@ -64,7 +66,7 @@ namespace MonoTorrent.Trackers
         public void FixtureSetup ()
         {
             listener = new IgnoringListener (0);
-            listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
+            listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
                 keys.Add (e.Key);
             };
             listener.Start ();
@@ -74,7 +76,7 @@ namespace MonoTorrent.Trackers
         public void Setup ()
         {
             keys = new List<BEncodedString> ();
-            server = new TrackerServer ();
+            server = new MonoTorrent.TrackerServer.TrackerServer ();
             server.AllowUnregisteredTorrents = true;
             server.RegisterListener (listener);
 
@@ -85,7 +87,8 @@ namespace MonoTorrent.Trackers
                 new IPEndPoint (IPAddress.Parse ("1.2.3.4"), 65000),
             };
 
-            tracker = (UdpTracker) Factories.Default.CreateTracker (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"));
+            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"));
+            tracker = new Tracker (trackerConnection);
             announceparams = announceparams.WithPort (listener.LocalEndPoint.Port);
 
             listener.IgnoreAnnounces = false;
@@ -257,67 +260,80 @@ namespace MonoTorrent.Trackers
         public async Task AnnounceTest_IncompleteAnnounce ()
         {
             listener.IncompleteAnnounce = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ());
+            var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.InvalidResponse, tracker.Status);
+            Assert.AreEqual (TrackerState.InvalidResponse, response.State);
 
             listener.IncompleteAnnounce = false;
-            await tracker.AnnounceAsync (announceparams, CancellationToken.None);
+            response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
         public async Task AnnounceTest_IncompleteConnect ()
         {
             listener.IncompleteConnect = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, CancellationToken.None).AsTask ());
+            var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.InvalidResponse, tracker.Status);
+            Assert.AreEqual (TrackerState.InvalidResponse, response.State);
 
             listener.IncompleteConnect = false;
-            await tracker.AnnounceAsync (announceparams, CancellationToken.None);
+            response = await tracker.AnnounceAsync (announceparams, CancellationToken.None);
             Assert.AreEqual (TrackerState.Ok, tracker.Status);
-
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
-        public void AnnounceTest_NoConnect ()
+        public async Task AnnounceTest_NoConnect ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, CancellationToken.None).AsTask ());
+            var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
         }
 
         [Test]
         public async Task AnnounceTest_NoConnect_ThenConnect ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, CancellationToken.None).AsTask ());
+            var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
+            Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
 
-            tracker.RetryDelay = TimeSpan.FromSeconds (5);
+            trackerConnection.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreConnects = false;
-            await tracker.AnnounceAsync (announceparams, CancellationToken.None);
+            response = await tracker.AnnounceAsync (announceparams, CancellationToken.None);
+            Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
-        public void AnnounceTest_NoAnnounce ()
+        public async Task AnnounceTest_NoAnnounce ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreAnnounces = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, CancellationToken.None).AsTask ());
+            var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
         }
 
         [Test]
         public async Task AnnounceTest_NoAnnounce_ThenAnnounce ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreAnnounces = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, CancellationToken.None).AsTask ());
+            var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None).WithTimeout ();
+            Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
 
-            tracker.RetryDelay = TimeSpan.FromSeconds (5);
+            trackerConnection.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreAnnounces = false;
-            await tracker.AnnounceAsync (announceparams, CancellationToken.None);
+            response = await tracker.AnnounceAsync (announceparams, CancellationToken.None);
+            Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
@@ -330,56 +346,70 @@ namespace MonoTorrent.Trackers
         }
 
         [Test]
-        public void ScrapeTest_NoConnect ()
+        public async Task ScrapeTest_NoConnect ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ());
+            var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ();
+            Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
         }
 
         [Test]
         public async Task ScrapeTest_NoConnect_ThenConnect ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ());
+            var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ();
+            Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
 
-            tracker.RetryDelay = TimeSpan.FromSeconds (5);
+            trackerConnection.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreConnects = false;
-            await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
+            response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
+            Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
         public async Task ScrapeTest_Incomplete ()
         {
             listener.IncompleteScrape = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ());
+            var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.InvalidResponse, tracker.Status);
+            Assert.AreEqual (TrackerState.InvalidResponse, response.State);
 
             listener.IncompleteScrape = false;
-            await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
+            response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
         }
 
         [Test]
-        public void ScrapeTest_NoScrapes ()
+        public async Task ScrapeTest_NoScrapes ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreScrapes = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ());
+            var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ();
             Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
         }
 
         [Test]
         public async Task ScrapeTest_NoScrapes_ThenScrape ()
         {
-            tracker.RetryDelay = TimeSpan.Zero;
+            trackerConnection.RetryDelay = TimeSpan.Zero;
             listener.IgnoreScrapes = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, CancellationToken.None).AsTask ());
+            var response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None).WithTimeout ();
+            Assert.AreEqual (TrackerState.Offline, tracker.Status);
+            Assert.AreEqual (TrackerState.Offline, response.State);
 
-            tracker.RetryDelay = TimeSpan.FromSeconds (5);
+            trackerConnection.RetryDelay = TimeSpan.FromSeconds (5);
             listener.IgnoreScrapes = false;
-            await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
+            response = await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
+            Assert.AreEqual (TrackerState.Ok, tracker.Status);
+            Assert.AreEqual (TrackerState.Ok, response.State);
+
         }
     }
 

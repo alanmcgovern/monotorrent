@@ -1,5 +1,5 @@
-﻿//
-// AnnounceResponse.cs
+//
+// InfoHashTrackable.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,37 +28,31 @@
 
 
 using System;
-using System.Collections.Generic;
 
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
-    public class AnnounceResponse : TrackerResponse
+    public class InfoHashTrackable : ITrackable
     {
-        /// <summary>
-        /// The list of peers returned by the tracker.
-        /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        public InfoHash InfoHash { get; }
+        public string Name { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
-
-        public TimeSpan UpdateInterval { get; }
-
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+        public InfoHashTrackable (Torrent torrent)
         {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
+            Check.Torrent (torrent);
+
+            Name = torrent.Name;
+            InfoHash = torrent.InfoHash;
+        }
+
+        public InfoHashTrackable (string name, InfoHash infoHash)
+        {
+            Check.InfoHash (infoHash);
+
+            if (string.IsNullOrEmpty (name))
+                throw new ArgumentNullException (nameof (name), $"{nameof (name)} cannot be null or empty");
+
+            InfoHash = infoHash;
+            Name = name;
         }
     }
 }

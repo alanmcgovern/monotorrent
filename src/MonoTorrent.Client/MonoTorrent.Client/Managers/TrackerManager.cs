@@ -172,7 +172,7 @@ namespace MonoTorrent.Trackers
             if (announces.Count > 0)
                 await Task.WhenAll (announces);
         }
-        async ReusableTask AnnounceTierAsync (TrackerTier tier, AnnounceParameters args, CancellationToken token)
+        async ReusableTask AnnounceTierAsync (TrackerTier tier, AnnounceRequest args, CancellationToken token)
         {
             using (await AnnounceLimiter.EnterAsync ())
                 await tier.AnnounceAsync (args, token);
@@ -187,12 +187,12 @@ namespace MonoTorrent.Trackers
 
             try {
                 var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
-                AnnounceParameters args = RequestFactory.CreateAnnounce (TorrentEvent.None);
+                AnnounceRequest args = RequestFactory.CreateAnnounce (TorrentEvent.None);
                 await AnnounceTrackerAsync (trackerTier, args, tracker, token);
             } catch {
             }
         }
-        async ReusableTask AnnounceTrackerAsync (TrackerTier tier, AnnounceParameters args, ITracker tracker, CancellationToken token)
+        async ReusableTask AnnounceTrackerAsync (TrackerTier tier, AnnounceRequest args, ITracker tracker, CancellationToken token)
         {
             using (await AnnounceLimiter.EnterAsync ())
                 await tier.AnnounceAsync (args, tracker, token);
@@ -223,7 +223,7 @@ namespace MonoTorrent.Trackers
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            ScrapeParameters args = RequestFactory.CreateScrape ();
+            ScrapeRequest args = RequestFactory.CreateScrape ();
             var trackerTier = Tiers.Single (t => t.Trackers.Contains (tracker));
             await trackerTier.ScrapeAsync (args, tracker, token);
         }

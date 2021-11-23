@@ -1,5 +1,5 @@
 ﻿//
-// AnnounceResponse.cs
+// ScrapeResponse.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -26,39 +26,55 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-using System;
-using System.Collections.Generic;
-
 namespace MonoTorrent.Trackers
 {
-    public class AnnounceResponse : TrackerResponse
+    public abstract class TrackerResponse
     {
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// The number of active peers which have completed downloading.
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        public int Complete { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
+        /// <summary>
+        /// The number of peers that have ever completed downloading.
+        /// </summary>
+        public int Downloaded { get; }
 
-        public TimeSpan UpdateInterval { get; }
+        /// <summary>
+        /// The number of active peers which have not completed downloading.
+        /// </summary>
+        public int Incomplete { get; }
 
-        public AnnounceResponse (
+        /// <summary>
+        /// The failure message returned by the tracker.
+        /// </summary>
+        public string FailureMessage { get; }
+
+        /// <summary>
+        /// The status of the tracker after this request.
+        /// </summary>
+        public TrackerState State { get; }
+
+        /// <summary>
+        /// The warning message returned by the tracker.
+        /// </summary>
+        public string WarningMessage { get; }
+
+        protected TrackerResponse (
             TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
             int? complete = null,
             int? incomplete = null,
             int? downloaded = null,
             string warningMessage = null,
             string failureMessage = null
             )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
         {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
+            State = state;
+            Complete = complete ?? 0;
+            Incomplete = incomplete ?? 0;
+            Downloaded = downloaded ?? 0;
+            WarningMessage = warningMessage ?? "";
+            FailureMessage = failureMessage ?? "";
         }
     }
 }

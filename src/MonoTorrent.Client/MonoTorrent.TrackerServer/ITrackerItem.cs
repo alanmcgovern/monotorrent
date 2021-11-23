@@ -1,10 +1,10 @@
 ﻿//
-// AnnounceResponse.cs
+// ITrackerItem.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,38 +27,45 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Trackers
+
+namespace MonoTorrent.TrackerServer
 {
-    public class AnnounceResponse : TrackerResponse
+    /// <summary>
+    /// Represents the metadata for a torrent when it is being tracked in a <see cref="TrackerServer"/>
+    /// </summary>
+    public interface ITrackerItem
     {
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// The number of active seeders
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        int Complete { get; }
 
-        public TimeSpan MinUpdateInterval { get; }
+        /// <summary>
+        /// The total number of peers being tracked
+        /// </summary>
+        int Count { get; }
 
-        public TimeSpan UpdateInterval { get; }
+        /// <summary>
+        /// The total number of times the torrent has been fully downloaded
+        /// </summary>
+        int Downloaded { get; }
 
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
-        {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
-        }
+        /// <summary>
+        /// The number of active leechers
+        /// </summary>
+        int Incomplete { get; }
+
+        /// <summary>
+        /// Represents the InfoHash (or equivalent) of the torrent which is being tracked.
+        /// </summary>
+        ITrackable Trackable { get; }
+
+        /// <summary>
+        /// Return a copy of the list of peers
+        /// </summary>
+        /// <returns></returns>
+        List<Peer> GetPeers ();
     }
 }

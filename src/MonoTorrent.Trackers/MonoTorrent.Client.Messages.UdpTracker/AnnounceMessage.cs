@@ -66,7 +66,7 @@ namespace MonoTorrent.Messages.UdpTracker
 
         }
 
-        public AnnounceMessage (int transactionId, long connectionId, AnnounceParameters parameters)
+        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest parameters)
             : base (1, transactionId)
         {
             ConnectionId = connectionId;

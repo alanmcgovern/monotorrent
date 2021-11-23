@@ -1,8 +1,8 @@
-﻿//
-// AnnounceResponse.cs
+//
+// ClientAddressComparer.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
 // Copyright (C) 2006 Alan McGovern
 //
@@ -27,38 +27,21 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-
-namespace MonoTorrent.Trackers
+namespace MonoTorrent.TrackerServer
 {
-    public class AnnounceResponse : TrackerResponse
+    /// <summary>
+    /// Uses the <see cref="AnnounceRequest.ClientAddress"/> field to compare peers when handling Announce or Scrape requests.
+    /// </summary>
+    public class ClientAddressComparer : IPeerComparer
     {
         /// <summary>
-        /// The list of peers returned by the tracker.
+        /// Returns the <see cref="AnnounceRequest.ClientAddress"/> field to use to compare peers.
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
-
-        public TimeSpan MinUpdateInterval { get; }
-
-        public TimeSpan UpdateInterval { get; }
-
-        public AnnounceResponse (
-            TrackerState state,
-            IList<PeerInfo> peers = null,
-            TimeSpan? minUpdateInterval = null,
-            TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
-            )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+        /// <param name="parameters">The data sent as part of the Announce request</param>
+        /// <returns></returns>
+        public object GetKey (AnnounceRequest parameters)
         {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
-            MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
-            UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
+            return parameters.ClientAddress;
         }
     }
 }

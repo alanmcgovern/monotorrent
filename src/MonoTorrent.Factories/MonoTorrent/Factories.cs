@@ -37,6 +37,7 @@ using System.Security.Cryptography;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Tracker;
 using MonoTorrent.Dht;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.PieceWriter;
@@ -116,9 +117,9 @@ namespace MonoTorrent
             StreamingPieceRequesterFunc = () => new StreamingPieceRequester ();
             TrackerFuncs = new ReadOnlyDictionary<string, TrackerCreator> (
                 new Dictionary<string, TrackerCreator> {
-                    { "http", uri => new HTTPTracker (uri, HttpClientFunc ()) },
-                    { "https", uri => new HTTPTracker (uri, HttpClientFunc ()) },
-                    { "udp", uri => new UdpTracker (uri) },
+                    { "http", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
+                    { "https", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
+                    { "udp", uri => new Tracker (new UdpTrackerConnection (uri)) },
                 }
             );
         }
