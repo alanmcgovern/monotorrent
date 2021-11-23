@@ -78,6 +78,9 @@ namespace MonoTorrent
         /// </summary>
         public long OffsetInTorrent { get; }
 
+        // FIXME: Expose as byte[]?
+        public BEncoding.BEncodedString PiecesRoot { get; }
+
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent)
             : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty)
         {
@@ -85,6 +88,11 @@ namespace MonoTorrent
         }
 
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> md5, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, md5, ed2k, sha1, null)
+        {
+        }
+
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> md5, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1, BEncoding.BEncodedString piecesRoot)
         {
             Path = path;
             Length = length;
@@ -92,6 +100,8 @@ namespace MonoTorrent
             StartPieceIndex = startIndex;
             EndPieceIndex = endIndex;
             OffsetInTorrent = offsetInTorrent;
+
+            PiecesRoot = piecesRoot;
 
             ED2K = ed2k;
             MD5 = md5;

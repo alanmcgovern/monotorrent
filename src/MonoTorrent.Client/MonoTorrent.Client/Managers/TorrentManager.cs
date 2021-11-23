@@ -673,6 +673,8 @@ namespace MonoTorrent.Client
                 StartTime = DateTime.Now;
                 if (!HasMetadata) {
                     Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
+                } else if (Torrent.Pieces is HashesV2) {
+                    Mode = new FetchHashesMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
                 } else {
                     var startingMode = new StartingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
                     Mode = startingMode;

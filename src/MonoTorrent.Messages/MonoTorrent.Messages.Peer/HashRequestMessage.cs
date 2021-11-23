@@ -1,4 +1,4 @@
-﻿//
+//
 // HashRequestMessage.cs
 //
 // Authors:

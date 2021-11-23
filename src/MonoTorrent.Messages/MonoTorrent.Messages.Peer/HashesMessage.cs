@@ -1,4 +1,4 @@
-﻿//
+//
 // HashesMessage.cs
 //
 // Authors:

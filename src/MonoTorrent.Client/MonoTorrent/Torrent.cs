@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -118,7 +119,7 @@ namespace MonoTorrent
         /// <summary>
         /// This is the array of hashes contained within the torrent.
         /// </summary>
-        public Hashes Pieces { get; private set; }
+        public ITorrentFileHashProvider Pieces { get; private set; }
 
         /// <summary>
         /// The name of the Publisher
@@ -182,7 +183,7 @@ namespace MonoTorrent
             Pieces = new Hashes (data, data.Length / 20);
         }
 
-        IList<TorrentFile> LoadTorrentFiles (BEncodedList list)
+        IList<TorrentFile> LoadTorrentFilesV1 (BEncodedList list)
         {
             var sb = new StringBuilder (32);
 
@@ -245,6 +246,29 @@ namespace MonoTorrent
             return Array.AsReadOnly (TorrentFile.Create (PieceLength, files.ToArray ()));
         }
 
+        IList<TorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree)
+        {
+            var results = new List<TorrentFile> ();
+            foreach (var entry in fileTree) {
+                string path = entry.Key.Text;
+                long length = 0;
+                BEncodedString piecesRoot = null;
+                foreach (var attr in (BEncodedDictionary) entry.Value) {
+                    foreach (var attr2 in (BEncodedDictionary)attr.Value) {
+                        if (attr2.Key.Text == "length")
+                            length = (attr2.Value as BEncodedNumber).Number;
+                        if (attr2.Key.Text == "pieces root")
+                            piecesRoot = (BEncodedString) attr2.Value;
+                    }
+                }
+
+                var startPiece = results.Count == 0 ? 0 : results[results.Count - 1].EndPieceIndex + 1;
+                var endPiece = startPiece + (int) ((length + PieceLength - 1) / PieceLength) - 1;
+                results.Add (new TorrentFile (path, length, startPiece, endPiece, startPiece * PieceLength, default, default, default, piecesRoot));
+                Size += length;
+            }
+            return Array.AsReadOnly (results.ToArray ());
+        }
 
         /// <summary>
         /// This method is called internally to load the information found within the "Info" section
@@ -255,7 +279,23 @@ namespace MonoTorrent
         {
             InfoMetadata = dictionary.Encode ();
             PieceLength = int.Parse (dictionary["piece length"].ToString ());
-            LoadHashPieces (((BEncodedString) dictionary["pieces"]).AsMemory ());
+            bool isV1 = false;
+            bool isV2 = false;
+
+            if (dictionary.TryGetValue ("meta version", out BEncodedValue metaVersion)) {
+                if (metaVersion is BEncodedNumber metadataVersion) {
+                    isV1 = metadataVersion.Number == 1;
+                    isV2 = metadataVersion.Number == 2;
+                }
+            } else {
+                isV1 = true;
+            }
+
+            if (!isV1 && !isV2)
+                throw new TorrentException ("Unsupported torrent version. Only v1 and v2 torrents are supported");
+
+            if (isV1)
+                LoadHashPieces (((BEncodedString) dictionary["pieces"]).AsMemory ());                
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
@@ -292,9 +332,16 @@ namespace MonoTorrent
                         break;
 
                     case ("files"):
-                        Files = LoadTorrentFiles ((BEncodedList) keypair.Value);
+                        // This is the list of files using the v1 torrent format.
+                        // Only load if we have not processed filesv2
+                        if (Files == null)
+                            Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value);
                         break;
 
+                    case "file tree":
+                        // This is the list of files using the v2 torrent format.
+                        Files = LoadTorrentFilesV2 ((BEncodedDictionary) dictionary["file tree"]);
+                        break;
                     case ("name.utf-8"):
                         if (keypair.Value.ToString ().Length > 0)
                             Name = keypair.Value.ToString ();
@@ -320,7 +367,7 @@ namespace MonoTorrent
                 }
             }
 
-            if (Files == null)   // Not a multi-file torrent
+            if (Files == null && isV1)   // Not a multi-file torrent
             {
                 long length = long.Parse (dictionary["length"].ToString ());
                 Size = length;
@@ -331,6 +378,16 @@ namespace MonoTorrent
                 int endPiece = Math.Min (Pieces.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly (new[] { new TorrentFile (path, length, 0, endPiece, 0, md5, ed2k, sha1) });
             }
+        }
+
+        void ProcessPieceLayers (BEncodedDictionary layers)
+        {
+            // the hashes for a given file can be accessed using
+            // `layers[Files[0].PiecesRoot]`
+            //
+            // The intention here is to change the 'hashes' API to accept an 'ITorrentFile' and/or
+            // a piece index/offset, so the engine can download/verify v1 or v2 torrents as needed.
+            Pieces = new HashesV2 (layers.ToDictionary (t => t.Key, v => (BEncodedString) v.Value), Files.ToArray (), PieceLength);
         }
 
         /// <summary>
@@ -589,6 +646,10 @@ namespace MonoTorrent
                     case ("info"):
                         InfoHash = infoHash;
                         ProcessInfo (((BEncodedDictionary) keypair.Value));
+                        break;
+
+                    case "piece layers":
+                        ProcessPieceLayers ((BEncodedDictionary) keypair.Value);
                         break;
 
                     case ("name"):                                               // Handled elsewhere

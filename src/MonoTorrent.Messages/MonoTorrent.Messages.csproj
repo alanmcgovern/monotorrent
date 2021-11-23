@@ -8,4 +8,8 @@
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\MonoTorrent.Client\MonoTorrent\Arrays.cs" Link="Linked\Arrays.cs" />
+  </ItemGroup>
+
 </Project>

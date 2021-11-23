@@ -1,4 +1,4 @@
-﻿//
+//
 // HashRejectMessage.cs
 //
 // Authors:

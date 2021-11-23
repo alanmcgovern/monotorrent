@@ -31,45 +31,25 @@ using System;
 
 namespace MonoTorrent
 {
-    public class Hashes
+    class Hashes : ITorrentFileHashProvider
     {
-        #region Constants
         /// <summary>
         /// Hash code length (in bytes)
         /// </summary>
         internal static readonly int HashCodeLength = 20;
-        #endregion
 
-
-        #region Private Fields
-
-        readonly ReadOnlyMemory<byte> hashData;
-
-        #endregion Private Fields
-
-
-        #region Properties
+        ReadOnlyMemory<byte> HashData { get; }
 
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>
         public int Count { get; }
 
-        #endregion Properties
-
-
-        #region Constructors
-
         internal Hashes (ReadOnlyMemory<byte> hashData, int count)
         {
-            this.hashData = hashData;
+            HashData = hashData;
             Count = count;
         }
-
-        #endregion Constructors
-
-
-        #region Methods
 
         /// <summary>
         /// Determine whether a calculated hash is equal to our stored hash
@@ -77,7 +57,7 @@ namespace MonoTorrent
         /// <param name="hash">Hash code to check</param>
         /// <param name="hashIndex">Index of hash/piece to verify against</param>
         /// <returns>true iff hash is equal to our stored hash, false otherwise</returns>
-        public bool IsValid (byte[] hash, int hashIndex)
+        public bool IsValid (ReadOnlySpan<byte> hash, int hashIndex)
         {
             if (hash == null)
                 throw new ArgumentNullException (nameof (hash));
@@ -88,7 +68,7 @@ namespace MonoTorrent
             if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
 
-            return hash.AsSpan ().SequenceEqual (hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
+            return hash.SequenceEqual (HashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
         }
 
         /// <summary>
@@ -97,8 +77,6 @@ namespace MonoTorrent
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
         public byte[] ReadHash (int hashIndex)
-            =>  hashData.Slice (hashIndex * HashCodeLength, HashCodeLength).ToArray ();
-
-        #endregion Methods
+            => HashData.Slice (hashIndex * HashCodeLength, HashCodeLength).ToArray ();
     }
 }
