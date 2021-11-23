@@ -27,8 +27,6 @@
 //
 
 
-using System;
-
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -37,7 +35,7 @@ namespace MonoTorrent.Client
     public class TorrentSettingsTests
     {
         [Test]
-        public void EncodeDecode()
+        public void EncodeDecode ()
         {
             var value = Serializer.DeserializeTorrentSettings (Serializer.Serialize (new TorrentSettings ()));
             Assert.AreEqual (value, new TorrentSettings ());

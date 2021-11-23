@@ -29,8 +29,6 @@
 
 using System;
 
-using MonoTorrent.Dht;
-
 namespace MonoTorrent.Client
 {
     public sealed class TorrentSettings : IEquatable<TorrentSettings>

@@ -79,29 +79,29 @@ namespace MonoTorrent.Client
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             using (ExecutionContext.SuppressFlow ())
 #endif
-                while (true) {
+            while (true) {
 
-                    lock (actionsLock) {
-                       if (actions.Count == 0)
-                            Monitor.Wait (actionsLock);
+                lock (actionsLock) {
+                    if (actions.Count == 0)
+                        Monitor.Wait (actionsLock);
 
-                        var swap = actions;
-                        actions = currentQueue;
-                        currentQueue = swap;
-                    }
+                    var swap = actions;
+                    actions = currentQueue;
+                    currentQueue = swap;
+                }
 
-                    while (currentQueue.Count > 0) {
-                        var task = currentQueue.Dequeue ();
-                        try {
-                            task.Action?.Invoke ();
-                            task.SendOrPostCallback?.Invoke (task.State);
-                        } catch (Exception ex) {
-                            Console.WriteLine ("Unexpected main loop exception: {0}", ex);
-                        } finally {
-                            task.WaitHandle?.Set ();
-                        }
+                while (currentQueue.Count > 0) {
+                    var task = currentQueue.Dequeue ();
+                    try {
+                        task.Action?.Invoke ();
+                        task.SendOrPostCallback?.Invoke (task.State);
+                    } catch (Exception ex) {
+                        Console.WriteLine ("Unexpected main loop exception: {0}", ex);
+                    } finally {
+                        task.WaitHandle?.Set ();
                     }
                 }
+            }
         }
 
         public void QueueWait (Action action)
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client
             }
         }
 
-#region If you await the MainLoop you'll swap to it's thread!
+        #region If you await the MainLoop you'll swap to it's thread!
         [EditorBrowsable (EditorBrowsableState.Never)]
         public MainLoop GetAwaiter ()
         {
@@ -207,7 +207,7 @@ namespace MonoTorrent.Client
             return new ThreadSwitcher ();
         }
 
-        [Conditional("DEBUG")]
+        [Conditional ("DEBUG")]
         internal void CheckThread ()
         {
             if (Thread.CurrentThread != thread)

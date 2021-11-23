@@ -408,14 +408,14 @@ namespace MonoTorrent.Client
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
-                .WithTrackerCreator("custom", uri => new Tracker (new CustomTracker (uri)))
+                .WithTrackerCreator ("custom", uri => new Tracker (new CustomTracker (uri)))
                 ;
 
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
                 cacheDirectory: cacheDir,
-                listenEndPoint: new IPEndPoint(IPAddress.Any, 12345)
+                listenEndPoint: new IPEndPoint (IPAddress.Any, 12345)
             ), factories);
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);
@@ -527,10 +527,10 @@ namespace MonoTorrent.Client
         static TorrentFile[] StandardMultiFile ()
         {
             return TorrentFile.Create (StandardPieceSize (),
-                ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
-                ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
-                ("File3", (int)(StandardPieceSize () * 23.68)),
-                ("File4", (int)(StandardPieceSize () * 2.05))
+                ("Dir1/File1", (int) (StandardPieceSize () * 0.44)),
+                ("Dir1/Dir2/File2", (int) (StandardPieceSize () * 13.25)),
+                ("File3", (int) (StandardPieceSize () * 23.68)),
+                ("File4", (int) (StandardPieceSize () * 2.05))
             );
         }
 
@@ -558,7 +558,7 @@ namespace MonoTorrent.Client
 
         internal static Torrent CreatePrivate ()
         {
-            var dict = CreateTorrent (16 * 1024 * 8, TorrentFile.Create (16 * 1024 * 8 , ("File", 16 * 1024 * 8)), null);
+            var dict = CreateTorrent (16 * 1024 * 8, TorrentFile.Create (16 * 1024 * 8, ("File", 16 * 1024 * 8)), null);
             var editor = new TorrentEditor (dict) {
                 CanEditSecureMetadata = true,
                 Private = true,

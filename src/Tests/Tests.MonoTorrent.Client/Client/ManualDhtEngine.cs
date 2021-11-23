@@ -31,7 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using MonoTorrent.BEncoding;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht;
 

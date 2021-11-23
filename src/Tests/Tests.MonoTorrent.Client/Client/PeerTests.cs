@@ -126,7 +126,7 @@ namespace MonoTorrent.Client
             };
             dict["peer id"] = peerId;
 
-            var peer = Peer.Decode (new BEncodedList {dict}).Single ();
+            var peer = Peer.Decode (new BEncodedList { dict }).Single ();
             Assert.AreEqual (peerId, peer.PeerId, "#1");
         }
 

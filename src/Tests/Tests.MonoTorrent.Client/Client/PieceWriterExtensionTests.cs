@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using MonoTorrent.Client.PieceWriters;
-
+﻿
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -127,7 +120,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void PieceIndex_Invalid()
+        public void PieceIndex_Invalid ()
         {
             var files = TorrentFileInfo.Create (Constants.BlockSize, 1024);
             Assert.Less (files.FindFileByPieceIndex (1), 0);

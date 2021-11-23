@@ -29,10 +29,7 @@
 
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
-
-using ReusableTasks;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -75,7 +72,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public override void Flush ()
         {
-            
+
         }
 
         public override int Read (byte[] buffer, int offset, int count)

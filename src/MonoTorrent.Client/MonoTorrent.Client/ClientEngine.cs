@@ -69,10 +69,10 @@ namespace MonoTorrent.Client
 
             var clientEngine = new ClientEngine (engineSettings);
             TorrentManager manager;
-            foreach (BEncodedDictionary torrent in (BEncodedList) state[nameof(clientEngine.Torrents)]) {
-                var saveDirectory = ((BEncodedString) torrent[nameof(manager.SavePath)]).Text;
+            foreach (BEncodedDictionary torrent in (BEncodedList) state[nameof (clientEngine.Torrents)]) {
+                var saveDirectory = ((BEncodedString) torrent[nameof (manager.SavePath)]).Text;
                 var streaming = bool.Parse (((BEncodedString) torrent["Streaming"]).Text);
-                var torrentSettings = Serializer.DeserializeTorrentSettings ((BEncodedDictionary) torrent[nameof(manager.Settings)]);
+                var torrentSettings = Serializer.DeserializeTorrentSettings ((BEncodedDictionary) torrent[nameof (manager.Settings)]);
 
                 if (torrent.ContainsKey (nameof (manager.MetadataPath))) {
                     var metadataPath = (BEncodedString) torrent[nameof (manager.MetadataPath)];
@@ -81,11 +81,11 @@ namespace MonoTorrent.Client
                     else
                         manager = await clientEngine.AddAsync (metadataPath.Text, saveDirectory, torrentSettings);
 
-                    foreach (BEncodedDictionary file in (BEncodedList) torrent[nameof(manager.Files)]) {
+                    foreach (BEncodedDictionary file in (BEncodedList) torrent[nameof (manager.Files)]) {
                         TorrentFileInfo torrentFile;
-                        torrentFile = (TorrentFileInfo) manager.Files.Single (t => t.Path == ((BEncodedString) file[nameof(torrentFile.Path)]).Text);
-                        torrentFile.Priority = (Priority) Enum.Parse (typeof (Priority), file[nameof(torrentFile.Priority)].ToString ());
-                        torrentFile.FullPath = ((BEncodedString) file[nameof(torrentFile.FullPath)]).Text;
+                        torrentFile = (TorrentFileInfo) manager.Files.Single (t => t.Path == ((BEncodedString) file[nameof (torrentFile.Path)]).Text);
+                        torrentFile.Priority = (Priority) Enum.Parse (typeof (Priority), file[nameof (torrentFile.Priority)].ToString ());
+                        torrentFile.FullPath = ((BEncodedString) file[nameof (torrentFile.FullPath)]).Text;
                     }
                 } else {
                     var magnetLink = MagnetLink.Parse (torrent[nameof (manager.MagnetLink)].ToString ());
@@ -352,7 +352,7 @@ namespace MonoTorrent.Client
             editor.SetCustom ("name", (BEncodedString) torrent.Name);
 
             if (torrent.AnnounceUrls.Count > 0) {
-                if (torrent.AnnounceUrls.Count == 1 && torrent.AnnounceUrls [0].Count == 1) {
+                if (torrent.AnnounceUrls.Count == 1 && torrent.AnnounceUrls[0].Count == 1) {
                     editor.Announce = torrent.AnnounceUrls.Single ().Single ();
                 } else {
                     foreach (var tier in torrent.AnnounceUrls) {
@@ -459,7 +459,7 @@ namespace MonoTorrent.Client
             manager.Dispose ();
 
             if (mode.HasFlag (RemoveMode.CacheDataOnly)) {
-                foreach (var path in new [] { Settings.GetFastResumePath (manager.InfoHash), Settings.GetMetadataPath (manager.InfoHash) })
+                foreach (var path in new[] { Settings.GetFastResumePath (manager.InfoHash), Settings.GetMetadataPath (manager.InfoHash) })
                     if (File.Exists (path))
                         File.Delete (path);
             }
@@ -913,7 +913,7 @@ namespace MonoTorrent.Client
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
 
-            if (!Equals(oldSettings.ListenEndPoint, newSettings.ListenEndPoint)) {
+            if (!Equals (oldSettings.ListenEndPoint, newSettings.ListenEndPoint)) {
                 if (PeerListener.LocalEndPoint != null)
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port), CancellationToken.None);
 
@@ -930,7 +930,7 @@ namespace MonoTorrent.Client
             }
 
             if (oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) {
-                RegisterLocalPeerDiscovery (!newSettings.AllowLocalPeerDiscovery ? null : Factories.CreateLocalPeerDiscovery());
+                RegisterLocalPeerDiscovery (!newSettings.AllowLocalPeerDiscovery ? null : Factories.CreateLocalPeerDiscovery ());
             }
         }
 

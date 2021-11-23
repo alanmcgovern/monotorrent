@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MonoTorrent.Connections
+﻿namespace MonoTorrent.Connections
 {
     public enum ListenerStatus
     {

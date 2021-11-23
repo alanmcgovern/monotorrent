@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
     public class EncryptionTypesTests
     {
         [Test]
-        public void GetSupported()
+        public void GetSupported ()
         {
             var result = EncryptionTypes.GetSupportedEncryption (
                 new[] { EncryptionType.RC4Full, EncryptionType.PlainText },
@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (EncryptionType.PlainText, result.Single ());
 
             result = EncryptionTypes.GetSupportedEncryption (
-                new[] { EncryptionType.PlainText, EncryptionType.RC4Full, EncryptionType.RC4Header},
+                new[] { EncryptionType.PlainText, EncryptionType.RC4Full, EncryptionType.RC4Header },
                 new[] { EncryptionType.RC4Full, EncryptionType.PlainText });
             Assert.AreEqual (EncryptionType.RC4Full, result.First ());
             Assert.AreEqual (EncryptionType.PlainText, result.Last ());
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void RemoveFromEmptyList()
+        public void RemoveFromEmptyList ()
         {
             var result = EncryptionTypes.Remove (new List<EncryptionType> (), EncryptionType.PlainText);
             Assert.IsEmpty (result);

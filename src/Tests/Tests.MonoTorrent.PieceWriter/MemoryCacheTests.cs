@@ -27,15 +27,16 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using ReusableTasks;
+using MonoTorrent.Client;
 
 using NUnit.Framework;
-using System;
-using MonoTorrent.Client;
+
+using ReusableTasks;
 
 namespace MonoTorrent.PieceWriter
 {
@@ -146,7 +147,7 @@ namespace MonoTorrent.PieceWriter
             };
 
             writer = new MemoryWriter ();
-            cache = new MemoryCache (new ByteBufferPool (false),  Constants.BlockSize * 4, writer);
+            cache = new MemoryCache (new ByteBufferPool (false), Constants.BlockSize * 4, writer);
         }
 
         [Test]
@@ -330,7 +331,7 @@ namespace MonoTorrent.PieceWriter
         }
 
         [Test]
-        public async Task MemoryWriter_ZeroCapacity_Write()
+        public async Task MemoryWriter_ZeroCapacity_Write ()
         {
             var writer = new MemoryWriter ();
             var cache = new MemoryCache (new ByteBufferPool (false), 0, writer);

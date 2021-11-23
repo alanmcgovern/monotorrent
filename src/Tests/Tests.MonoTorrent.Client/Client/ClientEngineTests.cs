@@ -32,8 +32,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Dht;
-
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -56,7 +54,7 @@ namespace MonoTorrent.Client
             };
 
             var peer = rig.CreatePeer (false).Peer;
-            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.TextBytes)  });
+            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.TextBytes) });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -84,7 +82,7 @@ namespace MonoTorrent.Client
             };
 
             var peer = rig.CreatePeer (false).Peer;
-            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.TextBytes)  });
+            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.TextBytes) });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -139,7 +137,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void CacheDirectory_IsFile_Constructor()
+        public void CacheDirectory_IsFile_Constructor ()
         {
             var tmp = TempDir.Create ();
             var cachePath = Path.Combine (tmp.Path, "test.file");
@@ -215,8 +213,8 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [TestCase(true)]
-        [TestCase(false)]
+        [TestCase (true)]
+        [TestCase (false)]
         public async Task SaveRestoreState_OneInMemoryTorrent (bool addStreaming)
         {
             var pieceLength = Constants.BlockSize * 4;
@@ -250,15 +248,15 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [TestCase(true)]
-        [TestCase(false)]
+        [TestCase (true)]
+        [TestCase (false)]
         public async Task SaveRestoreState_OneMagnetLink (bool addStreaming)
         {
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
             if (addStreaming)
                 await engine.AddStreamingAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
             else
-                await engine.AddAsync(new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
+                await engine.AddAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
 
             var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
@@ -293,7 +291,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1String (), restoredEngine.Torrents[0].MagnetLink.ToV1String ());
 
             Assert.AreEqual (engine.Torrents[0].Files.Count, restoredEngine.Torrents[0].Files.Count);
-            for (int i = 0; i < engine.Torrents.Count; i ++) {
+            for (int i = 0; i < engine.Torrents.Count; i++) {
                 Assert.AreEqual (engine.Torrents[0].Files[i].FullPath, restoredEngine.Torrents[0].Files[i].FullPath);
                 Assert.AreEqual (engine.Torrents[0].Files[i].Priority, restoredEngine.Torrents[0].Files[i].Priority);
             }

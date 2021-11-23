@@ -715,7 +715,7 @@ namespace MonoTorrent.PiecePicking
         }
 
         [Test]
-        public void DupeRequests_FinalBlock_ValidatePrimaryThenDupe()
+        public void DupeRequests_FinalBlock_ValidatePrimaryThenDupe ()
         {
             var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
             var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);

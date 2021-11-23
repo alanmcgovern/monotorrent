@@ -34,7 +34,6 @@ using System.Linq;
 using System.Net;
 
 using MonoTorrent.Connections;
-using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -78,7 +77,7 @@ namespace MonoTorrent.Client
         /// Connections will be attempted in the same order as they are in the list. Defaults to <see cref="EncryptionType.RC4Header"/>,
         /// <see cref="EncryptionType.RC4Full"/> and <see cref="EncryptionType.PlainText"/>.
         /// </summary>
-        public IList<EncryptionType> AllowedEncryption { get; set;  }
+        public IList<EncryptionType> AllowedEncryption { get; set; }
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers

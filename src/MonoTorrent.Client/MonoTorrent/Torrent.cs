@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -187,7 +186,7 @@ namespace MonoTorrent
         {
             var sb = new StringBuilder (32);
 
-            var files = new List<(string path, long length, byte[] md5sum, byte[]  ed2k, byte[] sha1)> ();
+            var files = new List<(string path, long length, byte[] md5sum, byte[] ed2k, byte[] sha1)> ();
             foreach (BEncodedDictionary dict in list) {
                 long length = 0;
                 string path = null;

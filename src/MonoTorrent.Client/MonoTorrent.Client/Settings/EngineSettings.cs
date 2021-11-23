@@ -34,7 +34,6 @@ using System.Linq;
 using System.Net;
 
 using MonoTorrent.Connections;
-using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -279,7 +278,7 @@ namespace MonoTorrent.Client
                    && Equals (DhtEndPoint, other.DhtEndPoint)
                    && DiskCacheBytes == other.DiskCacheBytes
                    && FastResumeMode == other.FastResumeMode
-                   && Equals(ListenEndPoint, other.ListenEndPoint)
+                   && Equals (ListenEndPoint, other.ListenEndPoint)
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate
                    && MaximumDiskWriteRate == other.MaximumDiskWriteRate

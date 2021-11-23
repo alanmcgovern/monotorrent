@@ -256,7 +256,7 @@ namespace MonoTorrent.Client.Unchoking
         }
 
         [Test]
-        public void UnchokeOneWithUnlimitedSlots()
+        public void UnchokeOneWithUnlimitedSlots ()
         {
             var unchokeable = new Unchokeable (PeerId.CreateInterested (10)) {
                 UploadSlots = 0

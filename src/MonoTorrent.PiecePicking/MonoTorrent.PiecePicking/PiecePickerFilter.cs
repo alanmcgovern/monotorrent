@@ -54,7 +54,7 @@ namespace MonoTorrent.PiecePicking
             => Next.CurrentReceivedCount ();
 
         public int CurrentRequestCount ()
-            => Next.CurrentRequestCount();
+            => Next.CurrentRequestCount ();
 
         public IList<ActivePieceRequest> ExportActiveRequests ()
             => Next.ExportActiveRequests ();

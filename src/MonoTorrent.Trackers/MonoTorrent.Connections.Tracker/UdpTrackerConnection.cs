@@ -40,7 +40,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Connections.Tracker
 {
-    [DebuggerDisplay("{" + nameof(Uri)+ "}")]
+    [DebuggerDisplay ("{" + nameof (Uri) + "}")]
     public class UdpTrackerConnection : ITrackerConnection
     {
         public bool CanScrape => true;

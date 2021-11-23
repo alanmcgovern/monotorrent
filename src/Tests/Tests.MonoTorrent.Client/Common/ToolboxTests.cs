@@ -28,6 +28,7 @@
 
 
 using System;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Common
@@ -42,7 +43,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void ByteMatch_DifferentArrayLengths2()
+        public void ByteMatch_DifferentArrayLengths2 ()
         {
             Assert.IsFalse (Toolbox.ByteMatch (new byte[1], 0, new byte[2], 0, 2));
             Assert.IsTrue (Toolbox.ByteMatch (new byte[1], 0, new byte[2], 0, 1));

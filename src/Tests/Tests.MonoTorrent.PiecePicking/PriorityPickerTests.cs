@@ -268,7 +268,7 @@ namespace MonoTorrent.PiecePicking
             singleFile.Files[0].Priority = Priority.Lowest;
             picker.Initialise (singleFile);
 
-            picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length -1 );
+            picker.PickPiece (singlePeer, singleBitfield, peers, 1, 0, singleBitfield.Length - 1);
             Assert.AreEqual (1, checker.Picks.Count, "#1");
             Assert.IsTrue (checker.Picks[0].available.AllTrue, "#2");
             Assert.IsTrue (picker.IsInteresting (singlePeer, singleBitfield), "#2");

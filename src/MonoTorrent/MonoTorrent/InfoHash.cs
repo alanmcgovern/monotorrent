@@ -35,7 +35,7 @@ using System.Web;
 
 namespace MonoTorrent
 {
-    [DebuggerDisplay("InfoHash: (hex) {System.BitConverter.ToString (Hash)}")]
+    [DebuggerDisplay ("InfoHash: (hex) {System.BitConverter.ToString (Hash)}")]
     public class InfoHash : IEquatable<InfoHash>
     {
         static readonly Dictionary<char, byte> Base32DecodeTable;

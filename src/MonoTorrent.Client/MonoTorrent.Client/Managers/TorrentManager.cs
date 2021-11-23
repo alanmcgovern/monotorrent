@@ -36,7 +36,6 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
-using MonoTorrent.Dht;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.Streaming;
@@ -1012,7 +1011,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeWriteFastResumeAsync ()
         {
-            if (!Engine.Settings.AutoSaveLoadFastResume ||!HashChecked)
+            if (!Engine.Settings.AutoSaveLoadFastResume || !HashChecked)
                 return;
 
             ClientEngine.MainLoop.CheckThread ();

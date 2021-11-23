@@ -53,7 +53,7 @@ namespace MonoTorrent
         public MutableBitField (bool[] array)
             : base (array)
         {
-            
+
         }
 
         public new MutableBitField And (BitField value)

@@ -36,7 +36,7 @@ namespace MonoTorrent.PiecePicking
         readonly BitField Bitfield;
         readonly MutableBitField Temp;
 
-        public static IPiecePicker Wrap(IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
+        public static IPiecePicker Wrap (IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
         {
             var result = picker;
             foreach (var bf in ignoringBitfields)

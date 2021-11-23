@@ -295,7 +295,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (buffer.Length * count, diskManager.PendingWriteBytes, "#2");
 
             // Give a proper max read rate.
-           await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskWriteRate = Constants.BlockSize * 2, DiskCacheBytes = 0 }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskWriteRate = Constants.BlockSize * 2, DiskCacheBytes = 0 }.ToSettings ());
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
 
@@ -332,7 +332,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task MoveFile_ConvertsToFullPath()
+        public async Task MoveFile_ConvertsToFullPath ()
         {
 
             using var writer = new TestPieceWriter ();
@@ -492,7 +492,7 @@ namespace MonoTorrent.Client
             var buffer = new byte[Constants.BlockSize];
             var allData = fileData.Data.SelectMany (t => t).Partition (Constants.BlockSize).ToArray ();
             int blocksPerPiece = fileData.PieceLength / Constants.BlockSize;
-            for (int i = 0; i < allData.Length; i ++) {
+            for (int i = 0; i < allData.Length; i++) {
                 var pieceIndex = i / blocksPerPiece;
                 var offset = (i % blocksPerPiece) * Constants.BlockSize;
 

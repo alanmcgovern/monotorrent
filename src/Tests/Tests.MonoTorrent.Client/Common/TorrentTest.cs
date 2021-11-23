@@ -267,7 +267,7 @@ namespace MonoTorrent.Common
         public void HttpSeeds ()
         {
             Assert.IsTrue (torrent.HttpSeeds.Count == 1);
-            Assert.AreEqual(new Uri("https://example.com/8/items/"), torrent.HttpSeeds[0]);
+            Assert.AreEqual (new Uri ("https://example.com/8/items/"), torrent.HttpSeeds[0]);
         }
 
         [Test]
@@ -414,7 +414,7 @@ namespace MonoTorrent.Common
         {
             int pieceLength = 32 * 32;
             TorrentFile[] files = TorrentFile.Create (pieceLength,
-                ("File0", pieceLength- 10),
+                ("File0", pieceLength - 10),
                 ("File1", 11)
             );
             Torrent t = TestRig.CreateMultiFileTorrent (files, pieceLength);

@@ -171,7 +171,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             await TrackerManager.AddTrackerAsync (new Uri ("http://test.tracker"));
-            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new[] { new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), new BEncodedString ("One").TextBytes), new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), new BEncodedString("Two").TextBytes) });
+            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new[] { new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), new BEncodedString ("One").TextBytes), new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), new BEncodedString ("Two").TextBytes) });
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (2, addedArgs.NewPeers, "#1");
@@ -221,7 +221,7 @@ namespace MonoTorrent.Client.Modes
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
-            var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte)15, 20).ToArray ()), "peerid", Constants.ProtocolStringV100);
+            var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte) 15, 20).ToArray ()), "peerid", Constants.ProtocolStringV100);
 
             Assert.Throws<TorrentException> (() => Manager.Mode.HandleMessage (peer, handshake));
         }

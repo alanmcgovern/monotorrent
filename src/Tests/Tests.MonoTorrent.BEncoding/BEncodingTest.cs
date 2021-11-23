@@ -30,8 +30,6 @@
 using System.IO;
 using System.Text;
 
-using MonoTorrent.BEncoding;
-
 using NUnit.Framework;
 
 namespace MonoTorrent.BEncoding

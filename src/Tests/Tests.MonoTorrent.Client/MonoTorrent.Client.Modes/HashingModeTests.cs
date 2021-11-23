@@ -91,7 +91,7 @@ namespace MonoTorrent.Client.Modes
 
             Assert.IsFalse (Peer.Connection.Disposed, "#1");
             Manager.HandlePeerConnected (Peer);
-            Assert.IsTrue(Peer.Connection.Disposed, "#2");
+            Assert.IsTrue (Peer.Connection.Disposed, "#2");
             Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
         }
 

@@ -129,7 +129,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="stream"></param>
         /// <param name="strictDecoding"></param>
         /// <returns></returns>
-        public static BEncodedValue Decode(Stream stream, bool strictDecoding)
+        public static BEncodedValue Decode (Stream stream, bool strictDecoding)
         {
             if (stream == null)
                 throw new ArgumentNullException (nameof (stream));

@@ -69,7 +69,7 @@ namespace SampleClient
             // Then the 5th piece
             await TimedRead (manager, stream, manager.PieceLength * 5, times, token);
             // Then 1/3 of the way in
-            await TimedRead (manager, stream, stream.Length  / 3, times, token);
+            await TimedRead (manager, stream, stream.Length / 3, times, token);
             // Then 2/3 of the way in
             await TimedRead (manager, stream, stream.Length / 3 * 2, times, token);
             // Then 1/5 of the way in
@@ -90,7 +90,7 @@ namespace SampleClient
             var stopwatch = Stopwatch.StartNew ();
             stream.Seek (position, SeekOrigin.Begin);
             await stream.ReadAsync (new byte[1], 0, 1, token);
-            lock(times)
+            lock (times)
                 times.Add (($"Read piece: {manager.ByteOffsetToPieceIndex (stream.Position - 1)}. Time since seeking: ", stopwatch.Elapsed));
         }
     }

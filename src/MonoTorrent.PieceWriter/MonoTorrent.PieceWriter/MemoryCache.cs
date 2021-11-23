@@ -156,7 +156,7 @@ namespace MonoTorrent.PieceWriter
                     }
                     Interlocked.Add (ref cacheHits, block.RequestLength);
                     ReadFromCache?.Invoke (this, block);
-                    return ReusableTask.FromResult(true);
+                    return ReusableTask.FromResult (true);
                 }
             }
 

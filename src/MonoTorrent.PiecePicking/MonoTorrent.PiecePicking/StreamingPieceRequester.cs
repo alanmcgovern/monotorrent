@@ -121,7 +121,7 @@ namespace MonoTorrent.PiecePicking
             foreach (var supportsFastPeer in new[] { true, false }) {
                 for (int i = 0; i < 4; i++) {
                     foreach (var peer in fastestPeers.Where (p => p.SupportsFastPeer == supportsFastPeer)) {
-                        AddRequests (peer, peers, HighPriorityPieceIndex, Math.Min (HighPriorityPieceIndex + 1, bitfield.Length - 1), 2, preferredMaxRequests : (i + 1) * 2);
+                        AddRequests (peer, peers, HighPriorityPieceIndex, Math.Min (HighPriorityPieceIndex + 1, bitfield.Length - 1), 2, preferredMaxRequests: (i + 1) * 2);
                     }
                 }
             }
@@ -197,7 +197,7 @@ namespace MonoTorrent.PiecePicking
 
         MutableBitField GenerateAlreadyHaves ()
         {
-            Temp.From (IgnoringBitfields [0]);
+            Temp.From (IgnoringBitfields[0]);
             for (int i = 1; i < IgnoringBitfields.Count; i++)
                 Temp.Or (IgnoringBitfields[i]);
             return Temp;

@@ -367,7 +367,7 @@ namespace MonoTorrent.Client
         {
             rig.Dispose ();
             rig = TestRig.CreateSingleFile ();
-            rig.Torrent.HttpSeeds.Add (new Uri($"{ListenerURL}File1.exe"));
+            rig.Torrent.HttpSeeds.Add (new Uri ($"{ListenerURL}File1.exe"));
 
             Uri url = rig.Torrent.HttpSeeds[0];
             connection = new HttpPeerConnection (rig.Manager, rig.Engine.Factories, url);

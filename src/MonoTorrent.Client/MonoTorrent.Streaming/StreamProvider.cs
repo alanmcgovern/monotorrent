@@ -169,7 +169,7 @@ namespace MonoTorrent.Streaming
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        
+
         public async Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);

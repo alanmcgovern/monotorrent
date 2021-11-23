@@ -129,8 +129,8 @@ namespace MonoTorrent.Client
             var limiter = new RateLimiter ();
             limiter.UpdateChunks (oneMegabyte, oneMegabyte);
 
-            await Outgoing.SendAsync (new ByteBuffer(oneMegabyte), 0, oneMegabyte);
-            await NetworkIO.ReceiveAsync (Incoming, new ByteBuffer(oneMegabyte), 0, oneMegabyte, limiter, null, null);
+            await Outgoing.SendAsync (new ByteBuffer (oneMegabyte), 0, oneMegabyte);
+            await NetworkIO.ReceiveAsync (Incoming, new ByteBuffer (oneMegabyte), 0, oneMegabyte, limiter, null, null);
 
             var expectedChunks = (int) Math.Ceiling (oneMegabyte / (double) NetworkIO.ChunkLength);
             Assert.AreEqual (expectedChunks, Incoming.Receives.Count, "#1");
@@ -181,7 +181,7 @@ namespace MonoTorrent.Client
             new Random ().NextBytes (data.Data);
 
             int sent = 0;
-            var buffer = new ByteBuffer(data.Data.Length);
+            var buffer = new ByteBuffer (data.Data.Length);
 
             var task = NetworkIO.ReceiveAsync (Outgoing, buffer, 0, buffer.Data.Length, null, null, null);
 

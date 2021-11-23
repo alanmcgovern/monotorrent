@@ -220,7 +220,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void ShouldAcceptHybridV1V2Uri()
+        public void ShouldAcceptHybridV1V2Uri ()
         {
             Assert.DoesNotThrow (() => MagnetLink.FromUri (new Uri ("magnet:?xt=urn:btih:631a31dd0a46257d5078c0dee4e66e26f73e42ac&xt=urn:btmh:1220d8dd32ac93357c368556af3ac1d95c9d76bd0dff6fa9833ecdac3d53134efabb&dn=bittorrent-v1-v2-hybrid-test")));
         }

@@ -27,8 +27,6 @@
 //
 
 
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,7 +34,6 @@ using System.Threading.Tasks;
 using MonoTorrent.Client;
 
 using NUnit.Framework;
-using ReusableTasks;
 
 namespace MonoTorrent.PieceWriter
 {
@@ -83,42 +80,42 @@ namespace MonoTorrent.PieceWriter
         }
 
         [Test]
-        public void CloseFileAsync_Unopened()
+        public void CloseFileAsync_Unopened ()
         {
             using var writer = new DiskWriter ();
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
         }
 
-       /* [Test]
-        public async Task ExceedMaxOpenFiles ()
-        {
-            var streams = new List<ManualStream> ();
-            var streamCreated = new ReusableTaskCompletionSource<bool> ();
-            Func<ITorrentFileInfo, FileAccess, Stream> creator = (file, access) => {
-                var s = new ManualStream (file, access);
-                s.WriteTcs = new TaskCompletionSource<int> ();
-                streams.Add (s);
-                streamCreated.SetResult (true);
-                return s;
-            };
-            using var writer = new DiskWriter (creator, 1);
+        /* [Test]
+         public async Task ExceedMaxOpenFiles ()
+         {
+             var streams = new List<ManualStream> ();
+             var streamCreated = new ReusableTaskCompletionSource<bool> ();
+             Func<ITorrentFileInfo, FileAccess, Stream> creator = (file, access) => {
+                 var s = new ManualStream (file, access);
+                 s.WriteTcs = new TaskCompletionSource<int> ();
+                 streams.Add (s);
+                 streamCreated.SetResult (true);
+                 return s;
+             };
+             using var writer = new DiskWriter (creator, 1);
 
-            var writeTask = writer.WriteAsync (TorrentFile, 0, new byte[100], 0, 100);
-            await streamCreated.Task.WithTimeout ();
+             var writeTask = writer.WriteAsync (TorrentFile, 0, new byte[100], 0, 100);
+             await streamCreated.Task.WithTimeout ();
 
-            // There's a limit of 1 concurrent read/write.
-            var secondStreamWaiter = streamCreated.Task.AsTask ();
+             // There's a limit of 1 concurrent read/write.
+             var secondStreamWaiter = streamCreated.Task.AsTask ();
 
-            var secondStream = writer.WriteAsync (Others.First (), 0, new byte[100], 0, 100);
-            Assert.ThrowsAsync<TimeoutException> (() => secondStreamWaiter.WithTimeout (100));
+             var secondStream = writer.WriteAsync (Others.First (), 0, new byte[100], 0, 100);
+             Assert.ThrowsAsync<TimeoutException> (() => secondStreamWaiter.WithTimeout (100));
 
-            streams[0].WriteTcs.SetResult (1);
-            await secondStreamWaiter.WithTimeout ();
-            streams[1].WriteTcs.SetResult (1);
+             streams[0].WriteTcs.SetResult (1);
+             await secondStreamWaiter.WithTimeout ();
+             streams[1].WriteTcs.SetResult (1);
 
-            await secondStream.WithTimeout ();
-            Assert.IsTrue (streams[0].Disposed);
-            Assert.IsFalse (streams[1].Disposed);
-        }*/
+             await secondStream.WithTimeout ();
+             Assert.IsTrue (streams[0].Disposed);
+             Assert.IsFalse (streams[1].Disposed);
+         }*/
     }
 }

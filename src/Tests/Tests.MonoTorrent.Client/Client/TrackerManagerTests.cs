@@ -213,7 +213,7 @@ namespace MonoTorrent.Client
             await tcs.Task.WithTimeout ();
             Assert.AreEqual (4, announces.Count);
 
-            Assert.AreEqual (trackerManager.Tiers[0].Trackers[2], trackerManager.Tiers [0].ActiveTracker, "#1");
+            Assert.AreEqual (trackerManager.Tiers[0].Trackers[2], trackerManager.Tiers[0].ActiveTracker, "#1");
             Assert.AreEqual (1, trackers[0][0].Connection.AnnouncedAt.Count, "#2a");
             Assert.IsFalse (announces.Single (args => args.Tracker == trackers[0][0]).Successful, "#2b");
 
@@ -225,7 +225,7 @@ namespace MonoTorrent.Client
 
             Assert.AreEqual (0, trackers[0][3].Connection.AnnouncedAt.Count, "#5");
 
-            Assert.AreEqual (trackerManager.Tiers[1].Trackers [0], trackerManager.Tiers[1].ActiveTracker, "#6");
+            Assert.AreEqual (trackerManager.Tiers[1].Trackers[0], trackerManager.Tiers[1].ActiveTracker, "#6");
             Assert.AreEqual (1, trackers[1][0].Connection.AnnouncedAt.Count, "#7a");
             Assert.IsTrue (announces.Single (args => args.Tracker == trackers[1][0]).Successful, "#7b");
 
@@ -241,7 +241,7 @@ namespace MonoTorrent.Client
             foreach (var tier in trackerManager.Tiers) {
                 Assert.IsFalse (tier.LastAnnounceSucceeded);
                 Assert.AreEqual (TimeSpan.MaxValue, tier.TimeSinceLastAnnounce);
-                Assert.AreEqual (tier.Trackers [0], tier.ActiveTracker);
+                Assert.AreEqual (tier.Trackers[0], tier.ActiveTracker);
             }
 
             await trackerManager.AnnounceAsync (CancellationToken.None);
@@ -333,7 +333,7 @@ namespace MonoTorrent.Client
         [Test]
         public void UnsupportedTrackers ()
         {
-            var tiers = new []{
+            var tiers = new[]{
                 new List<string> { "unregistered://1.1.1.1:1111", "unregistered://1.1.1.2:1112" },
                 new List<string> { "unregistered://2.2.2.2:2221" },
                 new List<string> { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },

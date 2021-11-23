@@ -34,6 +34,7 @@ using System.Linq;
 using MonoTorrent.PieceWriter;
 
 using NUnit.Framework;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Client
@@ -164,7 +165,7 @@ namespace MonoTorrent.Client
         public void MoveFileFail ()
         {
             writer.move = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFileAsync ((TorrentFileInfo)data.Files[0], "root"));
+            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFileAsync ((TorrentFileInfo) data.Files[0], "root"));
         }
 
         [Test]

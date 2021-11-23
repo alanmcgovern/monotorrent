@@ -227,11 +227,11 @@ namespace MonoTorrent.Dht
 
         void TimeoutMessage (SendDetails v)
         {
-                DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
-                WaitingResponse.Remove (v.Message.TransactionId);
+            DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
+            WaitingResponse.Remove (v.Message.TransactionId);
 
-                v.CompletionSource?.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage) v.Message));
-                RaiseMessageSent (v.Node, v.Destination, (QueryMessage) v.Message);
+            v.CompletionSource?.TrySetResult (new SendQueryEventArgs (v.Node, v.Destination, (QueryMessage) v.Message));
+            RaiseMessageSent (v.Node, v.Destination, (QueryMessage) v.Message);
         }
 
         void ReceiveMessage ()

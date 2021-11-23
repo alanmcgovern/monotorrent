@@ -99,7 +99,7 @@ namespace MonoTorrent.Connections
                 }
             }
 
-            return result == null ? None :  result.AsReadOnly ();
+            return result == null ? None : result.AsReadOnly ();
         }
     }
 }

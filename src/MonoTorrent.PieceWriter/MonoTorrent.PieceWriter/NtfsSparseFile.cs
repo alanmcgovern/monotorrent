@@ -144,13 +144,13 @@ namespace MonoTorrent.PieceWriter
 
         [DllImportAttribute ("kernel32.dll")]
         static extern bool GetVolumeInformationW (
-            [In] [MarshalAsAttribute (UnmanagedType.LPWStr)] string lpRootPathName,
-            [Out] [MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder lpVolumeNameBuffer,
+            [In][MarshalAsAttribute (UnmanagedType.LPWStr)] string lpRootPathName,
+            [Out][MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder lpVolumeNameBuffer,
             uint nVolumeNameSize,
             out uint lpVolumeSerialNumber,
             out uint lpMaximumComponentLength,
             out uint lpFileSystemFlags,
-            [Out] [MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder lpFileSystemNameBuffer,
+            [Out][MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder lpFileSystemNameBuffer,
             uint nFileSystemNameSize
         );
     }

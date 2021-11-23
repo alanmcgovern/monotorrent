@@ -48,27 +48,27 @@ namespace MonoTorrent
         /// </summary>
         public static readonly Version Version;
 
-        static GitInfoHelper()
+        static GitInfoHelper ()
         {
-            var version = new Version(
-                int.Parse(ThisAssembly.Git.BaseVersion.Major),
-                int.Parse(ThisAssembly.Git.BaseVersion.Minor),
-                int.Parse(ThisAssembly.Git.BaseVersion.Patch)
+            var version = new Version (
+                int.Parse (ThisAssembly.Git.BaseVersion.Major),
+                int.Parse (ThisAssembly.Git.BaseVersion.Minor),
+                int.Parse (ThisAssembly.Git.BaseVersion.Patch)
             );
-            Initialize(version);
+            Initialize (version);
             Version = version;
         }
 
-        internal static void Initialize(Version version)
+        internal static void Initialize (Version version)
         {
             // The scheme for generating the peerid includes the version number using the scheme:
             // ABCC, where A is the major, B is the minor and CC is the build version.
             if (version.Major > 9 || version.Major < 0)
-                throw new ArgumentException("The major version should be between 0 and 9 (inclusive)");
+                throw new ArgumentException ("The major version should be between 0 and 9 (inclusive)");
             if (version.Minor > 9 || version.Minor < 0)
-                throw new ArgumentException("The minor version should be between 0 and 9 (inclusive)");
+                throw new ArgumentException ("The minor version should be between 0 and 9 (inclusive)");
             if (version.Build > 99 || version.Build < 0)
-                throw new ArgumentException("The build version should be between 0 and 99 (inclusive)");
+                throw new ArgumentException ("The build version should be between 0 and 99 (inclusive)");
 
             // 'MO' for MonoTorrent then four digit version number
             var versionString = $"{version.Major}{version.Minor}{version.Build:00}";

@@ -29,6 +29,7 @@
 
 using System;
 using System.Linq;
+
 using NUnit.Framework;
 
 namespace MonoTorrent
@@ -87,17 +88,17 @@ namespace MonoTorrent
         {
             var first = new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ());
             var second = new InfoHash (Enumerable.Repeat ((byte) 1, 20).ToArray ());
-            Assert.IsFalse (first.Equals ((object)second));
+            Assert.IsFalse (first.Equals ((object) second));
             Assert.IsFalse (first.Equals (second));
         }
 
         [Test]
         public void Equals_True ()
         {
-            var first = new InfoHash (Enumerable.Repeat((byte)0, 20).ToArray());
-            var second = new InfoHash (Enumerable.Repeat((byte)0, 20).ToArray());
-            Assert.IsTrue(first.Equals ((object)second));
-            Assert.IsTrue(first.Equals (second));
+            var first = new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ());
+            var second = new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ());
+            Assert.IsTrue (first.Equals ((object) second));
+            Assert.IsTrue (first.Equals (second));
         }
     }
 }

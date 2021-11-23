@@ -180,7 +180,7 @@ namespace MonoTorrent.Dht
         {
             CheckDisposed ();
             if (infoHash == null)
-                throw new ArgumentNullException(nameof (infoHash));
+                throw new ArgumentNullException (nameof (infoHash));
 
             try {
                 await MainLoop;
@@ -323,7 +323,7 @@ namespace MonoTorrent.Dht
         }
 
         public async Task SetListenerAsync (IDhtListener listener)
-            =>  await MessageLoop.SetListener (listener);
+            => await MessageLoop.SetListener (listener);
 
         #endregion Methods
     }

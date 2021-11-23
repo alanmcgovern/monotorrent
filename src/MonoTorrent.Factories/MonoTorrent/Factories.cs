@@ -205,7 +205,7 @@ namespace MonoTorrent
 
         public IPeerConnectionListener CreatePeerConnectionListener (IPEndPoint endPoint)
             => PeerConnectionListenerFunc (endPoint);
-        public Factories WithPeerConnectionListenerCreator(PeerConnectionListenerCreator creator)
+        public Factories WithPeerConnectionListenerCreator (PeerConnectionListenerCreator creator)
         {
             var dupe = MemberwiseClone ();
             dupe.PeerConnectionListenerFunc = creator ?? Default.PeerConnectionListenerFunc;
@@ -250,7 +250,7 @@ namespace MonoTorrent
 
         public ISocketConnector CreateSocketConnector ()
             => SocketConnectorFunc ();
-        public Factories WithSocketConnectorCreator(SocketConnectorCreator creator)
+        public Factories WithSocketConnectorCreator (SocketConnectorCreator creator)
         {
             var dupe = MemberwiseClone ();
             dupe.SocketConnectorFunc = creator ?? Default.SocketConnectorFunc;

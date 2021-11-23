@@ -341,7 +341,7 @@ namespace MonoTorrent.Client
                 await WaitForPendingWrites ();
 
             var firstFile = manager.Files.FindFileByPieceIndex (startIndex);
-            for (int i = firstFile; i < manager.Files.Count; i ++) {
+            for (int i = firstFile; i < manager.Files.Count; i++) {
                 if (manager.Files[i].StartPieceIndex <= endIndex)
                     await Cache.Writer.FlushAsync (manager.Files[i]);
                 else

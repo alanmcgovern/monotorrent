@@ -45,7 +45,7 @@ namespace MonoTorrent
                 ? time.Ticks
                 : time.Ticks * ((double) Stopwatch.Frequency / TimeSpan.TicksPerSecond);
             return new ValueStopwatch {
-                startedAt = Stopwatch.GetTimestamp () - (long)offset
+                startedAt = Stopwatch.GetTimestamp () - (long) offset
             };
         }
 

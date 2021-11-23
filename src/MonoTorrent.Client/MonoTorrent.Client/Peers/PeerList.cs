@@ -27,7 +27,6 @@
 //
 
 
-using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client

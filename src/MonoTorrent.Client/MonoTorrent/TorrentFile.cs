@@ -79,7 +79,7 @@ namespace MonoTorrent
         public long OffsetInTorrent { get; }
 
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent)
-            : this(path, length, startIndex, endIndex, offsetInTorrent, null, null, null)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, null, null, null)
         {
 
         }
@@ -123,7 +123,7 @@ namespace MonoTorrent
             => Create (pieceLength, lengths.Select ((length, index) => ("File_" + index, length)).ToArray ());
 
         internal static TorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
-            => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, (byte[])null, (byte[]) null, (byte[]) null)).ToArray ());
+            => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, (byte[]) null, (byte[]) null, (byte[]) null)).ToArray ());
 
         internal static TorrentFile[] Create (int pieceLength, params (string path, long length, byte[] md5sum, byte[] ed2k, byte[] sha1)[] files)
         {

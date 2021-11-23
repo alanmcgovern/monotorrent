@@ -59,7 +59,7 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        [Repeat(10)]
+        [Repeat (10)]
         public async Task InitialiseFailure ()
         {
             // Block until we've checked the status moved to Initializing
@@ -87,7 +87,7 @@ namespace MonoTorrent.Dht
                     counter++;
             };
 
-            Assert.IsTrue ((await engine.SendQueryAsync (ping, node).WithTimeout(3000)).TimedOut, "#1");
+            Assert.IsTrue ((await engine.SendQueryAsync (ping, node).WithTimeout (3000)).TimedOut, "#1");
             Assert.AreEqual (4, counter, "#2");
         }
 

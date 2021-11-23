@@ -124,7 +124,7 @@ namespace MonoTorrent.PiecePicking
         public IList<ActivePieceRequest> ExportActiveRequests ()
         {
             var list = new List<ActivePieceRequest> ();
-            foreach(var piece in requests) {
+            foreach (var piece in requests) {
                 foreach (var block in piece.Blocks) {
                     if (block.Requested)
                         list.Add (new ActivePieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.RequestedOff, block.Received));
@@ -164,7 +164,7 @@ namespace MonoTorrent.PiecePicking
 
             // Only try to continue an abandoned piece if this peer has not recently been involved in downloading data which
             // failed it's hash check.
-            if (peer.RepeatedHashFails == 0  && (message = ContinueExistingRequest (peer, startIndex, endIndex, 1, true, false)) != null)
+            if (peer.RepeatedHashFails == 0 && (message = ContinueExistingRequest (peer, startIndex, endIndex, 1, true, false)) != null)
                 return new[] { message.Value };
 
             // We see if the peer has suggested any pieces we should request
@@ -306,7 +306,7 @@ namespace MonoTorrent.PiecePicking
                     for (int extraPieceIndex = 0; extraPieceIndex < extraPieces.Count; extraPieceIndex++) {
                         var extraPiece = extraPieces[extraPieceIndex];
                         for (int i = 0; i < extraPiece.BlockCount; i++)
-                            if (!extraPiece.Blocks[i].Requested && !HasAlreadyRequestedBlock(primaryPiece, extraPieces, peer, i))
+                            if (!extraPiece.Blocks[i].Requested && !HasAlreadyRequestedBlock (primaryPiece, extraPieces, peer, i))
                                 return extraPiece.Blocks[i].CreateRequest (peer);
                     }
                 }
@@ -405,7 +405,7 @@ namespace MonoTorrent.PiecePicking
 
             int largestStart = 0;
             int largestEnd = 0;
-            while (pieceStartIndex <= pieceEndIndex  && (pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
+            while (pieceStartIndex <= pieceEndIndex && (pieceStartIndex = bitfield.FirstTrue (pieceStartIndex, pieceEndIndex)) != -1) {
                 int end = bitfield.FirstFalse (pieceStartIndex, pieceEndIndex);
                 if (end == -1)
                     end = Math.Min (pieceStartIndex + pieceCount, bitfield.Length);

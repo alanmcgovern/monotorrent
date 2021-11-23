@@ -137,14 +137,14 @@ namespace MonoTorrent.PieceWriter
                         Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
                     NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
                 }
-                data.Stream = StreamCreator(file, access);
+                data.Stream = StreamCreator (file, access);
                 Count++;
 
                 // Ensure that we truncate existing files which are too large
                 if (data.Stream.Length > file.Length) {
                     if (!data.Stream.CanWrite) {
                         data.Stream.Dispose ();
-                        data.Stream = StreamCreator(file, FileAccess.ReadWrite);
+                        data.Stream = StreamCreator (file, FileAccess.ReadWrite);
                     }
                     data.Stream.SetLength (file.Length);
                 }

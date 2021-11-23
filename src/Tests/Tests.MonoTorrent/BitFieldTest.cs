@@ -93,7 +93,7 @@ namespace MonoTorrent
             Assert.AreEqual (0, bf.FirstTrue (0, bf.Length - 1));
             Assert.AreEqual (0, bf.FirstTrue (0, 0));
             Assert.AreEqual (11, bf.FirstTrue (bf.Length - 2, bf.Length - 1));
-            Assert.AreEqual (11, bf.FirstTrue (bf.Length - 1, bf.Length -1));
+            Assert.AreEqual (11, bf.FirstTrue (bf.Length - 1, bf.Length - 1));
             Assert.AreEqual (11, bf.FirstTrue (9, bf.Length - 1));
         }
 

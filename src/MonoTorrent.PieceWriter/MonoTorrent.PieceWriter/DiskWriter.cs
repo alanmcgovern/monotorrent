@@ -131,7 +131,7 @@ namespace MonoTorrent.PieceWriter
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
             if (buffer is null)
-                throw new ArgumentNullException(nameof(buffer));
+                throw new ArgumentNullException (nameof (buffer));
 
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));

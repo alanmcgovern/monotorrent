@@ -96,7 +96,7 @@ namespace MonoTorrent.Connections.Tracker
             HttpResponseMessage response;
 
             try {
-                response = await Client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead,  token);
+                response = await Client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead, token);
             } catch {
                 return new AnnounceResponse (
                     state: TrackerState.Offline,
@@ -160,7 +160,7 @@ namespace MonoTorrent.Connections.Tracker
         {
             var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
-             .Add ("peer_id", ((BEncodedString)parameters.PeerId).UrlEncode ())
+             .Add ("peer_id", ((BEncodedString) parameters.PeerId).UrlEncode ())
              .Add ("port", parameters.Port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)

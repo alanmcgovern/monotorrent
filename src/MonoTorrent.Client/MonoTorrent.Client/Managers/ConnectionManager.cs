@@ -481,7 +481,7 @@ namespace MonoTorrent.Client
                 Torrents.Sort (ActiveConnectionsComparer);
 
                 bool connected = false;
-                for (int i = 0; i < Torrents.Count; i ++) {
+                for (int i = 0; i < Torrents.Count; i++) {
                     // If we successfully connect, then break out of this loop and restart our
                     // connection process from the first node in the list again.
                     if (TryConnect (Torrents[i])) {

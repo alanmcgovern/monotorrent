@@ -55,8 +55,8 @@ namespace MonoTorrent.BEncoding
             return new BEncodedString (HttpUtility.UrlDecodeToBytes (urlEncodedValue, Encoding.UTF8));
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use 'UrlDecode' instead'")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        [Obsolete ("Use 'UrlDecode' instead'")]
         public static BEncodedString FromUrlEncodedString (string urlEncodedValue)
         => UrlDecode (urlEncodedValue);
 

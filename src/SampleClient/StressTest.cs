@@ -74,7 +74,7 @@ namespace SampleClient
                 new EngineSettingsBuilder {
                     AllowedEncryption = new[] { EncryptionType.PlainText },
                     DiskCacheBytes = DataSize,
-                    ListenEndPoint = new IPEndPoint(IPAddress.Any, port++)
+                    ListenEndPoint = new IPEndPoint (IPAddress.Any, port++)
                 }.ToSettings ()
             );
             await seeder.ChangePieceWriterAsync (new NullWriter ());
@@ -110,7 +110,7 @@ namespace SampleClient
             // Create the torrent file for the fake data
             var creator = new TorrentCreator ();
             creator.Announces.Add (new List<string> ());
-            creator.Announces [0].Add ("http://127.0.0.1:25611/announce");
+            creator.Announces[0].Add ("http://127.0.0.1:25611/announce");
 
             var metadata = await creator.CreateAsync (new TorrentFileSource (DataDir));
 
@@ -119,7 +119,7 @@ namespace SampleClient
             using (var fileStream = File.OpenRead (Path.Combine (DataDir, "file.data"))) {
                 while (fileStream.Position < fileStream.Length) {
                     var dataRead = new byte[16 * 1024];
-                    int offset = (int)fileStream.Position;
+                    int offset = (int) fileStream.Position;
                     int read = fileStream.Read (dataRead, 0, dataRead.Length);
                     // FIXME: Implement a custom IPieceWriter to handle this.
                     // The internal MemoryWriter is limited and isn't a general purpose read/write API

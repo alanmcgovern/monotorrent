@@ -101,7 +101,7 @@ namespace MonoTorrent.BEncoding
             return input.Seek (offset, origin);
         }
         public override void SetLength (long value)
-            =>  throw new NotSupportedException ();
+            => throw new NotSupportedException ();
 
         public override void Write (byte[] buffer, int offset, int count)
             => throw new NotSupportedException ();

@@ -147,7 +147,7 @@ namespace MonoTorrent.PortForwarding
             try {
                 await device.CreatePortMapAsync (map);
                 Mappings = Mappings.WithCreated (mapping);
-            }catch {
+            } catch {
                 Mappings = Mappings.WithFailed (mapping);
             }
         }

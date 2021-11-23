@@ -128,7 +128,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public async Task AfterHandshake_SendBitfieldMessage()
+        public async Task AfterHandshake_SendBitfieldMessage ()
         {
             await Setup (true);
             await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count));
@@ -195,14 +195,14 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public async Task AfterHandshake_SendHaveAllMessage()
+        public async Task AfterHandshake_SendHaveAllMessage ()
         {
             await Setup (true);
             await SendMetadataCore (rig.MetadataPath, new HaveAllMessage ());
         }
 
         [Test]
-        public async Task AfterHandshake_SendHaveNoneMessage()
+        public async Task AfterHandshake_SendHaveNoneMessage ()
         {
             await Setup (true);
             await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());

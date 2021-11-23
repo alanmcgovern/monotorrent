@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Modes
             try {
                 Manager.DhtAnnounce ();
                 await Task.WhenAll (
-                    Manager.TrackerManager.AnnounceAsync(CancellationToken.None).AsTask (),
+                    Manager.TrackerManager.AnnounceAsync (CancellationToken.None).AsTask (),
                     Manager.LocalPeerAnnounceAsync ()
                 );
             } catch {

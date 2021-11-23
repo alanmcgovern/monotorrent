@@ -47,7 +47,7 @@ namespace MonoTorrent.Trackers
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
-        public SemaphoreSlim  AnnounceLimiter { get; }
+        public SemaphoreSlim AnnounceLimiter { get; }
 
         Factories Factories { get; }
 
