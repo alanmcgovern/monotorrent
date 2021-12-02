@@ -61,7 +61,7 @@ namespace System
             while (buffer.Length > 0) {
                 var sliceSize = Math.Min (array.Length, buffer.Length);
                 buffer.Slice (0, sliceSize).CopyTo (array);
-                hasher.TransformBlock (array, 0, array.Length, array, 0);
+                hasher.TransformBlock (array, 0, sliceSize, array, 0);
                 buffer = buffer.Slice (sliceSize);
             }
             hasher.TransformFinalBlock (array, 0, 0);
