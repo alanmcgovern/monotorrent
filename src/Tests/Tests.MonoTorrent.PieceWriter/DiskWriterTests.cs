@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -72,7 +73,7 @@ namespace MonoTorrent.PieceWriter
         {
             using var writer = new DiskWriter ();
 
-            await writer.WriteAsync (TorrentFile, 0, new byte[10], 0, 10);
+            await writer.WriteAsync (TorrentFile, 0, new byte[10].AsMemory ());
             Assert.IsTrue (File.Exists (TorrentFile.FullPath));
 
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));

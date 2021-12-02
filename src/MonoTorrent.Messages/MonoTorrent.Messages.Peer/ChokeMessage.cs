@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Messages.Peer
 {
     /// <summary>
@@ -48,17 +50,17 @@ namespace MonoTorrent.Messages.Peer
 
 
         #region Methods
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, messageLength);
-            written += Write (buffer, written, MessageId);
+            Write (ref buffer, messageLength);
+            Write (ref buffer, MessageId);
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
             // No decoding needed
         }

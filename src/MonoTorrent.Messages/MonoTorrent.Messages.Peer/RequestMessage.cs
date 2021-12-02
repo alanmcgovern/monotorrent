@@ -27,6 +27,9 @@
 //
 
 
+using System;
+using System.Buffers.Binary;
+
 namespace MonoTorrent.Messages.Peer
 {
     public class RequestMessage : PeerMessage
@@ -66,24 +69,50 @@ namespace MonoTorrent.Messages.Peer
 
         #region Methods
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            PieceIndex = ReadInt (buffer, ref offset);
-            StartOffset = ReadInt (buffer, ref offset);
-            RequestLength = ReadInt (buffer, ref offset);
+            PieceIndex = ReadInt (ref buffer);
+            StartOffset = ReadInt (ref buffer);
+            RequestLength = ReadInt (ref buffer);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public void Decode (ref ReadOnlySpan<byte> buffer)
         {
-            int written = offset;
+            PieceIndex = ReadInt (ref buffer);
+            StartOffset = ReadInt (ref buffer);
+            RequestLength = ReadInt (ref buffer);
+        }
 
-            written += Write (buffer, written, messageLength);
-            written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, PieceIndex);
-            written += Write (buffer, written, StartOffset);
-            written += Write (buffer, written, RequestLength);
+        public override int Encode (Span<byte> buffer)
+        {
+            int written = buffer.Length;
 
-            return written - offset;
+            Write (ref buffer, messageLength);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, PieceIndex);
+            Write (ref buffer, StartOffset);
+            Write (ref buffer, RequestLength);
+
+            return written - buffer.Length;
+        }
+
+        public int Encode (ref Span<byte> buffer)
+        {
+            int written = buffer.Length;
+            /*
+            BinaryPrimitives.WriteInt32BigEndian (buffer, messageLength);
+            buffer.Slice (4)[0] = messageLength;
+            BinaryPrimitives.WriteInt32BigEndian (buffer.Slice (5), PieceIndex);
+            BinaryPrimitives.WriteInt32BigEndian (buffer.Slice (9), StartOffset);
+            BinaryPrimitives.WriteInt32BigEndian (buffer.Slice (13), RequestLength);
+            */
+            Write (ref buffer, messageLength);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, PieceIndex);
+            Write (ref buffer, StartOffset);
+            Write (ref buffer, RequestLength);
+
+            return written - buffer.Length;
         }
 
         public override bool Equals (object obj)

@@ -32,14 +32,14 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    interface ICache<T>
+    internal interface ICache<T>
     {
         int Count { get; }
-        T Dequeue ();
-        void Enqueue (T instance);
+        T Dequeue();
+        void Enqueue(T instance);
     }
 
-    class Cache<T> : ICache<T>
+    internal class Cache<T> : ICache<T>
         where T : class, ICacheable
     {
         readonly Queue<T> cache;
@@ -47,60 +47,60 @@ namespace MonoTorrent
 
         public int Count => cache.Count;
 
-        public Cache ()
-            : this (() => default)
+        public Cache()
+            : this(() => default)
         {
 
         }
 
-        public Cache (Func<T> creator)
+        public Cache(Func<T> creator)
         {
             Creator = creator;
-            cache = new Queue<T> ();
+            cache = new Queue<T>();
         }
 
-        public T Dequeue ()
+        public T Dequeue()
         {
             if (cache.Count > 0)
-                return cache.Dequeue ();
+                return cache.Dequeue();
 
-            var instance = Creator ();
-            instance?.Initialise ();
+            var instance = Creator();
+            instance?.Initialise();
             return instance;
         }
 
-        public void Enqueue (T instance)
+        public void Enqueue(T instance)
         {
-            instance.Initialise ();
-            cache.Enqueue (instance);
+            instance.Initialise();
+            cache.Enqueue(instance);
         }
-        public ICache<T> Synchronize ()
+        public ICache<T> Synchronize()
         {
-            return new SynchronizedCache<T> (this);
+            return new SynchronizedCache<T>(this);
         }
     }
 
-    class SynchronizedCache<T> : ICache<T>
+    internal class SynchronizedCache<T> : ICache<T>
     {
         ICache<T> Cache { get; }
 
         public int Count => Cache.Count;
 
-        public SynchronizedCache (ICache<T> cache)
+        public SynchronizedCache(ICache<T> cache)
         {
-            Cache = cache ?? throw new System.ArgumentNullException (nameof (cache));
+            Cache = cache ?? throw new System.ArgumentNullException(nameof(cache));
         }
 
-        public T Dequeue ()
+        public T Dequeue()
         {
             lock (Cache)
-                return Cache.Dequeue ();
+                return Cache.Dequeue();
         }
 
-        public void Enqueue (T instance)
+        public void Enqueue(T instance)
         {
             lock (Cache)
-                Cache.Enqueue (instance);
+                Cache.Enqueue(instance);
         }
     }
 }

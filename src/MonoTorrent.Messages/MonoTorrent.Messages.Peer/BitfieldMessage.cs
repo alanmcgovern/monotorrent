@@ -73,23 +73,23 @@ namespace MonoTorrent.Messages.Peer
 
         #region Methods
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            ((MutableBitField) BitField)?.From (buffer, offset);
+            ((MutableBitField) BitField)?.From (buffer);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
             if (BitField == null)
                 throw new InvalidOperationException ("Cannot send a BitfieldMessage without a Bitfield. Are you trying to send a bitfield during metadata mode?");
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, BitField.LengthInBytes + 1);
-            written += Write (buffer, written, MessageId);
-            BitField.ToByteArray (buffer, written);
-            written += BitField.LengthInBytes;
+            Write (ref buffer, BitField.LengthInBytes + 1);
+            Write (ref buffer, MessageId);
+            BitField.ToByteArray ().CopyTo (buffer);
+            buffer = buffer.Slice(BitField.LengthInBytes);
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
         /// <summary>

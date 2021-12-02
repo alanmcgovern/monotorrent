@@ -39,23 +39,19 @@ namespace MonoTorrent.Client
 {
     class NetworkIO
     {
-        internal static ByteBufferPool BufferPool { get; } = ByteBufferPool.DefaultWithSocketAsyncArgs;
+        internal static SocketMemoryPool BufferPool { get; } = ByteBufferPool.DefaultWithSocketAsyncArgs;
 
         public struct QueuedIO
         {
             public IPeerConnection connection;
-            public ByteBuffer buffer;
-            public int offset;
-            public int count;
+            public SocketMemory buffer;
             public IRateLimiter rateLimiter;
             public ReusableTaskCompletionSource<int> tcs;
 
-            public QueuedIO (IPeerConnection connection, ByteBuffer buffer, int offset, int count, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
+            public QueuedIO (IPeerConnection connection, SocketMemory buffer, IRateLimiter rateLimiter, ReusableTaskCompletionSource<int> tcs)
             {
                 this.connection = connection;
                 this.buffer = buffer;
-                this.offset = offset;
-                this.count = count;
                 this.rateLimiter = rateLimiter;
                 this.tcs = tcs;
             }
@@ -74,7 +70,7 @@ namespace MonoTorrent.Client
                 lock (receiveQueue) {
                     while (receiveQueue.Count > 0) {
                         QueuedIO io = receiveQueue.Peek ();
-                        if (io.rateLimiter.TryProcess (io.count))
+                        if (io.rateLimiter.TryProcess (io.buffer.Length))
                             ReceiveQueuedAsync (receiveQueue.Dequeue ());
                         else
                             break;
@@ -83,7 +79,7 @@ namespace MonoTorrent.Client
                 lock (sendQueue) {
                     while (sendQueue.Count > 0) {
                         QueuedIO io = sendQueue.Peek ();
-                        if (io.rateLimiter.TryProcess (io.count))
+                        if (io.rateLimiter.TryProcess (io.buffer.Length))
                             SendQueuedAsync (sendQueue.Dequeue ());
                         else
                             break;
@@ -97,7 +93,7 @@ namespace MonoTorrent.Client
         static async void ReceiveQueuedAsync (QueuedIO io)
         {
             try {
-                int result = await io.connection.ReceiveAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
+                int result = await io.connection.ReceiveAsync (io.buffer).ConfigureAwait (false);
                 io.tcs.SetResult (result);
             } catch (Exception ex) {
                 io.tcs.SetException (ex);
@@ -107,7 +103,7 @@ namespace MonoTorrent.Client
         static async void SendQueuedAsync (QueuedIO io)
         {
             try {
-                int result = await io.connection.SendAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
+                int result = await io.connection.SendAsync (io.buffer).ConfigureAwait (false);
                 io.tcs.SetResult (result);
             } catch (Exception ex) {
                 io.tcs.SetException (ex);
@@ -121,27 +117,27 @@ namespace MonoTorrent.Client
             await connection.ConnectAsync ();
         }
 
-        public static ReusableTask ReceiveAsync (IPeerConnection connection, ByteBuffer buffer, int offset, int count)
+        public static ReusableTask ReceiveAsync (IPeerConnection connection, SocketMemory buffer)
         {
-            return ReceiveAsync (connection, buffer, offset, count, null, null, null);
+            return ReceiveAsync (connection, buffer, null, null, null);
         }
 
-        public static async ReusableTask ReceiveAsync (IPeerConnection connection, ByteBuffer buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask ReceiveAsync (IPeerConnection connection, SocketMemory buffer, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await MainLoop.SwitchToThreadpool ();
 
-            while (count > 0) {
+            while (buffer.Length > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+                int shouldRead = unlimited ? buffer.Length : Math.Min (ChunkLength, buffer.Length);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();
                     lock (receiveQueue)
-                        receiveQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
+                        receiveQueue.Enqueue (new QueuedIO (connection, buffer, rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait (false);
                 } else {
-                    transferred = await connection.ReceiveAsync (buffer, offset, shouldRead).ConfigureAwait (false);
+                    transferred = await connection.ReceiveAsync (buffer.Slice (0, shouldRead)).ConfigureAwait (false);
                 }
 
                 if (transferred == 0)
@@ -150,32 +146,31 @@ namespace MonoTorrent.Client
                 peerMonitor?.AddDelta (transferred);
                 managerMonitor?.AddDelta (transferred);
 
-                offset += transferred;
-                count -= transferred;
+                buffer = buffer.Slice (transferred);
             }
         }
 
-        public static ReusableTask SendAsync (IPeerConnection connection, ByteBuffer buffer, int offset, int count)
+        public static ReusableTask SendAsync (IPeerConnection connection, SocketMemory buffer)
         {
-            return SendAsync (connection, buffer, offset, count, null, null, null);
+            return SendAsync (connection, buffer, null, null, null);
         }
 
-        public static async ReusableTask SendAsync (IPeerConnection connection, ByteBuffer buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask SendAsync (IPeerConnection connection, SocketMemory buffer, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await MainLoop.SwitchToThreadpool ();
 
-            while (count > 0) {
+            while (buffer.Length > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited ? count : Math.Min (ChunkLength, count);
+                int shouldRead = unlimited ? buffer.Length : Math.Min (ChunkLength, buffer.Length);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();
                     lock (sendQueue)
-                        sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, shouldRead, rateLimiter, tcs));
+                        sendQueue.Enqueue (new QueuedIO (connection, buffer.Slice (0, shouldRead), rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait (false);
                 } else {
-                    transferred = await connection.SendAsync (buffer, offset, shouldRead).ConfigureAwait (false);
+                    transferred = await connection.SendAsync (buffer.Slice (0, shouldRead)).ConfigureAwait (false);
                 }
 
                 if (transferred == 0)
@@ -184,8 +179,7 @@ namespace MonoTorrent.Client
                 peerMonitor?.AddDelta (transferred);
                 managerMonitor?.AddDelta (transferred);
 
-                offset += transferred;
-                count -= transferred;
+                buffer = buffer.Slice (transferred);
             }
         }
     }

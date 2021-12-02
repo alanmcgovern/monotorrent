@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Messages
 {
     public interface IMessage
@@ -34,8 +36,9 @@ namespace MonoTorrent.Messages
         int ByteLength { get; }
 
         byte[] Encode ();
-        int Encode (byte[] buffer, int offset);
 
-        void Decode (byte[] buffer, int offset, int length);
+        int Encode (Span<byte> buffer);
+
+        void Decode (ReadOnlySpan<byte> buffer);
     }
 }

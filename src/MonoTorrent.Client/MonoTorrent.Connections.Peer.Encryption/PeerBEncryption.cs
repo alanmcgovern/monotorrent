@@ -64,68 +64,66 @@ namespace MonoTorrent.Connections.Peer.Encryption
         {
             // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
             var length = 20 + VerificationConstant.Length + 4 + 2;
-            using (NetworkIO.BufferPool.Rent (length, out ByteBuffer verifyBytes)) {
-                await ReceiveMessageAsync (verifyBytes, length).ConfigureAwait (false);
-                await GotVerification (verifyBytes.Data).ConfigureAwait (false);
+            using (NetworkIO.BufferPool.Rent (length, out SocketMemory verifyBytes)) {
+                await ReceiveMessageAsync (verifyBytes).ConfigureAwait (false);
+                await GotVerification (verifyBytes.Memory).ConfigureAwait (false);
             }
         }
 
-        async ReusableTask GotVerification (byte[] verifyBytes)
+        async ReusableTask GotVerification (Memory<byte> verifyBytes)
         {
-            byte[] torrentHash = new byte[20];
+            var infoHash = verifyBytes.Slice (0, 20);
+            var verificationConstant = verifyBytes.Slice (20, 8);
+            var myCP = verifyBytes.Slice (28, 4);
+            var padCSpan = verifyBytes.Slice (32, 2);
 
-            byte[] myCP = new byte[4];
-
-            Array.Copy (verifyBytes, 0, torrentHash, 0, torrentHash.Length); // HASH('req2', SKEY) xor HASH('req3', S)
-
-            if (!MatchSKEY (torrentHash))
+            if (!MatchSKEY (infoHash.Span))
                 throw new EncryptionException ("No valid SKey found");
 
+            // Create the encryptor/decryptors
             CreateCryptors (KeyBBytes, KeyABytes);
 
-            DoDecrypt (verifyBytes, 20, 14); // ENCRYPT(VC, ...
+            // Decrypt everything after the infohash.
+            DoDecrypt (verifyBytes.Slice (infoHash.Length).Span);
 
-            for (int i = 0; i < VerificationConstant.Length; i++)
-                if (verifyBytes[i + 20] != VerificationConstant[i])
-                    throw new EncryptionException ("Verification constant was invalid");
-
-            Array.Copy (verifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
+            if (!MemoryExtensions.SequenceEqual (verificationConstant.Span, VerificationConstant))
+                throw new EncryptionException ("Verification constant was invalid");
 
             // We need to select the crypto *after* we send our response, otherwise the wrong
             // encryption will be used on the response
             int lenInitialPayload;
-            int lenPadC = Message.ReadShort (verifyBytes, 32) + 2;
-            using (NetworkIO.BufferPool.Rent (lenPadC, out ByteBuffer padC)) {
-                await ReceiveMessageAsync (padC, lenPadC).ConfigureAwait (false); // padC
-                DoDecrypt (padC.Data, 0, lenPadC);
-                lenInitialPayload = Message.ReadShort (padC.Data, lenPadC - 2);
+            int lenPadC = Message.ReadShort (padCSpan.Span) + 2;
+            using (NetworkIO.BufferPool.Rent (lenPadC, out SocketMemory padC)) {
+                await ReceiveMessageAsync (padC).ConfigureAwait (false); // padC
+                DoDecrypt (padC.AsSpan ());
+                lenInitialPayload = Message.ReadShort (padC.AsSpan (lenPadC - 2, 2));
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
-            using (NetworkIO.BufferPool.Rent (InitialData.Length, out ByteBuffer receiveBuffer)) {
-                await ReceiveMessageAsync (receiveBuffer, InitialData.Length).ConfigureAwait (false);
-                Buffer.BlockCopy (receiveBuffer.Data, 0, InitialData, 0, lenInitialPayload);
-                DoDecrypt (InitialData, 0, InitialData.Length); // ... ENCRYPT(IA)
+            using (NetworkIO.BufferPool.Rent (InitialData.Length, out SocketMemory receiveBuffer)) {
+                await ReceiveMessageAsync (receiveBuffer).ConfigureAwait (false);
+                receiveBuffer.Memory.CopyTo (InitialData);
+                DoDecrypt (InitialData); // ... ENCRYPT(IA)
             }
 
             // Step Four
-            byte[] padD = GeneratePad ();
-            SelectCrypto (myCP, false);
+            using var releaser = ByteBufferPool.Default.Rent (RandomNumber (512), out Memory<byte> padD);
+            SelectCrypto (myCP.Span, false);
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             int finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
-            using (NetworkIO.BufferPool.Rent (finalBufferLength, out ByteBuffer buffer)) {
-                int offset = 0;
-                offset += Message.Write (buffer.Data, offset, VerificationConstant);
-                offset += Message.Write (buffer.Data, offset, CryptoSelect);
-                offset += Message.Write (buffer.Data, offset, Len (padD));
-                offset += Message.Write (buffer.Data, offset, padD);
+            using (NetworkIO.BufferPool.Rent (finalBufferLength, out SocketMemory buffer)) {
+                var position = buffer.Memory;
+                Message.Write (ref position, VerificationConstant);
+                Message.Write (ref position, CryptoSelect);
+                Message.Write (ref position, (short) padD.Length);
+                Message.Write (ref position, padD.Span);
+                DoEncrypt (buffer.Span);
 
-                DoEncrypt (buffer.Data, 0, finalBufferLength);
-                await NetworkIO.SendAsync (socket, buffer, 0, finalBufferLength).ConfigureAwait (false);
+                await NetworkIO.SendAsync (socket, buffer).ConfigureAwait (false);
             }
 
-            SelectCrypto (myCP, true);
+            SelectCrypto (myCP.Span, true);
         }
 
         /// <summary>
@@ -133,10 +131,10 @@ namespace MonoTorrent.Connections.Peer.Encryption
         /// and sets the SKEY to the InfoHash of the matched torrent.
         /// </summary>
         /// <returns>true if a match has been found</returns>
-        bool MatchSKEY (byte[] torrentHash)
+        bool MatchSKEY (ReadOnlySpan<byte> torrentHash)
         {
             for (int i = 0; i < PossibleSKEYs.Length; i++) {
-                byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].UnsafeAsArray ());
+                byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].Span.ToArray ());
                 byte[] req3 = Hash (Req3Bytes, S);
 
                 bool match = true;

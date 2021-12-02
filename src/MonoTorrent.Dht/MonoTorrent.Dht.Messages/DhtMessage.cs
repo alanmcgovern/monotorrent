@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 using MonoTorrent.BEncoding;
 using MonoTorrent.Messages;
 
@@ -74,14 +76,16 @@ namespace MonoTorrent.Dht.Messages
 
         public override int ByteLength => properties.LengthInBytes ();
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            properties = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
+            properties = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            return properties.Encode (buffer, offset);
+            var length = buffer.Length;
+            Write (ref buffer, properties);
+            return length - buffer.Length;
         }
 
         public virtual void Handle (DhtEngine engine, Node node)

@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Messages.Peer
@@ -38,7 +40,6 @@ namespace MonoTorrent.Messages.Peer
     {
         public static readonly int HandshakeLength = Constants.HandshakeLengthV100;
 
-        static readonly byte[] ZeroedBits = new byte[8];
         const byte ExtendedMessagingFlag = 0x10;
         const byte FastPeersFlag = 0x04;
 
@@ -112,45 +113,48 @@ namespace MonoTorrent.Messages.Peer
 
 
         #region Methods
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, (byte) ProtocolString.Length);
-            written += WriteAscii (buffer, written, ProtocolString);
-            written += Write (buffer, written, ZeroedBits);
+            Write (ref buffer, (byte) ProtocolString.Length);
+            WriteAscii (ref buffer, ProtocolString);
+
+            Span<byte> supports = stackalloc byte[8];
+            supports.Clear ();
 
             if (SupportsExtendedMessaging)
-                buffer[written - 3] |= ExtendedMessagingFlag;
+                supports[5] |= ExtendedMessagingFlag;
             if (SupportsFastPeer)
-                buffer[written - 1] |= FastPeersFlag;
+                supports[7] |= FastPeersFlag;
+            supports.CopyTo (buffer);
+            buffer = buffer.Slice (supports.Length);
 
-            written += Write (buffer, written, InfoHash.UnsafeAsArray ());
-            written += Write (buffer, written, PeerId.TextBytes);
+            Write (ref buffer, InfoHash);
+            Write (ref buffer, PeerId.Span);
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            ProtocolStringLength = ReadByte (buffer, ref offset);                  // First byte is length
+            ProtocolStringLength = ReadByte (ref buffer);                  // First byte is length
 
             // #warning Fix this hack - is there a better way of verifying the protocol string? Hack
             if (ProtocolStringLength != Constants.ProtocolStringV100.Length)
                 ProtocolStringLength = Constants.ProtocolStringV100.Length;
 
-            ProtocolString = ReadString (buffer, ref offset, ProtocolStringLength);
-            CheckForSupports (buffer, ref offset);
-            InfoHash = new InfoHash (ReadBytes (buffer, ref offset, 20));
-            PeerId = ReadBytes (buffer, ref offset, 20);
+            ProtocolString = ReadString (ref buffer, ProtocolStringLength);
+            CheckForSupports (ref buffer);
+            InfoHash = InfoHash.FromMemory (ReadBytes (ref buffer, 20));
+            PeerId = ReadBytes (ref buffer, 20);
         }
 
-        void CheckForSupports (byte[] buffer, ref int offset)
+        void CheckForSupports (ref ReadOnlySpan<byte> buffer)
         {
-            // Increment offset first so that the indices are consistent between Encoding and Decoding
-            offset += 8;
-            SupportsExtendedMessaging = (ExtendedMessagingFlag & buffer[offset - 3]) != 0;
-            SupportsFastPeer = (FastPeersFlag & buffer[offset - 1]) != 0;
+            SupportsExtendedMessaging = (ExtendedMessagingFlag & buffer[5]) != 0;
+            SupportsFastPeer = (FastPeersFlag & buffer[7]) != 0;
+            buffer = buffer.Slice (8);
         }
 
         #endregion

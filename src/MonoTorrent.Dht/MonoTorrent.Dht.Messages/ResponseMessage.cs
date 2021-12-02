@@ -44,7 +44,7 @@ namespace MonoTorrent.Dht.Messages
             : base (ResponseType)
         {
             properties.Add (ReturnValuesKey, new BEncodedDictionary ());
-            Parameters.Add (IdKey, id.BencodedString ());
+            Parameters.Add (IdKey, BEncodedString.FromMemory (id.AsMemory ()));
             TransactionId = transactionId;
         }
 

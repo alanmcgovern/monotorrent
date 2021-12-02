@@ -5,7 +5,7 @@
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha.unstable</MonoTorrentReleaseSuffix>
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
 
-    <UseGitInfo>!$(ProjectName.StartsWith('Tests'))</UseGitInfo>
+    <UseGitInfo Condition="'$(UseGitInfo)' == ''">!$(ProjectName.StartsWith('Tests'))</UseGitInfo>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(ReferenceReusableTasks)' != 'false'">
@@ -20,6 +20,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)EnsureThreadPool.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)MainLoop.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Include="$(MSBuildThisFileDirectory)MemoryExtensions.cs" Condition="'$(UseMemoryExtensions)' == 'true'" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" Link="Linked\%(FileName)%(Extension)" Condition="$(ProjectName) == 'MonoTorrent.Dht' or $(ProjectName) == 'MonoTorrent.Client'" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>

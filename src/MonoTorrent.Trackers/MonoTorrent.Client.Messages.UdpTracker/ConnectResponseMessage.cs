@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Messages.UdpTracker
 {
     public class ConnectResponseMessage : UdpTrackerMessage
@@ -47,23 +49,23 @@ namespace MonoTorrent.Messages.UdpTracker
 
         public override int ByteLength => 8 + 4 + 4;
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            if (Action != ReadInt (buffer, ref offset))
+            if (Action != ReadInt (ref buffer))
                 ThrowInvalidActionException ();
-            TransactionId = ReadInt (buffer, ref offset);
-            ConnectionId = ReadLong (buffer, ref offset);
+            TransactionId = ReadInt (ref buffer);
+            ConnectionId = ReadLong (ref buffer);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, Action);
-            written += Write (buffer, written, TransactionId);
-            written += Write (buffer, written, ConnectionId);
+            Write (ref buffer, Action);
+            Write (ref buffer, TransactionId);
+            Write (ref buffer, ConnectionId);
 
-            return written - offset;
+            return written - buffer.Length;
         }
     }
 }

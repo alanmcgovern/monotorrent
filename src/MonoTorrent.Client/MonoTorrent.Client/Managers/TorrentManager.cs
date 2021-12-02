@@ -34,6 +34,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Messages.Peer;
@@ -1042,7 +1043,7 @@ namespace MonoTorrent.Client
             if (e.Successful) {
                 await ClientEngine.MainLoop;
 
-                int count = AddPeers (e.Peers.Select (t => new Peer (t.PeerId, t.Uri)).ToArray (), true);
+                int count = AddPeers (e.Peers.Select (t => new Peer (BEncodedString.FromMemory (t.PeerId), t.Uri)).ToArray (), true);
                 RaisePeersFound (new TrackerPeersAdded (this, count, e.Peers.Count, e.Tracker));
             }
         }

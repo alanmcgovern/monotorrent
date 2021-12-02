@@ -55,33 +55,33 @@ namespace MonoTorrent.Messages.UdpTracker
             Seeders = seeders;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            if (Action != ReadInt (buffer, offset))
+            if (Action != ReadInt (ref buffer))
                 ThrowInvalidActionException ();
-            TransactionId = ReadInt (buffer, offset + 4);
-            Interval = TimeSpan.FromSeconds (ReadInt (buffer, offset + 8));
-            Leechers = ReadInt (buffer, offset + 12);
-            Seeders = ReadInt (buffer, offset + 16);
+            TransactionId = ReadInt (ref buffer);
+            Interval = TimeSpan.FromSeconds (ReadInt (ref buffer));
+            Leechers = ReadInt (ref buffer);
+            Seeders = ReadInt (ref buffer);
 
-            IList<PeerInfo> peers = PeerInfo.FromCompact (buffer, 20);
+            IList<PeerInfo> peers = PeerInfo.FromCompact (buffer);
             Peers.AddRange (peers);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, Action);
-            written += Write (buffer, written, TransactionId);
-            written += Write (buffer, written, (int) Interval.TotalSeconds);
-            written += Write (buffer, written, Leechers);
-            written += Write (buffer, written, Seeders);
+            Write (ref buffer, Action);
+            Write (ref buffer, TransactionId);
+            Write (ref buffer, (int) Interval.TotalSeconds);
+            Write (ref buffer, Leechers);
+            Write (ref buffer, Seeders);
 
             for (int i = 0; i < Peers.Count; i++)
-                Peers[i].CompactPeer (buffer, written + (i * 6));
+                Peers[i].CompactPeer (buffer.Slice (i * 6));
 
-            return written - offset;
+            return written - buffer.Length;
         }
     }
 }

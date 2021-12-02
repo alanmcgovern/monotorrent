@@ -41,8 +41,8 @@ namespace MonoTorrent.PieceWriter
         ReusableTask<bool> ExistsAsync (ITorrentFileInfo file);
         ReusableTask FlushAsync (ITorrentFileInfo file);
         ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite);
-        ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
-        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count);
+        ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer);
+        ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer);
         ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles);
     }
 }

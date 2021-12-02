@@ -33,7 +33,7 @@ namespace MonoTorrent.Messages.Peer
 {
     public class PieceMessage : PeerMessage
     {
-        internal static ByteBufferPool BufferPool = ByteBufferPool.Default;
+        internal static MemoryPool BufferPool = ByteBufferPool.Default;
 
         public static readonly byte MessageId = 7;
         const int messageLength = 9;
@@ -41,9 +41,12 @@ namespace MonoTorrent.Messages.Peer
         /// <summary>
         /// The data associated with this block
         /// </summary>
-        public byte[] Data => DataReleaser.Buffer.Data;
+        public Memory<byte> Data { get; private set; }
 
-        public ByteBufferPool.Releaser DataReleaser;
+        public ByteBufferPool.Releaser DataReleaser { get; private set; }
+
+        public void SetData ((ByteBufferPool.Releaser releaser, Memory<byte> data) value)
+            => (DataReleaser, Data) = value;
 
         /// <summary>
         /// The index of the block from the piece which was requested.
@@ -81,28 +84,29 @@ namespace MonoTorrent.Messages.Peer
             RequestLength = blockLength;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            PieceIndex = ReadInt (buffer, ref offset);
-            StartOffset = ReadInt (buffer, ref offset);
-            RequestLength = length - 8;
+            PieceIndex = ReadInt (ref buffer);
+            StartOffset = ReadInt (ref buffer);
+            RequestLength = buffer.Length;
 
             // This buffer will be freed after the PieceWriter has finished with it
-            DataReleaser = BufferPool.Rent (RequestLength, out ByteBuffer _);
-            Buffer.BlockCopy (buffer, offset, Data, 0, RequestLength);
+            DataReleaser = BufferPool.Rent (RequestLength, out Memory<byte> memory);
+            buffer.CopyTo (memory.Span);
+            Data = memory;
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int origLength = buffer.Length;
 
-            written += Write (buffer, written, messageLength + RequestLength);
-            written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, PieceIndex);
-            written += Write (buffer, written, StartOffset);
-            written += Write (buffer, written, Data, 0, RequestLength);
+            Write (ref buffer, messageLength + RequestLength);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, PieceIndex);
+            Write (ref buffer, StartOffset);
+            Write (ref buffer, Data.Span);
 
-            return written - offset;
+            return origLength - buffer.Length;
         }
 
         public override bool Equals (object obj)

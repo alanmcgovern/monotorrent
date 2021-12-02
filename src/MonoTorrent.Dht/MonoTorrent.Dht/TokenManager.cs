@@ -57,7 +57,7 @@ namespace MonoTorrent.Dht
 
         BEncodedString GenerateToken (Node node, byte[] secret)
         {
-            byte[] n = node.CompactPort ().TextBytes;
+            byte[] n = node.CompactPort ().Span.ToArray ();
             sha1.Initialize ();
             sha1.TransformBlock (n, 0, n.Length, n, 0);
             sha1.TransformFinalBlock (secret, 0, secret.Length);

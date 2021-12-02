@@ -103,7 +103,7 @@ namespace MonoTorrent.Connections.TrackerServer
                     if (data.Length < 16)
                         return; //bad request
 
-                    var request = UdpTrackerMessage.DecodeMessage (data, 0, data.Length, MessageType.Request);
+                    var request = UdpTrackerMessage.DecodeMessage (data.AsSpan (0, data.Length), MessageType.Request);
 
                     if (sendTask != null) {
                         try {

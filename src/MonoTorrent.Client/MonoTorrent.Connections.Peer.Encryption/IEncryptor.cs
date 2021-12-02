@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Connections.Peer.Encryption
@@ -35,7 +37,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
     {
         ReusableTask HandshakeAsync (IPeerConnection socket);
 
-        ReusableTask HandshakeAsync (IPeerConnection socket, byte[] initialBuffer, int offset, int count);
+        ReusableTask HandshakeAsync (IPeerConnection socket, Memory<byte> initialBuffer);
 
         IEncryption Encryptor { get; }
         IEncryption Decryptor { get; }

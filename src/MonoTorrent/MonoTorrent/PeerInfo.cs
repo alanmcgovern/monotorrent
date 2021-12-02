@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
@@ -36,26 +37,20 @@ namespace MonoTorrent
 {
     public class PeerInfo : IEquatable<PeerInfo>
     {
-        public byte[] PeerId { get; }
+        public ReadOnlyMemory<byte> PeerId { get; }
 
         public Uri Uri { get; }
 
-        public PeerInfo (Uri uri, byte[] peerId)
-            => (Uri, PeerId) = (uri ?? throw new ArgumentNullException (nameof (peerId)), peerId ?? Array.Empty<byte> ());
+        public PeerInfo (Uri uri, ReadOnlyMemory<byte> peerId)
+            => (Uri, PeerId) = (uri ?? throw new ArgumentNullException (nameof (peerId)), peerId);
 
         public override bool Equals (object obj)
             => Equals (obj as PeerInfo);
 
         public bool Equals (PeerInfo other)
-        {
-            if (other == null || !Uri.Equals (other.Uri) || PeerId.Length != other.PeerId.Length)
-                return false;
-
-            for (int i = 0; i < PeerId.Length; i++)
-                if (PeerId[i] != other.PeerId[i])
-                    return false;
-            return true;
-        }
+            => other != null
+            && Uri.Equals (other.Uri)
+            && MemoryExtensions.SequenceEqual (PeerId.Span, other.PeerId.Span);
 
         public override int GetHashCode ()
             => Uri.GetHashCode ();
@@ -63,33 +58,28 @@ namespace MonoTorrent
         public byte[] CompactPeer ()
             => CompactPeer (Uri);
 
-        public void CompactPeer (byte[] data, int offset)
-            => CompactPeer (Uri, data, offset);
+        public void CompactPeer (Span<byte> buffer)
+            => CompactPeer (Uri, buffer);
 
         public static byte[] CompactPeer (Uri uri)
         {
             byte[] data = new byte[6];
-            CompactPeer (uri, data, 0);
+            CompactPeer (uri, data);
             return data;
         }
 
-        public static void CompactPeer (Uri uri, byte[] data, int offset)
+        public static void CompactPeer (Uri uri, Span<byte> buffer)
         {
-            Buffer.BlockCopy (IPAddress.Parse (uri.Host).GetAddressBytes (), 0, data, offset, 4);
-
-            var port = (ushort) IPAddress.HostToNetworkOrder ((short) uri.Port);
-            data[offset + 4] = (byte) (port >> 0);
-            data[offset + 5] = (byte) (port >> 8);
+            var bytes = IPAddress.Parse (uri.Host).GetAddressBytes ();
+            bytes.AsSpan ().CopyTo (buffer);
+            BinaryPrimitives.WriteUInt16BigEndian (buffer.Slice (bytes.Length), (ushort) uri.Port);
         }
 
-        public static IList<PeerInfo> FromCompact (byte[] data)
-            => FromCompact (data, 0);
-
-        public static IList<PeerInfo> FromCompact (byte[] data, int offset)
+        public static IList<PeerInfo> FromCompact (ReadOnlySpan<byte> buffer)
         {
             var sb = new StringBuilder (27);
-            var list = new List<PeerInfo> ((data.Length / 6) + 1);
-            FromCompact (data, offset, sb, list);
+            var list = new List<PeerInfo> ((buffer.Length / 6) + 1);
+            FromCompact (buffer, sb, list);
             return list;
         }
 
@@ -98,17 +88,17 @@ namespace MonoTorrent
             var sb = new StringBuilder (27);
             var list = new List<PeerInfo> ();
             foreach (var buffer in data)
-                FromCompact (buffer, 0, sb, list);
+                FromCompact (buffer.AsSpan (), sb, list);
             return list;
         }
 
-        static void FromCompact (byte[] data, int offset, StringBuilder sb, List<PeerInfo> list)
+        static void FromCompact (ReadOnlySpan<byte> buffer, StringBuilder sb, List<PeerInfo> list)
         {
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes
             // Ports are the following 2 bytes
-            byte[] byteOrderedData = data;
-            int i = offset;
+            var byteOrderedData = buffer;
+            int i = 0;
             ushort port;
             while ((i + 5) < byteOrderedData.Length) {
                 sb.Remove (0, sb.Length);
@@ -122,13 +112,13 @@ namespace MonoTorrent
                 sb.Append ('.');
                 sb.Append (byteOrderedData[i++]);
 
-                port = (ushort) IPAddress.NetworkToHostOrder (BitConverter.ToInt16 (byteOrderedData, i));
+                port = BinaryPrimitives.ReadUInt16BigEndian (byteOrderedData.Slice (i));
                 i += 2;
                 sb.Append (':');
                 sb.Append (port);
 
                 var uri = new Uri (sb.ToString ());
-                list.Add (new PeerInfo (uri, Array.Empty<byte> ()));
+                list.Add (new PeerInfo (uri, Memory<byte>.Empty));
             }
         }
     }

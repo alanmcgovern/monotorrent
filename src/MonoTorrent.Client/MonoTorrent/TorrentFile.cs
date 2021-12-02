@@ -39,7 +39,7 @@ namespace MonoTorrent
         /// <summary>
         /// The ED2K hash of the file
         /// </summary>
-        public byte[] ED2K { get; }
+        public ReadOnlyMemory<byte> ED2K { get; }
 
         /// <summary>
         /// The index of the last piece of this file
@@ -54,7 +54,7 @@ namespace MonoTorrent
         /// <summary>
         /// The MD5 hash of the file
         /// </summary>
-        public byte[] MD5 { get; }
+        public ReadOnlyMemory<byte> MD5 { get; }
 
         /// <summary>
         /// In the case of a single torrent file, this is the name of the file.
@@ -66,7 +66,7 @@ namespace MonoTorrent
         /// <summary>
         /// The SHA1 hash of the file
         /// </summary>
-        public byte[] SHA1 { get; }
+        public ReadOnlyMemory<byte> SHA1 { get; }
 
         /// <summary>
         /// The index of the first piece of this file
@@ -79,12 +79,12 @@ namespace MonoTorrent
         public long OffsetInTorrent { get; }
 
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, null, null, null)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty)
         {
 
         }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, byte[] md5, byte[] ed2k, byte[] sha1)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> md5, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)
         {
             Path = path;
             Length = length;
@@ -123,9 +123,9 @@ namespace MonoTorrent
             => Create (pieceLength, lengths.Select ((length, index) => ("File_" + index, length)).ToArray ());
 
         internal static TorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
-            => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, (byte[]) null, (byte[]) null, (byte[]) null)).ToArray ());
+            => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty)).ToArray ());
 
-        internal static TorrentFile[] Create (int pieceLength, params (string path, long length, byte[] md5sum, byte[] ed2k, byte[] sha1)[] files)
+        internal static TorrentFile[] Create (int pieceLength, params (string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)[] files)
         {
             long totalSize = 0;
             var results = new List<TorrentFile> (files.Length);

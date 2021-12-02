@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Messages.UdpTracker
@@ -48,32 +49,32 @@ namespace MonoTorrent.Messages.UdpTracker
             Scrapes = scrapes;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            if (Action != ReadInt (buffer, ref offset))
+            if (Action != ReadInt (ref buffer))
                 ThrowInvalidActionException ();
-            TransactionId = ReadInt (buffer, ref offset);
-            while (offset <= (buffer.Length - 12)) {
-                int seeds = ReadInt (buffer, ref offset);
-                int complete = ReadInt (buffer, ref offset);
-                int leeches = ReadInt (buffer, ref offset);
+            TransactionId = ReadInt (ref buffer);
+            while (buffer.Length >= 12) {
+                int seeds = ReadInt (ref buffer);
+                int complete = ReadInt (ref buffer);
+                int leeches = ReadInt (ref buffer);
                 Scrapes.Add (new ScrapeDetails (seeds, leeches, complete));
             }
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, Action);
-            written += Write (buffer, written, TransactionId);
+            Write (ref buffer, Action);
+            Write (ref buffer, TransactionId);
             for (int i = 0; i < Scrapes.Count; i++) {
-                written += Write (buffer, written, Scrapes[i].Seeds);
-                written += Write (buffer, written, Scrapes[i].Complete);
-                written += Write (buffer, written, Scrapes[i].Leeches);
+                Write (ref buffer, Scrapes[i].Seeds);
+                Write (ref buffer, Scrapes[i].Complete);
+                Write (ref buffer, Scrapes[i].Leeches);
             }
 
-            return written - offset;
+            return written - buffer.Length;
         }
     }
 }

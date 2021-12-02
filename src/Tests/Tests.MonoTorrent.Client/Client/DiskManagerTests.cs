@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
         }
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }
@@ -111,9 +111,9 @@ namespace MonoTorrent.Client
 
             public int MaximumOpenFiles { get; }
 
-            public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
             {
-                ReadData.Add (Tuple.Create (file, offset, count));
+                ReadData.Add (Tuple.Create (file, offset, buffer.Length));
 
                 if (Data == null) {
                     var fileData = WrittenData
@@ -121,18 +121,18 @@ namespace MonoTorrent.Client
                         .OrderBy (t => t.Item2)
                         .SelectMany (t => t.Item3)
                         .ToArray ();
-                    Buffer.BlockCopy (fileData, (int) offset, buffer, bufferOffset, count);
+                    fileData.AsSpan ((int)offset, buffer.Length).CopyTo (buffer.Span);
                 } else {
                     var data = Data[file];
-                    Buffer.BlockCopy (data, (int) offset, buffer, bufferOffset, count);
+                    data.AsSpan ((int) offset, buffer.Length).CopyTo (buffer.Span);
                 }
-                return ReusableTask.FromResult (count);
+                return ReusableTask.FromResult (buffer.Length);
             }
 
-            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
             {
-                var result = new byte[count];
-                Buffer.BlockCopy (buffer, bufferOffset, result, 0, count);
+                var result = new byte[buffer.Length];
+                buffer.CopyTo (result.AsMemory ());
                 WrittenData.Add (Tuple.Create (file, offset, result));
                 return ReusableTask.CompletedTask;
             }

@@ -28,11 +28,13 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MonoTorrent
@@ -70,15 +72,12 @@ namespace MonoTorrent
             From (other);
         }
 
-        public BitField (byte[] array, int length)
+        public BitField (ReadOnlySpan<byte> buffer, int length)
             : this (length)
         {
-            if (array == null)
-                throw new ArgumentNullException (nameof (array));
-            if (array.Length < 1)
-                throw new ArgumentOutOfRangeException (nameof (array), "Array length must be greater than zero");
-
-            From (array, 0);
+            if ((length + 31) / 32 > buffer.Length)
+                throw new ArgumentOutOfRangeException ("The buffer was too small");
+            From (buffer);
         }
 
         public BitField (int length)
@@ -118,18 +117,18 @@ namespace MonoTorrent
             private protected set => Set (index, value);
         }
 
-        private protected BitField From (byte[] buffer, int offset)
+        internal BitField From (ReadOnlySpan<byte> buffer)
         {
             int end = Length / 32;
-            for (int i = 0; i < end; i++)
-                Data[i] = (buffer[offset++] << 24) |
-                           (buffer[offset++] << 16) |
-                           (buffer[offset++] << 8) |
-                           (buffer[offset++]);
+            for (int i = 0; i < end; i++) {
+                Data[i] = BinaryPrimitives.ReadInt32BigEndian (buffer);
+                buffer = buffer.Slice (4);
+            }
 
             int shift = 24;
             for (int i = end * 32; i < Length; i += 8) {
-                Data[Data.Length - 1] |= buffer[offset++] << shift;
+                Data[Data.Length - 1] |= buffer[0] << shift;
+                buffer = buffer.Slice (1);
                 shift -= 8;
             }
             Validate ();
@@ -198,16 +197,9 @@ namespace MonoTorrent
         }
 
         public override bool Equals (object obj)
-        {
-            if (!(obj is BitField bf) || this.Data.Length != bf.Data.Length || TrueCount != bf.TrueCount)
-                return false;
-
-            for (int i = 0; i < Data.Length; i++)
-                if (Data[i] != bf.Data[i])
-                    return false;
-
-            return true;
-        }
+            => obj is BitField other
+            && TrueCount == other.TrueCount
+            && MemoryExtensions.SequenceEqual (Data.AsSpan (), other.Data);
 
         /// <summary>
         /// Returns the index of the first <see langword="true" /> bit in the bitfield.

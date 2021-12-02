@@ -58,7 +58,7 @@ namespace MonoTorrent
         {
             Assert.Throws<ArgumentNullException> (() => new BitField ((BitField) null));
             Assert.Throws<ArgumentNullException> (() => new BitField ((bool[]) null));
-            Assert.Throws<ArgumentNullException> (() => new BitField (null, 2));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (null, 2));
 
         }
         [Test]

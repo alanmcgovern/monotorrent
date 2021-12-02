@@ -42,10 +42,11 @@ namespace MonoTorrent.Messages.UdpTracker
             TransactionId = transactionId;
         }
 
-        public static UdpTrackerMessage DecodeMessage (byte[] buffer, int offset, int count, MessageType type)
+        public static UdpTrackerMessage DecodeMessage (ReadOnlySpan<byte> buffer, MessageType type)
         {
             UdpTrackerMessage m;
-            int action = type == MessageType.Request ? ReadInt (buffer, offset + 8) : ReadInt (buffer, offset);
+            var actionBuffer = type == MessageType.Request ? buffer.Slice (8) : buffer;
+            int action = ReadInt (ref actionBuffer);
             switch (action) {
                 case 0:
                     if (type == MessageType.Request)
@@ -69,11 +70,11 @@ namespace MonoTorrent.Messages.UdpTracker
                     m = new ErrorMessage ();
                     break;
                 default:
-                    throw new InvalidOperationException ($"Invalid udp message received: {buffer[offset]}");
+                    throw new InvalidOperationException ($"Invalid udp message received: {action}");
             }
 
             try {
-                m.Decode (buffer, offset, count);
+                m.Decode (buffer);
             } catch {
                 m = new ErrorMessage (0, "Couldn't decode the tracker response");
             }

@@ -79,15 +79,15 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
         {
             foreach (var write in Writes) {
-                if (write.offset == offset && write.file == file && write.buffer.Length == count) {
-                    var data = new byte[count];
-                    Buffer.BlockCopy (write.buffer, 0, buffer, bufferOffset, count);
-                    Buffer.BlockCopy (write.buffer, 0, data, 0, count);
+                if (write.offset == offset && write.file == file && write.buffer.Length == buffer.Length) {
+                    var data = new byte[buffer.Length];
+                    write.buffer.CopyTo (buffer);
+                    write.buffer.CopyTo (data.AsMemory ());
                     Reads.Add ((file, offset, data));
-                    return ReusableTask.FromResult (count);
+                    return ReusableTask.FromResult (buffer.Length);
                 }
             }
             Reads.Add ((file, offset, null));
@@ -99,10 +99,10 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
-        public virtual ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public virtual ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
         {
-            var actualData = new byte[count];
-            Buffer.BlockCopy (buffer, bufferOffset, actualData, 0, count);
+            var actualData = new byte[buffer.Length];
+            buffer.CopyTo (actualData.AsMemory ());
             Writes.Add ((file, offset, actualData));
             return ReusableTask.CompletedTask;
         }
@@ -112,7 +112,7 @@ namespace MonoTorrent.PieceWriter
     {
         public new List<ReusableTaskCompletionSource<object>> Writes { get; } = new List<ReusableTaskCompletionSource<object>> ();
 
-        public override async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public override async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
         {
             var tcs = new ReusableTaskCompletionSource<object> ();
             Writes.Add (tcs);
@@ -147,7 +147,7 @@ namespace MonoTorrent.PieceWriter
             };
 
             writer = new MemoryWriter ();
-            cache = new MemoryCache (new ByteBufferPool (false), Constants.BlockSize * 4, writer);
+            cache = new MemoryCache (new MemoryPool (), Constants.BlockSize * 4, writer);
         }
 
         [Test]
@@ -178,7 +178,7 @@ namespace MonoTorrent.PieceWriter
         public async Task OverFillBuffer ()
         {
             var writer = new MemoryWriter ();
-            var cache = new MemoryCache (new ByteBufferPool (false), Constants.BlockSize, writer);
+            var cache = new MemoryCache (new MemoryPool (), Constants.BlockSize, writer);
 
             // Write 4 blocks to the stream and then verify they can all be read
             for (int i = 0; i < 4; i++) {
@@ -206,7 +206,7 @@ namespace MonoTorrent.PieceWriter
         public async Task OverFillBuffer_CacheUsed ()
         {
             var writer = new MemoryWriter ();
-            var cache = new MemoryCache (new ByteBufferPool (false), 4, writer);
+            var cache = new MemoryCache (new MemoryPool (), 4, writer);
 
             await cache.WriteAsync (torrent, new BlockInfo (0, 0, 3), Enumerable.Repeat ((byte) 1, 3).ToArray (), false);
             await cache.WriteAsync (torrent, new BlockInfo (0, 3, 4), Enumerable.Repeat ((byte) 2, 4).ToArray (), false);
@@ -218,7 +218,7 @@ namespace MonoTorrent.PieceWriter
         public async Task ReadBlockWhileWriting ()
         {
             var writer = new BlockingMemoryWriter ();
-            var cache = new MemoryCache (new ByteBufferPool (false), 3, writer);
+            var cache = new MemoryCache (new MemoryPool (), 3, writer);
             await cache.WriteAsync (torrent, new BlockInfo (0, 0, 3), Enumerable.Repeat ((byte) 1, 3).ToArray (), false).WithTimeout ();
 
             var write = cache.WriteAsync (torrent, new BlockInfo (0, 3, 3), Enumerable.Repeat ((byte) 2, 3).ToArray (), false);
@@ -253,7 +253,7 @@ namespace MonoTorrent.PieceWriter
                 Size = torrent.Size
             };
 
-            var memory = new MemoryCache (new ByteBufferPool (false), 1024, new NullWriter ());
+            var memory = new MemoryCache (new MemoryPool (), 1024, new NullWriter ());
             await memory.WriteAsync (torrent, new BlockInfo (0, 0, 3), data1, false);
             await memory.WriteAsync (torrent2, new BlockInfo (0, 0, 3), data2, false);
 
@@ -272,7 +272,7 @@ namespace MonoTorrent.PieceWriter
             var data2 = new byte[] { 2, 2, 2 };
             var data3 = new byte[] { 3, 3, 3 };
 
-            var memory = new MemoryCache (new ByteBufferPool (false), 1024, new NullWriter ());
+            var memory = new MemoryCache (new MemoryPool (), 1024, new NullWriter ());
             await memory.WriteAsync (torrent, new BlockInfo (0, 0, 3), data1, false);
             await memory.WriteAsync (torrent, new BlockInfo (0, 3, 3), data2, false);
             await memory.WriteAsync (torrent, new BlockInfo (0, 3, 3), data3, false);
@@ -295,7 +295,7 @@ namespace MonoTorrent.PieceWriter
             var data = new byte[] { 1, 1, 1 };
 
             var writer = new MemoryWriter ();
-            var memory = new MemoryCache (new ByteBufferPool (false), 1024, writer);
+            var memory = new MemoryCache (new MemoryPool (), 1024, writer);
             await memory.WriteAsync (torrent, new BlockInfo (0, 0, 3), data, true);
             Assert.AreEqual (0, memory.CacheUsed);
             Assert.AreEqual (torrent.Files[0], writer.Writes.Single ().file);
@@ -317,7 +317,7 @@ namespace MonoTorrent.PieceWriter
         public async Task ReadWriteBlockChangeOriginal ()
         {
             var writer = new MemoryWriter ();
-            var cache = new MemoryCache (new ByteBufferPool (false), Constants.BlockSize, writer);
+            var cache = new MemoryCache (new MemoryPool (), Constants.BlockSize, writer);
 
             var buffer = Enumerable.Repeat ((byte) 5, Constants.BlockSize).ToArray ();
             await cache.WriteAsync (torrent, new BlockInfo (0, 0, Constants.BlockSize), buffer, false);
@@ -334,7 +334,7 @@ namespace MonoTorrent.PieceWriter
         public async Task MemoryWriter_ZeroCapacity_Write ()
         {
             var writer = new MemoryWriter ();
-            var cache = new MemoryCache (new ByteBufferPool (false), 0, writer);
+            var cache = new MemoryCache (new MemoryPool (), 0, writer);
 
             await cache.WriteAsync (torrent, new BlockInfo (0, 0, 1), new byte[] { 7 }, false);
             Assert.AreEqual (1, writer.Writes.Count);

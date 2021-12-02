@@ -40,23 +40,22 @@ namespace MonoTorrent.Messages.UdpTracker
 
         public override int ByteLength => 4 + usernameLength + 8;
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            usernameLength = buffer[offset];
-            offset++;
-            username = Encoding.ASCII.GetString (buffer, offset, usernameLength);
-            offset += usernameLength;
-            password = new byte[8];
-            Buffer.BlockCopy (buffer, offset, password, 0, password.Length);
+            usernameLength = ReadByte(ref buffer);
+            username = ReadString (ref buffer, usernameLength);
+            password = ReadBytes (ref buffer, 8);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = Write (buffer, offset, usernameLength);
-            byte[] name = Encoding.ASCII.GetBytes (username);
-            written += Write (buffer, offset, name, 0, name.Length);
-            written += Write (buffer, offset, password, 0, password.Length);
-            return written;
+            var written = buffer.Length;
+
+            Write (ref buffer, usernameLength);
+            WriteAscii (ref buffer, username);
+            Write (ref buffer, password);
+
+            return written - buffer.Length;
         }
     }
 }

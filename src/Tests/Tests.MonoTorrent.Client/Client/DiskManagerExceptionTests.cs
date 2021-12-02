@@ -84,14 +84,14 @@ namespace MonoTorrent.Client
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
             {
                 if (read)
                     throw new Exception ("read");
-                return ReusableTask.FromResult (count);
+                return ReusableTask.FromResult (buffer.Length);
             }
 
-            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
             {
                 if (write)
                     throw new Exception ("write");

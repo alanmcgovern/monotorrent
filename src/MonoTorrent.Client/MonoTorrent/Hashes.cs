@@ -43,7 +43,7 @@ namespace MonoTorrent
 
         #region Private Fields
 
-        readonly byte[] hashData;
+        readonly ReadOnlyMemory<byte> hashData;
 
         #endregion Private Fields
 
@@ -60,7 +60,7 @@ namespace MonoTorrent
 
         #region Constructors
 
-        internal Hashes (byte[] hashData, int count)
+        internal Hashes (ReadOnlyMemory<byte> hashData, int count)
         {
             this.hashData = hashData;
             Count = count;
@@ -88,12 +88,7 @@ namespace MonoTorrent
             if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
 
-            int start = hashIndex * HashCodeLength;
-            for (int i = 0; i < HashCodeLength; i++)
-                if (hash[i] != hashData[i + start])
-                    return false;
-
-            return true;
+            return MemoryExtensions.SequenceEqual (hash, hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
         }
 
         /// <summary>
@@ -102,16 +97,7 @@ namespace MonoTorrent
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
         public byte[] ReadHash (int hashIndex)
-        {
-            if (hashIndex < 0 || hashIndex >= Count)
-                throw new ArgumentOutOfRangeException (nameof (hashIndex));
-
-            // Read out our specified piece's hash data
-            byte[] hash = new byte[HashCodeLength];
-            Buffer.BlockCopy (hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
-
-            return hash;
-        }
+            =>  hashData.Slice (hashIndex * HashCodeLength, HashCodeLength).ToArray ();
 
         #endregion Methods
     }

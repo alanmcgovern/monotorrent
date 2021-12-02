@@ -332,7 +332,7 @@ namespace MonoTorrent.TrackerServer
                     { "incomplete", new BEncodedNumber (manager.Incomplete) },
                     { "name", new BEncodedString (manager.Trackable.Name) }
                 };
-                files.Add (new BEncodedString (e.InfoHashes[i].UnsafeAsArray ()), dict);
+                files.Add (new BEncodedString (e.InfoHashes[i].Span.ToArray ()), dict);
             }
             RaisePeerScraped (new ScrapeEventArgs (managers));
             if (files.Count > 0)

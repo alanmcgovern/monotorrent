@@ -62,38 +62,42 @@ namespace MonoTorrent.BEncoding
         /// Encodes this number to the supplied byte[] starting at the supplied offset
         /// </summary>
         /// <param name="buffer">The buffer to write the data to</param>
-        /// <param name="offset">The offset to start writing the data at</param>
         /// <returns></returns>
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            long number = Number;
+#if NETSTANDARD2_0
 
-            int written = offset;
+            // exclude the 'i' and 'e'
+            var totalCharacters = LengthInBytes () - 2;
+            int written = 0;
             buffer[written++] = (byte) 'i';
 
-            if (number < 0)
+            long number = Number;
+            if (number < 0) {
                 buffer[written++] = (byte) '-';
+                totalCharacters--;
+            }
 
-            // Reverse the number '12345' to get '54321'
-            long reversed = 0;
-            for (long i = number; i != 0; i /= 10)
-                reversed = reversed * 10 + i % 10;
+            for (int i = 0; i < totalCharacters; i++) {
+                buffer[(written + totalCharacters) - i - 1] = (byte) (Math.Abs (number % 10) + '0');
+                number /= 10;
+            }
 
-            // Write each digit of the reversed number to the array. We write '1'
-            // first, then '2', etc
-            for (long i = reversed; i != 0; i /= 10)
-                buffer[written++] = (byte) (Math.Abs (i % 10) + '0');
-
-            if (number == 0)
-                buffer[written++] = (byte) '0';
-
-            // If the original number ends in one or more zeros, they are lost
-            // when we reverse the number. We add them back in here.
-            for (long i = number; i % 10 == 0 && number != 0; i /= 10)
-                buffer[written++] = (byte) '0';
-
+            written += totalCharacters;
             buffer[written++] = (byte) 'e';
-            return written - offset;
+            return written;
+#else
+            // int64.MinValue has at most 20 characters
+            Span<char> bytes = stackalloc char[20];
+            if (!Number.TryFormat (bytes, out int written))
+                throw new ArgumentException ("Could not format the BEncodedNumber");
+            buffer[0] = (byte) 'i';
+            for (int i = 0; i < written; i ++)
+                buffer[1 + i] = (byte) bytes[i];
+            buffer[1 + written] = (byte) 'e';
+
+            return 2 + written;
+#endif
         }
 
         /// <summary>
@@ -101,16 +105,8 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <returns></returns>
         public override int LengthInBytes ()
-        {
-            long number = Number;
-            int count = number <= 0 ? 3 : 2; // account for the 'i' and 'e'
-
-            for (long i = number; i != 0; i /= 10)
-                count++;
-
-            return count;
-        }
-
+            // Add 2 for the 'i' and 'e'. Special case '0' as we can't Log10 it. Add 1 if the number is negative. Then calculate digits!
+            => 2 + (Number == 0 ? 1 : (Number > 0 ? 1 : 2) + (int) Math.Log10 (Math.Abs ((double)Number)));
 
         public int CompareTo (object other)
         {

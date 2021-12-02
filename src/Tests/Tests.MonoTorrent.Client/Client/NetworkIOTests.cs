@@ -28,8 +28,10 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.RateLimiters;
@@ -96,7 +98,8 @@ namespace MonoTorrent.Client
                 await connectTask.WithTimeout ();
 
                 c.Dispose ();
-                Assert.AreEqual (0, await c.ReceiveAsync (new ByteBuffer (123, true), 0, 123).WithTimeout ());
+                using var releaser = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (123, out var buffer);
+                Assert.AreEqual (0, await c.ReceiveAsync (buffer).WithTimeout ());
             } finally {
                 listener.Stop ();
             }
@@ -115,7 +118,8 @@ namespace MonoTorrent.Client
                 await connectTask.WithTimeout ();
 
                 c.Dispose ();
-                Assert.AreEqual (0, await c.SendAsync (new ByteBuffer (123, true), 0, 123).WithTimeout ());
+                using var releaser = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (123, out var buffer);
+                Assert.AreEqual (0, await c.SendAsync (buffer).WithTimeout ());
             } finally {
                 listener.Stop ();
             }
@@ -129,8 +133,11 @@ namespace MonoTorrent.Client
             var limiter = new RateLimiter ();
             limiter.UpdateChunks (oneMegabyte, oneMegabyte);
 
-            await Outgoing.SendAsync (new ByteBuffer (oneMegabyte), 0, oneMegabyte);
-            await NetworkIO.ReceiveAsync (Incoming, new ByteBuffer (oneMegabyte), 0, oneMegabyte, limiter, null, null);
+            using var r1 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (oneMegabyte, out var sendBuffer);
+            using var r2 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (oneMegabyte, out var receiveBuffer);
+
+            await Outgoing.SendAsync (sendBuffer);
+            await NetworkIO.ReceiveAsync (Incoming, receiveBuffer, limiter, null, null);
 
             var expectedChunks = (int) Math.Ceiling (oneMegabyte / (double) NetworkIO.ChunkLength);
             Assert.AreEqual (expectedChunks, Incoming.Receives.Count, "#1");
@@ -142,8 +149,11 @@ namespace MonoTorrent.Client
             var oneMegabyte = 1 * 1024 * 1024;
             var limiter = new RateLimiterGroup ();
 
-            await Outgoing.SendAsync (new ByteBuffer (oneMegabyte), 0, oneMegabyte);
-            await NetworkIO.ReceiveAsync (Incoming, new ByteBuffer (oneMegabyte), 0, oneMegabyte, limiter, null, null);
+            using var r1 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (oneMegabyte, out var sendBuffer);
+            using var r2 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (oneMegabyte, out var receiveBuffer);
+
+            await Outgoing.SendAsync (sendBuffer);
+            await NetworkIO.ReceiveAsync (Incoming, receiveBuffer, limiter, null, null);
 
             Assert.AreEqual (1, Incoming.Receives.Count, "#1");
         }
@@ -177,23 +187,22 @@ namespace MonoTorrent.Client
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
-            var data = new ByteBuffer (16384);
-            new Random ().NextBytes (data.Data);
+            using var r1 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (16384, out var data);
+            using var r2 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (16384, out var buffer);
+            new Random ().NextBytes (data.Span);
 
             int sent = 0;
-            var buffer = new ByteBuffer (data.Data.Length);
+            var task = NetworkIO.ReceiveAsync (Outgoing, buffer, null, null, null);
 
-            var task = NetworkIO.ReceiveAsync (Outgoing, buffer, 0, buffer.Data.Length, null, null, null);
-
-            while (sent != buffer.Data.Length) {
-                int r = await Incoming.SendAsync (data, sent, data.Data.Length - sent);
+            while (sent != buffer.Length) {
+                int r = await Incoming.SendAsync (data.Slice (sent));
                 Assert.AreNotEqual (0, r, "#Received data");
                 sent += r;
             }
 
             await task.WithTimeout (TimeSpan.FromSeconds (10));
-            for (int i = 0; i < buffer.Data.Length; i++) {
-                if (data.Data[i] != buffer.Data[i])
+            for (int i = 0; i < buffer.Length; i++) {
+                if (!MemoryExtensions.SequenceEqual (data.Span, buffer.Span))
                     Assert.Fail ($"Buffers differ at position {i}");
             }
         }
@@ -230,7 +239,8 @@ namespace MonoTorrent.Client
             var limiter = new RateLimiter ();
             limiter.UpdateChunks (oneMegabyte, oneMegabyte);
 
-            await NetworkIO.SendAsync (Incoming, new ByteBuffer (oneMegabyte), 0, oneMegabyte, limiter, null, null);
+            using var releaser = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (oneMegabyte, out var buffer);
+            await NetworkIO.SendAsync (Incoming, buffer, limiter, null, null);
 
             var expectedChunks = (int) Math.Ceiling (oneMegabyte / (double) NetworkIO.ChunkLength);
             Assert.AreEqual (expectedChunks, Incoming.Sends.Count, "#1");
@@ -242,7 +252,8 @@ namespace MonoTorrent.Client
             var oneMegabyte = 1 * 1024 * 1024;
             var limiter = new RateLimiterGroup ();
 
-            await NetworkIO.SendAsync (Incoming, new ByteBuffer (oneMegabyte), 0, oneMegabyte, limiter, null, null);
+            using var releaser = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (oneMegabyte, out var buffer);
+            await NetworkIO.SendAsync (Incoming, buffer, limiter, null, null);
 
             Assert.AreEqual (1, Incoming.Sends.Count, "#1");
         }
@@ -252,29 +263,29 @@ namespace MonoTorrent.Client
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
-            var data = new ByteBuffer (16384);
-            new Random ().NextBytes (data.Data);
-            var task = NetworkIO.SendAsync (Outgoing, data, 0, data.Data.Length, null, null, null);
+            using var r1 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (16384, out var sendBuffer);
+            using var r2 = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (16384, out var receiveBuffer);
+            new Random ().NextBytes (sendBuffer.Span);
+            var task = NetworkIO.SendAsync (Outgoing, sendBuffer, null, null, null);
 
             int received = 0;
-            var buffer = new ByteBuffer (data.Data.Length);
-            while (received != buffer.Data.Length) {
-                int r = await Incoming.ReceiveAsync (buffer, received, buffer.Data.Length - received);
+            while (received != receiveBuffer.Length) {
+                int r = await Incoming.ReceiveAsync (receiveBuffer.Slice (received));
                 Assert.AreNotEqual (0, r, "#Received data");
                 received += r;
             }
             await task.WithTimeout (TimeSpan.FromSeconds (10));
-            Assert.IsTrue (Toolbox.ByteMatch (buffer.Data, data.Data), "Data matches");
+            Assert.IsTrue (MemoryExtensions.SequenceEqual (receiveBuffer.Span, sendBuffer.Span), "Data matches");
         }
 
         [Test]
         public async Task ZeroReceivedClosesConnection ()
         {
-            var data = new ByteBuffer (100);
+            using var releaser = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (100, out var buffer);
             Incoming.ManualBytesReceived = 0;
-            var receiveTask = NetworkIO.ReceiveAsync (Incoming, data, 0, data.Data.Length, null, null, null);
+            var receiveTask = NetworkIO.ReceiveAsync (Incoming, buffer, null, null, null);
 
-            var sendTask = NetworkIO.SendAsync (Outgoing, data, 0, data.Data.Length, null, null, null);
+            var sendTask = NetworkIO.SendAsync (Outgoing, buffer, null, null, null);
             Assert.ThrowsAsync<ConnectionClosedException> (async () => await receiveTask);
             await sendTask;
         }
@@ -282,11 +293,11 @@ namespace MonoTorrent.Client
         [Test]
         public void ZeroSentClosesConnection ()
         {
-            var data = new ByteBuffer (100);
+            using var releaser = ByteBufferPool.DefaultWithSocketAsyncArgs.Rent (100, out var buffer);
             Incoming.ManualBytesSent = 0;
-            var task = NetworkIO.SendAsync (Incoming, data, 0, data.Data.Length, null, null, null);
+            var task = NetworkIO.SendAsync (Incoming, buffer, null, null, null);
 
-            _ = NetworkIO.ReceiveAsync (Outgoing, data, 0, data.Data.Length, null, null, null);
+            _ = NetworkIO.ReceiveAsync (Outgoing, buffer, null, null, null);
             Assert.ThrowsAsync<ConnectionClosedException> (async () => await task);
         }
     }

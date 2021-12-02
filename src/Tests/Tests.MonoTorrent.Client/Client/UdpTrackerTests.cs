@@ -115,7 +115,7 @@ namespace MonoTorrent.Trackers
         public void AnnounceMessageTest ()
         {
             AnnounceMessage m = new AnnounceMessage (0, 12345, announceparams);
-            AnnounceMessage d = (AnnounceMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Request);
+            AnnounceMessage d = (AnnounceMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Request);
             Check (m, MessageType.Request);
 
             Assert.AreEqual (1, m.Action);
@@ -127,9 +127,9 @@ namespace MonoTorrent.Trackers
         [Test]
         public void AnnounceResponseTest ()
         {
-            var peers = peerEndpoints.Select (t => new PeerInfo (new Uri ($"ipv4://{t.Address}:{t.Port}"), Array.Empty<byte> ())).ToList ();
+            var peers = peerEndpoints.Select (t => new PeerInfo (new Uri ($"ipv4://{t.Address}:{t.Port}"), ReadOnlyMemory<byte>.Empty)).ToList ();
             AnnounceResponseMessage m = new AnnounceResponseMessage (12345, TimeSpan.FromSeconds (10), 43, 65, peers);
-            AnnounceResponseMessage d = (AnnounceResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Response);
+            AnnounceResponseMessage d = (AnnounceResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Response);
             Check (m, MessageType.Response);
 
             Assert.AreEqual (1, m.Action);
@@ -142,7 +142,7 @@ namespace MonoTorrent.Trackers
         public void ConnectMessageTest ()
         {
             ConnectMessage m = new ConnectMessage ();
-            ConnectMessage d = (ConnectMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Request);
+            ConnectMessage d = (ConnectMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Request);
             Check (m, MessageType.Request);
 
             Assert.AreEqual (0, m.Action, "#0");
@@ -156,7 +156,7 @@ namespace MonoTorrent.Trackers
         public void ConnectResponseTest ()
         {
             ConnectResponseMessage m = new ConnectResponseMessage (5371, 12345);
-            ConnectResponseMessage d = (ConnectResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Response);
+            ConnectResponseMessage d = (ConnectResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Response);
             Check (m, MessageType.Response);
 
             Assert.AreEqual (0, m.Action, "#0");
@@ -185,7 +185,7 @@ namespace MonoTorrent.Trackers
             hashes.Add (hash3);
 
             ScrapeMessage m = new ScrapeMessage (12345, 123, hashes);
-            ScrapeMessage d = (ScrapeMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Request);
+            ScrapeMessage d = (ScrapeMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Request);
             Check (m, MessageType.Request);
 
             Assert.AreEqual (2, m.Action);
@@ -203,7 +203,7 @@ namespace MonoTorrent.Trackers
             };
 
             ScrapeResponseMessage m = new ScrapeResponseMessage (12345, details);
-            ScrapeResponseMessage d = (ScrapeResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), 0, m.ByteLength, MessageType.Response);
+            ScrapeResponseMessage d = (ScrapeResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Response);
             Check (m, MessageType.Response);
 
             Assert.AreEqual (2, m.Action);
@@ -216,7 +216,7 @@ namespace MonoTorrent.Trackers
         {
             byte[] e = message.Encode ();
             Assert.AreEqual (e.Length, message.ByteLength, "#1");
-            Assert.IsTrue (Toolbox.ByteMatch (e, UdpTrackerMessage.DecodeMessage (e, 0, e.Length, type).Encode ()), "#2");
+            Assert.IsTrue (Toolbox.ByteMatch (e, UdpTrackerMessage.DecodeMessage (e, type).Encode ()), "#2");
         }
 
         [Test]

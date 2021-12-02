@@ -1,11 +1,10 @@
-//
-// NullEncryption.cs
+﻿//
+// ByteBufferPool.ArraySegmentReleaser.cs
 //
 // Authors:
-//   Yiduo Wang planetbeing@gmail.com
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2007 Yiduo Wang
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,48 +28,38 @@
 
 
 using System;
+using System.Collections.Generic;
 
-namespace MonoTorrent.Connections.Peer.Encryption
+namespace MonoTorrent
 {
-    /// <summary>
-    /// Plaintext "encryption"
-    /// </summary>
-    class PlainTextEncryption : IEncryption
+    public partial class MemoryPool
     {
-        public static PlainTextEncryption Instance = new PlainTextEncryption ();
-
-        PlainTextEncryption ()
+        public readonly struct ArraySegmentReleaser : IDisposable
         {
-        }
+            readonly int counter;
+            readonly ByteBuffer Buffer;
+            readonly List<ByteBuffer> Pool;
 
-        public void Decrypt (byte[] buffer)
-        {
-            // Nothing
-        }
+            internal ArraySegmentReleaser (List<ByteBuffer> pool, ByteBuffer buffer)
+            {
+                Pool = pool;
+                Buffer = buffer;
+                counter = Buffer.Counter;
+            }
 
-        public void Decrypt (byte[] buffer, int offset, int count)
-        {
-            // Nothing
-        }
+            public void Dispose ()
+            {
+                if (Buffer == null)
+                    return;
 
-        public void Decrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
-        {
-            Encrypt (src, srcOffset, dest, destOffset, count);
-        }
+                lock (Pool) {
+                    if (counter != Buffer.Counter)
+                        throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
 
-        public void Encrypt (byte[] buffer)
-        {
-            // Nothing
-        }
-
-        public void Encrypt (byte[] buffer, int offset, int count)
-        {
-            // Nothing
-        }
-
-        public void Encrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
-        {
-            Buffer.BlockCopy (src, srcOffset, dest, destOffset, count);
+                    Buffer.Counter++;
+                    Pool.Add (Buffer);
+                }
+            }
         }
     }
 }

@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Messages.Peer.Libtorrent
@@ -72,21 +74,21 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         public override int ByteLength => 4 + 1 + 1 + messageDict.LengthInBytes ();
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            messageDict = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
+            messageDict = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, offset, ByteLength - 4);
-            written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, ExtensionId);
-            written += messageDict.Encode (buffer, written);
+            Write (ref buffer, ByteLength - 4);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, ExtensionId);
+            Write (ref buffer, messageDict);
 
-            return written - offset;
+            return written - buffer.Length;
         }
     }
 }

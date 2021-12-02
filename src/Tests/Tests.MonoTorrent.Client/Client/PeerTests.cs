@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         {
             byte[] bytes = new byte[peers.Count * 6];
             for (int i = 0; i < peers.Count; i++)
-                peers[i].CompactPeer (bytes, i * 6);
+                peers[i].CompactPeer (bytes.AsSpan (i * 6, 6));
             VerifyDecodedPeers (Peer.Decode (bytes));
         }
 

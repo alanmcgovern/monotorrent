@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 namespace MonoTorrent.Messages.Peer.FastPeer
 {
     public class HaveNoneMessage : PeerMessage, IFastPeerMessage
@@ -36,17 +38,17 @@ namespace MonoTorrent.Messages.Peer.FastPeer
 
         public override int ByteLength => messageLength + 4;
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, messageLength);
-            written += Write (buffer, written, MessageId);
+            Write (ref buffer, messageLength);
+            Write (ref buffer, MessageId);
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
         }
 

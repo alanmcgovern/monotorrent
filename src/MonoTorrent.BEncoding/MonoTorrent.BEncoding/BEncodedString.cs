@@ -28,7 +28,7 @@
 
 
 using System;
-using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 
@@ -37,57 +37,66 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded string
     /// </summary>
-    public class BEncodedString : BEncodedValue, IComparable<BEncodedString>
+    public class BEncodedString : BEncodedValue, IComparable<BEncodedString>, IEquatable<BEncodedString>
     {
-        public static readonly BEncodedString Empty = new BEncodedString (Array.Empty<byte> ());
+        public static readonly BEncodedString Empty = new BEncodedString (ReadOnlyMemory<byte>.Empty);
 
         public static bool IsNullOrEmpty (BEncodedString value)
-        {
-            return (value?.TextBytes.Length ?? 0) == 0;
-        }
+            => value == null || value.Span.IsEmpty;
+
+        public static BEncodedString FromMemory (ReadOnlyMemory<byte> buffer)
+            => buffer.Length == 0 ? Empty : new BEncodedString (buffer);
 
         public static BEncodedString UrlDecode (string urlEncodedValue)
         {
             if (urlEncodedValue == null)
-                return null;
+                throw new ArgumentNullException (urlEncodedValue);
             if (urlEncodedValue.Length == 0)
                 return Empty;
-            return new BEncodedString (HttpUtility.UrlDecodeToBytes (urlEncodedValue, Encoding.UTF8));
+            return new BEncodedString (new ReadOnlyMemory<byte> (HttpUtility.UrlDecodeToBytes (urlEncodedValue, Encoding.UTF8)));
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        [Obsolete ("Use 'UrlDecode' instead'")]
-        public static BEncodedString FromUrlEncodedString (string urlEncodedValue)
-        => UrlDecode (urlEncodedValue);
+        public static implicit operator BEncodedString (string value)
+            => value == null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
+        public static implicit operator BEncodedString (char[] value)
+            => value == null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
+
+        public static implicit operator BEncodedString (byte[] value)
+            => value == null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
+
+        readonly ReadOnlyMemory<byte> TextBytes;
 
         /// <summary>
         /// The value of the BEncodedString interpreted as a UTF-8 string. If the underlying bytes
         /// cannot be represented in UTF-8 then the invalid byte sequence is silently discarded.
         /// </summary>
-        public string Text => Encoding.UTF8.GetString (TextBytes);
-
-        /// <summary>
-        /// The underlying byte[] associated with this BEncodedString
-        /// </summary>
-        public byte[] TextBytes { get; private set; }
-
-        #region Constructors
-        /// <summary>
-        /// Create a new BEncodedString using UTF8 encoding
-        /// </summary>
-        public BEncodedString ()
-            : this (Array.Empty<byte> ())
-        {
+#if NETSTANDARD2_0
+        public unsafe string Text {
+            get {
+                var span = Span;
+                if (span.Length == 0)
+                    return "";
+                fixed (byte* spanPtr = span)
+                    return Encoding.UTF8.GetString (spanPtr, span.Length);
+            }
         }
+#else
+        public string Text
+            => Encoding.UTF8.GetString (Span);
+#endif
+
+        public ReadOnlySpan<byte> Span => TextBytes.Span;
 
         /// <summary>
         /// Create a new BEncodedString using UTF8 encoding
         /// </summary>
         /// <param name="value"></param>
         public BEncodedString (char[] value)
-            : this (Encoding.UTF8.GetBytes (value))
         {
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+            TextBytes =  value.Length == 0 ? ReadOnlyMemory<byte>.Empty : new ReadOnlyMemory<byte> (Encoding.UTF8.GetBytes (value));
         }
 
         /// <summary>
@@ -95,10 +104,11 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="value">Initial value for the string</param>
         public BEncodedString (string value)
-            : this (Encoding.UTF8.GetBytes (value))
         {
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+            TextBytes = value.Length == 0 ? ReadOnlyMemory<byte>.Empty : new ReadOnlyMemory<byte> (Encoding.UTF8.GetBytes (value));
         }
-
 
         /// <summary>
         /// Create a new BEncodedString using UTF8 encoding
@@ -106,74 +116,55 @@ namespace MonoTorrent.BEncoding
         /// <param name="value"></param>
         public BEncodedString (byte[] value)
         {
-            TextBytes = value;
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+            TextBytes = value.Length == 0 ? ReadOnlyMemory<byte>.Empty : new ReadOnlyMemory<byte> ((byte[]) value.Clone ());
         }
 
-        public static implicit operator BEncodedString (string value)
-        {
-            if (value == null)
-                return null;
-            if (value.Length == 0)
-                return Empty;
-            return new BEncodedString (value);
-        }
+        BEncodedString (ReadOnlyMemory<byte> value)
+            => TextBytes = value;
 
-        public static implicit operator BEncodedString (char[] value)
-        {
-            return value == null ? null : new BEncodedString (value);
-        }
-
-        public static implicit operator BEncodedString (byte[] value)
-        {
-            return value == null ? null : new BEncodedString (value);
-        }
-
-        #endregion
-
-
-        #region Encode/Decode Methods
-
+        /// <summary>
+        /// Returns a readonly reference to the underlying data.
+        /// </summary>
+        /// <returns></returns>
+        public ReadOnlyMemory<byte> AsMemory ()
+            => TextBytes;
 
         /// <summary>
         /// Encodes the BEncodedString to a byte[] using the supplied Encoding
         /// </summary>
         /// <param name="buffer">The buffer to encode the string to</param>
-        /// <param name="offset">The offset at which to save the data to</param>
         /// <returns>The number of bytes encoded</returns>
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
-            written += WriteLengthAsAscii (buffer, written, TextBytes.Length);
+            var written = WriteLengthAsAscii (buffer, TextBytes.Length);
             buffer[written++] = (byte) ':';
-            Buffer.BlockCopy (TextBytes, 0, buffer, written, TextBytes.Length);
-            return written + TextBytes.Length - offset;
+            Span.CopyTo (buffer.Slice (written));
+            return written + Span.Length;
         }
 
-        int WriteLengthAsAscii (byte[] buffer, int offset, int asciiLength)
+#if NETSTANDARD2_0
+        static int WriteLengthAsAscii (Span<byte> buffer, int asciiLength)
         {
-            if (asciiLength > 100000) {
-                var data = Encoding.ASCII.GetBytes (TextBytes.Length.ToString ());
-                Buffer.BlockCopy (data, 0, buffer, offset, data.Length);
-                return data.Length;
-            }
-            bool hasWritten = false;
-            int written = offset;
-            for (int remainder = 100000; remainder > 1; remainder /= 10) {
-                if (asciiLength < remainder && !hasWritten)
-                    continue;
-                byte resultChar = (byte) ('0' + asciiLength / remainder);
-                buffer[written++] = resultChar;
-                asciiLength %= remainder;
-                hasWritten = true;
-            }
-            buffer[written++] = (byte) ('0' + asciiLength);
-            return written - offset;
+            var lengthString = asciiLength.ToString ();
+            for (int i = 0; i < lengthString.Length; i++)
+                buffer[i] = (byte) lengthString[i];
+            return lengthString.Length;
         }
+#else
+        static int WriteLengthAsAscii (Span<byte> buffer, int asciiLength)
+        {
+            Span<char> asciiChars = stackalloc char[16];
+            if (!asciiLength.TryFormat (asciiChars, out int written))
+                throw new InvalidOperationException ("Could not write the length of the BEncodedString");
 
-        #endregion
+            for (int i = 0; i < written; i++)
+                buffer[i] = (byte) asciiChars[i];
 
-
-        #region Helper Methods
+            return written;
+        }
+#endif
 
         public override int LengthInBytes ()
         {
@@ -189,82 +180,39 @@ namespace MonoTorrent.BEncoding
         }
 
         public int CompareTo (object other)
-        {
-            return CompareTo (other as BEncodedString);
-        }
-
+            => CompareTo (other as BEncodedString);
 
         public int CompareTo (BEncodedString other)
-        {
-            if (other == null)
-                return 1;
-
-            int difference;
-            int length = TextBytes.Length > other.TextBytes.Length ? other.TextBytes.Length : TextBytes.Length;
-
-            for (int i = 0; i < length; i++)
-                if ((difference = TextBytes[i].CompareTo (other.TextBytes[i])) != 0)
-                    return difference;
-
-            if (TextBytes.Length == other.TextBytes.Length)
-                return 0;
-
-            return TextBytes.Length > other.TextBytes.Length ? 1 : -1;
-        }
-
-        #endregion
-
-
-        #region Overridden Methods
+            => other == null ? 1 : MemoryExtensions.SequenceCompareTo (Span, other.Span);
 
         public override bool Equals (object obj)
         {
-            if (obj == null)
-                return false;
-
-            BEncodedString other;
+            if (obj is BEncodedString other)
+                return Equals (other);
             if (obj is string str)
-                other = new BEncodedString (str);
-            else if (obj is BEncodedString bString)
-                other = bString;
-            else
-                return false;
-
-            var first = TextBytes;
-            var second = other.TextBytes;
-            if (first.Length != second.Length)
-                return false;
-
-            for (int i = 0; i < first.Length; i++)
-                if (first[i] != second[i])
-                    return false;
-            return true;
+                return Equals (new BEncodedString (str));
+            return false;
         }
+
+        public bool Equals (BEncodedString other)
+            => other != null &&  MemoryExtensions.SequenceEqual (Span, other.Span);
 
         public override int GetHashCode ()
         {
-            int hash = 0;
-            for (int i = 0; i < TextBytes.Length; i++)
-                hash += TextBytes[i];
-
-            return hash;
+            if (Span.Length >= 4)
+                return MemoryMarshal.Read<int> (Span);
+            if (Span.Length > 0)
+                return Span[0];
+            return 0;
         }
 
         public string UrlEncode ()
-        {
-            return HttpUtility.UrlEncode (TextBytes);
-        }
+            => HttpUtility.UrlEncode (Span.ToArray ());
 
         public string ToHex ()
-        {
-            return BitConverter.ToString (TextBytes);
-        }
+            => BitConverter.ToString (Span.ToArray ());
 
         public override string ToString ()
-        {
-            return Encoding.UTF8.GetString (TextBytes);
-        }
-
-        #endregion
+            => Text;
     }
 }

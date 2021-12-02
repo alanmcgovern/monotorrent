@@ -77,9 +77,9 @@ namespace MonoTorrent.Connections.Peer.Encryption
             // trying to decide what encryption to use
 
             var message = new HandshakeMessage ();
-            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out ByteBuffer buffer)) {
-                await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
-                message.Decode (buffer.Data, 0, HandshakeMessage.HandshakeLength);
+            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out SocketMemory buffer)) {
+                await NetworkIO.ReceiveAsync (connection, buffer, null, null, null).ConfigureAwait (false);
+                message.Decode (buffer.AsSpan ());
 
                 if (message.ProtocolString == Constants.ProtocolStringV100) {
                     if (supportsPlainText)
@@ -90,7 +90,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                     await MainLoop.SwitchToThreadpool ();
 
                     var encSocket = new PeerBEncryption (factories, sKeys, preferredEncryption);
-                    await encSocket.HandshakeAsync (connection, buffer.Data, 0, HandshakeMessage.HandshakeLength).ConfigureAwait (false);
+                    await encSocket.HandshakeAsync (connection, buffer.Memory).ConfigureAwait (false);
                     if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                         throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");
                     if (encSocket.Decryptor is RC4 && !supportsRC4Full)
@@ -99,13 +99,13 @@ namespace MonoTorrent.Connections.Peer.Encryption
                     // As the connection was encrypted, the data we got from the initial Receive call will have
                     // been consumed during the crypto handshake process. Now that the encrypted handshake has
                     // been established, we should ensure we read the data again.
-                    byte[] data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : null;
-                    if (data == null) {
-                        await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
-                        data = buffer.Data;
-                        encSocket.Decryptor.Decrypt (data, 0, HandshakeMessage.HandshakeLength);
+                    Memory<byte> data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : default;
+                    if (data.IsEmpty) {
+                        await NetworkIO.ReceiveAsync (connection, buffer, null, null, null).ConfigureAwait (false);
+                        encSocket.Decryptor.Decrypt (buffer.AsSpan ());
+                        data = buffer.Memory;
                     }
-                    message.Decode (data, 0, HandshakeMessage.HandshakeLength);
+                    message.Decode (data.Span);
                     if (message.ProtocolString == Constants.ProtocolStringV100)
                         return new EncryptorResult (encSocket.Decryptor, encSocket.Encryptor, message);
                 }
@@ -145,9 +145,9 @@ namespace MonoTorrent.Connections.Peer.Encryption
             } else if (supportsPlainText) {
                 if (handshake != null) {
                     int length = handshake.ByteLength;
-                    using (NetworkIO.BufferPool.Rent (length, out ByteBuffer buffer)) {
-                        handshake.Encode (buffer.Data, 0);
-                        await NetworkIO.SendAsync (connection, buffer, 0, length, null, null, null).ConfigureAwait (false);
+                    using (NetworkIO.BufferPool.Rent (length, out SocketMemory buffer)) {
+                        handshake.Encode (buffer.Span);
+                        await NetworkIO.SendAsync (connection, buffer, null, null, null).ConfigureAwait (false);
                     }
                 }
                 return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, null);
