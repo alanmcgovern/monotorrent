@@ -95,7 +95,7 @@ namespace MonoTorrent.Dht
             => CompareTo (obj as NodeId);
 
         public int CompareTo (NodeId other)
-            => other is null ? 1 : MemoryExtensions.SequenceCompareTo (Span, other.Span);
+            => other is null ? 1 : Span.SequenceCompareTo (other.Span);
 
         public override bool Equals (object obj)
             => Equals (obj as NodeId);
@@ -161,7 +161,7 @@ namespace MonoTorrent.Dht
                 return second is null;
             if (second is null)
                 return false;
-            return MemoryExtensions.SequenceEqual (first.Span, second.Span);
+            return first.Span.SequenceEqual (second.Span);
         }
 
         public static bool operator != (NodeId first, NodeId second)

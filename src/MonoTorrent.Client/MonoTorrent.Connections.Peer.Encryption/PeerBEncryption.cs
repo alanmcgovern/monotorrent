@@ -86,7 +86,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             // Decrypt everything after the infohash.
             DoDecrypt (verifyBytes.Slice (infoHash.Length).Span);
 
-            if (!MemoryExtensions.SequenceEqual (verificationConstant.Span, VerificationConstant))
+            if (!verificationConstant.Span.SequenceEqual (VerificationConstant))
                 throw new EncryptionException ("Verification constant was invalid");
 
             // We need to select the crypto *after* we send our response, otherwise the wrong

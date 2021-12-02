@@ -69,7 +69,7 @@ namespace MyBenchmarks
         public void OldCompare () => Value1.Equals (Value2);
 
         [Benchmark]
-        public void NewCompare () => MemoryExtensions.SequenceEqual (Value1.Span, Value2.Span);
+        public void NewCompare () => Value1.Span.SequenceEqual (Value2.Span);
 
     }
 

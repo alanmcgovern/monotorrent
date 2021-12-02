@@ -118,7 +118,7 @@ namespace MonoTorrent
             if (right is null)
                 return false;
 
-            return MemoryExtensions.SequenceEqual (left.Hash.Span, right.Hash.Span);
+            return left.Hash.Span.SequenceEqual (right.Hash.Span);
         }
 
         public static bool operator != (InfoHash left, InfoHash right)

@@ -44,7 +44,7 @@ namespace MonoTorrent.BEncoding
             var value = new BEncodedString (data);
             var encoded = value.UrlEncode ();
             var decoded = BEncodedString.UrlDecode (encoded);
-            MemoryExtensions.SequenceEqual (data.AsSpan (), decoded.Span);
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (decoded.Span));
         }
 
         [Test]
@@ -65,7 +65,7 @@ namespace MonoTorrent.BEncoding
             Span<byte> data = Encoding.UTF8.GetBytes ("22:this is my test string");
 
             BEncodedString benString = new BEncodedString ("this is my test string");
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data, benString.Encode ()));
+            Assert.IsTrue (data.SequenceEqual (benString.Encode ()));
         }
 
         [Test]
@@ -74,7 +74,7 @@ namespace MonoTorrent.BEncoding
             Span<byte> data = Encoding.UTF8.GetBytes ("0:");
 
             BEncodedString benString = new BEncodedString ("");
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data, benString.Encode ()));
+            Assert.IsTrue (data.SequenceEqual (benString.Encode ()));
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace MonoTorrent.BEncoding
             BEncodedString benString = new BEncodedString ("this is my test string");
             byte[] result = new byte[benString.LengthInBytes ()];
             benString.Encode (result.AsSpan ());
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data, result));
+            Assert.IsTrue (data.SequenceEqual (result));
         }
 
         [Test]

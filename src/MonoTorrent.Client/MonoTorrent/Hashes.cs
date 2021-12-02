@@ -88,7 +88,7 @@ namespace MonoTorrent
             if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
 
-            return MemoryExtensions.SequenceEqual (hash, hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
+            return hash.AsSpan ().SequenceEqual (hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
         }
 
         /// <summary>

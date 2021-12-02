@@ -202,7 +202,7 @@ namespace MonoTorrent.Client
 
             await task.WithTimeout (TimeSpan.FromSeconds (10));
             for (int i = 0; i < buffer.Length; i++) {
-                if (!MemoryExtensions.SequenceEqual (data.Span, buffer.Span))
+                if (!data.Span.SequenceEqual (buffer.Span))
                     Assert.Fail ($"Buffers differ at position {i}");
             }
         }
@@ -275,7 +275,7 @@ namespace MonoTorrent.Client
                 received += r;
             }
             await task.WithTimeout (TimeSpan.FromSeconds (10));
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (receiveBuffer.Span, sendBuffer.Span), "Data matches");
+            Assert.IsTrue (receiveBuffer.Span.SequenceEqual (sendBuffer.Span), "Data matches");
         }
 
         [Test]

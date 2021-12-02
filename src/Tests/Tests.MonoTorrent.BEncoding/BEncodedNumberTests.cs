@@ -57,7 +57,7 @@ namespace MonoTorrent.BEncoding
         {
             byte[] data = Encoding.UTF8.GetBytes ("i12345e");
             BEncodedNumber number = 12345;
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), number.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (number.Encode ()));
         }
 
         [Test]
@@ -66,7 +66,7 @@ namespace MonoTorrent.BEncoding
             byte[] data = Encoding.UTF8.GetBytes ("i0e");
             BEncodedNumber number = 0;
             Assert.AreEqual (3, number.LengthInBytes ());
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), number.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (number.Encode ()));
         }
 
         [Test]
@@ -75,7 +75,7 @@ namespace MonoTorrent.BEncoding
             byte[] data = Encoding.UTF8.GetBytes ("i1230e");
             BEncodedNumber number = 1230;
             Assert.AreEqual (6, number.LengthInBytes ());
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), number.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (number.Encode ()));
         }
 
         [Test]
@@ -84,7 +84,7 @@ namespace MonoTorrent.BEncoding
             byte[] data = Encoding.UTF8.GetBytes ("i-1230e");
             BEncodedNumber number = -1230;
             Assert.AreEqual (7, number.LengthInBytes ());
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), number.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (number.Encode ()));
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace MonoTorrent.BEncoding
             byte[] data = Encoding.UTF8.GetBytes ("i-123e");
             BEncodedNumber number = -123;
             Assert.AreEqual (6, number.LengthInBytes ());
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), number.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (number.Encode ()));
         }
 
         [Test]
@@ -120,7 +120,7 @@ namespace MonoTorrent.BEncoding
             BEncodedNumber number = 12345;
             byte[] result = new byte[number.LengthInBytes ()];
             number.Encode (result);
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), result));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (result));
         }
 
         [Test]

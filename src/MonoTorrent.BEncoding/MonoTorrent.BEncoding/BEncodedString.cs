@@ -183,7 +183,7 @@ namespace MonoTorrent.BEncoding
             => CompareTo (other as BEncodedString);
 
         public int CompareTo (BEncodedString other)
-            => other == null ? 1 : MemoryExtensions.SequenceCompareTo (Span, other.Span);
+            => other == null ? 1 : Span.SequenceCompareTo (other.Span);
 
         public override bool Equals (object obj)
         {
@@ -195,7 +195,7 @@ namespace MonoTorrent.BEncoding
         }
 
         public bool Equals (BEncodedString other)
-            => other != null &&  MemoryExtensions.SequenceEqual (Span, other.Span);
+            => other != null && Span.SequenceEqual (other.Span);
 
         public override int GetHashCode ()
         {

@@ -58,7 +58,7 @@ namespace MonoTorrent.Dht
             byte[] buffer = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 1, 21, 131, 3, 1, 255 };
             Node n = Node.FromCompactNode (buffer.AsSpan ());
 
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (buffer.AsSpan (0, 20), n.Id.Span), "#1");
+            Assert.IsTrue (buffer.AsSpan (0, 20).SequenceEqual (n.Id.Span), "#1");
             Assert.AreEqual (IPAddress.Parse ("1.21.131.3"), n.EndPoint.Address, "#2");
             Assert.AreEqual (511, n.EndPoint.Port, "#3");
         }
@@ -68,7 +68,7 @@ namespace MonoTorrent.Dht
         {
             Node n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("1.21.121.3"), 511));
             BEncodedString port = n.CompactNode ();
-            Assert.IsTrue (MemoryExtensions.SequenceEqual(n.Id.Span, port.Span.Slice (0, 20)), "#A");
+            Assert.IsTrue (n.Id.Span.SequenceEqual (port.Span.Slice (0, 20)), "#A");
             Assert.AreEqual (1, port.Span[20], "#1");
             Assert.AreEqual (21, port.Span[21], "#1");
             Assert.AreEqual (121, port.Span[22], "#1");

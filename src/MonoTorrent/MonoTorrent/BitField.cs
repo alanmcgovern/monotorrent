@@ -199,7 +199,7 @@ namespace MonoTorrent
         public override bool Equals (object obj)
             => obj is BitField other
             && TrueCount == other.TrueCount
-            && MemoryExtensions.SequenceEqual (Data.AsSpan (), other.Data);
+            && Data.AsSpan ().SequenceEqual (other.Data);
 
         /// <summary>
         /// Returns the index of the first <see langword="true" /> bit in the bitfield.

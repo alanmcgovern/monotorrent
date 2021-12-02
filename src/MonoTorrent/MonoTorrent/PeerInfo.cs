@@ -50,7 +50,7 @@ namespace MonoTorrent
         public bool Equals (PeerInfo other)
             => other != null
             && Uri.Equals (other.Uri)
-            && MemoryExtensions.SequenceEqual (PeerId.Span, other.PeerId.Span);
+            && PeerId.Span.SequenceEqual (other.PeerId.Span);
 
         public override int GetHashCode ()
             => Uri.GetHashCode ();

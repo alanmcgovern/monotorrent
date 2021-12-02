@@ -65,7 +65,7 @@ namespace MonoTorrent.BEncoding
                 new BEncodedString ("tested")
             };
 
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), list.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (list.Encode ()));
         }
 
         [Test]
@@ -79,7 +79,7 @@ namespace MonoTorrent.BEncoding
             };
             byte[] result = new byte[list.LengthInBytes ()];
             list.Encode (result);
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), result));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (result));
         }
 
         [Test]

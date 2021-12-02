@@ -64,7 +64,7 @@ namespace MonoTorrent.BEncoding
             };
             dict.Add ("spam", list);
             Assert.AreEqual (Encoding.UTF8.GetString (data), Encoding.UTF8.GetString (dict.Encode ()));
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), dict.Encode ()));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (dict.Encode ()));
         }
 
         [Test]
@@ -79,7 +79,7 @@ namespace MonoTorrent.BEncoding
             dict.Add ("spam", list);
             byte[] result = new byte[dict.LengthInBytes ()];
             dict.Encode (result);
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (data.AsSpan (), result));
+            Assert.IsTrue (data.AsSpan ().SequenceEqual (result));
         }
 
         [Test]

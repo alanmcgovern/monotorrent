@@ -101,8 +101,8 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
             byte[] buffer = message.Encode ();
             PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null);
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (peer.AsSpan (), m.Added.Span), "#1");
-            Assert.IsTrue (MemoryExtensions.SequenceEqual (supports.AsSpan (), m.AddedDotF.Span), "#2");
+            Assert.IsTrue (peer.AsSpan ().SequenceEqual (m.Added.Span), "#1");
+            Assert.IsTrue (supports.AsSpan ().SequenceEqual (m.AddedDotF.Span), "#2");
         }
 
         [Test]
