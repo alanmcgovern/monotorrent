@@ -62,8 +62,8 @@ namespace MonoTorrent.Client
         RequestBundle requests;
         readonly int numberOfPieces = 50;
 
-        [OneTimeSetUp]
-        public void FixtureSetup ()
+        [SetUp]
+        public void Setup ()
         {
             for (int i = 0; i < 10; i++) {
                 try {
@@ -77,17 +77,7 @@ namespace MonoTorrent.Client
                 }
             }
             listener.BeginGetContext (GotContext, listener);
-        }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown ()
-        {
-            listener.Close ();
-        }
-
-        [SetUp]
-        public void Setup ()
-        {
             requestedUrl.Clear ();
             partialData = false;
 
@@ -109,6 +99,7 @@ namespace MonoTorrent.Client
         [TearDown]
         public void TearDown ()
         {
+            listener.Close ();
             rig.Dispose ();
         }
 
