@@ -405,17 +405,18 @@ namespace MonoTorrent
         public byte[] ToByteArray ()
         {
             byte[] data = new byte[LengthInBytes];
-            ToByteArray (data, 0);
+            ToBytes (data);
             return data;
         }
 
-        public void ToByteArray (byte[] buffer, int offset)
+        public void ToBytes (Span<byte> buffer)
         {
             if (buffer == null)
                 throw new ArgumentNullException (nameof (buffer));
 
             ZeroUnusedBits ();
             int end = Length / 32;
+            int offset = 0;
             for (int i = 0; i < end; i++) {
                 buffer[offset++] = (byte) (Data[i] >> 24);
                 buffer[offset++] = (byte) (Data[i] >> 16);

@@ -86,8 +86,8 @@ namespace MonoTorrent.Messages.Peer
 
             Write (ref buffer, BitField.LengthInBytes + 1);
             Write (ref buffer, MessageId);
-            BitField.ToByteArray ().CopyTo (buffer);
-            buffer = buffer.Slice(BitField.LengthInBytes);
+            BitField.ToBytes (buffer);
+            buffer = buffer.Slice (BitField.LengthInBytes);
 
             return written - buffer.Length;
         }

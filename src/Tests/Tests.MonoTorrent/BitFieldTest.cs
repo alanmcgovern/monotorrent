@@ -192,12 +192,6 @@ namespace MonoTorrent
         }
 
         [Test]
-        public void ToByteArray_Null ()
-        {
-            Assert.Throws<ArgumentNullException> (() => new BitField (1).ToByteArray (null, 0));
-        }
-
-        [Test]
         public void Clone ()
         {
             BitField clone = new BitField (bf);
