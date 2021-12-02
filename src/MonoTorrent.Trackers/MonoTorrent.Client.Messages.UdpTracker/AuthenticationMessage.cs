@@ -36,7 +36,7 @@ namespace MonoTorrent.Messages.UdpTracker
     {
         byte usernameLength;
         string username;
-        byte[] password;
+        ReadOnlyMemory<byte> password;
 
         public override int ByteLength => 4 + usernameLength + 8;
 
@@ -53,7 +53,7 @@ namespace MonoTorrent.Messages.UdpTracker
 
             Write (ref buffer, usernameLength);
             WriteAscii (ref buffer, username);
-            Write (ref buffer, password);
+            Write (ref buffer, password.Span);
 
             return written - buffer.Length;
         }

@@ -92,7 +92,7 @@ namespace MonoTorrent.Connections.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
-                var infohashes = new List<byte[]> { parameters.InfoHash.Span.ToArray () };
+                var infohashes = new List<InfoHash> { parameters.InfoHash };
                 var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
                 (var rawResponse, var errorString) = await SendAndReceiveAsync (message);
 

@@ -130,7 +130,7 @@ namespace MonoTorrent.Messages.Peer
             supports.CopyTo (buffer);
             buffer = buffer.Slice (supports.Length);
 
-            Write (ref buffer, InfoHash);
+            Write (ref buffer, InfoHash.Span);
             Write (ref buffer, PeerId.Span);
 
             return written - buffer.Length;
@@ -147,7 +147,7 @@ namespace MonoTorrent.Messages.Peer
             ProtocolString = ReadString (ref buffer, ProtocolStringLength);
             CheckForSupports (ref buffer);
             InfoHash = InfoHash.FromMemory (ReadBytes (ref buffer, 20));
-            PeerId = ReadBytes (ref buffer, 20);
+            PeerId = BEncodedString.FromMemory (ReadBytes (ref buffer, 20));
         }
 
         void CheckForSupports (ref ReadOnlySpan<byte> buffer)

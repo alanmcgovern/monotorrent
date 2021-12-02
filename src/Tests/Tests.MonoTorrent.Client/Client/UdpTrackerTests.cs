@@ -172,7 +172,7 @@ namespace MonoTorrent.Trackers
         [Test]
         public void ScrapeMessageTest ()
         {
-            List<byte[]> hashes = new List<byte[]> ();
+            List<InfoHash> hashes = new List<InfoHash> ();
             Random r = new Random ();
             byte[] hash1 = new byte[20];
             byte[] hash2 = new byte[20];
@@ -180,9 +180,9 @@ namespace MonoTorrent.Trackers
             r.NextBytes (hash1);
             r.NextBytes (hash2);
             r.NextBytes (hash3);
-            hashes.Add (hash1);
-            hashes.Add (hash2);
-            hashes.Add (hash3);
+            hashes.Add (InfoHash.FromMemory (hash1));
+            hashes.Add (InfoHash.FromMemory (hash2));
+            hashes.Add (InfoHash.FromMemory (hash3));
 
             ScrapeMessage m = new ScrapeMessage (12345, 123, hashes);
             ScrapeMessage d = (ScrapeMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Request);

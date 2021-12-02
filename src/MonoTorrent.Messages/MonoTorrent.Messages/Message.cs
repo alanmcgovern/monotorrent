@@ -29,9 +29,7 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Net;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
 using MonoTorrent.BEncoding;
@@ -69,7 +67,7 @@ namespace MonoTorrent.Messages
             return result;
         }
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static byte[] ReadBytes (ref ReadOnlySpan<byte> buffer, int length)
+        public static ReadOnlyMemory<byte> ReadBytes (ref ReadOnlySpan<byte> buffer, int length)
         {
             var result = buffer.Slice (0, length).ToArray ();
             buffer = buffer.Slice (length);
@@ -137,12 +135,6 @@ namespace MonoTorrent.Messages
         }
 
 
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static void Write (ref Span<byte> buffer, InfoHash infoHash)
-        {
-            infoHash.Span.CopyTo (buffer);
-            buffer = buffer.Slice (infoHash.Span.Length);
-        }
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static void Write (ref Memory<byte> buffer, ReadOnlySpan<byte> data)
         {
@@ -234,156 +226,6 @@ namespace MonoTorrent.Messages
             var array = value.Encode ();
             array.AsSpan ().CopyTo (buffer);
             buffer = buffer.Slice (array.Length);
-        }
-
-
-        public static byte ReadByte (byte[] buffer, ref int offset)
-        {
-            byte b = buffer[offset];
-            offset++;
-            return b;
-        }
-
-        public static byte[] ReadBytes (byte[] buffer, int offset, int count)
-        {
-            return ReadBytes (buffer, ref offset, count);
-        }
-
-        public static byte[] ReadBytes (byte[] buffer, ref int offset, int count)
-        {
-            byte[] result = new byte[count];
-            Buffer.BlockCopy (buffer, offset, result, 0, count);
-            offset += count;
-            return result;
-        }
-
-        public static short ReadShort (byte[] buffer, int offset)
-        {
-            return ReadShort (buffer, ref offset);
-        }
-
-        public static short ReadShort (byte[] buffer, ref int offset)
-        {
-            short ret = IPAddress.NetworkToHostOrder (BitConverter.ToInt16 (buffer, offset));
-            offset += 2;
-            return ret;
-        }
-
-        public static string ReadString (byte[] buffer, int offset, int count)
-        {
-            return ReadString (buffer, ref offset, count);
-        }
-
-        public static string ReadString (byte[] buffer, ref int offset, int count)
-        {
-            string s = System.Text.Encoding.ASCII.GetString (buffer, offset, count);
-            offset += count;
-            return s;
-        }
-
-        public static int ReadInt (byte[] buffer, int offset)
-        {
-            return ReadInt (buffer, ref offset);
-        }
-
-        public static int ReadInt (byte[] buffer, ref int offset)
-        {
-            int ret = IPAddress.NetworkToHostOrder (BitConverter.ToInt32 (buffer, offset));
-            offset += 4;
-            return ret;
-        }
-
-        public static long ReadLong (byte[] buffer, int offset)
-        {
-            return ReadLong (buffer, ref offset);
-        }
-
-        public static long ReadLong (byte[] buffer, ref int offset)
-        {
-            long ret = IPAddress.NetworkToHostOrder (BitConverter.ToInt64 (buffer, offset));
-            offset += 8;
-            return ret;
-        }
-
-        public static int Write (byte[] buffer, int offset, byte value)
-        {
-            buffer[offset] = value;
-            return 1;
-        }
-
-        public static int Write (byte[] dest, int destOffset, byte[] src, int srcOffset, int count)
-        {
-            Buffer.BlockCopy (src, srcOffset, dest, destOffset, count);
-            return count;
-        }
-
-        public static int Write (byte[] buffer, int offset, ushort value)
-        {
-            buffer[offset + 0] = (byte) (value >> 8);
-            buffer[offset + 1] = (byte) value;
-            return 2;
-        }
-
-        public static int Write (byte[] buffer, int offset, short value)
-        {
-            buffer[offset + 0] = (byte) (value >> 8);
-            buffer[offset + 1] = (byte) value;
-            return 2;
-        }
-        public static int Write (byte[] buffer, int offset, int value)
-        {
-            buffer[offset + 0] = (byte) (value >> 24);
-            buffer[offset + 1] = (byte) (value >> 16);
-            buffer[offset + 2] = (byte) (value >> 8);
-            buffer[offset + 3] = (byte) value;
-            return 4;
-        }
-
-        public static int Write (byte[] buffer, int offset, uint value)
-        {
-            buffer[offset + 0] = (byte) (value >> 24);
-            buffer[offset + 1] = (byte) (value >> 16);
-            buffer[offset + 2] = (byte) (value >> 8);
-            buffer[offset + 3] = (byte) value;
-            return 4;
-        }
-
-        public static int Write (byte[] buffer, int offset, long value)
-        {
-            buffer[offset + 0] = (byte) (value >> 56);
-            buffer[offset + 1] = (byte) (value >> 48);
-            buffer[offset + 2] = (byte) (value >> 40);
-            buffer[offset + 3] = (byte) (value >> 32);
-            buffer[offset + 4] = (byte) (value >> 24);
-            buffer[offset + 5] = (byte) (value >> 16);
-            buffer[offset + 6] = (byte) (value >> 8);
-            buffer[offset + 7] = (byte) value;
-            return 8;
-        }
-
-        public static int Write (byte[] buffer, int offset, ulong value)
-        {
-            buffer[offset + 0] = (byte) (value >> 56);
-            buffer[offset + 1] = (byte) (value >> 48);
-            buffer[offset + 2] = (byte) (value >> 40);
-            buffer[offset + 3] = (byte) (value >> 32);
-            buffer[offset + 4] = (byte) (value >> 24);
-            buffer[offset + 5] = (byte) (value >> 16);
-            buffer[offset + 6] = (byte) (value >> 8);
-            buffer[offset + 7] = (byte) value;
-            return 8;
-        }
-
-        public static int Write (byte[] buffer, int offset, byte[] value)
-        {
-            return Write (buffer, offset, value, 0, value.Length);
-        }
-
-        public static int WriteAscii (byte[] buffer, int offset, string text)
-        {
-            for (int i = 0; i < text.Length; i++)
-                buffer[offset + i] = (byte) text[i];
-            return text.Length;
         }
     }
 }

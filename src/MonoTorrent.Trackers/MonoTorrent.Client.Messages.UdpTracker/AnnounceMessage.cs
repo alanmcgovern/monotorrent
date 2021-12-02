@@ -92,7 +92,7 @@ namespace MonoTorrent.Messages.UdpTracker
                 ThrowInvalidActionException ();
             TransactionId = ReadInt (ref buffer);
             InfoHash = InfoHash.FromMemory (ReadBytes (ref buffer, 20));
-            PeerId = ReadBytes (ref buffer, 20);
+            PeerId = BEncodedString.FromMemory (ReadBytes (ref buffer, 20));
             Downloaded = ReadLong (ref buffer);
             Left = ReadLong (ref buffer);
             Uploaded = ReadLong (ref buffer);
@@ -110,7 +110,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Write (ref buffer, ConnectionId);
             Write (ref buffer, Action);
             Write (ref buffer, TransactionId);
-            Write (ref buffer, InfoHash);
+            Write (ref buffer, InfoHash.Span);
             Write (ref buffer, PeerId.Span);
             Write (ref buffer, Downloaded);
             Write (ref buffer, Left);

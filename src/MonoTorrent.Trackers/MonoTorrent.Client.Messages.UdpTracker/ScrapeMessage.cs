@@ -36,15 +36,15 @@ namespace MonoTorrent.Messages.UdpTracker
     {
         public override int ByteLength => 8 + 4 + 4 + InfoHashes.Count * 20;
         long ConnectionId { get; set; }
-        public List<byte[]> InfoHashes { get; }
+        public List<InfoHash> InfoHashes { get; }
 
         public ScrapeMessage ()
-            : this (0, 0, new List<byte[]> ())
+            : this (0, 0, new List<InfoHash> ())
         {
 
         }
 
-        public ScrapeMessage (int transactionId, long connectionId, List<byte[]> infohashes)
+        public ScrapeMessage (int transactionId, long connectionId, List<InfoHash> infohashes)
             : base (2, transactionId)
         {
             ConnectionId = connectionId;
@@ -58,7 +58,7 @@ namespace MonoTorrent.Messages.UdpTracker
                 throw new MessageException ("Udp message decoded incorrectly");
             TransactionId = ReadInt (ref buffer);
             while (buffer.Length >= 20)
-                InfoHashes.Add (ReadBytes (ref buffer, 20));
+                InfoHashes.Add (InfoHash.FromMemory (ReadBytes (ref buffer, 20)));
         }
 
         public override int Encode (Span<byte> buffer)
@@ -69,7 +69,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Write (ref buffer, Action);
             Write (ref buffer, TransactionId);
             for (int i = 0; i < InfoHashes.Count; i++)
-                Write (ref buffer, InfoHashes[i]);
+                Write (ref buffer, InfoHashes[i].Span);
 
             return written - buffer.Length;
         }
