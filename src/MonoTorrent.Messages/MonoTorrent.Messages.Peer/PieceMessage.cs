@@ -33,7 +33,7 @@ namespace MonoTorrent.Messages.Peer
 {
     public class PieceMessage : PeerMessage
     {
-        internal static MemoryPool BufferPool = ByteBufferPool.Default;
+        internal static MemoryPool BufferPool = MemoryPool.Default;
 
         public static readonly byte MessageId = 7;
         const int messageLength = 9;

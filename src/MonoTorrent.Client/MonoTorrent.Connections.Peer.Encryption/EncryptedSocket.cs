@@ -127,6 +127,12 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
         #region Interface implementation
 
+        public void Dispose ()
+        {
+            hasher.Dispose ();
+            random.Dispose ();
+        }
+
         /// <summary>
         /// Begins the message stream encryption handshaking process
         /// </summary>
@@ -188,7 +194,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
         /// </summary>
         async ReusableTask ReceiveYAsync ()
         {
-            using (ByteBufferPool.Default.Rent (96, out Memory<byte> otherY))
+            using (MemoryPool.Default.Rent (96, out Memory<byte> otherY))
             using (NetworkIO.BufferPool.Rent (otherY.Length, out SocketMemory buffer)) {
 
                 await ReceiveMessageAsync (buffer).ConfigureAwait (false);

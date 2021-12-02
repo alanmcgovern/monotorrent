@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 {
     class NetworkIO
     {
-        internal static SocketMemoryPool BufferPool { get; } = ByteBufferPool.DefaultWithSocketAsyncArgs;
+        internal static SocketMemoryPool BufferPool { get; } = new SocketMemoryPool ();
 
         public struct QueuedIO
         {

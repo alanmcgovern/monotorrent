@@ -44,7 +44,7 @@ namespace System
     {
         public static async ReusableTask<int> ReadAsync (this Stream stream, Memory<byte> buffer)
         {
-            using (ByteBufferPool.Default.RentArraySegment (buffer.Length, out var segment)) {
+            using (MemoryPool.Default.RentArraySegment (buffer.Length, out var segment)) {
                 int result = await stream.ReadAsync (segment.Array, segment.Offset, buffer.Length);
                 segment.AsSpan (0, result).CopyTo (buffer.Span);
                 return result;
@@ -56,7 +56,7 @@ namespace System
     {
         public static void GetBytes (this RandomNumberGenerator random, Span<byte> buffer)
         {
-            using (MonoTorrent.ByteBufferPool.Default.RentArraySegment (buffer.Length, out ArraySegment<byte> segment)) {
+            using (MonoTorrent.MemoryPool.Default.RentArraySegment (buffer.Length, out ArraySegment<byte> segment)) {
                 random.GetBytes (segment.Array, segment.Offset, buffer.Length);
                 segment.Array.AsSpan (segment.Offset, buffer.Length).CopyTo (buffer);
             }

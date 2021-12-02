@@ -78,7 +78,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             for (int i = 0; i < req2.Length; i++)
                 req2[i] ^= req3[i];
 
-            using var releaser = ByteBufferPool.Default.Rent (RandomNumber (512), out Memory<byte> padC);
+            using var releaser = MemoryPool.Default.Rent (RandomNumber (512), out Memory<byte> padC);
 
             // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
             int bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length

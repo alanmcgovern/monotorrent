@@ -33,7 +33,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Connections.Peer.Encryption
 {
-    interface IEncryptor
+    interface IEncryptor : IDisposable
     {
         ReusableTask HandshakeAsync (IPeerConnection socket);
 

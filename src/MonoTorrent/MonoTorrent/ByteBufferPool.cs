@@ -37,9 +37,6 @@ namespace MonoTorrent
         public static int SmallMessageBufferSize => 256;
         public static int LargeMessageBufferSize => Constants.BlockSize + 32;
 
-        public static MemoryPool Default = new MemoryPool ();
-        public static SocketMemoryPool DefaultWithSocketAsyncArgs = new SocketMemoryPool ();
-
         const int AllocateDelta = 8;
 
 
@@ -113,7 +110,7 @@ namespace MonoTorrent
         void AllocateBuffers (int count, Queue<ByteBuffer> bufferQueue, int bufferSize)
         {
             var buffer = new byte[count * bufferSize];
-            for (int i = 0; i < count; i ++)
+            for (int i = 0; i < count; i++)
                 bufferQueue.Enqueue (new ByteBuffer (new Memory<byte> (buffer, i * bufferSize, bufferSize), CreateSocketAsyncArgs));
         }
     }

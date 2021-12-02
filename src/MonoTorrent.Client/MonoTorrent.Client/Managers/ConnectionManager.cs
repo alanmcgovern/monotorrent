@@ -257,6 +257,7 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchToThreadpool ();
 
             SocketMemory currentBuffer = default;
+
             SocketMemory smallBuffer = default;
             ByteBufferPool.Releaser smallReleaser = default;
 
@@ -277,6 +278,7 @@ namespace MonoTorrent.Client
                     } else {
                         if (!smallBuffer.IsEmpty) {
                             smallReleaser.Dispose ();
+                            smallReleaser = default;
                             smallBuffer = currentBuffer = default;
                         }
                         if (largeBuffer.IsEmpty) {
@@ -289,11 +291,11 @@ namespace MonoTorrent.Client
                     HandleReceivedMessage (id, torrentManager, message);
                 }
             } catch {
-                smallReleaser.Dispose ();
-                largeReleaser.Dispose ();
-
                 await ClientEngine.MainLoop;
                 CleanupSocket (torrentManager, id);
+            } finally {
+                smallReleaser.Dispose ();
+                largeReleaser.Dispose ();
             }
         }
 

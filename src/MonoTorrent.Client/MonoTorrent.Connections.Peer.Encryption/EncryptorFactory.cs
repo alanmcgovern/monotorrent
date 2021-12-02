@@ -89,7 +89,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                     // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
                     await MainLoop.SwitchToThreadpool ();
 
-                    var encSocket = new PeerBEncryption (factories, sKeys, preferredEncryption);
+                    using var encSocket = new PeerBEncryption (factories, sKeys, preferredEncryption);
                     await encSocket.HandshakeAsync (connection, buffer.Memory).ConfigureAwait (false);
                     if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                         throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");
@@ -134,7 +134,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
             await MainLoop.SwitchToThreadpool ();
             if (preferredEncryption[0] != EncryptionType.PlainText) {
-                var encSocket = new PeerAEncryption (factories, infoHash, preferredEncryption, handshake?.Encode ());
+                using var encSocket = new PeerAEncryption (factories, infoHash, preferredEncryption, handshake?.Encode ());
                 await encSocket.HandshakeAsync (connection).ConfigureAwait (false);
                 if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                     throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");

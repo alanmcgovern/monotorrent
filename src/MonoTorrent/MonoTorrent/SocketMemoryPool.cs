@@ -30,6 +30,8 @@ namespace MonoTorrent
 {
     public class SocketMemoryPool : ByteBufferPool
     {
+        public static SocketMemoryPool Default = new SocketMemoryPool ();
+
         public SocketMemoryPool ()
             : base (true)
         {

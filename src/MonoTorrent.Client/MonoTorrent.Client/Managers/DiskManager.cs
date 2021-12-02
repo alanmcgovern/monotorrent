@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
 {
     public class DiskManager : IDisposable
     {
-        internal static MemoryPool BufferPool { get; } = ByteBufferPool.Default;
+        internal static MemoryPool BufferPool { get; } = MemoryPool.Default;
 
         readonly ICache<IncrementalHashData> IncrementalHashCache;
 

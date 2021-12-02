@@ -107,7 +107,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             }
 
             // Step Four
-            using var releaser = ByteBufferPool.Default.Rent (RandomNumber (512), out Memory<byte> padD);
+            using var releaser = MemoryPool.Default.Rent (RandomNumber (512), out Memory<byte> padD);
             SelectCrypto (myCP.Span, false);
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
