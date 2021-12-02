@@ -55,7 +55,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.Trackers"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Dht", "MonoTorrent.Dht\MonoTorrent.Dht.csproj", "{6F2D738A-DCED-4C5E-AF99-734464B0AB7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.MonoTorrent.Dht", "Tests\Tests.MonoTorrent.Dht\Tests.MonoTorrent.Dht.csproj", "{041CF2E0-DF9E-4643-9664-521945DC5AA3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.Dht", "Tests\Tests.MonoTorrent.Dht\Tests.MonoTorrent.Dht.csproj", "{041CF2E0-DF9E-4643-9664-521945DC5AA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark", "Benchmark\Benchmark.csproj", "{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -151,6 +153,10 @@ Global
 		{041CF2E0-DF9E-4643-9664-521945DC5AA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{041CF2E0-DF9E-4643-9664-521945DC5AA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{041CF2E0-DF9E-4643-9664-521945DC5AA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -167,6 +173,7 @@ Global
 		{A8C22AB5-9A76-4258-881E-4AF8E72CC2D5} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
 		{F5C549C8-E036-4087-B3E0-E8A8D54DA2CC} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
 		{041CF2E0-DF9E-4643-9664-521945DC5AA3} = {8790FB34-68AA-4A1A-A339-0E1DAAB3E180}
+		{D27D0CD3-D644-4782-B530-CDA5DCEABDEC} = {2BB64148-15EE-4BD9-A48D-1CC8A14D7AC4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FDCCD363-7E21-4AA3-9373-5DCB46A67AD1}
