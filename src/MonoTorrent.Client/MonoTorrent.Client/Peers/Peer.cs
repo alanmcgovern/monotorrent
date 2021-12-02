@@ -44,10 +44,10 @@ namespace MonoTorrent.Client
         internal int CleanedUpCount { get; set; }
 
         internal static IList<Peer> Decode (BEncodedString peers)
-            => PeerDecoder.Decode (peers).Select (t => new Peer (t.PeerId, t.Uri)).ToArray ();
+            => PeerDecoder.Decode (peers).Select (t => new Peer (BEncodedString.FromMemory (t.PeerId), t.Uri)).ToArray ();
 
         internal static IList<Peer> Decode (BEncodedList l)
-            => PeerDecoder.Decode (l).Select (t => new Peer (t.PeerId, t.Uri)).ToArray ();
+            => PeerDecoder.Decode (l).Select (t => new Peer (BEncodedString.FromMemory (t.PeerId), t.Uri)).ToArray ();
 
         /// <summary>
         /// The URI used to make an outgoing connection to this peer.
@@ -152,8 +152,8 @@ namespace MonoTorrent.Client
         internal byte[] CompactPeer ()
             => PeerInfo.CompactPeer (ConnectionUri);
 
-        internal void CompactPeer (byte[] buffer, int offset)
-            => PeerInfo.CompactPeer (ConnectionUri, buffer, offset);
+        internal void CompactPeer (Span<byte> buffer)
+            => PeerInfo.CompactPeer (ConnectionUri, buffer);
 
         internal static BEncodedList Encode (IEnumerable<Peer> peers)
         {

@@ -81,13 +81,13 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             return SupportedMessages.Find (s => s.Name == name);
         }
 
-        public static PeerMessage DecodeExtensionMessage (byte[] buffer, int offset, int count, ITorrentData manager)
+        public static PeerMessage DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentData manager)
         {
-            if (!messageDict.TryGetValue (buffer[offset], out Func<ITorrentData, PeerMessage> creator))
+            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentData, PeerMessage> creator))
                 throw new MessageException ("Unknown extension message received");
 
             PeerMessage message = creator (manager);
-            message.Decode (buffer, offset + 1, count - 1);
+            message.Decode (buffer.Slice (1));
             return message;
         }
     }

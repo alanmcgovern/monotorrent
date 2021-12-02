@@ -92,7 +92,7 @@ namespace MonoTorrent.Connections.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
-                var infohashes = new List<byte[]> { parameters.InfoHash.UnsafeAsArray () };
+                var infohashes = new List<byte[]> { parameters.InfoHash.Span.ToArray () };
                 var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
                 (var rawResponse, var errorString) = await SendAndReceiveAsync (message);
 
@@ -166,7 +166,7 @@ namespace MonoTorrent.Connections.Tracker
         {
             while (!token.IsCancellationRequested) {
                 UdpReceiveResult received = await client.ReceiveAsync ();
-                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer, 0, received.Buffer.Length, MessageType.Response);
+                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer.AsSpan (0, received.Buffer.Length), MessageType.Response);
 
                 if (transactionId == rsp.TransactionId) {
                     if (rsp is ErrorMessage error) {

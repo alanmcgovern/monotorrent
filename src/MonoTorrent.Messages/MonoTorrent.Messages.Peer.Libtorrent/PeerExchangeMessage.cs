@@ -42,6 +42,12 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         static readonly BEncodedString AddedDotFKey = "added.f";
         static readonly BEncodedString DroppedKey = "dropped";
 
+        public ReadOnlyMemory<byte> Added  => ((BEncodedString) peerDict[AddedKey]).AsMemory ();
+
+        public ReadOnlyMemory<byte> AddedDotF => ((BEncodedString) peerDict[AddedDotFKey]).AsMemory ();
+
+        public ReadOnlyMemory<byte> Dropped => ((BEncodedString) peerDict[DroppedKey]).AsMemory ();
+
         public PeerExchangeMessage ()
             : base (Support.MessageId)
         {
@@ -64,55 +70,44 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         void Initialise (byte[] added, byte[] addedDotF, byte[] dropped)
         {
-            peerDict[AddedKey] = (BEncodedString) (added ?? Array.Empty<byte> ());
-            peerDict[AddedDotFKey] = (BEncodedString) (addedDotF ?? Array.Empty<byte> ());
-            peerDict[DroppedKey] = (BEncodedString) (dropped ?? Array.Empty<byte> ());
-        }
+            added = ((byte[]) added?.Clone ()) ?? Array.Empty<byte> ();
+            addedDotF = ((byte[]) addedDotF?.Clone ()) ?? Array.Empty<byte> ();
+            dropped = ((byte[]) dropped?.Clone ()) ?? Array.Empty<byte> ();
 
-        public byte[] Added {
-            set => peerDict[AddedKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
-            get => ((BEncodedString) peerDict[AddedKey]).TextBytes;
-        }
-
-        public byte[] AddedDotF {
-            set => peerDict[AddedDotFKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
-            get => ((BEncodedString) peerDict[AddedDotFKey]).TextBytes;
-        }
-
-        public byte[] Dropped {
-            set => peerDict[DroppedKey] = (BEncodedString) (value ?? Array.Empty<byte> ());
-            get => ((BEncodedString) peerDict[DroppedKey]).TextBytes;
+            peerDict[AddedKey] = BEncodedString.FromMemory (added);
+            peerDict[AddedDotFKey] = BEncodedString.FromMemory (addedDotF);
+            peerDict[DroppedKey] = BEncodedString.FromMemory (dropped);
         }
 
         public override int ByteLength => 4 + 1 + 1 + peerDict.LengthInBytes ();
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            peerDict = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
+            peerDict = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
             if (!peerDict.ContainsKey (AddedKey))
-                peerDict.Add (AddedKey, (BEncodedString) "");
+                peerDict.Add (AddedKey, BEncodedString.Empty);
             if (!peerDict.ContainsKey (AddedDotFKey))
-                peerDict.Add (AddedDotFKey, (BEncodedString) "");
+                peerDict.Add (AddedDotFKey, BEncodedString.Empty);
             if (!peerDict.ContainsKey (DroppedKey))
-                peerDict.Add (DroppedKey, (BEncodedString) "");
+                peerDict.Add (DroppedKey, BEncodedString.Empty);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, offset, ByteLength - 4);
-            written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, ExtensionId);
-            written += peerDict.Encode (buffer, written);
+            Write (ref buffer, ByteLength - 4);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, ExtensionId);
+            Write (ref buffer, peerDict);
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
         public override string ToString ()
         {
             var added = (BEncodedString) peerDict[AddedKey];
-            int numPeers = added.TextBytes.Length / 6;
+            int numPeers = added.Span.Length / 6;
 
             return $"PeerExchangeMessage: {numPeers} peers";
         }

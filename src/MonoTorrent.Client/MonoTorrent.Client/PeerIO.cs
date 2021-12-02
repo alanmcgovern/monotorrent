@@ -33,6 +33,7 @@ using System.Net;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Encryption;
+using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
@@ -47,13 +48,13 @@ namespace MonoTorrent.Client
         {
             await MainLoop.SwitchToThreadpool ();
 
-            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out ByteBuffer buffer)) {
-                await NetworkIO.ReceiveAsync (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null).ConfigureAwait (false);
+            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out SocketMemory buffer)) {
+                await NetworkIO.ReceiveAsync (connection, buffer, null, null, null).ConfigureAwait (false);
 
-                decryptor.Decrypt (buffer.Data, 0, HandshakeMessage.HandshakeLength);
+                decryptor.Decrypt (buffer.AsSpan ());
 
                 var message = new HandshakeMessage ();
-                message.Decode (buffer.Data, 0, HandshakeMessage.HandshakeLength);
+                message.Decode (buffer.AsSpan ());
                 return message;
             }
         }
@@ -65,26 +66,26 @@ namespace MonoTorrent.Client
 
         public static ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
-            return ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, null);
+            return ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, default);
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, ByteBuffer buffer)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, SocketMemory buffer)
         {
             await MainLoop.SwitchToThreadpool ();
 
             int messageHeaderLength = 4;
             int messageBodyLength;
 
-            ByteBuffer messageHeaderBuffer = buffer;
-            ByteBuffer messageBuffer = buffer;
+            SocketMemory messageHeaderBuffer = buffer;
+            SocketMemory messageBuffer = buffer;
             ByteBufferPool.Releaser messageBufferReleaser = default;
 
-            using (var headerReleaser = buffer == null ? NetworkIO.BufferPool.Rent (messageHeaderLength, out messageHeaderBuffer) : default) {
-                await NetworkIO.ReceiveAsync (connection, messageHeaderBuffer, 0, messageHeaderLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
+            using (var headerReleaser = messageHeaderBuffer.IsEmpty ? NetworkIO.BufferPool.Rent (messageHeaderLength, out messageHeaderBuffer) : default) {
+                await NetworkIO.ReceiveAsync (connection, messageHeaderBuffer.Slice (0, messageHeaderLength), rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
-                decryptor.Decrypt (messageHeaderBuffer.Data, 0, messageHeaderLength);
+                decryptor.Decrypt (messageHeaderBuffer.AsSpan (0, messageHeaderLength));
 
-                messageBodyLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (messageHeaderBuffer.Data, 0));
+                messageBodyLength = Message.ReadInt (messageHeaderBuffer.AsSpan ());
                 if (messageBodyLength < 0 || messageBodyLength > MaxMessageLength) {
                     connection.Dispose ();
                     throw new ProtocolException ($"Invalid message length received. Value was '{messageBodyLength}'");
@@ -93,19 +94,19 @@ namespace MonoTorrent.Client
                 if (messageBodyLength == 0)
                     return new KeepAliveMessage ();
 
-                if (buffer == null || buffer.Data.Length < messageBodyLength + messageHeaderLength) {
+                if (messageBuffer.IsEmpty || messageBuffer.Length < messageBodyLength + messageHeaderLength) {
                     messageBufferReleaser = NetworkIO.BufferPool.Rent (messageBodyLength + messageHeaderLength, out messageBuffer);
-                    Buffer.BlockCopy (messageHeaderBuffer.Data, 0, messageBuffer.Data, 0, messageHeaderLength);
+                    messageHeaderBuffer.Memory.Slice (0, messageHeaderLength).CopyTo (messageBuffer.Memory);
                 }
             }
 
             using (messageBufferReleaser) {
                 // Always assume protocol first, then convert to data when we what message it is!
-                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageHeaderLength, messageBodyLength, rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (connection, messageBuffer.Slice (messageHeaderLength, messageBodyLength), rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
-                decryptor.Decrypt (messageBuffer.Data, messageHeaderLength, messageBodyLength);
+                decryptor.Decrypt (messageBuffer.Span.Slice (messageHeaderLength, messageBodyLength));
                 // FIXME: manager should never be null, except some of the unit tests do that.
-                var data = PeerMessage.DecodeMessage (messageBuffer.Data, 0, messageHeaderLength + messageBodyLength, torrentData);
+                var data = PeerMessage.DecodeMessage (messageBuffer.Span.Slice (0, messageHeaderLength + messageBodyLength), torrentData);
                 if (data is PieceMessage msg) {
                     peerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
                     managerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
@@ -122,18 +123,18 @@ namespace MonoTorrent.Client
             return SendMessageAsync (connection, encryptor, message, null, null, null);
         }
 
-        public static async ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ByteBuffer buffer = null)
+        public static async ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, SocketMemory buffer = default)
         {
             await MainLoop.SwitchToThreadpool ();
 
             int count = message.ByteLength;
-            using (buffer == null ? NetworkIO.BufferPool.Rent (count, out buffer) : default) {
+            using (buffer.IsEmpty ? NetworkIO.BufferPool.Rent (count, out buffer) : default) {
                 var pieceMessage = message as PieceMessage;
-                message.Encode (buffer.Data, 0);
-                encryptor.Encrypt (buffer.Data, 0, count);
+                message.Encode (buffer.AsSpan ());
+                encryptor.Encrypt (buffer.AsSpan ());
 
                 // Assume protocol first, then swap it to data once we successfully send the data bytes.
-                await NetworkIO.SendAsync (connection, buffer, 0, count, pieceMessage == null ? null : rateLimiter, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp).ConfigureAwait (false);
+                await NetworkIO.SendAsync (connection, buffer, pieceMessage == null ? null : rateLimiter, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp).ConfigureAwait (false);
                 if (pieceMessage != null) {
                     peerMonitor?.ProtocolUp.AddDelta (-pieceMessage.RequestLength);
                     managerMonitor?.ProtocolUp.AddDelta (-pieceMessage.RequestLength);

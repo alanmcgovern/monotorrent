@@ -29,28 +29,41 @@
 
 using System;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 namespace MonoTorrent
 {
-    public sealed class ByteBuffer
+    public readonly struct SocketMemory
     {
-        // Used to prevent double-frees
-        internal int Counter { get; set; }
-        public byte[] Data { get; }
+        public readonly Memory<byte> Memory;
+        public readonly SocketAsyncEventArgs SocketArgs;
 
-        public SocketAsyncEventArgs Args { get; }
+        public bool IsEmpty => Memory.IsEmpty;
 
-        public ByteBuffer (int size)
-            : this (size, false)
+        public int Length => Memory.Length;
+
+        public Span<byte> Span
+            => Memory.Span;
+
+        internal SocketMemory (Memory<byte> memory, SocketAsyncEventArgs socketArgs)
         {
-
+            Memory = memory;
+            SocketArgs = socketArgs;
         }
 
-        public ByteBuffer (int size, bool createSocketAsyncArgs)
-        {
-            Data = size == 0 ? Array.Empty<byte> () : new byte[size];
-            if (createSocketAsyncArgs)
-                Args = new SocketAsyncEventArgs ();
-        }
+        public Span<byte> AsSpan ()
+            => Memory.Span;
+
+        public Span<byte> AsSpan (int start)
+           => Memory.Span.Slice (start);
+
+        public Span<byte> AsSpan (int start, int length)
+           => Memory.Span.Slice (start, length);
+
+        public SocketMemory Slice (int start)
+            => new SocketMemory (Memory.Slice (start), SocketArgs);
+
+        public SocketMemory Slice (int start, int length)
+            => new SocketMemory (Memory.Slice (start, length), SocketArgs);
     }
 }

@@ -42,19 +42,15 @@ namespace SampleClient
             foreach (string file in Directory.GetFiles (torrentsPath)) {
                 if (file.EndsWith (".torrent", StringComparison.OrdinalIgnoreCase)) {
                     try {
-                        // Load the .torrent from the file into a Torrent instance
-                        // You can use this to do preprocessing should you need to
-                        var torrent = await Torrent.LoadAsync (file);
-
                         // EngineSettings.AutoSaveLoadFastResume is enabled, so any cached fast resume
                         // data will be implicitly loaded. If fast resume data is found, the 'hash check'
                         // phase of starting a torrent can be skipped.
                         // 
                         // TorrentSettingsBuilder can be used to modify the settings for this
                         // torrent.
-                        var manager = await Engine.AddAsync (torrent, downloadsPath);
+                        var manager = await Engine.AddAsync (file, downloadsPath);
                         manager.PeersFound += Manager_PeersFound;
-                        Console.WriteLine (torrent.InfoHash.ToString ());
+                        Console.WriteLine (manager.InfoHash.ToHex ());
                     } catch (Exception e) {
                         Console.Write ("Couldn't decode {0}: ", file);
                         Console.WriteLine (e.Message);

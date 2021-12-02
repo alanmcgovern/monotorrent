@@ -203,7 +203,7 @@ namespace MonoTorrent.Dht
 
         internal void RaisePeersFound (NodeId infoHash, IList<PeerInfo> peers)
         {
-            PeersFound?.Invoke (this, new PeersFoundEventArgs (new InfoHash (infoHash.Bytes), peers));
+            PeersFound?.Invoke (this, new PeersFoundEventArgs (InfoHash.FromMemory (infoHash.AsMemory ()), peers));
         }
 
         void RaiseStateChanged (DhtState newState)

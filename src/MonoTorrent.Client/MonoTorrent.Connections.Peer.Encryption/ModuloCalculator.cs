@@ -41,7 +41,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
         internal static readonly BigEndianBigInteger TWO = new BigEndianBigInteger (2);
 
-        public static byte[] Calculate (byte[] a, byte[] b)
+        public static byte[] Calculate (ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
             return Calculate (new BigEndianBigInteger (a), new BigEndianBigInteger (b));
         }

@@ -37,14 +37,8 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public class BEncodedList : BEncodedValue, IList<BEncodedValue>
     {
-        #region Member Variables
-
         readonly List<BEncodedValue> list;
 
-        #endregion
-
-
-        #region Constructors
         /// <summary>
         /// Create a new BEncoded List with default capacity
         /// </summary>
@@ -76,34 +70,21 @@ namespace MonoTorrent.BEncoding
             list = value;
         }
 
-        #endregion
-
-
-        #region Encode/Decode Methods
-
-
         /// <summary>
         /// Encodes the list to a byte[]
         /// </summary>
         /// <param name="buffer">The buffer to encode the list to</param>
-        /// <param name="offset">The offset to start writing the data at</param>
         /// <returns></returns>
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = 0;
-            buffer[offset] = (byte) 'l';
-            written++;
+            buffer[0] = (byte) 'l';
+            int written = 1;
             for (int i = 0; i < list.Count; i++)
-                written += list[i].Encode (buffer, offset + written);
-            buffer[offset + written] = (byte) 'e';
-            written++;
+                written += list[i].Encode (buffer.Slice (written));
+            buffer[written++] = (byte) 'e';
             return written;
         }
 
-        #endregion
-
-
-        #region Helper Methods
         /// <summary>
         /// Returns the size of the list in bytes
         /// </summary>
@@ -117,10 +98,7 @@ namespace MonoTorrent.BEncoding
 
             return length;
         }
-        #endregion
 
-
-        #region Overridden Methods
         public override bool Equals (object obj)
         {
             if (!(obj is BEncodedList other))
@@ -133,25 +111,17 @@ namespace MonoTorrent.BEncoding
             return true;
         }
 
-
         public override int GetHashCode ()
         {
             int result = 0;
             for (int i = 0; i < list.Count; i++)
                 result ^= list[i].GetHashCode ();
-
             return result;
         }
 
-
         public override string ToString ()
-        {
-            return System.Text.Encoding.UTF8.GetString (Encode ());
-        }
-        #endregion
+            => $"BEncodedList [{list.Count} items]";
 
-
-        #region IList methods
         public void Add (BEncodedValue item)
         {
             list.Add (item);
@@ -215,6 +185,5 @@ namespace MonoTorrent.BEncoding
         {
             return GetEnumerator ();
         }
-        #endregion
     }
 }

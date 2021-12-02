@@ -29,44 +29,31 @@
 
 using System;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace MonoTorrent.BEncoding
 {
-    class RawReader : Stream
+    class HashingReader : Stream
     {
         readonly Stream input;
-        readonly byte[] peeked;
+        readonly byte[] read_one_buffer;
+        readonly HashAlgorithm algorithm;
 
-        MemoryStream CapturedData { get; set; }
-
-        public bool StrictDecoding { get; }
-
-        public RawReader (Stream input)
-            : this (input, false)
-        {
-
-        }
-
-        public RawReader (Stream input, bool strictDecoding)
+        public HashingReader (Stream input, byte firstByte, HashAlgorithm algorithm)
         {
             this.input = input;
-            peeked = new byte[1];
-            StrictDecoding = strictDecoding;
-        }
+            this.algorithm = algorithm;
 
-        internal void BeginCaptureData (MemoryStream stream)
-        {
-            CapturedData = stream;
-        }
-
-        internal void EndCaptureData ()
-        {
-            CapturedData = null;
+            // The reason for putting the first byte in the buffer is so we can
+            // immediately hash it. The 'd' prefix for the info dict is part of
+            // the infohash calculation.
+            read_one_buffer = new byte[] { firstByte };
+            algorithm.TransformBlock (read_one_buffer, 0, 1, read_one_buffer, 0);
         }
 
         public override bool CanRead => input.CanRead;
 
-        public override bool CanSeek => input.CanSeek;
+        public override bool CanSeek => false;
 
         public override bool CanWrite => false;
 
@@ -74,32 +61,32 @@ namespace MonoTorrent.BEncoding
 
         public override long Position {
             get => input.Position;
-            set {
-                if (value != Position)
-                    Seek (value, SeekOrigin.Begin);
-            }
+            set => throw new NotSupportedException ();
         }
 
-        public override void Flush ()
-            => throw new NotSupportedException ();
-
         public override int ReadByte ()
-            => Read (peeked, 0, 1) == 1 ? peeked[0] : -1;
+            => Read (read_one_buffer, 0, 1) == 1 ? read_one_buffer[0] : -1;
 
         public override int Read (byte[] buffer, int offset, int count)
         {
             var read = input.Read (buffer, offset, count);
             if (read > 0)
-                CapturedData?.Write (buffer, offset, read);
+                algorithm.TransformBlock (buffer, offset, read, buffer, offset);
             return read;
         }
 
-        public override long Seek (long offset, SeekOrigin origin)
+        public byte[] TransformFinalBlock ()
         {
-            if (CapturedData != null)
-                throw new NotSupportedException ("Cannot seek while capturing data");
-            return input.Seek (offset, origin);
+            algorithm.TransformFinalBlock (read_one_buffer, 0, 0);
+            return algorithm.Hash;
         }
+
+        public override void Flush ()
+            => throw new NotSupportedException ();
+
+        public override long Seek (long offset, SeekOrigin origin)
+            =>  throw new NotSupportedException ("Cannot seek while capturing data");
+
         public override void SetLength (long value)
             => throw new NotSupportedException ();
 

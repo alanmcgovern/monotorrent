@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 using MonoTorrent.PieceWriter;
 
 using ReusableTasks;
@@ -33,7 +35,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
         }
@@ -43,7 +45,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }

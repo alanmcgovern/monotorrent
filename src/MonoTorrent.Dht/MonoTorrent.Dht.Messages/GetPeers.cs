@@ -41,7 +41,7 @@ namespace MonoTorrent.Dht.Messages
         public GetPeers (NodeId id, NodeId infohash)
             : base (id, QueryName)
         {
-            Parameters.Add (InfoHashKey, infohash.BencodedString ());
+            Parameters.Add (InfoHashKey, BEncodedString.FromMemory (infohash.AsMemory ()));
         }
 
         public GetPeers (BEncodedDictionary d)

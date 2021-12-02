@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Text;
 
 namespace MonoTorrent.Messages.UdpTracker
@@ -47,23 +48,23 @@ namespace MonoTorrent.Messages.UdpTracker
             Error = error;
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            if (Action != ReadInt (buffer, ref offset))
+            if (Action != ReadInt (ref buffer))
                 ThrowInvalidActionException ();
-            TransactionId = ReadInt (buffer, ref offset);
-            Error = ReadString (buffer, ref offset, length - offset);
+            TransactionId = ReadInt (ref buffer);
+            Error = ReadString (ref buffer, buffer.Length);
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, Action);
-            written += Write (buffer, written, TransactionId);
-            written += WriteAscii (buffer, written, Error);
+            Write (ref buffer, Action);
+            Write (ref buffer, TransactionId);
+            WriteAscii (ref buffer, Error);
 
-            return written - offset;
+            return written - buffer.Length;
         }
     }
 }

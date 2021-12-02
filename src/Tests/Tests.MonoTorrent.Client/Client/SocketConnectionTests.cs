@@ -62,7 +62,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task DisposeWhileReceiving ()
         {
-            var task = Incoming.ReceiveAsync (new ByteBuffer (100, true), 0, 100).AsTask ();
+            using var releaser = SocketMemoryPool.Default.Rent (100, out var buffer);
+            var task = Incoming.ReceiveAsync (buffer).AsTask ();
             Incoming.Dispose ();
 
             // All we care about is that the task is marked as 'Complete'.
@@ -74,7 +75,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task DisposeWhileSending ()
         {
-            var task = Incoming.SendAsync (new ByteBuffer (1000000, true), 0, 1000000).AsTask ();
+            using var releaser = SocketMemoryPool.Default.Rent (1000000, out var buffer);
+            var task = Incoming.SendAsync (buffer).AsTask ();
             Incoming.Dispose ();
 
             // All we care about is that the task is marked as 'Complete'.

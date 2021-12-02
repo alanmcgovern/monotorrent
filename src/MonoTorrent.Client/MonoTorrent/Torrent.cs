@@ -65,7 +65,7 @@ namespace MonoTorrent
         /// <summary>
         /// The optional ED2K hash contained within the .torrent file
         /// </summary>
-        public byte[] ED2K { get; private set; }
+        public ReadOnlyMemory<byte> ED2K { get; private set; }
 
         /// <summary>
         /// The encoding used by the client that created the .torrent file
@@ -133,7 +133,7 @@ namespace MonoTorrent
         /// <summary>
         /// The optional SHA1 hash contained within the .torrent file
         /// </summary>
-        public byte[] SHA1 { get; private set; }
+        public ReadOnlyMemory<byte> SHA1 { get; private set; }
 
         /// <summary>
         /// The source of the torrent
@@ -174,7 +174,7 @@ namespace MonoTorrent
         /// .torrent file.
         /// </summary>
         /// <param name="data">The byte[]containing the hashes from the .torrent file</param>
-        void LoadHashPieces (byte[] data)
+        void LoadHashPieces (ReadOnlyMemory<byte> data)
         {
             if (data.Length % 20 != 0)
                 throw new TorrentException ("Invalid infohash detected");
@@ -186,22 +186,22 @@ namespace MonoTorrent
         {
             var sb = new StringBuilder (32);
 
-            var files = new List<(string path, long length, byte[] md5sum, byte[] ed2k, byte[] sha1)> ();
+            var files = new List<(string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)> ();
             foreach (BEncodedDictionary dict in list) {
                 long length = 0;
                 string path = null;
-                byte[] md5sum = null;
-                byte[] ed2k = null;
-                byte[] sha1 = null;
+                ReadOnlyMemory<byte> md5sum = default;
+                ReadOnlyMemory<byte> ed2k = default;
+                ReadOnlyMemory<byte> sha1 = default;
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("sha1"):
-                            sha1 = ((BEncodedString) keypair.Value).TextBytes;
+                            sha1 = ((BEncodedString) keypair.Value).AsMemory ();
                             break;
 
                         case ("ed2k"):
-                            ed2k = ((BEncodedString) keypair.Value).TextBytes;
+                            ed2k = ((BEncodedString) keypair.Value).AsMemory ();;
                             break;
 
                         case ("length"):
@@ -229,7 +229,7 @@ namespace MonoTorrent
                             break;
 
                         case ("md5sum"):
-                            md5sum = ((BEncodedString) keypair.Value).TextBytes;
+                            md5sum = ((BEncodedString) keypair.Value).AsMemory ();
                             break;
 
                         default:
@@ -255,7 +255,7 @@ namespace MonoTorrent
         {
             InfoMetadata = dictionary.Encode ();
             PieceLength = int.Parse (dictionary["piece length"].ToString ());
-            LoadHashPieces (((BEncodedString) dictionary["pieces"]).TextBytes);
+            LoadHashPieces (((BEncodedString) dictionary["pieces"]).AsMemory ());
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
@@ -264,11 +264,11 @@ namespace MonoTorrent
                         break;
 
                     case ("sha1"):
-                        SHA1 = ((BEncodedString) keypair.Value).TextBytes;
+                        SHA1 = ((BEncodedString) keypair.Value).Span.ToArray ();
                         break;
 
                     case ("ed2k"):
-                        ED2K = ((BEncodedString) keypair.Value).TextBytes;
+                        ED2K = ((BEncodedString) keypair.Value).Span.ToArray ();
                         break;
 
                     case ("publisher-url.utf-8"):
@@ -325,10 +325,9 @@ namespace MonoTorrent
                 long length = long.Parse (dictionary["length"].ToString ());
                 Size = length;
                 string path = Name;
-                byte[] md5 = (dictionary.ContainsKey ("md5")) ? ((BEncodedString) dictionary["md5"]).TextBytes : null;
-                byte[] ed2k = (dictionary.ContainsKey ("ed2k")) ? ((BEncodedString) dictionary["ed2k"]).TextBytes : null;
-                byte[] sha1 = (dictionary.ContainsKey ("sha1")) ? ((BEncodedString) dictionary["sha1"]).TextBytes : null;
-
+                var md5 = dictionary.TryGetValue("md5", out BEncodedValue value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
+                var ed2k = dictionary.TryGetValue ("ed2k", out value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
+                var sha1 = dictionary.TryGetValue ("sha1", out value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
                 int endPiece = Math.Min (Pieces.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly (new[] { new TorrentFile (path, length, 0, endPiece, 0, md5, ed2k, sha1) });
             }
@@ -498,7 +497,7 @@ namespace MonoTorrent
 
             try {
                 (var torrent, var infohash) = BEncodedDictionary.DecodeTorrent (stream);
-                return LoadCore (torrent, new InfoHash (infohash));
+                return LoadCore (torrent, InfoHash.FromMemory (infohash));
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
             }

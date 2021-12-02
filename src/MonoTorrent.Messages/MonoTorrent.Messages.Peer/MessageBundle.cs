@@ -61,19 +61,19 @@ namespace MonoTorrent.Messages.Peer
             }
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
             throw new InvalidOperationException ();
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
             for (int i = 0; i < Messages.Count; i++)
-                written += Messages[i].Encode (buffer, written);
+                buffer = buffer.Slice (Messages[i].Encode (buffer));
 
-            return written - offset;
+            return written - buffer.Length;
         }
     }
 }

@@ -26,6 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
 
 using MonoTorrent.BEncoding;
 
@@ -66,7 +67,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (false, 123, 5555);
             byte[] data = m.Encode ();
-            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data, 0, data.Length, null);
+            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data, null);
 
             Assert.AreEqual (m.ByteLength, data.Length);
             Assert.AreEqual (m.ByteLength, decoded.ByteLength, "#1");
@@ -83,7 +84,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             LTChat m = new LTChat (LTChat.Support.MessageId, "This Is My Message");
 
             byte[] data = m.Encode ();
-            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data, 0, data.Length, null);
+            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data, null);
 
             Assert.AreEqual (m.Message, decoded.Message, "#1");
         }
@@ -99,9 +100,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             PeerExchangeMessage message = new PeerExchangeMessage (id, peer, supports, null);
 
             byte[] buffer = message.Encode ();
-            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, 0, buffer.Length, null);
-            CollectionAssert.AreEqual (peer, m.Added, "#1");
-            CollectionAssert.AreEqual (supports, m.AddedDotF, "#1");
+            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null);
+            Assert.IsTrue (MemoryExtensions.SequenceEqual (peer.AsSpan (), m.Added.Span), "#1");
+            Assert.IsTrue (MemoryExtensions.SequenceEqual (supports.AsSpan (), m.AddedDotF.Span), "#2");
         }
 
         [Test]
@@ -109,10 +110,10 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             var data = new BEncodedDictionary ().Encode ();
             var message = new PeerExchangeMessage ();
-            message.Decode (data, 0, data.Length);
-            Assert.IsEmpty (message.Added, "#1");
-            Assert.IsEmpty (message.AddedDotF, "#2");
-            Assert.IsEmpty (message.Dropped, "#3");
+            message.Decode (data.AsSpan ());
+            Assert.IsTrue (message.Added.IsEmpty, "#1");
+            Assert.IsTrue (message.AddedDotF.IsEmpty, "#2");
+            Assert.IsTrue (message.Dropped.IsEmpty, "#3");
         }
     }
 }

@@ -108,35 +108,36 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             }
         }
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            using var reader = new MemoryStream (buffer, offset, length, false);
-            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (reader, false);
-            int totalSize = 0;
+            var d = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
 
             if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))
                 MetadataMessageType = (MessageType) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (PieceKey, out val))
                 Piece = (int) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (TotalSizeKey, out val)) {
-                totalSize = (int) ((BEncodedNumber) val).Number;
+                int totalSize = (int) ((BEncodedNumber) val).Number;
                 MetadataPiece = new byte[Math.Min (totalSize - Piece * BlockSize, BlockSize)];
-                reader.Read (MetadataPiece, 0, MetadataPiece.Length);
+                buffer.CopyTo (MetadataPiece);
             }
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
-            written += Write (buffer, written, ByteLength - 4);
-            written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, ExtensionId);
-            written += dict.Encode (buffer, written);
-            if (MetadataMessageType == MessageType.Data)
-                written += Write (buffer, written, MetadataPiece, Piece * BlockSize, Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize));
+            Write (ref buffer, ByteLength - 4);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, ExtensionId);
+            Write (ref buffer, dict);
 
-            return written - offset;
+            if (MetadataMessageType == MessageType.Data) {
+                var total = Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize);
+                MetadataPiece.AsSpan (Piece * BlockSize, total).CopyTo (buffer);
+                buffer = buffer.Slice (total);
+            }
+            return written - buffer.Length;
         }
     }
 }

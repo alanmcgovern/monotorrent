@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using ReusableTasks;
@@ -102,38 +103,33 @@ namespace MonoTorrent.PieceWriter
             }
         }
 
-        public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
         {
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
-            if (buffer is null)
-                throw new ArgumentNullException (nameof (buffer));
 
-            if (offset < 0 || offset + count > file.Length)
+            if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
                 using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
                 await SwitchToThreadpool ();
-                if (rented.Stream.Length < offset + count)
+                if (rented.Stream.Length < offset + buffer.Length)
                     return 0;
 
                 if (rented.Stream.Position != offset)
                     rented.Stream.Seek (offset, SeekOrigin.Begin);
-
-                return rented.Stream.Read (buffer, bufferOffset, count);
+                return rented.Stream.Read (buffer);
             }
         }
 
-        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public async ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
         {
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
-            if (buffer is null)
-                throw new ArgumentNullException (nameof (buffer));
 
-            if (offset < 0 || offset + count > file.Length)
+            if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
@@ -146,7 +142,7 @@ namespace MonoTorrent.PieceWriter
                 // We also want the Seek operation to execute on the threadpool.
                 await SwitchToThreadpool ();
                 rented.Stream.Seek (offset, SeekOrigin.Begin);
-                rented.Stream.Write (buffer, bufferOffset, count);
+                rented.Stream.Write (buffer);
             }
         }
 

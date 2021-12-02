@@ -35,7 +35,7 @@ namespace MonoTorrent.PieceWriter
 {
     static class IPieceWriterExtensions
     {
-        public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, byte[] buffer)
+        public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, Memory<byte> buffer)
         {
             var count = request.RequestLength;
             var offset = request.ToByteOffset (manager.PieceLength);
@@ -55,7 +55,7 @@ namespace MonoTorrent.PieceWriter
                 int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
                 fileToRead = Math.Min (fileToRead, Constants.BlockSize);
 
-                if (fileToRead != await writer.ReadAsync (files[i], offset, buffer, totalRead, fileToRead))
+                if (fileToRead != await writer.ReadAsync (files[i], offset, buffer.Slice (totalRead, fileToRead)))
                     return totalRead;
 
                 offset += fileToRead;
@@ -69,7 +69,7 @@ namespace MonoTorrent.PieceWriter
             return totalRead;
         }
 
-        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, byte[] buffer)
+        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, Memory<byte> buffer)
         {
             var count = request.RequestLength;
             var torrentOffset = request.ToByteOffset (manager.PieceLength);
@@ -85,7 +85,7 @@ namespace MonoTorrent.PieceWriter
                 int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Constants.BlockSize);
 
-                await writer.WriteAsync (files[i], offset, buffer, totalWritten, fileToWrite);
+                await writer.WriteAsync (files[i], offset, buffer.Slice (totalWritten, fileToWrite));
                 offset += fileToWrite;
                 totalWritten += fileToWrite;
                 if (offset >= files[i].Length) {

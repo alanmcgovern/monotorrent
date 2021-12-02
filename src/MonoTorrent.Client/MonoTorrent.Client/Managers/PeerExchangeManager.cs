@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
             byte[] added = new byte[len * 6];
             byte[] addedDotF = new byte[len];
             for (int i = 0; i < len; i++) {
-                addedPeers[i].CompactPeer (added, i * 6);
+                addedPeers[i].CompactPeer (added.AsSpan (i * 6, 6));
                 if (EncryptionTypes.SupportsRC4 (addedPeers[i].AllowedEncryption)) {
                     addedDotF[i] = 0x01;
                 } else {
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
 
             byte[] dropped = new byte[len * 6];
             for (int i = 0; i < len; i++)
-                droppedPeers[i].CompactPeer (dropped, i * 6);
+                droppedPeers[i].CompactPeer (dropped.AsSpan (i * 6, 6));
 
             droppedPeers.RemoveRange (0, len);
             id.MessageQueue.Enqueue (new PeerExchangeMessage (id.ExtensionSupports, added, addedDotF, dropped));

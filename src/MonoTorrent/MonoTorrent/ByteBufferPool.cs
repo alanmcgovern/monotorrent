@@ -32,96 +32,67 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public class ByteBufferPool
+    public abstract partial class ByteBufferPool
     {
-        public static ByteBufferPool Default = new ByteBufferPool (createSocketAsyncArgs: false);
-        public static ByteBufferPool DefaultWithSocketAsyncArgs = new ByteBufferPool (createSocketAsyncArgs: true);
-
-        public readonly struct Releaser : IDisposable
-        {
-            readonly int counter;
-            public readonly ByteBuffer Buffer;
-            readonly Queue<ByteBuffer> Pool;
-
-            internal Releaser (Queue<ByteBuffer> pool, ByteBuffer buffer)
-            {
-                Pool = pool;
-                Buffer = buffer;
-                counter = Buffer.Counter;
-            }
-
-            public void Dispose ()
-            {
-                if (Buffer == null)
-                    return;
-
-                lock (Pool) {
-                    if (counter != Buffer.Counter)
-                        throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
-
-                    Buffer.Counter++;
-                    Pool.Enqueue (Buffer);
-                }
-            }
-        }
+        public static int SmallMessageBufferSize => 256;
+        public static int LargeMessageBufferSize => Constants.BlockSize + 32;
 
         const int AllocateDelta = 8;
 
-        const int SmallMessageBufferSize = 256;
-        const int MediumMessageBufferSize = 2048;
-        const int LargeMessageBufferSize = Constants.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
         Queue<ByteBuffer> LargeMessageBuffers { get; }
         Queue<ByteBuffer> MassiveBuffers { get; }
-        Queue<ByteBuffer> MediumMessageBuffers { get; }
         Queue<ByteBuffer> SmallMessageBuffers { get; }
+
 
         bool CreateSocketAsyncArgs { get; }
 
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
-        public ByteBufferPool (bool createSocketAsyncArgs)
+        protected ByteBufferPool (bool createSocketAsyncArgs)
         {
             CreateSocketAsyncArgs = createSocketAsyncArgs;
 
             LargeMessageBuffers = new Queue<ByteBuffer> ();
             MassiveBuffers = new Queue<ByteBuffer> ();
-            MediumMessageBuffers = new Queue<ByteBuffer> ();
             SmallMessageBuffers = new Queue<ByteBuffer> ();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
-            AllocateBuffers (AllocateDelta, LargeMessageBuffers, LargeMessageBufferSize);
-            AllocateBuffers (AllocateDelta, MediumMessageBuffers, MediumMessageBufferSize);
-            AllocateBuffers (AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
+            AllocateBuffers (AllocateDelta * 4, LargeMessageBuffers, LargeMessageBufferSize);
+            AllocateBuffers (AllocateDelta * 4, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
-        public Releaser Rent (int minCapacity, out byte[] buffer)
+        protected Releaser Rent (int capacity, out SocketMemory buffer)
         {
-            var result = Rent (minCapacity, out ByteBuffer dataBuffer);
-            buffer = dataBuffer.Data;
+            var result = Rent (capacity, out ByteBuffer buf);
+            buffer = buf.SocketMemory;
             return result;
         }
 
-        public Releaser Rent (int minCapacity, out ByteBuffer buffer)
+        protected Releaser Rent (int capacity, out Memory<byte> buffer)
         {
-            if (minCapacity <= SmallMessageBufferSize)
+            var result = Rent (capacity, out ByteBuffer buf);
+            buffer = buf.Memory;
+            return result;
+        }
+
+        Releaser Rent (int capacity, out ByteBuffer buffer)
+        {
+            if (capacity <= SmallMessageBufferSize)
                 return Rent (SmallMessageBuffers, SmallMessageBufferSize, out buffer);
 
-            if (minCapacity <= MediumMessageBufferSize)
-                return Rent (MediumMessageBuffers, MediumMessageBufferSize, out buffer);
-
-            if (minCapacity <= LargeMessageBufferSize)
+            if (capacity <= LargeMessageBufferSize)
                 return Rent (LargeMessageBuffers, LargeMessageBufferSize, out buffer);
 
             lock (MassiveBuffers) {
                 for (int i = 0; i < MassiveBuffers.Count; i++)
-                    if ((buffer = MassiveBuffers.Dequeue ()).Data.Length >= minCapacity)
+                    if ((buffer = MassiveBuffers.Dequeue ()).Span.Length >= capacity)
                         return new Releaser (MassiveBuffers, buffer);
                     else
                         MassiveBuffers.Enqueue (buffer);
 
-                buffer = new ByteBuffer (minCapacity, CreateSocketAsyncArgs);
+                buffer = new ByteBuffer (new Memory<byte> (new byte[capacity]), CreateSocketAsyncArgs);
                 return new Releaser (MassiveBuffers, buffer);
             }
         }
@@ -138,8 +109,9 @@ namespace MonoTorrent
 
         void AllocateBuffers (int count, Queue<ByteBuffer> bufferQueue, int bufferSize)
         {
-            while (count-- > 0)
-                bufferQueue.Enqueue (new ByteBuffer (bufferSize, CreateSocketAsyncArgs));
+            var buffer = new byte[count * bufferSize];
+            for (int i = 0; i < count; i++)
+                bufferQueue.Enqueue (new ByteBuffer (new Memory<byte> (buffer, i * bufferSize, bufferSize), CreateSocketAsyncArgs));
         }
     }
 }

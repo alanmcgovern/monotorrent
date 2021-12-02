@@ -146,12 +146,12 @@ namespace MonoTorrent.Client.Modes
                     Stream.Write (message.MetadataPiece, 0, message.MetadataPiece.Length);
                     bitField[message.Piece] = true;
                     if (bitField.AllTrue) {
-                        byte[] hash;
+                        InfoHash hash;
                         Stream.Position = 0;
                         using (SHA1 hasher = Manager.Engine.Factories.CreateSHA1 ())
-                            hash = hasher.ComputeHash (Stream);
+                            hash = InfoHash.FromMemory (hasher.ComputeHash (Stream));
 
-                        if (Manager.InfoHash != new InfoHash (hash)) {
+                        if (Manager.InfoHash != hash) {
                             bitField.SetAll (false);
                         } else {
                             Stream.Position = 0;

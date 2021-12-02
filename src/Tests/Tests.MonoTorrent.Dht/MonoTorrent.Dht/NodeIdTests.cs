@@ -77,14 +77,14 @@ namespace MonoTorrent.Dht
         [Test]
         public void GetBytesTest ()
         {
-            var str = new NodeId (new BEncodedString (new byte[20])).BencodedString ();
-            Assert.AreEqual (20, str.TextBytes.Length);
+            var str = new NodeId (new BEncodedString (new byte[20])).AsMemory ();
+            Assert.AreEqual (20, str.Span.Length);
 
-            str = new NodeId (new byte[20]).BencodedString ();
-            Assert.AreEqual (20, str.TextBytes.Length);
+            str = new NodeId (new byte[20]).AsMemory ();
+            Assert.AreEqual (20, str.Span.Length);
 
-            str = new NodeId (new InfoHash (new byte[20])).BencodedString ();
-            Assert.AreEqual (20, str.TextBytes.Length);
+            str = new NodeId (new InfoHash (new byte[20])).AsMemory ();
+            Assert.AreEqual (20, str.Span.Length);
         }
     }
 }

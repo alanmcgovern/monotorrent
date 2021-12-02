@@ -28,6 +28,7 @@
 //
 
 
+using System;
 using System.Security.Cryptography;
 
 namespace MonoTorrent.Connections.Peer.Encryption
@@ -65,31 +66,13 @@ namespace MonoTorrent.Connections.Peer.Encryption
             Encrypt (wasteBuffer);
         }
 
-        public void Decrypt (byte[] buffer)
-        {
-            Encrypt (buffer, 0, buffer, 0, buffer.Length);
-        }
-        public void Decrypt (byte[] buffer, int offset, int count)
-        {
-            Decrypt (buffer, offset, buffer, offset, count);
-        }
-        public void Decrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
-        {
-            Encrypt (src, srcOffset, dest, destOffset, count);
-        }
+        public void Decrypt (Span<byte> buffer)
+            => Encrypt (buffer);
 
-        public void Encrypt (byte[] buffer)
-        {
-            Encrypt (buffer, 0, buffer, 0, buffer.Length);
-        }
-        public void Encrypt (byte[] buffer, int offset, int count)
-        {
-            Encrypt (buffer, offset, buffer, offset, count);
-        }
-        public void Encrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
+        public void Encrypt (Span<byte> buffer)
         {
             byte c;
-            for (int i = 0; i < count; i++) {
+            for (int i = 0; i < buffer.Length; i++) {
                 x = (x + 1) & 0xFF;
                 y = (y + S[x]) & 0xFF;
 
@@ -97,7 +80,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                 S[y] = S[x];
                 S[x] = c;
 
-                dest[i + destOffset] = (byte) (src[i + srcOffset] ^ (S[(S[x] + S[y]) & 0xFF]));
+                buffer[i] = (byte) (buffer[i] ^ (S[(S[x] + S[y]) & 0xFF]));
             }
         }
     }

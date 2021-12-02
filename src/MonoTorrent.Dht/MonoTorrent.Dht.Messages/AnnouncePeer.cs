@@ -49,7 +49,7 @@ namespace MonoTorrent.Dht.Messages
         public AnnouncePeer (NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
             : base (id, QueryName)
         {
-            Parameters.Add (InfoHashKey, infoHash.BencodedString ());
+            Parameters.Add (InfoHashKey, BEncodedString.FromMemory (infoHash.AsMemory ()));
             Parameters.Add (PortKey, port);
             Parameters.Add (TokenKey, token);
         }

@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
@@ -88,9 +89,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         #region Methods
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary> (buffer, offset, length, false);
+            var d = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
 
             if (d.TryGetValue (MaxRequestKey, out BEncodedValue val))
                 MaxRequests = (int) ((BEncodedNumber) val).Number;
@@ -114,17 +115,17 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             Supports = list;
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
             BEncodedDictionary dict = Create ();
 
-            written += Write (buffer, written, dict.LengthInBytes () + 1 + 1);
-            written += Write (buffer, written, MessageId);
-            written += Write (buffer, written, Support.MessageId);
-            written += dict.Encode (buffer, written);
+            Write (ref buffer, dict.LengthInBytes () + 1 + 1);
+            Write (ref buffer, MessageId);
+            Write (ref buffer, Support.MessageId);
+            Write (ref buffer, dict);
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
         BEncodedDictionary Create ()

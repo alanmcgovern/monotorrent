@@ -167,7 +167,7 @@ namespace MonoTorrent.TrackerServer
             var files = (BEncodedDictionary) result["files"];
 
             Assert.AreEqual (1, files.Count, "#1");
-            Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.UnsafeAsArray ())), "#1");
+            Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Span.ToArray ())), "#1");
         }
 
         [Test]
@@ -180,7 +180,7 @@ namespace MonoTorrent.TrackerServer
             var files = (BEncodedDictionary) result["files"];
             Assert.AreEqual (rig.Trackables.Count, files.Count, "#1");
             foreach (var trackable in rig.Trackables)
-                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.UnsafeAsArray ())), "#2");
+                Assert.IsTrue (files.ContainsKey (new BEncodedString (trackable.InfoHash.Span.ToArray ())), "#2");
         }
 
         [Test]

@@ -41,7 +41,7 @@ namespace MonoTorrent.Dht.Messages
         public FindNode (NodeId id, NodeId target)
             : base (id, QueryName)
         {
-            Parameters.Add (TargetKey, target.BencodedString ());
+            Parameters.Add (TargetKey, BEncodedString.FromMemory (target.AsMemory ()));
         }
 
         public FindNode (BEncodedDictionary d)

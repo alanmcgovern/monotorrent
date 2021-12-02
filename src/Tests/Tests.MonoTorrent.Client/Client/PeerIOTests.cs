@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Peer.Encryption;
@@ -57,10 +58,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task LargeMessageBodyLength ()
         {
-            var buffer = new ByteBuffer (4);
-            Message.Write (buffer.Data, 0, int.MaxValue);
+            using var releaser = SocketMemoryPool.Default.Rent (4, out var buffer);
+            Message.Write (buffer.Span, int.MaxValue);
 
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer);
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
             Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
@@ -70,10 +71,10 @@ namespace MonoTorrent.Client
         [Test]
         public async Task NegativeMessageBodyLength ()
         {
-            var buffer = new ByteBuffer (4);
-            Message.Write (buffer.Data, 0, -6);
+            using var releaser = SocketMemoryPool.Default.Rent (20, out var buffer);
+            Message.Write (buffer.Span, -6);
 
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer);
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
             Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
@@ -83,13 +84,13 @@ namespace MonoTorrent.Client
         [Test]
         public async Task UnknownMessage ()
         {
-            var data = new ByteBuffer (20, true);
-            Message.Write (data.Data, 0, 16);
+            using var releaser = SocketMemoryPool.Default.Rent (20, out var data);
+            Message.Write (data.Span, 16);
             for (int i = 4; i < 16; i++)
-                data.Data[i] = byte.MaxValue;
+                data.Span [i] = byte.MaxValue;
 
             var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
-            await NetworkIO.SendAsync (pair.Outgoing, data, 0, 20);
+            await NetworkIO.SendAsync (pair.Outgoing, data);
 
             Assert.ThrowsAsync<MessageException> (async () => await task, "#1");
         }
@@ -97,14 +98,14 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ZeroMessageBodyIsKeepAlive ()
         {
-            var buffer = new ByteBuffer (4);
+            using var releaser = SocketMemoryPool.Default.Rent (4, out var buffer);
 
-            Message.Write (buffer.Data, 0, 0);
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
+            Message.Write (buffer.Span, 0);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer);
             Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
 
-            new KeepAliveMessage ().Encode (buffer.Data, 0);
-            await NetworkIO.SendAsync (pair.Outgoing, buffer, 0, buffer.Data.Length);
+            new KeepAliveMessage ().Encode (buffer.Span);
+            await NetworkIO.SendAsync (pair.Outgoing, buffer);
             Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
         }
 
@@ -112,9 +113,8 @@ namespace MonoTorrent.Client
         public void IgnoreNullMonitors ()
         {
             var blockSize = Constants.BlockSize - 1234;
-            var msg = new PieceMessage (0, 0, blockSize) {
-                DataReleaser = new ByteBufferPool (false).Rent (blockSize, out ByteBuffer _)
-            };
+            var msg = new PieceMessage (0, 0, blockSize);
+            msg.SetData (new MemoryPool ().Rent (blockSize));
 
             Assert.DoesNotThrowAsync (() => {
                 return Task.WhenAll (
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
         {
             var blockSize = Constants.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize);
-            msg.DataReleaser = new ByteBufferPool (false).Rent (blockSize, out ByteBuffer _);
+            msg.SetData (new MemoryPool ().Rent (blockSize));
 
             var protocolSize = msg.ByteLength - blockSize;
             await Task.WhenAll (

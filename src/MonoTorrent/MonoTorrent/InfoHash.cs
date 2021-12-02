@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 
@@ -48,17 +49,45 @@ namespace MonoTorrent
                 Base32DecodeTable[table[i]] = (byte) i;
         }
 
-        readonly byte[] hash;
+        ReadOnlyMemory<byte> Hash { get; }
 
+        public ReadOnlySpan<byte> Span => Hash.Span;
+
+        /// <summary>
+        /// Clones the provided byte[] before storing the value internally.
+        /// </summary>
+        /// <param name="infoHash"></param>
         public InfoHash (byte[] infoHash)
         {
             if (infoHash is null)
                 throw new ArgumentNullException (nameof (infoHash));
-
             if (infoHash.Length != 20)
                 throw new ArgumentException ("InfoHash must be exactly 20 bytes long", nameof (infoHash));
-            hash = (byte[]) infoHash.Clone ();
+            Hash = (byte[]) infoHash.Clone ();
         }
+
+        /// <summary>
+        /// Clones the provided span before storing the value internally.
+        /// </summary>
+        /// <param name="infoHash"></param>
+        public InfoHash (ReadOnlySpan<byte> infoHash)
+            : this (new ReadOnlyMemory<byte> (infoHash.ToArray ()))
+        {
+
+        }
+
+        InfoHash (ReadOnlyMemory<byte> infoHash)
+        {
+            if (infoHash.Length != 20)
+                throw new ArgumentException ("InfoHash must be exactly 20 bytes long", nameof (infoHash));
+            Hash = infoHash;
+        }
+
+        public ReadOnlyMemory<byte> AsMemory ()
+            => Hash;
+
+        public override int GetHashCode ()
+            => MemoryMarshal.Read<int> (Hash.Span);
 
         public override bool Equals (object obj)
             => Equals (obj as InfoHash);
@@ -66,31 +95,12 @@ namespace MonoTorrent
         public bool Equals (InfoHash other)
             => this == other;
 
-        // Equality is based generally on checking 20 positions, checking 4 should be enough
-        // for the hashcode as infohashes are randomly distributed.
-        public override int GetHashCode ()
-            => hash[0] | (hash[1] << 8) | (hash[2] << 16) | (hash[3] << 24);
-
-        /// <summary>
-        /// Returns the underlying byte[]. If the byte[] is modified you will corrupt the
-        /// underlying datastructure.
-        /// </summary>
-        /// <returns></returns>
-        public byte[] UnsafeAsArray ()
-            => hash;
-
-        /// <summary>
-        /// Duplicates the underlying byte[] and returns the copy.
-        /// </summary>
-        /// <returns></returns>
-        public byte[] ToArray ()
-            => (byte[]) hash.Clone ();
-
         public string ToHex ()
         {
+            var span = Hash.Span;
             var sb = new StringBuilder (40);
-            for (int i = 0; i < hash.Length; i++) {
-                string hex = hash[i].ToString ("X");
+            for (int i = 0; i < Hash.Length; i++) {
+                string hex = span[i].ToString ("X");
                 if (hex.Length != 2)
                     sb.Append ("0");
                 sb.Append (hex);
@@ -99,7 +109,7 @@ namespace MonoTorrent
         }
 
         public string UrlEncode ()
-            => HttpUtility.UrlEncode (hash);
+            => HttpUtility.UrlEncode (Hash.Span.ToArray ());
 
         public static bool operator == (InfoHash left, InfoHash right)
         {
@@ -108,18 +118,11 @@ namespace MonoTorrent
             if (right is null)
                 return false;
 
-            var leftHash = left.hash;
-            var rightHash = right.hash;
-            for (int i = 0; i < leftHash.Length && i < rightHash.Length; i++)
-                if (leftHash[i] != rightHash[i])
-                    return false;
-            return true;
+            return MemoryExtensions.SequenceEqual (left.Hash.Span, right.Hash.Span);
         }
 
         public static bool operator != (InfoHash left, InfoHash right)
-        {
-            return !(left == right);
-        }
+            => !(left == right);
 
         public static InfoHash FromBase32 (string infoHash)
         {
@@ -131,8 +134,8 @@ namespace MonoTorrent
 
             infoHash = infoHash.ToLower ();
             int infoHashOffset = 0;
-            byte[] hash = new byte[20];
-            byte[] temp = new byte[8];
+            Span<byte> hash = stackalloc byte[20];
+            Span<byte> temp = stackalloc byte[8];
             for (int i = 0; i < hash.Length;) {
                 for (int j = 0; j < 8; j++)
                     if (!Base32DecodeTable.TryGetValue (infoHash[infoHashOffset++], out temp[j]))
@@ -164,11 +167,18 @@ namespace MonoTorrent
             return new InfoHash (hash);
         }
 
+        /// <summary>
+        /// Stores the supplied value internally.
+        /// </summary>
+        /// <param name="infoHash"></param>
+        public static InfoHash FromMemory (ReadOnlyMemory<byte> infoHash)
+            => new InfoHash (infoHash);
+
         public static InfoHash UrlDecode (string infoHash)
         {
             if (infoHash is null)
                 throw new ArgumentNullException (nameof (infoHash));
-            return new InfoHash (HttpUtility.UrlDecodeToBytes (infoHash));
+            return new InfoHash (new ReadOnlyMemory<byte> (HttpUtility.UrlDecodeToBytes (infoHash)));
         }
     }
 }

@@ -30,6 +30,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using ReusableTasks;
@@ -48,16 +49,29 @@ namespace MonoTorrent.Connections.Peer
         /// </summary>
         /// <param name="buffer">The buffer we wish to get the reusuable 'SocketAsyncEventArgs' for</param>
         /// <returns></returns>
-        static SocketAsyncEventArgs GetSocketAsyncEventArgs (ByteBuffer buffer)
+        static SocketAsyncEventArgs GetSocketAsyncEventArgs (SocketMemory buffer)
         {
-            if (buffer.Args.Buffer == null) {
-                buffer.Args.SetBuffer (buffer.Data, 0, buffer.Data.Length);
-                buffer.Args.Completed += Handler;
-            }
-            return buffer.Args;
+
+#if NETSTANDARD2_0
+            if (buffer.SocketArgs.Buffer == null)
+                buffer.SocketArgs.Completed += Handler;
+
+            if (!MemoryMarshal.TryGetArray (buffer.Memory, out ArraySegment<byte> segment))
+                throw new ArgumentException ("Could not retrieve the underlying buffer");
+
+            if (buffer.SocketArgs.Buffer == null)
+                buffer.SocketArgs.SetBuffer (segment.Array, segment.Offset, segment.Count);
+            else
+                buffer.SocketArgs.SetBuffer (segment.Offset, segment.Count);
+#else
+            if (buffer.SocketArgs.MemoryBuffer.IsEmpty)
+                buffer.SocketArgs.Completed += Handler;
+            buffer.SocketArgs.SetBuffer (buffer.Memory);
+#endif
+            return buffer.SocketArgs;
         }
 
-        #region Member Variables
+#region Member Variables
 
         public byte[] AddressBytes => EndPoint.Address.GetAddressBytes ();
 
@@ -83,10 +97,10 @@ namespace MonoTorrent.Connections.Peer
 
         public Uri Uri { get; }
 
-        #endregion
+#endregion
 
 
-        #region Constructors
+#region Constructors
 
         public SocketPeerConnection (Socket socket, bool isIncoming)
             : this (null, null, socket, isIncoming)
@@ -134,10 +148,10 @@ namespace MonoTorrent.Connections.Peer
                 tcs.SetResult (transferred);
         }
 
-        #endregion
+#endregion
 
 
-        #region Async Methods
+#region Async Methods
 
         public async ReusableTask ConnectAsync ()
         {
@@ -148,10 +162,9 @@ namespace MonoTorrent.Connections.Peer
             }
         }
 
-        public ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
+        public ReusableTask<int> ReceiveAsync (SocketMemory buffer)
         {
             SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
-            args.SetBuffer (offset, count);
             args.UserToken = ReceiveTcs;
 
             AsyncFlowControl? control = null;
@@ -170,10 +183,9 @@ namespace MonoTorrent.Connections.Peer
             return ReceiveTcs.Task;
         }
 
-        public ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
+        public ReusableTask<int> SendAsync (SocketMemory buffer)
         {
             SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
-            args.SetBuffer (offset, count);
             args.UserToken = SendTcs;
 
             AsyncFlowControl? control = null;
@@ -182,7 +194,7 @@ namespace MonoTorrent.Connections.Peer
 
             try {
                 if (!Socket.SendAsync (args))
-                    SendTcs.SetResult (count);
+                    SendTcs.SetResult (buffer.Length);
             } catch (ObjectDisposedException) {
                 SendTcs.SetResult (0);
             } finally {
@@ -199,6 +211,6 @@ namespace MonoTorrent.Connections.Peer
             Socket?.Dispose ();
         }
 
-        #endregion
+#endregion
     }
 }

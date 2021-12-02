@@ -26,6 +26,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
+
 namespace MonoTorrent
 {
     public sealed class MutableBitField : BitField
@@ -40,7 +42,7 @@ namespace MonoTorrent
         {
         }
 
-        public MutableBitField (byte[] array, int length)
+        public MutableBitField (ReadOnlySpan<byte> array, int length)
             : base (array, length)
         {
         }
@@ -62,8 +64,8 @@ namespace MonoTorrent
         public new MutableBitField From (BitField value)
             => (MutableBitField) base.From (value);
 
-        public new MutableBitField From (byte[] array, int offset)
-            => (MutableBitField) base.From (array, offset);
+        public new MutableBitField From (ReadOnlySpan<byte> buffer)
+            => (MutableBitField) base.From (buffer);
 
         public new MutableBitField NAnd (BitField value)
             => (MutableBitField) base.NAnd (value);

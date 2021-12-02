@@ -53,7 +53,7 @@ namespace MonoTorrent.Dht.Messages
             properties.Add (QueryNameKey, queryName);
             properties.Add (QueryArgumentsKey, queryArguments);
 
-            Parameters.Add (IdKey, id.BencodedString ());
+            Parameters.Add (IdKey, BEncodedString.FromMemory (id.AsMemory ()));
         }
 
         protected QueryMessage (BEncodedDictionary d)

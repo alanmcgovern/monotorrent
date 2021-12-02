@@ -34,29 +34,29 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    struct EnsureThreadPool : INotifyCompletion
+    internal struct EnsureThreadPool : INotifyCompletion
     {
-        static readonly WaitCallback Callback = (state) => ((Action) state).Invoke ();
+        static readonly WaitCallback Callback = (state) => ((Action)state).Invoke();
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public EnsureThreadPool GetAwaiter ()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public EnsureThreadPool GetAwaiter()
         {
             return this;
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public bool IsCompleted => Thread.CurrentThread.IsThreadPoolThread;
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public void GetResult ()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void GetResult()
         {
 
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public void OnCompleted (Action continuation)
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void OnCompleted(Action continuation)
         {
-            ThreadPool.UnsafeQueueUserWorkItem (Callback, continuation);
+            ThreadPool.UnsafeQueueUserWorkItem(Callback, continuation);
         }
     }
 }

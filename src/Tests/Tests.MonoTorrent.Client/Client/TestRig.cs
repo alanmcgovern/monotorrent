@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
 
         public int MaximumOpenFiles { get; }
 
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
         {
             if (DoNotReadFrom.Contains (file))
                 return ReusableTask.FromResult (0);
@@ -69,15 +69,15 @@ namespace MonoTorrent.Client
             if (!Paths.Contains (file.FullPath))
                 Paths.Add (file.FullPath);
 
-            if ((offset + count) > file.Length)
+            if ((offset + buffer.Length) > file.Length)
                 throw new ArgumentOutOfRangeException ("Tried to read past the end of the file");
             if (!DontWrite)
-                for (int i = 0; i < count; i++)
-                    buffer[bufferOffset + i] = (byte) (bufferOffset + i);
-            return ReusableTask.FromResult (count);
+                for (int i = 0; i < buffer.Length; i++)
+                    buffer.Span[i] = (byte) i;
+            return ReusableTask.FromResult (buffer.Length);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, byte[] buffer, int bufferOffset, int count)
+        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }
@@ -139,7 +139,7 @@ namespace MonoTorrent.Client
                 throw new TrackerException ("Deliberately failing announce request", null);
 
             AnnounceParameters.Add (parameters);
-            return ReusableTask.FromResult (new AnnounceResponse (TrackerState.Ok, peers: peers.Select (t => new PeerInfo (t.ConnectionUri, t.PeerId?.TextBytes)).ToArray ()));
+            return ReusableTask.FromResult (new AnnounceResponse (TrackerState.Ok, peers: peers.Select (t => new PeerInfo (t.ConnectionUri, t.PeerId?.AsMemory () ?? Memory<byte>.Empty)).ToArray ()));
         }
 
         public ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest parameters, CancellationToken token)
@@ -208,24 +208,28 @@ namespace MonoTorrent.Client
             Disposed = true;
         }
 
-        public async ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count)
+        public async ReusableTask<int> ReceiveAsync (SocketMemory buffer)
         {
             if (SlowConnection)
-                count = Math.Min (88, count);
+                buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            var result = await ReadStream.ReadAsync (buffer.Data, offset, count, CancellationToken.None);
-            Receives.Add (result);
-            return ManualBytesReceived ?? result;
+            using (MemoryPool.Default.RentArraySegment (buffer.Length, out ArraySegment<byte> segment)) {
+                var result = await ReadStream.ReadAsync (segment.Array, segment.Offset, buffer.Length, CancellationToken.None);
+                segment.Array.AsSpan (segment.Offset, result).CopyTo (buffer.Span);
+                Receives.Add (result);
+                return ManualBytesReceived ?? result;
+            }
         }
 
-        public async ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count)
+        public async ReusableTask<int> SendAsync (SocketMemory buffer)
         {
             if (SlowConnection)
-                count = Math.Min (88, count);
+                buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            await WriteStream.WriteAsync (buffer.Data, offset, count, CancellationToken.None);
-            Sends.Add (count);
-            return ManualBytesSent ?? count;
+            var data = buffer.Memory.ToArray ();
+            await WriteStream.WriteAsync (data, 0, data.Length, CancellationToken.None);
+            Sends.Add (buffer.Length);
+            return ManualBytesSent ?? buffer.Length;
         }
 
         public override string ToString ()

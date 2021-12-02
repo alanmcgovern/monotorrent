@@ -227,7 +227,7 @@ namespace MonoTorrent.Common
         [Test]
         public void ED2K ()
         {
-            Assert.IsTrue (Toolbox.ByteMatch (torrent.ED2K, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("ed2k isn't a sha, but who cares"))));
+            Assert.IsTrue (MemoryExtensions.SequenceEqual (torrent.ED2K.Span, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("ed2k isn't a sha, but who cares"))));
         }
 
         /// <summary>
@@ -462,7 +462,7 @@ namespace MonoTorrent.Common
         [Test]
         public void SHA1 ()
         {
-            Assert.IsTrue (Toolbox.ByteMatch (torrent.SHA1, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))));
+            Assert.IsTrue (MemoryExtensions.SequenceEqual (torrent.SHA1.Span, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))));
         }
     }
 }

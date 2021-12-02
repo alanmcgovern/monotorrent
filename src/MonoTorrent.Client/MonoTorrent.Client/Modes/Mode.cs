@@ -208,9 +208,9 @@ namespace MonoTorrent.Client.Modes
                 if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaximumConnections)
                     return;
 
-                IList<Peer> newPeers = Peer.Decode (message.Added);
+                IList<Peer> newPeers = Peer.Decode (BEncodedString.FromMemory (message.Added));
                 for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++) {
-                    newPeers[i].IsSeeder = (message.AddedDotF[i] & 0x2) == 0x2;
+                    newPeers[i].IsSeeder = (message.AddedDotF.Span[i] & 0x2) == 0x2;
                 }
                 int count = await Manager.AddPeersAsync (newPeers);
                 Manager.RaisePeersFound (new PeerExchangePeersAdded (Manager, count, newPeers.Count, id));

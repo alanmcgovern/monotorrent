@@ -6,6 +6,7 @@
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    <UseMemoryExtensions>true</UseMemoryExtensions>
   </PropertyGroup>
 
   <ItemGroup>

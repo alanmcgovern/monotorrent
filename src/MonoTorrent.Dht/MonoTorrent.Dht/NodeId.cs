@@ -30,6 +30,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using MonoTorrent.BEncoding;
 
@@ -44,102 +45,84 @@ namespace MonoTorrent.Dht
 
         public BigEndianBigInteger value;
 
-        public byte[] Bytes { get; }
+        ReadOnlyMemory<byte> Bytes { get; }
+
+        public ReadOnlySpan<byte> Span => Bytes.Span;
 
         internal NodeId (BigEndianBigInteger value)
         {
-            Bytes = value.ToByteArray ();
-            if (Bytes.Length < 20) {
+            var b = value.ToByteArray ();
+            if (b.Length < 20) {
                 byte[] newBytes = new byte[20];
-                Buffer.BlockCopy (Bytes, 0, newBytes, newBytes.Length - Bytes.Length, Bytes.Length);
-                Bytes = newBytes;
+                b.AsSpan ().CopyTo (newBytes.AsSpan ().Slice (newBytes.Length - b.Length, b.Length));
+                b = newBytes;
             }
 
-            if (Bytes.Length != 20)
+            if (b.Length != 20)
                 throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
+            Bytes = b;
         }
 
         internal NodeId (byte[] value)
         {
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
             if (value.Length != 20)
-                throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
-
-            Bytes = value;
+                throw new ArgumentException ("Array should be exactly 20 bytes", nameof (value));
+            Bytes = (byte[]) value.Clone ();
         }
 
         internal NodeId (InfoHash infoHash)
-            : this (infoHash.ToArray ())
         {
-
+            if (infoHash is null)
+                throw new ArgumentNullException (nameof (infoHash));
+            Bytes = infoHash.AsMemory ();
         }
 
         internal NodeId (BEncodedString value)
-            : this (value.TextBytes)
         {
-
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+            if (value.Span.Length != 20)
+                throw new ArgumentException ("BEncodedString should be exactly 20 bytes", nameof (value));
+            Bytes = value.Span.ToArray ();
         }
 
-        internal BEncodedString BencodedString ()
-        {
-            return new BEncodedString ((byte[]) Bytes.Clone ());
-        }
+        public ReadOnlyMemory<byte> AsMemory ()
+            => Bytes;
 
         public int CompareTo (object obj)
-        {
-            return CompareTo (obj as NodeId);
-        }
+            => CompareTo (obj as NodeId);
 
         public int CompareTo (NodeId other)
-        {
-            if (other is null)
-                return 1;
-
-            for (int i = 0; i < Bytes.Length; i++) {
-                if (Bytes[i] != other.Bytes[i])
-                    return Bytes[i] - other.Bytes[i];
-            }
-            return 0;
-        }
+            => other is null ? 1 : MemoryExtensions.SequenceCompareTo (Span, other.Span);
 
         public override bool Equals (object obj)
-        {
-            return Equals (obj as NodeId);
-        }
+            => Equals (obj as NodeId);
 
         public bool Equals (NodeId other)
-        {
-            return this == other;
-        }
+            => this == other;
 
         public override int GetHashCode ()
-        {
-            return Bytes[0] << 24
-                        | Bytes[1] << 16
-                        | Bytes[2] << 8
-                        | Bytes[3];
-        }
+            => MemoryMarshal.Read<int> (Span);
 
         public override string ToString ()
-        {
-            return BitConverter.ToString (Bytes);
-        }
+            => BitConverter.ToString (Span.ToArray ());
 
         internal static NodeId Median (NodeId min, NodeId max)
-        {
-            return new NodeId ((new BigEndianBigInteger (min.Bytes) + new BigEndianBigInteger (max.Bytes)) / 2);
-        }
+            => new NodeId ((new BigEndianBigInteger (min.Span) + new BigEndianBigInteger (max.Span)) / 2);
 
         public static NodeId operator ^ (NodeId left, NodeId right)
         {
-            byte[] clone = (byte[]) left.Bytes.Clone ();
-            for (int i = 0; i < right.Bytes.Length; i++)
-                clone[i] ^= right.Bytes[i];
+            var clone = new byte[left.Span.Length];
+            for (int i = 0; i < right.Span.Length; i++)
+                clone[i] = (byte)(left.Span[i] ^ right.Span[i]);
             return new NodeId (clone);
         }
 
         public static NodeId operator - (NodeId first, NodeId second)
         {
-            return new NodeId (new BigEndianBigInteger (first.Bytes) - new BigEndianBigInteger (second.Bytes));
+            return new NodeId (new BigEndianBigInteger (first.Span) - new BigEndianBigInteger (second.Span));
         }
 
         public static bool operator > (NodeId first, NodeId second)
@@ -149,7 +132,7 @@ namespace MonoTorrent.Dht
 
         public static bool operator > (NodeId first, int second)
         {
-            return new BigEndianBigInteger (first.Bytes) > second;
+            return new BigEndianBigInteger (first.Span) > second;
         }
 
         public static bool operator < (NodeId first, NodeId second)
@@ -159,7 +142,7 @@ namespace MonoTorrent.Dht
 
         public static bool operator < (NodeId first, int second)
         {
-            return new BigEndianBigInteger (first.Bytes) < second;
+            return new BigEndianBigInteger (first.Span) < second;
         }
 
         public static bool operator <= (NodeId first, NodeId second)
@@ -174,17 +157,19 @@ namespace MonoTorrent.Dht
 
         public static bool operator == (NodeId first, NodeId second)
         {
-            return first is null ? second is null : first.CompareTo (second) == 0;
+            if (first is null)
+                return second is null;
+            if (second is null)
+                return false;
+            return MemoryExtensions.SequenceEqual (first.Span, second.Span);
         }
 
         public static bool operator != (NodeId first, NodeId second)
-        {
-            return !(first == second);
-        }
+            => !(first == second);
 
         public static NodeId Create ()
         {
-            byte[] b = new byte[20];
+            var b = new byte[20];
             lock (random)
                 random.NextBytes (b);
             return new NodeId (b);

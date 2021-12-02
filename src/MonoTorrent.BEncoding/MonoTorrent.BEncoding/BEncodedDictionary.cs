@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -37,14 +38,23 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public class BEncodedDictionary : BEncodedValue, IDictionary<BEncodedString, BEncodedValue>
     {
-        #region Member Variables
+        /// <summary>
+        /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
+        /// for torrents which contain dictionaries with misordered keys.
+        /// </summary>
+        /// <returns></returns>
+        public static (BEncodedDictionary torrent, ReadOnlyMemory<byte> infohash) DecodeTorrent (ReadOnlySpan<byte> buffer)
+            => BEncodeDecoder.DecodeTorrent (ref buffer);
+
+        /// <summary>
+        /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
+        /// for torrents which contain dictionaries with misordered keys.
+        /// </summary>
+        /// <returns></returns>
+        public static (BEncodedDictionary torrent, ReadOnlyMemory<byte> infohash) DecodeTorrent (Stream stream)
+            => BEncodeDecoder.DecodeTorrent (stream);
 
         readonly SortedList<BEncodedString, BEncodedValue> dictionary;
-
-        #endregion
-
-
-        #region Constructors
 
         /// <summary>
         /// Create a new BEncodedDictionary
@@ -54,51 +64,26 @@ namespace MonoTorrent.BEncoding
             dictionary = new SortedList<BEncodedString, BEncodedValue> ();
         }
 
-        #endregion
-
-
-        #region Encode/Decode Methods
-
         /// <summary>
         /// Encodes the dictionary to a byte[]
         /// </summary>
         /// <param name="buffer">The buffer to encode the data to</param>
-        /// <param name="offset">The offset to start writing the data to</param>
         /// <returns></returns>
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = 0;
-
             //Dictionaries start with 'd'
-            buffer[offset] = (byte) 'd';
-            written++;
+            buffer[0] = (byte) 'd';
+            int written = 1;
 
             foreach (var keypair in dictionary) {
-                written += keypair.Key.Encode (buffer, offset + written);
-                written += keypair.Value.Encode (buffer, offset + written);
+                written += keypair.Key.Encode (buffer.Slice (written));
+                written += keypair.Value.Encode (buffer.Slice (written));
             }
 
             // Dictionaries end with 'e'
-            buffer[offset + written] = (byte) 'e';
-            written++;
+            buffer[written ++] = (byte) 'e';
             return written;
         }
-
-        public static (BEncodedDictionary torrent, byte[] infohash) DecodeTorrent (byte[] bytes)
-            => DecodeTorrent (new MemoryStream (bytes));
-
-        /// <summary>
-        /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
-        /// for torrents which contain dictionaries with misordered keys.
-        /// </summary>
-        /// <returns></returns>
-        public static (BEncodedDictionary torrent, byte[] infohash) DecodeTorrent (Stream stream)
-            => BEncodeDecoder.DecodeTorrent (new RawReader (stream, false));
-
-        #endregion
-
-
-        #region Helper Methods
 
         /// <summary>
         /// Returns the size of the dictionary in bytes using UTF8 encoding
@@ -116,10 +101,6 @@ namespace MonoTorrent.BEncoding
             return length;
         }
 
-        #endregion
-
-
-        #region Overridden Methods
         public override bool Equals (object obj)
         {
             if (!(obj is BEncodedDictionary other))
@@ -151,13 +132,8 @@ namespace MonoTorrent.BEncoding
         }
 
         public override string ToString ()
-        {
-            return System.Text.Encoding.UTF8.GetString (Encode ());
-        }
-        #endregion
+            => $"BEncodedDictionary [{Count} items]";
 
-
-        #region IDictionary and IList methods
         public void Add (BEncodedString key, BEncodedValue value)
         {
             dictionary.Add (key, value);
@@ -203,16 +179,6 @@ namespace MonoTorrent.BEncoding
             return dictionary.TryGetValue (key, out BEncodedValue value) ? value : defaultValue;
         }
 
-        //public int IndexOf(KeyValuePair<BEncodedString, IBEncodedValue> item)
-        //{
-        //    return this.dictionary.IndexOf(item);
-        //}
-
-        //public void Insert(int index, KeyValuePair<BEncodedString, IBEncodedValue> item)
-        //{
-        //    this.dictionary.Insert(index, item);
-        //}
-
         public bool IsReadOnly => false;
 
         public bool Remove (BEncodedString key)
@@ -248,6 +214,5 @@ namespace MonoTorrent.BEncoding
         {
             return dictionary.GetEnumerator ();
         }
-        #endregion
     }
 }

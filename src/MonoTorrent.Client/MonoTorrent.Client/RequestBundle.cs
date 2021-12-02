@@ -45,23 +45,23 @@ namespace MonoTorrent.Messages.Peer
 
         public override int ByteLength => Message.ByteLength * Requests.Count;
 
-        public override void Decode (byte[] buffer, int offset, int length)
+        public override void Decode (ReadOnlySpan<byte> buffer)
         {
             throw new InvalidOperationException ();
         }
 
-        public override int Encode (byte[] buffer, int offset)
+        public override int Encode (Span<byte> buffer)
         {
-            int written = offset;
+            int written = buffer.Length;
 
             for (int i = 0; i < Requests.Count; i++) {
                 Message.PieceIndex = Requests[i].PieceIndex;
                 Message.RequestLength = Requests[i].RequestLength;
                 Message.StartOffset = Requests[i].StartOffset;
-                written += Message.Encode (buffer, written);
+                buffer = buffer.Slice (Message.Encode (buffer));
             }
 
-            return written - offset;
+            return written - buffer.Length;
         }
 
         public IEnumerable<RequestMessage> ToRequestMessages ()

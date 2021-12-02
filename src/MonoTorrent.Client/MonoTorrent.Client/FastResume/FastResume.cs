@@ -73,14 +73,14 @@ namespace MonoTorrent.Client
             CheckContent (dict, BitfieldKey);
             CheckContent (dict, BitfieldLengthKey);
 
-            Infohash = new InfoHash (((BEncodedString) dict[InfoHashKey]).TextBytes);
+            Infohash = InfoHash.FromMemory (((BEncodedString) dict[InfoHashKey]).AsMemory ());
 
-            byte[] data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
+            var data = ((BEncodedString) dict[BitfieldKey]).Span;
             Bitfield = new BitField (data, (int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
 
             // If we're loading up an older version of the FastResume data then we
             if (dict.ContainsKey (UnhashedPiecesKey)) {
-                data = ((BEncodedString) dict[UnhashedPiecesKey]).TextBytes;
+                data = ((BEncodedString) dict[UnhashedPiecesKey]).Span;
                 UnhashedPieces = new BitField (data, Bitfield.Length);
             } else {
                 UnhashedPieces = new BitField (Bitfield.Length);
@@ -106,7 +106,7 @@ namespace MonoTorrent.Client
         {
             return new BEncodedDictionary {
                 { VersionKey, FastResumeVersion },
-                { InfoHashKey, new BEncodedString(Infohash.UnsafeAsArray ()) },
+                { InfoHashKey, new BEncodedString(Infohash.Span.ToArray ()) },
                 { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
                 { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },
                 { UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) }

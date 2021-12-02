@@ -36,11 +36,11 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    class MainLoop : SynchronizationContext, INotifyCompletion
+    internal class MainLoop : SynchronizationContext, INotifyCompletion
     {
-        static readonly ICache<CacheableManualResetEventSlim> cache = new Cache<CacheableManualResetEventSlim> (() => new CacheableManualResetEventSlim ()).Synchronize ();
+        static readonly ICache<CacheableManualResetEventSlim> cache = new Cache<CacheableManualResetEventSlim>(() => new CacheableManualResetEventSlim()).Synchronize();
 
-        struct QueuedTask
+        private struct QueuedTask
         {
             public Action Action;
 
@@ -50,140 +50,155 @@ namespace MonoTorrent.Client
             public ManualResetEventSlim WaitHandle;
         }
 
-        class CacheableManualResetEventSlim : ManualResetEventSlim, ICacheable
+        private class CacheableManualResetEventSlim : ManualResetEventSlim, ICacheable
         {
-            public void Initialise ()
+            public void Initialise()
             {
-                Reset ();
+                Reset();
             }
         }
 
-        Queue<QueuedTask> actions = new Queue<QueuedTask> ();
-        readonly object actionsLock = new object ();
+        Queue<QueuedTask> actions = new Queue<QueuedTask>();
+        readonly object actionsLock = new object();
         readonly Thread thread;
 
-        public MainLoop (string name)
+        public MainLoop(string name)
         {
-            thread = new Thread (Loop) {
+            thread = new Thread(Loop)
+            {
                 Name = name,
                 IsBackground = true
             };
-            thread.Start ();
+            thread.Start();
         }
 
-        void Loop ()
+        void Loop()
         {
-            var currentQueue = new Queue<QueuedTask> ();
+            var currentQueue = new Queue<QueuedTask>();
 
-            SetSynchronizationContext (this);
+            SetSynchronizationContext(this);
 #if ALLOW_EXECUTION_CONTEXT_SUPPRESSION
             using (ExecutionContext.SuppressFlow ())
 #endif
-            while (true) {
+            while (true)
+            {
 
-                lock (actionsLock) {
+                lock (actionsLock)
+                {
                     if (actions.Count == 0)
-                        Monitor.Wait (actionsLock);
+                        Monitor.Wait(actionsLock);
 
                     var swap = actions;
                     actions = currentQueue;
                     currentQueue = swap;
                 }
 
-                while (currentQueue.Count > 0) {
-                    var task = currentQueue.Dequeue ();
-                    try {
-                        task.Action?.Invoke ();
-                        task.SendOrPostCallback?.Invoke (task.State);
-                    } catch (Exception ex) {
-                        Console.WriteLine ("Unexpected main loop exception: {0}", ex);
-                    } finally {
-                        task.WaitHandle?.Set ();
+                while (currentQueue.Count > 0)
+                {
+                    var task = currentQueue.Dequeue();
+                    try
+                    {
+                        task.Action?.Invoke();
+                        task.SendOrPostCallback?.Invoke(task.State);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Unexpected main loop exception: {0}", ex);
+                    }
+                    finally
+                    {
+                        task.WaitHandle?.Set();
                     }
                 }
             }
         }
 
-        public void QueueWait (Action action)
+        public void QueueWait(Action action)
         {
-            Send (t => action (), null);
+            Send(t => action(), null);
         }
 
-        public object QueueWait (Func<object> func)
+        public object QueueWait(Func<object> func)
         {
             object result = null;
-            Send (t => result = func (), null);
+            Send(t => result = func(), null);
             return result;
         }
 
-        public void QueueTimeout (TimeSpan span, Func<bool> task)
+        public void QueueTimeout(TimeSpan span, Func<bool> task)
         {
             if (span.TotalMilliseconds < 1)
-                span = TimeSpan.FromMilliseconds (1);
+                span = TimeSpan.FromMilliseconds(1);
             bool disposed = false;
             Timer timer = null;
 
-            void Callback (object state)
+            void Callback(object state)
             {
-                if (!disposed && !task ()) {
+                if (!disposed && !task())
+                {
                     disposed = true;
-                    timer.Dispose ();
+                    timer.Dispose();
                 }
             }
 
-            timer = new Timer (state => {
-                Post (Callback, null);
+            timer = new Timer(state =>
+            {
+                Post(Callback, null);
             }, null, span, span);
         }
 
-        void Queue (QueuedTask task)
+        void Queue(QueuedTask task)
         {
-            lock (actionsLock) {
-                actions.Enqueue (task);
+            lock (actionsLock)
+            {
+                actions.Enqueue(task);
                 if (actions.Count == 1)
-                    Monitor.Pulse (actionsLock);
+                    Monitor.Pulse(actionsLock);
             }
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public override void Post (SendOrPostCallback d, object state)
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public override void Post(SendOrPostCallback d, object state)
         {
-            Queue (new QueuedTask { SendOrPostCallback = d, State = state });
+            Queue(new QueuedTask { SendOrPostCallback = d, State = state });
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public override void Send (SendOrPostCallback d, object state)
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public override void Send(SendOrPostCallback d, object state)
         {
-            if (thread == Thread.CurrentThread) {
-                d (state);
-            } else {
-                CacheableManualResetEventSlim waiter = cache.Dequeue ();
-                Queue (new QueuedTask { SendOrPostCallback = d, State = state, WaitHandle = waiter });
-                waiter.Wait ();
-                cache.Enqueue (waiter);
+            if (thread == Thread.CurrentThread)
+            {
+                d(state);
+            }
+            else
+            {
+                CacheableManualResetEventSlim waiter = cache.Dequeue();
+                Queue(new QueuedTask { SendOrPostCallback = d, State = state, WaitHandle = waiter });
+                waiter.Wait();
+                cache.Enqueue(waiter);
             }
         }
 
         #region If you await the MainLoop you'll swap to it's thread!
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public MainLoop GetAwaiter ()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public MainLoop GetAwaiter()
         {
             return this;
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public bool IsCompleted => thread == Thread.CurrentThread;
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public void GetResult ()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void GetResult()
         {
 
         }
 
-        [EditorBrowsable (EditorBrowsableState.Never)]
-        public void OnCompleted (Action continuation)
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void OnCompleted(Action continuation)
         {
-            Queue (new QueuedTask { Action = continuation });
+            Queue(new QueuedTask { Action = continuation });
         }
 
         /// <summary>
@@ -192,9 +207,9 @@ namespace MonoTorrent.Client
         /// will execute synchronously.
         /// </summary>
         /// <returns></returns>
-        public static EnsureThreadPool SwitchToThreadpool ()
+        public static EnsureThreadPool SwitchToThreadpool()
         {
-            return new EnsureThreadPool ();
+            return new EnsureThreadPool();
         }
 
         /// <summary>
@@ -202,16 +217,16 @@ namespace MonoTorrent.Client
         /// the ThreadPool for execution. It will never execute synchronously.
         /// </summary>
         /// <returns></returns>
-        public static ThreadSwitcher SwitchThread ()
+        public static ThreadSwitcher SwitchThread()
         {
-            return new ThreadSwitcher ();
+            return new ThreadSwitcher();
         }
 
-        [Conditional ("DEBUG")]
-        internal void CheckThread ()
+        [Conditional("DEBUG")]
+        internal void CheckThread()
         {
             if (Thread.CurrentThread != thread)
-                throw new InvalidOperationException ($"Missing context switch to the {thread.Name} MainLoop.");
+                throw new InvalidOperationException($"Missing context switch to the {thread.Name} MainLoop.");
         }
 
         #endregion

@@ -63,11 +63,6 @@ namespace MonoTorrent.Connections
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
             var tcs = (ReusableTaskCompletionSource<int>) e.UserToken;
             SocketError error = e.SocketError;
-            e.RemoteEndPoint = null;
-            e.UserToken = null;
-
-            lock (cache)
-                cache.Enqueue (e);
 
             if (error != SocketError.Success)
                 tcs.SetException (new SocketException ((int) error));
@@ -87,10 +82,20 @@ namespace MonoTorrent.Connections
             args.RemoteEndPoint = endPoint;
             args.UserToken = tcs;
 
-            if (!socket.ConnectAsync (args))
-                tcs.SetResult (0);
+            try {
+                if (!socket.ConnectAsync (args))
+                    tcs.SetResult (0);
 
-            await tcs.Task;
+                await tcs.Task;
+            } catch {
+                socket.Dispose ();
+                throw;
+            } finally {
+                args.RemoteEndPoint = null;
+                args.UserToken = null;
+                lock (cache)
+                    cache.Enqueue (args);
+            }
             return socket;
         }
     }

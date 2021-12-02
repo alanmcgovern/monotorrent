@@ -48,9 +48,9 @@ namespace MonoTorrent.Connections.Peer
 
         ReusableTask ConnectAsync ();
 
-        ReusableTask<int> ReceiveAsync (ByteBuffer buffer, int offset, int count);
+        ReusableTask<int> ReceiveAsync (SocketMemory buffer);
 
-        ReusableTask<int> SendAsync (ByteBuffer buffer, int offset, int count);
+        ReusableTask<int> SendAsync (SocketMemory buffer);
 
         Uri Uri { get; }
     }
