@@ -62,8 +62,8 @@ namespace MonoTorrent
             SmallMessageBuffers = new Queue<ByteBuffer> ();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
-            AllocateBuffers (AllocateDelta, LargeMessageBuffers, LargeMessageBufferSize);
-            AllocateBuffers (AllocateDelta, SmallMessageBuffers, SmallMessageBufferSize);
+            AllocateBuffers (AllocateDelta * 4, LargeMessageBuffers, LargeMessageBufferSize);
+            AllocateBuffers (AllocateDelta * 4, SmallMessageBuffers, SmallMessageBufferSize);
         }
 
         protected Releaser Rent (int capacity, out SocketMemory buffer)
@@ -95,7 +95,7 @@ namespace MonoTorrent
                     else
                         MassiveBuffers.Enqueue (buffer);
 
-                buffer = new ByteBuffer (capacity, CreateSocketAsyncArgs);
+                buffer = new ByteBuffer (new Memory<byte> (new byte[capacity]), CreateSocketAsyncArgs);
                 return new Releaser (MassiveBuffers, buffer);
             }
         }
@@ -112,8 +112,9 @@ namespace MonoTorrent
 
         void AllocateBuffers (int count, Queue<ByteBuffer> bufferQueue, int bufferSize)
         {
-            while (count-- > 0)
-                bufferQueue.Enqueue (new ByteBuffer (bufferSize, CreateSocketAsyncArgs));
+            var buffer = new byte[count * bufferSize];
+            for (int i = 0; i < count; i ++)
+                bufferQueue.Enqueue (new ByteBuffer (new Memory<byte> (buffer, i * bufferSize, bufferSize), CreateSocketAsyncArgs));
         }
     }
 }

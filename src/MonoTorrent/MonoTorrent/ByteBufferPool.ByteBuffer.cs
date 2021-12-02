@@ -47,9 +47,9 @@ namespace MonoTorrent
 
             public ArraySegment<byte> Segment { get; private set; }
 
-            public ByteBuffer (int size, bool createSocketAsyncArgs)
+            public ByteBuffer (Memory<byte> memory, bool createSocketAsyncArgs)
             {
-                Memory = new byte[size];
+                Memory = memory;
                 if (createSocketAsyncArgs)
                     socketMemory = new SocketMemory (Memory, new SocketAsyncEventArgs ());
             }
