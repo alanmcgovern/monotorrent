@@ -60,6 +60,9 @@ namespace MonoTorrent.Messages.Peer
             Register (RequestMessage.MessageId, data => new RequestMessage ());
             Register (SuggestPieceMessage.MessageId, data => new SuggestPieceMessage ());
             Register (UnchokeMessage.MessageId, data => new UnchokeMessage ());
+            Register (HashRequestMessage.MessageId, data => new HashRequestMessage ());
+            Register (HashesMessage.MessageId, data => new HashesMessage ());
+            Register (HashRejectMessage.MessageId, data => new HashRejectMessage ());
 
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection

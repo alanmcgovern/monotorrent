@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using NUnit.Framework;
@@ -174,6 +175,28 @@ namespace MonoTorrent.Messages.Peer
             Assert.AreEqual (orig.Encode (), dec.Encode ());
         }
 
+
+        [Test]
+        public void HashReject ()
+        {
+            var array = Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ();
+            EncodeDecode (new HashRequestMessage (array, 1, 2, 3, 4));
+        }
+
+        [Test]
+        public void Hashes ()
+        {
+            var piecesRoot = Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ();
+            ReadOnlyMemory<byte> hash = Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ();
+            EncodeDecode (new HashesMessage (piecesRoot, 1, 2, 3, 4, new List<ReadOnlyMemory<byte>> { hash }));
+        }
+
+        [Test]
+        public void HashRequest ()
+        {
+            var array = Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ();
+            EncodeDecode (new HashRequestMessage (array, 1, 2, 3, 4));
+        }
 
 
         [Test]
