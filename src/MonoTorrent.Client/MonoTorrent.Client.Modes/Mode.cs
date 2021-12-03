@@ -110,6 +110,12 @@ namespace MonoTorrent.Client.Modes
                 HandleBitfieldMessage (id, bitfield);
             else if (message is UnchokeMessage unchoke)
                 HandleUnchokeMessage (id, unchoke);
+            else if (message is HashRejectMessage hashReject)
+                HandleHashRejectMessage (id, hashReject);
+            else if (message is HashesMessage hashes)
+                HandleHashesMessage (id, hashes);
+            else if (message is HashRequestMessage hashRequest)
+                HandleHashRequestMessage (id, hashRequest);
             else if (message is HaveAllMessage haveall)
                 HandleHaveAllMessage (id, haveall);
             else if (message is HaveNoneMessage havenone)
@@ -136,6 +142,19 @@ namespace MonoTorrent.Client.Modes
                 throw new MessageException ($"Unsupported message found: {message.GetType ().Name}");
 
             ConnectionManager.TryProcessQueue (Manager, id);
+        }
+
+        protected virtual void HandleHashRequestMessage (PeerId id, HashRequestMessage hashRequest)
+        {
+            id.MessageQueue.Enqueue (new HashRejectMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers));
+        }
+
+        protected virtual void HandleHashesMessage (PeerId id, HashesMessage hashesMessage)
+        {
+        }
+
+        protected virtual void HandleHashRejectMessage (PeerId id, HashRejectMessage hashRejectMessage)
+        {
         }
 
         public bool ShouldConnect (PeerId peer)
