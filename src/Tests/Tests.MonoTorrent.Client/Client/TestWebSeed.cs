@@ -224,7 +224,14 @@ namespace MonoTorrent.Client
         [Test]
         public void CompleteChunkBeforeRequestNext ()
         {
-            var messages = requests.ToRequestMessages ().ToList ();
+            var messages = new List<RequestMessage> ();
+            var requestsBuffer = requests.Encode ().AsMemory ();
+            while (requestsBuffer.Length > 0) {
+                var message = (RequestMessage) PeerMessage.DecodeMessage (requestsBuffer.Span, null).message;
+                messages.Add (message);
+                requestsBuffer = requestsBuffer.Slice (message.ByteLength);
+            }
+
             for (int i = 0; i < messages.Count - 1; i++) {
                 rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, out _);
                 int orig = id.AmRequestingPiecesCount;
@@ -262,7 +269,14 @@ namespace MonoTorrent.Client
 
         private async Task CompleteSendOrReceiveFirst (SocketMemory buffer)
         {
-            var allRequests = requests.ToRequestMessages ().ToList ();
+            var allRequests = new List<RequestMessage> ();
+            var requestsBuffer = requests.Encode ().AsMemory ();
+            while (requestsBuffer.Length > 0) {
+                var message = (RequestMessage) PeerMessage.DecodeMessage (requestsBuffer.Span, null).message;
+                allRequests.Add (message);
+                requestsBuffer = requestsBuffer.Slice (message.ByteLength);
+            }
+
             while (allRequests.Count > 0) {
                 int size = Message.ReadInt (buffer.Span);
 

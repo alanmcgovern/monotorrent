@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -55,18 +56,18 @@ namespace MonoTorrent.PiecePicking
             => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
             && base.IsInteresting (peer, Temp);
 
-        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
             if (Bitfield.AllFalse)
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return base.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
             Temp.From (available).NAnd (Bitfield);
             if (Temp.AllFalse)
-                return null;
+                return 0;
 
-            return base.PickPiece (peer, Temp, otherPeers, count, startIndex, endIndex);
+            return base.PickPiece (peer, Temp, otherPeers, startIndex, endIndex, requests);
         }
     }
 }

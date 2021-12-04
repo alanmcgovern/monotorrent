@@ -101,11 +101,11 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse)
-                return null;
+                return 0;
 
             // Rebuild if any file changed priority
             if (ShouldRebuildSelectors ())
@@ -114,25 +114,25 @@ namespace MonoTorrent.PiecePicking
             // Fast Path - As 'files' has been sorted highest priority first, all files
             // must be set to DoNotDownload if this is true.
             if (files[0].Priority == Priority.DoNotDownload)
-                return null;
+                return 0;
 
             // Fast Path - If it's a single file, or if all the priorities are the same,
             // then we can just pick normally. No prioritisation is needed.
             if (files.Count == 1 || files.TrueForAll (AllSamePriority))
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return base.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
             // Start with the highest priority and work our way down.
             for (int i = 0; i < prioritised.Count; i++) {
                 temp.From (prioritised[i]).And (available);
                 if (!temp.AllFalse) {
-                    IList<BlockInfo> result = base.PickPiece (peer, temp, otherPeers, count, startIndex, endIndex);
-                    if (result != null)
+                    var result = base.PickPiece (peer, temp, otherPeers, startIndex, endIndex, requests);
+                    if (result > 0)
                         return result;
                 }
             }
 
             // None of the pieces from files marked as downloadable were available.
-            return null;
+            return 0;
         }
 
         void BuildSelectors ()

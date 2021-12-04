@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 using MonoTorrent.Client;
@@ -92,7 +93,8 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void SinglePieceRange ()
         {
-            picker.PickPiece (seeder, seeder.BitField, new List<PeerId> (), 1, 12, 13);
+            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            picker.PickPiece (seeder, seeder.BitField, new List<PeerId> (), 12, 13, buffer);
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");
             Assert.AreEqual (12, checker.Picks[0].startIndex, "#2");
@@ -102,8 +104,9 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void TwoPieceRange ()
         {
+            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
             var onePiece = new MutableBitField (seeder.BitField.Length).Set (0, true);
-            picker.PickPiece (seeder, onePiece, new List<PeerId> (), 1, 12, 14);
+            picker.PickPiece (seeder, onePiece, new List<PeerId> (), 12, 14, buffer);
 
             Assert.AreEqual (2, checker.Picks.Count, "#1");
             Assert.AreEqual (13, checker.Picks[0].startIndex, "#2");

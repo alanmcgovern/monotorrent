@@ -186,9 +186,11 @@ namespace MonoTorrent.PiecePicking
                 MutableBitField filtered = null;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= GenerateAlreadyHaves ().Not ().And (peer.BitField);
-                    IList<BlockInfo> request = PriorityPick (peer, filtered, allPeers, preferredRequestAmount, startPieceIndex, endPieceIndex);
-                    if (request != null && request.Count > 0)
-                        peer.EnqueueRequests (request);
+
+                    Span<BlockInfo> buffer = stackalloc BlockInfo[preferredRequestAmount];
+                    int requested = PriorityPick (peer, filtered, allPeers, startPieceIndex, endPieceIndex, buffer);
+                    if (requested > 0)
+                        peer.EnqueueRequests (buffer);
                     else
                         break;
                 }
@@ -203,10 +205,10 @@ namespace MonoTorrent.PiecePicking
             return Temp;
         }
 
-        IList<BlockInfo> PriorityPick (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        int PriorityPick (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             BlockInfo? request;
-            IList<BlockInfo> bundle;
+            int requestCount;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
                 var start = HighPriorityPieceIndex;
@@ -214,26 +216,28 @@ namespace MonoTorrent.PiecePicking
 
                 for (int prioritised = start; prioritised <= start + 1 && prioritised <= end; prioritised++) {
                     if (available[prioritised]) {
-                        if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, prioritised, prioritised)) != null)
-                            return bundle;
-                        if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, prioritised, prioritised, 3)) != null)
-                            return new[] { request.Value };
+                        if ((requestCount = HighPriorityPicker.PickPiece (peer, available, otherPeers, prioritised, prioritised, requests)) > 0)
+                            return requestCount;
+                        if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, prioritised, prioritised, 3)) != null) {
+                            requests[0] = request.Value;
+                            return 1;
+                        }
                     }
                 }
 
-                if ((bundle = HighPriorityPicker.PickPiece (peer, available, otherPeers, count, start, end)) != null)
-                    return bundle;
+                if ((requestCount = HighPriorityPicker.PickPiece (peer, available, otherPeers, start, end, requests)) > 0)
+                    return requestCount;
             }
 
             var lowPriorityEndIndex = Math.Min (HighPriorityPieceIndex + LowPriorityCount, endIndex);
-            if ((bundle = LowPriorityPicker.PickPiece (peer, available, otherPeers, count, HighPriorityPieceIndex, lowPriorityEndIndex)) != null)
-                return bundle;
+            if ((requestCount = LowPriorityPicker.PickPiece (peer, available, otherPeers, HighPriorityPieceIndex, lowPriorityEndIndex, requests)) > 0)
+                return requestCount;
 
             // If we're downloading from the 'not important at all' section, queue up at most 2.
             if (peer.AmRequestingPiecesCount < 2)
-                return LowPriorityPicker.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+                return LowPriorityPicker.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
-            return null;
+            return 0;
         }
 
         /// <summary>

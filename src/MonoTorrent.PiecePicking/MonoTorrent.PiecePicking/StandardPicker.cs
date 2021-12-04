@@ -144,38 +144,42 @@ namespace MonoTorrent.PiecePicking
             return !bitfield.AllFalse;
         }
 
-        public IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             BlockInfo? message;
-            IList<BlockInfo> bundle;
 
             // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
             // requests that could be continued would be existing "Fast" pieces.
-            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, 1, false, false)) != null)
-                return new[] { message.Value };
+            if ((message = ContinueExistingRequest (peer, startIndex, endIndex, 1, false, false)) != null) {
+                requests[0] = message.Value;
+                return 1;
+            }
 
             // Then we check if there are any allowed "Fast" pieces to download
-            if (peer.IsChoking && (message = GetFromList (peer, available, peer.IsAllowedFastPieces)) != null)
-                return new[] { message.Value };
+            if (peer.IsChoking && (message = GetFromList (peer, available, peer.IsAllowedFastPieces)) != null) {
+                requests[0] = message.Value;
+                return 1;
+            }
 
             // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
             if (peer.IsChoking)
-                return null;
+                return 0;
 
             // Only try to continue an abandoned piece if this peer has not recently been involved in downloading data which
             // failed it's hash check.
-            if (peer.RepeatedHashFails == 0 && (message = ContinueExistingRequest (peer, startIndex, endIndex, 1, true, false)) != null)
-                return new[] { message.Value };
+            if (peer.RepeatedHashFails == 0 && (message = ContinueExistingRequest (peer, startIndex, endIndex, 1, true, false)) != null) {
+                requests[0] = message.Value;
+                return 1;
+            }
 
             // We see if the peer has suggested any pieces we should request
-            if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null)
-                return new[] { message.Value };
+            if ((message = GetFromList (peer, available, peer.SuggestedPieces)) != null) {
+                requests[0] = message.Value;
+                return 1;
+            }
 
             // Now we see what pieces the peer has that we don't have and try and request one
-            if ((bundle = GetStandardRequest (peer, available, startIndex, endIndex, count)) != null)
-                return bundle;
-
-            return null;
+            return GetStandardRequest (peer, available, startIndex, endIndex, requests);
         }
 
         public void Reset ()
@@ -357,26 +361,26 @@ namespace MonoTorrent.PiecePicking
             return null;
         }
 
-        IList<BlockInfo> GetStandardRequest (IPeer peer, BitField current, int startIndex, int endIndex, int count)
+        int GetStandardRequest (IPeer peer, BitField current, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
-            int piecesNeeded = (count * Piece.BlockSize) / TorrentData.PieceLength;
-            if ((count * Piece.BlockSize) % TorrentData.PieceLength != 0)
+            int piecesNeeded = (requests.Length * Piece.BlockSize) / TorrentData.PieceLength;
+            if ((requests.Length * Piece.BlockSize) % TorrentData.PieceLength != 0)
                 piecesNeeded++;
             int checkIndex = CanRequest (current, startIndex, endIndex, ref piecesNeeded);
 
             // Nothing to request.
             if (checkIndex == -1)
-                return null;
+                return 0;
 
-            var bundle = new List<BlockInfo> (count);
-            for (int i = 0; bundle.Count < count && i < piecesNeeded; i++) {
+            var totalRequested = 0;
+            for (int i = 0; totalRequested < requests.Length && i < piecesNeeded; i++) {
                 // Request the piece
                 var p = new Piece (checkIndex + i, TorrentData.BytesPerPiece (checkIndex + i));
-                requests.Add (p);
-                for (int j = 0; j < p.Blocks.Length && bundle.Count < count; j++)
-                    bundle.Add (p.Blocks[j].CreateRequest (peer));
+                this.requests.Add (p);
+                for (int j = 0; j < p.Blocks.Length && totalRequested < requests.Length; j++)
+                    requests[totalRequested++] = p.Blocks[j].CreateRequest (peer);
             }
-            return bundle;
+            return totalRequested;
         }
 
         protected bool AlreadyRequested (int index)

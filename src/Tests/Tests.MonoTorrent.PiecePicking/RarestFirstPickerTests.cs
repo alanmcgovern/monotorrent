@@ -86,12 +86,13 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void RarestPieceTest ()
         {
+            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < (i * 5) + 5; j++)
                     peers[i].BitField[j] = true;
 
             // No pieces should be selected, but we can check what was requested.
-            picker.PickPiece (peer, peer.BitField, peers, 1, 0, peer.BitField.Length - 1);
+            picker.PickPiece (peer, peer.BitField, peers, 0, peer.BitField.Length - 1, buffer);
             Assert.AreEqual (6, checker.Picks.Count);
 
             // Two peers have piece 25

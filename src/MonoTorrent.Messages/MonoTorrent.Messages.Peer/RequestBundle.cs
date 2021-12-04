@@ -29,20 +29,24 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
 {
     public class RequestBundle : PeerMessage
     {
+        static readonly MemoryPool Pool = new MemoryPool ();
         static readonly int RequestMessageLength = new RequestMessage ().ByteLength;
 
-        List<BlockInfo> Requests { get; }
+        MemoryPool.ArraySegmentReleaser RequestsMemoryReleaser;
+        Memory<byte> RequestsMemory;
+        Span<BlockInfo> Requests => MemoryMarshal.Cast<byte, BlockInfo> (RequestsMemory.Span);
 
-        public override int ByteLength => RequestMessageLength * Requests.Count;
+        public override int ByteLength => RequestMessageLength * Requests.Length;
 
         public RequestBundle ()
         {
-            Requests = new List<BlockInfo> ();
         }
 
         public override void Decode (ReadOnlySpan<byte> buffer)
@@ -55,7 +59,7 @@ namespace MonoTorrent.Messages.Peer
             int written = buffer.Length;
 
             using (Rent (out RequestMessage message)) {
-                for (int i = 0; i < Requests.Count; i++) {
+                for (int i = 0; i < Requests.Length; i++) {
                     message.Initialize (Requests[i]);
                     buffer = buffer.Slice (message.Encode (buffer));
                 }
@@ -64,21 +68,18 @@ namespace MonoTorrent.Messages.Peer
             return written - buffer.Length;
         }
 
-        public void Initialize (IList<BlockInfo> requests)
+        public void Initialize (Span<BlockInfo> requests)
         {
-            Requests.AddRange (requests);
+            RequestsMemoryReleaser = Pool.RentArraySegment (MemoryMarshal.AsBytes (requests).Length, out var segment);
+            RequestsMemory = segment.AsMemory ();
+            requests.CopyTo (Requests);
         }
 
         protected override void Reset ()
         {
             base.Reset ();
-            Requests.Clear ();
-        }
-
-        public IEnumerable<RequestMessage> ToRequestMessages ()
-        {
-            foreach (BlockInfo req in Requests)
-                yield return new RequestMessage (req.PieceIndex, req.StartOffset, req.RequestLength);
+            RequestsMemoryReleaser.Dispose ();
+            (RequestsMemory, RequestsMemory) = (default, default);
         }
     }
 }

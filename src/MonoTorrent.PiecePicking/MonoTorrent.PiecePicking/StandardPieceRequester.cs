@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -34,6 +35,7 @@ namespace MonoTorrent.PiecePicking
     public class StandardPieceRequester : IPieceRequester
     {
         IReadOnlyList<BitField> IgnorableBitfields { get; set; }
+        Memory<BlockInfo> RequestBufferCache { get; set; }
         MutableBitField Temp { get; set; }
         ITorrentData TorrentData { get; set; }
 
@@ -79,8 +81,6 @@ namespace MonoTorrent.PiecePicking
             if (!peer.CanRequestMorePieces)
                 return;
 
-            int count = peer.PreferredRequestAmount (TorrentData.PieceLength);
-
             // This is safe to invoke. 'ContinueExistingRequest' strongly guarantees that a peer will only
             // continue a piece they have initiated. If they're choking then the only piece they can continue
             // will be a fast piece (if one exists!)
@@ -94,14 +94,20 @@ namespace MonoTorrent.PiecePicking
                 }
             }
 
-            // FIXME: Would it be easier if RequestManager called PickPiece(AllowedFastPieces[0]) or something along those lines?
+            int count = peer.PreferredRequestAmount (TorrentData.PieceLength);
+            if (RequestBufferCache.Length < count)
+                RequestBufferCache = new Memory<BlockInfo> (new BlockInfo[count]);
+
+            // Reuse the same buffer across multiple requests. However ensure the piecepicker is given
+            // a Span<T> of the expected size - so slice the reused buffer if it's too large.
+            var requestBuffer = RequestBufferCache.Span.Slice (0, count);
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
                 BitField filtered = null;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= ApplyIgnorables (peer.BitField);
-                    IList<BlockInfo> request = Picker.PickPiece (peer, filtered, allPeers, count, 0, TorrentData.PieceCount () - 1);
-                    if (request != null && request.Count > 0)
-                        peer.EnqueueRequests (request);
+                    int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount () - 1, requestBuffer);
+                    if (requests > 0)
+                        peer.EnqueueRequests (requestBuffer.Slice (0, requests));
                     else
                         break;
                 }

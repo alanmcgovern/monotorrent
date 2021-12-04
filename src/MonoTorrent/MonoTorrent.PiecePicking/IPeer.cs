@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -63,7 +64,7 @@ namespace MonoTorrent.PiecePicking
     public interface IPeerWithMessaging : IPeer
     {
         void EnqueueRequest (BlockInfo request);
-        void EnqueueRequests (IList<BlockInfo> requests);
+        void EnqueueRequests (Span<BlockInfo> requests);
         void EnqueueCancellation (BlockInfo request);
         void EnqueueCancellations (IList<BlockInfo> requests);
     }

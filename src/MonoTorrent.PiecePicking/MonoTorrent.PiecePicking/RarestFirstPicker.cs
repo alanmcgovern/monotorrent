@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -50,26 +51,26 @@ namespace MonoTorrent.PiecePicking
             spares.Clear ();
         }
 
-        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             if (available.AllFalse)
-                return null;
+                return 0;
 
-            if (count > 1)
-                return base.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+            if (requests.Length > 1)
+                return base.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
             GenerateRarestFirst (available, otherPeers);
 
             while (rarest.Count > 0) {
                 MutableBitField current = rarest.Pop ();
-                IList<BlockInfo> bundle = base.PickPiece (peer, current, otherPeers, count, startIndex, endIndex);
+                int requested = base.PickPiece (peer, current, otherPeers, startIndex, endIndex, requests);
                 spares.Push (current);
 
-                if (bundle != null)
-                    return bundle;
+                if (requested > 0)
+                    return requested;
             }
 
-            return null;
+            return 0;
         }
 
         void GenerateRarestFirst (BitField peerBitfield, IReadOnlyList<IPeer> otherPeers)

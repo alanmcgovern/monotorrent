@@ -51,7 +51,7 @@ namespace SampleClient
                 ListenEndPoint = new IPEndPoint (IPAddress.Any, 55123),
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
-                DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
+                DhtEndPoint = null,//new IPEndPoint (IPAddress.Any, 55123),
             };
             using var engine = new ClientEngine (settingBuilder.ToSettings ());
 

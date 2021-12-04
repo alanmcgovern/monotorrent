@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -114,11 +115,11 @@ namespace MonoTorrent.PiecePicking
         /// <param name="peer"></param>
         /// <param name="available"></param>
         /// <param name="otherPeers"></param>
-        /// <param name="count"></param>
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
+        /// <param name="requests"></param>
         /// <returns></returns>
-        IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex);
+        int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests);
 
         /// <summary>
         /// Called when a piece is received from the <paramref name="peer"/>. Returns true if the

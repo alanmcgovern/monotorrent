@@ -61,9 +61,10 @@ namespace MonoTorrent.PiecePicking
             Requests.Add (request);
         }
 
-        public void EnqueueRequests (IList<BlockInfo> requests)
+        public void EnqueueRequests (Span<BlockInfo> requests)
         {
-            Requests.AddRange (requests);
+            for (int i = 0; i < requests.Length; i++)
+                Requests.Add (requests[i]);
         }
 
         public int PreferredRequestAmount (int pieceLength)

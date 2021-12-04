@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -62,10 +63,10 @@ namespace MonoTorrent.PiecePicking
             return Next == null ? !bitfield.AllFalse : Next.IsInteresting (peer, bitfield);
         }
 
-        public override IList<BlockInfo> PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)
+        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
-            Picks.Add ((peer, new BitField (available), new List<IPeer> (otherPeers).AsReadOnly (), count, startIndex, endIndex));
-            return Next == null ? null : Next.PickPiece (peer, available, otherPeers, count, startIndex, endIndex);
+            Picks.Add ((peer, new BitField (available), new List<IPeer> (otherPeers).AsReadOnly (), requests.Length, startIndex, endIndex));
+            return Next == null ? 0 : Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
         }
     }
 }

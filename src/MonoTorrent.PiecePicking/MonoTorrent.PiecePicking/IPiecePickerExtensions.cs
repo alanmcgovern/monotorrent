@@ -45,19 +45,21 @@ namespace MonoTorrent.PiecePicking
 
         public static BlockInfo? PickPiece (this IPiecePicker picker, IPeer peer, BitField available)
         {
-            var result = picker.PickPiece (peer, available, Array.Empty<IPeer> (), 1, 0, available.Length - 1);
-            return result?.Single ();
+            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            var picked = picker.PickPiece (peer, available, Array.Empty<IPeer> (), 0, available.Length - 1, buffer);
+            return picked == 1 ? (BlockInfo?) buffer[0] : null;
         }
 
         public static BlockInfo? PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers)
         {
-            var result = picker.PickPiece (peer, available, otherPeers, 1, 0, available.Length - 1);
-            return result?.Single ();
+            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            var result = picker.PickPiece (peer, available, otherPeers, 0, available.Length - 1, buffer);
+            return result == 1 ? (BlockInfo?) buffer[0] : null;
         }
 
-        public static IList<BlockInfo> PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count)
+        public static int PickPiece (this IPiecePicker picker, IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, Span<BlockInfo> requests)
         {
-            return picker.PickPiece (peer, available, otherPeers, count, 0, available.Length - 1);
+            return picker.PickPiece (peer, available, otherPeers, 0, available.Length - 1, requests);
         }
     }
 }

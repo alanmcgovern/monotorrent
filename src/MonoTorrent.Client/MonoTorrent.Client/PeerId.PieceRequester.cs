@@ -62,17 +62,17 @@ namespace MonoTorrent.Client
 
         void IPeerWithMessaging.EnqueueRequest (BlockInfo request)
         {
-            (var message, var releaser) = PeerMessage.Rent<RequestMessage> ();
-            message.Initialize (request);
-            MessageQueue.Enqueue (message, releaser);
+            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            buffer[0] = request;
+            ((IPeerWithMessaging) this).EnqueueRequests (buffer);
         }
 
-        void IPeerWithMessaging.EnqueueRequests (IList<BlockInfo> requests)
+        void IPeerWithMessaging.EnqueueRequests (Span<BlockInfo> requests)
         {
+
             (var bundle, var releaser) = PeerMessage.Rent<RequestBundle> ();
             bundle.Initialize (requests);
-            MessageQueue.Enqueue (bundle, releaser);
-        }
+            MessageQueue.Enqueue (bundle, releaser);        }
 
         void IPeerWithMessaging.EnqueueCancellation (BlockInfo request)
         {
