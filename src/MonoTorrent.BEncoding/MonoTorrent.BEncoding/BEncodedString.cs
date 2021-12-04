@@ -147,10 +147,20 @@ namespace MonoTorrent.BEncoding
 #if NETSTANDARD2_0
         static int WriteLengthAsAscii (Span<byte> buffer, int asciiLength)
         {
-            var lengthString = asciiLength.ToString ();
-            for (int i = 0; i < lengthString.Length; i++)
-                buffer[i] = (byte) lengthString[i];
-            return lengthString.Length;
+            if (asciiLength == 0) {
+                buffer[0] = (byte) '0';
+                return 1;
+            }
+
+            // int32.MinValue can have at most 11 characters
+            Span<byte> printedchars = stackalloc byte[11];
+            int counter = printedchars.Length;
+            while (asciiLength > 0) {
+                printedchars[--counter] = (byte) ('0' + asciiLength % 10);
+                asciiLength /= 10;
+            }
+            printedchars.Slice (counter).CopyTo (buffer);
+            return printedchars.Length - counter;
         }
 #else
         static int WriteLengthAsAscii (Span<byte> buffer, int asciiLength)
