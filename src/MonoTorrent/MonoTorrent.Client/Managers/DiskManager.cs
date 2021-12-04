@@ -271,8 +271,12 @@ namespace MonoTorrent.Client
 
                     while (startOffset != endOffset) {
                         int count = (int) Math.Min (Piece.BlockSize, endOffset - startOffset);
-                        if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false))
+                        if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false)) {
+                            // There's a bug in .NET 6.0 where the hasher becomes corrupt if you Initialize it without calling 'TransformFinalBlock'
+                            // if you have called 'TransformBlock' at least once.
+                            hasher.TransformFinalBlock (new byte[0], 0, 0);
                             return null;
+                        }
                         startOffset += count;
                         hasher.TransformBlock (hashBuffer, 0, count, hashBuffer, 0);
                     }
