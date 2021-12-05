@@ -64,12 +64,12 @@ namespace MonoTorrent.Client
             return ReceiveMessageAsync (connection, decryptor, null, null, null, null);
         }
 
-        public static ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
         {
-            return ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, default);
+            return (await ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, default)).message;
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, SocketMemory buffer)
+        public static async ReusableTask<(PeerMessage message, PeerMessage.Releaser releaser)> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, SocketMemory buffer)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
                 }
 
                 if (messageBodyLength == 0)
-                    return new KeepAliveMessage ();
+                    return (KeepAliveMessage.Instance, default);
 
                 if (messageBuffer.IsEmpty || messageBuffer.Length < messageBodyLength + messageHeaderLength) {
                     messageBufferReleaser = NetworkIO.BufferPool.Rent (messageBodyLength + messageHeaderLength, out messageBuffer);
@@ -106,15 +106,15 @@ namespace MonoTorrent.Client
 
                 decryptor.Decrypt (messageBuffer.Span.Slice (messageHeaderLength, messageBodyLength));
                 // FIXME: manager should never be null, except some of the unit tests do that.
-                var data = PeerMessage.DecodeMessage (messageBuffer.Span.Slice (0, messageHeaderLength + messageBodyLength), torrentData);
-                if (data is PieceMessage msg) {
+                (var message, var releaser) = PeerMessage.DecodeMessage (messageBuffer.Span.Slice (0, messageHeaderLength + messageBodyLength), torrentData);
+                if (message is PieceMessage msg) {
                     peerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
                     managerMonitor?.ProtocolDown.AddDelta (-msg.RequestLength);
 
                     peerMonitor?.DataDown.AddDelta (msg.RequestLength);
                     managerMonitor?.DataDown.AddDelta (msg.RequestLength);
                 }
-                return data;
+                return (message, releaser);
             }
         }
 

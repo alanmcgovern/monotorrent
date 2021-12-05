@@ -258,7 +258,7 @@ namespace MonoTorrent.Client.Modes
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
         {
             if (id.SupportsFastPeer)
-                bundle.Messages.Add (new HaveNoneMessage ());
+                bundle.Add (HaveNoneMessage.Instance, default);
             // If the fast peer extensions are not supported we must not send a
             // bitfield message because we don't know how many pieces the torrent
             // has. We could probably send an invalid one and force the connection

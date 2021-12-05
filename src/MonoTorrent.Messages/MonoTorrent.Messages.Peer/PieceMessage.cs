@@ -43,10 +43,7 @@ namespace MonoTorrent.Messages.Peer
         /// </summary>
         public Memory<byte> Data { get; private set; }
 
-        public ByteBufferPool.Releaser DataReleaser { get; private set; }
-
-        public void SetData ((ByteBufferPool.Releaser releaser, Memory<byte> data) value)
-            => (DataReleaser, Data) = value;
+        ByteBufferPool.Releaser DataReleaser { get; set; }
 
         /// <summary>
         /// The index of the block from the piece which was requested.
@@ -78,11 +75,7 @@ namespace MonoTorrent.Messages.Peer
         }
 
         public PieceMessage (int pieceIndex, int startOffset, int blockLength)
-        {
-            PieceIndex = pieceIndex;
-            StartOffset = startOffset;
-            RequestLength = blockLength;
-        }
+            => Initialize (pieceIndex, startOffset, blockLength);
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
@@ -110,17 +103,28 @@ namespace MonoTorrent.Messages.Peer
         }
 
         public override bool Equals (object obj)
-        {
-            return obj is PieceMessage message
+            => obj is PieceMessage message
                 && message.PieceIndex == PieceIndex
                 && message.StartOffset == StartOffset
                 && message.RequestLength == RequestLength;
-        }
 
         public override int GetHashCode ()
+            => RequestLength.GetHashCode () ^ PieceIndex.GetHashCode () ^ StartOffset.GetHashCode ();
+
+        public PieceMessage Initialize (int pieceIndex, int startOffset, int blockLength)
         {
-            return RequestLength.GetHashCode () ^ PieceIndex.GetHashCode () ^ StartOffset.GetHashCode ();
+            (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, blockLength);
+            return this;
         }
+
+        protected override void Reset ()
+        {
+            DataReleaser.Dispose ();
+            (DataReleaser, Data) = (default, default);
+        }
+
+        public void SetData ((ByteBufferPool.Releaser releaser, Memory<byte> data) value)
+            => (DataReleaser, Data) = value;
 
         public override string ToString ()
         {

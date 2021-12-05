@@ -33,8 +33,21 @@ namespace MonoTorrent.Messages.Peer
 {
     public class UnchokeMessage : PeerMessage
     {
+        public static UnchokeMessage Instance { get; } = new UnchokeMessage ();
+
         internal static readonly byte MessageId = 1;
         const int messageLength = 1;
+
+        public override int ByteLength => (messageLength + 4);
+
+        public UnchokeMessage ()
+        {
+        }
+
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+            // No decoding needed
+        }
 
         public override int Encode (Span<byte> buffer)
         {
@@ -46,26 +59,13 @@ namespace MonoTorrent.Messages.Peer
             return written - buffer.Length;
         }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-            // No decoding needed
-        }
-
-        public override int ByteLength => (messageLength + 4);
-
-        public override string ToString ()
-        {
-            return "UnChokeMessage";
-        }
-
         public override bool Equals (object obj)
-        {
-            return (obj is UnchokeMessage);
-        }
+            => obj is UnchokeMessage;
 
         public override int GetHashCode ()
-        {
-            return ToString ().GetHashCode ();
-        }
+            => MessageId;
+
+        public override string ToString ()
+            => "UnchokeMessage";
     }
 }

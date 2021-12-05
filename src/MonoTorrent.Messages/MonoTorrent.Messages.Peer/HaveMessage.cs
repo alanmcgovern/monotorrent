@@ -39,17 +39,16 @@ namespace MonoTorrent.Messages.Peer
         internal static readonly byte MessageId = 4;
         const int messageLength = 5;
 
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        public override int ByteLength => messageLength + 4;
 
-        #region Member Variables
         /// <summary>
         /// The index of the piece that you "have"
         /// </summary>
         public int PieceIndex { get; set; }
 
-        #endregion
-
-
-        #region Constructors
         /// <summary>
         /// Creates a new HaveMessage
         /// </summary>
@@ -57,19 +56,13 @@ namespace MonoTorrent.Messages.Peer
         {
         }
 
-
         /// <summary>
         /// Creates a new HaveMessage
         /// </summary>
         /// <param name="pieceIndex">The index of the piece that you "have"</param>
         public HaveMessage (int pieceIndex)
-        {
-            PieceIndex = pieceIndex;
-        }
-        #endregion
+            => PieceIndex = pieceIndex;
 
-
-        #region Methods
         public override int Encode (Span<byte> buffer)
         {
             int written = buffer.Length;
@@ -86,18 +79,16 @@ namespace MonoTorrent.Messages.Peer
             PieceIndex = ReadInt (ref buffer);
         }
 
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
-        public override int ByteLength => (messageLength + 4);
-        #endregion
+        public override bool Equals (object obj)
+            => obj is HaveMessage msg
+            && PieceIndex == msg.PieceIndex;
 
+        public override int GetHashCode ()
+            => PieceIndex.GetHashCode ();
 
-        #region Overridden Methods
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
+        public void Initialize (int index)
+            => PieceIndex = index;
+
         public override string ToString ()
         {
             var sb = new System.Text.StringBuilder ();
@@ -106,19 +97,5 @@ namespace MonoTorrent.Messages.Peer
             sb.Append (PieceIndex);
             return sb.ToString ();
         }
-
-        public override bool Equals (object obj)
-        {
-            if (!(obj is HaveMessage msg))
-                return false;
-
-            return (PieceIndex == msg.PieceIndex);
-        }
-
-        public override int GetHashCode ()
-        {
-            return PieceIndex.GetHashCode ();
-        }
-        #endregion
     }
 }

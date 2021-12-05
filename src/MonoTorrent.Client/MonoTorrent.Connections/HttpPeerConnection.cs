@@ -46,18 +46,19 @@ namespace MonoTorrent.Connections.Peer
     {
         class HttpRequestData
         {
-            public readonly RequestMessage Request;
             public bool SentLength;
             public bool SentHeader;
             public readonly int TotalToReceive;
             public int TotalReceived;
 
+            public BlockInfo BlockInfo { get; }
+
             public bool Complete => TotalToReceive == TotalReceived;
 
-            public HttpRequestData (RequestMessage request)
+            public HttpRequestData (BlockInfo blockInfo)
             {
-                Request = request;
-                var m = new PieceMessage (request.PieceIndex, request.StartOffset, request.RequestLength);
+                BlockInfo = blockInfo;
+                var m = new PieceMessage (BlockInfo.PieceIndex, BlockInfo.StartOffset, BlockInfo.RequestLength);
                 TotalToReceive = m.ByteLength;
             }
         }
@@ -94,7 +95,7 @@ namespace MonoTorrent.Connections.Peer
 
         AutoResetEvent ReceiveWaiter { get; } = new AutoResetEvent (false);
 
-        List<RequestMessage> RequestMessages { get; } = new List<RequestMessage> ();
+        List<BlockInfo> RequestMessages { get; } = new List<BlockInfo> ();
 
         TaskCompletionSource<object> SendResult { get; set; }
 
@@ -161,10 +162,10 @@ namespace MonoTorrent.Connections.Peer
                 Message.Write (socketBuffer.AsSpan (written, 1), PieceMessage.MessageId);
                 written++;
 
-                Message.Write (socketBuffer.AsSpan (written, 4), CurrentRequest.Request.PieceIndex);
+                Message.Write (socketBuffer.AsSpan (written, 4), CurrentRequest.BlockInfo.PieceIndex);
                 written += 4;
 
-                Message.Write (socketBuffer.AsSpan (written, 4), CurrentRequest.Request.StartOffset);
+                Message.Write (socketBuffer.AsSpan (written, 4), CurrentRequest.BlockInfo.StartOffset);
                 written += 4;
 
                 socketBuffer = socketBuffer.Slice (written);
@@ -242,12 +243,12 @@ namespace MonoTorrent.Connections.Peer
         {
             SendResult = new TaskCompletionSource<object> ();
 
-            List<RequestMessage> bundle = DecodeMessages (socketBuffer.Memory.Span);
+            List<BlockInfo> bundle = DecodeMessages (socketBuffer.Memory.Span);
             if (bundle.Count > 0) {
                 RequestMessages.AddRange (bundle);
                 // The RequestMessages are always sequential
-                RequestMessage start = bundle[0];
-                RequestMessage end = bundle[bundle.Count - 1];
+                BlockInfo start = RequestMessages[0];
+                BlockInfo end = RequestMessages[RequestMessages.Count - 1];
                 CreateWebRequests (start, end);
             } else {
                 return socketBuffer.Length;
@@ -258,20 +259,21 @@ namespace MonoTorrent.Connections.Peer
             return socketBuffer.Length;
         }
 
-        static List<RequestMessage> DecodeMessages (ReadOnlySpan<byte> buffer)
+        static List<BlockInfo> DecodeMessages (ReadOnlySpan<byte> buffer)
         {
-            var messages = new List<RequestMessage> ();
+            var messages = new List<BlockInfo> ();
             for (int i = 0; i < buffer.Length;) {
-                var message = PeerMessage.DecodeMessage (buffer.Slice (i), null);
-                if (message is RequestMessage msg)
-                    messages.Add (msg);
-                i += message.ByteLength;
+                var payload = PeerMessage.DecodeMessage (buffer.Slice (i), null);
+                if (payload.message is RequestMessage msg)
+                    messages.Add (new BlockInfo (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
+                i += payload.message.ByteLength;
+                payload.releaser.Dispose ();
             }
             return messages;
         }
 
 
-        void CreateWebRequests (RequestMessage start, RequestMessage end)
+        void CreateWebRequests (BlockInfo start, BlockInfo end)
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
@@ -282,8 +284,8 @@ namespace MonoTorrent.Connections.Peer
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            long startOffset = new BlockInfo (start.PieceIndex, start.StartOffset, start.RequestLength).ToByteOffset (TorrentData.PieceLength);
-            long endOffset = new BlockInfo (end.PieceIndex, end.StartOffset, end.RequestLength).ToByteOffset (TorrentData.PieceLength) + end.RequestLength;
+            long startOffset = start.ToByteOffset (TorrentData.PieceLength);
+            long endOffset = end.ToByteOffset (TorrentData.PieceLength) + end.RequestLength;
 
             foreach (var file in TorrentData.Files) {
                 Uri u = uri;

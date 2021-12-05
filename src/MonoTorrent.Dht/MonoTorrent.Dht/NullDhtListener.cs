@@ -41,8 +41,10 @@ namespace MonoTorrent.Dht
         public IPEndPoint LocalEndPoint { get; }
         public ListenerStatus Status { get; } = ListenerStatus.NotListening;
 
+#pragma warning disable CS0067 
         public event Action<byte[], IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
+#pragma warning restore CS0067
 
         public Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {

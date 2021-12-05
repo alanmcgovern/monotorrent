@@ -37,7 +37,6 @@ namespace MonoTorrent.Messages.Peer.FastPeer
         internal static readonly byte MessageId = 0x10;
         public readonly int messageLength = 13;
 
-        #region Member Variables
         public override int ByteLength => messageLength + 4;
 
         /// <summary>
@@ -54,10 +53,7 @@ namespace MonoTorrent.Messages.Peer.FastPeer
         /// The length of the block of data
         /// </summary>
         public int RequestLength { get; private set; }
-        #endregion
 
-
-        #region Constructors
         public RejectRequestMessage ()
         {
         }
@@ -79,10 +75,14 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             StartOffset = startOffset;
             RequestLength = requestLength;
         }
-        #endregion
 
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+            PieceIndex = ReadInt (ref buffer);
+            StartOffset = ReadInt (ref buffer);
+            RequestLength = ReadInt (ref buffer);
+        }
 
-        #region Methods
         public override int Encode (Span<byte> buffer)
         {
             int written = buffer.Length;
@@ -96,35 +96,19 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             return written - buffer.Length;
         }
 
-
-        public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-            PieceIndex = ReadInt (ref buffer);
-            StartOffset = ReadInt (ref buffer);
-            RequestLength = ReadInt (ref buffer);
-        }
-        #endregion
-
-
-        #region Overidden Methods
         public override bool Equals (object obj)
-        {
-            if (!(obj is RejectRequestMessage msg))
-                return false;
-
-            return (PieceIndex == msg.PieceIndex
-                && StartOffset == msg.StartOffset
-                && RequestLength == msg.RequestLength);
-        }
-
+            => obj is RejectRequestMessage msg
+            && PieceIndex == msg.PieceIndex
+            && StartOffset == msg.StartOffset
+            && RequestLength == msg.RequestLength;
 
         public override int GetHashCode ()
-        {
-            return (PieceIndex.GetHashCode ()
-                    ^ RequestLength.GetHashCode ()
-                    ^ StartOffset.GetHashCode ());
-        }
+            => PieceIndex.GetHashCode ()
+            ^ RequestLength.GetHashCode ()
+            ^ StartOffset.GetHashCode ();
 
+        public void Initialize (int pieceIndex, int startOffset, int requestLength)
+            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
         public override string ToString ()
         {
@@ -138,6 +122,5 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             sb.Append (RequestLength);
             return sb.ToString ();
         }
-        #endregion
     }
 }

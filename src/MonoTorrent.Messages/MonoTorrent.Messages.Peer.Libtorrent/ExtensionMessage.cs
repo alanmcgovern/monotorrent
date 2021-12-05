@@ -49,13 +49,13 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             if (id != 0)
                 throw new InvalidOperationException ("The handshake message should be registered with id '0'");
 
-            id = Register (data => new LTChat ());
+            id = Register (data => GetInstance<LTChat> ());
             SupportedMessages.Add (new ExtensionSupport ("LT_chat", id));
 
-            id = Register (data => new LTMetadata ());
+            id = Register (data => GetInstance<LTMetadata> ());
             SupportedMessages.Add (new ExtensionSupport ("ut_metadata", id));
 
-            id = Register (data => new PeerExchangeMessage ());
+            id = Register (data => GetInstance<PeerExchangeMessage> ());
             SupportedMessages.Add (new ExtensionSupport ("ut_pex", id));
         }
 
@@ -81,14 +81,14 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             return SupportedMessages.Find (s => s.Name == name);
         }
 
-        public static PeerMessage DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentData manager)
+        public static (PeerMessage message, PeerMessage.Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentData manager)
         {
             if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentData, PeerMessage> creator))
                 throw new MessageException ("Unknown extension message received");
 
             PeerMessage message = creator (manager);
             message.Decode (buffer.Slice (1));
-            return message;
+            return (message, new Releaser (message));
         }
     }
 }

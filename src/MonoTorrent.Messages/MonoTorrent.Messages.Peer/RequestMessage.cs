@@ -28,7 +28,6 @@
 
 
 using System;
-using System.Buffers.Binary;
 
 namespace MonoTorrent.Messages.Peer
 {
@@ -40,18 +39,10 @@ namespace MonoTorrent.Messages.Peer
         public const int MaxSize = 65536 + 64;
         public const int MinSize = 4096;
 
-
-        #region Public Properties
-
         public override int ByteLength => messageLength + 4;
         public int PieceIndex { get; protected set; }
         public int RequestLength { get; protected set; }
         public int StartOffset { get; protected set; }
-
-        #endregion
-
-
-        #region Constructors
 
         public RequestMessage ()
         {
@@ -59,15 +50,8 @@ namespace MonoTorrent.Messages.Peer
 
         public RequestMessage (int pieceIndex, int startOffset, int requestLength)
         {
-            PieceIndex = pieceIndex;
-            StartOffset = startOffset;
-            RequestLength = requestLength;
+            Initialize (new BlockInfo (pieceIndex, startOffset, requestLength));
         }
-
-        #endregion
-
-
-        #region Methods
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
@@ -99,13 +83,7 @@ namespace MonoTorrent.Messages.Peer
         public int Encode (ref Span<byte> buffer)
         {
             int written = buffer.Length;
-            /*
-            BinaryPrimitives.WriteInt32BigEndian (buffer, messageLength);
-            buffer.Slice (4)[0] = messageLength;
-            BinaryPrimitives.WriteInt32BigEndian (buffer.Slice (5), PieceIndex);
-            BinaryPrimitives.WriteInt32BigEndian (buffer.Slice (9), StartOffset);
-            BinaryPrimitives.WriteInt32BigEndian (buffer.Slice (13), RequestLength);
-            */
+
             Write (ref buffer, messageLength);
             Write (ref buffer, MessageId);
             Write (ref buffer, PieceIndex);
@@ -116,15 +94,19 @@ namespace MonoTorrent.Messages.Peer
         }
 
         public override bool Equals (object obj)
-        {
-            return (!(obj is RequestMessage msg)) ? false : (PieceIndex == msg.PieceIndex
-                                                             && StartOffset == msg.StartOffset
-                                                             && RequestLength == msg.RequestLength);
-        }
+            => obj is RequestMessage msg
+            && PieceIndex == msg.PieceIndex
+            && StartOffset == msg.StartOffset
+            && RequestLength == msg.RequestLength;
 
         public override int GetHashCode ()
+            => PieceIndex.GetHashCode () ^ RequestLength.GetHashCode () ^ StartOffset.GetHashCode ();
+
+        public void Initialize (BlockInfo request)
         {
-            return (PieceIndex.GetHashCode () ^ RequestLength.GetHashCode () ^ StartOffset.GetHashCode ());
+            PieceIndex = request.PieceIndex;
+            StartOffset = request.StartOffset;
+            RequestLength = request.RequestLength;
         }
 
         public override string ToString ()
@@ -140,7 +122,5 @@ namespace MonoTorrent.Messages.Peer
             sb.Append (RequestLength);
             return sb.ToString ();
         }
-
-        #endregion
     }
 }

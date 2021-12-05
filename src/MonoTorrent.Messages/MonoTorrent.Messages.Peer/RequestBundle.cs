@@ -32,18 +32,18 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Messages.Peer
 {
-    class RequestBundle : PeerMessage
+    public class RequestBundle : PeerMessage
     {
-        MutableRequestMessage Message { get; }
-        IList<BlockInfo> Requests { get; }
+        static readonly int RequestMessageLength = new RequestMessage ().ByteLength;
 
-        internal RequestBundle (IList<BlockInfo> requests)
+        List<BlockInfo> Requests { get; }
+
+        public override int ByteLength => RequestMessageLength * Requests.Count;
+
+        public RequestBundle ()
         {
-            Message = new MutableRequestMessage ();
-            Requests = requests;
+            Requests = new List<BlockInfo> ();
         }
-
-        public override int ByteLength => Message.ByteLength * Requests.Count;
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
@@ -54,14 +54,25 @@ namespace MonoTorrent.Messages.Peer
         {
             int written = buffer.Length;
 
-            for (int i = 0; i < Requests.Count; i++) {
-                Message.PieceIndex = Requests[i].PieceIndex;
-                Message.RequestLength = Requests[i].RequestLength;
-                Message.StartOffset = Requests[i].StartOffset;
-                buffer = buffer.Slice (Message.Encode (buffer));
+            using (Rent (out RequestMessage message)) {
+                for (int i = 0; i < Requests.Count; i++) {
+                    message.Initialize (Requests[i]);
+                    buffer = buffer.Slice (message.Encode (buffer));
+                }
             }
 
             return written - buffer.Length;
+        }
+
+        public void Initialize (IList<BlockInfo> requests)
+        {
+            Requests.AddRange (requests);
+        }
+
+        protected override void Reset ()
+        {
+            base.Reset ();
+            Requests.Clear ();
         }
 
         public IEnumerable<RequestMessage> ToRequestMessages ()
