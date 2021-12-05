@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        internal Queue<HaveMessage> finishedPieces;     // The list of pieces which we should send "have" messages for
+        internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         Mode mode;
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         TaskCompletionSource<Torrent> MetadataTask { get; }
@@ -250,7 +250,7 @@ namespace MonoTorrent.Client
         public DateTime LastDhtAnnounce { get; private set; }
 
         /// <summary>
-        /// Internal timer used to trigger Dht announces every <see cref="MonoTorrent.Dht.DhtEngine.AnnounceInternal"/> seconds.
+        /// Internal timer used to trigger Dht announces every interval seconds.
         /// </summary>
         internal ValueStopwatch LastDhtAnnounceTimer;
 
@@ -404,7 +404,7 @@ namespace MonoTorrent.Client
             PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
             UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
             SavePath = string.IsNullOrEmpty (savePath) ? Environment.CurrentDirectory : Path.GetFullPath (savePath);
-            finishedPieces = new Queue<HaveMessage> ();
+            finishedPieces = new Queue<int> ();
             Monitor = new ConnectionMonitor ();
             InactivePeerManager = new InactivePeerManager (this);
             Peers = new PeerManager ();

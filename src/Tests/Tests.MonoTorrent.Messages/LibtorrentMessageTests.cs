@@ -67,7 +67,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (false, 123, 5555);
             byte[] data = m.Encode ();
-            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data, null);
+            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data, null).message;
 
             Assert.AreEqual (m.ByteLength, data.Length);
             Assert.AreEqual (m.ByteLength, decoded.ByteLength, "#1");
@@ -84,7 +84,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             LTChat m = new LTChat (LTChat.Support.MessageId, "This Is My Message");
 
             byte[] data = m.Encode ();
-            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data, null);
+            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data, null).message;
 
             Assert.AreEqual (m.Message, decoded.Message, "#1");
         }
@@ -100,7 +100,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             PeerExchangeMessage message = new PeerExchangeMessage (id, peer, supports, null);
 
             byte[] buffer = message.Encode ();
-            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null);
+            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null).message;
             Assert.IsTrue (peer.AsSpan ().SequenceEqual (m.Added.Span), "#1");
             Assert.IsTrue (supports.AsSpan ().SequenceEqual (m.AddedDotF.Span), "#2");
         }

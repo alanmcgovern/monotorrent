@@ -33,10 +33,21 @@ namespace MonoTorrent.Messages.Peer.FastPeer
 {
     public class HaveNoneMessage : PeerMessage, IFastPeerMessage
     {
+        public static HaveNoneMessage Instance { get; } = new HaveNoneMessage ();
+
         internal static readonly byte MessageId = 0x0F;
         readonly int messageLength = 1;
 
         public override int ByteLength => messageLength + 4;
+
+        public HaveNoneMessage ()
+        {
+
+        }
+
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+        }
 
         public override int Encode (Span<byte> buffer)
         {
@@ -48,23 +59,13 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             return written - buffer.Length;
         }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-        }
-
         public override bool Equals (object obj)
-        {
-            return obj is HaveNoneMessage;
-        }
+            => obj is HaveNoneMessage;
 
         public override int GetHashCode ()
-        {
-            return 1;
-        }
+            => MessageId;
 
         public override string ToString ()
-        {
-            return "HaveNoneMessage";
-        }
+            => "HaveNoneMessage";
     }
 }

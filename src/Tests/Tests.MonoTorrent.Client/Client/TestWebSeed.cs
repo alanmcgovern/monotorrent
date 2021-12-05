@@ -115,8 +115,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendFirst ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (new MessageBundle (requests).ByteLength, out var sendBuffer);
-            new MessageBundle (requests).Encode (sendBuffer.Span);
+            using var releaser = SocketMemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
+            requests.Encode (sendBuffer.Span);
             var task = connection.SendAsync (sendBuffer).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
@@ -125,10 +125,10 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendAndReceiveFirst ()
         {
-            using var r1 = SocketMemoryPool.Default.Rent (new MessageBundle (requests).ByteLength, out var sendBuffer);
+            using var r1 = SocketMemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
             using var r2 = SocketMemoryPool.Default.Rent (100000, out var receiveBuffer);
 
-            new MessageBundle (requests).Encode (sendBuffer.Span);
+            requests.Encode (sendBuffer.Span);
 
             var sendTask = connection.SendAsync (sendBuffer).AsTask ();
             var receiveTask = connection.ReceiveAsync (receiveBuffer);
@@ -268,7 +268,7 @@ namespace MonoTorrent.Client
 
                 await NetworkIO.ReceiveAsync (connection, buffer.Slice (4, size), null, null, null);
 
-                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer.AsSpan (0, size + 4), rig.Manager);
+                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer.AsSpan (0, size + 4), rig.Manager).message;
                 var request = allRequests[0];
                 Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
                 Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");

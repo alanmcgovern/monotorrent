@@ -62,23 +62,29 @@ namespace MonoTorrent.Client
 
         void IPeerWithMessaging.EnqueueRequest (BlockInfo request)
         {
-            MessageQueue.Enqueue (new RequestMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+            (var message, var releaser) = PeerMessage.Rent<RequestMessage> ();
+            message.Initialize (request);
+            MessageQueue.Enqueue (message, releaser);
         }
 
         void IPeerWithMessaging.EnqueueRequests (IList<BlockInfo> requests)
         {
-            MessageQueue.Enqueue (new RequestBundle (requests));
+            (var bundle, var releaser) = PeerMessage.Rent<RequestBundle> ();
+            bundle.Initialize (requests);
+            MessageQueue.Enqueue (bundle, releaser);
         }
 
         void IPeerWithMessaging.EnqueueCancellation (BlockInfo request)
         {
-            MessageQueue.Enqueue (new CancelMessage (request.PieceIndex, request.StartOffset, request.RequestLength));
+            (var msg, var releaser) = PeerMessage.Rent<CancelMessage> ();
+            msg.Initialize (request.PieceIndex, request.StartOffset, request.RequestLength);
+            MessageQueue.Enqueue (msg, releaser);
         }
 
         void IPeerWithMessaging.EnqueueCancellations (IList<BlockInfo> requests)
         {
             for (int i = 0; i < requests.Count; i++)
-                MessageQueue.Enqueue (new CancelMessage (requests[i].PieceIndex, requests[i].StartOffset, requests[i].RequestLength));
+                MessageQueue.Enqueue (new CancelMessage (requests[i].PieceIndex, requests[i].StartOffset, requests[i].RequestLength), default);
         }
 
         int IPeer.PreferredRequestAmount (int pieceLength)

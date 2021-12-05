@@ -29,12 +29,14 @@
 
 using System;
 
+using MonoTorrent.Dht;
+
 namespace MonoTorrent.Client
 {
     public sealed class TorrentSettings : IEquatable<TorrentSettings>
     {
         /// <summary>
-        /// If set to false then the <see cref="DhtEngine"/> registered with the <see cref="ClientEngine" /> will
+        /// If set to false then the <see cref="IDhtEngine"/> registered with the <see cref="ClientEngine" /> will
         /// never be used to locate additional peers. Defaults to true.
         /// </summary>
         public bool AllowDht { get; } = true;

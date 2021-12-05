@@ -34,6 +34,7 @@ using System.Linq;
 using System.Net;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -70,7 +71,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// If set to true dht nodes will be implicitly saved when there are no active <see cref="TorrentManager"/> instances in the engine.
         /// Dht nodes will be restored when the first <see cref="TorrentManager"/> is started. Otherwise dht nodes will not be cached between
-        /// restarts and the <see cref="DhtEngine"/> will have to bootstrap from scratch each time.
+        /// restarts and the <see cref="IDhtEngine"/> will have to bootstrap from scratch each time.
         /// Defaults to <see langword="true"/>.
         /// </summary>
         public bool AutoSaveLoadDhtCache { get; } = true;

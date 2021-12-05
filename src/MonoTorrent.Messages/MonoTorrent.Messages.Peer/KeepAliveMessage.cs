@@ -36,6 +36,8 @@ namespace MonoTorrent.Messages.Peer
     /// </summary>
     public class KeepAliveMessage : PeerMessage
     {
+        public static KeepAliveMessage Instance { get; } = new KeepAliveMessage ();
+
         static readonly byte[] payload = { 0, 0, 0, 0 };
 
         #region Constructors

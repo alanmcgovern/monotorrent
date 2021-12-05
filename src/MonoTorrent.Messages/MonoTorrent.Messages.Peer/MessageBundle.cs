@@ -34,23 +34,8 @@ namespace MonoTorrent.Messages.Peer
 {
     public class MessageBundle : PeerMessage
     {
-        public List<PeerMessage> Messages { get; }
-
-        public MessageBundle ()
-        {
-            Messages = new List<PeerMessage> ();
-        }
-
-        public MessageBundle (int capacity)
-        {
-            Messages = new List<PeerMessage> (capacity);
-        }
-
-        public MessageBundle (PeerMessage message)
-            : this ()
-        {
-            Messages.Add (message);
-        }
+        List<PeerMessage> Messages { get; }
+        public List<Releaser> Releasers { get; }
 
         public override int ByteLength {
             get {
@@ -59,6 +44,18 @@ namespace MonoTorrent.Messages.Peer
                     total += Messages[i].ByteLength;
                 return total;
             }
+        }
+
+        public MessageBundle ()
+        {
+            Messages = new List<PeerMessage> ();
+            Releasers = new List<Releaser> ();
+        }
+
+        public void Add (PeerMessage message, Releaser releaser)
+        {
+            Messages.Add (message);
+            Releasers.Add (releaser);
         }
 
         public override void Decode (ReadOnlySpan<byte> buffer)
@@ -74,6 +71,15 @@ namespace MonoTorrent.Messages.Peer
                 buffer = buffer.Slice (Messages[i].Encode (buffer));
 
             return written - buffer.Length;
+        }
+
+        protected override void Reset ()
+        {
+            base.Reset ();
+            foreach (var releaser in Releasers)
+                releaser.Dispose ();
+            Messages.Clear ();
+            Releasers.Clear ();
         }
     }
 }

@@ -36,7 +36,7 @@ namespace MonoTorrent
     {
         public readonly struct Releaser : IDisposable
         {
-            readonly int counter;
+            readonly int Counter;
             readonly ByteBuffer Buffer;
             readonly Queue<ByteBuffer> Pool;
 
@@ -44,7 +44,7 @@ namespace MonoTorrent
             {
                 Pool = pool;
                 Buffer = buffer;
-                counter = Buffer.Counter;
+                Counter = Buffer.Counter;
             }
 
             public void Dispose ()
@@ -52,13 +52,12 @@ namespace MonoTorrent
                 if (Buffer == null)
                     return;
 
-                lock (Pool) {
-                    if (counter != Buffer.Counter)
-                        throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
+                if (Counter != Buffer.Counter)
+                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
 
-                    Buffer.Counter++;
+                Buffer.Counter++;
+                lock (Pool)
                     Pool.Enqueue (Buffer);
-                }
             }
         }
     }

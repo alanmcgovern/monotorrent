@@ -123,7 +123,7 @@ namespace MonoTorrent.TrackerServer
         public int Port => ParseInt ("port");
 
         /// <summary>
-        /// The first time a peer announces to a tracker, we send it the <see cref="TrackerServer.TrackerId"/>
+        /// The first time a peer announces to a tracker, we send it the TrackerId
         /// of this tracker. Subsequent announce requests should send that value.
         /// </summary>
         public BEncodedString TrackerId => BEncodedString.UrlDecode (Parameters["trackerid"]);

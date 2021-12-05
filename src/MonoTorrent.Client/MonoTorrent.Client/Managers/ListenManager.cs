@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
                 Encryptor = encryptor
             };
 
-            man.Mode.HandleMessage (id, message);
+            await man.Mode.HandleMessage (id, message);
             logger.Info (id.Connection, "Handshake successful handled");
 
             id.ClientApp = new Software (message.PeerId);

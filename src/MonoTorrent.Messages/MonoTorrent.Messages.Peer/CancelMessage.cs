@@ -39,36 +39,32 @@ namespace MonoTorrent.Messages.Peer
         const int messageLength = 13;
         internal static readonly byte MessageId = 8;
 
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        public override int ByteLength => (messageLength + 4);
 
-        #region Member Variables
         /// <summary>
         /// The index of the piece
         /// </summary>
-        public int PieceIndex { get; set; }
-
+        public int PieceIndex { get; private set; }
 
         /// <summary>
         /// The offset in bytes of the block of data
         /// </summary>
-        public int StartOffset { get; set; }
-
+        public int StartOffset { get; private set; }
 
         /// <summary>
         /// The length in bytes of the block of data
         /// </summary>
-        public int RequestLength { get; set; }
+        public int RequestLength { get; private set; }
 
-        #endregion
-
-
-        #region Constructors
         /// <summary>
         /// Creates a new CancelMessage
         /// </summary>
         public CancelMessage ()
         {
         }
-
 
         /// <summary>
         /// Creates a new CancelMessage
@@ -82,10 +78,14 @@ namespace MonoTorrent.Messages.Peer
             StartOffset = startOffset;
             RequestLength = requestLength;
         }
-        #endregion
 
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+            PieceIndex = ReadInt (ref buffer);
+            StartOffset = ReadInt (ref buffer);
+            RequestLength = ReadInt (ref buffer);
+        }
 
-        #region Methods
         public override int Encode (Span<byte> buffer)
         {
             int written = buffer.Length;
@@ -99,25 +99,20 @@ namespace MonoTorrent.Messages.Peer
             return written - buffer.Length;
         }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-            PieceIndex = ReadInt (ref buffer);
-            StartOffset = ReadInt (ref buffer);
-            RequestLength = ReadInt (ref buffer);
-        }
+        public override bool Equals (object obj)
+            => obj is CancelMessage msg
+            && PieceIndex == msg.PieceIndex
+            && StartOffset == msg.StartOffset
+            && RequestLength == msg.RequestLength;
 
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
-        public override int ByteLength => (messageLength + 4);
-        #endregion
+        public override int GetHashCode ()
+            => PieceIndex.GetHashCode ()
+             ^ RequestLength.GetHashCode ()
+             ^ StartOffset.GetHashCode ();
 
+        public void Initialize (int pieceIndex, int startOffset, int requestLength)
+            => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
-        #region Overridden Methods
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override string ToString ()
         {
             var sb = new System.Text.StringBuilder ();
@@ -130,23 +125,5 @@ namespace MonoTorrent.Messages.Peer
             sb.Append (RequestLength);
             return sb.ToString ();
         }
-
-        public override bool Equals (object obj)
-        {
-            if (!(obj is CancelMessage msg))
-                return false;
-
-            return (PieceIndex == msg.PieceIndex
-                    && StartOffset == msg.StartOffset
-                    && RequestLength == msg.RequestLength);
-        }
-
-        public override int GetHashCode ()
-        {
-            return (PieceIndex.GetHashCode ()
-                ^ RequestLength.GetHashCode ()
-                ^ StartOffset.GetHashCode ());
-        }
-        #endregion
     }
 }

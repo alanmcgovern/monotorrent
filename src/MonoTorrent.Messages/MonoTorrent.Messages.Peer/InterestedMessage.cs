@@ -36,21 +36,28 @@ namespace MonoTorrent.Messages.Peer
     /// </summary>
     public class InterestedMessage : PeerMessage
     {
+        public static InterestedMessage Instance { get; } = new InterestedMessage ();
+
         internal static readonly byte MessageId = 2;
         const int messageLength = 1;
 
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        public override int ByteLength => messageLength + 4;
 
-        #region Constructors
         /// <summary>
         /// Creates a new InterestedMessage
         /// </summary>
         public InterestedMessage ()
         {
         }
-        #endregion
 
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+            // No decoding needed.
+        }
 
-        #region Methods
         public override int Encode (Span<byte> buffer)
         {
             int written = buffer.Length;
@@ -61,37 +68,13 @@ namespace MonoTorrent.Messages.Peer
             return written - buffer.Length;
         }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-            // No decoding needed.
-        }
-
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
-        public override int ByteLength => (messageLength + 4);
-        #endregion
-
-
-        #region Overridden Methods
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString ()
-        {
-            return "InterestedMessage";
-        }
-
         public override bool Equals (object obj)
-        {
-            return (obj is InterestedMessage);
-        }
+            => obj is InterestedMessage;
 
         public override int GetHashCode ()
-        {
-            return ToString ().GetHashCode ();
-        }
-        #endregion
+            => MessageId;
+
+        public override string ToString ()
+            => "InterestedMessage";
     }
 }

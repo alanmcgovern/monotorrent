@@ -33,10 +33,21 @@ namespace MonoTorrent.Messages.Peer.FastPeer
 {
     public class HaveAllMessage : PeerMessage, IFastPeerMessage
     {
+        public static HaveAllMessage Instance { get; } = new HaveAllMessage ();
+
         internal static readonly byte MessageId = 0x0E;
         readonly int messageLength = 1;
 
         public override int ByteLength => messageLength + 4;
+
+        public HaveAllMessage ()
+        {
+
+        }
+
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+        }
 
         public override int Encode (Span<byte> buffer)
         {
@@ -48,23 +59,13 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             return written - buffer.Length;
         }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-        }
-
         public override bool Equals (object obj)
-        {
-            return obj is HaveAllMessage;
-        }
+            => obj is HaveAllMessage;
 
         public override int GetHashCode ()
-        {
-            return 0;
-        }
+            => MessageId;
 
         public override string ToString ()
-        {
-            return "HaveAllMessage";
-        }
+            => "HaveAllMessage";
     }
 }

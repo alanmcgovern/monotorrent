@@ -61,19 +61,17 @@ namespace MonoTorrent.Messages.Peer.FastPeer
         }
 
         public override void Decode (ReadOnlySpan<byte> buffer)
-        {
-            PieceIndex = ReadInt (ref buffer);
-        }
+            => PieceIndex = ReadInt (ref buffer);
 
         public override bool Equals (object obj)
-        {
-            return (obj as AllowedFastMessage)?.PieceIndex == PieceIndex;
-        }
+            => obj is AllowedFastMessage other
+            && other.PieceIndex == PieceIndex;
 
         public override int GetHashCode ()
-        {
-            return PieceIndex.GetHashCode ();
-        }
+            => PieceIndex;
+
+        public void Initialize (int pieceIndex)
+            => PieceIndex = pieceIndex;
 
         public override string ToString ()
         {

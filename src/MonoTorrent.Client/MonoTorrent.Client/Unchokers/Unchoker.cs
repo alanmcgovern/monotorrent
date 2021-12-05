@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         {
             Manager.UploadingTo--;
             id.AmChoking = true;
-            id.MessageQueue.Enqueue (new ChokeMessage ());
+            id.MessageQueue.Enqueue (ChokeMessage.Instance, default);
         }
 
         public abstract void UnchokeReview ();
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
         {
             Manager.UploadingTo++;
             id.AmChoking = false;
-            id.MessageQueue.Enqueue (new UnchokeMessage ());
+            id.MessageQueue.Enqueue (UnchokeMessage.Instance, default);
             id.LastUnchoked.Restart ();
         }
     }

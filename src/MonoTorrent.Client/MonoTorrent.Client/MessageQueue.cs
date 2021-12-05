@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
 
         public bool ProcessingQueue { get; private set; } = true;
         public int QueueLength => SendQueue.Count;
-        List<PeerMessage> SendQueue { get; } = new List<PeerMessage> ();
+        List<(PeerMessage message, PeerMessage.Releaser releaser)> SendQueue { get; } = new List<(PeerMessage message, PeerMessage.Releaser releaser)> ();
 
         internal bool BeginProcessing (bool force = false)
         {
@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal PeerMessage TryDequeue ()
+        internal bool TryDequeue (out PeerMessage message, out PeerMessage.Releaser releaser)
         {
             lock (SendQueue) {
                 if (!Ready)
@@ -62,28 +62,36 @@ namespace MonoTorrent.Client
 
                 if (SendQueue.Count == 0) {
                     ProcessingQueue = false;
-                    return null;
+                    message = default;
+                    releaser = default;
+                    return false;
                 }
 
-                PeerMessage message = SendQueue[0];
+                (message, releaser) = SendQueue[0];
                 SendQueue.RemoveAt (0);
-                return message;
+                return true;
             }
         }
 
         internal void Enqueue (PeerMessage message)
+            => Enqueue (message, default);
+
+        internal void Enqueue (PeerMessage message, PeerMessage.Releaser releaser)
         {
             lock (SendQueue)
-                EnqueueAt (message, SendQueue.Count);
+                EnqueueAt (SendQueue.Count, message, releaser);
         }
 
         internal void EnqueueAt (PeerMessage message, int index)
+            => EnqueueAt (index, message, default);
+
+        internal void EnqueueAt (int index, PeerMessage message, PeerMessage.Releaser releaser)
         {
             lock (SendQueue) {
                 if (SendQueue.Count == 0 || index >= SendQueue.Count)
-                    SendQueue.Add (message);
+                    SendQueue.Add ((message, releaser));
                 else
-                    SendQueue.Insert (index, message);
+                    SendQueue.Insert (index, (message, releaser));
             }
         }
 
@@ -92,11 +100,12 @@ namespace MonoTorrent.Client
             lock (SendQueue) {
                 int rejectedCount = 0;
                 for (int i = 0; i < SendQueue.Count; i++) {
-                    if (!(SendQueue[i] is PieceMessage msg))
+                    if (!(SendQueue[i].message is PieceMessage msg))
                         continue;
 
                     // If the peer doesn't support fast peer, then we will never requeue the message
                     if (!supportsFastPeer) {
+                        // FIXME: Dispose it here!
                         SendQueue.RemoveAt (i);
                         i--;
                         rejectedCount++;
@@ -109,7 +118,7 @@ namespace MonoTorrent.Client
                         continue;
                     else {
                         rejectedCount++;
-                        SendQueue[i] = new RejectRequestMessage (msg);
+                        SendQueue[i] = (new RejectRequestMessage (msg), default);
                     }
                 }
                 return rejectedCount;
@@ -120,8 +129,10 @@ namespace MonoTorrent.Client
         {
             lock (SendQueue) {
                 for (int i = 0; i < SendQueue.Count; i++) {
-                    if (!(SendQueue[i] is PieceMessage msg))
+                    if (!(SendQueue[i].message is PieceMessage msg))
                         continue;
+
+                    // FIXME: Dispose the message here
                     if (msg.PieceIndex == pieceIndex && msg.StartOffset == startOffset && msg.RequestLength == requestLength) {
                         SendQueue.RemoveAt (i);
                         return true;

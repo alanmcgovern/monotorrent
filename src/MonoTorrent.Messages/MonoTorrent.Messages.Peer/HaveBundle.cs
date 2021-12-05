@@ -1,10 +1,10 @@
-//
-// ChokeMessage.cs
+﻿//
+// RequestBundle.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,53 +28,55 @@
 
 
 using System;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Messages.Peer
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class ChokeMessage : PeerMessage
+    public class HaveBundle : PeerMessage
     {
-        public static ChokeMessage Instance { get; } = new ChokeMessage ();
+        static int HaveMessageLength = new HaveMessage ().ByteLength;
 
-        const int messageLength = 1;
-        internal static readonly byte MessageId = 0;
+        List<int> PieceIndexes { get; }
 
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
-        public override int ByteLength => (messageLength + 4);
+        public override int ByteLength => HaveMessageLength * PieceIndexes.Count;
 
-        /// <summary>
-        /// Creates a new ChokeMessage
-        /// </summary>
-        public ChokeMessage ()
+        public int Count => PieceIndexes.Count;
+
+        public HaveBundle ()
         {
+            PieceIndexes = new List<int> ();
+        }
+
+        public void Add (int index)
+            => PieceIndexes.Add (index);
+
+        public override void Decode (ReadOnlySpan<byte> buffer)
+        {
+            throw new InvalidOperationException ();
         }
 
         public override int Encode (Span<byte> buffer)
         {
             int written = buffer.Length;
 
-            Write (ref buffer, messageLength);
-            Write (ref buffer, MessageId);
-
+            using (Rent (out HaveMessage message)) {
+                for (int i = 0; i < PieceIndexes.Count; i++) {
+                    message.PieceIndex = PieceIndexes[i];
+                    buffer = buffer.Slice (message.Encode (buffer));
+                }
+            }
             return written - buffer.Length;
         }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
+        public void Initialize (IList<int> haves)
         {
-            // No decoding needed
+            PieceIndexes.AddRange (haves);
         }
 
-        public override bool Equals (object obj)
-            => obj is ChokeMessage;
-
-        public override int GetHashCode ()
-            => MessageId;
-
-        public override string ToString ()
-            => "ChokeMessage";
+        protected override void Reset ()
+        {
+            base.Reset ();
+            PieceIndexes.Clear ();
+        }
     }
 }

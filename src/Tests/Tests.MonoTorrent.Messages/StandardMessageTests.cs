@@ -78,7 +78,7 @@ namespace MonoTorrent.Messages.Peer
             Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.Size / torrentData.PieceLength), "#0");
             byte[] encoded = new BitfieldMessage (new BitField (data)).Encode ();
 
-            BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded, torrentData);
+            BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded, torrentData).message;
             Assert.AreEqual (data.Length, m.BitField.Length, "#1");
             for (int i = 0; i < data.Length; i++)
                 Assert.AreEqual (data[i], m.BitField[i], "#2." + i);
@@ -88,7 +88,7 @@ namespace MonoTorrent.Messages.Peer
         public void BitFieldDecoding ()
         {
             byte[] buf = { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08, 0xAA, 0xE3, 0x00 };
-            BitfieldMessage msg = (BitfieldMessage) PeerMessage.DecodeMessage (buf, torrentData);
+            BitfieldMessage msg = (BitfieldMessage) PeerMessage.DecodeMessage (buf, torrentData).message;
 
             for (int i = 0; i < 8; i++)
                 Assert.IsTrue (msg.BitField[i], i.ToString ());
@@ -318,10 +318,10 @@ namespace MonoTorrent.Messages.Peer
         private void EncodeDecode (Message orig)
         {
             orig.Encode (buffer.AsSpan (offset));
-            Message dec = PeerMessage.DecodeMessage (buffer.AsSpan (offset, orig.ByteLength), torrentData);
+            Message dec = PeerMessage.DecodeMessage (buffer.AsSpan (offset, orig.ByteLength), torrentData).message;
             Assert.IsTrue (orig.Equals (dec), $"orig: {orig}, new: {dec}");
 
-            Assert.IsTrue (Toolbox.ByteMatch (orig.Encode (), PeerMessage.DecodeMessage (orig.Encode (), torrentData).Encode ()));
+            Assert.IsTrue (Toolbox.ByteMatch (orig.Encode (), PeerMessage.DecodeMessage (orig.Encode (), torrentData).message.Encode ()));
         }
     }
 }
