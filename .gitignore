@@ -6,3 +6,4 @@ obj/
 /build/
 /out/
 /src/.vs
+*.csproj.user
