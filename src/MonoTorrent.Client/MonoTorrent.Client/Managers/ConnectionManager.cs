@@ -216,7 +216,7 @@ namespace MonoTorrent.Client
             try {
                 // Receive their handshake
                 HandshakeMessage handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
-                await manager.Mode.HandleMessage (id, handshake);
+                manager.Mode.HandleMessage (id, handshake, default);
             } catch {
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
                 id.Peer.AllowedEncryption = EncryptionTypes.Remove (id.Peer.AllowedEncryption, id.EncryptionType);
@@ -303,11 +303,11 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
-            using (releaser) {
-                if (!id.Disposed) {
-                    id.LastMessageReceived.Restart ();
-                    await torrentManager.Mode.HandleMessage (id, message);
-                }
+            if (!id.Disposed) {
+                id.LastMessageReceived.Restart ();
+                torrentManager.Mode.HandleMessage (id, message, releaser);
+            } else {
+                releaser.Dispose ();
             }
         }
 
@@ -377,7 +377,9 @@ namespace MonoTorrent.Client
         internal async ReusableTask<bool> IncomingConnectionAcceptedAsync (TorrentManager manager, PeerId id)
         {
             try {
-                bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, Settings.MaximumConnections);
+                bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, Settings.MaximumConnections)
+                    || OpenConnections >= manager.Settings.MaximumConnections;
+
                 if (LocalPeerId.Equals (id.Peer.PeerId)) {
                     logger.Info ("Connected to self - disconnecting");
                     CleanupSocket (manager, id);
@@ -437,24 +439,21 @@ namespace MonoTorrent.Client
 
             await MainLoop.SwitchToThreadpool ();
 
-            ByteBufferPool.Releaser messageMemoryReleaser = default;
-            SocketMemory messageMemory = default;
-
-            ByteBufferPool.Releaser pieceReleaser = default;
-            Memory<byte> pieceMemory = default;
+            ByteBufferPool.Releaser socketMemoryReleaser = default;
+            SocketMemory socketMemory = default;
 
             try {
                 while (id.MessageQueue.TryDequeue (out PeerMessage msg, out PeerMessage.Releaser msgReleaser)) {
                     using var autorelease = msgReleaser;
-                    var msgLength = msg.ByteLength;
 
+                    if (socketMemory.IsEmpty || socketMemory.Length < msg.ByteLength) {
+                        socketMemoryReleaser.Dispose ();
+                        (socketMemoryReleaser, socketMemory) = NetworkIO.BufferPool.Rent (msg.ByteLength);
+                    }
+
+                    var buffer = socketMemory.Slice (0, msg.ByteLength);
                     if (msg is PieceMessage pm) {
-                        if (pieceMemory.IsEmpty || pieceMemory.Length < msgLength) {
-                            pieceReleaser.Dispose ();
-                            (pieceReleaser, pieceMemory) = DiskManager.BufferPool.Rent (pm.RequestLength);
-                            pm.SetData ((default, pieceMemory));
-                        }
-
+                        pm.SetData ((default, buffer.Memory.Slice (buffer.Length - pm.RequestLength)));
                         try {
                             var request = new BlockInfo (pm.PieceIndex, pm.StartOffset, pm.RequestLength);
                             await DiskManager.ReadAsync (manager, request, pm.Data).ConfigureAwait (false);
@@ -464,16 +463,9 @@ namespace MonoTorrent.Client
                             return;
                         }
                         Interlocked.Increment (ref id.piecesSent);
-                    } else {
-                        pieceReleaser.Dispose ();
-                        (pieceReleaser, pieceMemory) = (default, default);
                     }
 
-                    if (messageMemory.IsEmpty || messageMemory.Length < msg.ByteLength) {
-                        messageMemoryReleaser.Dispose ();
-                        (messageMemoryReleaser, messageMemory) = NetworkIO.BufferPool.Rent (msgLength);
-                    }
-                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor, messageMemory).ConfigureAwait (false);
+                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor, buffer).ConfigureAwait (false);
                     if (msg is PieceMessage)
                         Interlocked.Decrement (ref id.isRequestingPiecesCount);
 
@@ -483,8 +475,7 @@ namespace MonoTorrent.Client
                 await ClientEngine.MainLoop;
                 CleanupSocket (manager, id);
             } finally {
-                messageMemoryReleaser.Dispose ();
-                pieceReleaser.Dispose ();
+                socketMemoryReleaser.Dispose ();
             }
         }
 

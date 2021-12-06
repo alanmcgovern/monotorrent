@@ -54,11 +54,15 @@ namespace System
 
     static class RandomNumberGeneratorExtensions
     {
+        static readonly byte[] Buffer = new byte[96 + 512];
         public static void GetBytes (this RandomNumberGenerator random, Span<byte> buffer)
         {
-            using (MonoTorrent.MemoryPool.Default.RentArraySegment (buffer.Length, out ArraySegment<byte> segment)) {
-                random.GetBytes (segment.Array, segment.Offset, buffer.Length);
-                segment.Array.AsSpan (segment.Offset, buffer.Length).CopyTo (buffer);
+            if (buffer.Length > Buffer.Length)
+                throw new NotSupportedException ("Wrong buffer size");
+
+            lock (Buffer) {
+                random.GetBytes (Buffer, 0, buffer.Length);
+                Buffer.AsSpan (0, buffer.Length).CopyTo (buffer);
             }
         }
     }

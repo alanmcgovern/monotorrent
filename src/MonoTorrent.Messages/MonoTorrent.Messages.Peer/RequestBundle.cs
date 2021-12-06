@@ -28,18 +28,16 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
 {
     public class RequestBundle : PeerMessage
     {
-        static readonly MemoryPool Pool = new MemoryPool ();
+        static readonly MemoryPool Pool = MemoryPool.Default;
         static readonly int RequestMessageLength = new RequestMessage ().ByteLength;
 
-        MemoryPool.ArraySegmentReleaser RequestsMemoryReleaser;
+        ByteBufferPool.Releaser RequestsMemoryReleaser;
         Memory<byte> RequestsMemory;
         Span<BlockInfo> Requests => MemoryMarshal.Cast<byte, BlockInfo> (RequestsMemory.Span);
 
@@ -70,8 +68,8 @@ namespace MonoTorrent.Messages.Peer
 
         public void Initialize (Span<BlockInfo> requests)
         {
-            RequestsMemoryReleaser = Pool.RentArraySegment (MemoryMarshal.AsBytes (requests).Length, out var segment);
-            RequestsMemory = segment.AsMemory ();
+            RequestsMemoryReleaser = Pool.Rent (MemoryMarshal.AsBytes (requests).Length, out var memory);
+            RequestsMemory = memory;
             requests.CopyTo (Requests);
         }
 
@@ -79,7 +77,7 @@ namespace MonoTorrent.Messages.Peer
         {
             base.Reset ();
             RequestsMemoryReleaser.Dispose ();
-            (RequestsMemory, RequestsMemory) = (default, default);
+            (RequestsMemoryReleaser, RequestsMemory) = (default, default);
         }
     }
 }

@@ -72,7 +72,8 @@ namespace MonoTorrent.Client
 
             (var bundle, var releaser) = PeerMessage.Rent<RequestBundle> ();
             bundle.Initialize (requests);
-            MessageQueue.Enqueue (bundle, releaser);        }
+            MessageQueue.Enqueue (bundle, releaser);
+        }
 
         void IPeerWithMessaging.EnqueueCancellation (BlockInfo request)
         {

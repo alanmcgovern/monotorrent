@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Modes
 
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, null, 5555);
             exHand.Supports.Add (LTMetadata.Support);
-            Assert.DoesNotThrowAsync (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1), exHand).AsTask ());
+            Assert.DoesNotThrow (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1), exHand, default));
         }
 
         [Test]
@@ -321,7 +321,7 @@ namespace MonoTorrent.Client.Modes
                         // And let's receive many handshake messages from other peers. Ensure we process this on the correct
                         // thread. It needs to be on the main loop as it's run in the context of the ClientEngine loop.
                         if (rig.Manager.Mode is MetadataMode mode)
-                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389), exHand).AsTask ().Wait (), null);
+                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389), exHand, default), null);
                     }
                 }
             }

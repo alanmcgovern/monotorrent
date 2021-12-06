@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
             using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out SocketMemory buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, null, null, null).ConfigureAwait (false);
 
-                decryptor.Decrypt (buffer.AsSpan ());
+                decryptor.Decrypt (buffer.Span);
 
                 var message = new HandshakeMessage ();
                 message.Decode (buffer.AsSpan ());
@@ -78,9 +78,13 @@ namespace MonoTorrent.Client
 
             SocketMemory messageHeaderBuffer = buffer;
             SocketMemory messageBuffer = buffer;
+
+            ByteBufferPool.Releaser messageHeaderReleaser = default;
             ByteBufferPool.Releaser messageBufferReleaser = default;
 
-            using (var headerReleaser = messageHeaderBuffer.IsEmpty ? NetworkIO.BufferPool.Rent (messageHeaderLength, out messageHeaderBuffer) : default) {
+            if (messageHeaderBuffer.IsEmpty)
+                messageHeaderReleaser = NetworkIO.BufferPool.Rent (messageHeaderLength, out messageHeaderBuffer);
+            using (messageHeaderReleaser) {
                 await NetworkIO.ReceiveAsync (connection, messageHeaderBuffer.Slice (0, messageHeaderLength), rateLimiter, peerMonitor?.ProtocolDown, managerMonitor?.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageHeaderBuffer.AsSpan (0, messageHeaderLength));

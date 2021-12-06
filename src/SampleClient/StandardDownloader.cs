@@ -48,7 +48,10 @@ namespace SampleClient
                         // 
                         // TorrentSettingsBuilder can be used to modify the settings for this
                         // torrent.
-                        var manager = await Engine.AddAsync (file, downloadsPath);
+                        var settingsBuilder = new TorrentSettingsBuilder {
+                            MaximumConnections = 60,
+                        };
+                        var manager = await Engine.AddAsync (file, downloadsPath, settingsBuilder.ToSettings ());
                         manager.PeersFound += Manager_PeersFound;
                         Console.WriteLine (manager.InfoHash.ToHex ());
                     } catch (Exception e) {

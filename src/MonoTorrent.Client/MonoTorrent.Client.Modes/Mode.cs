@@ -77,7 +77,7 @@ namespace MonoTorrent.Client.Modes
             Unchoker = unchoker ?? new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
         }
 
-        public async ReusableTask HandleMessage (PeerId id, PeerMessage message)
+        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
         {
             if (!CanHandleMessages)
                 return;
@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.Modes
             else if (message is PortMessage port)
                 HandlePortMessage (id, port);
             else if (message is PieceMessage piece)
-                await HandlePieceMessage (id, piece);
+                HandlePieceMessage (id, piece, releaser);
             else if (message is NotInterestedMessage notinterested)
                 HandleNotInterested (id, notinterested);
             else if (message is KeepAliveMessage keepalive)
@@ -141,6 +141,8 @@ namespace MonoTorrent.Client.Modes
             else
                 throw new MessageException ($"Unsupported message found: {message.GetType ().Name}");
 
+            if (!(message is PieceMessage))
+                releaser.Dispose ();
             ConnectionManager.TryProcessQueue (Manager, id);
         }
 
@@ -349,20 +351,24 @@ namespace MonoTorrent.Client.Modes
             id.IsInterested = false;
         }
 
-        protected virtual async ReusableTask HandlePieceMessage (PeerId id, PieceMessage message)
+        protected virtual void HandlePieceMessage (PeerId id, PieceMessage message, PeerMessage.Releaser releaser)
         {
             id.PiecesReceived++;
             if (Manager.PieceManager.PieceDataReceived (id, message, out bool _, out IList<IPeer> peersInvolved))
-                await WritePieceAsync (message, peersInvolved);
+                WritePieceAsync (message, releaser, peersInvolved);
+            else
+                releaser.Dispose ();
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests (id);
         }
 
         readonly Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> ();
-        async ReusableTask WritePieceAsync (PieceMessage message, IList<IPeer> peersInvolved)
+        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, IList<IPeer> peersInvolved)
         {
+            BlockInfo block = new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength);
             try {
-                await DiskManager.WriteAsync (Manager, new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength), message.Data);
+                using (releaser)
+                    await DiskManager.WriteAsync (Manager, block, message.Data);
                 if (Cancellation.IsCancellationRequested)
                     return;
             } catch (Exception ex) {
@@ -370,25 +376,25 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            if (!BlocksWrittenPerPiece.TryGetValue (message.PieceIndex, out (int blocksWritten, IList<IPeer> peersInvolved) data))
+            if (!BlocksWrittenPerPiece.TryGetValue (block.PieceIndex, out (int blocksWritten, IList<IPeer> peersInvolved) data))
                 data = (0, peersInvolved);
 
             // Increment the number of blocks, and keep storing 'peersInvolved' until it's non-null. It will be non-null when the
             // final piece is received.
             data = (data.blocksWritten + 1, data.peersInvolved ?? peersInvolved);
-            if (data.blocksWritten != Manager.BlocksPerPiece (message.PieceIndex)) {
-                BlocksWrittenPerPiece[message.PieceIndex] = data;
+            if (data.blocksWritten != Manager.BlocksPerPiece (block.PieceIndex)) {
+                BlocksWrittenPerPiece[block.PieceIndex] = data;
                 return;
             }
 
             // All blocks have been written for this piece have been written!
-            BlocksWrittenPerPiece.Remove (message.PieceIndex);
+            BlocksWrittenPerPiece.Remove (block.PieceIndex);
             peersInvolved = data.peersInvolved;
 
             // Hashcheck the piece as we now have all the blocks.
             byte[] hash;
             try {
-                hash = await DiskManager.GetHashAsync (Manager, message.PieceIndex);
+                hash = await DiskManager.GetHashAsync (Manager, block.PieceIndex);
                 if (Cancellation.IsCancellationRequested)
                     return;
             } catch (Exception ex) {
@@ -396,9 +402,9 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, message.PieceIndex);
-            Manager.OnPieceHashed (message.PieceIndex, result, 1, 1);
-            Manager.PieceManager.PieceHashed (message.PieceIndex);
+            bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, block.PieceIndex);
+            Manager.OnPieceHashed (block.PieceIndex, result, 1, 1);
+            Manager.PieceManager.PieceHashed (block.PieceIndex);
             if (!result)
                 Manager.HashFails++;
 
@@ -410,7 +416,7 @@ namespace MonoTorrent.Client.Modes
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)
-                Manager.finishedPieces.Enqueue (message.PieceIndex);
+                Manager.finishedPieces.Enqueue (block.PieceIndex);
         }
 
         protected virtual void HandlePortMessage (PeerId id, PortMessage message)

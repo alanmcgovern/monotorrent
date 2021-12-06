@@ -82,9 +82,6 @@ namespace MonoTorrent.Client
                 EnqueueAt (SendQueue.Count, message, releaser);
         }
 
-        internal void EnqueueAt (PeerMessage message, int index)
-            => EnqueueAt (index, message, default);
-
         internal void EnqueueAt (int index, PeerMessage message, PeerMessage.Releaser releaser)
         {
             lock (SendQueue) {

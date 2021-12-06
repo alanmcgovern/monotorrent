@@ -83,6 +83,10 @@ namespace MonoTorrent.Messages.Peer
             StartOffset = ReadInt (ref buffer);
             RequestLength = buffer.Length;
 
+            if (RequestLength > 16384)
+                Console.WriteLine ("Huh...");
+            if (!Data.IsEmpty)
+                Console.Write ("ooooops?");
             // This buffer will be freed after the PieceWriter has finished with it
             DataReleaser = BufferPool.Rent (RequestLength, out Memory<byte> memory);
             buffer.CopyTo (memory.Span);
@@ -119,12 +123,19 @@ namespace MonoTorrent.Messages.Peer
 
         protected override void Reset ()
         {
+            PieceIndex = Int32.MinValue;
+            StartOffset = Int32.MinValue;
+            RequestLength = Int32.MinValue;
             DataReleaser.Dispose ();
             (DataReleaser, Data) = (default, default);
         }
 
         public void SetData ((ByteBufferPool.Releaser releaser, Memory<byte> data) value)
-            => (DataReleaser, Data) = value;
+        {
+            if (!Data.IsEmpty)
+                throw new Exception ("Der");
+            (DataReleaser, Data) = value;
+        } 
 
         public override string ToString ()
         {

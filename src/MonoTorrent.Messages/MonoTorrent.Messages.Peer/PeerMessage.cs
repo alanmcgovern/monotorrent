@@ -66,7 +66,7 @@ namespace MonoTorrent.Messages.Peer
     {
         int ReuseId;
 
-        static readonly Dictionary<Type, Queue<PeerMessage>> InstanceCache;
+        private protected static readonly Dictionary<Type, Queue<PeerMessage>> InstanceCache;
         static readonly Dictionary<byte, Func<ITorrentData, (PeerMessage, Releaser)>> messageDict;
 
         static PeerMessage ()
@@ -91,22 +91,18 @@ namespace MonoTorrent.Messages.Peer
             Register (NotInterestedMessage.MessageId, data => NotInterestedMessage.Instance, false);
             Register (UnchokeMessage.MessageId, data => UnchokeMessage.Instance, false);
 
-            // We register this solely so that the user cannot register their own message with this ID.
-            // Actual decoding is handled with manual detection.
-            Register<ExtensionMessage> (ExtensionMessage.MessageId, data => throw new MessageException ("Shouldn't decode extension message this way"), false);
-
             // Cache most/all messages
             Register (PieceMessage.MessageId, data => GetInstance<PieceMessage> (), true);
             Register (RequestMessage.MessageId, data => GetInstance<RequestMessage> (), true);
             Register (CancelMessage.MessageId, data => GetInstance<CancelMessage> (), true);
             Register (AllowedFastMessage.MessageId, data => GetInstance<AllowedFastMessage> (), true);
             Register (HaveMessage.MessageId, data => GetInstance<HaveMessage> (), true);
+            Register (SuggestPieceMessage.MessageId, data => GetInstance<SuggestPieceMessage> (), true);
+            Register (PortMessage.MessageId, data => GetInstance<PortMessage> (), true);
 
             // Currently uncached
             Register (BitfieldMessage.MessageId, data => data.Files == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.PieceCount ()));
-            Register (PortMessage.MessageId, data => GetInstance<PortMessage> ());
             Register (RejectRequestMessage.MessageId, data => GetInstance<RejectRequestMessage> ());
-            Register (SuggestPieceMessage.MessageId, data => GetInstance<SuggestPieceMessage> ());
             Register (HashRequestMessage.MessageId, data => GetInstance<HashRequestMessage> ());
             Register (HashesMessage.MessageId, data => GetInstance<HashesMessage> ());
             Register (HashRejectMessage.MessageId, data => GetInstance<HashRejectMessage> ());
@@ -141,7 +137,7 @@ namespace MonoTorrent.Messages.Peer
             where T: PeerMessage
             => Register (identifier, creator, false);
 
-        static void Register<T> (byte identifier, Func<ITorrentData, T> creator, bool reusable)
+        private protected static void Register<T> (byte identifier, Func<ITorrentData, T> creator, bool reusable)
             where T : PeerMessage
         {
             if (creator == null)
@@ -149,7 +145,8 @@ namespace MonoTorrent.Messages.Peer
 
             Func<ITorrentData, (PeerMessage, Releaser)> wrapper;
             if (reusable) {
-                InstanceCache[typeof (T)] = new Queue<PeerMessage> ();
+                lock (InstanceCache)
+                    InstanceCache[typeof (T)] = new Queue<PeerMessage> ();
                 wrapper = (data) => { var msg = creator (data); return (msg, new Releaser (msg)); };
             } else {
                 wrapper = (data) => (creator (data), default);

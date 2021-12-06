@@ -213,12 +213,9 @@ namespace MonoTorrent.Client
             if (SlowConnection)
                 buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            using (MemoryPool.Default.RentArraySegment (buffer.Length, out ArraySegment<byte> segment)) {
-                var result = await ReadStream.ReadAsync (segment.Array, segment.Offset, buffer.Length, CancellationToken.None);
-                segment.Array.AsSpan (segment.Offset, result).CopyTo (buffer.Span);
-                Receives.Add (result);
-                return ManualBytesReceived ?? result;
-            }
+            var result = await ReadStream.ReadAsync(buffer.Memory);
+            Receives.Add (result);
+            return ManualBytesReceived ?? result;
         }
 
         public async ReusableTask<int> SendAsync (SocketMemory buffer)

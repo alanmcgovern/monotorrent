@@ -136,7 +136,7 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = true;
             Unchokeable.UploadingTo--;
-            peer.MessageQueue.EnqueueAt (new ChokeMessage (), 0);
+            peer.MessageQueue.EnqueueAt (0, ChokeMessage.Instance, default);
             RejectPendingRequests (peer);
             peer.LastUnchoked = new ValueStopwatch ();
         }
@@ -321,7 +321,7 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = false;
             Unchokeable.UploadingTo++;
-            peer.MessageQueue.EnqueueAt (new UnchokeMessage (), 0);
+            peer.MessageQueue.EnqueueAt (0, UnchokeMessage.Instance, default);
             peer.LastUnchoked.Restart ();
             peer.FirstReviewPeriod = true;
         }

@@ -119,7 +119,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Peers.ClearAll ();
                 var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
                 Manager.Mode = mode;
-                await Manager.Mode.HandleMessage (id, exchangeMessage);
+                Manager.Mode.HandleMessage (id, exchangeMessage, default);
 
                 var addedArgs = await peersTask.Task.WithTimeout ();
                 Assert.AreEqual (2, addedArgs.NewPeers, "#1");
@@ -149,7 +149,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
-            await manager.Mode.HandleMessage (id, exchangeMessage);
+            manager.Mode.HandleMessage (id, exchangeMessage, default);
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (0, addedArgs.NewPeers, "#1");
@@ -223,7 +223,7 @@ namespace MonoTorrent.Client.Modes
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
             var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte) 15, 20).ToArray ()), "peerid", Constants.ProtocolStringV100);
 
-            Assert.ThrowsAsync<TorrentException> (() => Manager.Mode.HandleMessage (peer, handshake).AsTask ());
+            Assert.Throws<TorrentException> (() => Manager.Mode.HandleMessage (peer, handshake, default));
         }
 
         [Test]
@@ -233,7 +233,7 @@ namespace MonoTorrent.Client.Modes
             var peerId = PeerId.CreateNull (Manager.Bitfield.Length);
             var handshake = new HandshakeMessage (Manager.InfoHash, "peerid", "bleurgh");
 
-            Assert.ThrowsAsync<ProtocolException> (() => Manager.Mode.HandleMessage (peerId, handshake).AsTask ());
+            Assert.Throws<ProtocolException> (() => Manager.Mode.HandleMessage (peerId, handshake, default));
         }
 
         [Test]
@@ -248,19 +248,19 @@ namespace MonoTorrent.Client.Modes
             peer.Peer.PeerId = null;
             var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
-            await manager.Mode.HandleMessage (peer, handshake);
+            manager.Mode.HandleMessage (peer, handshake, default);
             Assert.AreEqual (handshake.PeerId, peer.PeerID);
         }
 
         [Test]
-        public async Task EmptyPeerId_PublicTorrent ()
+        public void EmptyPeerId_PublicTorrent ()
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
             peer.Peer.PeerId = null;
             var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
-            await Manager.Mode.HandleMessage (peer, handshake);
+            Manager.Mode.HandleMessage (peer, handshake, default);
             Assert.AreEqual (handshake.PeerId, peer.PeerID);
         }
 
@@ -275,7 +275,7 @@ namespace MonoTorrent.Client.Modes
             var peer = PeerId.CreateNull (manager.Bitfield.Length);
             var handshake = new HandshakeMessage (manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
-            Assert.ThrowsAsync<TorrentException> (() => manager.Mode.HandleMessage (peer, handshake).AsTask ());
+            Assert.Throws<TorrentException> (() => manager.Mode.HandleMessage (peer, handshake, default));
         }
 
         [Test]
@@ -285,7 +285,7 @@ namespace MonoTorrent.Client.Modes
             var peer = PeerId.CreateNull (Manager.Bitfield.Length);
             var handshake = new HandshakeMessage (Manager.InfoHash, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
-            Assert.DoesNotThrowAsync (() => Manager.Mode.HandleMessage (peer, handshake).AsTask ());
+            Assert.DoesNotThrow (() => Manager.Mode.HandleMessage (peer, handshake, default));
             Assert.AreEqual (peer.PeerID, handshake.PeerId);
         }
 

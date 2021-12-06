@@ -35,7 +35,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
     public abstract class ExtensionMessage : PeerMessage
     {
         internal static readonly byte MessageId = 20;
-        static readonly Dictionary<byte, Func<ITorrentData, PeerMessage>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentData, (PeerMessage, Releaser)>> messageDict;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport> ();
 
@@ -43,19 +43,23 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         static ExtensionMessage ()
         {
-            messageDict = new Dictionary<byte, Func<ITorrentData, PeerMessage>> ();
+            // We register this solely so that the user cannot register their own message with this ID.
+            // Actual decoding is handled with manual detection.
+            Register<ExtensionMessage> (MessageId, data => throw new MessageException ("Shouldn't decode extension message this way"), false);
 
-            byte id = Register (data => new ExtendedHandshakeMessage ());
+            messageDict = new Dictionary<byte, Func<ITorrentData, (PeerMessage, Releaser)>> ();
+
+            byte id = Register (data => new ExtendedHandshakeMessage (), false);
             if (id != 0)
                 throw new InvalidOperationException ("The handshake message should be registered with id '0'");
 
-            id = Register (data => GetInstance<LTChat> ());
+            id = Register (data => GetInstance<LTChat> (), false);
             SupportedMessages.Add (new ExtensionSupport ("LT_chat", id));
 
-            id = Register (data => GetInstance<LTMetadata> ());
+            id = Register (data => GetInstance<LTMetadata> (), false);
             SupportedMessages.Add (new ExtensionSupport ("ut_metadata", id));
 
-            id = Register (data => GetInstance<PeerExchangeMessage> ());
+            id = Register (data => GetInstance<PeerExchangeMessage> (), false);
             SupportedMessages.Add (new ExtensionSupport ("ut_pex", id));
         }
 
@@ -64,14 +68,22 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             ExtensionId = messageId;
         }
 
-        public static byte Register (Func<ITorrentData, PeerMessage> creator)
+        public static byte Register<T> (Func<ITorrentData, T> creator, bool reusable)
+            where T : PeerMessage
         {
             if (creator == null)
                 throw new ArgumentNullException (nameof (creator));
 
             lock (messageDict) {
                 byte id = (byte) messageDict.Count;
-                messageDict.Add (id, creator);
+                Func<ITorrentData, (PeerMessage, Releaser)> wrapper;
+                if (reusable) {
+                    lock (InstanceCache)
+                        InstanceCache[typeof (T)] = new Queue<PeerMessage> ();
+                    wrapper = (data) => { var message = creator (data); return (message, new Releaser (message)); };
+                } else
+                    wrapper = (data) => (creator (data), default);
+                messageDict.Add (id, wrapper);
                 return id;
             }
         }
@@ -81,14 +93,14 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             return SupportedMessages.Find (s => s.Name == name);
         }
 
-        public static (PeerMessage message, PeerMessage.Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentData manager)
+        public static (PeerMessage message, Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentData manager)
         {
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentData, PeerMessage> creator))
+            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentData, (PeerMessage, Releaser)> creator))
                 throw new MessageException ("Unknown extension message received");
 
-            PeerMessage message = creator (manager);
+            (PeerMessage message, Releaser releaser) = creator (manager);
             message.Decode (buffer.Slice (1));
-            return (message, new Releaser (message));
+            return (message, releaser);
         }
     }
 }

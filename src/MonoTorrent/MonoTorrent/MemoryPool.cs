@@ -44,6 +44,7 @@ namespace MonoTorrent
 
         }
 
+
         public ArraySegmentReleaser RentArraySegment (int capacity, out ArraySegment<byte> segment)
         {
             lock (ArraySegments) {
@@ -60,7 +61,7 @@ namespace MonoTorrent
             // The (only?) user of this in the engine is the code which generates randoms for the NET472
             // profile, and it uses buffers of size [96 + Rand(0, 512)]. If we always generate 1kB buffers
             // we can probably end up creating and reusing one buffer for the entire lifespan of the engine.
-            var byteBuffer = new ByteBuffer (new ArraySegment<byte> (new byte[Math.Max (capacity, 1024)]));
+            var byteBuffer = new ByteBuffer (new ArraySegment<byte> (new byte[capacity]));
             segment = new ArraySegment<byte> (byteBuffer.Segment.Array, byteBuffer.Segment.Offset, capacity);
             return new ArraySegmentReleaser (ArraySegments, byteBuffer);
         }
