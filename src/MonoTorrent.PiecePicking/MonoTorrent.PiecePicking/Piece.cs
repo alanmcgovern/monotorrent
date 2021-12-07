@@ -28,93 +28,118 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace MonoTorrent.PiecePicking
 {
-    [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
-    class Piece : IComparable<Piece>
+    partial class StandardPicker
     {
-        internal const int BlockSize = (1 << 14); // 16kB
-
-
-        #region Fields
-
-        public Block this[int index] => Blocks[index];
-
-        /// <summary>
-        /// Set to true when the original peer times out sending a piece, disconnects, or chokes us.
-        /// This allows other peers to immediately begin downloading blocks from this piece to complete
-        /// it.
-        /// </summary>
-        internal bool Abandoned { get; set; }
-
-        internal Block[] Blocks { get; set; }
-
-        public bool AllBlocksRequested => TotalRequested == Blocks.Length;
-
-        public bool AllBlocksReceived => TotalReceived == Blocks.Length;
-
-        public bool AllBlocksWritten => TotalWritten == Blocks.Length;
-
-        public int BlockCount => Blocks.Length;
-
-        public int Index { get; }
-
-        public bool NoBlocksRequested => TotalRequested == 0;
-
-        public int TotalReceived { get; internal set; }
-
-        public int TotalRequested { get; internal set; }
-
-        public int TotalWritten { get; internal set; }
-
-        #endregion Fields
-
-
-        #region Constructors
-
-        internal Piece (int pieceIndex, int length)
+        [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
+        internal class Piece : IComparable<Piece>, ICacheable
         {
-            Index = pieceIndex;
+            internal const int BlockSize = (1 << 14); // 16kB
 
-            Blocks = new Block[(length + BlockSize - 1) / BlockSize];
-            for (int i = 0; i < Blocks.Length - 1; i++)
-                Blocks[i] = new Block (this, i * BlockSize, BlockSize);
+            HashSet<IPeer> PeersInvolved { get; }
 
-            Blocks[Blocks.Length - 1] = new Block (this, (Blocks.Length - 1) * BlockSize, length - (Blocks.Length - 1) * BlockSize);
+            public Block this[int index] => Blocks[index];
+
+            /// <summary>
+            /// Set to true when the original peer times out sending a piece, disconnects, or chokes us.
+            /// This allows other peers to immediately begin downloading blocks from this piece to complete
+            /// it.
+            /// </summary>
+            internal bool Abandoned { get; set; }
+
+            internal Block[] Blocks { get; set; }
+
+            public bool AllBlocksRequested => TotalRequested == Blocks.Length;
+
+            public bool AllBlocksReceived => TotalReceived == Blocks.Length;
+
+            public bool AllBlocksWritten => TotalWritten == Blocks.Length;
+
+            public int BlockCount => Blocks.Length;
+
+            public int Index { get; private set; }
+
+            public bool NoBlocksRequested => TotalRequested == 0;
+
+            public int TotalReceived { get; internal set; }
+
+            public int TotalRequested { get; internal set; }
+
+            public int TotalWritten { get; internal set; }
+
+
+            internal Piece (int pieceIndex, int length)
+            {
+                Blocks = Array.Empty<Block> ();
+                PeersInvolved = new HashSet<IPeer> ();
+                Initialise (pieceIndex, length);
+            }
+
+            public int CompareTo (Piece other)
+            {
+                return other == null ? 1 : Index.CompareTo (other.Index);
+            }
+
+            public override bool Equals (object obj)
+            {
+                return (!(obj is Piece p)) ? false : Index.Equals (p.Index);
+            }
+
+            public System.Collections.IEnumerator GetEnumerator ()
+            {
+                return Blocks.GetEnumerator ();
+            }
+
+            public override int GetHashCode ()
+            {
+                return Index;
+            }
+
+            public void Initialise ()
+                => Initialise (-1, -1);
+
+            public Piece Initialise (int pieceIndex, int length)
+            {
+                Index = pieceIndex;
+
+                Abandoned = false;
+                TotalReceived = 0;
+                TotalRequested = 0;
+                TotalWritten = 0;
+
+                if (length != -1) {
+                    var expectedLength = (length + BlockSize - 1) / BlockSize;
+                    if (Blocks.Length != expectedLength)
+                        Blocks = new Block[expectedLength];
+
+                    for (int i = 0; i < Blocks.Length - 1; i++)
+                        Blocks[i] = new Block (this, i * BlockSize, BlockSize);
+
+                    Blocks[Blocks.Length - 1] = new Block (this, (Blocks.Length - 1) * BlockSize, length - (Blocks.Length - 1) * BlockSize);
+                }
+
+                return this;
+            }
+
+            string ToDebuggerString ()
+            {
+                return $"Piece {Index}";
+            }
+
+            internal IList<IPeer> CalculatePeersInvolved ()
+            {
+                PeersInvolved.Clear ();
+                foreach (var block in Blocks)
+                    PeersInvolved.Add (block.RequestedOff);
+
+                var result = new IPeer[PeersInvolved.Count];
+                PeersInvolved.CopyTo (result);
+                return result;
+            }
         }
-
-        #endregion
-
-
-        #region Methods
-
-        public int CompareTo (Piece other)
-        {
-            return other == null ? 1 : Index.CompareTo (other.Index);
-        }
-
-        public override bool Equals (object obj)
-        {
-            return (!(obj is Piece p)) ? false : Index.Equals (p.Index);
-        }
-
-        public System.Collections.IEnumerator GetEnumerator ()
-        {
-            return Blocks.GetEnumerator ();
-        }
-
-        public override int GetHashCode ()
-        {
-            return Index;
-        }
-
-        string ToDebuggerString ()
-        {
-            return $"Piece {Index}";
-        }
-
-        #endregion
     }
 }

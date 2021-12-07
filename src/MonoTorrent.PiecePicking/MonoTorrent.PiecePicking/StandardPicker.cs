@@ -35,8 +35,10 @@ using System.Linq;
 
 namespace MonoTorrent.PiecePicking
 {
-    public class StandardPicker : IPiecePicker
+    public partial class StandardPicker : IPiecePicker
     {
+        static ICache<Piece> PieceCache { get; } = new Cache<Piece> (() => new Piece (-1, -1)).Synchronize ();
+
         // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
         readonly Dictionary<int, List<Piece>> duplicates;
@@ -208,8 +210,10 @@ namespace MonoTorrent.PiecePicking
             // If there are no duplicate requests, exit early! Otherwise we'll need to do book keeping to
             // ensure our received piece is not re-requested again.
             if (!duplicates.TryGetValue (request.PieceIndex, out List<Piece> extraPieces)) {
-                if (pieceComplete)
+                if (pieceComplete) {
                     requests.RemoveAt (pIndex);
+                    PieceCache.Enqueue (primaryPiece);
+                }
                 return result;
             }
 
@@ -233,6 +237,9 @@ namespace MonoTorrent.PiecePicking
             if (pieceComplete) {
                 requests.RemoveAt (pIndex);
                 duplicates.Remove (primaryPiece.Index);
+
+                // Return the primary piece to the cache for re-use.
+                PieceCache.Enqueue (primaryPiece);
                 return result;
             }
             return result;
@@ -262,7 +269,7 @@ namespace MonoTorrent.PiecePicking
 
             if (piece.AllBlocksReceived) {
                 pieceComplete = true;
-                peersInvolved = piece.Blocks.Select (t => t.RequestedOff).Distinct ().ToArray ();
+                peersInvolved = piece.CalculatePeersInvolved ();
             }
             return true;
         }
@@ -300,7 +307,7 @@ namespace MonoTorrent.PiecePicking
                         duplicates[primaryPiece.Index] = extraPieces = new List<Piece> ();
 
                     if (extraPieces.Count < duplicate) {
-                        var newPiece = new Piece (primaryPiece.Index, TorrentData.BytesPerPiece (primaryPiece.Index));
+                        var newPiece = PieceCache.Dequeue ().Initialise (primaryPiece.Index, TorrentData.BytesPerPiece (primaryPiece.Index));
                         for (int i = 0; i < primaryPiece.BlockCount; i++)
                             if (primaryPiece.Blocks[i].Received)
                                 newPiece.Blocks[i].TrySetReceived (primaryPiece.Blocks[i].RequestedOff);
@@ -352,7 +359,7 @@ namespace MonoTorrent.PiecePicking
                     continue;
 
                 pieces.RemoveAt (i);
-                var p = new Piece (index, TorrentData.BytesPerPiece (index));
+                var p = PieceCache.Dequeue ().Initialise (index, TorrentData.BytesPerPiece (index));
                 requests.Add (p);
                 return p.Blocks[0].CreateRequest (peer);
             }
@@ -375,7 +382,7 @@ namespace MonoTorrent.PiecePicking
             var totalRequested = 0;
             for (int i = 0; totalRequested < requests.Length && i < piecesNeeded; i++) {
                 // Request the piece
-                var p = new Piece (checkIndex + i, TorrentData.BytesPerPiece (checkIndex + i));
+                var p = PieceCache.Dequeue ().Initialise (checkIndex + i, TorrentData.BytesPerPiece (checkIndex + i));
                 this.requests.Add (p);
                 for (int j = 0; j < p.Blocks.Length && totalRequested < requests.Length; j++)
                     requests[totalRequested++] = p.Blocks[j].CreateRequest (peer);

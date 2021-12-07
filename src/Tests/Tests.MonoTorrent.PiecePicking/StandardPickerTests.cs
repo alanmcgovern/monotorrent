@@ -481,7 +481,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void CreateFinalPiece ()
         {
-            var piece = new Piece (0, Constants.BlockSize * 3 + 1);
+            var piece = new StandardPicker.Piece (0, Constants.BlockSize * 3 + 1);
             Assert.AreEqual (4, piece.BlockCount);
 
             Assert.AreEqual (Constants.BlockSize * 3, piece.Blocks[3].StartOffset);
@@ -491,7 +491,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void CreateNormalPiece ()
         {
-            var piece = new Piece (0, Constants.BlockSize * 3);
+            var piece = new StandardPicker.Piece (0, Constants.BlockSize * 3);
             Assert.AreEqual (3, piece.BlockCount);
 
             Assert.AreEqual (Constants.BlockSize * 0, piece.Blocks[0].StartOffset);
@@ -508,7 +508,7 @@ namespace MonoTorrent.PiecePicking
         public void CreatePiece_NotMultipleOf16KB ()
         {
             var totalSize = 2318336;
-            var piece = new Piece (0, totalSize);
+            var piece = new StandardPicker.Piece (0, totalSize);
             Assert.AreEqual (142, piece.BlockCount);
 
             for (int i = 0; i < piece.BlockCount - 1; i++)
