@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;net6.0;netcoreapp3.1</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <ReferenceReusableTasks>false</ReferenceReusableTasks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Nat" Version="3.0.1" />
+    <PackageReference Include="ReusableTasks" Version="2.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Dht\MonoTorrent.Dht.csproj" />
+  </ItemGroup>
+
+</Project>

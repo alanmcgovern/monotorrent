@@ -51,7 +51,7 @@ namespace MonoTorrent.Dht
         Task<byte[]> SaveNodesAsync ();
         Task SetListenerAsync (IDhtListener listener);
         Task StartAsync ();
-        Task StartAsync (byte[] initialNodes);
+        Task StartAsync (ReadOnlyMemory<byte> initialNodes);
         Task StopAsync ();
     }
 }

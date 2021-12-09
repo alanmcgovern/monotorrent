@@ -111,8 +111,6 @@ namespace MonoTorrent.Dht
 
         #endregion Constructors
 
-        #region Methods
-
         public void Add (IEnumerable<byte[]> nodes)
         {
             // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
@@ -273,7 +271,7 @@ namespace MonoTorrent.Dht
             await StartAsync (Array.Empty<byte> ());
         }
 
-        public async Task StartAsync (byte[] initialNodes)
+        public async Task StartAsync (ReadOnlyMemory<byte> initialNodes)
         {
             CheckDisposed ();
 
@@ -281,7 +279,8 @@ namespace MonoTorrent.Dht
             MessageLoop.Start ();
             if (RoutingTable.NeedsBootstrap) {
                 RaiseStateChanged (DhtState.Initialising);
-                InitializeAsync (Node.FromCompactNode (initialNodes ?? Array.Empty<byte> ()));
+                // HACK: We want to disambiguate between 'decode one' and 'decode many' when using a Span<byte>
+                InitializeAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)));
             } else {
                 RaiseStateChanged (DhtState.Ready);
             }
@@ -324,7 +323,5 @@ namespace MonoTorrent.Dht
 
         public async Task SetListenerAsync (IDhtListener listener)
             => await MessageLoop.SetListener (listener);
-
-        #endregion Methods
     }
 }

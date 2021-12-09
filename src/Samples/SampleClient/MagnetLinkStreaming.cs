@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using MonoTorrent;
 using MonoTorrent.Client;
 
-namespace SampleClient
+namespace ClientSample
 {
     class MagnetLinkStreaming
     {

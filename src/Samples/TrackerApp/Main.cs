@@ -38,7 +38,7 @@ using MonoTorrent.TrackerServer;
 
 using TrackerApp;
 
-namespace SampleTracker
+namespace TrackerSample
 {
     /// <summary>
     /// This is a sample implementation of how you could create a custom ITrackable

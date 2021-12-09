@@ -90,7 +90,7 @@ namespace MonoTorrent.Dht
             return Task.CompletedTask;
         }
 
-        public Task StartAsync (byte[] initialNodes)
+        public Task StartAsync (ReadOnlyMemory<byte> initialNodes)
         {
             return Task.CompletedTask;
         }

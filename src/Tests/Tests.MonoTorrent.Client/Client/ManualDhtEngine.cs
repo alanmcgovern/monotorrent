@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
         public Task StartAsync ()
             => StartAsync (null);
 
-        public Task StartAsync (byte[] initialNodes)
+        public Task StartAsync (ReadOnlyMemory<byte> initialNodes)
         {
             RaiseStateChanged (DhtState.Ready);
             return Task.CompletedTask;

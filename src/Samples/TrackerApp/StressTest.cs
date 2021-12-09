@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 using MonoTorrent;
 
@@ -38,8 +39,9 @@ namespace TrackerApp
 
         public void Start (string trackerAddress)
         {
+            var client = new HttpClient ();
             for (int i = 0; i < threads.Length; i++) {
-                threads[i] = new Thread ((ThreadStart) delegate {
+                threads[i] = new Thread ((ThreadStart) async delegate {
                     StringBuilder sb = new StringBuilder ();
                     int torrent = 0;
                     while (true) {
@@ -63,18 +65,10 @@ namespace TrackerApp
                         sb.Append ("&compact=");
                         sb.Append ("1");
 
-                        WebRequest req = WebRequest.Create (sb.ToString ());
-                        req.BeginGetResponse (delegate (IAsyncResult r) {
-                            try {
-                                req.EndGetResponse (r).Close ();
-                                requests.AddDelta (1);
-                            } catch {
-                            } finally {
-                                requests.Tick ();
-                            }
-                        }, null);
-
-                        Thread.Sleep (threadSleepTime);
+                        await client.GetByteArrayAsync (sb.ToString ());
+                        requests.AddDelta (1);
+                        requests.Tick ();
+                        await Task.Delay (threadSleepTime);
                     }
                 });
                 threads[i].Start ();

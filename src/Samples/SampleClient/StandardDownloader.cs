@@ -9,7 +9,7 @@ using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Logging;
 
-namespace SampleClient
+namespace ClientSample
 {
     class StandardDownloader
     {

@@ -14,7 +14,7 @@ using MonoTorrent.TrackerServer;
 
 using ReusableTasks;
 
-namespace SampleClient
+namespace ClientSample
 {
     class NullWriter : IPieceWriter
     {
