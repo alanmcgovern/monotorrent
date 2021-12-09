@@ -27,6 +27,11 @@
 //
 
 
+using System;
+using System.ComponentModel;
+
+using MonoTorrent.Messages.Peer;
+
 namespace MonoTorrent.Client
 {
     /// <summary>
@@ -34,34 +39,65 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionMonitor
     {
-        #region Member Variables
 
         internal SpeedMonitor DataDown { get; }
         internal SpeedMonitor DataUp { get; }
         internal SpeedMonitor ProtocolDown { get; }
         internal SpeedMonitor ProtocolUp { get; }
 
-        #endregion Member Variables
+        [Obsolete ("Use DataBytesReceived instead")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public long DataBytesDownloaded => DataBytesReceived;
 
+        [Obsolete ("Use DataBytesSent instead")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public long DataBytesUploaded => DataBytesSent;
 
-        #region Public Properties
+        [Obsolete ("Use ReceiveRate instead")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public long DownloadSpeed => ReceiveRate;
 
-        public long DataBytesDownloaded => DataDown.Total;
+        [Obsolete ("Use ProtocolBytesReceived instead")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public long ProtocolBytesDownloaded => ProtocolBytesReceived;
 
-        public long DataBytesUploaded => DataUp.Total;
+        [Obsolete ("Use ProtocolBytesSent instead")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public long ProtocolBytesUploaded => ProtocolBytesSent;
 
-        public long DownloadSpeed => DataDown.Rate + ProtocolDown.Rate;
+        [Obsolete ("Use SendRate instead")]
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public long UploadSpeed => SendRate;
 
-        public long ProtocolBytesDownloaded => ProtocolDown.Total;
+        /// <summary>
+        /// Total bytes of <see cref="ITorrentFile"/> data received from this peer. This value tracks the size of the payload of each <see cref="PieceMessage"/> received from this peer, which is <see cref="PieceMessage.RequestLength"/> bytes.
+        /// </summary>
+        public long DataBytesReceived => DataDown.Total;
 
-        public long ProtocolBytesUploaded => ProtocolUp.Total;
+        /// <summary>
+        /// Total bytes of <see cref="ITorrentFile"/> data sent to this peer. This value tracks the size of the payload of each <see cref="PieceMessage"/> sent to this peer, which is <see cref="PieceMessage.RequestLength"/> bytes.
+        /// </summary>
+        public long DataBytesSent => DataUp.Total;
 
-        public long UploadSpeed => DataUp.Rate + ProtocolUp.Rate;
+        /// <summary>
+        /// Current receive rate, in bytes/second, for this peer. This value includes 'data' as well as 'protocol'.
+        /// </summary>
+        public long ReceiveRate => DataDown.Rate + ProtocolDown.Rate;
 
-        #endregion Public Properties
+        /// <summary>
+        /// Total bytes of protocol data received from this peer. This value tracks the size of each <see cref="PeerMessage"/> received from this peer, excluding the payload portion of each <see cref="PieceMessage"/>, which is <see cref="PieceMessage.RequestLength"/> bytes.
+        /// </summary>
+        public long ProtocolBytesReceived => ProtocolDown.Total;
 
+        /// <summary>
+        /// Total bytes of protocol data sent to this peer. This value tracks the size of each <see cref="PeerMessage"/> sent to this peer, excluding the payload portion of each <see cref="PieceMessage"/>, which is <see cref="PieceMessage.RequestLength"/> bytes.
+        /// </summary>
+        public long ProtocolBytesSent => ProtocolUp.Total;
 
-        #region Constructors
+        /// <summary>
+        /// Current send rate, in bytes/second, for this peer. This value includes 'data' as well as 'protocol'.
+        /// </summary>
+        public long SendRate => DataUp.Rate + ProtocolUp.Rate;
 
         internal ConnectionMonitor ()
             : this (12)
@@ -76,11 +112,6 @@ namespace MonoTorrent.Client
             ProtocolDown = new SpeedMonitor (averagingPeriod);
             ProtocolUp = new SpeedMonitor (averagingPeriod);
         }
-
-        #endregion
-
-
-        #region Methods
 
         internal void Reset ()
         {
@@ -97,7 +128,5 @@ namespace MonoTorrent.Client
             ProtocolDown.Tick ();
             ProtocolUp.Tick ();
         }
-
-        #endregion
     }
 }
