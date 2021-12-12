@@ -34,7 +34,7 @@ namespace MonoTorrent
 {
     public class SpeedMonitor
     {
-        internal const int DefaultAveragePeriod = 12;
+        public const int DefaultAveragePeriod = 12;
 
         ValueStopwatch lastUpdated;
         long rate;
@@ -90,7 +90,7 @@ namespace MonoTorrent
                 Tick (difference);
         }
 
-        internal void Tick (int difference)
+        public void Tick (int difference)
         {
             lastUpdated.Restart ();
             TimePeriodPassed (difference);

@@ -48,6 +48,17 @@ namespace MonoTorrent.Dht
         MethodUnknown = 204//Method Unknown
     }
 
+    class TransferMonitor : ITransferMonitor
+    {
+        long ITransferMonitor.SendRate => SendMonitor.Rate;
+        long ITransferMonitor.ReceiveRate => ReceiveMonitor.Rate;
+        long ITransferMonitor.BytesSent => SendMonitor.Total;
+        long ITransferMonitor.BytesReceived => ReceiveMonitor.Total;
+
+        internal SpeedMonitor SendMonitor { get; } = new SpeedMonitor ();
+        internal SpeedMonitor ReceiveMonitor { get; } = new SpeedMonitor ();
+    }
+
     public class DhtEngine : IDisposable, IDhtEngine
     {
         static readonly TimeSpan DefaultAnnounceInternal = TimeSpan.FromMinutes (10);
@@ -60,17 +71,15 @@ namespace MonoTorrent.Dht
 
         #endregion Events
 
-        #region Fields
-
         internal static MainLoop MainLoop { get; } = new MainLoop ("DhtLoop");
-
-        #endregion Fields
 
         #region Properties
 
         public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
 
         public bool Disposed { get; private set; }
+
+        public ITransferMonitor Monitor { get; }
 
         public TimeSpan MinimumAnnounceInterval => DefaultMinimumAnnounceInterval;
 
@@ -95,8 +104,10 @@ namespace MonoTorrent.Dht
 
         public DhtEngine (SHA1 hasher)
         {
+            var monitor = new TransferMonitor ();
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
-            MessageLoop = new MessageLoop (this);
+            MessageLoop = new MessageLoop (this, monitor);
+            Monitor = monitor;
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
             TokenManager = new TokenManager (hasher);

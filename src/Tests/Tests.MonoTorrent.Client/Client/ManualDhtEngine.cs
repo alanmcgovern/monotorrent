@@ -41,6 +41,7 @@ namespace MonoTorrent.Client
         public TimeSpan AnnounceInterval { get; }
         public bool Disposed { get; private set; }
         public TimeSpan MinimumAnnounceInterval { get; }
+        public ITransferMonitor Monitor { get; }
         public DhtState State { get; private set; }
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;

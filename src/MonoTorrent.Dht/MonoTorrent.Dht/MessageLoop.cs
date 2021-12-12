@@ -75,6 +75,8 @@ namespace MonoTorrent.Dht
         /// </summary>
         IDhtListener Listener { get; set; }
 
+        TransferMonitor Monitor { get; }
+
         /// <summary>
         /// The number of DHT messages which have been sent and no response has been received.
         /// </summary>
@@ -107,9 +109,10 @@ namespace MonoTorrent.Dht
         /// </summary>
         List<SendDetails> WaitingResponseTimedOut { get; }
 
-        public MessageLoop (DhtEngine engine)
+        public MessageLoop (DhtEngine engine, TransferMonitor monitor)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
+            Monitor = monitor;
             DhtMessageFactory = new DhtMessageFactory ();
             Listener = new NullDhtListener ();
             ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>> ();
@@ -120,6 +123,9 @@ namespace MonoTorrent.Dht
 
             Task sendTask = null;
             DhtEngine.MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (5), () => {
+                monitor.ReceiveMonitor.Tick ();
+                monitor.SendMonitor.Tick ();
+
                 if (engine.Disposed)
                     return false;
                 try {
@@ -151,8 +157,10 @@ namespace MonoTorrent.Dht
             // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
             // and return an error message (if that's what the spec allows)
             try {
-                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, false), out DhtMessage message))
+                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, false), out DhtMessage message)) {
+                    Monitor.ReceiveMonitor.AddDelta (buffer.Length);
                     ReceiveQueue.Enqueue (new KeyValuePair<IPEndPoint, DhtMessage> (endpoint, message));
+                }
             } catch (MessageException) {
                 // Caused by bad transaction id usually - ignore
             } catch (Exception) {
@@ -186,6 +194,7 @@ namespace MonoTorrent.Dht
 
                 byte[] buffer = details.Message.Encode ();
                 try {
+                    Monitor.SendMonitor.AddDelta (buffer.Length);
                     await Listener.SendAsync (buffer, details.Destination);
                 } catch {
                     TimeoutMessage (details);

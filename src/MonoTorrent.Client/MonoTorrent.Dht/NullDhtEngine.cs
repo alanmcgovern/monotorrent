@@ -52,6 +52,7 @@ namespace MonoTorrent.Dht
         public TimeSpan AnnounceInterval { get; }
         public bool Disposed => false;
         public TimeSpan MinimumAnnounceInterval { get; }
+        public ITransferMonitor Monitor { get; }
 
         public DhtState State => DhtState.NotReady;
 
