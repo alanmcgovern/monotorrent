@@ -35,6 +35,29 @@ using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
 {
+    public interface ITransferMonitor
+    {
+        /// <summary>
+        /// Total bytes sent since the start of the session.
+        /// </summary>
+        long BytesSent { get; }
+
+        /// <summary>
+        /// Total bytes received since the start of the session.
+        /// </summary>
+        long BytesReceived { get; }
+
+        /// <summary>
+        /// Estimate of the amount of data sent every second, in bytes/second.
+        /// </summary>
+        long ReceiveRate { get; }
+
+        /// <summary>
+        /// Estimate of the amount of data sent every second, in bytes/second.
+        /// </summary>
+        long SendRate { get; }
+    }
+
     public interface IDhtEngine : IDisposable
     {
         event EventHandler<PeersFoundEventArgs> PeersFound;
@@ -42,6 +65,7 @@ namespace MonoTorrent.Dht
 
         TimeSpan AnnounceInterval { get; }
         bool Disposed { get; }
+        ITransferMonitor Monitor { get; }
         TimeSpan MinimumAnnounceInterval { get; }
         DhtState State { get; }
 
