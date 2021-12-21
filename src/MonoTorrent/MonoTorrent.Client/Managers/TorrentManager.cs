@@ -612,12 +612,12 @@ namespace MonoTorrent.Client
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             var savePath = SavePath;
             if (Torrent.Files.Count > 1 && Settings.CreateContainingDirectory)
-                savePath = Path.Combine (savePath, Torrent.Name);
+                savePath = Path.Combine (savePath, TorrentFileInfo.PathEscape (Torrent.Name));
 
             // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
             // should be set to 'true' for each piece as all files are being downloaded.
             Files = Torrent.Files.Select (file =>
-                new TorrentFileInfo (file, Path.Combine (savePath, file.Path))
+                new TorrentFileInfo (file, Path.Combine (savePath, TorrentFileInfo.PathAndFileNameEscape (file.Path)))
             ).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
 
             PieceManager.Initialise ();
