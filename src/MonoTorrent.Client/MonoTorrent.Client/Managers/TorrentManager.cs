@@ -617,12 +617,12 @@ namespace MonoTorrent.Client
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             var savePath = SavePath;
             if (Torrent.Files.Count > 1 && Settings.CreateContainingDirectory)
-                savePath = Path.Combine (savePath, Torrent.Name);
+                savePath = Path.Combine (savePath, TorrentFileInfo.PathEscape (Torrent.Name));
 
             // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
             // should be set to 'true' for each piece as all files are being downloaded.
             Files = Torrent.Files.Select (file => {
-                var downloadCompleteFullPath = Path.Combine (savePath, file.Path);
+                var downloadCompleteFullPath = Path.Combine (savePath, TorrentFileInfo.PathAndFileNameEscape (file.Path));
                 var downloadIncompleteFullPath = downloadCompleteFullPath + TorrentFileInfo.IncompleteFileSuffix;
 
                 // FIXME: Is this the best place to futz with actually moving files?
