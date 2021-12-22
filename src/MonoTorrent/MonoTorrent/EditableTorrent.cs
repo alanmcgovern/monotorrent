@@ -43,6 +43,7 @@ namespace MonoTorrent
         static readonly BEncodedString CreatedByKey = "created by";
         static readonly BEncodedString EncodingKey = "encoding";
         static readonly BEncodedString InfoKey = "info";
+        static readonly BEncodedString NameKey = "name";
         private protected static readonly BEncodedString PieceLengthKey = "piece length";
         static readonly BEncodedString PrivateKey = "private";
         static readonly BEncodedString PublisherKey = "publisher";
@@ -83,6 +84,11 @@ namespace MonoTorrent
 
         protected BEncodedDictionary Metadata {
             get; private set;
+        }
+
+        public string Name {
+            get => GetString (InfoDict, NameKey);
+            set => SetString (InfoDict, NameKey, value);
         }
 
         public long PieceLength {
