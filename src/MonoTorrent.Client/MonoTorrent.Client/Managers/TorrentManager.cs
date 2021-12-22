@@ -631,8 +631,13 @@ namespace MonoTorrent.Client
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             if (Torrent.Files.Count == 1 || !Settings.CreateContainingDirectory)
                 ContainingDirectory = SavePath;
-            else
-                ContainingDirectory = Path.Combine (SavePath, TorrentFileInfo.PathEscape (Torrent.Name));
+            else {
+                PathValidator.Validate (Torrent.Name);
+                ContainingDirectory = Path.GetFullPath (Path.Combine (SavePath, TorrentFileInfo.PathEscape (Torrent.Name)));
+            }
+
+            if (!ContainingDirectory.StartsWith (SavePath))
+                throw new InvalidOperationException ($"The containing directory path '{ContainingDirectory}' must be a subdirectory of '{SavePath}'.");
 
             // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
             // should be set to 'true' for each piece as all files are being downloaded.

@@ -156,6 +156,38 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task ContainingDirectory_InvalidCharacters ()
+        {
+            // You can't manually add peers to private torrents
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
+            await rig.Engine.RemoveAsync (rig.Engine.Torrents[0]);
+
+            var editor = new TorrentEditor (rig.TorrentDict);
+            editor.CanEditSecureMetadata = true;
+            editor.Name = $"{Path.GetInvalidPathChars()[0]}test{Path.GetInvalidPathChars ()[0]}";
+
+            var manager = await rig.Engine.AddAsync (editor.ToTorrent (), "path", new TorrentSettings ());
+            Assert.IsFalse(manager.ContainingDirectory.Contains (manager.Torrent.Name));
+            Assert.IsTrue (manager.ContainingDirectory.StartsWith (manager.SavePath));
+            Assert.AreEqual (Path.GetFullPath (manager.ContainingDirectory), manager.ContainingDirectory);
+            Assert.AreEqual (Path.GetFullPath (manager.SavePath), manager.SavePath);
+        }
+
+        [Test]
+        public async Task ContainingDirectory_PathBusting ()
+        {
+            // You can't manually add peers to private torrents
+            using var rig = TestRig.CreateMultiFile (new TestWriter ());
+            await rig.Engine.RemoveAsync (rig.Engine.Torrents[0]);
+
+            var editor = new TorrentEditor (rig.TorrentDict);
+            editor.CanEditSecureMetadata = true;
+            editor.Name = $"..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}test{Path.GetInvalidPathChars ()[0]}";
+
+            Assert.ThrowsAsync<ArgumentException> (() => rig.Engine.AddAsync (editor.ToTorrent (), "path", new TorrentSettings ()));
+        }
+
+        [Test]
         public async Task UsePartialFiles_InitiallyOff_ToggleOn ()
         {
             var pieceLength = Constants.BlockSize * 4;
