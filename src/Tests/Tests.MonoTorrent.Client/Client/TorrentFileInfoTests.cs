@@ -44,8 +44,8 @@ namespace MonoTorrent.Client
         {
             var escaped = TorrentFileInfo.PathAndFileNameEscape (path);
             Assert.AreNotEqual (path, escaped);
-            Assert.DoesNotThrow (() => Path.Combine (escaped, "test"));
-            Assert.Throws<ArgumentException> (() => Path.Combine (path, "test"));
+            Assert.IsTrue (Path.GetInvalidFileNameChars ().All (t => !Path.GetFileName (escaped).Contains (t)));
+            Assert.IsTrue (Path.GetInvalidPathChars ().All (t => !Path.GetDirectoryName (escaped).Contains (t)));
         }
 
         [Test]
@@ -53,8 +53,8 @@ namespace MonoTorrent.Client
         {
             var escaped = TorrentFileInfo.PathAndFileNameEscape (path);
             Assert.AreNotEqual (path, escaped);
-            Assert.DoesNotThrow (() => Path.Combine (escaped, "test"));
-            Assert.Throws<ArgumentException> (() => Path.Combine (path, "test"));
+            Assert.IsTrue (Path.GetInvalidFileNameChars ().All (t => !Path.GetFileName (escaped).Contains (t)));
+            Assert.IsTrue (Path.GetInvalidPathChars ().All (t => !Path.GetDirectoryName (escaped).Contains (t)));
         }
 
         [Test]
@@ -62,8 +62,8 @@ namespace MonoTorrent.Client
         {
             var escaped = TorrentFileInfo.PathAndFileNameEscape (path);
             Assert.AreNotEqual (path, escaped);
-            Assert.DoesNotThrow (() => Path.Combine (escaped, "test"));
-            Assert.Throws<ArgumentException> (() => Path.Combine (path, "test"));
+            Assert.IsTrue (Path.GetInvalidFileNameChars ().All (t => !Path.GetFileName (escaped).Contains (t)));
+            Assert.IsTrue (Path.GetInvalidPathChars ().All (t => !Path.GetDirectoryName (escaped).Contains (t)));
         }
     }
 }
