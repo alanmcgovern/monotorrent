@@ -409,7 +409,8 @@ namespace MonoTorrent.Client.Modes
             if (!result)
                 Manager.HashFails++;
 
-            foreach (PeerId peer in peersInvolved) {
+            for (int i = 0; i < peersInvolved.Count; i ++) {
+                var peer = (PeerId) peersInvolved[i];
                 peer.Peer.HashedPiece (result);
                 if (peer.Peer.TotalHashFails == 5)
                     ConnectionManager.CleanupSocket (Manager, peer);
