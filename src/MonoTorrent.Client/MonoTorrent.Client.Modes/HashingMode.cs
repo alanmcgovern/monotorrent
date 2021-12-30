@@ -83,6 +83,7 @@ namespace MonoTorrent.Client.Modes
             if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
                 int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
+                using var hashBuffer = MemoryPool.Default.Rent (20, out System.Memory<byte> memory);
                 for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
                     if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
@@ -96,14 +97,14 @@ namespace MonoTorrent.Client.Modes
                     await PausedCompletionSource.Task;
                     Cancellation.Token.ThrowIfCancellationRequested ();
 
-                    byte[] hash = await DiskManager.GetHashAsync (Manager, index);
+                    var successful = await DiskManager.GetHashAsync (Manager, index, memory);
 
                     if (Cancellation.Token.IsCancellationRequested) {
                         await DiskManager.CloseFilesAsync (Manager);
                         Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 
-                    bool hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
+                    bool hashPassed = successful && Manager.Torrent.Pieces.IsValid (memory.Span, index);
                     Manager.OnPieceHashed (index, hashPassed, ++piecesHashed, Manager.PartialProgressSelector.TrueCount);
                 }
             } else {

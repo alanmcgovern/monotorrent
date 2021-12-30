@@ -78,6 +78,9 @@ namespace MonoTorrent
         /// <param name="hashIndex">Index of hash/piece to verify against</param>
         /// <returns>true iff hash is equal to our stored hash, false otherwise</returns>
         public bool IsValid (byte[] hash, int hashIndex)
+            => IsValid (hash.AsSpan (), hashIndex);
+
+        internal bool IsValid (ReadOnlySpan<byte> hash, int hashIndex)
         {
             if (hash == null)
                 throw new ArgumentNullException (nameof (hash));
@@ -88,7 +91,7 @@ namespace MonoTorrent
             if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
 
-            return hash.AsSpan ().SequenceEqual (hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
+            return hash.SequenceEqual (hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
         }
 
         /// <summary>
@@ -97,7 +100,14 @@ namespace MonoTorrent
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
         public byte[] ReadHash (int hashIndex)
-            =>  hashData.Slice (hashIndex * HashCodeLength, HashCodeLength).ToArray ();
+        {
+            var buffer = new byte[20];
+            ReadHash (hashIndex, buffer);
+            return buffer;
+        }
+
+        internal void ReadHash (int hashIndex, Span<byte> dest)
+            => hashData.Span.Slice (hashIndex * HashCodeLength, HashCodeLength).CopyTo (dest);
 
         #endregion Methods
     }

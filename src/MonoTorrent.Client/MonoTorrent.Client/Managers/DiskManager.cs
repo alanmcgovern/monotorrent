@@ -53,6 +53,8 @@ namespace MonoTorrent.Client
 
         class IncrementalHashData : ICacheable
         {
+            static readonly byte[] Flusher = new byte[20];
+
             public readonly IncrementalHash Hasher;
             public int NextOffsetToHash;
             public ReusableExclusiveSemaphore Locker;
@@ -66,7 +68,7 @@ namespace MonoTorrent.Client
 
             public void Initialise ()
             {
-                Hasher.GetHashAndReset ();
+                Hasher.TryGetHashAndReset (Flusher, out _);
                 NextOffsetToHash = 0;
             }
         }
@@ -233,12 +235,13 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal Func<ITorrentData, int, Task<byte[]>> GetHashAsyncOverride;
+        internal Func<ITorrentData, int, Memory<byte>, Task<bool>> GetHashAsyncOverride;
 
-        internal async ReusableTask<byte[]> GetHashAsync (ITorrentData manager, int pieceIndex)
+        internal async ReusableTask<bool> GetHashAsync (ITorrentData manager, int pieceIndex, Memory<byte> dest)
         {
-            if (GetHashAsyncOverride != null)
-                return await GetHashAsyncOverride (manager, pieceIndex);
+            if (GetHashAsyncOverride != null) {
+                return await GetHashAsyncOverride (manager, pieceIndex, dest);
+            }
 
             await IOLoop;
 
@@ -252,9 +255,10 @@ namespace MonoTorrent.Client
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
                 if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex)) {
-                    byte[] result = incrementalHash.Hasher.GetHashAndReset ();
+                    if (!incrementalHash.Hasher.TryGetHashAndReset (dest.Span, out int written) || written != 20)
+                        throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
                     IncrementalHashCache.Enqueue (incrementalHash);
-                    return result;
+                    return true;
                 }
             } else {
                 // If we have no partial hash data for this piece we could be doing a full
@@ -280,12 +284,12 @@ namespace MonoTorrent.Client
                     while (startOffset != endOffset) {
                         int count = Math.Min (Constants.BlockSize, endOffset - startOffset);
                         if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false))
-                            return null;
+                            return false;
                         startOffset += count;
                         hasher.AppendData (hashBuffer.Slice (0, count));
                     }
 
-                    return hasher.GetHashAndReset ();
+                    return hasher.TryGetHashAndReset (dest.Span, out int written);
                 } finally {
                     await IOLoop;
                     IncrementalHashCache.Enqueue (incrementalHash);

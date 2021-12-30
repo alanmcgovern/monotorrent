@@ -85,7 +85,7 @@ namespace MonoTorrent.Dht
                 throw new ArgumentNullException (nameof (value));
             if (value.Span.Length != 20)
                 throw new ArgumentException ("BEncodedString should be exactly 20 bytes", nameof (value));
-            Bytes = value.Span.ToArray ();
+            Bytes = value.AsMemory ();
         }
 
         public ReadOnlyMemory<byte> AsMemory ()

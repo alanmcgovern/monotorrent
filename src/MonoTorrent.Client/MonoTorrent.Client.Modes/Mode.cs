@@ -392,9 +392,10 @@ namespace MonoTorrent.Client.Modes
             peersInvolved = data.peersInvolved;
 
             // Hashcheck the piece as we now have all the blocks.
-            byte[] hash;
+            using var byteBuffer = MemoryPool.Default.Rent (20, out Memory<byte> memory);
+            bool successful = false;
             try {
-                hash = await DiskManager.GetHashAsync (Manager, block.PieceIndex);
+                successful = await DiskManager.GetHashAsync (Manager, block.PieceIndex, memory);
                 if (Cancellation.IsCancellationRequested)
                     return;
             } catch (Exception ex) {
@@ -402,7 +403,7 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            bool result = hash != null && Manager.Torrent.Pieces.IsValid (hash, block.PieceIndex);
+            bool result = successful && Manager.Torrent.Pieces.IsValid (memory.Span, block.PieceIndex);
             Manager.OnPieceHashed (block.PieceIndex, result, 1, 1);
             Manager.PieceManager.PieceHashed (block.PieceIndex);
             if (!result)
@@ -701,15 +702,16 @@ namespace MonoTorrent.Client.Modes
             // FIXME: Handle errors from DiskManager and also handle cancellation if the Mode is replaced.
             hashingPendingFiles = true;
             try {
+                using var hashBuffer = MemoryPool.Default.Rent (20, out Memory<byte> memory);
                 foreach (var file in Manager.Files) {
                     // If the start piece *and* end piece have been hashed, then every piece in between must've been hashed!
                     if (file.Priority != Priority.DoNotDownload && (Manager.UnhashedPieces[file.StartPieceIndex] || Manager.UnhashedPieces[file.EndPieceIndex])) {
                         for (int index = file.StartPieceIndex; index <= file.EndPieceIndex; index++) {
                             if (Manager.UnhashedPieces[index]) {
-                                byte[] hash = await DiskManager.GetHashAsync (Manager, index);
+                                var successful = await DiskManager.GetHashAsync (Manager, index, memory);
                                 Cancellation.Token.ThrowIfCancellationRequested ();
 
-                                bool hashPassed = hash != null && Manager.Torrent.Pieces.IsValid (hash, index);
+                                bool hashPassed = successful && Manager.Torrent.Pieces.IsValid (memory.Span, index);
                                 Manager.OnPieceHashed (index, hashPassed, 1, 1);
 
                                 if (hashPassed)

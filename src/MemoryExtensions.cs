@@ -70,7 +70,21 @@ namespace System
             return true;
         }
 #endif
-        
+
+#if NETSTANDARD2_0 || NET472
+        public static bool TryGetHashAndReset (this IncrementalHash incrementalHash, Span<byte> dest, out int bytesWritten)
+        {
+            var hash = incrementalHash.GetHashAndReset ();
+            if (dest.Length < hash.Length) {
+                bytesWritten = 0;
+                return false;
+            }
+
+            hash.CopyTo (dest);
+            bytesWritten = hash.Length;
+            return true;
+        }
+#endif
 
         public static void AppendData (this IncrementalHash incrementalHash, Memory<byte> buffer)
         {
