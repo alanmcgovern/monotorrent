@@ -931,14 +931,18 @@ namespace MonoTorrent.Client
         internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count)
         {
             var files = Files;
-            var tasks = new List<Task> ();
+            List<Task> tasks = null;
             for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
-                if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath)
+                if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath) {
+                    tasks ??= new List<Task> ();
                     tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath));
-                else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath)
+                } else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath) {
+                    tasks ??= new List<Task> ();
                     tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath));
+                }
             }
-            await Task.WhenAll (tasks).ConfigureAwait (false);
+            if (tasks != null)
+                await Task.WhenAll (tasks).ConfigureAwait (false);
         }
 
         internal void RaiseTorrentStateChanged (TorrentStateChangedEventArgs e)
