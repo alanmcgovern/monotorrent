@@ -61,8 +61,8 @@ namespace MonoTorrent
         {
             if (infoHash is null)
                 throw new ArgumentNullException (nameof (infoHash));
-            if (infoHash.Length != 20)
-                throw new ArgumentException ("InfoHash must be exactly 20 bytes long", nameof (infoHash));
+            if (infoHash.Length != 20 && infoHash.Length != 32)
+                throw new ArgumentException ("InfoHash must be exactly 20 bytes long for SHA1 hashes, or 32 bytes long for SHA256 hashes", nameof (infoHash));
             Hash = (byte[]) infoHash.Clone ();
         }
 
@@ -78,8 +78,8 @@ namespace MonoTorrent
 
         InfoHash (ReadOnlyMemory<byte> infoHash)
         {
-            if (infoHash.Length != 20)
-                throw new ArgumentException ("InfoHash must be exactly 20 bytes long", nameof (infoHash));
+            if (infoHash.Length != 20 && infoHash.Length != 32)
+                throw new ArgumentException ("InfoHash must be exactly 20 bytes long for SHA1 hashes, or 32 bytes long for SHA256 hashes", nameof (infoHash));
             Hash = infoHash;
         }
 

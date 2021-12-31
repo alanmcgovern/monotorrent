@@ -69,7 +69,7 @@ namespace MonoTorrent.BEncoding
             }
         }
 
-        public static (BEncodedDictionary torrent, ReadOnlyMemory<byte> infohash) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
+        public static (BEncodedDictionary torrent, InfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
         {
             if (buffer[0] != 'd')
                 throw new BEncodingException ($"The root value was not a BEncodedDictionary");
@@ -77,12 +77,13 @@ namespace MonoTorrent.BEncoding
             buffer = buffer.Slice (1);
             ReadOnlySpan<byte> infoBuffer = default;
             BEncodedString oldkey = null;
-            Memory<byte> infoHash = null;
+            Memory<byte> infoHashSHA1 = null;
+            Memory<byte> infoHashSHA256 = null;
             var dictionary = new BEncodedDictionary ();
             while (buffer.Length > 0) {
                 if (buffer[0] == 'e') {
                     buffer = buffer.Slice (1);
-                    return (dictionary, infoHash);
+                    return (dictionary, new InfoHashes (infoHashSHA1, infoHashSHA256));
                 }
 
                 var key = DecodeString (ref buffer);
@@ -98,9 +99,13 @@ namespace MonoTorrent.BEncoding
 
                 if (InfoKey.Equals (key)) {
                     using var hasher = SHA1.Create ();
-                    infoHash = new byte[hasher.HashSize / 8];
-                    if (!hasher.TryComputeHash (infoBuffer.Slice (0, infoBuffer.Length - buffer.Length), infoHash.Span, out int written) || written != infoHash.Length)
+                    using var hasherV2 = SHA256.Create ();
+                    infoHashSHA1 = new byte[hasher.HashSize / 8];
+                    infoHashSHA256 = new byte[hasherV2.HashSize / 8];
+                    if (!hasher.TryComputeHash (infoBuffer.Slice (0, infoBuffer.Length - buffer.Length), infoHashSHA1.Span, out int written) || written != infoHashSHA1.Length)
                         throw new BEncodingException ("Could not compute infohash for torrent.");
+                    if (!hasherV2.TryComputeHash (infoBuffer.Slice (0, infoBuffer.Length - buffer.Length), infoHashSHA256.Span, out written) || written != infoHashSHA256.Length)
+                        throw new BEncodingException ("Could not compute v2 infohash for torrent.");
                 }
             }
             throw new BEncodingException ("Invalid data found. Aborting");

@@ -43,7 +43,7 @@ namespace MonoTorrent.BEncoding
         /// for torrents which contain dictionaries with misordered keys.
         /// </summary>
         /// <returns></returns>
-        public static (BEncodedDictionary torrent, ReadOnlyMemory<byte> infohash) DecodeTorrent (ReadOnlySpan<byte> buffer)
+        public static (BEncodedDictionary torrent, InfoHashes infoHashes) DecodeTorrent (ReadOnlySpan<byte> buffer)
             => BEncodeDecoder.DecodeTorrent (ref buffer);
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace MonoTorrent.BEncoding
         /// for torrents which contain dictionaries with misordered keys.
         /// </summary>
         /// <returns></returns>
-        public static (BEncodedDictionary torrent, ReadOnlyMemory<byte> infohash) DecodeTorrent (Stream stream)
+        public static (BEncodedDictionary torrent, InfoHashes infohashes) DecodeTorrent (Stream stream)
             => BEncodeDecoder.DecodeTorrent (stream);
 
         readonly SortedList<BEncodedString, BEncodedValue> dictionary;

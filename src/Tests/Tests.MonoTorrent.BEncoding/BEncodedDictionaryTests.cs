@@ -124,5 +124,69 @@ namespace MonoTorrent.BEncoding
             Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (data));
             Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (new MemoryStream (data)));
         }
+
+
+        [Test]
+        public void DecodeTorrentNotDictionary ()
+        {
+            string benString = "5:test";
+            Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeTorrent_MissingTrailingE ()
+        {
+            string benString = "d1:a1:b";
+            Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (benString)));
+        }
+
+        [Test]
+        public void DecodeTorrentWithOutOfOrderKeys ()
+        {
+            var good = "d4:infod5:key_a7:value_a5:key_b7:value_bee";
+            var bad = "d4:infod5:key_b7:value_b5:key_a7:value_aee";
+
+            var good_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (good));
+            var bad_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (bad));
+            Assert.IsTrue (good_result.torrent.Encode ().AsSpan ().SequenceEqual (bad_result.torrent.Encode ()));
+            Assert.AreNotEqual (good_result.infoHashes.SHA1, bad_result.infoHashes.SHA1);
+        }
+
+        [Test]
+        public void DecodeTorrentWithInfo ()
+        {
+            var infoDict = new BEncodedDictionary {
+                { "test", new BEncodedString ("value") }
+            };
+            var dict = new BEncodedDictionary {
+                { "info", infoDict }
+            };
+
+            var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
+            Assert.IsTrue (dict.Encode ().AsSpan ().SequenceEqual (result.torrent.Encode ()));
+        }
+
+
+        [Test]
+        public void DecodeTorrentWithString ()
+        {
+            var dict = new BEncodedDictionary {
+                { "info", (BEncodedString) "value" }
+            };
+
+            var result = BEncodedDictionary.DecodeTorrent (dict.Encode ());
+            Assert.IsTrue (dict.Encode ().AsSpan ().SequenceEqual (result.torrent.Encode ()));
+        }
+
+        [Test]
+        public void DecodeTorrent_CompareSpanAndStream ()
+        {
+            var data = Encoding.UTF8.GetBytes ("d4:infod5:key_a7:value_a5:key_b7:value_bee");
+            var span = BEncodedDictionary.DecodeTorrent (data);
+            var stream = BEncodedDictionary.DecodeTorrent (new MemoryStream (data));
+            Assert.IsTrue (span.torrent.Encode ().AsSpan ().SequenceEqual (stream.torrent.Encode ()));
+            Assert.IsTrue (span.infoHashes.SHA1.Span.SequenceEqual (stream.infohashes.SHA1.Span));
+            Assert.IsTrue (span.infoHashes.SHA256.Span.SequenceEqual (stream.infohashes.SHA256.Span));
+        }
     }
 }

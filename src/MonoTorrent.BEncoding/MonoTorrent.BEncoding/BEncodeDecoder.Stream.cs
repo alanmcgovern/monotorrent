@@ -39,17 +39,18 @@ namespace MonoTorrent.BEncoding
         public static BEncodedValue Decode (Stream reader, bool strictDecoding)
             => Decode (reader, strictDecoding, reader.ReadByte ());
 
-        public static (BEncodedDictionary torrent, byte[] infohash) DecodeTorrent (Stream reader)
+        public static (BEncodedDictionary torrent, InfoHashes infohashes) DecodeTorrent (Stream reader)
         {
             var torrent = new BEncodedDictionary ();
             if (reader.ReadByte () != 'd')
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             int read;
-            byte[] infoHash = null;
+            byte[] infohashSHA1 = null;
+            byte[] infohashSHA256 = null;
             while ((read = reader.ReadByte ()) != -1) {
                 if (read == 'e')
-                    return (torrent, infoHash);
+                    return (torrent, new InfoHashes (infohashSHA1, infohashSHA256));
 
                 if (read < '0' || read > '9')
                     throw new BEncodingException ("Invalid key length");
@@ -59,9 +60,11 @@ namespace MonoTorrent.BEncoding
 
                 if ((read = reader.ReadByte ()) == 'd') {
                     if (InfoKey.Equals (key)) {
-                        var capturingReader = new HashingReader (reader, (byte) 'd', SHA1.Create ());
-                        value = DecodeDictionary (capturingReader, false);
-                        infoHash = capturingReader.TransformFinalBlock ();
+                        using var sha1Reader = new HashingReader (reader, (byte) 'd', SHA1.Create ());
+                        using var sha256Reader = new HashingReader (sha1Reader, (byte) 'd', SHA256.Create ());
+                        value = DecodeDictionary (sha256Reader, false);
+                        infohashSHA1 = sha1Reader.TransformFinalBlock ();
+                        infohashSHA256 = sha256Reader.TransformFinalBlock ();
                     } else {
                         value = DecodeDictionary (reader, false);
                     }
