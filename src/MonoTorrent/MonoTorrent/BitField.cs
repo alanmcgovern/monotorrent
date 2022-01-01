@@ -45,7 +45,7 @@ namespace MonoTorrent
     [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
     public class BitField : IEnumerable<bool>
     {
-        private protected readonly int[] Data;
+        private protected readonly uint[] Data;
 
         public int Length { get; }
 
@@ -66,7 +66,7 @@ namespace MonoTorrent
             if (other == null)
                 throw new ArgumentNullException (nameof (other));
 
-            Data = new int[other.Data.Length];
+            Data = new uint[other.Data.Length];
             Length = other.Length;
 
             From (other);
@@ -86,7 +86,7 @@ namespace MonoTorrent
                 throw new ArgumentOutOfRangeException (nameof (length), "Length must be greater than zero");
 
             Length = length;
-            Data = new int[(length + 31) / 32];
+            Data = new uint[(length + 31) / 32];
         }
 
         public BitField (bool[] array)
@@ -98,7 +98,7 @@ namespace MonoTorrent
                 throw new ArgumentOutOfRangeException ("The array must contain at least one element", nameof (array));
 
             Length = array.Length;
-            this.Data = new int[(array.Length + 31) / 32];
+            Data = new uint[(array.Length + 31) / 32];
             for (int i = 0; i < array.Length; i++)
                 Set (i, array[i]);
         }
@@ -121,13 +121,13 @@ namespace MonoTorrent
         {
             int end = Length / 32;
             for (int i = 0; i < end; i++) {
-                Data[i] = BinaryPrimitives.ReadInt32BigEndian (buffer);
+                Data[i] = BinaryPrimitives.ReadUInt32BigEndian (buffer);
                 buffer = buffer.Slice (4);
             }
 
             int shift = 24;
             for (int i = end * 32; i < Length; i += 8) {
-                Data[Data.Length - 1] |= buffer[0] << shift;
+                Data[Data.Length - 1] |= (uint)buffer[0] << shift;
                 buffer = buffer.Slice (1);
                 shift -= 8;
             }
@@ -239,7 +239,9 @@ namespace MonoTorrent
                     continue;
 
                 start = i * 32;
-                end = start + 32;
+                end = start + 31;
+
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
                 start = (start < startIndex) ? startIndex : start;
                 end = (end > Length) ? Length : end;
                 end = (end > endIndex) ? endIndex : end;
@@ -249,6 +251,17 @@ namespace MonoTorrent
                 for (int j = start; j <= end; j++)
                     if (Get (j))     // This piece is true
                         return j;
+#else
+                var mask = uint.MaxValue;
+                if (start < startIndex)
+                    mask &= uint.MaxValue >> (startIndex - start);
+                if (end > endIndex)
+                    mask &= uint.MaxValue << (end - endIndex);
+                mask &= Data[i];
+                if (mask == 0)
+                    continue;
+                return System.Numerics.BitOperations.LeadingZeroCount (mask) + start;
+#endif
             }
 
             return -1;              // Nothing is true
@@ -288,11 +301,13 @@ namespace MonoTorrent
             // For the case when endIndex == 0, we need to ensure we don't go negative
             int loopEnd = Math.Min ((endIndex / 32), Data.Length - 1);
             for (int i = (startIndex / 32); i <= loopEnd; i++) {
-                if (Data[i] == ~0)        // This one has no false values
+                if (Data[i] == uint.MaxValue)        // This one has no false values
                     continue;
 
                 start = i * 32;
-                end = start + 32;
+                end = start + 31;
+
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
                 start = (start < startIndex) ? startIndex : start;
                 end = (end > Length) ? Length : end;
                 end = (end > endIndex) ? endIndex : end;
@@ -300,8 +315,19 @@ namespace MonoTorrent
                     end--;
 
                 for (int j = start; j <= end; j++)
-                    if (!Get (j))     // This piece is true
+                    if (!Get (j))     // This piece is false
                         return j;
+#else
+                var mask = uint.MaxValue;
+                if (start < startIndex)
+                    mask &= uint.MaxValue >> (startIndex - start);
+                if (end > endIndex)
+                    mask &= uint.MaxValue << (end - endIndex);
+                mask &= ~Data[i];
+                if (mask == 0)
+                    continue;
+                return System.Numerics.BitOperations.LeadingZeroCount (mask) + start;
+#endif
             }
 
             return -1;              // Nothing is true
@@ -325,9 +351,9 @@ namespace MonoTorrent
             if (selector.Length != Length)
                 throw new ArgumentException ("The selector should be the same length as this bitfield", nameof (selector));
 
-            uint count = 0;
+            int count = 0;
             for (int i = 0; i < Data.Length; i++)
-                count += CountBits ((uint) (Data[i] & selector.Data[i]));
+                count += CountBits (Data[i] & selector.Data[i]);
             return (int) count;
         }
 
@@ -338,11 +364,11 @@ namespace MonoTorrent
 
         public override int GetHashCode ()
         {
-            int count = 0;
+            uint count = 0;
             for (int i = 0; i < Data.Length; i++)
                 count += Data[i];
 
-            return count;
+            return (int)count;
         }
 
         private protected BitField Set (int index, bool value)
@@ -353,11 +379,11 @@ namespace MonoTorrent
             if (value) {
                 if ((Data[index >> 5] & (1 << (31 - (index & 31)))) == 0)// If it's not already true
                     TrueCount++;                                        // Increase true count
-                Data[index >> 5] |= (1 << (31 - index & 31));
+                Data[index >> 5] |= ((uint)1 << (31 - index & 31));
             } else {
                 if ((Data[index >> 5] & (1 << (31 - (index & 31)))) != 0)// If it's not already false
                     TrueCount--;                                        // Decrease true count
-                Data[index >> 5] &= ~(1 << (31 - (index & 31)));
+                Data[index >> 5] &= ~((uint) 1 << (31 - (index & 31)));
             }
 
             return this;
@@ -391,7 +417,7 @@ namespace MonoTorrent
 
             if (value) {
                 for (int i = 0; i < Data.Length; i++)
-                    Data[i] = ~0;
+                    Data[i] = uint.MaxValue;
                 Validate ();
             } else {
                 for (int i = 0; i < Data.Length; i++)
@@ -443,30 +469,34 @@ namespace MonoTorrent
             return sb.ToString (0, sb.Length - 1);
         }
 
-        private protected void Validate ()
+        void Validate ()
         {
             ZeroUnusedBits ();
 
             // Update the population count
-            uint count = 0;
+            int count = 0;
             for (int i = 0; i < Data.Length; i++)
-                count += CountBits ((uint) Data[i]);
-            TrueCount = (int) count;
+                count += CountBits (Data[i]);
+            TrueCount = count;
         }
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        static uint CountBits (uint v)
+        static int CountBits (uint v)
         {
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
             v -= (v >> 1) & 0x55555555;
             v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-            return (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101)) >> 24;
+            return (int) (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24);
+#else
+            return System.Numerics.BitOperations.PopCount (v);
+#endif
         }
 
         void ZeroUnusedBits ()
         {
             int shift = 32 - Length % 32;
             if (shift != 0)
-                Data[Data.Length - 1] &= (-1 << shift);
+                Data[Data.Length - 1] &= uint.MaxValue << shift;
         }
 
         void Check (BitField value)
@@ -478,6 +508,6 @@ namespace MonoTorrent
                 throw new ArgumentException ("BitFields are of different lengths", nameof (value));
         }
 
-        #endregion
+#endregion
     }
 }

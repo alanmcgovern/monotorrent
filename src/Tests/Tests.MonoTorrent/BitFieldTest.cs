@@ -106,6 +106,25 @@ namespace MonoTorrent
         }
 
         [Test]
+        public void FirstTrue_3 ()
+        {
+            var b = new MutableBitField (65);
+            b[0] = true;
+            Assert.AreEqual (0, b.FirstTrue (0, 0));
+            Assert.AreEqual (0, b.FirstTrue (0, 1));
+            Assert.AreEqual (-1, b.FirstTrue (1, 1));
+            Assert.AreEqual (-1, b.FirstTrue (1, 2));
+
+            b[31] = true;
+            Assert.AreEqual (31, b.FirstTrue (1, 31));
+            Assert.AreEqual (31, b.FirstTrue (1, 32));
+
+            b[31] = false;
+            b[32] = true;
+            Assert.AreEqual (32, b.FirstTrue (1, 32));
+        }
+
+        [Test]
         public void LongByteArrayTest ()
         {
             List<byte> list = new List<byte> (initialByteValues);

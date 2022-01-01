@@ -12,6 +12,28 @@ using MonoTorrent.Messages.Peer;
 namespace MyBenchmarks
 {
     [MemoryDiagnoser]
+    public class BitfieldBenchmark
+    {
+        MutableBitField BitField = new MutableBitField (100000);
+        BitField Selector;
+
+        public BitfieldBenchmark ()
+        {
+            for (int i = 31; i < BitField.Length; i += 32)
+                BitField[i] = true;
+            Selector = new MutableBitField (BitField.Length).SetAll (true);
+        }
+
+        [Benchmark]
+        public void FirstTrue ()
+            => BitField.FirstTrue ();
+
+        [Benchmark]
+        public void PopCount ()
+            => BitField.CountTrue (Selector);
+    }
+
+    [MemoryDiagnoser]
     public class MessageEncoder
     {
         readonly Memory<byte> Buffer;
@@ -129,7 +151,7 @@ namespace MyBenchmarks
     {
         public static void Main (string[] args)
         {
-            var summary = BenchmarkRunner.Run (typeof (BEncodedNumberLengthInBytesBenchmark));
+            var summary = BenchmarkRunner.Run (typeof (BitfieldBenchmark));
         }
     }
 }
