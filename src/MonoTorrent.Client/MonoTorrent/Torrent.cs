@@ -43,6 +43,171 @@ namespace MonoTorrent
     {
         internal static bool SupportsV2Torrents = false;
 
+        /// <summary>
+        /// This method loads a .torrent file from the specified path.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        public static Torrent Load (string path)
+        {
+            if (string.IsNullOrEmpty (path))
+                throw new ArgumentException ("value must not be null or empty", nameof (path));
+
+            using Stream s = new FileStream (path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return Load (s, default);
+        }
+
+        /// <summary>
+        /// Loads a torrent from the provided <see cref="BEncodedDictionary"/>
+        /// </summary>
+        /// <param name="dictionary">The BEncodedDictionary containing the torrent data</param>
+        /// <returns></returns>
+        public static Torrent Load (BEncodedDictionary dictionary)
+        {
+            using (MemoryPool.Default.Rent (dictionary.LengthInBytes (), out Memory<byte> buffer)) {
+                dictionary.Encode (buffer.Span);
+                return Load (buffer.Span);
+            }
+        }
+
+        /// <summary>
+        /// Loads a torrent from the provided Span
+        /// </summary>
+        /// <param name="span">The Span containing the data</param>
+        /// <returns></returns>
+        public static Torrent Load (ReadOnlySpan<byte> span)
+            => Load (null, span);
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <returns></returns>
+        public static Torrent Load (Stream stream)
+            => Load (stream ?? throw new ArgumentNullException (nameof (stream)), default);
+
+        /// <summary>
+        /// Called from either Load(stream) or Load(string).
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static Torrent Load (Stream stream, ReadOnlySpan<byte> buffer)
+        {
+            try {
+                (var torrentDict, var infoHash) = stream != null ? BEncodedDictionary.DecodeTorrent (stream) : BEncodedDictionary.DecodeTorrent (buffer);
+                var t = new Torrent ();
+                t.LoadInternal (torrentDict, InfoHash.FromMemory (infoHash));
+                return t;
+            } catch (BEncodingException ex) {
+                throw new TorrentException ("Invalid torrent file specified", ex);
+            }
+        }
+
+        /// <summary>
+        /// This method loads a .torrent file from the specified path.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        public static Task<Torrent> LoadAsync (string path)
+            => Task.Run (() => Load (path));
+
+        /// <summary>
+        /// Loads a torrent from a Memory containing the bencoded data
+        /// </summary>
+        /// <param name="memory">The Memory containing the data</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (Memory<byte> memory)
+            => Task.Run (() => Load (memory.Span));
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (Stream stream)
+            => Task.Run (() => Load (stream));
+
+        /// <summary>
+        /// Loads a .torrent file from the specified URL
+        /// </summary>
+        /// <param name="client">The HttpClient used to download the url</param>
+        /// <param name="url">The URL to download the .torrent from</param>
+        /// <param name="savePath">The path to download the .torrent to before it gets loaded</param>
+        /// <returns></returns>
+        public static async Task<Torrent> LoadAsync (HttpClient client, Uri url, string savePath)
+        {
+            try {
+                File.WriteAllBytes (savePath, await client.GetByteArrayAsync (url));
+            } catch (Exception ex) {
+                File.Delete (savePath);
+                throw new TorrentException ("Could not download .torrent file from the specified url", ex);
+            }
+
+            return await LoadAsync (savePath).ConfigureAwait (false);
+        }
+
+        /// <summary>
+        /// Loads a .torrent from the specificed path. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad (string path, out Torrent torrent)
+        {
+            if (string.IsNullOrEmpty (path))
+                throw new ArgumentNullException ("Value must not be null or empty", nameof (path));
+
+            torrent = null;
+            try {
+                if (File.Exists (path))
+                    torrent = Load (path);
+            } catch {
+                // We will return false if an exception is thrown as 'torrent' will still
+                // be null.
+            }
+
+            return torrent != null;
+        }
+
+        /// <summary>
+        /// Loads a .torrent from the specified Span. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="span">The Span to load the .torrent from</param>
+        /// <param name="torrent">If loading was successful, it contains the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad (ReadOnlySpan<byte> span, out Torrent torrent)
+        {
+            try {
+                torrent = Load (span);
+            } catch {
+                torrent = null;
+            }
+
+            return torrent != null;
+        }
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad (Stream stream, out Torrent torrent)
+        {
+            if (stream is null)
+                throw new ArgumentNullException (nameof (stream));
+
+            try {
+                torrent = Load (stream);
+            } catch {
+                torrent = null;
+            }
+
+            return torrent != null;
+        }
+
         static DateTime UnixEpoch => new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
@@ -176,103 +341,13 @@ namespace MonoTorrent
         /// This method is called internally to read out the hashes from the info section of the
         /// .torrent file.
         /// </summary>
-        /// <param name="data">The byte[]containing the hashes from the .torrent file</param>
+        /// <param name="data">The Memory containing the hashes from the .torrent file</param>
         void LoadHashPieces (ReadOnlyMemory<byte> data)
         {
             if (data.Length % 20 != 0)
                 throw new TorrentException ("Invalid infohash detected");
 
             Pieces = new Hashes (data, data.Length / 20);
-        }
-
-        static IList<TorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
-        {
-            var sb = new StringBuilder (32);
-
-            var files = new List<(string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)> ();
-            foreach (BEncodedDictionary dict in list) {
-                long length = 0;
-                string path = null;
-                ReadOnlyMemory<byte> md5sum = default;
-                ReadOnlyMemory<byte> ed2k = default;
-                ReadOnlyMemory<byte> sha1 = default;
-
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
-                    switch (keypair.Key.Text) {
-                        case ("sha1"):
-                            sha1 = ((BEncodedString) keypair.Value).AsMemory ();
-                            break;
-
-                        case ("ed2k"):
-                            ed2k = ((BEncodedString) keypair.Value).AsMemory ();;
-                            break;
-
-                        case ("length"):
-                            length = long.Parse (keypair.Value.ToString ());
-                            break;
-
-                        case ("path.utf-8"):
-                            foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                sb.Append (str.Text);
-                                sb.Append (Path.DirectorySeparatorChar);
-                            }
-                            path = sb.ToString (0, sb.Length - 1);
-                            sb.Remove (0, sb.Length);
-                            break;
-
-                        case ("path"):
-                            if (string.IsNullOrEmpty (path)) {
-                                foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                    sb.Append (str.Text);
-                                    sb.Append (Path.DirectorySeparatorChar);
-                                }
-                                path = sb.ToString (0, sb.Length - 1);
-                                sb.Remove (0, sb.Length);
-                            }
-                            break;
-
-                        case ("md5sum"):
-                            md5sum = ((BEncodedString) keypair.Value).AsMemory ();
-                            break;
-
-                        default:
-                            break; //FIXME: Log unknown values
-                    }
-                }
-
-                PathValidator.Validate (path);
-                files.Add ((path, length, md5sum, ed2k, sha1));
-            }
-
-            return Array.AsReadOnly (TorrentFile.Create (pieceLength, files.ToArray ()));
-        }
-
-        internal static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<TorrentFile> files, int pieceLength, ref int totalPieces, string path)
-        {
-            if (key == "") {
-                var length = ((BEncodedNumber) data["length"]).Number;
-                if (length == 0) {
-                    files.Add (new TorrentFile (path, length, 0, 0, 0, default, default, default));
-                } else {
-                    totalPieces++;
-                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), pieceLength * totalPieces, default, default, default, piecesRoot));
-                    totalPieces = files.Last ().EndPieceIndex;
-                }
-            } else {
-                foreach (var entry in data) {
-                    LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, Path.Combine (path, key));
-                }
-            }
-        }
-
-        internal static IList<TorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree, int pieceLength)
-        {
-            var files = new List<TorrentFile> ();
-            int totalPieces = -1;
-            foreach (var entry in fileTree)
-                LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "");
-            return Array.AsReadOnly (files.ToArray ());
         }
 
         /// <summary>
@@ -395,191 +470,6 @@ namespace MonoTorrent
                 int endPiece = Math.Min (Pieces.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly (new[] { new TorrentFile (path, length, 0, endPiece, 0, md5, ed2k, sha1) });
             }
-        }
-
-        /// <summary>
-        /// This method loads a .torrent file from the specified path.
-        /// </summary>
-        /// <param name="path">The path to load the .torrent file from</param>
-        public static Torrent Load (string path)
-        {
-            Check.Path (path);
-
-            using Stream s = new FileStream (path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return Load (s, path);
-        }
-
-        /// <summary>
-        /// This method loads a .torrent file from the specified path.
-        /// </summary>
-        /// <param name="path">The path to load the .torrent file from</param>
-        public static Task<Torrent> LoadAsync (string path)
-        {
-            return Task.Run (() => Load (path));
-        }
-
-        /// <summary>
-        /// Loads a torrent from a byte[] containing the bencoded data
-        /// </summary>
-        /// <param name="data">The byte[] containing the data</param>
-        /// <returns></returns>
-        public static Torrent Load (byte[] data)
-        {
-            Check.Data (data);
-
-            using var s = new MemoryStream (data);
-            return Load (s, "");
-        }
-
-        /// <summary>
-        /// Loads a torrent from a byte[] containing the bencoded data
-        /// </summary>
-        /// <param name="data">The byte[] containing the data</param>
-        /// <returns></returns>
-        public static Task<Torrent> LoadAsync (byte[] data)
-        {
-            return Task.Run (() => Load (data));
-        }
-
-        /// <summary>
-        /// Loads a .torrent from the supplied stream
-        /// </summary>
-        /// <param name="stream">The stream containing the data to load</param>
-        /// <returns></returns>
-        public static Torrent Load (Stream stream)
-        {
-            Check.Stream (stream);
-
-            if (stream == null)
-                throw new ArgumentNullException (nameof (stream));
-
-            return Load (stream, "");
-        }
-
-        /// <summary>
-        /// Loads a .torrent from the supplied stream
-        /// </summary>
-        /// <param name="stream">The stream containing the data to load</param>
-        /// <returns></returns>
-        public static Task<Torrent> LoadAsync (Stream stream)
-        {
-            return Task.Run (() => Load (stream));
-        }
-
-        /// <summary>
-        /// Loads a .torrent file from the specified URL
-        /// </summary>
-        /// <param name="client">The HttpClient used to download the url</param>
-        /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="savePath">The path to download the .torrent to before it gets loaded</param>
-        /// <returns></returns>
-        public static async Task<Torrent> LoadAsync (HttpClient client, Uri url, string savePath)
-        {
-            try {
-                File.WriteAllBytes (savePath, await client.GetByteArrayAsync (url));
-            } catch (Exception ex) {
-                File.Delete (savePath);
-                throw new TorrentException ("Could not download .torrent file from the specified url", ex);
-            }
-
-            return await LoadAsync (savePath).ConfigureAwait (false);
-        }
-
-        /// <summary>
-        /// Loads a .torrent from the specificed path. A return value indicates
-        /// whether the operation was successful.
-        /// </summary>
-        /// <param name="path">The path to load the .torrent file from</param>
-        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
-        /// <returns>True if successful</returns>
-        public static bool TryLoad (string path, out Torrent torrent)
-        {
-            Check.Path (path);
-
-            torrent = null;
-            try {
-                if (!string.IsNullOrEmpty (path) && File.Exists (path))
-                    torrent = Load (path);
-            } catch {
-                // We will return false if an exception is thrown as 'torrent' will still
-                // be null.
-            }
-
-            return torrent != null;
-        }
-
-        /// <summary>
-        /// Loads a .torrent from the specified byte[]. A return value indicates
-        /// whether the operation was successful.
-        /// </summary>
-        /// <param name="data">The byte[] to load the .torrent from</param>
-        /// <param name="torrent">If loading was successful, it contains the Torrent</param>
-        /// <returns>True if successful</returns>
-        public static bool TryLoad (byte[] data, out Torrent torrent)
-        {
-            Check.Data (data);
-
-            try {
-                torrent = Load (data);
-            } catch {
-                torrent = null;
-            }
-
-            return torrent != null;
-        }
-
-        /// <summary>
-        /// Loads a .torrent from the supplied stream. A return value indicates
-        /// whether the operation was successful.
-        /// </summary>
-        /// <param name="stream">The stream containing the data to load</param>
-        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
-        /// <returns>True if successful</returns>
-        public static bool TryLoad (Stream stream, out Torrent torrent)
-        {
-            Check.Stream (stream);
-
-            try {
-                torrent = Load (stream);
-            } catch {
-                torrent = null;
-            }
-
-            return torrent != null;
-        }
-
-        /// <summary>
-        /// Called from either Load(stream) or Load(string).
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        static Torrent Load (Stream stream, string path)
-        {
-            Check.Stream (stream);
-            Check.Path (path);
-
-            try {
-                (var torrent, var infohash) = BEncodedDictionary.DecodeTorrent (stream);
-                return LoadCore (torrent, InfoHash.FromMemory (infohash));
-            } catch (BEncodingException ex) {
-                throw new TorrentException ("Invalid torrent file specified", ex);
-            }
-        }
-
-        public static Torrent Load (BEncodedDictionary torrentInformation)
-        {
-            return Load (torrentInformation.Encode ());
-        }
-
-        internal static Torrent LoadCore (BEncodedDictionary torrentInformation, InfoHash infoHash)
-        {
-            Check.TorrentInformation (torrentInformation);
-
-            var t = new Torrent ();
-            t.LoadInternal (torrentInformation, infoHash);
-
-            return t;
         }
 
         void LoadInternal (BEncodedDictionary torrentInformation, InfoHash infoHash)
@@ -707,6 +597,97 @@ namespace MonoTorrent
                         break;
                 }
             }
+        }
+
+        static IList<TorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
+        {
+            var sb = new StringBuilder (32);
+
+            var files = new List<(string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)> ();
+            foreach (BEncodedDictionary dict in list) {
+                long length = 0;
+                string path = null;
+                ReadOnlyMemory<byte> md5sum = default;
+                ReadOnlyMemory<byte> ed2k = default;
+                ReadOnlyMemory<byte> sha1 = default;
+
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
+                    switch (keypair.Key.Text) {
+                        case ("sha1"):
+                            sha1 = ((BEncodedString) keypair.Value).AsMemory ();
+                            break;
+
+                        case ("ed2k"):
+                            ed2k = ((BEncodedString) keypair.Value).AsMemory ();
+                            ;
+                            break;
+
+                        case ("length"):
+                            length = long.Parse (keypair.Value.ToString ());
+                            break;
+
+                        case ("path.utf-8"):
+                            foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
+                                sb.Append (str.Text);
+                                sb.Append (Path.DirectorySeparatorChar);
+                            }
+                            path = sb.ToString (0, sb.Length - 1);
+                            sb.Remove (0, sb.Length);
+                            break;
+
+                        case ("path"):
+                            if (string.IsNullOrEmpty (path)) {
+                                foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
+                                    sb.Append (str.Text);
+                                    sb.Append (Path.DirectorySeparatorChar);
+                                }
+                                path = sb.ToString (0, sb.Length - 1);
+                                sb.Remove (0, sb.Length);
+                            }
+                            break;
+
+                        case ("md5sum"):
+                            md5sum = ((BEncodedString) keypair.Value).AsMemory ();
+                            break;
+
+                        default:
+                            break; //FIXME: Log unknown values
+                    }
+                }
+
+                PathValidator.Validate (path);
+                files.Add ((path, length, md5sum, ed2k, sha1));
+            }
+
+            return Array.AsReadOnly (TorrentFile.Create (pieceLength, files.ToArray ()));
+        }
+
+        static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<TorrentFile> files, int pieceLength, ref int totalPieces, string path)
+        {
+            if (key == "") {
+                var length = ((BEncodedNumber) data["length"]).Number;
+                if (length == 0) {
+                    files.Add (new TorrentFile (path, length, 0, 0, 0, default, default, default));
+                } else {
+                    totalPieces++;
+                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
+                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), pieceLength * totalPieces, default, default, default, piecesRoot));
+                    totalPieces = files.Last ().EndPieceIndex;
+                }
+            } else {
+                foreach (var entry in data) {
+                    LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, Path.Combine (path, key));
+                }
+            }
+        }
+
+        static IList<TorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree, int pieceLength)
+        {
+            var files = new List<TorrentFile> ();
+            int totalPieces = -1;
+            foreach (var entry in fileTree)
+                LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "");
+            return Array.AsReadOnly (files.ToArray ());
         }
     }
 }

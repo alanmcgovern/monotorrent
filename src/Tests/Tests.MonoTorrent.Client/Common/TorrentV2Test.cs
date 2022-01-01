@@ -56,9 +56,8 @@ namespace MonoTorrent.Common
         [Test]
         public void LoadSingleFile()
         {
-            var dict = (BEncodedDictionary)BEncodedValue.Decode (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeeeee"));
-
-            var file = Torrent.LoadTorrentFilesV2 ((BEncodedDictionary) ((BEncodedDictionary) dict["info"])["file tree"], 16284).Single (); ;
+            var torrent = Torrent.Load (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:piece lengthi32768eee"));
+            var file = torrent.Files.Single ();
             Assert.AreEqual (Path.Combine ("dir1", "dir2", "fileA.txt"), file.Path);
             Assert.AreEqual (0, file.StartPieceIndex);
             Assert.AreEqual (0, file.EndPieceIndex);
@@ -67,7 +66,6 @@ namespace MonoTorrent.Common
             var hash = Enumerable.Repeat ((byte) 'a', 32).ToArray ().AsMemory ();
             Assert.IsTrue (hash.Span.SequenceEqual (file.PiecesRoot.Span));
         }
-
 
         [Test]
         public void LoadingMetadataVersion2FailsBEP52Unsupported ()
