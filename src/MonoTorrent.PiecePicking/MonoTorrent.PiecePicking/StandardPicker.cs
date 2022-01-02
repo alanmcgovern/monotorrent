@@ -43,6 +43,7 @@ namespace MonoTorrent.PiecePicking
 
         readonly Dictionary<int, List<Piece>> duplicates;
         readonly Dictionary<int, Piece> requests;
+        MutableBitField alreadyRequested;
 
         ITorrentData TorrentData { get; set; }
 
@@ -105,8 +106,10 @@ namespace MonoTorrent.PiecePicking
                     toRemove.Push (piece.Index);
             }
 
-            while (toRemove.Count > 0)
+            while (toRemove.Count > 0) {
+                alreadyRequested[toRemove.Peek ()] = false;
                 requests.Remove (toRemove.Pop ());
+            }
             return count;
         }
 
@@ -141,6 +144,7 @@ namespace MonoTorrent.PiecePicking
         public void Initialise (ITorrentData torrentData)
         {
             TorrentData = torrentData;
+            alreadyRequested = new MutableBitField (torrentData.PieceCount ());
             requests.Clear ();
         }
 
@@ -212,6 +216,7 @@ namespace MonoTorrent.PiecePicking
             // ensure our received piece is not re-requested again.
             if (!duplicates.TryGetValue (request.PieceIndex, out List<Piece> extraPieces)) {
                 if (pieceComplete) {
+                    alreadyRequested[request.PieceIndex] = false;
                     requests.Remove (request.PieceIndex);
                     PieceCache.Enqueue (primaryPiece);
                 }
@@ -236,6 +241,7 @@ namespace MonoTorrent.PiecePicking
 
             // If the piece is complete then remove it, and any dupes, from the picker.
             if (pieceComplete) {
+                alreadyRequested[request.PieceIndex] = false;
                 requests.Remove (request.PieceIndex);
                 duplicates.Remove (primaryPiece.Index);
 
@@ -354,12 +360,13 @@ namespace MonoTorrent.PiecePicking
             for (int i = 0; i < pieces.Count; i++) {
                 int index = pieces[i];
                 // A peer should only suggest a piece he has, but just in case.
-                if (index >= bitfield.Length || !bitfield[index] || AlreadyRequested (index))
+                if (index >= bitfield.Length || !bitfield[index] || alreadyRequested [index])
                     continue;
 
                 pieces.RemoveAt (i);
                 var p = PieceCache.Dequeue ().Initialise (index, TorrentData.BytesPerPiece (index));
                 requests.Add (p.Index, p);
+                alreadyRequested[p.Index] = true;
                 return p.Blocks[0].CreateRequest (peer);
             }
 
@@ -383,15 +390,11 @@ namespace MonoTorrent.PiecePicking
                 // Request the piece
                 var p = PieceCache.Dequeue ().Initialise (checkIndex + i, TorrentData.BytesPerPiece (checkIndex + i));
                 this.requests.Add (p.Index, p);
+                alreadyRequested[p.Index] = true;
                 for (int j = 0; j < p.Blocks.Length && totalRequested < requests.Length; j++)
                     requests[totalRequested++] = p.Blocks[j].CreateRequest (peer);
             }
             return totalRequested;
-        }
-
-        protected bool AlreadyRequested (int index)
-        {
-            return requests.ContainsKey (index);
         }
 
         int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
@@ -406,7 +409,7 @@ namespace MonoTorrent.PiecePicking
                     // 'pieceEndIndex' as the last available piece to request as all pieces are available.
                     var lastAvailable = end == -1 ? pieceEndIndex : end - 1;
                     for (int i = pieceStartIndex; i <= lastAvailable; i++)
-                        if (!AlreadyRequested (i))
+                        if (!alreadyRequested[i])
                             return i;
                     pieceStartIndex = lastAvailable + 1;
                 }
@@ -422,7 +425,7 @@ namespace MonoTorrent.PiecePicking
 
                 // Do not include 'end' as it's the first *false* piece.
                 for (int i = pieceStartIndex; i < end; i++)
-                    if (AlreadyRequested (i))
+                    if (alreadyRequested [i])
                         end = i;
 
                 if ((end - pieceStartIndex) >= pieceCount)
