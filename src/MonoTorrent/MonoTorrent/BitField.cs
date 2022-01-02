@@ -131,16 +131,19 @@ namespace MonoTorrent
                 buffer = buffer.Slice (1);
                 shift -= 8;
             }
-            Validate ();
+            ZeroUnusedBits ();
+
+            int count = 0;
+            for (int i = 0; i < Data.Length; i++)
+                count += CountBits (Data[i]);
+            TrueCount = count;
+
             return this;
         }
 
         private protected BitField From (BitField value)
         {
-            if (value is null)
-                throw new ArgumentNullException (nameof (value));
-            if (Length != value.Length)
-                throw new ArgumentException ("BitFields are of different lengths", nameof (value));
+            Check (value);
 
             value.Data.AsSpan ().CopyTo (Data);
             TrueCount = value.TrueCount;
@@ -152,6 +155,7 @@ namespace MonoTorrent
             for (int i = 0; i < Data.Length; i++)
                 Data[i] = ~Data[i];
 
+            ZeroUnusedBits ();
             TrueCount = Length - TrueCount;
             return this;
         }
@@ -160,23 +164,26 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < Data.Length; i++)
-                Data[i] &= value.Data[i];
+            var data = Data;
+            var valueData = value.Data;
+            int count = 0;
+            for (int i = 0; i < data.Length && i < valueData.Length; i++) {
+                var result = data[i] & valueData[i];
+                count += CountBits (result);
+                data[i] = result;
+            }
+            TrueCount = count;
 
-            Validate ();
             return this;
         }
 
         private protected BitField NAnd (BitField value)
         {
-            if (value is null)
-                throw new ArgumentNullException (nameof (value));
-            if (value.Length != Length)
-                throw new ArgumentException ("BitFields are of different lengths", nameof (value));
+            Check (value);
 
+            int count = 0;
             var data = Data;
             var valueData = value.Data;
-            int count = 0;
             for (int i = 0; i < data.Length && i < valueData.Length; i++) {
                 var result = data[i] & (~valueData[i]);
                 count += CountBits (result);
@@ -191,10 +198,16 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < Data.Length; i++)
-                Data[i] |= value.Data[i];
+            int count = 0;
+            var data = Data;
+            var valueData = value.Data;
+            for (int i = 0; i < data.Length && i < valueData.Length; i++) {
+                var result = data[i] | valueData[i];
+                count += CountBits (result);
+                data[i] = result;
+            }
+            TrueCount = count;
 
-            Validate ();
             return this;
         }
 
@@ -202,10 +215,16 @@ namespace MonoTorrent
         {
             Check (value);
 
-            for (int i = 0; i < Data.Length; i++)
-                Data[i] ^= value.Data[i];
+            int count = 0;
+            var data = Data;
+            var valueData = value.Data;
+            for (int i = 0; i < data.Length && i < valueData.Length; i++) {
+                var result = data[i] ^ valueData[i];
+                count += CountBits (result);
+                data[i] = result;
+            }
+            TrueCount = count;
 
-            Validate ();
             return this;
         }
 
@@ -365,9 +384,11 @@ namespace MonoTorrent
                 throw new ArgumentException ("The selector should be the same length as this bitfield", nameof (selector));
 
             int count = 0;
-            for (int i = 0; i < Data.Length; i++)
-                count += CountBits (Data[i] & selector.Data[i]);
-            return (int) count;
+            var data = Data;
+            var selectorData = selector.Data;
+            for (int i = 0; i < data.Length && i < selectorData.Length; i++)
+                count += CountBits (data[i] & selectorData[i]);
+            return count;
         }
 
         IEnumerator IEnumerable.GetEnumerator ()
@@ -454,7 +475,6 @@ namespace MonoTorrent
             if (buffer == null)
                 throw new ArgumentNullException (nameof (buffer));
 
-            ZeroUnusedBits ();
             int end = Length / 32;
             int offset = 0;
             for (int i = 0; i < end; i++) {
@@ -483,17 +503,6 @@ namespace MonoTorrent
             return sb.ToString (0, sb.Length - 1);
         }
 
-        void Validate ()
-        {
-            ZeroUnusedBits ();
-
-            // Update the population count
-            int count = 0;
-            for (int i = 0; i < Data.Length; i++)
-                count += CountBits (Data[i]);
-            TrueCount = count;
-        }
-
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         static int CountBits (uint v)
         {
@@ -508,9 +517,9 @@ namespace MonoTorrent
 
         void ZeroUnusedBits ()
         {
-            int shift = 32 - Length % 32;
+            int shift = Length % 32;
             if (shift != 0)
-                Data[Data.Length - 1] &= uint.MaxValue << shift;
+                Data[Data.Length - 1] &= uint.MaxValue << (32 - shift);
         }
 
         void Check (BitField value)

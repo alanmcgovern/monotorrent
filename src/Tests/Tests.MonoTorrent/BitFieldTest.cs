@@ -88,6 +88,24 @@ namespace MonoTorrent
         }
 
         [Test]
+        public void ExtraBitsAtEnd ()
+        {
+            var bf = new BitField (17);
+            bf.From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
+            Assert.AreEqual (17, bf.TrueCount);
+            Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, (byte)(1 << 7) }.SequenceEqual (bf.ToByteArray ()));
+        }
+
+        [Test]
+        public void ExtraBitsAtEnd2 ()
+        {
+            var bf = new BitField (32);
+            bf.From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
+            Assert.AreEqual (32, bf.TrueCount);
+            Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue }.SequenceEqual (bf.ToByteArray ()));
+        }
+
+        [Test]
         public void FirstTrue ()
         {
             Assert.AreEqual (0, bf.FirstTrue (0, bf.Length - 1));
@@ -347,6 +365,22 @@ namespace MonoTorrent
                 Assert.AreEqual (!initalValues[i], bf[i], "#1");
 
             Assert.AreEqual (initalValues.Count (b => !b), bf.TrueCount, "#2");
+        }
+
+        [Test]
+        public void Not_ExtraBits ()
+        {
+            var bf = new MutableBitField (25);
+            Assert.AreEqual (0, bf.TrueCount);
+            Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToByteArray ()));
+
+            bf.Not ();
+            Assert.AreEqual (25, bf.TrueCount);
+            Assert.IsTrue (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, 1 << 7 }.SequenceEqual (bf.ToByteArray ()));
+
+            bf.Not ();
+            Assert.AreEqual (0, bf.TrueCount);
+            Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToByteArray ()));
         }
 
         [Test]
