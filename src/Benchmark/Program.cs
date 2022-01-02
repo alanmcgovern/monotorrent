@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 
 using BenchmarkDotNet.Attributes;
@@ -8,6 +10,7 @@ using BenchmarkDotNet.Running;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.PiecePicking;
 
 namespace MyBenchmarks
 {
@@ -188,11 +191,142 @@ namespace MyBenchmarks
         public void One () => OneValue.LengthInBytes ();
     }
 
+    [MemoryDiagnoser]
+    public class StandardPickerBenchmark
+    {
+        class TorrentData : ITorrentData
+        {
+            const int PieceCount = 500;
+
+            public IList<ITorrentFileInfo> Files { get; }
+            public InfoHash InfoHash { get; } = new InfoHash (new byte[20]);
+            public string Name { get; } = "Name";
+            public int PieceLength { get; } = 32768;
+            public long Size { get; } = 32768 * PieceCount;
+
+            public IPeer CreatePeer ()
+                => new Peer (PieceCount);
+        }
+
+        class Peer : IPeer
+        {
+            public int AmRequestingPiecesCount { get; set; }
+            public BitField BitField { get; }
+            public bool CanRequestMorePieces { get; } = true;
+            public long DownloadSpeed { get; }
+            public List<int> IsAllowedFastPieces { get; }
+            public bool IsChoking { get; } = false;
+            public bool IsSeeder { get; } = true;
+            public int MaxPendingRequests { get; } = int.MaxValue;
+            public int RepeatedHashFails { get; }
+            public List<int> SuggestedPieces { get; } = new List<int> ();
+            public bool SupportsFastPeer { get; } = true;
+            public int TotalHashFails { get; }
+            public bool CanCancelRequests { get; }
+
+            public int PreferredRequestAmount (int pieceLength)
+                => 1;
+
+            public Peer (int pieceCount)
+                => BitField = new MutableBitField (pieceCount).SetAll (true);
+        }
+
+        readonly TorrentData Data;
+        readonly StandardPicker Picker;
+        readonly IPeer Requester;
+        readonly Queue<BlockInfo> Requested;
+
+        public StandardPickerBenchmark ()
+        {
+            Data = new TorrentData ();
+            Picker = new StandardPicker ();
+            Requester = Data.CreatePeer ();
+            Requested = new Queue<BlockInfo> ((int)(Data.PieceCount () * Data.BlocksPerPiece (0)));
+
+
+            Random = new Random (1234);
+            Requesters = new List<IPeer> (Enumerable.Range (0, 60).Select (t => Data.CreatePeer ()));
+            RequestedBlocks = new List<Queue<BlockInfo>> ();
+            foreach (var requester in Requesters)
+                RequestedBlocks.Add (new Queue<BlockInfo> (1400));
+        }
+
+        [Benchmark]
+        public void PickAndValidate ()
+        {
+            Picker.Initialise (Data);
+
+            BlockInfo? requested;
+            while ((requested = Picker.PickPiece (Requester, Requester.BitField)).HasValue) {
+                Requested.Enqueue (requested.Value);
+            }
+
+            while (Requested.Count > 0)
+                Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, out _);
+
+        }
+
+        [Benchmark]
+        public void PickAndValidate_600Concurrent ()
+        {
+            Picker.Initialise (new TorrentData ());
+
+            var bf = new MutableBitField (Requester.BitField);
+            BlockInfo? requested;
+            while ((requested = Picker.PickPiece (Requester, bf)).HasValue) {
+                Requested.Enqueue (requested.Value);
+                if (Requested.Count > 600) {
+                    var popped = Requested.Dequeue ();
+                    if (Picker.ValidatePiece (Requester, popped, out bool done, out _))
+                        if (done)
+                            bf[popped.PieceIndex] = false;
+                }
+            }
+
+            while (Requested.Count > 0)
+                Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, out _);
+        }
+
+        readonly Random Random;
+        readonly List<IPeer> Requesters;
+        readonly List<Queue<BlockInfo>> RequestedBlocks;
+
+        [Benchmark]
+        public void PickAndValidate_600Concurrent_60Requesters ()
+        {
+            Picker.Initialise (new TorrentData ());
+
+            var bf = new MutableBitField (Requester.BitField);
+            BlockInfo? requested;
+            int requestIndex = Random.Next (0, Requesters.Count);
+            while ((requested = Picker.PickPiece (Requesters[requestIndex], bf)).HasValue) {
+                RequestedBlocks[requestIndex].Enqueue (requested.Value);
+                if (RequestedBlocks[requestIndex].Count > 600) {
+                    var popped = RequestedBlocks[requestIndex].Dequeue ();
+                    if (Picker.ValidatePiece (Requesters[requestIndex], popped, out bool done, out _))
+                        if (done)
+                            bf[popped.PieceIndex] = false;
+                }
+            }
+
+            for (int i = 0; i < Requesters.Count; i++) {
+                while (RequestedBlocks[i].Count > 0) {
+                    var popped = RequestedBlocks[i].Dequeue ();
+                    if (Picker.ValidatePiece (Requesters[i], popped, out bool success, out _))
+                        if (success)
+                            bf[popped.PieceIndex] = false;
+                }
+            }
+            if (!bf.AllFalse)
+                throw new Exception ();
+        }
+    }
+
     public class Program
     {
         public static void Main (string[] args)
         {
-            var summary = BenchmarkRunner.Run (typeof (BitfieldBenchmark));
+            var summary = BenchmarkRunner.Run (typeof (StandardPickerBenchmark));
         }
     }
 }
