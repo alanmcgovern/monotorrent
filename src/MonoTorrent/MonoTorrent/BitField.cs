@@ -137,8 +137,12 @@ namespace MonoTorrent
 
         private protected BitField From (BitField value)
         {
-            Check (value);
-            Buffer.BlockCopy (value.Data, 0, Data, 0, Data.Length * 4);
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+            if (Length != value.Length)
+                throw new ArgumentException ("BitFields are of different lengths", nameof (value));
+
+            value.Data.AsSpan ().CopyTo (Data);
             TrueCount = value.TrueCount;
             return this;
         }
@@ -165,12 +169,21 @@ namespace MonoTorrent
 
         private protected BitField NAnd (BitField value)
         {
-            Check (value);
+            if (value is null)
+                throw new ArgumentNullException (nameof (value));
+            if (value.Length != Length)
+                throw new ArgumentException ("BitFields are of different lengths", nameof (value));
 
-            for (int i = 0; i < Data.Length; i++)
-                Data[i] &= ~value.Data[i];
+            var data = Data;
+            var valueData = value.Data;
+            int count = 0;
+            for (int i = 0; i < data.Length && i < valueData.Length; i++) {
+                var result = data[i] & (~valueData[i]);
+                count += CountBits (result);
+                data[i] = result;
+            }
+            TrueCount = count;
 
-            Validate ();
             return this;
         }
 
@@ -418,7 +431,8 @@ namespace MonoTorrent
             if (value) {
                 for (int i = 0; i < Data.Length; i++)
                     Data[i] = uint.MaxValue;
-                Validate ();
+                ZeroUnusedBits ();
+                TrueCount = Length;
             } else {
                 for (int i = 0; i < Data.Length; i++)
                     Data[i] = 0;

@@ -14,23 +14,64 @@ namespace MyBenchmarks
     [MemoryDiagnoser]
     public class BitfieldBenchmark
     {
-        MutableBitField BitField = new MutableBitField (100000);
-        BitField Selector;
+        MutableBitField BitField_S = new MutableBitField (5);
+        MutableBitField BitField_M = new MutableBitField (50);
+        MutableBitField BitField_L = new MutableBitField (500);
+        MutableBitField BitField_XL = new MutableBitField (5000);
+        MutableBitField BitField_XXL = new MutableBitField (50000);
+
+        MutableBitField Temp_S = new MutableBitField (5);
+        MutableBitField Temp_M = new MutableBitField (50);
+        MutableBitField Temp_L = new MutableBitField (500);
+        MutableBitField Temp_XL = new MutableBitField (5000);
+        MutableBitField Temp_XXL = new MutableBitField (50000);
+
+        MutableBitField Selector_S = new MutableBitField (5).SetAll (true);
+        MutableBitField Selector_M = new MutableBitField (50).SetAll (true);
+        MutableBitField Selector_L = new MutableBitField (500).SetAll (true);
+        MutableBitField Selector_XL = new MutableBitField (5000).SetAll (true);
+        MutableBitField Selector_XXL = new MutableBitField (50000).SetAll (true);
 
         public BitfieldBenchmark ()
         {
-            for (int i = 31; i < BitField.Length; i += 32)
-                BitField[i] = true;
-            Selector = new MutableBitField (BitField.Length).SetAll (true);
+            BitField_S[1] = true;
+
+            foreach (var bf in new[] { BitField_M, BitField_L, BitField_XL, BitField_XXL })
+                for (int i = 31; i < bf.Length; i += 32)
+                    bf[i] = true;
         }
 
         [Benchmark]
         public void FirstTrue ()
-            => BitField.FirstTrue ();
+            => BitField_L.FirstTrue ();
 
         [Benchmark]
         public void PopCount ()
-            => BitField.CountTrue (Selector);
+            => BitField_L.CountTrue (Selector_L);
+
+        [Benchmark]
+        public void NAnd ()
+            => Temp_L.From (BitField_L).NAnd (Selector_L);
+
+        [Benchmark]
+        public void From_S ()
+            => Temp_S.From (BitField_S);
+
+        [Benchmark]
+        public void From_M ()
+            => Temp_M.From (BitField_M);
+
+        [Benchmark]
+        public void From_L ()
+            => Temp_L.From (BitField_L);
+
+        [Benchmark]
+        public void From_XL ()
+            => Temp_XL.From (BitField_XL);
+
+        [Benchmark]
+        public void From_XXL ()
+            => Temp_XXL.From (BitField_XXL);
     }
 
     [MemoryDiagnoser]
