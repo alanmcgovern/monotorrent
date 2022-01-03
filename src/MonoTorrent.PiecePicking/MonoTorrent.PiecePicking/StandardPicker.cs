@@ -41,10 +41,11 @@ namespace MonoTorrent.PiecePicking
 
         // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
-        readonly Dictionary<int, List<Piece>> duplicates;
-        readonly Dictionary<int, Piece> requests;
         MutableBitField alreadyRequestedBitField;
         MutableBitField canRequestBitField;
+        readonly Dictionary<int, List<Piece>> duplicates;
+        readonly Dictionary<int, Piece> requests;
+        readonly Dictionary<IPeer, Piece> mostRecentRequest;
 
         ITorrentData TorrentData { get; set; }
 
@@ -52,6 +53,7 @@ namespace MonoTorrent.PiecePicking
         {
             duplicates = new Dictionary<int, List<Piece>> ();
             requests = new Dictionary<int, Piece> ();
+            mostRecentRequest = new Dictionary<IPeer, Piece> ();
         }
 
         public int AbortRequests (IPeer peer)
@@ -90,7 +92,7 @@ namespace MonoTorrent.PiecePicking
         }
 
 
-        readonly Stack<int> toRemove = new Stack<int> ();
+        readonly Stack<Piece> toRemove = new Stack<Piece> ();
         int CancelWhere (Predicate<Block> predicate)
         {
             int count = 0;
@@ -104,12 +106,19 @@ namespace MonoTorrent.PiecePicking
                     }
                 }
                 if (piece.NoBlocksRequested)
-                    toRemove.Push (piece.Index);
+                    toRemove.Push (piece);
             }
 
             while (toRemove.Count > 0) {
-                alreadyRequestedBitField[toRemove.Peek ()] = false;
-                requests.Remove (toRemove.Pop ());
+                var piece = toRemove.Pop ();
+                requests.Remove (piece.Index);
+                alreadyRequestedBitField[piece.Index] = false;
+                foreach (var entry in mostRecentRequest) {
+                    if (entry.Value == piece) {
+                        mostRecentRequest.Remove (entry.Key);
+                        break;
+                    }
+                }
             }
             return count;
         }
@@ -147,6 +156,7 @@ namespace MonoTorrent.PiecePicking
             TorrentData = torrentData;
             alreadyRequestedBitField = new MutableBitField (torrentData.PieceCount ());
             canRequestBitField = new MutableBitField (torrentData.PieceCount ());
+            mostRecentRequest.Clear ();
             requests.Clear ();
         }
 
@@ -222,6 +232,10 @@ namespace MonoTorrent.PiecePicking
                 if (pieceComplete) {
                     alreadyRequestedBitField[request.PieceIndex] = false;
                     requests.Remove (request.PieceIndex);
+                    foreach (var involvedPeer in peersInvolved)
+                        if (mostRecentRequest.TryGetValue (involvedPeer, out Piece piece))
+                            if (piece.Index == primaryPiece.Index)
+                                mostRecentRequest.Remove (involvedPeer);
                     PieceCache.Enqueue (primaryPiece);
                 }
                 return result;
@@ -248,7 +262,10 @@ namespace MonoTorrent.PiecePicking
                 alreadyRequestedBitField[request.PieceIndex] = false;
                 requests.Remove (request.PieceIndex);
                 duplicates.Remove (primaryPiece.Index);
-
+                foreach (var involvedPeer in peersInvolved)
+                    if (mostRecentRequest.TryGetValue (involvedPeer, out Piece piece))
+                        if (piece.Index == primaryPiece.Index)
+                            mostRecentRequest.Remove (involvedPeer);
                 // Return the primary piece to the cache for re-use.
                 PieceCache.Enqueue (primaryPiece);
                 return result;
@@ -263,20 +280,21 @@ namespace MonoTorrent.PiecePicking
 
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf (piece.Blocks, request.StartOffset, request.RequestLength);
-            if (blockIndex == -1 || !peer.Equals (piece.Blocks[blockIndex].RequestedOff)) {
+            ref Block block = ref piece.Blocks[blockIndex];
+            if (blockIndex == -1 || !peer.Equals (block.RequestedOff)) {
                 //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No block ", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
-            if (piece.Blocks[blockIndex].Received) {
+            if (block.Received) {
                 //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Already received.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
-            if (!piece.Blocks[blockIndex].Requested) {
+            if (!block.Requested) {
                 //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} Not requested.", request.PieceIndex, request.StartOffset, peer);
                 return false;
             }
             peer.AmRequestingPiecesCount--;
-            piece.Blocks[blockIndex].Received = true;
+            block.Received = true;
 
             if (piece.AllBlocksReceived) {
                 pieceComplete = true;
@@ -290,6 +308,15 @@ namespace MonoTorrent.PiecePicking
 
         BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests, bool allowAbandoned, bool allowAny)
         {
+            if (mostRecentRequest.TryGetValue (peer, out Piece mostRecent)) {
+                foreach (ref Block block in mostRecent.Blocks.AsSpan ())
+                    if (!block.Requested && !block.Received)
+                        return block.CreateRequest (peer);
+
+                if (maxDuplicateRequests == 1 && !allowAbandoned && !allowAny)
+                    return null;
+            }
+
             foreach (var p in requests.Values) {
                 int index = p.Index;
                 if (p.AllBlocksRequested || index < startIndex || index > endIndex || !peer.BitField[index])
@@ -298,9 +325,9 @@ namespace MonoTorrent.PiecePicking
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
                 if (allowAny || (allowAbandoned && p.Abandoned) || peer == p.Blocks[0].RequestedOff) {
-                    for (int i = 0; i < p.BlockCount; i++) {
-                        if (!p.Blocks[i].Received && !p.Blocks[i].Requested)
-                            return p.Blocks[i].CreateRequest (peer);
+                    foreach (ref Block block in p.Blocks.AsSpan ()) {
+                        if (!block.Requested && !block.Received)
+                            return block.CreateRequest (peer);
                     }
                 }
             }
@@ -370,6 +397,7 @@ namespace MonoTorrent.PiecePicking
                 var p = PieceCache.Dequeue ().Initialise (index, TorrentData.BytesPerPiece (index));
                 requests.Add (p.Index, p);
                 alreadyRequestedBitField[p.Index] = true;
+                mostRecentRequest[peer] = p;
                 return p.Blocks[0].CreateRequest (peer);
             }
 
@@ -394,6 +422,7 @@ namespace MonoTorrent.PiecePicking
                 var p = PieceCache.Dequeue ().Initialise (checkIndex + i, TorrentData.BytesPerPiece (checkIndex + i));
                 this.requests.Add (p.Index, p);
                 alreadyRequestedBitField[p.Index] = true;
+                mostRecentRequest[peer] = p;
                 for (int j = 0; j < p.Blocks.Length && totalRequested < requests.Length; j++)
                     requests[totalRequested++] = p.Blocks[j].CreateRequest (peer);
             }
