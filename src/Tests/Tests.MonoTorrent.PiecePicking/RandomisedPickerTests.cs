@@ -39,6 +39,15 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class RandomisedPickerTests
     {
+        class OnePieceTorrentData : ITorrentData
+        {
+            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024);
+            public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public string Name => "Test Torrent";
+            public int PieceLength { get; } = 64 * 1024;
+            public long Size { get; } = 64 * 1024;
+        }
+
         class TestTorrentData : ITorrentData
         {
             public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
@@ -83,6 +92,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void SinglePieceBitfield ()
         {
+            picker.Initialise (new OnePieceTorrentData ());
             picker.PickPiece (seeder, new MutableBitField (1).SetAll (true), new List<PeerId> ());
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");

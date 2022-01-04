@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
+    <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
   </ItemGroup>
 
 </Project>
