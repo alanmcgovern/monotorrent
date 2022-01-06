@@ -679,7 +679,9 @@ namespace MonoTorrent
 
             try {
                 var decoded = BEncodedDictionary.DecodeTorrent (stream);
-                return LoadCore (decoded.torrent, decoded.infohash);
+                var t = LoadCore (decoded.torrent, decoded.infohash);
+                t.torrentPath = path;
+                return t;
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
             }
