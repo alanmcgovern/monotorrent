@@ -110,6 +110,24 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void LoadEncoded ()
+        {
+            var unhashedPieces = new MutableBitField (10).SetAll (false);
+            var downloaded = new MutableBitField (10).SetAll (true);
+            var fastResume = new FastResume (InfoHash, downloaded, unhashedPieces);
+            var stream = new MemoryStream ();
+
+            fastResume.Encode (stream);
+            Assert.IsTrue (stream.Length > 0, "#1");
+
+            stream.Seek(0, SeekOrigin.Begin);
+            Assert.IsTrue (FastResume.TryLoad (stream, out var newFastResume), "#2");
+            Assert.IsNotNull (newFastResume, "#3");
+            Assert.IsTrue (newFastResume.UnhashedPieces.AllFalse, "#4");
+            Assert.IsTrue (newFastResume.Bitfield.AllTrue, "#5");
+        }
+
+        [Test]
         public async Task IgnoreInvalidFastResume ()
         {
             using var tmpDir = TempDir.Create ();
