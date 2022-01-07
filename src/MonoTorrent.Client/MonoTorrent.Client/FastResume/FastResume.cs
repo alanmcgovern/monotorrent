@@ -119,19 +119,34 @@ namespace MonoTorrent.Client
             s.Write (data, 0, data.Length);
         }
 
+        public static bool TryLoad (Stream s, out FastResume fastResume)
+        {
+            fastResume = Load (s);
+            return fastResume != null;
+        }
+
         public static bool TryLoad (string fastResumeFilePath, out FastResume fastResume)
         {
+            fastResume = null;
             try {
                 if (File.Exists (fastResumeFilePath)) {
-                    var data = (BEncodedDictionary) BEncodedDictionary.Decode (File.ReadAllBytes (fastResumeFilePath));
-                    fastResume = new FastResume (data);
-                } else {
-                    fastResume = null;
+                    using (FileStream s = File.Open (fastResumeFilePath, FileMode.Open)) {
+                        fastResume = Load (s);
+                    }
                 }
             } catch {
-                fastResume = null;
             }
             return fastResume != null;
+        }
+
+        static FastResume Load (Stream s)
+        {
+            try {
+                var data = (BEncodedDictionary) BEncodedDictionary.Decode (s);
+                return new FastResume (data);
+            } catch {
+            }
+            return null;
         }
     }
 }
