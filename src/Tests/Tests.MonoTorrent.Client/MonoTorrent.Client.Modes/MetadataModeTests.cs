@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task MetadataOnly_True ()
         {
-            var tcs = new TaskCompletionSource<byte[]> ();
+            var tcs = new TaskCompletionSource<ReadOnlyMemory<byte>> ();
             new CancellationTokenSource (Debugger.IsAttached ? 100000 : 10000)
                 .Token
                 .Register (() => tcs.TrySetCanceled ());
@@ -191,7 +191,7 @@ namespace MonoTorrent.Client.Modes
 
             rig.Manager.MetadataReceived += (o, e) => tcs.TrySetResult (e);
             await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
-            Assert.IsNotNull (await tcs.Task);
+            Assert.IsTrue ((await tcs.Task).Length > 0);
         }
 
         [Test]
@@ -280,7 +280,7 @@ namespace MonoTorrent.Client.Modes
         internal async Task SendMetadataCore (string expectedPath, PeerMessage sendAfterHandshakeMessage, bool metadataOnly = false)
         {
             CustomConnection connection = pair.Incoming;
-            var metadataTcs = new TaskCompletionSource<byte[]> ();
+            var metadataTcs = new TaskCompletionSource<ReadOnlyMemory<byte>> ();
             rig.Manager.MetadataReceived += (o, e) => metadataTcs.TrySetResult (e);
 
             // 1) Send local handshake. We've already received the remote handshake as part
@@ -329,7 +329,7 @@ namespace MonoTorrent.Client.Modes
             // We've sent all the pieces. Now we just wait for the torrentmanager to process them all.
             Torrent torrent;
             if (metadataOnly) {
-                torrent = Torrent.Load (await metadataTcs.Task.WithTimeout ());
+                torrent = Torrent.Load ((await metadataTcs.Task.WithTimeout ()).Span);
             } else {
                 await rig.Manager.WaitForState (TorrentState.Downloading).WithTimeout ();
                 Assert.IsTrue (File.Exists (expectedPath), "#1");

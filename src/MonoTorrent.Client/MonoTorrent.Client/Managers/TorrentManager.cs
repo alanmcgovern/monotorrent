@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        internal event EventHandler<byte[]> MetadataReceived;
+        internal event EventHandler<ReadOnlyMemory<byte>> MetadataReceived;
 
         /// <summary>
         /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void RaiseMetadataReceived (byte[] metadata)
+        internal void RaiseMetadataReceived (ReadOnlyMemory<byte> metadata)
         {
             MetadataReceived?.Invoke (this, metadata);
         }

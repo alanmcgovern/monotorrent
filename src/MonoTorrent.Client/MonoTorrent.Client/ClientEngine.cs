@@ -62,9 +62,9 @@ namespace MonoTorrent.Client
             return await RestoreStateAsync (File.ReadAllBytes (pathToStateFile));
         }
 
-        public static async Task<ClientEngine> RestoreStateAsync (byte[] buffer)
+        public static async Task<ClientEngine> RestoreStateAsync (ReadOnlyMemory<byte> buffer)
         {
-            var state = BEncodedValue.Decode<BEncodedDictionary> (buffer);
+            var state = BEncodedValue.Decode<BEncodedDictionary> (buffer.Span);
             var engineSettings = Serializer.DeserializeEngineSettings ((BEncodedDictionary) state["Settings"]);
 
             var clientEngine = new ClientEngine (engineSettings);
@@ -547,12 +547,12 @@ namespace MonoTorrent.Client
         /// <param name="token">The cancellation token used to to abort the download. This method will
         /// only complete if the metadata successfully downloads, or the token is cancelled.</param>
         /// <returns></returns>
-        public async Task<byte[]> DownloadMetadataAsync (MagnetLink magnetLink, CancellationToken token)
+        public async Task<ReadOnlyMemory<byte>> DownloadMetadataAsync (MagnetLink magnetLink, CancellationToken token)
         {
             await MainLoop;
 
             var manager = new TorrentManager (this, magnetLink, "", new TorrentSettings ());
-            var metadataCompleted = new TaskCompletionSource<byte[]> ();
+            var metadataCompleted = new TaskCompletionSource<ReadOnlyMemory<byte>> ();
             using var registration = token.Register (() => metadataCompleted.TrySetResult (null));
             manager.MetadataReceived += (o, e) => metadataCompleted.TrySetResult (e);
 
