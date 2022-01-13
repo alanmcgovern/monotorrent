@@ -174,6 +174,8 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
+        readonly SemaphoreSlim dhtNodeLocker;
+
         readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         int tickCount;
         /// <summary>
@@ -269,6 +271,7 @@ namespace MonoTorrent.Client
             CheckSettingsAreValid (Settings);
 
             allTorrents = new List<TorrentManager> ();
+            dhtNodeLocker = new SemaphoreSlim (1, 1);
             publicTorrents = new List<TorrentManager> ();
             Torrents = new ReadOnlyCollection<TorrentManager> (publicTorrents);
 
@@ -823,12 +826,19 @@ namespace MonoTorrent.Client
             if (nodes.Length == 0)
                 return;
 
-            await Task.Run (() => {
+            // Perform this action on a threadpool thread.
+            await MainLoop.SwitchThread ();
+
+            // Ensure only 1 thread at a time tries to save DhtNodes.
+            // Users can call StartAsync/StopAsync many times on
+            // TorrentManagers and the file write could happen
+            // concurrently.
+            using (await dhtNodeLocker.EnterAsync ().ConfigureAwait (false)) {
                 var savePath = Settings.GetDhtNodeCacheFilePath ();
                 var parentDir = Path.GetDirectoryName (savePath);
                 Directory.CreateDirectory (parentDir);
                 File.WriteAllBytes (savePath, nodes);
-            });
+            }
         }
 
         public async Task UpdateSettingsAsync (EngineSettings settings)
