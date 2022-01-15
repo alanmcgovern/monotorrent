@@ -31,6 +31,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
@@ -41,6 +42,8 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentV2Test
     {
+        string V2OnlyTorrent => Path.Combine (Path.GetDirectoryName (typeof (TorrentV2Test).Assembly.Location), "MonoTorrent", "bittorrent-v2-test.torrent");
+
         [SetUp]
         public void Setup ()
         {
@@ -83,6 +86,15 @@ namespace MonoTorrent.Common
 
             var dict = (BEncodedDictionary) BEncodedValue.Decode (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:piece lengthi16382eee"));
             Assert.Throws<TorrentException> (() => Torrent.Load (dict));
+        }
+
+        [Test]
+        public void LoadV2OnlyTorrent ()
+        {
+            var torrent = Torrent.Load (V2OnlyTorrent);
+            // A v2 only torrent does not have a regular infohash
+            Assert.IsNull (torrent.InfoHash);
+            Assert.IsNotNull (torrent.InfoHashV2);
         }
     }
 }
