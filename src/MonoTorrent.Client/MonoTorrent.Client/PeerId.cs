@@ -331,8 +331,8 @@ namespace MonoTorrent.Client
 
                 if (AmInterested) {
                     //if we are interested and unchoked, update last measured download rate, unless it is 0
-                    if (Monitor.DownloadSpeed > 0) {
-                        lastMeasuredDownloadRate = Monitor.DownloadSpeed;
+                    if (Monitor.ReceiveRate > 0) {
+                        lastMeasuredDownloadRate = Monitor.ReceiveRate;
 
                         maxObservedDownloadSpeed = Math.Max (lastMeasuredDownloadRate, maxObservedDownloadSpeed);
                     }
@@ -362,7 +362,7 @@ namespace MonoTorrent.Client
         /// <returns>True if the upload rate for recip is greater than the actual upload rate</returns>
         internal bool IsUnderUploadLimit ()
         {
-            return UploadRateForRecip > Monitor.UploadSpeed;
+            return UploadRateForRecip > Monitor.SendRate;
         }
 
 

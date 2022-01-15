@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
             int candidateDataBytes;
             for (int i = 0; i < TorrentManager.Peers.ConnectedPeers.Count; i++) {
                 PeerId nextPeer = TorrentManager.Peers.ConnectedPeers[i];
-                if (nextPeer.Monitor.DataBytesDownloaded == 0 && nextPeer.WhenConnected.Elapsed > TorrentManager.Settings.TimeToWaitUntilIdle) {
+                if (nextPeer.Monitor.DataBytesReceived == 0 && nextPeer.WhenConnected.Elapsed > TorrentManager.Settings.TimeToWaitUntilIdle) {
                     // This one is eligible for marking as inactive
                     if (!nextPeer.AmInterested) {
                         // This is an eligible peer and we're not interested in it so stop looking
@@ -86,20 +86,20 @@ namespace MonoTorrent.Client
                     // If the number of available peers is running low (less than max number of peer connections), don't try to inactivate peers that have given us data
                     if (indexOfFirstInterestingCandidate < 0
                         && TorrentManager.Settings.ConnectionRetentionFactor > 0
-                        && nextPeer.Monitor.DataBytesDownloaded > 0
+                        && nextPeer.Monitor.DataBytesReceived > 0
                         && TorrentManager.Peers.Available >= TorrentManager.Settings.MaximumConnections) {
                         // Calculate an inactive time.
                         // Base time is time since the last message (in seconds)
                         // Give the peer an extra second for every 'ConnectionRetentionFactor' bytes
                         TimeSpan timeSinceLastBlock = nextPeer.LastBlockReceived.Elapsed;
-                        int calculatedInactiveTime = Convert.ToInt32 (timeSinceLastBlock.TotalSeconds - Convert.ToInt32 (nextPeer.Monitor.DataBytesDownloaded / TorrentManager.Settings.ConnectionRetentionFactor));
+                        int calculatedInactiveTime = Convert.ToInt32 (timeSinceLastBlock.TotalSeconds - Convert.ToInt32 (nextPeer.Monitor.DataBytesReceived / TorrentManager.Settings.ConnectionRetentionFactor));
                         // Register as the least attractive candidate if the calculated time is more than the idle wait time and more than any other candidate
                         if (calculatedInactiveTime > TorrentManager.Settings.TimeToWaitUntilIdle.TotalSeconds && calculatedInactiveTime > longestCalculatedInactiveTime) {
                             longestCalculatedInactiveTime = calculatedInactiveTime;
                             leastAttractiveCandidate = i;
                             candidateSecondsConnected = (int) nextPeer.WhenConnected.Elapsed.TotalSeconds;
                             candidateSecondsSinceLastBlock = (int) nextPeer.LastBlockReceived.Elapsed.TotalSeconds;
-                            candidateDataBytes = (int) nextPeer.Monitor.DataBytesDownloaded;
+                            candidateDataBytes = (int) nextPeer.Monitor.DataBytesReceived;
                         }
                     }
                 }

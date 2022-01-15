@@ -17,17 +17,17 @@ namespace MyBenchmarks
     [MemoryDiagnoser]
     public class BitfieldBenchmark
     {
-        MutableBitField BitField_S = new MutableBitField (5);
-        MutableBitField BitField_M = new MutableBitField (50);
-        MutableBitField BitField_L = new MutableBitField (500);
-        MutableBitField BitField_XL = new MutableBitField (5000);
-        MutableBitField BitField_XXL = new MutableBitField (50000);
+        readonly MutableBitField BitField_S = new MutableBitField (5);
+        readonly MutableBitField BitField_M = new MutableBitField (50);
+        readonly MutableBitField BitField_L = new MutableBitField (500);
+        readonly MutableBitField BitField_XL = new MutableBitField (5000);
+        readonly MutableBitField BitField_XXL = new MutableBitField (50000);
 
-        MutableBitField Temp_S = new MutableBitField (5);
-        MutableBitField Temp_M = new MutableBitField (50);
-        MutableBitField Temp_L = new MutableBitField (500);
-        MutableBitField Temp_XL = new MutableBitField (5000);
-        MutableBitField Temp_XXL = new MutableBitField (50000);
+        readonly MutableBitField Temp_S = new MutableBitField (5);
+        readonly MutableBitField Temp_M = new MutableBitField (50);
+        readonly MutableBitField Temp_L = new MutableBitField (500);
+        readonly MutableBitField Temp_XL = new MutableBitField (5000);
+        readonly MutableBitField Temp_XXL = new MutableBitField (50000);
 
         MutableBitField Selector_S = new MutableBitField (5).SetAll (true);
         MutableBitField Selector_M = new MutableBitField (50).SetAll (true);

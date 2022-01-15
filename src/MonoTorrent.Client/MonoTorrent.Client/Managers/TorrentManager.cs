@@ -322,6 +322,7 @@ namespace MonoTorrent.Client
         /// and <see cref="Torrent.Name"/> after replacing all invalid characters with equivalents which are safe to use in file paths.
         /// <see cref="ContainingDirectory"/> will be <see langword="null"/> until the torrent metadata has been downloaded and <see cref="HasMetadata"/> returns
         /// <see langword="true"/>
+        /// </summary>
         public string ContainingDirectory {
             get; private set;
         }
@@ -961,8 +962,8 @@ namespace MonoTorrent.Client
 
         internal void UpdateLimiters ()
         {
-            DownloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, Monitor.DownloadSpeed);
-            UploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, Monitor.UploadSpeed);
+            DownloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, Monitor.ReceiveRate);
+            UploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, Monitor.SendRate);
         }
         #endregion Internal Methods
 

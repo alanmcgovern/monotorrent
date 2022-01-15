@@ -68,8 +68,8 @@ namespace MonoTorrent.Trackers
             if (Manager.HasMetadata)
                 bytesLeft = (long) ((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
 
-            return new AnnounceRequest (Manager.Monitor.DataBytesDownloaded,
-                                          Manager.Monitor.DataBytesUploaded,
+            return new AnnounceRequest (Manager.Monitor.DataBytesReceived,
+                                          Manager.Monitor.DataBytesSent,
                                           bytesLeft,
                                           clientEvent, Manager.InfoHash, requireEncryption, Manager.Engine.PeerId.AsMemory ().ToArray (),
                                           ip, port, supportsEncryption);

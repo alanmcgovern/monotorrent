@@ -64,10 +64,10 @@ namespace MonoTorrent
         [Test]
         public void Constructor_TooSmall ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new bool[0]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (Array.Empty<bool> ()));
             Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (0));
             Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (-1));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new byte[0], 1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (Array.Empty<byte> (), 1));
             Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new byte[1], 0));
         }
         [Test]

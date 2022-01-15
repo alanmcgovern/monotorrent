@@ -231,7 +231,7 @@ namespace MonoTorrent.Client
             get {
                 long total = 0;
                 for (int i = 0; i < publicTorrents.Count; i++)
-                    total += publicTorrents[i].Monitor.DownloadSpeed;
+                    total += publicTorrents[i].Monitor.ReceiveRate;
                 return total;
             }
         }
@@ -240,7 +240,7 @@ namespace MonoTorrent.Client
             get {
                 long total = 0;
                 for (int i = 0; i < publicTorrents.Count; i++)
-                    total += publicTorrents[i].Monitor.UploadSpeed;
+                    total += publicTorrents[i].Monitor.SendRate;
                 return total;
             }
         }

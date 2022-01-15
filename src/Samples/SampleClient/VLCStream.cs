@@ -99,8 +99,8 @@ namespace ClientSample
                             AppendFormat (sb, $"State:              {manager.State}");
                             AppendFormat (sb, $"Name:               {(manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name)}");
                             AppendFormat (sb, $"Progress:           {manager.Progress:0.00}");
-                            AppendFormat (sb, $"Transfer Rate:      {manager.Monitor.DownloadSpeed / 1024.0:0.00}kB/s down / {manager.Monitor.UploadSpeed / 1024.0:0.00} kB/s up");
-                            AppendFormat (sb, $"Total transferred:  {manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0):0.00} MB down / {manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0):0.00} MB up");
+                            AppendFormat (sb, $"Transfer Rate:      {manager.Monitor.ReceiveRate / 1024.0:0.00}kB/s down / {manager.Monitor.SendRate / 1024.0:0.00} kB/s up");
+                            AppendFormat (sb, $"Total transferred:  {manager.Monitor.DataBytesReceived / (1024.0 * 1024.0):0.00} MB down / {manager.Monitor.DataBytesSent / (1024.0 * 1024.0):0.00} MB up");
                             AppendFormat (sb, $"Tracker Status");
                             foreach (var tier in manager.TrackerManager.Tiers)
                                 AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapeSucceeded}.");
@@ -112,9 +112,9 @@ namespace ClientSample
                             AppendFormat (sb, "Outgoing:");
                             foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Outgoing)) {
                                 AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
-                                                                                            p.Monitor.DownloadSpeed / 1024.0,
+                                                                                            p.Monitor.ReceiveRate / 1024.0,
                                                                                             p.AmRequestingPiecesCount,
-                                                                                            p.Monitor.UploadSpeed / 1024.0,
+                                                                                            p.Monitor.SendRate / 1024.0,
                                                                                             p.EncryptionType,
                                                                                             string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
                             }
@@ -122,9 +122,9 @@ namespace ClientSample
                             AppendFormat (sb, "Incoming:");
                             foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Incoming)) {
                                 AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
-                                                                                            p.Monitor.DownloadSpeed / 1024.0,
+                                                                                            p.Monitor.ReceiveRate / 1024.0,
                                                                                             p.AmRequestingPiecesCount,
-                                                                                            p.Monitor.UploadSpeed / 1024.0,
+                                                                                            p.Monitor.SendRate / 1024.0,
                                                                                             p.EncryptionType,
                                                                                             string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
                             }

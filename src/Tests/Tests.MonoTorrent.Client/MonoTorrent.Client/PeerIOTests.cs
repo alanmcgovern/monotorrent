@@ -138,26 +138,26 @@ namespace MonoTorrent.Client
             );
 
             // incoming connection sends 1 message so should receive nothing.
-            Assert.AreEqual (0, pair.Incoming.Monitor.DataBytesDownloaded);
-            Assert.AreEqual (0, pair.Incoming.ManagerMonitor.DataBytesDownloaded);
-            Assert.AreEqual (0, pair.Incoming.Monitor.ProtocolBytesDownloaded);
-            Assert.AreEqual (0, pair.Incoming.ManagerMonitor.ProtocolBytesDownloaded);
+            Assert.AreEqual (0, pair.Incoming.Monitor.DataBytesReceived);
+            Assert.AreEqual (0, pair.Incoming.ManagerMonitor.DataBytesReceived);
+            Assert.AreEqual (0, pair.Incoming.Monitor.ProtocolBytesReceived);
+            Assert.AreEqual (0, pair.Incoming.ManagerMonitor.ProtocolBytesReceived);
 
-            Assert.AreEqual (blockSize, pair.Incoming.Monitor.DataBytesUploaded);
-            Assert.AreEqual (blockSize, pair.Incoming.ManagerMonitor.DataBytesUploaded);
-            Assert.AreEqual (protocolSize, pair.Incoming.Monitor.ProtocolBytesUploaded);
-            Assert.AreEqual (protocolSize, pair.Incoming.ManagerMonitor.ProtocolBytesUploaded);
+            Assert.AreEqual (blockSize, pair.Incoming.Monitor.DataBytesSent);
+            Assert.AreEqual (blockSize, pair.Incoming.ManagerMonitor.DataBytesSent);
+            Assert.AreEqual (protocolSize, pair.Incoming.Monitor.ProtocolBytesSent);
+            Assert.AreEqual (protocolSize, pair.Incoming.ManagerMonitor.ProtocolBytesSent);
 
             // outgoing connection receives 1 message, so should send nothing.
-            Assert.AreEqual (0, pair.Outgoing.Monitor.DataBytesUploaded);
-            Assert.AreEqual (0, pair.Outgoing.ManagerMonitor.DataBytesUploaded);
-            Assert.AreEqual (0, pair.Outgoing.Monitor.ProtocolBytesUploaded);
-            Assert.AreEqual (0, pair.Outgoing.ManagerMonitor.ProtocolBytesUploaded);
+            Assert.AreEqual (0, pair.Outgoing.Monitor.DataBytesSent);
+            Assert.AreEqual (0, pair.Outgoing.ManagerMonitor.DataBytesSent);
+            Assert.AreEqual (0, pair.Outgoing.Monitor.ProtocolBytesSent);
+            Assert.AreEqual (0, pair.Outgoing.ManagerMonitor.ProtocolBytesSent);
 
-            Assert.AreEqual (blockSize, pair.Outgoing.Monitor.DataBytesDownloaded);
-            Assert.AreEqual (blockSize, pair.Outgoing.ManagerMonitor.DataBytesDownloaded);
-            Assert.AreEqual (protocolSize, pair.Outgoing.Monitor.ProtocolBytesDownloaded);
-            Assert.AreEqual (protocolSize, pair.Outgoing.ManagerMonitor.ProtocolBytesDownloaded);
+            Assert.AreEqual (blockSize, pair.Outgoing.Monitor.DataBytesReceived);
+            Assert.AreEqual (blockSize, pair.Outgoing.ManagerMonitor.DataBytesReceived);
+            Assert.AreEqual (protocolSize, pair.Outgoing.Monitor.ProtocolBytesReceived);
+            Assert.AreEqual (protocolSize, pair.Outgoing.ManagerMonitor.ProtocolBytesReceived);
         }
     }
 }

@@ -164,10 +164,10 @@ namespace MonoTorrent.Client
                     long bytesTransferred = 0;
                     if (Unchokeable.Seeding)
                         //We are seeding the torrent; determine bytesTransferred as bytes uploaded
-                        bytesTransferred = connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview;
+                        bytesTransferred = connectedPeer.Monitor.DataBytesSent - connectedPeer.BytesUploadedAtLastReview;
                     else
                         //The peer is unchoked and we are downloading the torrent; determine bytesTransferred as bytes downloaded
-                        bytesTransferred = connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview;
+                        bytesTransferred = connectedPeer.Monitor.DataBytesReceived - connectedPeer.BytesDownloadedAtLastReview;
 
                     //Reset review up and download rates to zero; peers are therefore non-responders unless we determine otherwise
                     connectedPeer.LastReviewDownloadRate = 0;
@@ -186,8 +186,8 @@ namespace MonoTorrent.Client
                         //Add to peers that are candidates for unchoking based on their performance
                         candidatePeers.Add (connectedPeer);
                         //Calculate the latest up/downloadrate
-                        connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
-                        connectedPeer.LastReviewDownloadRate = (connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
+                        connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesSent - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
+                        connectedPeer.LastReviewDownloadRate = (connectedPeer.Monitor.DataBytesReceived - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
                     } else if (!Unchokeable.Seeding && connectedPeer.IsInterested && connectedPeer.AmChoking && bytesTransferred > 0)
                     //A peer is optimistically unchoking us.  Take the maximum of their current download rate and their download rate over the
                     //	review period since they might have only just unchoked us and we don't want to miss out on a good opportunity.  Upload
@@ -196,16 +196,16 @@ namespace MonoTorrent.Client
                         //Add to peers that are candidates for unchoking based on their performance
                         candidatePeers.Add (connectedPeer);
                         //Calculate the latest up/downloadrate
-                        connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
-                        connectedPeer.LastReviewDownloadRate = Math.Max ((connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds,
-                            connectedPeer.Monitor.DownloadSpeed);
+                        connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesSent - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
+                        connectedPeer.LastReviewDownloadRate = Math.Max ((connectedPeer.Monitor.DataBytesReceived - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds,
+                            connectedPeer.Monitor.ReceiveRate);
                     } else if (connectedPeer.IsInterested)
                         //All other interested peers are candidates for optimistic unchoking
                         optimisticUnchokeCandidates.Add (connectedPeer);
 
                     //Remember the number of bytes up and downloaded for the next review
-                    connectedPeer.BytesUploadedAtLastReview = connectedPeer.Monitor.DataBytesUploaded;
-                    connectedPeer.BytesDownloadedAtLastReview = connectedPeer.Monitor.DataBytesDownloaded;
+                    connectedPeer.BytesUploadedAtLastReview = connectedPeer.Monitor.DataBytesSent;
+                    connectedPeer.BytesDownloadedAtLastReview = connectedPeer.Monitor.DataBytesReceived;
 
                     //If the peer has been unchoked for longer than one review period, unset FirstReviewPeriod
                     if (timeUnchoked >= minimumTimeBetweenReviews)
