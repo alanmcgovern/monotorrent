@@ -86,7 +86,7 @@ namespace System
         }
 #endif
 
-        public static void AppendData (this IncrementalHash incrementalHash, Memory<byte> buffer)
+        public static void AppendData (this IncrementalHash incrementalHash, ReadOnlyMemory<byte> buffer)
         {
 #if NETSTANDARD2_0 || NET472
             if (!MemoryMarshal.TryGetArray (buffer, out ArraySegment<byte> array))
