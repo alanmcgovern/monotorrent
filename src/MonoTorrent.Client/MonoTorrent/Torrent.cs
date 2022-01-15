@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,6 +42,25 @@ namespace MonoTorrent
 {
     public sealed class Torrent : IEquatable<Torrent>
     {
+        static Dictionary<int, ReadOnlyMemory<byte>> FinalLayerHash { get; } = CreateFinalHashPerLayer ();
+
+        static Dictionary<int, ReadOnlyMemory<byte>>  CreateFinalHashPerLayer ()
+        {
+            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
+            byte[] buffer = new byte[32];
+
+            Dictionary<int, ReadOnlyMemory<byte>> results = new Dictionary<int, ReadOnlyMemory<byte>> ();
+            results[Constants.BlockSize] = (byte[]) buffer.Clone ();
+            for (int i = Constants.BlockSize * 2; i <= Constants.MaximumPieceLength; i *= 2) {
+                hasher.AppendData (buffer);
+                hasher.AppendData (buffer);
+                if (!hasher.TryGetHashAndReset (buffer, out int written) || written != 32)
+                    throw new Exception ("Critical failure");
+                results[i] = (byte[]) buffer.Clone ();
+            }
+            return results;
+        }
+
         internal static bool SupportsV2Torrents = false;
 
         /// <summary>
@@ -547,9 +567,11 @@ namespace MonoTorrent
                         break;
 
                     case ("info"):
-                        InfoHash = InfoHash.FromMemory (infoHashes.SHA1);
-                        InfoHashV2 = SupportsV2Torrents && !infoHashes.SHA256.IsEmpty ? InfoHash.FromMemory (infoHashes.SHA256) : null;
                         ProcessInfo (((BEncodedDictionary) keypair.Value));
+                        if (Pieces != null)
+                            InfoHash = InfoHash.FromMemory (infoHashes.SHA1);
+                        if (SupportsV2Torrents && !infoHashes.SHA256.IsEmpty)
+                            InfoHashV2 = InfoHash.FromMemory (infoHashes.SHA256);
                         break;
 
                     case ("name"):                                               // Handled elsewhere
@@ -585,6 +607,10 @@ namespace MonoTorrent
 
                     case ("httpseeds"):
                         // This form of web-seeding is not supported.
+                        break;
+
+                    case "piece layers":
+                        LoadPieceLayers (Files, (BEncodedDictionary) keypair.Value, PieceLength);
                         break;
 
                     case ("url-list"):
@@ -652,7 +678,6 @@ namespace MonoTorrent
                                 sb.Remove (0, sb.Length);
                             }
                             break;
-
                         case ("md5sum"):
                             md5sum = ((BEncodedString) keypair.Value).AsMemory ();
                             break;
@@ -667,6 +692,47 @@ namespace MonoTorrent
             }
 
             return Array.AsReadOnly (TorrentFile.Create (pieceLength, files.ToArray ()));
+        }
+
+        static void LoadPieceLayers (IList<TorrentFile> files, BEncodedDictionary hashes, int actualPieceLength)
+        {
+            using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+
+            for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
+                var file = files[fileIndex];
+                if (file.Length < actualPieceLength)
+                    continue;
+
+                if (!hashes.TryGetValue (BEncodedString.FromMemory (file.PiecesRoot), out BEncodedValue hashValue))
+                    throw new TorrentException ($"the 'piece layers' dictionary did not contain an entry for the file '{file.Path}'");
+                if (!(hashValue is BEncodedString hash))
+                    throw new TorrentException ("The 'piece layers' dictionary should contain BEncodedStrings");
+
+                if ((hash.Span.Length % 32) != 0)
+                    throw new TorrentException ($"The piece layer for {file.Path} was not a valid array of SHA256 hashes");
+
+                var src = hash.AsMemory ();
+                using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
+                var pieceLength = actualPieceLength;
+                while (src.Length != 32) {
+                    for (int i = 0; i < src.Length / 64; i ++) {
+                        hasher.AppendData (src.Slice (i * 64, 64));
+                        if (!hasher.TryGetHashAndReset (dest.Slice (i * 32, 32).Span, out int written) || written != 32)
+                            throw new TorrentException ($"Could not compute the SHA256 hash for file {file.Path}");
+                    }
+                    if (src.Length % 64 == 32) {
+                        hasher.AppendData (src.Slice (src.Length - 32, 32));
+                        hasher.AppendData (FinalLayerHash[pieceLength]);
+                        if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out int written) || written != 32)
+                            throw new TorrentException ($"Could not compute the SHA256 hash for file {file.Path}");
+                    }
+                    src = dest;
+                    dest = dest.Slice (0, ((dest.Length + 63) / 64) * 32);
+                    pieceLength *= 2;
+                }
+                if (!src.Span.SequenceEqual (file.PiecesRoot.Span))
+                    throw new TorrentException ($"The has root is corrupt for file {file.Path}");
+            }
         }
 
         static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<TorrentFile> files, int pieceLength, ref int totalPieces, string path)
