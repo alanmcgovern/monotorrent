@@ -13,7 +13,12 @@
     <Deterministic>true</Deterministic>
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-
+    
+    <!-- These are essentially junk if i'm compiling against net472/NetStandard2.0 and newer targets.
+         Most rules result in uncompilable net472 code, so let's ignore them as i don't want to wade
+         through fixing/ignoring hundreds of rules with little real-world value. -->
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <RestoreLockedMode Condition="$(CI) and '$(RestoreLockedMode)' == ''">false</RestoreLockedMode>
   </PropertyGroup>
 
