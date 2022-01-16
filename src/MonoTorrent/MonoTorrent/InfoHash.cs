@@ -164,7 +164,7 @@ namespace MonoTorrent
             for (int i = 0; i < hash.Length; i++)
                 hash[i] = byte.Parse (infoHash.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
 
-            return new InfoHash (hash);
+            return InfoHash.FromMemory (hash);
         }
 
         /// <summary>
