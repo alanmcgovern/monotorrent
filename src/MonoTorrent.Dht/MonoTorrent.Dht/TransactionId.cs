@@ -40,7 +40,7 @@ namespace MonoTorrent.Dht
         {
             int value = Interlocked.Increment (ref current);
             byte[] data = new[] { (byte) (value >> 8), (byte) value };
-            return new BEncodedString (data);
+            return BEncodedString.FromMemory (data);
         }
     }
 }

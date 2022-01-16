@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Net;
 
 using MonoTorrent.BEncoding;
@@ -156,14 +157,17 @@ namespace MonoTorrent.TrackerServer
             };
             return dictionary;
         }
+
         byte[] GenerateCompactPeersEntry ()
         {
-            byte[] port = BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short) ClientAddress.Port));
-            byte[] addr = ClientAddress.Address.GetAddressBytes ();
-            byte[] entry = new byte[addr.Length + port.Length];
+            Span<byte> addressBytes = stackalloc byte[16];
+            if (!ClientAddress.Address.TryWriteBytes (addressBytes, out int written))
+                throw new NotSupportedException ($"IPAddress of type {ClientAddress.AddressFamily} are unsupported");
+            addressBytes = addressBytes.Slice (0, written);
 
-            Array.Copy (addr, entry, addr.Length);
-            Array.Copy (port, 0, entry, addr.Length, port.Length);
+            var entry = new byte[addressBytes.Length + 2];
+            addressBytes.CopyTo (entry);
+            BinaryPrimitives.WriteUInt16BigEndian (entry.AsSpan (written), (ushort) ClientAddress.Port);
             return entry;
         }
     }

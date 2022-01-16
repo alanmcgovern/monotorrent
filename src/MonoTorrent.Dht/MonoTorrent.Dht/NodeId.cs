@@ -38,12 +38,20 @@ namespace MonoTorrent.Dht
 {
     class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
-        internal static readonly NodeId Minimum = new NodeId (new byte[20]);
-        internal static readonly NodeId Maximum = new NodeId (Enumerable.Repeat ((byte) 255, 20).ToArray ());
+        internal static readonly NodeId Minimum = NodeId.FromMemory (new byte[20]);
+        internal static readonly NodeId Maximum = NodeId.FromMemory (Enumerable.Repeat ((byte) 255, 20).ToArray ());
+        static readonly Random Random = new Random ();
 
-        static readonly Random random = new Random ();
+        public static NodeId Create ()
+        {
+            var b = new byte[20];
+            lock (Random)
+                Random.NextBytes (b);
+            return NodeId.FromMemory (b);
+        }
 
-        public BigEndianBigInteger value;
+        internal static NodeId FromMemory (ReadOnlyMemory<byte> memory)
+            => new NodeId (memory);
 
         ReadOnlyMemory<byte> Bytes { get; }
 
@@ -63,15 +71,6 @@ namespace MonoTorrent.Dht
             Bytes = b;
         }
 
-        internal NodeId (byte[] value)
-        {
-            if (value is null)
-                throw new ArgumentNullException (nameof (value));
-            if (value.Length != 20)
-                throw new ArgumentException ("Array should be exactly 20 bytes", nameof (value));
-            Bytes = (byte[]) value.Clone ();
-        }
-
         internal NodeId (InfoHash infoHash)
         {
             if (infoHash is null)
@@ -87,6 +86,9 @@ namespace MonoTorrent.Dht
                 throw new ArgumentException ("BEncodedString should be exactly 20 bytes", nameof (value));
             Bytes = value.AsMemory ();
         }
+
+        NodeId (ReadOnlyMemory<byte> memory)
+            => (Bytes) = memory;
 
         public ReadOnlyMemory<byte> AsMemory ()
             => Bytes;
@@ -117,7 +119,7 @@ namespace MonoTorrent.Dht
             var clone = new byte[left.Span.Length];
             for (int i = 0; i < right.Span.Length; i++)
                 clone[i] = (byte)(left.Span[i] ^ right.Span[i]);
-            return new NodeId (clone);
+            return NodeId.FromMemory (new ReadOnlyMemory<byte> (clone));
         }
 
         public static NodeId operator - (NodeId first, NodeId second)
@@ -166,13 +168,5 @@ namespace MonoTorrent.Dht
 
         public static bool operator != (NodeId first, NodeId second)
             => !(first == second);
-
-        public static NodeId Create ()
-        {
-            var b = new byte[20];
-            lock (random)
-                random.NextBytes (b);
-            return new NodeId (b);
-        }
     }
 }

@@ -111,11 +111,14 @@ namespace MonoTorrent.Messages
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static string ReadString (ref ReadOnlySpan<byte> buffer, int length)
         {
+            string result;
 #if NETSTANDARD2_0
-            var array = buffer.Slice (0, length).ToArray ();
-            var result = Encoding.ASCII.GetString (array);
+            using (MemoryPool.Default.RentArraySegment (length, out var segment)) {
+                buffer.Slice (0, length).CopyTo (segment.AsSpan ());
+                result = Encoding.ASCII.GetString (segment.Array, segment.Offset, segment.Count);
+            }
 #else
-            var result = Encoding.ASCII.GetString (buffer.Slice (0, length));
+            result = Encoding.ASCII.GetString (buffer.Slice (0, length));
 #endif
             buffer = buffer.Slice (length);
             return result;
@@ -223,9 +226,8 @@ namespace MonoTorrent.Messages
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static void Write (ref Span<byte> buffer, BEncodedValue value)
         {
-            var array = value.Encode ();
-            array.AsSpan ().CopyTo (buffer);
-            buffer = buffer.Slice (array.Length);
+            int written = value.Encode (buffer);
+            buffer = buffer.Slice (written);
         }
     }
 }

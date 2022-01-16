@@ -140,7 +140,7 @@ namespace MonoTorrent.Dht
             buffer.Slice (0, 20).CopyTo (id);
             var address = new IPAddress (BinaryPrimitives.ReadUInt32LittleEndian (buffer.Slice (20, 4)));
             int port = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice (24, 2));
-            return new Node (new NodeId (id), new IPEndPoint (address, port));
+            return new Node (NodeId.FromMemory (id), new IPEndPoint (address, port));
         }
 
         internal static IEnumerable<Node> FromCompactNode (byte[] buffer)
