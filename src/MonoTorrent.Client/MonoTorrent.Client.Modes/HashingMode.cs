@@ -84,7 +84,7 @@ namespace MonoTorrent.Client.Modes
                 int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 using var hashBuffer = MemoryPool.Default.Rent (20, out System.Memory<byte> memory);
-                for (int index = 0; index < Manager.Torrent.Pieces.Count; index++) {
+                for (int index = 0; index < Manager.Torrent.PieceCount; index++) {
                     if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
                         // so they also report that the piece is not available/downloaded.
@@ -104,13 +104,13 @@ namespace MonoTorrent.Client.Modes
                         Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 
-                    bool hashPassed = successful && Manager.Torrent.Pieces.IsValid (memory.Span, index);
+                    bool hashPassed = successful && Manager.Torrent.PieceHashes.IsValid (memory.Span, index);
                     Manager.OnPieceHashed (index, hashPassed, ++piecesHashed, Manager.PartialProgressSelector.TrueCount);
                 }
             } else {
                 await PausedCompletionSource.Task;
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.Pieces.Count);
+                for (int i = 0; i < Manager.Torrent.PieceCount; i++)
+                    Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.PieceCount);
             }
         }
 

@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.Modes
         public async Task AfterHandshake_SendBitfieldMessage ()
         {
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count));
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount));
         }
 
         [Test]
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client.Modes
                 else
                     tcs.SetResult (rig.Manager.Files);
             };
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount), metadataOnly: true);
             Assert.IsNotNull (await tcs.Task);
         }
 
@@ -175,7 +175,7 @@ namespace MonoTorrent.Client.Modes
 
             WaitAsync ();
 
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount), metadataOnly: true);
             Assert.IsNotNull (await tcs.Task);
         }
 
@@ -190,7 +190,7 @@ namespace MonoTorrent.Client.Modes
             await Setup (true, metadataOnly: true);
 
             rig.Manager.MetadataReceived += (o, e) => tcs.TrySetResult (e);
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.Pieces.Count), metadataOnly: true);
+            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount), metadataOnly: true);
             Assert.IsTrue ((await tcs.Task).Length > 0);
         }
 

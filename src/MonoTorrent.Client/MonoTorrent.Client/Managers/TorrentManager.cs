@@ -415,9 +415,9 @@ namespace MonoTorrent.Client
             }
             SetTrackerManager (new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false));
 
-            MutableBitField = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
-            PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1);
-            UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.Pieces.Count : 1).SetAll (true);
+            MutableBitField = new MutableBitField (HasMetadata ? Torrent.PieceCount: 1);
+            PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.PieceCount : 1);
+            UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.PieceCount : 1).SetAll (true);
             SavePath = string.IsNullOrEmpty (savePath) ? Environment.CurrentDirectory : Path.GetFullPath (savePath);
             finishedPieces = new Queue<int> ();
             Monitor = new ConnectionMonitor ();
@@ -625,9 +625,9 @@ namespace MonoTorrent.Client
             Torrent = torrent;
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
                 Engine.ConnectionManager.CleanupSocket (this, id);
-            MutableBitField = new MutableBitField (Torrent.Pieces.Count);
-            PartialProgressSelector = new MutableBitField (Torrent.Pieces.Count).SetAll (true);
-            UnhashedPieces = new MutableBitField (Torrent.Pieces.Count).SetAll (true);
+            MutableBitField = new MutableBitField (Torrent.PieceCount);
+            PartialProgressSelector = new MutableBitField (Torrent.PieceCount).SetAll (true);
+            UnhashedPieces = new MutableBitField (Torrent.PieceCount).SetAll (true);
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             if (Torrent.Files.Count == 1 || !Settings.CreateContainingDirectory)
@@ -990,11 +990,11 @@ namespace MonoTorrent.Client
             CheckMetadata ();
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
-            if (InfoHash != data.Infohash || Torrent.Pieces.Count != data.Bitfield.Length)
+            if (InfoHash != data.Infohash || Torrent.PieceCount != data.Bitfield.Length)
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
-            for (int i = 0; i < Torrent.Pieces.Count; i++)
-                OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.Pieces.Count);
+            for (int i = 0; i < Torrent.PieceCount; i++)
+                OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.PieceCount);
             UnhashedPieces.From (data.UnhashedPieces);
 
             HashChecked = true;

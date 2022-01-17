@@ -215,7 +215,7 @@ namespace MonoTorrent.Client.Modes
             // If they support fast peers, create their list of allowed pieces that they can request off me
             if (id.SupportsFastPeer && Manager != null && Manager.HasMetadata) {
                 AllowedFastHasher ??= SHA1.Create ();
-                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHash, (uint) Manager.Torrent.Pieces.Count);
+                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHash, (uint) Manager.Torrent.PieceCount);
             }
         }
 
@@ -403,7 +403,7 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            bool result = successful && Manager.Torrent.Pieces.IsValid (memory.Span, block.PieceIndex);
+            bool result = successful && Manager.Torrent.PieceHashes.IsValid (memory.Span, block.PieceIndex);
             Manager.OnPieceHashed (block.PieceIndex, result, 1, 1);
             Manager.PieceManager.PieceHashed (block.PieceIndex);
             if (!result)
@@ -430,7 +430,7 @@ namespace MonoTorrent.Client.Modes
         {
             // If we are not on the last piece and the user requested a stupidly big/small amount of data
             // we will close the connection
-            if (Manager.Torrent.Pieces.Count != (message.PieceIndex + 1))
+            if (Manager.Torrent.PieceCount != (message.PieceIndex + 1))
                 if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
                     throw new MessageException (
                         $"Illegal piece request received. Peer requested {message.RequestLength} byte");
@@ -712,7 +712,7 @@ namespace MonoTorrent.Client.Modes
                                 var successful = await DiskManager.GetHashAsync (Manager, index, memory);
                                 Cancellation.Token.ThrowIfCancellationRequested ();
 
-                                bool hashPassed = successful && Manager.Torrent.Pieces.IsValid (memory.Span, index);
+                                bool hashPassed = successful && Manager.Torrent.PieceHashes.IsValid (memory.Span, index);
                                 Manager.OnPieceHashed (index, hashPassed, 1, 1);
 
                                 if (hashPassed)

@@ -13,7 +13,7 @@ namespace MonoTorrent.Common
         [SetUp]
         public void Setup ()
         {
-            Hashes = new Hashes (new byte[20 * 10], 10);
+            Hashes = new Hashes (new byte[20 * 10], 20);
         }
 
         [Test]
@@ -34,12 +34,6 @@ namespace MonoTorrent.Common
         public void IsValid_Matches ()
         {
             Assert.IsTrue (Hashes.IsValid (new byte[20], 0));
-        }
-
-        [Test]
-        public void IsValid_Null ()
-        {
-            Assert.Throws<ArgumentNullException> (() => Hashes.IsValid (null, 0));
         }
 
         [Test]

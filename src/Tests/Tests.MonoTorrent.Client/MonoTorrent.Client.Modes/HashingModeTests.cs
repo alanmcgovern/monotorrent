@@ -179,7 +179,7 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceHashed += (o, e) => {
                 lock (args) {
                     args.Add (e);
-                    if (args.Count == Manager.Torrent.Pieces.Count)
+                    if (args.Count == Manager.Torrent.PieceCount)
                         tcs.SetResult (true);
                 }
             };
@@ -239,7 +239,7 @@ namespace MonoTorrent.Client.Modes
         {
             DiskManager.GetHashAsyncOverride = (manager, index, dest) => {
                 if (index >= 0 && index <= 4) {
-                    Manager.Torrent.Pieces.GetHash (index).CopyTo (dest);
+                    Manager.Torrent.PieceHashes.GetHash (index).CopyTo (dest);
                 } else {
                     Enumerable.Repeat ((byte) 255, 20).ToArray ().CopyTo (dest);
                 }
