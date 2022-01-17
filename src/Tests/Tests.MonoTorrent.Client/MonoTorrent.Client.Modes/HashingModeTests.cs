@@ -239,7 +239,7 @@ namespace MonoTorrent.Client.Modes
         {
             DiskManager.GetHashAsyncOverride = (manager, index, dest) => {
                 if (index >= 0 && index <= 4) {
-                    Manager.Torrent.Pieces.ReadHash (index, dest.Span);
+                    Manager.Torrent.Pieces.GetHash (index).CopyTo (dest);
                 } else {
                     Enumerable.Repeat ((byte) 255, 20).ToArray ().CopyTo (dest);
                 }
