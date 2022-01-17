@@ -1,5 +1,5 @@
 //
-// Hashes.cs
+// PieceHashesV1.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent
 {
-    public class Hashes
+    class PieceHashesV1 : IPieceHashes
     {
         readonly int HashCodeLength;
         readonly ReadOnlyMemory<byte> HashData;
@@ -41,7 +41,7 @@ namespace MonoTorrent
         /// </summary>
         public int Count => HashData.Length / HashCodeLength;
 
-        internal Hashes (ReadOnlyMemory<byte> hashData, int hashCodeLength)
+        internal PieceHashesV1 (ReadOnlyMemory<byte> hashData, int hashCodeLength)
             => (HashData, HashCodeLength) = (hashData, hashCodeLength);
 
         /// <summary>
@@ -57,10 +57,7 @@ namespace MonoTorrent
             if (hash.Length != HashCodeLength)
                 throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
 
-            if (hashIndex < 0 || hashIndex >= Count)
-                throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
-
-            return hash.SequenceEqual (HashData.Span.Slice (hashIndex * hash.Length, hash.Length));
+            return GetHash (hashIndex).Span.SequenceEqual (hash);
         }
     }
 }

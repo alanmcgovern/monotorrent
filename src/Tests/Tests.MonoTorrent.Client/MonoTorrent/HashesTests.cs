@@ -8,12 +8,12 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class HashesTests
     {
-        Hashes Hashes { get; set; }
+        IPieceHashes Hashes { get; set; }
 
         [SetUp]
         public void Setup ()
         {
-            Hashes = new Hashes (new byte[20 * 10], 20);
+            Hashes = new PieceHashesV1 (new byte[20 * 10], 20);
         }
 
         [Test]

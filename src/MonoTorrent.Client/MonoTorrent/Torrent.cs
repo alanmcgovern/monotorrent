@@ -317,12 +317,12 @@ namespace MonoTorrent
         /// <summary>
         /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
         /// </summary>
-        public Hashes PieceHashes { get; private set; }
+        public IPieceHashes PieceHashes { get; private set; }
 
         /// <summary>
         /// This is the array of SHA256 piece hashes contained within the torrent. Used to validate torrents which comply with the V2 specification.
         /// </summary>
-        public Hashes PieceHashesV2 { get; private set; }
+        public IPieceHashes PieceHashesV2 { get; private set; }
 
         /// <summary>
         /// The name of the Publisher
@@ -410,7 +410,7 @@ namespace MonoTorrent
                 var data = ((BEncodedString) dictionary["pieces"]).AsMemory ();
                 if (data.Length % 20 != 0)
                     throw new TorrentException ("Invalid infohash detected");
-                PieceHashes = new Hashes (data, 20);
+                PieceHashes = new PieceHashesV1 (data, 20);
             }
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
@@ -611,7 +611,7 @@ namespace MonoTorrent
                         break;
 
                     case "piece layers":
-                        LoadPieceLayers (Files, (BEncodedDictionary) keypair.Value, PieceLength);
+                        PieceHashesV2 = LoadHashesV2 (Files, (BEncodedDictionary) keypair.Value, PieceLength);
                         break;
 
                     case ("url-list"):
@@ -695,7 +695,7 @@ namespace MonoTorrent
             return Array.AsReadOnly (TorrentFile.Create (pieceLength, files.ToArray ()));
         }
 
-        static void LoadPieceLayers (IList<TorrentFile> files, BEncodedDictionary hashes, int actualPieceLength)
+        static PieceHashesV2 LoadHashesV2 (IList<TorrentFile> files, BEncodedDictionary hashes, int actualPieceLength)
         {
             using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 
@@ -734,6 +734,8 @@ namespace MonoTorrent
                 if (!src.Span.SequenceEqual (file.PiecesRoot.Span))
                     throw new TorrentException ($"The has root is corrupt for file {file.Path}");
             }
+
+            return new PieceHashesV2 (files, hashes);
         }
 
         static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<TorrentFile> files, int pieceLength, ref int totalPieces, string path)
