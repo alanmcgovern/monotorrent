@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Modes
                     if (bitField.AllTrue) {
                         InfoHash hash;
                         Stream.Position = 0;
-                        using (SHA1 hasher = Manager.Engine.Factories.CreateSHA1 ())
+                        using (SHA1 hasher = SHA1.Create ())
                             hash = InfoHash.FromMemory (hasher.ComputeHash (Stream));
 
                         if (Manager.InfoHash != hash) {

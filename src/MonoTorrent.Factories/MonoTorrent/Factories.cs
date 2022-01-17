@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Http;
-using System.Security.Cryptography;
 
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
@@ -61,9 +60,6 @@ namespace MonoTorrent
         public delegate ISocketConnector SocketConnectorCreator ();
         public delegate IStreamingPieceRequester StreamingPieceRequesterCreator ();
         public delegate ITracker TrackerCreator (Uri uri);
-
-        public delegate MD5 MD5Creator ();
-        public delegate SHA1 SHA1Creator ();
     }
 
     public partial class Factories
@@ -85,16 +81,10 @@ namespace MonoTorrent
 
         ReadOnlyDictionary<string, TrackerCreator> TrackerFuncs { get; set; }
 
-        MD5Creator MD5Func { get; set; }
-        SHA1Creator SHA1Func { get; set; }
-
         public Factories ()
         {
-            MD5Func = () => MD5.Create ();
-            SHA1Func = () => SHA1.Create ();
-
             BlockCacheFunc = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
-            DhtFunc = () => new DhtEngine (SHA1Func ());
+            DhtFunc = () => new DhtEngine ();
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
             HttpClientFunc = () => {
                 var client = new HttpClient ();
@@ -168,15 +158,6 @@ namespace MonoTorrent
             return dupe;
         }
 
-        public MD5 CreateMD5 ()
-            => MD5Func ();
-        public Factories WithMD5Creator (MD5Creator creator)
-        {
-            var dupe = MemberwiseClone ();
-            dupe.MD5Func = creator ?? Default.MD5Func;
-            return dupe;
-        }
-
         public IPeerConnection CreatePeerConnection (Uri uri)
         {
             try {
@@ -236,15 +217,6 @@ namespace MonoTorrent
         {
             var dupe = MemberwiseClone ();
             dupe.PortForwarderFunc = creator ?? Default.PortForwarderFunc;
-            return dupe;
-        }
-
-        public SHA1 CreateSHA1 ()
-            => SHA1Func ();
-        public Factories WithSHA1Creator (SHA1Creator creator)
-        {
-            var dupe = MemberwiseClone ();
-            dupe.SHA1Func = creator ?? Default.SHA1Func;
             return dupe;
         }
 

@@ -214,7 +214,7 @@ namespace MonoTorrent.Client.Modes
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
             if (id.SupportsFastPeer && Manager != null && Manager.HasMetadata) {
-                AllowedFastHasher ??= Manager.Engine.Factories.CreateSHA1 ();
+                AllowedFastHasher ??= SHA1.Create ();
                 id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHash, (uint) Manager.Torrent.Pieces.Count);
             }
         }

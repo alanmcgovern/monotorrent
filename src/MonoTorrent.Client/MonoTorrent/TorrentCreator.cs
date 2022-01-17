@@ -409,8 +409,8 @@ namespace MonoTorrent
         {
             await MainLoop.SwitchToThreadpool ();
 
-            using MD5 md5Hasher = StoreMD5 ? Factories.CreateMD5 () : null;
-            using SHA1 shaHasher = Factories.CreateSHA1 ();
+            using MD5 md5Hasher = StoreMD5 ? MD5.Create () : null;
+            using SHA1 shaHasher = SHA1.Create ();
 
             md5Hasher?.Initialize ();
             shaHasher?.Initialize ();

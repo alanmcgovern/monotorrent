@@ -28,7 +28,6 @@ namespace MonoTorrent.Common
         List<TorrentCreator.InputFile> files;
 
         Factories TestFactories => Factories.Default
-            .WithSHA1Creator (() => new SHA1Fake ())
             .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true });
 
         [SetUp]

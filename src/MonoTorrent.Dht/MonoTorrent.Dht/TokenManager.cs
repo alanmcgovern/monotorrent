@@ -40,9 +40,9 @@ namespace MonoTorrent.Dht
         readonly RandomNumberGenerator random;
         readonly SHA1 sha1;
 
-        public TokenManager (SHA1 hasher)
+        public TokenManager ()
         {
-            sha1 = hasher;
+            sha1 = SHA1.Create ();
             random = new RNGCryptoServiceProvider ();
             currentSecret = new byte[10];
             previousSecret = new byte[10];

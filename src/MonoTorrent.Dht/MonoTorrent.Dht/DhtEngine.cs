@@ -97,12 +97,6 @@ namespace MonoTorrent.Dht
         #region Constructors
 
         public DhtEngine ()
-            : this (SHA1.Create ())
-        {
-
-        }
-
-        public DhtEngine (SHA1 hasher)
         {
             var monitor = new TransferMonitor ();
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
@@ -110,7 +104,7 @@ namespace MonoTorrent.Dht
             Monitor = monitor;
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
-            TokenManager = new TokenManager (hasher);
+            TokenManager = new TokenManager ();
             Torrents = new Dictionary<NodeId, List<Node>> ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMinutes (5), () => {

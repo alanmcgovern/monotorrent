@@ -116,7 +116,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
         {
             unsafeRandom = new Random ();
             random = RandomNumberGenerator.Create ();
-            hasher = factories.CreateSHA1 ();
+            hasher = SHA1.Create ();
 
             X = new byte[20];
             random.GetBytes (X);
