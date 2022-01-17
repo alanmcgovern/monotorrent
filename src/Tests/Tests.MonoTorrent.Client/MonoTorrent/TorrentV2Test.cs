@@ -94,7 +94,13 @@ namespace MonoTorrent.Common
             var torrent = Torrent.Load (V2OnlyTorrent);
             // A v2 only torrent does not have a regular infohash
             Assert.IsNull (torrent.InfoHash);
+            Assert.IsNull (torrent.PieceHashes);
+
             Assert.IsNotNull (torrent.InfoHashV2);
+            Assert.IsNotNull (torrent.PieceHashesV2);
+
+            Assert.IsFalse (torrent.PieceHashesV2.GetHash (torrent.PieceCount - 1).IsEmpty);
+            Assert.IsFalse (torrent.PieceHashesV2.GetHash (0).IsEmpty);
         }
     }
 }
