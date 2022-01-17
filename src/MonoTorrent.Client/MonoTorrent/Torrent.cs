@@ -310,9 +310,19 @@ namespace MonoTorrent
         public int PieceLength { get; private set; }
 
         /// <summary>
-        /// This is the array of hashes contained within the torrent.
+        /// The number of pieces in the torrent.
         /// </summary>
-        public Hashes Pieces { get; private set; }
+        public int PieceCount => PieceHashes != null ? PieceHashes.Count : PieceHashesV2.Count;
+
+        /// <summary>
+        /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
+        /// </summary>
+        public Hashes PieceHashes { get; private set; }
+
+        /// <summary>
+        /// This is the array of SHA256 piece hashes contained within the torrent. Used to validate torrents which comply with the V2 specification.
+        /// </summary>
+        public Hashes PieceHashesV2 { get; private set; }
 
         /// <summary>
         /// The name of the Publisher
@@ -364,19 +374,6 @@ namespace MonoTorrent
             => Name;
 
         /// <summary>
-        /// This method is called internally to read out the hashes from the info section of the
-        /// .torrent file.
-        /// </summary>
-        /// <param name="data">The Memory containing the hashes from the .torrent file</param>
-        void LoadHashPieces (ReadOnlyMemory<byte> data)
-        {
-            if (data.Length % 20 != 0)
-                throw new TorrentException ("Invalid infohash detected");
-
-            Pieces = new Hashes (data, data.Length / 20);
-        }
-
-        /// <summary>
         /// This method is called internally to load the information found within the "Info" section
         /// of the .torrent file
         /// </summary>
@@ -409,8 +406,12 @@ namespace MonoTorrent
                 }
             }
 
-            if (hasV1Data)
-                LoadHashPieces (((BEncodedString) dictionary["pieces"]).AsMemory ());
+            if (hasV1Data) {
+                var data = ((BEncodedString) dictionary["pieces"]).AsMemory ();
+                if (data.Length % 20 != 0)
+                    throw new TorrentException ("Invalid infohash detected");
+                PieceHashes = new Hashes (data, 20);
+            }
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
@@ -493,7 +494,7 @@ namespace MonoTorrent
                 var md5 = dictionary.TryGetValue("md5", out BEncodedValue value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
                 var ed2k = dictionary.TryGetValue ("ed2k", out value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
                 var sha1 = dictionary.TryGetValue ("sha1", out value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                int endPiece = Math.Min (Pieces.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
+                int endPiece = Math.Min (PieceCount - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly (new[] { new TorrentFile (path, length, 0, endPiece, 0, md5, ed2k, sha1) });
             }
         }
@@ -568,7 +569,7 @@ namespace MonoTorrent
 
                     case ("info"):
                         ProcessInfo (((BEncodedDictionary) keypair.Value));
-                        if (Pieces != null)
+                        if (PieceHashes != null)
                             InfoHash = InfoHash.FromMemory (infoHashes.SHA1);
                         if (SupportsV2Torrents && !infoHashes.SHA256.IsEmpty)
                             InfoHashV2 = InfoHash.FromMemory (infoHashes.SHA256);

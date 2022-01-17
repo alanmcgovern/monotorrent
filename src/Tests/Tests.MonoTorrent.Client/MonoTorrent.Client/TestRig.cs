@@ -302,7 +302,7 @@ namespace MonoTorrent.Client
         }
 
         public int Pieces {
-            get { return Torrent.Pieces.Count; }
+            get { return Torrent.PieceCount; }
         }
 
         public int TotalBlocks {

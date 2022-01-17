@@ -313,7 +313,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PartialProgress_AllDownloaded_AllDownloadable ()
         {
-            for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+            for (int i = 0; i < Manager.Torrent.PieceCount; i++)
                 Manager.OnPieceHashed (i, true);
 
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -328,7 +328,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PartialProgress_AllDownloaded_SomeDownloadable ()
         {
-            for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+            for (int i = 0; i < Manager.Torrent.PieceCount; i++)
                 Manager.OnPieceHashed (i, true);
 
             foreach (var file in Manager.Files)
@@ -395,7 +395,7 @@ namespace MonoTorrent.Client.Modes
         public async Task PartialProgress_RelatedDownloaded2 ()
         {
             var lastFile = Manager.Files.Last ();
-            Manager.OnPieceHashed (Manager.Torrent.Pieces.Count - 1, true);
+            Manager.OnPieceHashed (Manager.Torrent.PieceCount - 1, true);
 
             foreach (var file in Manager.Files)
                 await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
