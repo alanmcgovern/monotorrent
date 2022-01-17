@@ -33,82 +33,34 @@ namespace MonoTorrent
 {
     public class Hashes
     {
-        #region Constants
-        /// <summary>
-        /// Hash code length (in bytes)
-        /// </summary>
-        static readonly int HashCodeLength = 20;
-        #endregion
-
-
-        #region Private Fields
-
-        readonly ReadOnlyMemory<byte> hashData;
-
-        #endregion Private Fields
-
-
-        #region Properties
+        readonly int HashCodeLength;
+        readonly ReadOnlyMemory<byte> HashData;
 
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>
-        public int Count { get; }
+        public int Count => HashData.Length / HashCodeLength;
 
-        #endregion Properties
-
-
-        #region Constructors
-
-        internal Hashes (ReadOnlyMemory<byte> hashData, int count)
-        {
-            this.hashData = hashData;
-            Count = count;
-        }
-
-        #endregion Constructors
-
-
-        #region Methods
-
-        /// <summary>
-        /// Determine whether a calculated hash is equal to our stored hash
-        /// </summary>
-        /// <param name="hash">Hash code to check</param>
-        /// <param name="hashIndex">Index of hash/piece to verify against</param>
-        /// <returns>true iff hash is equal to our stored hash, false otherwise</returns>
-        public bool IsValid (byte[] hash, int hashIndex)
-            => IsValid (hash.AsSpan (), hashIndex);
-
-        internal bool IsValid (ReadOnlySpan<byte> hash, int hashIndex)
-        {
-            if (hash == null)
-                throw new ArgumentNullException (nameof (hash));
-
-            if (hash.Length != HashCodeLength)
-                throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
-
-            if (hashIndex < 0 || hashIndex >= Count)
-                throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
-
-            return hash.SequenceEqual (hashData.Span.Slice (hashIndex * HashCodeLength, hash.Length));
-        }
+        internal Hashes (ReadOnlyMemory<byte> hashData, int hashCodeLength)
+            => (HashData, HashCodeLength) = (hashData, hashCodeLength);
 
         /// <summary>
         /// Returns the hash for a specific piece
         /// </summary>
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
-        public byte[] ReadHash (int hashIndex)
+        public ReadOnlyMemory<byte> GetHash (int hashIndex)
+            => HashData.Slice (hashIndex * HashCodeLength, HashCodeLength);
+
+        public bool IsValid (ReadOnlySpan<byte> hash, int hashIndex)
         {
-            var buffer = new byte[20];
-            ReadHash (hashIndex, buffer);
-            return buffer;
+            if (hash.Length != HashCodeLength)
+                throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
+
+            if (hashIndex < 0 || hashIndex >= Count)
+                throw new ArgumentOutOfRangeException (nameof (hashIndex), $"hashIndex must be between 0 and {Count}");
+
+            return hash.SequenceEqual (HashData.Span.Slice (hashIndex * hash.Length, hash.Length));
         }
-
-        internal void ReadHash (int hashIndex, Span<byte> dest)
-            => hashData.Span.Slice (hashIndex * HashCodeLength, HashCodeLength).CopyTo (dest);
-
-        #endregion Methods
     }
 }

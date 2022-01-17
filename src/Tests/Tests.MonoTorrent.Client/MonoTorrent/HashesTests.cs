@@ -52,8 +52,8 @@ namespace MonoTorrent.Common
         [Test]
         public void Read_InvalidIndex ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.ReadHash (-1));
-            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.ReadHash (Hashes.Count));
+            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.GetHash (-1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.GetHash (Hashes.Count));
         }
     }
 }
