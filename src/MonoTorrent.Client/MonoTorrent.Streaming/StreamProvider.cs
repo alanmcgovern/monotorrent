@@ -62,7 +62,7 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <returns></returns>
-        public Task<Stream> CreateStreamAsync (ITorrentFileInfo file)
+        public Task<Stream> CreateStreamAsync (ITorrentManagerFile file)
             => CreateStreamAsync (file, prebuffer: true, CancellationToken.None);
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public Task<Stream> CreateStreamAsync (ITorrentFileInfo file, CancellationToken token)
+        public Task<Stream> CreateStreamAsync (ITorrentManagerFile file, CancellationToken token)
             => CreateStreamAsync (file, prebuffer: true, token);
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <returns></returns>
-        public Task<Stream> CreateStreamAsync (ITorrentFileInfo file, bool prebuffer)
+        public Task<Stream> CreateStreamAsync (ITorrentManagerFile file, bool prebuffer)
             => CreateStreamAsync (file, prebuffer, CancellationToken.None);
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace MonoTorrent.Streaming
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns></returns>
-        public async Task<Stream> CreateStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
+        public async Task<Stream> CreateStreamAsync (ITorrentManagerFile file, bool prebuffer, CancellationToken token)
         {
             if (file == null)
                 throw new ArgumentNullException (nameof (file));
@@ -134,7 +134,7 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file)
+        public Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file)
             => CreateHttpStreamAsync (file, prebuffer: true, CancellationToken.None);
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, CancellationToken token)
+        public Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, CancellationToken token)
             => CreateHttpStreamAsync (file, prebuffer: true, token);
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer)
+        public Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer)
             => CreateHttpStreamAsync (file, prebuffer, CancellationToken.None);
 
 
@@ -170,7 +170,7 @@ namespace MonoTorrent.Streaming
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
 
-        public async Task<IUriStream> CreateHttpStreamAsync (ITorrentFileInfo file, bool prebuffer, CancellationToken token)
+        public async Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);
             var httpStreamer = new HttpStream (stream);

@@ -46,7 +46,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IEquatable<TorrentManager>, ITorrentData
+    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo
     {
         #region Events
 
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
-        public async Task SetFilePriorityAsync (ITorrentFileInfo file, Priority priority)
+        public async Task SetFilePriorityAsync (ITorrentManagerFile file, Priority priority)
         {
             if (!Files.Contains (file))
                 throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
@@ -162,9 +162,10 @@ namespace MonoTorrent.Client
 
         public Error Error { get; private set; }
 
-        public IList<ITorrentFileInfo> Files { get; private set; }
+        IList<ITorrentFile> ITorrentInfo.Files => Torrent?.Files;
+        public IList<ITorrentManagerFile> Files { get; private set; }
 
-        string ITorrentData.Name => Torrent == null ? null : Torrent.Name;
+        string ITorrentInfo.Name => Torrent == null ? null : Torrent.Name;
 
         public int PieceLength => Torrent == null ? -1 : Torrent.PieceLength;
         public long Size => Torrent == null ? -1 : Torrent.Size;
@@ -213,7 +214,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// If <see cref="ITorrentFileInfo.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
+        /// If <see cref="ITorrentManagerFile.Priority"/> is set to <see cref="Priority.DoNotDownload"/> then the pieces
         /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
         /// to ensure pieces which have not been hash checked are never downloaded.
         /// </summary>
@@ -226,6 +227,8 @@ namespace MonoTorrent.Client
         public bool HasMetadata => Torrent != null;
 
         public InfoHash InfoHash => Torrent?.InfoHash ?? MagnetLink.InfoHash;
+
+        public InfoHash InfoHashV2 => Torrent?.InfoHashV2 ?? MagnetLink.InfoHashV2;
 
         /// <summary>
         /// The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <see cref="EngineSettings.MetadataCacheDirectory"/> directory.
@@ -571,7 +574,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task MoveFileAsync (ITorrentFileInfo file, string path)
+        public async Task MoveFileAsync (ITorrentManagerFile file, string path)
         {
             Check.File (file);
             Check.PathNotEmpty (path);
@@ -659,7 +662,7 @@ namespace MonoTorrent.Client
                     DownloadCompleteFullPath = downloadCompleteFullPath,
                     DownloadIncompleteFullPath = downloadIncompleteFullPath
                 };
-            }).Cast<ITorrentFileInfo> ().ToList ().AsReadOnly ();
+            }).Cast<ITorrentManagerFile> ().ToList ().AsReadOnly ();
 
             PieceManager.Initialise ();
             MetadataTask.SetResult (Torrent);

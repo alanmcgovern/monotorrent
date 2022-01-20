@@ -37,7 +37,7 @@ namespace MonoTorrent.PiecePicking
     {
         bool RefreshAfterSeeking = false;
 
-        ITorrentData TorrentData { get; set; }
+        ITorrentManagerInfo TorrentData { get; set; }
 
         IReadOnlyList<BitField> IgnoringBitfields { get; set; }
 
@@ -64,7 +64,7 @@ namespace MonoTorrent.PiecePicking
 
         MutableBitField Temp { get; set; }
 
-        public void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignoringBitfields)
+        public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<BitField> ignoringBitfields)
         {
             TorrentData = torrentData;
             IgnoringBitfields = ignoringBitfields;
@@ -246,7 +246,7 @@ namespace MonoTorrent.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        public void SeekToPosition (ITorrentFileInfo file, long position)
+        public void SeekToPosition (ITorrentManagerFile file, long position)
         {
             // Update the high priority set, then cancel pending requests.
             var oldIndex = HighPriorityPieceIndex;
@@ -260,7 +260,7 @@ namespace MonoTorrent.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        public void ReadToPosition (ITorrentFileInfo file, long position)
+        public void ReadToPosition (ITorrentManagerFile file, long position)
         {
             HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
         }

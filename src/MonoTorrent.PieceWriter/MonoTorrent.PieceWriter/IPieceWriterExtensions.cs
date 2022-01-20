@@ -35,7 +35,7 @@ namespace MonoTorrent.PieceWriter
 {
     static class IPieceWriterExtensions
     {
-        public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, Memory<byte> buffer)
+        public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
         {
             var count = request.RequestLength;
             var offset = request.ToByteOffset (manager.PieceLength);
@@ -69,7 +69,7 @@ namespace MonoTorrent.PieceWriter
             return totalRead;
         }
 
-        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentData manager, BlockInfo request, Memory<byte> buffer)
+        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
         {
             var count = request.RequestLength;
             var torrentOffset = request.ToByteOffset (manager.PieceLength);

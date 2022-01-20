@@ -50,8 +50,8 @@ namespace MonoTorrent.Client
 {
     public class TestWriter : IPieceWriter
     {
-        public List<ITorrentFileInfo> FilesThatExist = new List<ITorrentFileInfo> ();
-        public List<ITorrentFileInfo> DoNotReadFrom = new List<ITorrentFileInfo> ();
+        public List<ITorrentManagerFile> FilesThatExist = new List<ITorrentManagerFile> ();
+        public List<ITorrentManagerFile> DoNotReadFrom = new List<ITorrentManagerFile> ();
         public bool DontWrite;
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
 
         public int MaximumOpenFiles { get; }
 
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
+        public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             if (DoNotReadFrom.Contains (file))
                 return ReusableTask.FromResult (0);
@@ -77,12 +77,12 @@ namespace MonoTorrent.Client
             return ReusableTask.FromResult (buffer.Length);
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
+        public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask CloseAsync (ITorrentFileInfo file)
+        public ReusableTask CloseAsync (ITorrentManagerFile file)
         {
             return ReusableTask.CompletedTask;
         }
@@ -92,17 +92,17 @@ namespace MonoTorrent.Client
             // Nothing
         }
 
-        public ReusableTask FlushAsync (ITorrentFileInfo file)
+        public ReusableTask FlushAsync (ITorrentManagerFile file)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
+        public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
             return ReusableTask.FromResult (FilesThatExist.Contains (file));
         }
 
-        public ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
+        public ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
         }
@@ -389,14 +389,14 @@ namespace MonoTorrent.Client
 
         #region Rig Creation
 
-        readonly TorrentFile[] files;
-        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, TorrentFile[] files)
+        readonly ITorrentFile[] files;
+        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, ITorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
 
         }
 
-        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
+        TestRig (string savePath, int piecelength, IPieceWriter writer, string[][] trackers, ITorrentFile[] files, bool metadataMode)
         {
             this.files = files;
             this.savePath = savePath;
@@ -440,7 +440,7 @@ namespace MonoTorrent.Client
             dict["announce-list"] = announces;
         }
 
-        static BEncodedDictionary CreateTorrent (int pieceLength, TorrentFile[] files, string[][] tier)
+        static BEncodedDictionary CreateTorrent (int pieceLength, ITorrentFile[] files, string[][] tier)
         {
             BEncodedDictionary dict = new BEncodedDictionary ();
             BEncodedDictionary infoDict = new BEncodedDictionary ();
@@ -456,17 +456,17 @@ namespace MonoTorrent.Client
             return dict;
         }
 
-        internal static Torrent CreateMultiFileTorrent (TorrentFile[] files, int pieceLength)
+        internal static Torrent CreateMultiFileTorrent (ITorrentFile[] files, int pieceLength)
             => CreateMultiFileTorrent (files, pieceLength, out BEncodedDictionary _);
 
-        internal static Torrent CreateMultiFileTorrent (TorrentFile[] files, int pieceLength, out BEncodedDictionary torrentInfo)
+        internal static Torrent CreateMultiFileTorrent (ITorrentFile[] files, int pieceLength, out BEncodedDictionary torrentInfo)
         {
             using var rig = CreateMultiFile (files, pieceLength);
             torrentInfo = rig.TorrentDict;
             return rig.Torrent;
         }
 
-        static void AddFiles (BEncodedDictionary dict, TorrentFile[] files, int pieceLength)
+        static void AddFiles (BEncodedDictionary dict, ITorrentFile[] files, int pieceLength)
         {
             long totalSize = pieceLength - 1;
             var bFiles = new BEncodedList ();
@@ -498,7 +498,7 @@ namespace MonoTorrent.Client
             return new TestRig ("", StandardPieceSize (), StandardWriter (), StandardTrackers (), StandardMultiFile ());
         }
 
-        internal static TestRig CreateMultiFile (TorrentFile[] files, int pieceLength, IPieceWriter writer = null)
+        internal static TestRig CreateMultiFile (ITorrentFile[] files, int pieceLength, IPieceWriter writer = null)
         {
             return new TestRig ("", pieceLength, writer ?? StandardWriter (), StandardTrackers (), files);
         }
@@ -525,7 +525,7 @@ namespace MonoTorrent.Client
             return 256 * 1024;
         }
 
-        static TorrentFile[] StandardMultiFile ()
+        static ITorrentFile[] StandardMultiFile ()
         {
             return TorrentFile.Create (StandardPieceSize (),
                 ("Dir1/File1", (int) (StandardPieceSize () * 0.44)),
@@ -535,7 +535,7 @@ namespace MonoTorrent.Client
             );
         }
 
-        static TorrentFile[] StandardSingleFile ()
+        static ITorrentFile[] StandardSingleFile ()
         {
             return TorrentFile.Create (StandardPieceSize (), ("Dir1/File1", (int) (StandardPieceSize () * 0.44)));
         }
@@ -574,7 +574,7 @@ namespace MonoTorrent.Client
 
         internal static TestRig CreateSingleFile (long torrentSize, int pieceLength, bool metadataMode)
         {
-            TorrentFile[] files = StandardSingleFile ();
+            ITorrentFile[] files = StandardSingleFile ();
             files[0] = TorrentFile.Create (pieceLength, (files[0].Path, torrentSize)).Single ();
             return new TestRig ("", pieceLength, StandardWriter (), StandardTrackers (), files, metadataMode);
         }
@@ -595,7 +595,7 @@ namespace MonoTorrent.Client
             return CreateMultiFileManager (files, pieceLength, writer);
         }
 
-        internal static TorrentManager CreateMultiFileManager (TorrentFile[] files, int pieceLength, IPieceWriter writer = null)
+        internal static TorrentManager CreateMultiFileManager (ITorrentFile[] files, int pieceLength, IPieceWriter writer = null)
         {
             return CreateMultiFile (files, pieceLength, writer: writer).Manager;
         }

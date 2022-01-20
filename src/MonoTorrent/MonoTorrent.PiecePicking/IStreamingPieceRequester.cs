@@ -39,7 +39,7 @@ namespace MonoTorrent.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        void SeekToPosition (ITorrentFileInfo file, long position);
+        void SeekToPosition (ITorrentManagerFile file, long position);
 
         /// <summary>
         /// Inform the picker that we have sequentially read data and so will need to update the high priority set without
@@ -47,6 +47,6 @@ namespace MonoTorrent.PiecePicking
         /// </summary>
         /// <param name="file"></param>
         /// <param name="position"></param>
-        void ReadToPosition (ITorrentFileInfo file, long position);
+        void ReadToPosition (ITorrentManagerFile file, long position);
     }
 }

@@ -1,10 +1,10 @@
 ﻿//
-// DiskWriter.cs
+// ITorrentInfo.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2022 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -31,14 +31,22 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public interface ITorrentData
+    public interface ITorrentInfo
     {
         /// <summary>
         /// The files contained within the Torrent
         /// </summary>
-        IList<ITorrentFileInfo> Files { get; }
+        IList<ITorrentFile> Files { get; }
 
+        /// <summary>
+        /// The SHA1 hash for this torrent. Used by torrents which comply with the v1 specification, or hybrid v1/v2 torrents.
+        /// </summary>
         InfoHash InfoHash { get; }
+
+        /// <summary>
+        /// The SHA256 hash for this torrent. Used by torrents which comply with the v2 specification, or hybrid v1/v2 torrents.
+        /// </summary>
+        InfoHash InfoHashV2 { get; }
 
         /// <summary>
         /// The name of the Torrent.
@@ -56,9 +64,9 @@ namespace MonoTorrent
         long Size { get; }
     }
 
-    public static class ITorrentDataExtensions
+    public static class ITorrentInfoExtensions
     {
-        public static int BlocksPerPiece (this ITorrentData self, int pieceIndex)
+        public static int BlocksPerPiece (this ITorrentInfo self, int pieceIndex)
         {
             if (pieceIndex < self.PieceCount () - 1)
                 return (Constants.BlockSize - 1 + self.PieceLength) / Constants.BlockSize;
@@ -67,14 +75,14 @@ namespace MonoTorrent
             return (int) ((remainder + Constants.BlockSize - 1) / Constants.BlockSize);
         }
 
-        public static int BytesPerPiece (this ITorrentData self, int pieceIndex)
+        public static int BytesPerPiece (this ITorrentInfo self, int pieceIndex)
         {
             if (pieceIndex < self.PieceCount () - 1)
                 return self.PieceLength;
             return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
         }
 
-        public static int ByteOffsetToPieceIndex (this ITorrentData self, long offset)
+        public static int ByteOffsetToPieceIndex (this ITorrentInfo self, long offset)
             => (int) (offset / self.PieceLength);
 
         /// <summary>
@@ -82,10 +90,10 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public static int PieceCount (this ITorrentData self)
+        public static int PieceCount (this ITorrentInfo self)
             => (int) ((self.Size + self.PieceLength - 1) / self.PieceLength);
 
-        public static long PieceIndexToByteOffset (this ITorrentData self, int pieceIndex)
+        public static long PieceIndexToByteOffset (this ITorrentInfo self, int pieceIndex)
             => (long) self.PieceLength * pieceIndex;
     }
 }

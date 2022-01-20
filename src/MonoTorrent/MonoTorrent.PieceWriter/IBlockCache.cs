@@ -82,7 +82,7 @@ namespace MonoTorrent.PieceWriter
         /// <param name="block"></param>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        ReusableTask<bool> ReadAsync (ITorrentData torrent, BlockInfo block, Memory<byte> buffer);
+        ReusableTask<bool> ReadAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer);
 
         /// <summary>
         /// If the block of data is available in the cache, the data is read into the buffer and the method returns true.
@@ -92,7 +92,7 @@ namespace MonoTorrent.PieceWriter
         /// <param name="block"></param>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        ReusableTask<bool> ReadFromCacheAsync (ITorrentData torrent, BlockInfo block, Memory<byte> buffer);
+        ReusableTask<bool> ReadFromCacheAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer);
 
         /// <summary>
         /// Set the max capacity, in bytes.
@@ -111,6 +111,6 @@ namespace MonoTorrent.PieceWriter
         /// <param name="buffer"></param>
         /// <param name="preferSkipCache"></param>
         /// <returns></returns>
-        ReusableTask WriteAsync (ITorrentData torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache);
+        ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache);
     }
 }

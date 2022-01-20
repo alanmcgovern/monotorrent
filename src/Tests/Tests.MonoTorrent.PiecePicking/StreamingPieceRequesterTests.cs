@@ -40,10 +40,12 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class StreamingPieceRequesterTests
     {
-        class TorrentData : ITorrentData
+        class TorrentData : ITorrentManagerInfo
         {
-            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (Constants.BlockSize * 8, 1024 * 1024 * 8);
+            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
+            public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (Constants.BlockSize * 8, 1024 * 1024 * 8);
             public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public InfoHash InfoHashV2 { get; } = new InfoHash (new byte[32]);
             public string Name => "Test Torrent";
             public int PieceLength => Constants.BlockSize * 8;
             public long Size => Files[0].Length;

@@ -64,12 +64,12 @@ namespace MonoTorrent.Client
             return ReceiveMessageAsync (connection, decryptor, null, null, null, null);
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentManagerInfo torrentData)
         {
             return (await ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, default)).message;
         }
 
-        public static async ReusableTask<(PeerMessage message, PeerMessage.Releaser releaser)> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentData torrentData, SocketMemory buffer)
+        public static async ReusableTask<(PeerMessage message, PeerMessage.Releaser releaser)> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentManagerInfo torrentData, SocketMemory buffer)
         {
             await MainLoop.SwitchToThreadpool ();
 

@@ -46,18 +46,18 @@ namespace MonoTorrent.Client
         {
             public bool exist, close, flush, move, read, write;
 
-            public List<ITorrentFileInfo> FlushedFiles = new List<ITorrentFileInfo> ();
+            public List<ITorrentManagerFile> FlushedFiles = new List<ITorrentManagerFile> ();
 
             public int MaximumOpenFiles { get; }
 
-            public ReusableTask CloseAsync (ITorrentFileInfo file)
+            public ReusableTask CloseAsync (ITorrentManagerFile file)
             {
                 if (close)
                     throw new Exception ("close");
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
+            public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
             {
                 if (exist)
                     throw new Exception ("exists");
@@ -69,7 +69,7 @@ namespace MonoTorrent.Client
 
             }
 
-            public ReusableTask FlushAsync (ITorrentFileInfo file)
+            public ReusableTask FlushAsync (ITorrentManagerFile file)
             {
                 if (flush)
                     throw new Exception ("flush");
@@ -77,21 +77,21 @@ namespace MonoTorrent.Client
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask MoveAsync (ITorrentFileInfo file, string newPath, bool overwrite)
+            public ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
             {
                 if (move)
                     throw new Exception ("move");
                 return ReusableTask.CompletedTask;
             }
 
-            public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
+            public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
             {
                 if (read)
                     throw new Exception ("read");
                 return ReusableTask.FromResult (buffer.Length);
             }
 
-            public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
+            public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
             {
                 if (write)
                     throw new Exception ("write");
@@ -104,10 +104,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        class TestTorrentData : ITorrentData
+        class TestTorrentData : ITorrentManagerInfo
         {
-            public IList<ITorrentFileInfo> Files { get; set; }
+            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
+            public IList<ITorrentManagerFile> Files { get; set; }
             public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public InfoHash InfoHashV2 { get; } = new InfoHash (new byte[32]);
             public string Name => "Test Torrent";
             public int PieceLength { get; set; }
             public long Size { get; set; }

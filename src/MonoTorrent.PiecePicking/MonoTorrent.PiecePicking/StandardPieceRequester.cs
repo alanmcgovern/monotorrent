@@ -37,12 +37,12 @@ namespace MonoTorrent.PiecePicking
         IReadOnlyList<BitField> IgnorableBitfields { get; set; }
         Memory<BlockInfo> RequestBufferCache { get; set; }
         MutableBitField Temp { get; set; }
-        ITorrentData TorrentData { get; set; }
+        ITorrentManagerInfo TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
         public IPiecePicker Picker { get; private set; }
 
-        public void Initialise (ITorrentData torrentData, IReadOnlyList<BitField> ignoringBitfields)
+        public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<BitField> ignoringBitfields)
         {
             IgnorableBitfields = ignoringBitfields;
             TorrentData = torrentData;

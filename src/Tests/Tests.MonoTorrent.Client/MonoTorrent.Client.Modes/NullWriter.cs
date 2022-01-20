@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
     {
         public int MaximumOpenFiles { get; }
 
-        public ReusableTask CloseAsync (ITorrentFileInfo file)
+        public ReusableTask CloseAsync (ITorrentManagerFile file)
         {
             return ReusableTask.CompletedTask;
         }
@@ -20,22 +20,22 @@ namespace MonoTorrent.Client
         {
         }
 
-        public ReusableTask<bool> ExistsAsync (ITorrentFileInfo file)
+        public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
             return ReusableTask.FromResult (false);
         }
 
-        public ReusableTask FlushAsync (ITorrentFileInfo file)
+        public ReusableTask FlushAsync (ITorrentManagerFile file)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask MoveAsync (ITorrentFileInfo file, string fullPath, bool overwrite)
+        public ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (ITorrentFileInfo file, long offset, Memory<byte> buffer)
+        public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
         }
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask WriteAsync (ITorrentFileInfo file, long offset, ReadOnlyMemory<byte> buffer)
+        public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }

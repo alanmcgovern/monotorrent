@@ -32,7 +32,7 @@ using System.Linq;
 
 namespace MonoTorrent.Client
 {
-    class TorrentFileInfo : ITorrentFileInfo
+    class TorrentFileInfo : ITorrentManagerFile
     {
         public static string IncompleteFileSuffix => ".!mt";
 
@@ -57,6 +57,8 @@ namespace MonoTorrent.Client
         public int EndPieceIndex => TorrentFile.EndPieceIndex;
 
         public long Length => TorrentFile.Length;
+
+        public ReadOnlyMemory<byte> PiecesRoot { get; }
 
         public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
         {

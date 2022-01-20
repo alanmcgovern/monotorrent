@@ -41,8 +41,8 @@ namespace MonoTorrent.PieceWriter
     public class DiskWriterTests
     {
         string Temp { get; set; }
-        ITorrentFileInfo[] Others { get; set; }
-        ITorrentFileInfo TorrentFile { get; set; }
+        ITorrentManagerFile[] Others { get; set; }
+        ITorrentManagerFile TorrentFile { get; set; }
 
         [SetUp]
         public void Setup ()

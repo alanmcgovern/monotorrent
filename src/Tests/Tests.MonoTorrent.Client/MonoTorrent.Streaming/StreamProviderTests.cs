@@ -55,7 +55,7 @@ namespace MonoTorrent.Streaming
 
             PieceWriter = new TestWriter ();
             await Engine.DiskManager.SetWriterAsync (PieceWriter);
-            Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Constants.BlockSize * 1024, 0, 1024 / 8 - 1, 0, null, null, null) }, Constants.BlockSize * 8, out torrentInfo);
+            Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Constants.BlockSize * 1024, 0, 1024 / 8 - 1, 0) }, Constants.BlockSize * 8, out torrentInfo);
             MagnetLink = new MagnetLink (Torrent.InfoHash, "MagnetDownload");
         }
 

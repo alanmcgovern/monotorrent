@@ -37,9 +37,9 @@ namespace MonoTorrent.PiecePicking
         class Files : IComparable<Files>
         {
             public Priority Priority { get; private set; }
-            public ITorrentFileInfo File;
+            public ITorrentManagerFile File;
 
-            public Files (ITorrentFileInfo file)
+            public Files (ITorrentManagerFile file)
             {
                 Priority = file.Priority;
                 File = file;
@@ -71,7 +71,7 @@ namespace MonoTorrent.PiecePicking
             AllSamePriority = file => file.Priority == files[0].Priority;
         }
 
-        public override void Initialise (ITorrentData torrentData)
+        public override void Initialise (ITorrentManagerInfo torrentData)
         {
             base.Initialise (torrentData);
 
