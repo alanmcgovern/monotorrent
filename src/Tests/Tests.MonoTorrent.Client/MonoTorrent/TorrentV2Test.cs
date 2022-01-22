@@ -49,7 +49,9 @@ namespace MonoTorrent.Common
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
+            Torrent.SupportsV2Torrents = true;
             V2OnlyTorrent = Torrent.Load (V2OnlyTorrentPath);
+            Torrent.SupportsV2Torrents = false;
         }
 
         [SetUp]
@@ -114,7 +116,48 @@ namespace MonoTorrent.Common
         public void BlocksPerPiece ()
         {
             foreach (var file in V2OnlyTorrent.Files) {
-                Enumerable.Range (file.StartPieceIndex, file.EndPieceIndex - file.StartPieceIndex + 1).Select (t => V2OnlyTorrent);
+                var actualBlocks = Enumerable.Range (file.StartPieceIndex, file.EndPieceIndex - file.StartPieceIndex + 1)
+                    .Select (V2OnlyTorrent.BlocksPerPiece)
+                    .Sum ();
+                var expectedBlocks = (file.Length + Constants.BlockSize - 1) / Constants.BlockSize;
+                Assert.AreEqual (expectedBlocks, actualBlocks);
+            }
+        }
+
+        [Test]
+        public void ByteOffsetToPieceIndex ()
+        {
+            long runningTotal = 0;
+            foreach (var file in V2OnlyTorrent.Files) {
+                Assert.AreEqual (file.StartPieceIndex, V2OnlyTorrent.ByteOffsetToPieceIndex (runningTotal));
+                Assert.AreEqual (file.EndPieceIndex, V2OnlyTorrent.ByteOffsetToPieceIndex (runningTotal + file.Length - 1));
+                runningTotal += file.Length;
+            }
+        }
+
+        [Test]
+        public void BytesPerPiece ()
+        {
+            foreach (var file in V2OnlyTorrent.Files) {
+                Assert.AreEqual (file.Length % V2OnlyTorrent.PieceLength, V2OnlyTorrent.BytesPerPiece (file.EndPieceIndex));
+            }
+        }
+
+        [Test]
+        public void PieceCount ()
+        {
+            Assert.AreEqual (V2OnlyTorrent.PieceCount, V2OnlyTorrent.Files.Last ().EndPieceIndex + 1);
+            Assert.AreEqual (V2OnlyTorrent.PieceCount, ((ITorrentInfo)V2OnlyTorrent).PieceCount ());
+        }
+
+        [Test]
+        public void PieceIndexToByteOffset ()
+        {
+            long runningTotal = 0;
+            foreach (var file in V2OnlyTorrent.Files) {
+                Assert.AreEqual (runningTotal, V2OnlyTorrent.PieceIndexToByteOffset (file.StartPieceIndex));
+                Assert.AreEqual (runningTotal + file.Length - (file.Length % V2OnlyTorrent.PieceLength), V2OnlyTorrent.PieceIndexToByteOffset (file.EndPieceIndex));
+                runningTotal += file.Length;
             }
         }
     }

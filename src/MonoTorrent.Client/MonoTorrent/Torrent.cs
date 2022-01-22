@@ -743,8 +743,9 @@ namespace MonoTorrent
                     files.Add (new TorrentFile (path, length, 0, 0, 0));
                 } else {
                     totalPieces++;
+                    var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0);
                     var piecesRoot = data.TryGetValue ("pieces root", out var value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), pieceLength * totalPieces, piecesRoot));
+                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), offsetInTorrent, piecesRoot));
                     totalPieces = files.Last ().EndPieceIndex;
                 }
             } else {

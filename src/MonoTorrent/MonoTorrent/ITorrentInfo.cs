@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent
@@ -66,24 +67,54 @@ namespace MonoTorrent
 
     public static class ITorrentInfoExtensions
     {
-        public static int BlocksPerPiece (this ITorrentInfo self, int pieceIndex)
-        {
-            if (pieceIndex < self.PieceCount () - 1)
-                return (Constants.BlockSize - 1 + self.PieceLength) / Constants.BlockSize;
+        static bool IsV1Only (this ITorrentInfo self)
+            => self.InfoHash != null && self.InfoHashV2 == null;
 
-            var remainder = self.Size - self.PieceIndexToByteOffset (pieceIndex);
-            return (int) ((remainder + Constants.BlockSize - 1) / Constants.BlockSize);
-        }
+        static bool IsV2Only (this ITorrentInfo self)
+            => self.InfoHash == null && self.InfoHashV2 != null;
+
+        static bool IsHybrid (this ITorrentInfo self)
+            => self.InfoHash != null && self.InfoHashV2 != null;
+
+        public static int BlocksPerPiece (this ITorrentInfo self, int pieceIndex)
+            => (BytesPerPiece (self, pieceIndex) + Constants.BlockSize - 1) / Constants.BlockSize;
 
         public static int BytesPerPiece (this ITorrentInfo self, int pieceIndex)
         {
-            if (pieceIndex < self.PieceCount () - 1)
-                return self.PieceLength;
-            return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
+            if (self.IsV1Only ()) {
+                if (pieceIndex < self.PieceCount () - 1)
+                    return self.PieceLength;
+                return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
+            } else if (self.IsV2Only ()) {
+                for (int i = 0; i < self.Files.Count; i++) {
+                    var file = self.Files[i];
+                    if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex)
+                        continue;
+                    var remainder = file.Length - (pieceIndex - file.StartPieceIndex) * self.PieceLength;
+                    return (int) (remainder > self.PieceLength ? self.PieceLength : remainder);
+                }
+                throw new ArgumentOutOfRangeException (nameof (pieceIndex));
+            } else {
+                throw new NotSupportedException ("hybrid torrents aren't supported");
+            }
         }
 
         public static int ByteOffsetToPieceIndex (this ITorrentInfo self, long offset)
-            => (int) (offset / self.PieceLength);
+        {
+            if (self.IsV1Only ()) {
+                return (int) (offset / self.PieceLength);
+            } else if (self.IsV2Only ()) {
+                for (int i = 0; i < self.Files.Count; i++) {
+                    var file = self.Files[i];
+                    if (offset < file.OffsetInTorrent || offset >= file.OffsetInTorrent + file.Length)
+                        continue;
+                    return file.StartPieceIndex + (int) ((offset - file.OffsetInTorrent) / self.PieceLength);
+                }
+                throw new ArgumentOutOfRangeException (nameof (offset));
+            } else {
+                throw new NotSupportedException ("Hybrid torrents aren't supported");
+            }
+        }
 
         /// <summary>
         /// The number of pieces in the torrent
@@ -91,9 +122,30 @@ namespace MonoTorrent
         /// <param name="self"></param>
         /// <returns></returns>
         public static int PieceCount (this ITorrentInfo self)
-            => (int) ((self.Size + self.PieceLength - 1) / self.PieceLength);
+        {
+            if (self.IsV1Only ())
+                return (int) ((self.Size + self.PieceLength - 1) / self.PieceLength);
+            else if (self.IsV2Only ())
+                return self.Files[self.Files.Count - 1].EndPieceIndex + 1;
+            else
+                throw new NotSupportedException ();
+        }
 
         public static long PieceIndexToByteOffset (this ITorrentInfo self, int pieceIndex)
-            => (long) self.PieceLength * pieceIndex;
+        {
+            if (self.IsV1Only ()) {
+                return (long) (long) self.PieceLength * pieceIndex;
+            } else if (self.IsV2Only ()) {
+                for (int i = 0; i < self.Files.Count; i++) {
+                    var file = self.Files[i];
+                    if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex)
+                        continue;
+                    return file.OffsetInTorrent + ((pieceIndex - file.StartPieceIndex) * (long) self.PieceLength);
+                }
+                throw new ArgumentOutOfRangeException (nameof (pieceIndex));
+            } else {
+                throw new NotSupportedException ("Hybrid torrents aren't supported");
+            }
+        }
     }
 }
