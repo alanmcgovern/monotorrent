@@ -228,6 +228,15 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void DownloadMagnetLink_SameTwice ()
+        {
+            var link = MagnetLink.Parse ("magnet:?xt=urn:btih:1234512345123451234512345123451234512345");
+            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var first = engine.AddAsync (link, "");
+            Assert.ThrowsAsync<TorrentException> (() => engine.AddAsync (link, ""));
+        }
+
+        [Test]
         public void DownloadMetadata_SameTwice ()
         {
             var link = MagnetLink.Parse ("magnet:?xt=urn:btih:1234512345123451234512345123451234512345");
