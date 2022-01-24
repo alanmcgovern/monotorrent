@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
 
         readonly ICache<IncrementalHashData> IncrementalHashCache;
 
-        readonly Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentData, int>, IncrementalHashData> ();
+        readonly Dictionary<ValueTuple<ITorrentManagerInfo, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentManagerInfo, int>, IncrementalHashData> ();
 
         class IncrementalHashData : ICacheable
         {
@@ -75,13 +75,13 @@ namespace MonoTorrent.Client
 
         struct BufferedIO
         {
-            public readonly ITorrentData manager;
+            public readonly ITorrentManagerInfo manager;
             public readonly BlockInfo request;
             public readonly Memory<byte> buffer;
             public readonly ReusableTaskCompletionSource<bool> tcs;
             public readonly bool preferSkipCache;
 
-            public BufferedIO (ITorrentData manager, BlockInfo request, Memory<byte> buffer, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
                 this.request = request;
@@ -218,14 +218,14 @@ namespace MonoTorrent.Client
             Cache.Dispose ();
         }
 
-        internal async Task<bool> CheckFileExistsAsync (ITorrentFileInfo file)
+        internal async Task<bool> CheckFileExistsAsync (ITorrentManagerFile file)
         {
             await IOLoop;
 
             return await Cache.Writer.ExistsAsync (file).ConfigureAwait (false);
         }
 
-        internal async Task<bool> CheckAnyFilesExistAsync (ITorrentData manager)
+        internal async Task<bool> CheckAnyFilesExistAsync (ITorrentManagerInfo manager)
         {
             await IOLoop;
 
@@ -235,9 +235,9 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal Func<ITorrentData, int, Memory<byte>, Task<bool>> GetHashAsyncOverride;
+        internal Func<ITorrentManagerInfo, int, Memory<byte>, Task<bool>> GetHashAsyncOverride;
 
-        internal async ReusableTask<bool> GetHashAsync (ITorrentData manager, int pieceIndex, Memory<byte> dest)
+        internal async ReusableTask<bool> GetHashAsync (ITorrentManagerInfo manager, int pieceIndex, Memory<byte> dest)
         {
             if (GetHashAsyncOverride != null) {
                 return await GetHashAsyncOverride (manager, pieceIndex, dest);
@@ -306,7 +306,7 @@ namespace MonoTorrent.Client
             return await tcs.Task;
         }
 
-        internal async Task CloseFilesAsync (ITorrentData manager)
+        internal async Task CloseFilesAsync (ITorrentManagerInfo manager)
         {
             await IOLoop;
 
@@ -322,7 +322,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The torrent containing the files to flush</param>
         /// <returns></returns>
-        public Task FlushAsync (ITorrentData manager)
+        public Task FlushAsync (ITorrentManagerInfo manager)
         {
             return FlushAsync (manager, 0, manager.PieceCount () - 1);
         }
@@ -335,7 +335,7 @@ namespace MonoTorrent.Client
         /// <param name="startIndex">The first index of the piece to flush.</param>
         /// <param name="endIndex">The final index of the piece to flush.</param>
         /// <returns></returns>
-        public async Task FlushAsync (ITorrentData manager, int startIndex, int endIndex)
+        public async Task FlushAsync (ITorrentManagerInfo manager, int startIndex, int endIndex)
         {
             if (manager is null)
                 throw new ArgumentNullException (nameof (manager));
@@ -353,13 +353,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal Task MoveFileAsync (ITorrentFileInfo file, string newPath)
+        internal Task MoveFileAsync (ITorrentManagerFile file, string newPath)
             => MoveFileAsync ((TorrentFileInfo) file, newPath);
 
         internal Task MoveFileAsync (TorrentFileInfo file, string newPath)
             => MoveFileAsync (file, newPath, false);
 
-        internal async Task MoveFilesAsync (IList<ITorrentFileInfo> files, string newRoot, bool overwrite)
+        internal async Task MoveFilesAsync (IList<ITorrentManagerFile> files, string newRoot, bool overwrite)
         {
             foreach (TorrentFileInfo file in files)
                 await MoveFileAsync (file, Path.Combine (newRoot, file.Path), overwrite);
@@ -376,7 +376,7 @@ namespace MonoTorrent.Client
             file.FullPath = newPath;
         }
 
-        internal async ReusableTask<bool> ReadAsync (ITorrentData manager, BlockInfo request, Memory<byte> buffer)
+        internal async ReusableTask<bool> ReadAsync (ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
         {
             Interlocked.Add (ref pendingReadBytes, request.RequestLength);
 
@@ -395,13 +395,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal async Task<bool> ReadAsync (ITorrentFileInfo file, long position, Memory<byte> buffer)
+        internal async Task<bool> ReadAsync (ITorrentManagerFile file, long position, Memory<byte> buffer)
         {
             await IOLoop;
             return await Cache.Writer.ReadAsync (file, position, buffer) == buffer.Length;
         }
 
-        internal async ReusableTask WriteAsync (ITorrentData manager, BlockInfo request, Memory<byte> buffer)
+        internal async ReusableTask WriteAsync (ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
         {
             if (request.RequestLength < 1)
                 throw new ArgumentOutOfRangeException (nameof (request.RequestLength), $"Count must be greater than zero, but was {request.RequestLength}.");
@@ -454,7 +454,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTask TryIncrementallyHashFromMemory (ITorrentData torrent, int pieceIndex, IncrementalHashData incrementalHash)
+        async ReusableTask TryIncrementallyHashFromMemory (ITorrentManagerInfo torrent, int pieceIndex, IncrementalHashData incrementalHash)
         {
             var sizeOfPiece = torrent.BytesPerPiece (pieceIndex);
             using var releaser = BufferPool.Rent (Constants.BlockSize, out Memory<byte> buffer);

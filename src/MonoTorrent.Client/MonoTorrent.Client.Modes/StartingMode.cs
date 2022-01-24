@@ -133,7 +133,7 @@ namespace MonoTorrent.Client.Modes
             // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
             // a zero length file and someone deletes it after the first piece has been written to disk, it will
             // never be recreated. If the downloaded data requires this file to exist, we have an issue.
-            foreach (ITorrentFileInfo file in Manager.Files) {
+            foreach (ITorrentManagerFile file in Manager.Files) {
                 if (!file.BitField.AllFalse && file.Length > 0) {
                     if (!await DiskManager.CheckFileExistsAsync (file)) {
                         Manager.SetNeedsHashCheck ();

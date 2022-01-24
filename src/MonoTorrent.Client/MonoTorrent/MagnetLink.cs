@@ -43,11 +43,15 @@ namespace MonoTorrent
         }
 
         /// <summary>
-        /// The infohash of the torrent.
+        /// The SHA1 hash for this torrent. Used by torrents which comply with the v1 specification, or hybrid v1/v2 torrents.
         /// </summary>
-        public InfoHash InfoHash {
-            get;
-        }
+        public InfoHash InfoHash { get; }
+
+        /// <summary>
+        /// The SHA256 hash for this torrent. Used by torrents which comply with the v2 specification, or hybrid v1/v2 torrents.
+        /// </summary>
+        public InfoHash InfoHashV2 { get; }
+        // FIXME: bep52: support this.
 
         /// <summary>
         /// The size in bytes of the data, if available.
@@ -73,6 +77,13 @@ namespace MonoTorrent
         public MagnetLink (InfoHash infoHash, string name = null, IList<string> announceUrls = null, IEnumerable<string> webSeeds = null, long? size = null)
         {
             InfoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            if (InfoHash.AsMemory ().Length == 20)
+                InfoHash = infoHash;
+            else if (InfoHash.AsMemory ().Length == 32)
+                InfoHashV2 = infoHash;
+            else
+                throw new NotSupportedException ();
+
             Name = name;
             AnnounceUrls = new List<string> (announceUrls ?? Array.Empty<string> ()).AsReadOnly ();
             Webseeds = new List<string> (webSeeds ?? Array.Empty<string> ()).AsReadOnly ();

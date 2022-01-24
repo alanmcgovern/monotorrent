@@ -37,11 +37,6 @@ namespace MonoTorrent
     public sealed class TorrentFile : IEquatable<TorrentFile>, ITorrentFile
     {
         /// <summary>
-        /// The ED2K hash of the file
-        /// </summary>
-        public ReadOnlyMemory<byte> ED2K { get; }
-
-        /// <summary>
         /// The index of the last piece of this file
         /// </summary>
         public int EndPieceIndex { get; }
@@ -52,21 +47,11 @@ namespace MonoTorrent
         public long Length { get; }
 
         /// <summary>
-        /// The MD5 hash of the file
-        /// </summary>
-        public ReadOnlyMemory<byte> MD5 { get; }
-
-        /// <summary>
         /// In the case of a single torrent file, this is the name of the file.
         /// In the case of a multi-file torrent this is the relative path of the file
         /// (including the filename) from the base directory
         /// </summary>
         public string Path { get; }
-
-        /// <summary>
-        /// The SHA1 hash of the file
-        /// </summary>
-        public ReadOnlyMemory<byte> SHA1 { get; }
 
         /// <summary>
         /// The index of the first piece of this file
@@ -81,17 +66,12 @@ namespace MonoTorrent
         public ReadOnlyMemory<byte> PiecesRoot { get; }
 
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty)
         {
 
         }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> md5, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, md5, ed2k, sha1, null)
-        {
-        }
-
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> md5, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1, ReadOnlyMemory<byte> piecesRoot)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> piecesRoot)
         {
             Path = path;
             Length = length;
@@ -101,10 +81,6 @@ namespace MonoTorrent
             OffsetInTorrent = offsetInTorrent;
 
             PiecesRoot = piecesRoot;
-
-            ED2K = ed2k;
-            MD5 = md5;
-            SHA1 = sha1;
         }
 
         public override bool Equals (object obj)
@@ -128,16 +104,16 @@ namespace MonoTorrent
             return sb.ToString ();
         }
 
-        internal static TorrentFile[] Create (int pieceLength, params long[] lengths)
+        internal static ITorrentFile[] Create (int pieceLength, params long[] lengths)
             => Create (pieceLength, lengths.Select ((length, index) => ("File_" + index, length)).ToArray ());
 
-        internal static TorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
+        internal static ITorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
             => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty)).ToArray ());
 
-        internal static TorrentFile[] Create (int pieceLength, params (string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)[] files)
+        internal static ITorrentFile[] Create (int pieceLength, params (string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)[] files)
         {
             long totalSize = 0;
-            var results = new List<TorrentFile> (files.Length);
+            var results = new List<ITorrentFile> (files.Length);
             for (int i = 0; i < files.Length; i++) {
                 var length = files[i].length;
 
@@ -153,7 +129,7 @@ namespace MonoTorrent
                     startOffsetInTorrent = i > 0 ? results[i - 1].OffsetInTorrent : 0;
                 }
 
-                results.Add (new TorrentFile (files[i].path, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].md5sum, files[i].ed2k, files[i].sha1));
+                results.Add (new TorrentFile (files[i].path, length, pieceStart, pieceEnd, startOffsetInTorrent));
                 totalSize += length;
             }
 

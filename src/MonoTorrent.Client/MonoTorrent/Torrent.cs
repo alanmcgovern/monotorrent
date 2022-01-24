@@ -40,7 +40,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
-    public sealed class Torrent : IEquatable<Torrent>
+    public sealed class Torrent : ITorrentInfo, IEquatable<Torrent>
     {
         static Dictionary<int, ReadOnlyMemory<byte>> FinalLayerHash { get; } = CreateFinalHashPerLayer ();
 
@@ -263,7 +263,7 @@ namespace MonoTorrent
         /// <summary>
         /// The list of files contained within the .torrent which are available for download
         /// </summary>
-        public IList<TorrentFile> Files { get; private set; }
+        public IList<ITorrentFile> Files { get; private set; }
 
         /// <summary>
         /// This is the http-based seeding (getright protocole)
@@ -491,11 +491,8 @@ namespace MonoTorrent
                 long length = long.Parse (dictionary["length"].ToString ());
                 Size = length;
                 string path = Name;
-                var md5 = dictionary.TryGetValue("md5", out BEncodedValue value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                var ed2k = dictionary.TryGetValue ("ed2k", out value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                var sha1 = dictionary.TryGetValue ("sha1", out value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
                 int endPiece = Math.Min (PieceCount - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
-                Files = Array.AsReadOnly (new[] { new TorrentFile (path, length, 0, endPiece, 0, md5, ed2k, sha1) });
+                Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0) });
             }
         }
 
@@ -633,7 +630,7 @@ namespace MonoTorrent
             }
         }
 
-        static IList<TorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
+        static IList<ITorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
         {
             var sb = new StringBuilder (32);
 
@@ -692,10 +689,10 @@ namespace MonoTorrent
                 files.Add ((path, length, md5sum, ed2k, sha1));
             }
 
-            return Array.AsReadOnly (TorrentFile.Create (pieceLength, files.ToArray ()));
+            return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
         }
 
-        static PieceHashesV2 LoadHashesV2 (IList<TorrentFile> files, BEncodedDictionary hashes, int actualPieceLength)
+        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, BEncodedDictionary hashes, int actualPieceLength)
         {
             using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 
@@ -738,16 +735,17 @@ namespace MonoTorrent
             return new PieceHashesV2 (files, hashes);
         }
 
-        static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<TorrentFile> files, int pieceLength, ref int totalPieces, string path)
+        static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<ITorrentFile> files, int pieceLength, ref int totalPieces, string path)
         {
             if (key == "") {
                 var length = ((BEncodedNumber) data["length"]).Number;
                 if (length == 0) {
-                    files.Add (new TorrentFile (path, length, 0, 0, 0, default, default, default));
+                    files.Add (new TorrentFile (path, length, 0, 0, 0));
                 } else {
                     totalPieces++;
+                    var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0);
                     var piecesRoot = data.TryGetValue ("pieces root", out var value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), pieceLength * totalPieces, default, default, default, piecesRoot));
+                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), offsetInTorrent, piecesRoot));
                     totalPieces = files.Last ().EndPieceIndex;
                 }
             } else {
@@ -757,9 +755,9 @@ namespace MonoTorrent
             }
         }
 
-        static IList<TorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree, int pieceLength)
+        static IList<ITorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree, int pieceLength)
         {
-            var files = new List<TorrentFile> ();
+            var files = new List<ITorrentFile> ();
             int totalPieces = -1;
             foreach (var entry in fileTree)
                 LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "");

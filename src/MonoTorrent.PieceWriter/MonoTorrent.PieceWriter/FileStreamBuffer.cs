@@ -69,18 +69,18 @@ namespace MonoTorrent.PieceWriter
 
         public int Count { get; private set; }
 
-        Func<ITorrentFileInfo, FileAccess, Stream> StreamCreator { get; }
+        Func<ITorrentManagerFile, FileAccess, Stream> StreamCreator { get; }
 
-        Dictionary<ITorrentFileInfo, StreamData> Streams { get; }
+        Dictionary<ITorrentManagerFile, StreamData> Streams { get; }
 
-        internal FileStreamBuffer (Func<ITorrentFileInfo, FileAccess, Stream> streamCreator, int maxStreams)
+        internal FileStreamBuffer (Func<ITorrentManagerFile, FileAccess, Stream> streamCreator, int maxStreams)
         {
             StreamCreator = streamCreator;
             MaxStreams = maxStreams;
-            Streams = new Dictionary<ITorrentFileInfo, StreamData> (maxStreams);
+            Streams = new Dictionary<ITorrentManagerFile, StreamData> (maxStreams);
         }
 
-        internal async ReusableTask<bool> CloseStreamAsync (ITorrentFileInfo file)
+        internal async ReusableTask<bool> CloseStreamAsync (ITorrentManagerFile file)
         {
             if (Streams.TryGetValue (file, out StreamData data)) {
                 using var releaser = await data.Locker.EnterAsync ();
@@ -95,14 +95,14 @@ namespace MonoTorrent.PieceWriter
             return false;
         }
 
-        internal async ReusableTask FlushAsync (ITorrentFileInfo file)
+        internal async ReusableTask FlushAsync (ITorrentManagerFile file)
         {
             using var rented = await GetStream (file);
             if (rented.Stream != null)
                 await rented.Stream.FlushAsync ();
         }
 
-        internal async ReusableTask<RentedStream> GetStream (ITorrentFileInfo file)
+        internal async ReusableTask<RentedStream> GetStream (ITorrentManagerFile file)
         {
             if (Streams.TryGetValue (file, out StreamData data)) {
                 var releaser = await data.Locker.EnterAsync ();
@@ -116,7 +116,7 @@ namespace MonoTorrent.PieceWriter
             return new RentedStream (null, default);
         }
 
-        internal async ReusableTask<RentedStream> GetOrCreateStreamAsync (ITorrentFileInfo file, FileAccess access)
+        internal async ReusableTask<RentedStream> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
         {
             if (!Streams.TryGetValue (file, out StreamData data))
                 data = Streams[file] = new StreamData ();

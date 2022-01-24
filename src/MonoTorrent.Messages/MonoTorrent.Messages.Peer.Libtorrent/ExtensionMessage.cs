@@ -35,7 +35,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
     public abstract class ExtensionMessage : PeerMessage
     {
         internal static readonly byte MessageId = 20;
-        static readonly Dictionary<byte, Func<ITorrentData, (PeerMessage, Releaser)>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentManagerInfo, (PeerMessage, Releaser)>> messageDict;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport> ();
 
@@ -47,7 +47,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             // Actual decoding is handled with manual detection.
             Register<ExtensionMessage> (MessageId, data => throw new MessageException ("Shouldn't decode extension message this way"), false);
 
-            messageDict = new Dictionary<byte, Func<ITorrentData, (PeerMessage, Releaser)>> ();
+            messageDict = new Dictionary<byte, Func<ITorrentManagerInfo, (PeerMessage, Releaser)>> ();
 
             byte id = Register (data => new ExtendedHandshakeMessage (), false);
             if (id != 0)
@@ -68,7 +68,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             ExtensionId = messageId;
         }
 
-        public static byte Register<T> (Func<ITorrentData, T> creator, bool reusable)
+        public static byte Register<T> (Func<ITorrentManagerInfo, T> creator, bool reusable)
             where T : PeerMessage
         {
             if (creator == null)
@@ -76,7 +76,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
             lock (messageDict) {
                 byte id = (byte) messageDict.Count;
-                Func<ITorrentData, (PeerMessage, Releaser)> wrapper;
+                Func<ITorrentManagerInfo, (PeerMessage, Releaser)> wrapper;
                 if (reusable) {
                     lock (InstanceCache)
                         InstanceCache[typeof (T)] = new Queue<PeerMessage> ();
@@ -93,9 +93,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             return SupportedMessages.Find (s => s.Name == name);
         }
 
-        public static (PeerMessage message, Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentData manager)
+        public static (PeerMessage message, Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo manager)
         {
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentData, (PeerMessage, Releaser)> creator))
+            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo, (PeerMessage, Releaser)> creator))
                 throw new MessageException ("Unknown extension message received");
 
             (PeerMessage message, Releaser releaser) = creator (manager);

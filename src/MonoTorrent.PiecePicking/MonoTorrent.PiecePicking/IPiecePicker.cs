@@ -91,7 +91,7 @@ namespace MonoTorrent.PiecePicking
         /// Reset all internal state.
         /// </summary>
         /// <param name="torrentData"></param>
-        void Initialise (ITorrentData torrentData);
+        void Initialise (ITorrentManagerInfo torrentData);
 
         /// <summary>
         /// 

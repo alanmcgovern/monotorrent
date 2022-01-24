@@ -39,10 +39,12 @@ namespace MonoTorrent.Messages.Peer
     [TestFixture]
     public class StandardMessageTests
     {
-        class TestTorrentData : ITorrentData
+        class TestTorrentData : ITorrentManagerInfo
         {
-            public IList<ITorrentFileInfo> Files { get; set; }
+            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
+            public IList<ITorrentManagerFile> Files { get; set; }
             public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public InfoHash InfoHashV2 => null;
             public string Name => "Test Torrent";
             public int PieceLength { get; set; }
             public long Size { get; set; }
@@ -50,7 +52,7 @@ namespace MonoTorrent.Messages.Peer
 
         byte[] buffer;
         int offset;
-        ITorrentData torrentData;
+        ITorrentManagerInfo torrentData;
 
         [SetUp]
         public void Setup ()
@@ -61,7 +63,7 @@ namespace MonoTorrent.Messages.Peer
                 buffer[i] = 0xff;
 
             torrentData = new TestTorrentData {
-                Files = new List<ITorrentFileInfo> (),
+                Files = new List<ITorrentManagerFile> (),
                 PieceLength = 16 * Constants.BlockSize,
                 Size = 40 * 16 * Constants.BlockSize,
             };

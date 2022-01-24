@@ -1,10 +1,10 @@
 ﻿//
-// ITorrentFile.cs
+// ITorrentManagerInfo.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,37 +27,15 @@
 //
 
 
-using System;
+using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public interface ITorrentFile
+    public interface ITorrentManagerInfo : ITorrentInfo
     {
         /// <summary>
-        /// The relative path to the file within the torrent.
+        /// The files contained within the Torrent
         /// </summary>
-        string Path { get; }
-
-        /// <summary>
-        /// The first piece which contains data for this file
-        /// </summary>
-        int StartPieceIndex { get; }
-
-        /// <summary>
-        /// The last piece which contains data for this file.
-        /// </summary>
-        int EndPieceIndex { get; }
-
-        /// <summary>
-        /// The size of this file in bytes.
-        /// </summary>
-        long Length { get; }
-
-        /// <summary>
-        /// The offset, relative to the first byte in the torrent, where this file begins.
-        /// </summary>
-        long OffsetInTorrent { get; }
-
-        ReadOnlyMemory<byte> PiecesRoot { get; }
+        new IList<ITorrentManagerFile> Files { get; }
     }
 }

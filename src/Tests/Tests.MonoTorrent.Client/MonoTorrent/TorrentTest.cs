@@ -346,7 +346,7 @@ namespace MonoTorrent.Common
         public void StartEndIndices ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = TorrentFile.Create (pieceLength,
+            ITorrentFile[] files = TorrentFile.Create (pieceLength,
                 ("File0", 0),
                 ("File1", pieceLength),
                 ("File2", 0),
@@ -383,7 +383,7 @@ namespace MonoTorrent.Common
         public void StartEndIndices2 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = TorrentFile.Create (pieceLength,
+            ITorrentFile[] files = TorrentFile.Create (pieceLength,
                 ("File0", pieceLength),
                 ("File1", 0)
             );
@@ -400,7 +400,7 @@ namespace MonoTorrent.Common
         public void StartEndIndices3 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = TorrentFile.Create (pieceLength,
+            ITorrentFile[] files = TorrentFile.Create (pieceLength,
                 ("File0", pieceLength - 10),
                 ("File1", 10)
             );
@@ -417,7 +417,7 @@ namespace MonoTorrent.Common
         public void StartEndIndices4 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = TorrentFile.Create (pieceLength,
+            ITorrentFile[] files = TorrentFile.Create (pieceLength,
                 ("File0", pieceLength - 10),
                 ("File1", 11)
             );
@@ -434,7 +434,7 @@ namespace MonoTorrent.Common
         public void StartEndIndices5 ()
         {
             int pieceLength = 32 * 32;
-            TorrentFile[] files = TorrentFile.Create (pieceLength,
+            ITorrentFile[] files = TorrentFile.Create (pieceLength,
                 ("File0", pieceLength - 10),
                 ("File1", 10),
                 ("File1", 1)

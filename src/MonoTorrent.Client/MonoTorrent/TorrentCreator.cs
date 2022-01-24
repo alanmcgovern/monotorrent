@@ -46,7 +46,7 @@ namespace MonoTorrent
 {
     public class TorrentCreator : EditableTorrent
     {
-        internal class InputFile : ITorrentFileInfo
+        internal class InputFile : ITorrentManagerFile
         {
             public string DownloadCompleteFullPath { get; }
             public string DownloadIncompleteFullPath { get; }
@@ -55,6 +55,7 @@ namespace MonoTorrent
             public byte[] MD5 { get; set; }
             public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
             public long Length { get; set; }
+            public ReadOnlyMemory<byte> PiecesRoot { get; }
 
             internal InputFile (string path, long length)
                 : this (path, path, length)
@@ -106,7 +107,7 @@ namespace MonoTorrent
             return RecommendedPieceSize (files.Sum (f => new FileInfo (f).Length));
         }
 
-        public static int RecommendedPieceSize (IEnumerable<ITorrentFileInfo> files)
+        public static int RecommendedPieceSize (IEnumerable<ITorrentManagerFile> files)
         {
             return RecommendedPieceSize (files.Sum (f => f.Length));
         }

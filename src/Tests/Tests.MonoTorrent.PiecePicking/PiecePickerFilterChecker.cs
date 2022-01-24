@@ -34,7 +34,7 @@ namespace MonoTorrent.PiecePicking
 {
     class PiecePickerFilterChecker : PiecePickerFilter
     {
-        public List<ITorrentData> Initialised;
+        public List<ITorrentManagerInfo> Initialised;
         public List<(IPeer peer, BitField bitfield)> Interesting;
         public List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> Picks;
 
@@ -46,12 +46,12 @@ namespace MonoTorrent.PiecePicking
         public PiecePickerFilterChecker (IPiecePicker next)
             : base (next)
         {
-            Initialised = new List<ITorrentData> ();
+            Initialised = new List<ITorrentManagerInfo> ();
             Interesting = new List<(IPeer peer, BitField bitfield)> ();
             Picks = new List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> ();
         }
 
-        public override void Initialise (ITorrentData torrentData)
+        public override void Initialise (ITorrentManagerInfo torrentData)
         {
             Initialised.Add (torrentData);
             Next?.Initialise (torrentData);

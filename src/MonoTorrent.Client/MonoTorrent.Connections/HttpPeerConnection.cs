@@ -91,7 +91,7 @@ namespace MonoTorrent.Connections.Peer
 
         public bool IsIncoming => false;
 
-        ITorrentData TorrentData { get; set; }
+        ITorrentManagerInfo TorrentData { get; set; }
 
         AutoResetEvent ReceiveWaiter { get; } = new AutoResetEvent (false);
 
@@ -108,7 +108,7 @@ namespace MonoTorrent.Connections.Peer
 
         #region Constructors
 
-        public HttpPeerConnection (ITorrentData torrentData, Factories requestCreator, Uri uri)
+        public HttpPeerConnection (ITorrentManagerInfo torrentData, Factories requestCreator, Uri uri)
         {
             ConnectionTimeout = TimeSpan.FromSeconds (10);
             RequestCreator = requestCreator;

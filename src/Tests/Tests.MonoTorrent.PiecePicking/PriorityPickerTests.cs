@@ -40,12 +40,14 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class PriorityPickerTests
     {
-        class TestTorrentData : ITorrentData
+        class TestTorrentData : ITorrentManagerInfo
         {
-            IList<ITorrentFileInfo> ITorrentData.Files => new List<ITorrentFileInfo> (Files);
+            IList<ITorrentManagerFile> ITorrentManagerInfo.Files => new List<ITorrentManagerFile> (Files);
 
+            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
             public IList<TorrentFileInfo> Files { get; set; }
             public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public InfoHash InfoHashV2 => null;
             public string Name => "Test Torrent";
             public int PieceLength { get; set; }
             public int Pieces => (int) Math.Ceiling ((double) Size / PieceLength);

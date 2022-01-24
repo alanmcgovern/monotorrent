@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
             File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.PieceCount).SetAll (true), new MutableBitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             await engine.ChangePieceWriterAsync (new TestWriter {
-                FilesThatExist = new System.Collections.Generic.List<ITorrentFileInfo> (manager.Files)
+                FilesThatExist = new System.Collections.Generic.List<ITorrentManagerFile> (manager.Files)
             });
 
             Assert.IsTrue (manager.HashChecked);

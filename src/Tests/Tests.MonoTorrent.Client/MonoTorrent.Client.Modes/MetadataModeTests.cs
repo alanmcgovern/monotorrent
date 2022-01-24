@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             rig.AddConnection (pair.Outgoing);
 
             var connection = pair.Incoming;
-            PeerId id = new PeerId (new Peer ("", connection.Uri), connection, new MutableBitField (rig.Manager.PieceCount ()));
+            PeerId id = new PeerId (new Peer ("", connection.Uri), connection, new MutableBitField (rig.Torrent.PieceCount));
 
             var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, new[] { rig.Manager.InfoHash }, Factories.Default);
             decryptor = id.Decryptor = result.Decryptor;
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task MetadataOnly_False_WithEvent ()
         {
-            var tcs = new TaskCompletionSource<IList<ITorrentFileInfo>> ();
+            var tcs = new TaskCompletionSource<IList<ITorrentManagerFile>> ();
             new CancellationTokenSource (Debugger.IsAttached ? 100_000 : 10_000)
                 .Token
                 .Register (() => tcs.TrySetCanceled ());
@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task MetadataOnly_False_WithTask ()
         {
-            var tcs = new TaskCompletionSource<IList<ITorrentFileInfo>> ();
+            var tcs = new TaskCompletionSource<IList<ITorrentManagerFile>> ();
             new CancellationTokenSource (Debugger.IsAttached ? 100_000 : 10_000)
                 .Token
                 .Register (() => tcs.TrySetCanceled ());

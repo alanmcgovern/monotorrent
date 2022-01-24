@@ -38,7 +38,7 @@ namespace MonoTorrent
     class PieceHashesV2 : IPieceHashes
     {
         readonly int HashCodeLength;
-        readonly IList<TorrentFile> Files;
+        readonly IList<ITorrentFile> Files;
         readonly BEncodedDictionary Layers;
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace MonoTorrent
         /// </summary>
         public int Count { get; }
 
-        internal PieceHashesV2 (IList<TorrentFile> files, BEncodedDictionary layers)
+        internal PieceHashesV2 (IList<ITorrentFile> files, BEncodedDictionary layers)
             => (Files, Layers, HashCodeLength, Count) = (files, layers, 32, files.Last ().EndPieceIndex + 1);
 
         /// <summary>

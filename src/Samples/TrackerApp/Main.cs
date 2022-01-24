@@ -63,7 +63,7 @@ namespace TrackerSample
         /// <summary>
         /// The files in the torrent
         /// </summary>
-        public IList<TorrentFile> Files { get; }
+        public IList<ITorrentFile> Files { get; }
 
         /// <summary>
         /// The infohash of the torrent

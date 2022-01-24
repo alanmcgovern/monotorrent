@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using MonoTorrent.Client;
 
@@ -39,19 +40,23 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class RandomisedPickerTests
     {
-        class OnePieceTorrentData : ITorrentData
+        class OnePieceTorrentData : ITorrentManagerInfo
         {
-            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024);
+            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
+            public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024);
             public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public InfoHash InfoHashV2 => null;
             public string Name => "Test Torrent";
             public int PieceLength { get; } = 64 * 1024;
             public long Size { get; } = 64 * 1024;
         }
 
-        class TestTorrentData : ITorrentData
+        class TestTorrentData : ITorrentManagerInfo
         {
-            public IList<ITorrentFileInfo> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
+            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
+            public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
             public InfoHash InfoHash => new InfoHash (new byte[20]);
+            public InfoHash InfoHashV2 => null;
             public string Name => "Test Torrent";
             public int PieceLength { get; } = 64 * 1024;
             public long Size { get; } = 64 * 1024 * 40;

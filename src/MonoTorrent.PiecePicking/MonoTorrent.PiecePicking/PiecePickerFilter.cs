@@ -60,7 +60,7 @@ namespace MonoTorrent.PiecePicking
         public IList<ActivePieceRequest> ExportActiveRequests ()
             => Next.ExportActiveRequests ();
 
-        public virtual void Initialise (ITorrentData torrentData)
+        public virtual void Initialise (ITorrentManagerInfo torrentData)
             => Next.Initialise (torrentData);
 
         public virtual bool IsInteresting (IPeer peer, BitField bitfield)
