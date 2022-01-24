@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.Modes
                 await Task.WhenAll (
                     Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None).AsTask (),
                     Manager.MaybeWriteFastResumeAsync ().AsTask (),
-                    DiskManager.FlushAsync (Manager)
+                    DiskManager.CloseFilesAsync (Manager)
                 );
                 Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
             } else if (Manager.PartialProgressSelector.TrueCount > 0) {
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client.Modes
                     state = TorrentState.Seeding;
                     await Task.WhenAll (
                         Manager.MaybeWriteFastResumeAsync ().AsTask (),
-                        DiskManager.FlushAsync (Manager)
+                        DiskManager.CloseFilesAsync (Manager)
                     );
                     Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Downloading, TorrentState.Seeding));
                 } else if (Manager.Bitfield.CountTrue (Manager.PartialProgressSelector) < Manager.PartialProgressSelector.TrueCount && state == TorrentState.Seeding) {
