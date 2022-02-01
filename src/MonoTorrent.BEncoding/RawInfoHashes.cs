@@ -31,12 +31,12 @@ using System;
 
 namespace MonoTorrent.BEncoding
 {
-    public class InfoHashes
+    public class RawInfoHashes
     {
         public ReadOnlyMemory<byte> SHA1 { get; }
         public ReadOnlyMemory<byte> SHA256 { get; }
 
-        internal InfoHashes (ReadOnlyMemory<byte> sha1, ReadOnlyMemory<byte> sha256)
+        internal RawInfoHashes (ReadOnlyMemory<byte> sha1, ReadOnlyMemory<byte> sha256)
             => (SHA1, SHA256) = (sha1, sha256);
     }
 }

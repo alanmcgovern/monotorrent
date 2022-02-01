@@ -39,7 +39,7 @@ namespace MonoTorrent.BEncoding
         public static BEncodedValue Decode (Stream reader, bool strictDecoding)
             => Decode (reader, strictDecoding, reader.ReadByte ());
 
-        public static (BEncodedDictionary torrent, InfoHashes infohashes) DecodeTorrent (Stream reader)
+        public static (BEncodedDictionary torrent, RawInfoHashes infohashes) DecodeTorrent (Stream reader)
         {
             var torrent = new BEncodedDictionary ();
             if (reader.ReadByte () != 'd')
@@ -50,7 +50,7 @@ namespace MonoTorrent.BEncoding
             byte[] infohashSHA256 = null;
             while ((read = reader.ReadByte ()) != -1) {
                 if (read == 'e')
-                    return (torrent, new InfoHashes (infohashSHA1, infohashSHA256));
+                    return (torrent, new RawInfoHashes (infohashSHA1, infohashSHA256));
 
                 if (read < '0' || read > '9')
                     throw new BEncodingException ("Invalid key length");

@@ -69,7 +69,7 @@ namespace MonoTorrent.BEncoding
             }
         }
 
-        public static (BEncodedDictionary torrent, InfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
+        public static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
         {
             if (buffer[0] != 'd')
                 throw new BEncodingException ($"The root value was not a BEncodedDictionary");
@@ -83,7 +83,7 @@ namespace MonoTorrent.BEncoding
             while (buffer.Length > 0) {
                 if (buffer[0] == 'e') {
                     buffer = buffer.Slice (1);
-                    return (dictionary, new InfoHashes (infoHashSHA1, infoHashSHA256));
+                    return (dictionary, new RawInfoHashes (infoHashSHA1, infoHashSHA256));
                 }
 
                 var key = DecodeString (ref buffer);

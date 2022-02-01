@@ -496,7 +496,7 @@ namespace MonoTorrent
             }
         }
 
-        void LoadInternal (BEncodedDictionary torrentInformation, InfoHashes infoHashes)
+        void LoadInternal (BEncodedDictionary torrentInformation, RawInfoHashes infoHashes)
         {
             Check.TorrentInformation (torrentInformation);
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
