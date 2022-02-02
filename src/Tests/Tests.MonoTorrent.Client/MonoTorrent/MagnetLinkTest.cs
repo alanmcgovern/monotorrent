@@ -57,18 +57,18 @@ namespace MonoTorrent.Common
         public void InfoHashTest ()
         {
             MagnetLink link = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
-            Assert.AreEqual (InfoHash.FromBase32 ("YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C"), link.InfoHash, "#1");
+            Assert.AreEqual (InfoHash.FromBase32 ("YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C"), link.InfoHashes.V1, "#1");
 
             //base32
             InfoHash initial = new InfoHash (System.Text.Encoding.ASCII.GetBytes ("foobafoobafoobafooba"));
             link = MagnetLink.Parse ("magnet:?xt=urn:sha1:MZXW6YTBMZXW6YTBMZXW6YTBMZXW6YTB");
-            Assert.AreEqual (initial, link.InfoHash, "#2");
+            Assert.AreEqual (initial, link.InfoHashes.V1, "#2");
 
             //base40 = hex
             InfoHash hash = Create ();
             string hex = hash.ToHex ();
             link = MagnetLink.Parse ($"magnet:?xt=urn:btih:{hex}");
-            Assert.AreEqual (hash, link.InfoHash, "#3");
+            Assert.AreEqual (hash, link.InfoHashes.V1, "#3");
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace MonoTorrent.Common
             InfoHash hash = Create ();
             string magnet = $"magnet:?xt=urn:btih:{hash.ToHex ()}";
             MagnetLink other = MagnetLink.Parse (magnet);
-            Assert.AreEqual (hash, other.InfoHash, "#1");
+            Assert.AreEqual (hash, other.InfoHashes.V1, "#1");
         }
 
         [Test]
@@ -87,7 +87,7 @@ namespace MonoTorrent.Common
                 InfoHash hash = Create ();
                 string magnet = $"magnet?xt=urn:btih:{hash.ToHex ()}";
                 MagnetLink other = MagnetLink.Parse (magnet);
-                Assert.AreEqual (hash, other.InfoHash, "#1");
+                Assert.AreEqual (hash, other.InfoHashes.V1, "#1");
             });
         }
 
@@ -98,7 +98,7 @@ namespace MonoTorrent.Common
                 InfoHash hash = Create ();
                 string magnet = string.Format ("magnet:?xt=urn:btih:", hash.ToHex ());
                 MagnetLink other = MagnetLink.Parse (magnet);
-                Assert.AreEqual (hash, other.InfoHash, "#1");
+                Assert.AreEqual (hash, other.InfoHashes.V1, "#1");
             });
         }
 
@@ -109,7 +109,7 @@ namespace MonoTorrent.Common
                 InfoHash hash = Create ();
                 string magnet = string.Format ("magnet:?xt=urn:btih:23526246235623564234365879634581726345981", hash.ToHex ());
                 MagnetLink other = MagnetLink.Parse (magnet);
-                Assert.AreEqual (hash, other.InfoHash, "#1");
+                Assert.AreEqual (hash, other.InfoHashes.V1, "#1");
             });
         }
 
@@ -142,7 +142,8 @@ namespace MonoTorrent.Common
         [Test]
         public void NullMagnetLink ()
         {
-            Assert.Throws<ArgumentNullException> (() => new MagnetLink (null));
+            Assert.Throws<ArgumentNullException> (() => new MagnetLink ((InfoHash) null));
+            Assert.Throws<ArgumentNullException> (() => new MagnetLink ((InfoHashes) null));
         }
 
         [Test]
@@ -199,7 +200,7 @@ namespace MonoTorrent.Common
             Assert.IsFalse (uriString.Contains (name), "The name should be Uri encoded");
 
             magnetLink = MagnetLink.Parse (uriString);
-            Assert.AreEqual (infoHash, magnetLink.InfoHash, "#1");
+            Assert.AreEqual (infoHash, magnetLink.InfoHashes.V1, "#1");
             Assert.AreEqual (name, magnetLink.Name, "#2");
             CollectionAssert.AreEquivalent (announces, magnetLink.AnnounceUrls, "#3");
             CollectionAssert.AreEquivalent (webSeeds, magnetLink.Webseeds, "#4");

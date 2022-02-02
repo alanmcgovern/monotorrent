@@ -61,7 +61,7 @@ namespace MonoTorrent.Dht
 
         }
 
-        public void Announce (InfoHash infohash, int port)
+        public void Announce (InfoHash infoHash, int port)
         {
 
         }
@@ -71,7 +71,7 @@ namespace MonoTorrent.Dht
 
         }
 
-        public void GetPeers (InfoHash infohash)
+        public void GetPeers (InfoHash infoHash)
         {
 
         }

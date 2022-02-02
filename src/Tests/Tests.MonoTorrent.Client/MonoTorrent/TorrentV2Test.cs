@@ -103,10 +103,10 @@ namespace MonoTorrent.Common
         public void LoadV2OnlyTorrent ()
         {
             // A v2 only torrent does not have a regular infohash
-            Assert.IsNull (V2OnlyTorrent.InfoHash);
+            Assert.IsNull (V2OnlyTorrent.InfoHashes.V1);
             Assert.IsNull (V2OnlyTorrent.PieceHashes);
 
-            Assert.IsNotNull (V2OnlyTorrent.InfoHashV2);
+            Assert.IsNotNull (V2OnlyTorrent.InfoHashes.V2);
             Assert.IsNotNull (V2OnlyTorrent.PieceHashesV2);
 
             Assert.IsFalse (V2OnlyTorrent.PieceHashesV2.GetHash (V2OnlyTorrent.PieceCount - 1).IsEmpty);

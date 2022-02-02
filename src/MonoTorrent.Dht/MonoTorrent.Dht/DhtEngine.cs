@@ -150,7 +150,7 @@ namespace MonoTorrent.Dht
         public async void Announce (InfoHash infoHash, int port)
         {
             CheckDisposed ();
-            if (infoHash == null)
+            if (infoHash is null)
                 throw new ArgumentNullException (nameof (infoHash));
 
             try {

@@ -56,7 +56,7 @@ namespace TrackerSample
             // Note: I'm just storing the files, infohash and name. A typical Torrent instance
             // is ~100kB in memory. A typical CustomITrackable will be ~100 bytes.
             Files = t.Files;
-            InfoHash = t.InfoHash;
+            InfoHash = t.InfoHashes.V1OrV2;
             Name = t.Name;
         }
 

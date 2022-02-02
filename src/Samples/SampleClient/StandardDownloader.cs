@@ -53,7 +53,7 @@ namespace ClientSample
                         };
                         var manager = await Engine.AddAsync (file, downloadsPath, settingsBuilder.ToSettings ());
                         manager.PeersFound += Manager_PeersFound;
-                        Console.WriteLine (manager.InfoHash.ToHex ());
+                        Console.WriteLine (manager.InfoHashes.V1OrV2.ToHex ());
                     } catch (Exception e) {
                         Console.Write ("Couldn't decode {0}: ", file);
                         Console.WriteLine (e.Message);

@@ -62,14 +62,14 @@ namespace MonoTorrent.Client.Modes
 
             // Mark the torrent as hash check complete with no data downloaded
             if (rig.Manager.HasMetadata)
-                rig.Manager.LoadFastResume (new FastResume (rig.Manager.InfoHash, new MutableBitField (rig.Manager.PieceCount ()), new MutableBitField (rig.Manager.PieceCount ())));
+                rig.Manager.LoadFastResume (new FastResume (rig.Manager.InfoHashes, new MutableBitField (rig.Manager.PieceCount ()), new MutableBitField (rig.Manager.PieceCount ())));
             await rig.Manager.StartAsync (metadataOnly);
             rig.AddConnection (pair.Outgoing);
 
             var connection = pair.Incoming;
             PeerId id = new PeerId (new Peer ("", connection.Uri), connection, new MutableBitField (rig.Torrent.PieceCount));
 
-            var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, new[] { rig.Manager.InfoHash }, Factories.Default);
+            var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, new[] { rig.Manager.InfoHashes.V1OrV2 }, Factories.Default);
             decryptor = id.Decryptor = result.Decryptor;
             encryptor = id.Encryptor = result.Encryptor;
         }
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHash, new string ('g', 20), Constants.ProtocolStringV100, true, true);
+            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHashes.V1OrV2, new string ('g', 20), Constants.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.TorrentDict.LengthInBytes (), 5555);
             exHand.Supports.Add (LTMetadata.Support);
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.Modes
 
             // 4) Verify the hash is the same.
             stream.Position = 0;
-            Assert.AreEqual (rig.Torrent.InfoHash, new InfoHash (SHA1.Create ().ComputeHash (stream)), "#1");
+            Assert.AreEqual (rig.Torrent.InfoHashes.V1OrV2, new InfoHash (SHA1.Create ().ComputeHash (stream)), "#1");
         }
 
         [Test]
@@ -285,7 +285,7 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHash, new string ('g', 20), Constants.ProtocolStringV100, true, true);
+            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHashes.V1OrV2, new string ('g', 20), Constants.ProtocolStringV100, true, true);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.InfoMetadata.Length, 5555);
             exHand.Supports.Add (LTMetadata.Support);
@@ -336,7 +336,7 @@ namespace MonoTorrent.Client.Modes
                 torrent = Torrent.Load (expectedPath);
             }
 
-            Assert.AreEqual (rig.Manager.InfoHash, torrent.InfoHash, "#2");
+            Assert.AreEqual (rig.Manager.InfoHashes, torrent.InfoHashes, "#2");
             Assert.AreEqual (1, torrent.AnnounceUrls.Count, "#3");
             Assert.AreEqual (2, torrent.AnnounceUrls[0].Count, "#4");
 

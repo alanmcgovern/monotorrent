@@ -13,8 +13,7 @@ namespace MonoTorrent.Client
         {
             IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
             public IList<ITorrentManagerFile> Files { get; }
-            public InfoHash InfoHash { get; }
-            public InfoHash InfoHashV2 { get; } = new InfoHash (new byte[32]);
+            public InfoHashes InfoHashes { get; } = new InfoHashes (null, new InfoHash (new byte[32]));
             public string Name { get; }
             public int PieceLength { get; }
             public long Size { get; }

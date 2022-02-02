@@ -158,7 +158,7 @@ namespace MonoTorrent.TrackerServer
             Assert.AreEqual ((BEncodedString) announceParams.PeerId, args.PeerId, "#2");
 
             Assert.AreEqual (infoHash, args.InfoHash, "#3");
-            Assert.AreEqual (announceParams.InfoHash, args.InfoHash, "#3");
+            Assert.IsTrue (announceParams.InfoHash == args.InfoHash, "#3");
         }
 
         [Test]

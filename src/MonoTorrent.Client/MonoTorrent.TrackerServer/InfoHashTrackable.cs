@@ -41,12 +41,13 @@ namespace MonoTorrent.TrackerServer
             Check.Torrent (torrent);
 
             Name = torrent.Name;
-            InfoHash = torrent.InfoHash;
+            InfoHash = torrent.InfoHashes.V1OrV2;
         }
 
         public InfoHashTrackable (string name, InfoHash infoHash)
         {
-            Check.InfoHash (infoHash);
+            if (infoHash == null)
+                throw new ArgumentNullException (nameof (infoHash));
 
             if (string.IsNullOrEmpty (name))
                 throw new ArgumentNullException (nameof (name), $"{nameof (name)} cannot be null or empty");

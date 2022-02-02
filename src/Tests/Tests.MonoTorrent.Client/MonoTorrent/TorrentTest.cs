@@ -76,8 +76,8 @@ namespace MonoTorrent.Common
             torrent = Torrent.Load (torrentInfo);
 
             // People using monotorrent should only see V1 torrent infohashes (for now).
-            Assert.IsNotNull (torrent.InfoHash);
-            Assert.IsNull (torrent.InfoHashV2);
+            Assert.IsNotNull (torrent.InfoHashes.V1);
+            Assert.IsNull (torrent.InfoHashes.V2);
         }
         private BEncodedDictionary CreateInfoDict ()
         {

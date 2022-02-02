@@ -200,8 +200,7 @@ namespace MyBenchmarks
 
             IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
             public IList<ITorrentManagerFile> Files { get; }
-            public InfoHash InfoHash { get; } = new InfoHash (new byte[20]);
-            public InfoHash InfoHashV2 { get; } = new InfoHash (new byte[32]);
+            public InfoHashes InfoHashes { get; } = new InfoHashes (new InfoHash (new byte[20]), new InfoHash (new byte[32]));
             public string Name { get; } = "Name";
             public int PieceLength { get; } = 32768;
             public long Size { get; } = 32768 * PieceCount;

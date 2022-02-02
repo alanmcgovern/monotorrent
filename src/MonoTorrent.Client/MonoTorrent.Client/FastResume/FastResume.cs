@@ -50,13 +50,13 @@ namespace MonoTorrent.Client
 
         public BitField Bitfield { get; }
 
-        public InfoHash Infohash { get; }
+        public InfoHashes InfoHashes { get; }
 
         public BitField UnhashedPieces { get; }
 
-        internal FastResume (InfoHash infoHash, BitField bitfield, BitField unhashedPieces)
+        internal FastResume (InfoHashes infoHashes, BitField bitfield, BitField unhashedPieces)
         {
-            Infohash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
+            InfoHashes = infoHashes ?? throw new ArgumentNullException (nameof (infoHashes));
             Bitfield = new BitField (bitfield);
             UnhashedPieces = new BitField (unhashedPieces);
 
@@ -73,7 +73,12 @@ namespace MonoTorrent.Client
             CheckContent (dict, BitfieldKey);
             CheckContent (dict, BitfieldLengthKey);
 
-            Infohash = InfoHash.FromMemory (((BEncodedString) dict[InfoHashKey]).AsMemory ());
+            // BEP52: Support backwards/forwards compatibility
+            var infoHash = InfoHash.FromMemory (((BEncodedString) dict[InfoHashKey]).AsMemory ());
+            if (infoHash.Span.Length == 20)
+                InfoHashes = InfoHashes.FromV1 (infoHash);
+            else
+                InfoHashes = InfoHashes.FromV2 (infoHash);
 
             var data = ((BEncodedString) dict[BitfieldKey]).Span;
             Bitfield = new BitField (data, (int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
@@ -106,7 +111,7 @@ namespace MonoTorrent.Client
         {
             return new BEncodedDictionary {
                 { VersionKey, FastResumeVersion },
-                { InfoHashKey, new BEncodedString(Infohash.Span.ToArray ()) },
+                { InfoHashKey, new BEncodedString(InfoHashes.V1OrV2.Span.ToArray ()) },
                 { BitfieldKey, new BEncodedString(Bitfield.ToByteArray()) },
                 { BitfieldLengthKey, (BEncodedNumber)Bitfield.Length },
                 { UnhashedPiecesKey, new BEncodedString (UnhashedPieces.ToByteArray ()) }

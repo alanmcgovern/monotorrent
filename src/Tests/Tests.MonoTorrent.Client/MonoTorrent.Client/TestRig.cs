@@ -256,7 +256,7 @@ namespace MonoTorrent.Client
 
         public void Add (TorrentManager manager, IPeerConnection connection)
         {
-            ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, manager.InfoHash));
+            ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, manager.InfoHashes.V1OrV2));
         }
     }
 
@@ -381,7 +381,7 @@ namespace MonoTorrent.Client
             TorrentDict = CreateTorrent (piecelength, files, tier);
             Torrent = Torrent.Load (TorrentDict);
 
-            var magnetLink = new MagnetLink (Torrent.InfoHash, null, tier[0].ToArray (), null, null);
+            var magnetLink = new MagnetLink (Torrent.InfoHashes, null, tier[0].ToArray (), null, null);
             Manager = MetadataMode
                 ? await Engine.AddAsync (magnetLink, savePath, new TorrentSettings ())
                 : await Engine.AddAsync (Torrent, savePath, new TorrentSettings ());
@@ -424,7 +424,7 @@ namespace MonoTorrent.Client
             Writer = writer;
 
             RecreateManager ().Wait ();
-            MetadataPath = Path.Combine (Engine.Settings.MetadataCacheDirectory, $"{Engine.Torrents.Single ().InfoHash.ToHex ()}.torrent");
+            MetadataPath = Path.Combine (Engine.Settings.MetadataCacheDirectory, $"{Engine.Torrents.Single ().InfoHashes.V1OrV2.ToHex ()}.torrent");
         }
 
         private static void AddAnnounces (BEncodedDictionary dict, string[][] tiers)

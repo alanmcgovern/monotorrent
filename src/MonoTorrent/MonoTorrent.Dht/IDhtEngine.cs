@@ -70,8 +70,8 @@ namespace MonoTorrent.Dht
         DhtState State { get; }
 
         void Add (IEnumerable<byte[]> nodes);
-        void Announce (InfoHash infohash, int port);
-        void GetPeers (InfoHash infohash);
+        void Announce (InfoHash infoHash, int port);
+        void GetPeers (InfoHash infoHash);
         Task<byte[]> SaveNodesAsync ();
         Task SetListenerAsync (IDhtListener listener);
         Task StartAsync ();

@@ -187,7 +187,7 @@ namespace MonoTorrent.Client.Modes
                 id.Peer.PeerId = message.PeerId;
 
             // If the infohash doesn't match, dump the connection
-            if (message.InfoHash != Manager.InfoHash) {
+            if (!Manager.InfoHashes.Contains (message.InfoHash)) {
                 logger.Info (id.Connection, "HandShake.Handle - Invalid infohash");
                 throw new TorrentException ("Invalid infohash. Not tracking this torrent");
             }
@@ -215,7 +215,7 @@ namespace MonoTorrent.Client.Modes
             // If they support fast peers, create their list of allowed pieces that they can request off me
             if (id.SupportsFastPeer && Manager != null && Manager.HasMetadata) {
                 AllowedFastHasher ??= SHA1.Create ();
-                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHash, (uint) Manager.Torrent.PieceCount);
+                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHashes, (uint) Manager.Torrent.PieceCount);
             }
         }
 

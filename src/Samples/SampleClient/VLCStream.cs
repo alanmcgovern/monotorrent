@@ -26,6 +26,9 @@ namespace ClientSample
         internal async Task StreamAsync (InfoHash infoHash, CancellationToken token)
             => await StreamAsync (await Engine.AddStreamingAsync (new MagnetLink (infoHash), DownloadDirectory), token);
 
+        internal async Task StreamAsync (InfoHashes infoHashes, CancellationToken token)
+            => await StreamAsync (await Engine.AddStreamingAsync (new MagnetLink (infoHashes), DownloadDirectory), token);
+
         internal async Task StreamAsync (MagnetLink magnetLink, CancellationToken token)
             => await StreamAsync (await Engine.AddStreamingAsync (magnetLink, DownloadDirectory), token);
 

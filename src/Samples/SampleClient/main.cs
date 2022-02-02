@@ -82,7 +82,7 @@ namespace ClientSample
                 }
                 await stoppingTask;
                 if (engine.Settings.AutoSaveLoadFastResume)
-                    Console.WriteLine ($"FastResume data for {manager.Torrent?.Name ?? manager.InfoHash.ToHex ()} has been written to disk.");
+                    Console.WriteLine ($"FastResume data for {manager.Torrent?.Name ?? manager.InfoHashes.V1?.ToHex () ?? manager.InfoHashes.V2?.ToHex ()} has been written to disk.");
             }
 
             if (engine.Settings.AutoSaveLoadDhtCache)

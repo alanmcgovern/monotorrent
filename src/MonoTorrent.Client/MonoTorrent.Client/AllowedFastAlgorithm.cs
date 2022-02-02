@@ -38,13 +38,18 @@ namespace MonoTorrent.Client
     {
         static readonly int AllowedFastPieceCount = 10;
 
-        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHash infohash, uint numberOfPieces)
+        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHashes infohashes, uint numberOfPieces)
         {
-            return Calculate (hasher, addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
+            return Calculate (hasher, addressBytes, infohashes, AllowedFastPieceCount, numberOfPieces);
         }
 
-        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHash infohash, int count, uint numberOfPieces)
+        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHashes infohashes, int count, uint numberOfPieces)
         {
+            // BEP52: Support V2 torrents
+            var infohash = infohashes.V1;
+            if (infohash == null)
+                return new List<int> ();
+
             byte[] hashBuffer = new byte[24];                // The hash buffer to be used in hashing
             var results = new List<int> (count);  // The results array which will be returned
 

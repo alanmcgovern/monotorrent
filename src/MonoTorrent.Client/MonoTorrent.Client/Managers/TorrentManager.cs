@@ -191,7 +191,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Marks the <see cref="TorrentManager"/> as needing a full hash check. If <see cref="EngineSettings.AutoSaveLoadFastResume"/>
         /// is enabled this method will also delete fast resume data from the location specified by
-        /// <see cref="EngineSettings.GetFastResumePath(InfoHash)"/>. This can only be invoked when the <see cref="State"/> is
+        /// <see cref="EngineSettings.GetFastResumePath(InfoHashes)"/>. This can only be invoked when the <see cref="State"/> is
         /// <see cref="TorrentState.Stopped"/>.
         /// </summary>
         /// <returns></returns>
@@ -207,7 +207,7 @@ namespace MonoTorrent.Client
         {
             HashChecked = false;
             if (Engine.Settings.AutoSaveLoadFastResume) {
-                var path = Engine.Settings.GetFastResumePath (InfoHash);
+                var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
                     File.Delete (path);
             }
@@ -226,9 +226,7 @@ namespace MonoTorrent.Client
 
         public bool HasMetadata => Torrent != null;
 
-        public InfoHash InfoHash => Torrent?.InfoHash ?? MagnetLink.InfoHash;
-
-        public InfoHash InfoHashV2 => Torrent?.InfoHashV2 ?? MagnetLink.InfoHashV2;
+        public InfoHashes InfoHashes => Torrent?.InfoHashes ?? MagnetLink.InfoHashes;
 
         /// <summary>
         /// The path to the .torrent metadata used to create the TorrentManager. Typically stored within the <see cref="EngineSettings.MetadataCacheDirectory"/> directory.
@@ -403,12 +401,12 @@ namespace MonoTorrent.Client
         TorrentManager (ClientEngine engine, Torrent torrent, MagnetLink magnetLink, string savePath, TorrentSettings settings)
         {
             Engine = engine;
-            MagnetLink = magnetLink ?? new MagnetLink (torrent.InfoHash, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
+            MagnetLink = magnetLink ?? new MagnetLink (torrent.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
             Torrent = torrent;
             Settings = settings;
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
-            MetadataPath = engine.Settings.GetMetadataPath (InfoHash);
+            MetadataPath = engine.Settings.GetMetadataPath (InfoHashes);
 
             var announces = Torrent?.AnnounceUrls;
             if (announces == null) {
@@ -505,9 +503,7 @@ namespace MonoTorrent.Client
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals (TorrentManager other)
-        {
-            return (other == null) ? false : InfoHash == other.InfoHash;
-        }
+            => other != null && other.InfoHashes == InfoHashes;
 
         /// <summary>
         /// 
@@ -515,7 +511,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override int GetHashCode ()
         {
-            return InfoHash.GetHashCode ();
+            return InfoHashes.GetHashCode ();
         }
 
         public async Task<List<PeerId>> GetPeersAsync ()
@@ -714,7 +710,7 @@ namespace MonoTorrent.Client
                     LastLocalPeerAnnounce = DateTime.Now;
                     LastLocalPeerAnnounceTimer.Restart ();
 
-                    await Engine?.LocalPeerDiscovery.Announce (InfoHash, Engine.PeerListener.LocalEndPoint);
+                    await Engine?.LocalPeerDiscovery.Announce (InfoHashes.V1OrV2, Engine.PeerListener.LocalEndPoint);
                 }
             }
         }
@@ -735,7 +731,7 @@ namespace MonoTorrent.Client
             if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
-                Engine.DhtEngine.GetPeers (InfoHash);
+                Engine.DhtEngine.GetPeers (InfoHashes.V1OrV2);
             }
         }
 
@@ -993,7 +989,7 @@ namespace MonoTorrent.Client
             CheckMetadata ();
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
-            if (InfoHash != data.Infohash || Torrent.PieceCount != data.Bitfield.Length)
+            if (InfoHashes != data.InfoHashes || Torrent.PieceCount != data.Bitfield.Length)
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
             for (int i = 0; i < Torrent.PieceCount; i++)
@@ -1008,7 +1004,7 @@ namespace MonoTorrent.Client
             CheckMetadata ();
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
-            return new FastResume (InfoHash, Bitfield, UnhashedPieces);
+            return new FastResume (InfoHashes, Bitfield, UnhashedPieces);
         }
 
         internal async ReusableTask MaybeDeleteFastResumeAsync ()
@@ -1017,7 +1013,7 @@ namespace MonoTorrent.Client
                 return;
 
             try {
-                var path = Engine.Settings.GetFastResumePath (InfoHash);
+                var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
                     await Task.Run (() => File.Delete (path));
             } catch {
@@ -1031,8 +1027,8 @@ namespace MonoTorrent.Client
                 return;
 
             await MainLoop.SwitchToThreadpool ();
-            var fastResumePath = Engine.Settings.GetFastResumePath (InfoHash);
-            if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume fastResume) && InfoHash == fastResume.Infohash) {
+            var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);
+            if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume fastResume) && InfoHashes == fastResume.InfoHashes) {
                 await ClientEngine.MainLoop;
                 LoadFastResume (fastResume);
             }
@@ -1047,7 +1043,7 @@ namespace MonoTorrent.Client
             var fastResumeData = SaveFastResume ().Encode ();
 
             await MainLoop.SwitchToThreadpool ();
-            var fastResumePath = Engine.Settings.GetFastResumePath (InfoHash);
+            var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);
             var parentDirectory = Path.GetDirectoryName (fastResumePath);
             Directory.CreateDirectory (parentDirectory);
             File.WriteAllBytes (fastResumePath, fastResumeData);

@@ -40,14 +40,15 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class FastResumeTests
     {
-        static readonly InfoHash InfoHash = new InfoHash (new byte[20]);
+        static InfoHash InfoHash => InfoHashes.V1;
+        static InfoHashes InfoHashes { get; } = new InfoHashes (new InfoHash (new byte[20]), null);
 
         [Test]
         public void AllHashed_AllDownloaded ()
         {
             var unhashedPieces = new MutableBitField (10).SetAll (false);
             var downloaded = new MutableBitField (10).SetAll (true);
-            Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
+            Assert.DoesNotThrow (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
@@ -55,7 +56,7 @@ namespace MonoTorrent.Client
         {
             var unhashedPieces = new MutableBitField (10).SetAll (false);
             var downloaded = new MutableBitField (10).SetAll (false);
-            Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
+            Assert.DoesNotThrow (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
@@ -63,7 +64,7 @@ namespace MonoTorrent.Client
         {
             var unhashedPieces = new MutableBitField (10).SetAll (true);
             var downloaded = new MutableBitField (10).SetAll (false);
-            Assert.DoesNotThrow (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
+            Assert.DoesNotThrow (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
@@ -71,7 +72,7 @@ namespace MonoTorrent.Client
         {
             var unhashedPieces = new MutableBitField (10).SetAll (true);
             var downloaded = new MutableBitField (10).SetAll (true);
-            Assert.Throws<ArgumentException> (() => new FastResume (InfoHash, downloaded, unhashedPieces), "#1");
+            Assert.Throws<ArgumentException> (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
@@ -114,7 +115,7 @@ namespace MonoTorrent.Client
         {
             var unhashedPieces = new MutableBitField (10).SetAll (false);
             var downloaded = new MutableBitField (10).SetAll (true);
-            var fastResume = new FastResume (InfoHash, downloaded, unhashedPieces);
+            var fastResume = new FastResume (InfoHashes, downloaded, unhashedPieces);
             var stream = new MemoryStream ();
 
             fastResume.Encode (stream);
@@ -138,9 +139,9 @@ namespace MonoTorrent.Client
             }.ToSettings ());
 
             var torrent = TestRig.CreatePrivate ();
-            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (InfoHash, new MutableBitField (torrent.PieceCount).SetAll (false), new MutableBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (new InfoHashes (InfoHash, null), new MutableBitField (torrent.PieceCount).SetAll (false), new MutableBitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsFalse (manager.HashChecked);
             await manager.StartAsync ();
@@ -159,9 +160,9 @@ namespace MonoTorrent.Client
             }.ToSettings ());
 
             var torrent = TestRig.CreatePrivate ();
-            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.PieceCount).SetAll (false), new MutableBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (false), new MutableBitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -180,9 +181,9 @@ namespace MonoTorrent.Client
             }.ToSettings ());
 
             var torrent = TestRig.CreatePrivate ();
-            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -204,9 +205,9 @@ namespace MonoTorrent.Client
             var second = new TaskCompletionSource<object> ();
 
             var torrent = TestRig.CreatePrivate ();
-            var path = engine.Settings.GetFastResumePath (torrent.InfoHash);
+            var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHash, new MutableBitField (torrent.PieceCount).SetAll (true), new MutableBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (true), new MutableBitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             await engine.ChangePieceWriterAsync (new TestWriter {
                 FilesThatExist = new System.Collections.Generic.List<ITorrentManagerFile> (manager.Files)

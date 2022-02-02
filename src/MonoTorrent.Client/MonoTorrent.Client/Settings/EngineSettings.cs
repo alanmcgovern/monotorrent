@@ -254,13 +254,13 @@ namespace MonoTorrent.Client
         /// Returns the full path to the <see cref="FastResume"/> file for the specified torrent. This is
         /// where data will be written to, or loaded from, when <see cref="AutoSaveLoadFastResume"/> is enabled. 
         /// </summary>
-        /// <param name="infoHash">The infohash of the torrent</param>
+        /// <param name="infoHashes">The infohashes for the torrent</param>
         /// <returns></returns>
-        public string GetFastResumePath (InfoHash infoHash)
-            => Path.Combine (FastResumeCacheDirectory, $"{infoHash.ToHex ()}.fresume");
+        public string GetFastResumePath (InfoHashes infoHashes)
+            => Path.Combine (FastResumeCacheDirectory, $"{infoHashes.V1OrV2.ToHex ()}.fresume");
 
-        internal string GetMetadataPath (InfoHash infoHash)
-            => Path.Combine (MetadataCacheDirectory, infoHash.ToHex () + ".torrent");
+        internal string GetMetadataPath (InfoHashes infoHashes)
+            => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V1OrV2.ToHex ()}.torrent");
 
         public override bool Equals (object obj)
             => Equals (obj as EngineSettings);

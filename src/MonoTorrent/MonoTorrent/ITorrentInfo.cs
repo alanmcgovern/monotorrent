@@ -40,14 +40,9 @@ namespace MonoTorrent
         IList<ITorrentFile> Files { get; }
 
         /// <summary>
-        /// The SHA1 hash for this torrent. Used by torrents which comply with the v1 specification, or hybrid v1/v2 torrents.
+        /// The infohashes for this torrent.
         /// </summary>
-        InfoHash InfoHash { get; }
-
-        /// <summary>
-        /// The SHA256 hash for this torrent. Used by torrents which comply with the v2 specification, or hybrid v1/v2 torrents.
-        /// </summary>
-        InfoHash InfoHashV2 { get; }
+        InfoHashes InfoHashes { get; }
 
         /// <summary>
         /// The name of the Torrent.
@@ -68,13 +63,13 @@ namespace MonoTorrent
     public static class ITorrentInfoExtensions
     {
         static bool IsV1Only (this ITorrentInfo self)
-            => self.InfoHash != null && self.InfoHashV2 == null;
+            => self.InfoHashes.V1 != null && self.InfoHashes.V2 == null;
 
         static bool IsV2Only (this ITorrentInfo self)
-            => self.InfoHash == null && self.InfoHashV2 != null;
+            => self.InfoHashes.V1 == null && self.InfoHashes.V2 != null;
 
         static bool IsHybrid (this ITorrentInfo self)
-            => self.InfoHash != null && self.InfoHashV2 != null;
+            => self.InfoHashes.V1 != null && self.InfoHashes.V2 != null;
 
         public static int BlocksPerPiece (this ITorrentInfo self, int pieceIndex)
             => (BytesPerPiece (self, pieceIndex) + Constants.BlockSize - 1) / Constants.BlockSize;

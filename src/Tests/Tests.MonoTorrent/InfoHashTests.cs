@@ -57,7 +57,19 @@ namespace MonoTorrent
         [Test]
         public void InvalidArray ()
         {
+            Assert.Throws<ArgumentException> (() => new InfoHash (new byte[19]));
             Assert.Throws<ArgumentException> (() => new InfoHash (new byte[21]));
+            Assert.Throws<ArgumentException> (() => new InfoHash (new byte[31]));
+            Assert.Throws<ArgumentException> (() => new InfoHash (new byte[33]));
+        }
+
+        [Test]
+        public void InvalidMemory ()
+        {
+            Assert.Throws<ArgumentException> (() => InfoHash.FromMemory (new byte[19]));
+            Assert.Throws<ArgumentException> (() => InfoHash.FromMemory (new byte[21]));
+            Assert.Throws<ArgumentException> (() => InfoHash.FromMemory (new byte[31]));
+            Assert.Throws<ArgumentException> (() => InfoHash.FromMemory (new byte[33]));
         }
 
         [Test]

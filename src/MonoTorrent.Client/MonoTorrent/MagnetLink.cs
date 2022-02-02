@@ -43,15 +43,9 @@ namespace MonoTorrent
         }
 
         /// <summary>
-        /// The SHA1 hash for this torrent. Used by torrents which comply with the v1 specification, or hybrid v1/v2 torrents.
+        /// The infohashes for this torrent.
         /// </summary>
-        public InfoHash InfoHash { get; }
-
-        /// <summary>
-        /// The SHA256 hash for this torrent. Used by torrents which comply with the v2 specification, or hybrid v1/v2 torrents.
-        /// </summary>
-        public InfoHash InfoHashV2 { get; }
-        // FIXME: bep52: support this.
+        public InfoHashes InfoHashes { get; private set; }
 
         /// <summary>
         /// The size in bytes of the data, if available.
@@ -75,14 +69,14 @@ namespace MonoTorrent
         }
 
         public MagnetLink (InfoHash infoHash, string name = null, IList<string> announceUrls = null, IEnumerable<string> webSeeds = null, long? size = null)
+            : this (InfoHashes.FromInfoHash (infoHash), name, announceUrls, webSeeds, size)
         {
-            InfoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
-            if (InfoHash.AsMemory ().Length == 20)
-                InfoHash = infoHash;
-            else if (InfoHash.AsMemory ().Length == 32)
-                InfoHashV2 = infoHash;
-            else
-                throw new NotSupportedException ();
+
+        }
+
+        public MagnetLink (InfoHashes infoHashes, string name = null, IList<string> announceUrls = null, IEnumerable<string> webSeeds = null, long? size = null)
+        {
+            InfoHashes = infoHashes ?? throw new ArgumentNullException (nameof (infoHashes));
 
             Name = name;
             AnnounceUrls = new List<string> (announceUrls ?? Array.Empty<string> ()).AsReadOnly ();
@@ -124,7 +118,7 @@ namespace MonoTorrent
         /// <returns></returns>
         public static MagnetLink FromUri (Uri uri)
         {
-            InfoHash infoHash = null;
+            InfoHashes infoHashes = null;
             string name = null;
             var announceUrls = new List<string> ();
             var webSeeds = new List<string> ();
@@ -147,13 +141,14 @@ namespace MonoTorrent
                         switch (keyval[1].Substring (0, 9)) {
                             case "urn:sha1:"://base32 hash
                             case "urn:btih:":
-                                if (infoHash != null)
+                                if (infoHashes != null)
                                     throw new FormatException ("More than one infohash in magnet link is not allowed.");
 
+                                // BEP52: Support v2 magnet links
                                 if (val.Length == 32)
-                                    infoHash = InfoHash.FromBase32 (val);
+                                    infoHashes = InfoHashes.FromV1 (InfoHash.FromBase32 (val));
                                 else if (val.Length == 40)
-                                    infoHash = InfoHash.FromHex (val);
+                                    infoHashes = InfoHashes.FromV1 (InfoHash.FromHex (val));
                                 else
                                     throw new FormatException ("Infohash must be base32 or hex encoded.");
                                 break;
@@ -185,10 +180,10 @@ namespace MonoTorrent
                 }
             }
 
-            if (infoHash == null)
+            if (infoHashes == null)
                 throw new FormatException ("The magnet link did not contain a valid 'xt' parameter referencing the infohash");
 
-            return new MagnetLink (infoHash, name, announceUrls, webSeeds, size);
+            return new MagnetLink (infoHashes, name, announceUrls, webSeeds, size);
         }
 
         public string ToV1String ()
@@ -206,7 +201,7 @@ namespace MonoTorrent
             var sb = new StringBuilder ();
             sb.Append ("magnet:?");
             sb.Append ("xt=urn:btih:");
-            sb.Append (InfoHash.ToHex ());
+            sb.Append (InfoHashes.V1OrV2.ToHex ());
 
             if (!string.IsNullOrEmpty (Name)) {
                 sb.Append ("&dn=");

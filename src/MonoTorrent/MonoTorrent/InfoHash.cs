@@ -36,7 +36,7 @@ using System.Web;
 
 namespace MonoTorrent
 {
-    [DebuggerDisplay ("InfoHash: (hex) {System.BitConverter.ToString (Hash)}")]
+    [DebuggerDisplay ("InfoHash: (hex) {ToHex ()}")]
     public class InfoHash : IEquatable<InfoHash>
     {
         static readonly Dictionary<char, byte> Base32DecodeTable;
@@ -94,6 +94,14 @@ namespace MonoTorrent
 
         public bool Equals (InfoHash other)
             => this == other;
+
+        /// <summary>
+        /// If this <see cref="InfoHash"/> object represents a SHA256 hash the return value will be the first
+        /// 20 bytes of the hash. If it represents a SHA1 hash the full (untruncated) value will be returned.
+        /// </summary>
+        /// <returns></returns>
+        public InfoHash Truncate ()
+            => Hash.Length == 20 ? this : new InfoHash (Hash.Slice (0, 20));
 
         public string ToHex ()
         {

@@ -56,7 +56,7 @@ namespace MonoTorrent.Streaming
             PieceWriter = new TestWriter ();
             await Engine.DiskManager.SetWriterAsync (PieceWriter);
             Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Constants.BlockSize * 1024, 0, 1024 / 8 - 1, 0) }, Constants.BlockSize * 8, out torrentInfo);
-            MagnetLink = new MagnetLink (Torrent.InfoHash, "MagnetDownload");
+            MagnetLink = new MagnetLink (Torrent.InfoHashes, "MagnetDownload");
         }
 
         [TearDown]
@@ -70,7 +70,7 @@ namespace MonoTorrent.Streaming
         public async Task CreateStream ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "test");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -86,7 +86,7 @@ namespace MonoTorrent.Streaming
         public async Task CreateStream_Prebuffer ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "test");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -102,7 +102,7 @@ namespace MonoTorrent.Streaming
         public async Task ReadPastEndOfStream ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -117,7 +117,7 @@ namespace MonoTorrent.Streaming
         public async Task ReadLastByte ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -135,7 +135,7 @@ namespace MonoTorrent.Streaming
         public async Task SeekBeforeStart ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -150,7 +150,7 @@ namespace MonoTorrent.Streaming
         public async Task SeekToMiddle ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -164,7 +164,7 @@ namespace MonoTorrent.Streaming
         public async Task SeekPastEnd ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();
@@ -179,7 +179,7 @@ namespace MonoTorrent.Streaming
         public async Task CreateStreamBeforeStart ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             Assert.ThrowsAsync<InvalidOperationException> (() => manager.StreamProvider.CreateHttpStreamAsync (manager.Files[0]));
@@ -189,7 +189,7 @@ namespace MonoTorrent.Streaming
         public async Task CreateStreamTwice ()
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
-            manager.LoadFastResume (new FastResume (manager.InfoHash, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
+            manager.LoadFastResume (new FastResume (manager.InfoHashes, new MutableBitField (manager.PieceCount ()).SetAll (true), new MutableBitField (manager.PieceCount ())));
             PieceWriter.FilesThatExist.AddRange (manager.Files);
 
             await manager.StartAsync ();

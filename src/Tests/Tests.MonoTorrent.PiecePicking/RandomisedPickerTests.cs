@@ -44,8 +44,7 @@ namespace MonoTorrent.PiecePicking
         {
             IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
             public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024);
-            public InfoHash InfoHash => new InfoHash (new byte[20]);
-            public InfoHash InfoHashV2 => null;
+            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
             public string Name => "Test Torrent";
             public int PieceLength { get; } = 64 * 1024;
             public long Size { get; } = 64 * 1024;
@@ -55,8 +54,7 @@ namespace MonoTorrent.PiecePicking
         {
             IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
             public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
-            public InfoHash InfoHash => new InfoHash (new byte[20]);
-            public InfoHash InfoHashV2 => null;
+            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
             public string Name => "Test Torrent";
             public int PieceLength { get; } = 64 * 1024;
             public long Size { get; } = 64 * 1024 * 40;

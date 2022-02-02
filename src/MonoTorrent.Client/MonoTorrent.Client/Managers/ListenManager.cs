@@ -58,18 +58,18 @@ namespace MonoTorrent.Client
             SKeys = Array.Empty<InfoHash> ();
         }
 
-        public void Add (InfoHash skey)
+        public void Add (InfoHashes skey)
         {
             var clone = new InfoHash[SKeys.Length + 1];
             Array.Copy (SKeys, clone, SKeys.Length);
-            clone[clone.Length - 1] = skey;
+            clone[clone.Length - 1] = skey.V1OrV2;
             SKeys = clone;
         }
 
-        public void Remove (InfoHash skey)
+        public void Remove (InfoHashes skey)
         {
             var clone = new InfoHash[SKeys.Length - 1];
-            var index = Array.IndexOf (SKeys, skey);
+            var index = Array.IndexOf (SKeys, skey.V1OrV2);
             Array.Copy (SKeys, clone, index);
             Array.Copy (SKeys, index + 1, clone, index, clone.Length - index);
             SKeys = clone;
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
                     return;
                 }
                 if (!e.Connection.IsIncoming) {
-                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHash == e.InfoHash);
+                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash));
                     var id = new PeerId (peer, e.Connection, new MutableBitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
                 return false;
 
             for (int i = 0; i < Engine.Torrents.Count; i++)
-                if (message.InfoHash == Engine.Torrents[i].InfoHash)
+                if (Engine.Torrents[i].InfoHashes.Contains (message.InfoHash))
                     man = Engine.Torrents[i];
 
             // We're not hosting that torrent

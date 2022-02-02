@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
             };
 
             var peer = rig.CreatePeer (false).Peer;
-            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.AsMemory ()) });
+            dht.RaisePeersFound (manager.InfoHashes.V1OrV2, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.AsMemory ()) });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
             };
 
             var peer = rig.CreatePeer (false).Peer;
-            dht.RaisePeersFound (manager.InfoHash, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.AsMemory ()) });
+            dht.RaisePeersFound (manager.InfoHashes.V1OrV2, new[] { new PeerInfo (peer.ConnectionUri, peer.PeerId.AsMemory ()) });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (args);
             };
 
-            localPeer.RaisePeerFound (manager.InfoHash, rig.CreatePeer (false).Uri);
+            localPeer.RaisePeerFound (manager.InfoHashes.V1OrV2, rig.CreatePeer (false).Uri);
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
                     tcs.TrySetResult (args);
             };
 
-            localPeer.RaisePeerFound (manager.InfoHash, rig.CreatePeer (false).Uri);
+            localPeer.RaisePeerFound (manager.InfoHashes.V1OrV2, rig.CreatePeer (false).Uri);
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (0, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
@@ -222,7 +222,7 @@ namespace MonoTorrent.Client
         {
             var cts = new CancellationTokenSource ();
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            var task = engine.DownloadMetadataAsync (new MagnetLink (new InfoHash (new byte[20])), cts.Token);
+            var task = engine.DownloadMetadataAsync (new MagnetLink (InfoHashes.FromV1 (new InfoHash (new byte[20]))), cts.Token);
             cts.Cancel ();
             Assert.ThrowsAsync<OperationCanceledException> (() => task);
         }
@@ -278,7 +278,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (engine.Torrents[0].Torrent.Name, restoredEngine.Torrents[0].Torrent.Name);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
             Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
-            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].InfoHashes, restoredEngine.Torrents[0].InfoHashes);
             Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1String (), restoredEngine.Torrents[0].MagnetLink.ToV1String ());
 
             Assert.AreEqual (engine.Torrents[0].Files.Count, restoredEngine.Torrents[0].Files.Count);
@@ -303,7 +303,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
             Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
-            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].InfoHashes, restoredEngine.Torrents[0].InfoHashes);
             Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1Uri (), restoredEngine.Torrents[0].MagnetLink.ToV1Uri ());
             Assert.AreEqual (engine.Torrents[0].Files, restoredEngine.Torrents[0].Files);
         }
@@ -328,7 +328,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (engine.Torrents[0].Torrent.Name, restoredEngine.Torrents[0].Torrent.Name);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
             Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
-            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].InfoHashes, restoredEngine.Torrents[0].InfoHashes);
             Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1String (), restoredEngine.Torrents[0].MagnetLink.ToV1String ());
 
             Assert.AreEqual (engine.Torrents[0].Files.Count, restoredEngine.Torrents[0].Files.Count);
@@ -356,7 +356,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (engine.Torrents[0].Torrent.Name, restoredEngine.Torrents[0].Torrent.Name);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
             Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
-            Assert.AreEqual (engine.Torrents[0].InfoHash, restoredEngine.Torrents[0].InfoHash);
+            Assert.AreEqual (engine.Torrents[0].InfoHashes, restoredEngine.Torrents[0].InfoHashes);
             Assert.AreEqual (engine.Torrents[0].MagnetLink.ToV1String (), restoredEngine.Torrents[0].MagnetLink.ToV1String ());
 
             Assert.AreEqual (engine.Torrents[0].Files.Count, restoredEngine.Torrents[0].Files.Count);
