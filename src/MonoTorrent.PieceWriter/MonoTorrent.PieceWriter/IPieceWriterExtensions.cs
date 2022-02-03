@@ -38,7 +38,7 @@ namespace MonoTorrent.PieceWriter
         public static async ReusableTask<int> ReadFromFilesAsync (this IPieceWriter writer, ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
         {
             var count = request.RequestLength;
-            var offset = request.ToByteOffset (manager.PieceLength);
+            var offset = manager.PieceIndexToByteOffset (request.PieceIndex) + request.StartOffset;
 
             if (count < 1)
                 throw new ArgumentOutOfRangeException (nameof (count), $"Count must be greater than zero, but was {count}.");
@@ -72,7 +72,7 @@ namespace MonoTorrent.PieceWriter
         public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
         {
             var count = request.RequestLength;
-            var torrentOffset = request.ToByteOffset (manager.PieceLength);
+            var torrentOffset = manager.PieceIndexToByteOffset (request.PieceIndex) + request.StartOffset;
             if (torrentOffset < 0 || torrentOffset + count > manager.Size)
                 throw new ArgumentOutOfRangeException (nameof (request));
 

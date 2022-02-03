@@ -56,9 +56,6 @@ namespace MonoTorrent
         public static bool operator != (BlockInfo left, BlockInfo right)
             => !left.Equals (right);
 
-        public long ToByteOffset (int pieceLength)
-         => (long) PieceIndex * pieceLength + StartOffset;
-
         public override string ToString ()
             => $"Piece: {PieceIndex} - Offset {StartOffset / Constants.BlockSize}";
     }
