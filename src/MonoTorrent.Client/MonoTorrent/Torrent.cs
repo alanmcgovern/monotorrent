@@ -42,26 +42,7 @@ namespace MonoTorrent
 {
     public sealed class Torrent : ITorrentInfo, IEquatable<Torrent>
     {
-        static Dictionary<int, ReadOnlyMemory<byte>> FinalLayerHash { get; } = CreateFinalHashPerLayer ();
-
-        static Dictionary<int, ReadOnlyMemory<byte>>  CreateFinalHashPerLayer ()
-        {
-            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-            byte[] buffer = new byte[32];
-
-            Dictionary<int, ReadOnlyMemory<byte>> results = new Dictionary<int, ReadOnlyMemory<byte>> ();
-            results[Constants.BlockSize] = (byte[]) buffer.Clone ();
-            for (int i = Constants.BlockSize * 2; i <= Constants.MaximumPieceLength; i *= 2) {
-                hasher.AppendData (buffer);
-                hasher.AppendData (buffer);
-                if (!hasher.TryGetHashAndReset (buffer, out int written) || written != 32)
-                    throw new Exception ("Critical failure");
-                results[i] = (byte[]) buffer.Clone ();
-            }
-            return results;
-        }
-
-        internal static bool SupportsV2Torrents = false;
+        internal static bool SupportsV2Torrents = true;
         internal static bool SupportsV1V2Torrents = false;
 
         /// <summary>
@@ -702,26 +683,11 @@ namespace MonoTorrent
                 if ((hash.Span.Length % 32) != 0)
                     throw new TorrentException ($"The piece layer for {file.Path} was not a valid array of SHA256 hashes");
 
-                var src = hash.AsMemory ();
-                using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
-                var pieceLength = actualPieceLength;
-                while (src.Length != 32) {
-                    for (int i = 0; i < src.Length / 64; i ++) {
-                        hasher.AppendData (src.Slice (i * 64, 64));
-                        if (!hasher.TryGetHashAndReset (dest.Slice (i * 32, 32).Span, out int written) || written != 32)
-                            throw new TorrentException ($"Could not compute the SHA256 hash for file {file.Path}");
-                    }
-                    if (src.Length % 64 == 32) {
-                        hasher.AppendData (src.Slice (src.Length - 32, 32));
-                        hasher.AppendData (FinalLayerHash[pieceLength]);
-                        if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out int written) || written != 32)
-                            throw new TorrentException ($"Could not compute the SHA256 hash for file {file.Path}");
-                    }
-                    src = dest;
-                    dest = dest.Slice (0, ((dest.Length + 63) / 64) * 32);
-                    pieceLength *= 2;
-                }
-                if (!src.Span.SequenceEqual (file.PiecesRoot.Span))
+                Span<byte> computedHash = stackalloc byte[32];
+                if (!MerkleHash.TryHash (hasher, hash.AsMemory (), actualPieceLength, computedHash, out int written) || written != 32)
+                    throw new InvalidOperationException ($"Could not compute merkle hash for file '{file.Path}'");
+
+                if (!computedHash.SequenceEqual (file.PiecesRoot.Span))
                     throw new TorrentException ($"The has root is corrupt for file {file.Path}");
             }
 

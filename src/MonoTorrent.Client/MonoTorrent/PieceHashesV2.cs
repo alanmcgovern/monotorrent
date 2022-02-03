@@ -77,7 +77,6 @@ namespace MonoTorrent
         {
             if (hash.Length != HashCodeLength)
                 throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
-
             return GetHash (hashIndex).Span.SequenceEqual (hash);
         }
     }
