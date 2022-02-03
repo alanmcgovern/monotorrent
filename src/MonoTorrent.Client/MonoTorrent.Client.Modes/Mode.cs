@@ -392,7 +392,8 @@ namespace MonoTorrent.Client.Modes
             peersInvolved = data.peersInvolved;
 
             // Hashcheck the piece as we now have all the blocks.
-            using var byteBuffer = MemoryPool.Default.Rent (20, out Memory<byte> memory);
+            // BEP52: Support validating both SHA1 *and* SHA256.
+            using var byteBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> memory);
             bool successful = false;
             try {
                 successful = await DiskManager.GetHashAsync (Manager, block.PieceIndex, memory);
@@ -403,7 +404,10 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            bool result = successful && Manager.Torrent.PieceHashes.IsValid (memory.Span, block.PieceIndex);
+            bool result = successful
+                && (Manager.Torrent.PieceHashes?.IsValid (memory.Span, block.PieceIndex) ?? true)
+                && (Manager.Torrent.PieceHashesV2?.IsValid (memory.Span, block.PieceIndex) ?? true);
+
             Manager.OnPieceHashed (block.PieceIndex, result, 1, 1);
             Manager.PieceManager.PieceHashed (block.PieceIndex);
             if (!result)

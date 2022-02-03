@@ -62,8 +62,13 @@ namespace MonoTorrent
             for (int i = 0; i < Files.Count; i++) {
                 if (hashIndex < Files[i].StartPieceIndex || hashIndex > Files[i].EndPieceIndex)
                     continue;
-                var layer = (BEncodedString) Layers[BEncodedString.FromMemory (Files[i].PiecesRoot)];
-                return layer.AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength);
+
+                // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
+                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedValue layer))
+                    return ((BEncodedString) layer).AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength);
+
+                // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
+                return Files[i].PiecesRoot;
             }
             throw new InvalidOperationException ("Requested a piece which does not exist");
         }

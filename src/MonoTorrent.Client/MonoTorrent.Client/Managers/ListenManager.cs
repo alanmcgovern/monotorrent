@@ -62,14 +62,14 @@ namespace MonoTorrent.Client
         {
             var clone = new InfoHash[SKeys.Length + 1];
             Array.Copy (SKeys, clone, SKeys.Length);
-            clone[clone.Length - 1] = skey.V1OrV2;
+            clone[clone.Length - 1] = skey.V1OrV2.Truncate ();
             SKeys = clone;
         }
 
         public void Remove (InfoHashes skey)
         {
             var clone = new InfoHash[SKeys.Length - 1];
-            var index = Array.IndexOf (SKeys, skey.V1OrV2);
+            var index = Array.IndexOf (SKeys, skey.V1OrV2.Truncate ());
             Array.Copy (SKeys, clone, index);
             Array.Copy (SKeys, index + 1, clone, index, clone.Length - index);
             SKeys = clone;
