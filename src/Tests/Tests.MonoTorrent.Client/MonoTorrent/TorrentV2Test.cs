@@ -34,6 +34,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 
 using NUnit.Framework;
 
@@ -159,6 +160,13 @@ namespace MonoTorrent.Common
                 Assert.AreEqual (runningTotal + file.Length - (file.Length % V2OnlyTorrent.PieceLength), V2OnlyTorrent.PieceIndexToByteOffset (file.EndPieceIndex));
                 runningTotal += file.Length;
             }
+        }
+
+        [Test]
+        public void PiecesRootNotNull ()
+        {
+            TorrentFileInfo wrapper = new TorrentFileInfo (V2OnlyTorrent.Files[0], @"c:\test.a");
+            Assert.AreEqual (V2OnlyTorrent.Files[0].PiecesRoot, wrapper.PiecesRoot);
         }
     }
 }

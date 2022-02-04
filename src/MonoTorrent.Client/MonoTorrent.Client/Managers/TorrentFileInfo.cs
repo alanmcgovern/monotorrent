@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
 
         public long Length => TorrentFile.Length;
 
-        public ReadOnlyMemory<byte> PiecesRoot { get; }
+        public ReadOnlyMemory<byte> PiecesRoot => TorrentFile.PiecesRoot;
 
         public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
         {
