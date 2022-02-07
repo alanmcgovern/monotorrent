@@ -559,9 +559,9 @@ namespace MonoTorrent
                         ProcessInfo (((BEncodedDictionary) keypair.Value));
                         if (PieceHashes != null)
                             InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), null);
-                        if (SupportsV2Torrents && !SupportsV1V2Torrents && !infoHashes.SHA256.IsEmpty)
+                        if (SupportsV2Torrents && !SupportsV1V2Torrents && !Files[0].PiecesRoot.IsEmpty)
                             InfoHashes = new InfoHashes (null, InfoHash.FromMemory (infoHashes.SHA256));
-                        if (SupportsV2Torrents && SupportsV1V2Torrents && !infoHashes.SHA256.IsEmpty)
+                        if (SupportsV2Torrents && SupportsV1V2Torrents && !Files[0].PiecesRoot.IsEmpty)
                             InfoHashes = new InfoHashes (InfoHashes?.V1, InfoHash.FromMemory (infoHashes.SHA256));
                         break;
 

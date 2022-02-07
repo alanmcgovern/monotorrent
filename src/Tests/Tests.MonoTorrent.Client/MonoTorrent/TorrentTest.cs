@@ -468,5 +468,17 @@ namespace MonoTorrent.Common
         {
             Assert.IsTrue (torrent.SHA1.Span.SequenceEqual (sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))));
         }
+
+        [Test]
+        public void V1InfoHashOnly ()
+        {
+            (bool before1, bool before2) = (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents);
+            (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents) = (true, true);
+            try {
+                Assert.IsNull (Torrent.Load (torrentInfo).InfoHashes.V2);
+            } finally {
+                (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents) = (before1, before2);
+            }
+        }
     }
 }
