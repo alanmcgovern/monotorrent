@@ -165,10 +165,10 @@ namespace MonoTorrent
             if (infoHash is null)
                 throw new ArgumentNullException (nameof (infoHash));
 
-            if (infoHash.Length != 40)
-                throw new ArgumentException ("InfoHash must be 40 characters long", nameof (infoHash));
+            if (infoHash.Length != 40 && infoHash.Length != 64)
+                throw new ArgumentException ("V1 InfoHashes must be 40 characters long, V2 infohashes must be 64 characters long.", nameof (infoHash));
 
-            byte[] hash = new byte[20];
+            byte[] hash = new byte[infoHash.Length / 2];
             for (int i = 0; i < hash.Length; i++)
                 hash[i] = byte.Parse (infoHash.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
 

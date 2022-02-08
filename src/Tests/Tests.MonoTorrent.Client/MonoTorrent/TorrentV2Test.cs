@@ -111,6 +111,8 @@ namespace MonoTorrent.Common
 
             Assert.IsFalse (V2OnlyTorrent.PieceHashesV2.GetHash (V2OnlyTorrent.PieceCount - 1).IsEmpty);
             Assert.IsFalse (V2OnlyTorrent.PieceHashesV2.GetHash (0).IsEmpty);
+
+            Assert.AreEqual (InfoHash.FromHex ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e"), V2OnlyTorrent.InfoHashes.V2);
         }
 
         [Test]
