@@ -56,8 +56,7 @@ namespace MonoTorrent.Client
             static readonly byte[] Flusher = new byte[32];
 
             readonly IncrementalHash SHA1Hasher;
-            public int BlocksPerPiece;
-            public int NextOffsetToHash;
+            public int NextOffsetToHash { get; private set; }
             public ReusableExclusiveSemaphore Locker;
 
             readonly IncrementalHash SHA256Hasher;
@@ -80,11 +79,17 @@ namespace MonoTorrent.Client
                 Nibbles.Clear ();
             }
 
+            public void PrepareForFirstUse (int pieceLength)
+            {
+
+            }
+
             public void AppendData(ReadOnlyMemory<byte> buffer)
             {
                 SHA1Hasher.AppendData (buffer);
                 SHA256Hasher.AppendData (buffer);
                 Nibbles.Add (SHA256Hasher.GetHashAndReset ());
+                NextOffsetToHash += buffer.Length;
             }
 
             public bool TryGetHashAndReset (int pieceLength, Span<byte> dest, out int written)
@@ -463,7 +468,6 @@ namespace MonoTorrent.Client
                         // this method.
                         await MainLoop.SwitchToThreadpool ();
                         incrementalHash.AppendData (buffer.Slice (0, request.RequestLength));
-                        incrementalHash.NextOffsetToHash += request.RequestLength;
                     }
                 }
 
@@ -485,7 +489,6 @@ namespace MonoTorrent.Client
                 var remaining = Math.Min (Constants.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);
                 if (await Cache.ReadFromCacheAsync (torrent, new BlockInfo (pieceIndex, incrementalHash.NextOffsetToHash, remaining), buffer)) {
                     incrementalHash.AppendData (buffer.Slice (0, remaining));
-                    incrementalHash.NextOffsetToHash += remaining;
                 } else {
                     break;
                 }
