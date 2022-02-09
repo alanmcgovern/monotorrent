@@ -67,6 +67,9 @@ namespace MonoTorrent.Client
             MemoryPool.Releaser BlockHashesReleaser { get; set; }
             Memory<byte> BlockHashes { get; set; }
 
+            bool UseV1 { get; set; }
+            bool UseV2 { get; set; }
+
             public IncrementalHashData ()
             {
                 SHA1Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
@@ -86,30 +89,38 @@ namespace MonoTorrent.Client
                 BlockHashes = default;
             }
 
-            public void PrepareForFirstUse (int lengthOfCurrentPiece)
+            public void PrepareForFirstUse (int lengthOfCurrentPiece, bool useV1, bool useV2)
             {
                 LengthOfCurrentPiece = lengthOfCurrentPiece;
-                (BlockHashesReleaser, BlockHashes) = MemoryPool.Default.Rent (((lengthOfCurrentPiece + (Constants.BlockSize - 1)) / Constants.BlockSize) * 32);
+                UseV1 = useV1;
+                UseV2 = useV2;
+                if (UseV2)
+                    (BlockHashesReleaser, BlockHashes) = MemoryPool.Default.Rent (((lengthOfCurrentPiece + (Constants.BlockSize - 1)) / Constants.BlockSize) * 32);
             }
 
             public void AppendData(ReadOnlyMemory<byte> buffer)
             {
                 // SHA1 hashes need to be computed by hashing the blocks in the piece sequentially
-                SHA1Hasher.AppendData (buffer);
+                if (UseV1)
+                    SHA1Hasher.AppendData (buffer);
 
                 // SHA256 hashes are hashed blockwise first, and then those block hashes are combined like a merkle tree until
                 // we have a piece hash.
-                SHA256Hasher.AppendData (buffer);
-                if (!SHA256Hasher.TryGetHashAndReset (BlockHashes.Span.Slice ((NextOffsetToHash / Constants.BlockSize) * 32, 32), out _))
-                    throw new InvalidOperationException ("Failed to generate SHA256 hash for the provided piece");
+                if (UseV2) {
+                    SHA256Hasher.AppendData (buffer);
+                    if (!SHA256Hasher.TryGetHashAndReset (BlockHashes.Span.Slice ((NextOffsetToHash / Constants.BlockSize) * 32, 32), out _))
+                        throw new InvalidOperationException ("Failed to generate SHA256 hash for the provided piece");
+                }
+
                 NextOffsetToHash += buffer.Length;
             }
 
             public bool TryGetHashAndReset (long pieceLength, Span<byte> dest, out int written)
             {
+                written = 0;
                 return dest.Length == 20
-                    ? SHA1Hasher.TryGetHashAndReset (dest, out written)
-                    : MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest, out written);
+                    ? UseV1 && SHA1Hasher.TryGetHashAndReset (dest, out written)
+                    : UseV2 && MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest, out written);
             }
         }
 
@@ -304,7 +315,7 @@ namespace MonoTorrent.Client
                 // If we have no partial hash data for this piece we could be doing a full
                 // hash check, so let's create a IncrementalHashData for our piece!
                 incrementalHash = IncrementalHashCache.Dequeue ();
-                incrementalHash.PrepareForFirstUse (manager.BytesPerPiece (pieceIndex));
+                incrementalHash.PrepareForFirstUse (manager.BytesPerPiece (pieceIndex), manager.InfoHashes.V1 != null, manager.InfoHashes.V2 != null);
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -457,7 +468,7 @@ namespace MonoTorrent.Client
                 int pieceIndex = request.PieceIndex;
                 if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
                     incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
-                    incrementalHash.PrepareForFirstUse (manager.BytesPerPiece (request.PieceIndex));
+                    incrementalHash.PrepareForFirstUse (manager.BytesPerPiece (request.PieceIndex), manager.InfoHashes.V1 != null, manager.InfoHashes.V2 != null);
                 }
 
                 ReusableTaskCompletionSource<bool> tcs = null;
