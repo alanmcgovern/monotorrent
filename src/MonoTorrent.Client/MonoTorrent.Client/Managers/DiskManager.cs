@@ -56,17 +56,21 @@ namespace MonoTorrent.Client
             static readonly byte[] Flusher = new byte[32];
 
             readonly IncrementalHash SHA1Hasher;
+
             public int NextOffsetToHash { get; private set; }
+
+            int LengthOfCurrentPiece { get; set; }
+
             public ReusableExclusiveSemaphore Locker;
 
             readonly IncrementalHash SHA256Hasher;
-            readonly List<ReadOnlyMemory<byte>> Nibbles;
+            MemoryPool.Releaser BlockHashesReleaser { get; set; }
+            Memory<byte> BlockHashes { get; set; }
 
             public IncrementalHashData ()
             {
                 SHA1Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
                 SHA256Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-                Nibbles = new List<ReadOnlyMemory<byte>> ();
                 Locker = new ReusableExclusiveSemaphore ();
                 Initialise ();
             }
@@ -76,29 +80,36 @@ namespace MonoTorrent.Client
                 SHA1Hasher.TryGetHashAndReset (Flusher, out _);
                 SHA256Hasher.TryGetHashAndReset (Flusher, out _);
                 NextOffsetToHash = 0;
-                Nibbles.Clear ();
+
+                BlockHashesReleaser.Dispose ();
+                BlockHashesReleaser = default;
+                BlockHashes = default;
             }
 
-            public void PrepareForFirstUse (int pieceLength)
+            public void PrepareForFirstUse (int lengthOfCurrentPiece)
             {
-
+                LengthOfCurrentPiece = lengthOfCurrentPiece;
+                (BlockHashesReleaser, BlockHashes) = MemoryPool.Default.Rent (((lengthOfCurrentPiece + (Constants.BlockSize - 1)) / Constants.BlockSize) * 32);
             }
 
             public void AppendData(ReadOnlyMemory<byte> buffer)
             {
+                // SHA1 hashes need to be computed by hashing the blocks in the piece sequentially
                 SHA1Hasher.AppendData (buffer);
+
+                // SHA256 hashes are hashed blockwise first, and then those block hashes are combined like a merkle tree until
+                // we have a piece hash.
                 SHA256Hasher.AppendData (buffer);
-                Nibbles.Add (SHA256Hasher.GetHashAndReset ());
+                if (!SHA256Hasher.TryGetHashAndReset (BlockHashes.Span.Slice ((NextOffsetToHash / Constants.BlockSize) * 32, 32), out _))
+                    throw new InvalidOperationException ("Failed to generate SHA256 hash for the provided piece");
                 NextOffsetToHash += buffer.Length;
             }
 
-            public bool TryGetHashAndReset (int pieceLength, Span<byte> dest, out int written)
+            public bool TryGetHashAndReset (long pieceLength, Span<byte> dest, out int written)
             {
-                if (dest.Length == 20)
-                    return SHA1Hasher.TryGetHashAndReset (dest, out written);
-
-                written = 0;
-                return false;
+                return dest.Length == 20
+                    ? SHA1Hasher.TryGetHashAndReset (dest, out written)
+                    : MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest, out written);
             }
         }
 
@@ -293,6 +304,7 @@ namespace MonoTorrent.Client
                 // If we have no partial hash data for this piece we could be doing a full
                 // hash check, so let's create a IncrementalHashData for our piece!
                 incrementalHash = IncrementalHashCache.Dequeue ();
+                incrementalHash.PrepareForFirstUse (manager.BytesPerPiece (pieceIndex));
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -316,8 +328,11 @@ namespace MonoTorrent.Client
                         startOffset += count;
                         incrementalHash.AppendData (hashBuffer.Slice (0, count));
                     }
-                    
-                    return incrementalHash.TryGetHashAndReset (manager.PieceLength, dest.Span, out int written);
+
+                    // Pad to the next power of 2 *or* the piece length, whichever is smaller.
+                    var file = manager.Files[manager.Files.FindFileByPieceIndex (pieceIndex)];
+                    var finalLayer = file.Length < manager.PieceLength ? Math.Min (manager.PieceLength, (long)Math.Pow (2, Math.Ceiling (Math.Log (manager.BytesPerPiece (pieceIndex), 2)))) : manager.PieceLength;
+                    return incrementalHash.TryGetHashAndReset (finalLayer, dest.Span, out int written);
                 } finally {
                     await IOLoop;
                     IncrementalHashCache.Enqueue (incrementalHash);
@@ -442,6 +457,7 @@ namespace MonoTorrent.Client
                 int pieceIndex = request.PieceIndex;
                 if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
                     incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
+                    incrementalHash.PrepareForFirstUse (manager.BytesPerPiece (request.PieceIndex));
                 }
 
                 ReusableTaskCompletionSource<bool> tcs = null;
