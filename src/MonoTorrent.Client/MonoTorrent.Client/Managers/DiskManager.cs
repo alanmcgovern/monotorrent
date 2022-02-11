@@ -306,7 +306,9 @@ namespace MonoTorrent.Client
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
                 if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex)) {
-                    if (!incrementalHash.TryGetHashAndReset (manager.PieceLength, dest.Span, out int written))
+                    var file = manager.Files[manager.Files.FindFileByPieceIndex (pieceIndex)];
+                    var finalLayer = file.Length < manager.PieceLength ? Math.Min (manager.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (manager.BytesPerPiece (pieceIndex), 2)))) : manager.PieceLength;
+                    if (!incrementalHash.TryGetHashAndReset (finalLayer, dest.Span, out int written))
                         throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
                     IncrementalHashCache.Enqueue (incrementalHash);
                     return true;
