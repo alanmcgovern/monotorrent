@@ -141,15 +141,15 @@ namespace MonoTorrent.Client.Modes
 
                 if (!pieceHashed.Task.IsCompleted) {
                     var data = await pieceHashed.Task.WithTimeout ();
-                    data.CopyTo (dest);
+                    data.CopyTo (dest.V1Hash);
                     return true;
                 }
                 if (!secondPieceHashed.Task.IsCompleted) {
                     var data = await secondPieceHashed.Task.WithTimeout ();
-                    data.CopyTo (dest);
+                    data.CopyTo (dest.V1Hash);
                     return true;
                 }
-                new byte[20].CopyTo (dest);
+                new byte[20].CopyTo (dest.V1Hash);
                 return true;
             };
 
@@ -239,9 +239,9 @@ namespace MonoTorrent.Client.Modes
         {
             DiskManager.GetHashAsyncOverride = (manager, index, dest) => {
                 if (index >= 0 && index <= 4) {
-                    Manager.Torrent.PieceHashes.GetHash (index).CopyTo (dest);
+                    Manager.Torrent.PieceHashes.GetHash (index).Span.CopyTo (dest.V1Hash);
                 } else {
-                    Enumerable.Repeat ((byte) 255, 20).ToArray ().CopyTo (dest);
+                    Enumerable.Repeat ((byte) 255, 20).ToArray ().CopyTo (dest.V1Hash);
                 }
                 return Task.FromResult (true);
             };
@@ -289,7 +289,7 @@ namespace MonoTorrent.Client.Modes
                 if (pieceHashCount == 3)
                     Manager.StopAsync ().Wait ();
 
-                Enumerable.Repeat ((byte) 0, 20).ToArray ().CopyTo (dest);
+                Enumerable.Repeat ((byte) 0, 20).ToArray ().CopyTo (dest.V1Hash);
                 return Task.FromResult (true);
             };
 
@@ -316,7 +316,7 @@ namespace MonoTorrent.Client.Modes
                 getHashCount++;
                 if (getHashCount == 2)
                     Manager.PauseAsync ().Wait ();
-                Enumerable.Repeat ((byte) 0, 20).ToArray ().CopyTo (dest);
+                Enumerable.Repeat ((byte) 0, 20).ToArray ().CopyTo (dest.V1Hash);
                 return Task.FromResult (true);
             };
 

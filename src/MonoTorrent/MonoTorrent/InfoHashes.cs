@@ -117,8 +117,7 @@ namespace MonoTorrent
             => (V1 ?? V2).GetHashCode ();
 
         public int GetMaxByteCount ()
-            // V2 hashes are longer than V1 hashes.
-            => (V2 ?? V1).Span.Length;
+            => (V1 == null ? 0 : 20) + (V2 == null ? 0 : 32);
 
         public static bool operator == (InfoHashes left, InfoHashes right)
         {

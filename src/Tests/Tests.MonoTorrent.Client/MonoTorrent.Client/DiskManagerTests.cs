@@ -501,16 +501,17 @@ namespace MonoTorrent.Client
                 await diskManager.WriteAsync (fileData, new BlockInfo (pieceIndex, offset, allData[i].Length), buffer);
             }
 
-            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> memory);
+            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> hashMemory);
+            var hashes = new Hashes (hashMemory);
             for (int i = 0; i < fileData.Hashes.Length; i++) {
                 // Check twice because the first check should give us the result from the incremental hash.
-                memory.Span.Fill (0);
-                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, memory));
-                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (memory.Span), "#2." + i);
+                hashes.V1Hash.Clear ();
+                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, hashes));
+                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (hashes.V1Hash), "#2." + i);
 
-                memory.Span.Fill (0);
-                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, memory));
-                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (memory.Span), "#3." + i);
+                hashes.V1Hash.Fill (0);
+                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, hashes));
+                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (hashes.V1Hash), "#3." + i);
             }
         }
 
@@ -545,16 +546,17 @@ namespace MonoTorrent.Client
                 offset += block.Length;
             }
 
-            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> memory);
+            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> hashMemory);
+            var hashes = new Hashes (hashMemory);
             for (int i = 0; i < fileData.Hashes.Length; i++) {
                 // Check twice because the first check should give us the result from the incremental hash.
-                memory.Span.Fill (0);
-                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, memory));
-                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (memory.Span), "#2." + i);
+                hashes.V1Hash.Fill (0);
+                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, hashes));
+                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (hashes.V1Hash), "#2." + i);
 
-                memory.Span.Fill (0);
-                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, memory));
-                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (memory.Span), "#3." + i);
+                hashes.V1Hash.Fill (0);
+                Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, hashes));
+                Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (hashes.V1Hash), "#3." + i);
             }
             Assert.AreEqual (fileData.Size + otherData.Size, diskManager.TotalBytesWritten, "#4");
         }
@@ -586,10 +588,11 @@ namespace MonoTorrent.Client
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 0, Constants.BlockSize), blocks[0]);
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 2, Constants.BlockSize), blocks[2]);
 
-            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> memory);
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#1");
+            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> hashMemory);
+            var hashes = new Hashes (hashMemory);
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#1");
             // If we have at least Constants.BlockSize in the disk cache we'll need to read nothing from disk
             if (cacheSize < Constants.BlockSize)
                 Assert.AreEqual (Constants.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
@@ -598,9 +601,9 @@ namespace MonoTorrent.Client
 
 
             writer.ReadData.Clear ();
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#3");
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#3");
             Assert.AreEqual (Constants.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
         }
 
@@ -618,16 +621,17 @@ namespace MonoTorrent.Client
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 1, Constants.BlockSize), blocks[1]);
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 2, Constants.BlockSize), blocks[2]);
 
-            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> memory);
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#1");
+            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> hashMemory);
+            var hashes = new Hashes (hashMemory);
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#1");
             Assert.AreEqual (0, writer.ReadData.Sum (t => t.Item3), "#2");
 
             writer.ReadData.Clear ();
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#3");
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#3");
             Assert.AreEqual (Constants.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
         }
 
@@ -646,16 +650,17 @@ namespace MonoTorrent.Client
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 2, Constants.BlockSize), blocks[2]);
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 1, Constants.BlockSize), blocks[1]);
 
-            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> memory);
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#1");
+            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> hashMemory);
+            var hashes = new Hashes (hashMemory);
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#1");
             Assert.AreEqual (Constants.BlockSize, writer.ReadData.Sum (t => t.Item3), "#2");
 
             writer.ReadData.Clear ();
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#3");
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#3");
             Assert.AreEqual (Constants.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
         }
 
@@ -674,16 +679,17 @@ namespace MonoTorrent.Client
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 1, Constants.BlockSize), blocks[1]);
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 0, Constants.BlockSize), blocks[0]);
 
-            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> memory);
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#1");
+            using var _ = MemoryPool.Default.Rent (20, out Memory<byte> hashMemory);
+            var hashes = new Hashes (hashMemory);
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#1");
             Assert.AreEqual (Constants.BlockSize * 2, writer.ReadData.Sum (t => t.Item3), "#2");
 
             writer.ReadData.Clear ();
-            memory.Span.Fill (0);
-            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, memory));
-            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (memory.Span), "#3");
+            hashes.V1Hash.Fill (0);
+            Assert.IsTrue (await diskManager.GetHashAsync (fileData, 0, hashes));
+            Assert.IsTrue (fileData.Hashes[0].AsSpan ().SequenceEqual (hashes.V1Hash), "#3");
             Assert.AreEqual (Constants.BlockSize * 3, writer.ReadData.Sum (t => t.Item3), "#4");
         }
 

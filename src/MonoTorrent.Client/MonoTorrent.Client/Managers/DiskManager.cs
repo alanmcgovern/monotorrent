@@ -43,6 +43,17 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
+    readonly struct Hashes
+    {
+        readonly Memory<byte> Memory;
+
+        public Span<byte> V1Hash => Memory.Length == 20 || Memory.Length == 52 ? Memory.Span.Slice (0, 20) : Span<byte>.Empty;
+        public Span<byte> V2Hash => Memory.Length == 32 ? Memory.Span : Memory.Length == 52 ? Memory.Span.Slice (20, 32) : Span<byte>.Empty;
+
+        internal Hashes (Memory<byte> memory)
+            => Memory = memory;
+    }
+
     public class DiskManager : IDisposable
     {
         internal static MemoryPool BufferPool { get; } = MemoryPool.Default;
@@ -115,12 +126,15 @@ namespace MonoTorrent.Client
                 NextOffsetToHash += buffer.Length;
             }
 
-            public bool TryGetHashAndReset (long pieceLength, Span<byte> dest, out int written)
+            public bool TryGetHashAndReset (long pieceLength, Hashes dest)
             {
-                written = 0;
-                return dest.Length == 20
-                    ? UseV1 && SHA1Hasher.TryGetHashAndReset (dest, out written)
-                    : UseV2 && MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest, out written);
+                if (UseV1 && (!SHA1Hasher.TryGetHashAndReset (dest.V1Hash, out int written) || written != dest.V1Hash.Length))
+                    return false;
+
+                if (UseV2 && (!MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest.V2Hash, out written) || written != dest.V2Hash.Length))
+                    return false;
+
+                return true;
             }
         }
 
@@ -286,9 +300,9 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal Func<ITorrentManagerInfo, int, Memory<byte>, Task<bool>> GetHashAsyncOverride;
+        internal Func<ITorrentManagerInfo, int, Hashes, Task<bool>> GetHashAsyncOverride;
 
-        internal async ReusableTask<bool> GetHashAsync (ITorrentManagerInfo manager, int pieceIndex, Memory<byte> dest)
+        internal async ReusableTask<bool> GetHashAsync (ITorrentManagerInfo manager, int pieceIndex, Hashes dest)
         {
             if (GetHashAsyncOverride != null) {
                 return await GetHashAsyncOverride (manager, pieceIndex, dest);
@@ -308,7 +322,7 @@ namespace MonoTorrent.Client
                 if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex)) {
                     var file = manager.Files[manager.Files.FindFileByPieceIndex (pieceIndex)];
                     var finalLayer = file.Length < manager.PieceLength ? Math.Min (manager.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (manager.BytesPerPiece (pieceIndex), 2)))) : manager.PieceLength;
-                    if (!incrementalHash.TryGetHashAndReset (finalLayer, dest.Span, out int written))
+                    if (!incrementalHash.TryGetHashAndReset (finalLayer, dest))
                         throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
                     IncrementalHashCache.Enqueue (incrementalHash);
                     return true;
@@ -345,7 +359,7 @@ namespace MonoTorrent.Client
                     // Pad to the next power of 2 *or* the piece length, whichever is smaller.
                     var file = manager.Files[manager.Files.FindFileByPieceIndex (pieceIndex)];
                     var finalLayer = file.Length < manager.PieceLength ? Math.Min (manager.PieceLength, (long)Math.Pow (2, Math.Ceiling (Math.Log (manager.BytesPerPiece (pieceIndex), 2)))) : manager.PieceLength;
-                    return incrementalHash.TryGetHashAndReset (finalLayer, dest.Span, out int written);
+                    return incrementalHash.TryGetHashAndReset (finalLayer, dest);
                 } finally {
                     await IOLoop;
                     IncrementalHashCache.Enqueue (incrementalHash);

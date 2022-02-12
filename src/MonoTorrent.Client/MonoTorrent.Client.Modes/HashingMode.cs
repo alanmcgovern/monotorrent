@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -84,7 +85,8 @@ namespace MonoTorrent.Client.Modes
                 int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 // bep52: Properly support this
-                using var hashBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out System.Memory<byte> memory);
+                using var hashBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> hashMemory);
+                var hashes = new Hashes (hashMemory);
                 for (int index = 0; index < Manager.Torrent.PieceCount; index++) {
                     if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
@@ -98,7 +100,7 @@ namespace MonoTorrent.Client.Modes
                     await PausedCompletionSource.Task;
                     Cancellation.Token.ThrowIfCancellationRequested ();
 
-                    var successful = await DiskManager.GetHashAsync (Manager, index, memory);
+                    var successful = await DiskManager.GetHashAsync (Manager, index, hashes);
 
                     if (Cancellation.Token.IsCancellationRequested) {
                         await DiskManager.CloseFilesAsync (Manager);
@@ -106,8 +108,8 @@ namespace MonoTorrent.Client.Modes
                     }
 
                     bool hashPassed = successful &&
-                        (Manager.Torrent.PieceHashes?.IsValid (memory.Span, index) ?? true) &&
-                        (Manager.Torrent.PieceHashesV2?.IsValid (memory.Span, index) ?? true);
+                        (Manager.Torrent.PieceHashes?.IsValid (hashes.V1Hash, index) ?? true) &&
+                        (Manager.Torrent.PieceHashesV2?.IsValid (hashes.V2Hash, index) ?? true);
                     Manager.OnPieceHashed (index, hashPassed, ++piecesHashed, Manager.PartialProgressSelector.TrueCount);
                 }
             } else {
