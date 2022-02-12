@@ -284,17 +284,12 @@ namespace MonoTorrent
         /// <summary>
         /// The number of pieces in the torrent.
         /// </summary>
-        public int PieceCount => PieceHashes != null ? PieceHashes.Count : PieceHashesV2.Count;
+        public int PieceCount => PieceHashes.Count;
 
         /// <summary>
         /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
         /// </summary>
         public IPieceHashes PieceHashes { get; private set; }
-
-        /// <summary>
-        /// This is the array of SHA256 piece hashes contained within the torrent. Used to validate torrents which comply with the V2 specification.
-        /// </summary>
-        public IPieceHashes PieceHashesV2 { get; private set; }
 
         /// <summary>
         /// The name of the Publisher
@@ -350,7 +345,7 @@ namespace MonoTorrent
         /// of the .torrent file
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
-        void ProcessInfo (BEncodedDictionary dictionary)
+        void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1 hashesV1)
         {
             InfoMetadata = dictionary.Encode ();
             PieceLength = int.Parse (dictionary["piece length"].ToString ());
@@ -382,7 +377,7 @@ namespace MonoTorrent
                 var data = ((BEncodedString) dictionary["pieces"]).AsMemory ();
                 if (data.Length % 20 != 0)
                     throw new TorrentException ("Invalid infohash detected");
-                PieceHashes = new PieceHashesV1 (data, 20);
+                hashesV1 = new PieceHashesV1 (data, 20);
             }
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
@@ -463,7 +458,7 @@ namespace MonoTorrent
                 long length = long.Parse (dictionary["length"].ToString ());
                 Size = length;
                 string path = Name;
-                int endPiece = Math.Min (PieceCount - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
+                int endPiece = Math.Min (hashesV1.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0) });
             }
         }
@@ -473,6 +468,8 @@ namespace MonoTorrent
             Check.TorrentInformation (torrentInformation);
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
 
+            PieceHashesV1 hashesV1 = null;
+            PieceHashesV2 hashesV2 = null;
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
                 switch (keypair.Key.Text) {
                     case ("announce"):
@@ -537,13 +534,7 @@ namespace MonoTorrent
                         break;
 
                     case ("info"):
-                        ProcessInfo (((BEncodedDictionary) keypair.Value));
-                        if (PieceHashes != null)
-                            InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), null);
-                        if (SupportsV2Torrents && !SupportsV1V2Torrents && !Files[0].PiecesRoot.IsEmpty)
-                            InfoHashes = new InfoHashes (null, InfoHash.FromMemory (infoHashes.SHA256));
-                        if (SupportsV2Torrents && SupportsV1V2Torrents && !Files[0].PiecesRoot.IsEmpty)
-                            InfoHashes = new InfoHashes (InfoHashes?.V1, InfoHash.FromMemory (infoHashes.SHA256));
+                        ProcessInfo (((BEncodedDictionary) keypair.Value), ref hashesV1);
                         break;
 
                     case ("name"):                                               // Handled elsewhere
@@ -582,7 +573,7 @@ namespace MonoTorrent
                         break;
 
                     case "piece layers":
-                        PieceHashesV2 = LoadHashesV2 (Files, (BEncodedDictionary) keypair.Value, PieceLength);
+                        hashesV2 = LoadHashesV2 (Files, (BEncodedDictionary) keypair.Value, PieceLength);
                         break;
 
                     case ("url-list"):
@@ -601,6 +592,18 @@ namespace MonoTorrent
                     default:
                         break;
                 }
+            }
+
+            PieceHashes = new PieceHashes (hashesV1, hashesV2);
+            if (SupportsV2Torrents && SupportsV1V2Torrents) {
+                InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), Files[0].PiecesRoot.IsEmpty ? default : InfoHash.FromMemory (infoHashes.SHA256));
+            } else if (SupportsV2Torrents) {
+                if (Files[0].PiecesRoot.IsEmpty)
+                    InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), default);
+                else
+                    InfoHashes = new InfoHashes (default, InfoHash.FromMemory (infoHashes.SHA256));
+            } else {
+                InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
             }
         }
 

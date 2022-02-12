@@ -1,10 +1,10 @@
-//
-// PieceHashesV1.cs
+﻿//
+// ReadOnlyPieceHash.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2022 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -31,28 +31,26 @@ using System;
 
 namespace MonoTorrent
 {
-    class PieceHashesV1 : IPieceHashes
+    public readonly struct ReadOnlyPieceHash
     {
-        readonly int HashCodeLength;
-        readonly ReadOnlyMemory<byte> HashData;
+        public ReadOnlyMemory<byte> V1Hash { get; }
+        public ReadOnlyMemory<byte> V2Hash { get; }
 
-        /// <summary>
-        /// Number of Hashes (equivalent to number of Pieces)
-        /// </summary>
-        public int Count => HashData.Length / HashCodeLength;
+        internal ReadOnlyPieceHash (ReadOnlyMemory<byte> memory)
+            : this (memory.Length == 20 || memory.Length == 52 ? memory.Slice (0, 20) : ReadOnlyMemory<byte>.Empty,
+                  memory.Length == 32 ? memory : memory.Length == 52 ? memory.Slice (20, 32) : ReadOnlyMemory<byte>.Empty)
+        {
 
-        internal PieceHashesV1 (ReadOnlyMemory<byte> hashData, int hashCodeLength)
-            => (HashData, HashCodeLength) = (hashData, hashCodeLength);
+        }
 
-        /// <summary>
-        /// Returns the hash for a specific piece
-        /// </summary>
-        /// <param name="hashIndex">Piece/hash index to return</param>
-        /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
-        public ReadOnlyPieceHash GetHash (int hashIndex)
-            => new ReadOnlyPieceHash (HashData.Slice (hashIndex * HashCodeLength, HashCodeLength), default);
+        internal ReadOnlyPieceHash (ReadOnlyMemory<byte> v1Hash, ReadOnlyMemory<byte> v2Hash)
+        {
+            if (!v1Hash.IsEmpty && v1Hash.Length != 20)
+                throw new ArgumentException ("V1 hashes must be 20 bytes long");
+            if (!v2Hash.IsEmpty && v2Hash.Length != 32)
+                throw new ArgumentNullException ("V2 hashes must be 32 bytes long");
 
-        public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
-            => GetHash (hashIndex).V1Hash.Span.SequenceEqual (hashes.V1Hash.Span);
+            (V1Hash, V2Hash) = (v1Hash, v2Hash);
+        }
     }
 }

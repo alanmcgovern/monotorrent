@@ -1,10 +1,10 @@
 //
-// PieceHashesV1.cs
+// PieceHashes.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2022 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -31,28 +31,27 @@ using System;
 
 namespace MonoTorrent
 {
-    class PieceHashesV1 : IPieceHashes
+    class PieceHashes : IPieceHashes
     {
-        readonly int HashCodeLength;
-        readonly ReadOnlyMemory<byte> HashData;
+        PieceHashesV1 V1 { get; }
+        PieceHashesV2 V2 { get; }
 
-        /// <summary>
-        /// Number of Hashes (equivalent to number of Pieces)
-        /// </summary>
-        public int Count => HashData.Length / HashCodeLength;
+        public int Count => ((IPieceHashes) V1 ?? (IPieceHashes) V2).Count;
 
-        internal PieceHashesV1 (ReadOnlyMemory<byte> hashData, int hashCodeLength)
-            => (HashData, HashCodeLength) = (hashData, hashCodeLength);
+        internal PieceHashes (PieceHashesV1 v1Hashes, PieceHashesV2 v2Hashes)
+            => (V1, V2) = (v1Hashes, v2Hashes);
 
-        /// <summary>
-        /// Returns the hash for a specific piece
-        /// </summary>
-        /// <param name="hashIndex">Piece/hash index to return</param>
-        /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
         public ReadOnlyPieceHash GetHash (int hashIndex)
-            => new ReadOnlyPieceHash (HashData.Slice (hashIndex * HashCodeLength, HashCodeLength), default);
+        {
+            var v1 = V1 == null ? default : V1.GetHash (hashIndex);
+            var v2 = V2 == null ? default : V2.GetHash (hashIndex);
+            return new ReadOnlyPieceHash (v1.V1Hash, v2.V2Hash);
+        }
 
         public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
-            => GetHash (hashIndex).V1Hash.Span.SequenceEqual (hashes.V1Hash.Span);
+        {
+            return (V1 == null || V1.IsValid (hashes, hashIndex))
+                && (V2 == null || V2.IsValid (hashes, hashIndex));
+        }
     }
 }

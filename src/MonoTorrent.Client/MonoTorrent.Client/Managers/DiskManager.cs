@@ -43,17 +43,6 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    readonly struct Hashes
-    {
-        readonly Memory<byte> Memory;
-
-        public Span<byte> V1Hash => Memory.Length == 20 || Memory.Length == 52 ? Memory.Span.Slice (0, 20) : Span<byte>.Empty;
-        public Span<byte> V2Hash => Memory.Length == 32 ? Memory.Span : Memory.Length == 52 ? Memory.Span.Slice (20, 32) : Span<byte>.Empty;
-
-        internal Hashes (Memory<byte> memory)
-            => Memory = memory;
-    }
-
     public class DiskManager : IDisposable
     {
         internal static MemoryPool BufferPool { get; } = MemoryPool.Default;
@@ -126,12 +115,12 @@ namespace MonoTorrent.Client
                 NextOffsetToHash += buffer.Length;
             }
 
-            public bool TryGetHashAndReset (long pieceLength, Hashes dest)
+            public bool TryGetHashAndReset (long pieceLength, PieceHash dest)
             {
-                if (UseV1 && (!SHA1Hasher.TryGetHashAndReset (dest.V1Hash, out int written) || written != dest.V1Hash.Length))
+                if (UseV1 && (!SHA1Hasher.TryGetHashAndReset (dest.V1Hash.Span, out int written) || written != dest.V1Hash.Length))
                     return false;
 
-                if (UseV2 && (!MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest.V2Hash, out written) || written != dest.V2Hash.Length))
+                if (UseV2 && (!MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, pieceLength, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length))
                     return false;
 
                 return true;
@@ -300,9 +289,9 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal Func<ITorrentManagerInfo, int, Hashes, Task<bool>> GetHashAsyncOverride;
+        internal Func<ITorrentManagerInfo, int, PieceHash, Task<bool>> GetHashAsyncOverride;
 
-        internal async ReusableTask<bool> GetHashAsync (ITorrentManagerInfo manager, int pieceIndex, Hashes dest)
+        internal async ReusableTask<bool> GetHashAsync (ITorrentManagerInfo manager, int pieceIndex, PieceHash dest)
         {
             if (GetHashAsyncOverride != null) {
                 return await GetHashAsyncOverride (manager, pieceIndex, dest);

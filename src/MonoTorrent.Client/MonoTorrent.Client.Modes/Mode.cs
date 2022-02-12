@@ -394,7 +394,7 @@ namespace MonoTorrent.Client.Modes
             // Hashcheck the piece as we now have all the blocks.
             // BEP52: Support validating both SHA1 *and* SHA256.
             using var byteBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> hashMemory);
-            var hashes = new Hashes (hashMemory);
+            var hashes = new PieceHash (hashMemory);
             bool successful = false;
             try {
                 successful = await DiskManager.GetHashAsync (Manager, block.PieceIndex, hashes);
@@ -405,10 +405,7 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            bool result = successful
-                && (Manager.Torrent.PieceHashes?.IsValid (hashes.V1Hash, block.PieceIndex) ?? true)
-                && (Manager.Torrent.PieceHashesV2?.IsValid (hashes.V2Hash, block.PieceIndex) ?? true);
-
+            bool result = successful && Manager.Torrent.PieceHashes.IsValid (hashes, block.PieceIndex);
             Manager.OnPieceHashed (block.PieceIndex, result, 1, 1);
             Manager.PieceManager.PieceHashed (block.PieceIndex);
             if (!result)
@@ -709,7 +706,7 @@ namespace MonoTorrent.Client.Modes
             hashingPendingFiles = true;
             try {
                 using var hashBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> hashMemory);
-                var hashes = new Hashes (hashMemory);
+                var hashes = new PieceHash (hashMemory);
                 foreach (var file in Manager.Files) {
                     // If the start piece *and* end piece have been hashed, then every piece in between must've been hashed!
                     if (file.Priority != Priority.DoNotDownload && (Manager.UnhashedPieces[file.StartPieceIndex] || Manager.UnhashedPieces[file.EndPieceIndex])) {
@@ -718,9 +715,7 @@ namespace MonoTorrent.Client.Modes
                                 var successful = await DiskManager.GetHashAsync (Manager, index, hashes);
                                 Cancellation.Token.ThrowIfCancellationRequested ();
 
-                                bool hashPassed = successful
-                                    && (Manager.Torrent.PieceHashes?.IsValid (hashes.V1Hash, index) ?? true)
-                                    && (Manager.Torrent.PieceHashesV2?.IsValid (hashes.V2Hash, index) ?? true);
+                                bool hashPassed = successful && Manager.Torrent.PieceHashes.IsValid (hashes, index);
                                 Manager.OnPieceHashed (index, hashPassed, 1, 1);
 
                                 if (hashPassed)

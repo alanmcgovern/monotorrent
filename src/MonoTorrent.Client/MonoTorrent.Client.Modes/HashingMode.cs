@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.Modes
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 // bep52: Properly support this
                 using var hashBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> hashMemory);
-                var hashes = new Hashes (hashMemory);
+                var hashes = new PieceHash (hashMemory);
                 for (int index = 0; index < Manager.Torrent.PieceCount; index++) {
                     if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
@@ -107,9 +107,7 @@ namespace MonoTorrent.Client.Modes
                         Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 
-                    bool hashPassed = successful &&
-                        (Manager.Torrent.PieceHashes?.IsValid (hashes.V1Hash, index) ?? true) &&
-                        (Manager.Torrent.PieceHashesV2?.IsValid (hashes.V2Hash, index) ?? true);
+                    bool hashPassed = successful && Manager.Torrent.PieceHashes.IsValid (hashes, index);
                     Manager.OnPieceHashed (index, hashPassed, ++piecesHashed, Manager.PartialProgressSelector.TrueCount);
                 }
             } else {
