@@ -110,7 +110,7 @@ namespace ClientSample
             while (Engine.IsRunning) {
                 sb.Remove (0, sb.Length);
 
-                AppendFormat (sb, $"Transfer Rate:      {Engine.TotalDownloadSpeed / 1024.0:0.00}kB/sec down / {Engine.TotalUploadSpeed / 1024.0:0.00}kB/sec up");
+                AppendFormat (sb, $"Transfer Rate:      {Engine.TotalDownloadSpeed / 1024.0:0.00}kB/sec ↓ / {Engine.TotalUploadSpeed / 1024.0:0.00}kB/sec ↑");
                 AppendFormat (sb, $"Memory Cache:       {Engine.DiskManager.CacheBytesUsed / 1024.0:0.00}/{Engine.Settings.DiskCacheBytes / 1024.0:0.00} kB");
                 AppendFormat (sb, $"Disk IO Rate:       {Engine.DiskManager.ReadRate / 1024.0:0.00} kB/s read / {Engine.DiskManager.WriteRate / 1024.0:0.00} kB/s write");
                 AppendFormat (sb, $"Disk IO Total:      {Engine.DiskManager.TotalBytesRead / 1024.0:0.00} kB read / {Engine.DiskManager.TotalBytesWritten / 1024.0:0.00} kB written");
@@ -129,6 +129,7 @@ namespace ClientSample
                     AppendFormat (sb, $"State:              {manager.State}");
                     AppendFormat (sb, $"Name:               {(manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name)}");
                     AppendFormat (sb, $"Progress:           {manager.Progress:0.00}");
+                    AppendFormat (sb, $"Transferred:        {manager.Monitor.DataBytesReceived / 1024.0 / 1024.0:0.00} MB ↓ / {manager.Monitor.DataBytesSent / 1024.0 / 1024.0:0.00} MB ↑");
                     AppendFormat (sb, $"Tracker Status");
                     foreach (var tier in manager.TrackerManager.Tiers)
                         AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapeSucceeded}.");
