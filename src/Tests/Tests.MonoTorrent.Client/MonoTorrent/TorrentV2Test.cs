@@ -104,13 +104,11 @@ namespace MonoTorrent.Common
         {
             // A v2 only torrent does not have a regular infohash
             Assert.IsNull (V2OnlyTorrent.InfoHashes.V1);
-            Assert.IsNull (V2OnlyTorrent.PieceHashes);
-
             Assert.IsNotNull (V2OnlyTorrent.InfoHashes.V2);
-            Assert.IsNotNull (V2OnlyTorrent.PieceHashesV2);
 
-            Assert.IsFalse (V2OnlyTorrent.PieceHashesV2.GetHash (V2OnlyTorrent.PieceCount - 1).IsEmpty);
-            Assert.IsFalse (V2OnlyTorrent.PieceHashesV2.GetHash (0).IsEmpty);
+            Assert.IsTrue (V2OnlyTorrent.PieceHashes.GetHash (V2OnlyTorrent.PieceCount - 1).V1Hash.IsEmpty);
+            Assert.IsFalse (V2OnlyTorrent.PieceHashes.GetHash (V2OnlyTorrent.PieceCount - 1).V2Hash.IsEmpty);
+            Assert.IsFalse (V2OnlyTorrent.PieceHashes.GetHash (0).V2Hash.IsEmpty);
 
             Assert.AreEqual (InfoHash.FromHex ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e"), V2OnlyTorrent.InfoHashes.V2);
         }

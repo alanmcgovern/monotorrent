@@ -130,7 +130,7 @@ namespace MonoTorrent.Messages.Peer
             supports.CopyTo (buffer);
             buffer = buffer.Slice (supports.Length);
 
-            Write (ref buffer, InfoHash.Span);
+            Write (ref buffer, InfoHash.Truncate ().Span);
             Write (ref buffer, PeerId.Span);
 
             return written - buffer.Length;

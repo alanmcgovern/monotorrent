@@ -65,6 +65,10 @@ namespace MonoTorrent
         /// </summary>
         public InfoHash V2 { get; }
 
+        /// <summary>
+        /// If the V1 hash is non-null, then it is returned. Otherwise the V2 hash is returned.
+        /// As a result, the V1 hash will be returned if both the V1 and V2 hash are non-null.
+        /// </summary>
         public InfoHash V1OrV2 => V1 ?? V2;
 
         /// <summary>
@@ -111,6 +115,9 @@ namespace MonoTorrent
 
         public override int GetHashCode ()
             => (V1 ?? V2).GetHashCode ();
+
+        public int GetMaxByteCount ()
+            => (V1 == null ? 0 : 20) + (V2 == null ? 0 : 32);
 
         public static bool operator == (InfoHashes left, InfoHashes right)
         {

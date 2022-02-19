@@ -695,8 +695,8 @@ namespace MonoTorrent.Client
                 if (!manager.CanUseDht)
                     continue;
 
-                DhtEngine.Announce (manager.InfoHashes.V1OrV2, Settings.ListenEndPoint?.Port ?? -1);
-                DhtEngine.GetPeers (manager.InfoHashes.V1OrV2);
+                DhtEngine.Announce (manager.InfoHashes.V1OrV2.Truncate (), Settings.ListenEndPoint?.Port ?? -1);
+                DhtEngine.GetPeers (manager.InfoHashes.V1OrV2.Truncate ());
             }
         }
 

@@ -42,26 +42,7 @@ namespace MonoTorrent
 {
     public sealed class Torrent : ITorrentInfo, IEquatable<Torrent>
     {
-        static Dictionary<int, ReadOnlyMemory<byte>> FinalLayerHash { get; } = CreateFinalHashPerLayer ();
-
-        static Dictionary<int, ReadOnlyMemory<byte>>  CreateFinalHashPerLayer ()
-        {
-            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-            byte[] buffer = new byte[32];
-
-            Dictionary<int, ReadOnlyMemory<byte>> results = new Dictionary<int, ReadOnlyMemory<byte>> ();
-            results[Constants.BlockSize] = (byte[]) buffer.Clone ();
-            for (int i = Constants.BlockSize * 2; i <= Constants.MaximumPieceLength; i *= 2) {
-                hasher.AppendData (buffer);
-                hasher.AppendData (buffer);
-                if (!hasher.TryGetHashAndReset (buffer, out int written) || written != 32)
-                    throw new Exception ("Critical failure");
-                results[i] = (byte[]) buffer.Clone ();
-            }
-            return results;
-        }
-
-        internal static bool SupportsV2Torrents = false;
+        internal static bool SupportsV2Torrents = true;
         internal static bool SupportsV1V2Torrents = false;
 
         /// <summary>
@@ -303,17 +284,12 @@ namespace MonoTorrent
         /// <summary>
         /// The number of pieces in the torrent.
         /// </summary>
-        public int PieceCount => PieceHashes != null ? PieceHashes.Count : PieceHashesV2.Count;
+        public int PieceCount => PieceHashes.Count;
 
         /// <summary>
         /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
         /// </summary>
         public IPieceHashes PieceHashes { get; private set; }
-
-        /// <summary>
-        /// This is the array of SHA256 piece hashes contained within the torrent. Used to validate torrents which comply with the V2 specification.
-        /// </summary>
-        public IPieceHashes PieceHashesV2 { get; private set; }
 
         /// <summary>
         /// The name of the Publisher
@@ -369,7 +345,7 @@ namespace MonoTorrent
         /// of the .torrent file
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
-        void ProcessInfo (BEncodedDictionary dictionary)
+        void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1 hashesV1)
         {
             InfoMetadata = dictionary.Encode ();
             PieceLength = int.Parse (dictionary["piece length"].ToString ());
@@ -401,7 +377,7 @@ namespace MonoTorrent
                 var data = ((BEncodedString) dictionary["pieces"]).AsMemory ();
                 if (data.Length % 20 != 0)
                     throw new TorrentException ("Invalid infohash detected");
-                PieceHashes = new PieceHashesV1 (data, 20);
+                hashesV1 = new PieceHashesV1 (data, 20);
             }
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
@@ -482,7 +458,7 @@ namespace MonoTorrent
                 long length = long.Parse (dictionary["length"].ToString ());
                 Size = length;
                 string path = Name;
-                int endPiece = Math.Min (PieceCount - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
+                int endPiece = Math.Min (hashesV1.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0) });
             }
         }
@@ -492,6 +468,8 @@ namespace MonoTorrent
             Check.TorrentInformation (torrentInformation);
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
 
+            PieceHashesV1 hashesV1 = null;
+            PieceHashesV2 hashesV2 = null;
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
                 switch (keypair.Key.Text) {
                     case ("announce"):
@@ -556,13 +534,7 @@ namespace MonoTorrent
                         break;
 
                     case ("info"):
-                        ProcessInfo (((BEncodedDictionary) keypair.Value));
-                        if (PieceHashes != null)
-                            InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), null);
-                        if (SupportsV2Torrents && !SupportsV1V2Torrents && !Files[0].PiecesRoot.IsEmpty)
-                            InfoHashes = new InfoHashes (null, InfoHash.FromMemory (infoHashes.SHA256));
-                        if (SupportsV2Torrents && SupportsV1V2Torrents && !Files[0].PiecesRoot.IsEmpty)
-                            InfoHashes = new InfoHashes (InfoHashes?.V1, InfoHash.FromMemory (infoHashes.SHA256));
+                        ProcessInfo (((BEncodedDictionary) keypair.Value), ref hashesV1);
                         break;
 
                     case ("name"):                                               // Handled elsewhere
@@ -601,7 +573,7 @@ namespace MonoTorrent
                         break;
 
                     case "piece layers":
-                        PieceHashesV2 = LoadHashesV2 (Files, (BEncodedDictionary) keypair.Value, PieceLength);
+                        hashesV2 = LoadHashesV2 (Files, (BEncodedDictionary) keypair.Value, PieceLength);
                         break;
 
                     case ("url-list"):
@@ -620,6 +592,18 @@ namespace MonoTorrent
                     default:
                         break;
                 }
+            }
+
+            PieceHashes = new PieceHashes (hashesV1, hashesV2);
+            if (SupportsV2Torrents && SupportsV1V2Torrents) {
+                InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), Files[0].PiecesRoot.IsEmpty ? default : InfoHash.FromMemory (infoHashes.SHA256));
+            } else if (SupportsV2Torrents) {
+                if (Files[0].PiecesRoot.IsEmpty)
+                    InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), default);
+                else
+                    InfoHashes = new InfoHashes (default, InfoHash.FromMemory (infoHashes.SHA256));
+            } else {
+                InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
             }
         }
 
@@ -702,26 +686,11 @@ namespace MonoTorrent
                 if ((hash.Span.Length % 32) != 0)
                     throw new TorrentException ($"The piece layer for {file.Path} was not a valid array of SHA256 hashes");
 
-                var src = hash.AsMemory ();
-                using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
-                var pieceLength = actualPieceLength;
-                while (src.Length != 32) {
-                    for (int i = 0; i < src.Length / 64; i ++) {
-                        hasher.AppendData (src.Slice (i * 64, 64));
-                        if (!hasher.TryGetHashAndReset (dest.Slice (i * 32, 32).Span, out int written) || written != 32)
-                            throw new TorrentException ($"Could not compute the SHA256 hash for file {file.Path}");
-                    }
-                    if (src.Length % 64 == 32) {
-                        hasher.AppendData (src.Slice (src.Length - 32, 32));
-                        hasher.AppendData (FinalLayerHash[pieceLength]);
-                        if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out int written) || written != 32)
-                            throw new TorrentException ($"Could not compute the SHA256 hash for file {file.Path}");
-                    }
-                    src = dest;
-                    dest = dest.Slice (0, ((dest.Length + 63) / 64) * 32);
-                    pieceLength *= 2;
-                }
-                if (!src.Span.SequenceEqual (file.PiecesRoot.Span))
+                Span<byte> computedHash = stackalloc byte[32];
+                if (!MerkleHash.TryHash (hasher, hash.AsMemory (), actualPieceLength, computedHash, out int written) || written != 32)
+                    throw new InvalidOperationException ($"Could not compute merkle hash for file '{file.Path}'");
+
+                if (!computedHash.SequenceEqual (file.PiecesRoot.Span))
                     throw new TorrentException ($"The has root is corrupt for file {file.Path}");
             }
 

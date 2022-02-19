@@ -34,7 +34,7 @@ namespace MonoTorrent
     public interface IPieceHashes
     {
         int Count { get; }
-        ReadOnlyMemory<byte> GetHash (int hashIndex);
-        bool IsValid (ReadOnlySpan<byte> hash, int hashIndex);
+        ReadOnlyPieceHash GetHash (int hashIndex);
+        bool IsValid (ReadOnlyPieceHash hashes, int hashIndex);
     }
 }

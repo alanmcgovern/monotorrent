@@ -731,7 +731,7 @@ namespace MonoTorrent.Client
             if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
-                Engine.DhtEngine.GetPeers (InfoHashes.V1OrV2);
+                Engine.DhtEngine.GetPeers (InfoHashes.V1OrV2.Truncate ());
             }
         }
 

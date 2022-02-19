@@ -54,7 +54,7 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
-        public ReadOnlyMemory<byte> GetHash (int hashIndex)
+        public ReadOnlyPieceHash GetHash (int hashIndex)
         {
             if (hashIndex < 0 || hashIndex > Count)
                 throw new ArgumentOutOfRangeException (nameof (hashIndex), $"Value must be grater than or equal to '0' and less than '{Count}'");
@@ -62,18 +62,20 @@ namespace MonoTorrent
             for (int i = 0; i < Files.Count; i++) {
                 if (hashIndex < Files[i].StartPieceIndex || hashIndex > Files[i].EndPieceIndex)
                     continue;
-                var layer = (BEncodedString) Layers[BEncodedString.FromMemory (Files[i].PiecesRoot)];
-                return layer.AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength);
+
+                // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
+                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedValue layer))
+                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, ((BEncodedString) layer).AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
+
+                // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
+                return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot);
             }
             throw new InvalidOperationException ("Requested a piece which does not exist");
         }
 
-        public bool IsValid (ReadOnlySpan<byte> hash, int hashIndex)
+        public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
         {
-            if (hash.Length != HashCodeLength)
-                throw new ArgumentException ($"Hash must be {HashCodeLength} bytes in length", nameof (hash));
-
-            return GetHash (hashIndex).Span.SequenceEqual (hash);
+            return GetHash (hashIndex).V2Hash.Span.SequenceEqual (hashes.V2Hash.Span);
         }
     }
 }

@@ -19,28 +19,21 @@ namespace MonoTorrent.Common
         [Test]
         public void IsValid_DoesNotMatch ()
         {
-            var other = Enumerable.Repeat ((byte) 20, 20).ToArray ();
+            var other = new PieceHash (Enumerable.Repeat ((byte) 20, 20).ToArray (), default);
             Assert.IsFalse (Hashes.IsValid (other, 0));
         }
 
         [Test]
         public void IsValid_InvalidIndex ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.IsValid (new byte[20], -1));
-            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.IsValid (new byte[20], Hashes.Count));
+            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.IsValid (new PieceHash (new byte[20], default), -1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => Hashes.IsValid (new PieceHash (new byte[20], default), Hashes.Count));
         }
 
         [Test]
         public void IsValid_Matches ()
         {
-            Assert.IsTrue (Hashes.IsValid (new byte[20], 0));
-        }
-
-        [Test]
-        public void IsValid_WrongLength ()
-        {
-            Assert.Throws<ArgumentException> (() => Hashes.IsValid (new byte[5], 0));
-
+            Assert.IsTrue (Hashes.IsValid (new PieceHash (new byte[20]), 0));
         }
 
         [Test]
