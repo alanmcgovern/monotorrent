@@ -636,8 +636,10 @@ namespace MonoTorrent
 
                         case ("path.utf-8"):
                             foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                sb.Append (str.Text);
-                                sb.Append (Path.DirectorySeparatorChar);
+                                if (!(string.IsNullOrEmpty (str.Text) || str.Text == Path.DirectorySeparatorChar)) {
+                                    sb.Append (str.Text);
+                                    sb.Append (Path.DirectorySeparatorChar);
+                                }
                             }
                             path = sb.ToString (0, sb.Length - 1);
                             sb.Remove (0, sb.Length);
@@ -646,8 +648,10 @@ namespace MonoTorrent
                         case ("path"):
                             if (string.IsNullOrEmpty (path)) {
                                 foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                    sb.Append (str.Text);
-                                    sb.Append (Path.DirectorySeparatorChar);
+                                    if (!(string.IsNullOrEmpty (str.Text) || str.Text == Path.DirectorySeparatorChar)) {
+                                        sb.Append (str.Text);
+                                        sb.Append (Path.DirectorySeparatorChar);
+                                    }
                                 }
                                 path = sb.ToString (0, sb.Length - 1);
                                 sb.Remove (0, sb.Length);
