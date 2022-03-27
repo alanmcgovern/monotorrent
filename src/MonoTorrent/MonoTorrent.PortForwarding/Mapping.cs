@@ -64,11 +64,11 @@ namespace MonoTorrent.PortForwarding
             PublicPort = publicPort;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as Mapping);
 
-        public bool Equals (Mapping mapping)
-            => mapping != null
+        public bool Equals (Mapping? mapping)
+            => !(mapping is null)
                 && mapping.PrivatePort == PrivatePort
                 && mapping.PublicPort == PublicPort
                 && mapping.Protocol == Protocol;

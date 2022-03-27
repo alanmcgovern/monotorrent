@@ -83,7 +83,7 @@ namespace MonoTorrent.PiecePicking
 
         public void AddRequests (IReadOnlyList<IPeerWithMessaging> peers)
         {
-            if (!RefreshAfterSeeking)
+            if (!RefreshAfterSeeking || TorrentData is null)
                 return;
 
             RefreshAfterSeeking = false;
@@ -131,6 +131,9 @@ namespace MonoTorrent.PiecePicking
 
         public void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> allPeers)
         {
+            if (TorrentData is null)
+                return;
+
             // The first two pieces in the high priority set should be requested multiple times to ensure fast delivery
             var pieceCount = TorrentData.PieceCount ();
             for (int i = HighPriorityPieceIndex; i < pieceCount && i <= HighPriorityPieceIndex + 1; i++)
@@ -260,7 +263,8 @@ namespace MonoTorrent.PiecePicking
         /// <param name="position"></param>
         public void ReadToPosition (ITorrentManagerFile file, long position)
         {
-            HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
+            if (TorrentData != null)
+                HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
         }
 
         public bool ValidatePiece (IPeer peer, BlockInfo blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved)

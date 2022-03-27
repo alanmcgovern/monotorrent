@@ -267,7 +267,8 @@ namespace MonoTorrent.PiecePicking
 
         public void Reset ()
         {
-            Requests = new PickedPieces (TorrentData.PieceCount ());
+            if (TorrentData != null)
+                Requests = new PickedPieces (TorrentData.PieceCount ());
         }
 
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
@@ -354,7 +355,7 @@ namespace MonoTorrent.PiecePicking
 
         BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests, bool allowAbandoned, bool allowAny)
         {
-            if (Requests == null)
+            if (Requests is null || TorrentData is null)
                 return null;
 
             if (Requests.TryGetMostRecentRequest (peer, out Piece mostRecent)) {
@@ -436,7 +437,7 @@ namespace MonoTorrent.PiecePicking
 
         BlockInfo? GetFromList (IPeer peer, BitField bitfield, IList<int> pieces)
         {
-            if (!peer.SupportsFastPeer || Requests == null)
+            if (!peer.SupportsFastPeer || Requests is null || TorrentData is null)
                 return null;
 
             for (int i = 0; i < pieces.Count; i++) {

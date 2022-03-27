@@ -86,7 +86,7 @@ namespace MonoTorrent.PiecePicking
 
         public override bool IsInteresting (IPeer peer, BitField bitfield)
         {
-            if (temp == null)
+            if (temp is null || allPrioritisedPieces is null)
                 return false;
 
             if (ShouldRebuildSelectors ())

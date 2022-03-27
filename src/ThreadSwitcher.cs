@@ -36,7 +36,7 @@ namespace MonoTorrent
 {
     internal struct ThreadSwitcher : INotifyCompletion
     {
-        static readonly WaitCallback Callback = (state) => ((Action)state).Invoke();
+        static readonly WaitCallback Callback = (state) => ((Action) state!).Invoke ();
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public ThreadSwitcher GetAwaiter()

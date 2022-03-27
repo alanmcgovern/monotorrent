@@ -35,9 +35,9 @@ namespace MonoTorrent.Trackers
         public long BytesLeft { get; private set; }
         public long BytesUploaded { get; private set; }
         public TorrentEvent ClientEvent { get; private set; }
-        public InfoHash InfoHash { get; private set; }
-        public string IPAddress { get; private set; }
-        public byte[] PeerId { get; private set; }
+        public InfoHash? InfoHash { get; private set; }
+        public string? IPAddress { get; private set; }
+        public byte[]? PeerId { get; private set; }
         public int Port { get; private set; }
         public bool RequireEncryption { get; private set; }
         public bool SupportsEncryption { get; private set; }

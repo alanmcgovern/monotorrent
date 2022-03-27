@@ -58,18 +58,18 @@ namespace MonoTorrent
         /// <summary>
         /// The SHA1 hash of the torrent's 'info' dictionary. Used by V1 torrents and hybrid v1/v2 torrents.
         /// </summary>
-        public InfoHash V1 { get; }
+        public InfoHash? V1 { get; }
 
         /// <summary>
         /// The SHA256 hash of the torrent's 'info' dictionary. Used by V2 torrents and hybrid v1/v2 torrents.
         /// </summary>
-        public InfoHash V2 { get; }
+        public InfoHash? V2 { get; }
 
         /// <summary>
         /// If the V1 hash is non-null, then it is returned. Otherwise the V2 hash is returned.
         /// As a result, the V1 hash will be returned if both the V1 and V2 hash are non-null.
         /// </summary>
-        public InfoHash V1OrV2 => V1 ?? V2;
+        public InfoHash V1OrV2 => (V1 ?? V2)!;
 
         /// <summary>
         /// Creates an 'InfoHashes' object using the BitTorrent V1 and/or BitTorrent V2 info hashes.
@@ -86,13 +86,13 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="sha1InfoHash"></param>
         /// <param name="sha256InfoHash"></param>
-        public InfoHashes (InfoHash sha1InfoHash, InfoHash sha256InfoHash)
+        public InfoHashes (InfoHash? sha1InfoHash, InfoHash? sha256InfoHash)
         {
             if (sha1InfoHash is null && sha256InfoHash is null)
                 throw new ArgumentNullException ("It is invalid for both 'sha1InfoHash' and 'sha256InfoHash' to both be null.");
-            if (sha1InfoHash != null && sha1InfoHash.Span.Length != 20)
+            if (!(sha1InfoHash is null) && sha1InfoHash.Span.Length != 20)
                 throw new ArgumentException ("Value must be a 20 byte infohash", nameof (sha1InfoHash));
-            if (sha256InfoHash != null && sha256InfoHash.Span.Length != 32)
+            if (!(sha256InfoHash is null) && sha256InfoHash.Span.Length != 32)
                 throw new ArgumentException ("Value must be a 32 byte infohash", nameof (sha256InfoHash));
 
             V1 = sha1InfoHash;
@@ -103,23 +103,23 @@ namespace MonoTorrent
             // For V1 torrents we need a direct match.
             // For V2 torrents we need a direct match *or* a substring match. It's 'normal' to send truncated versions
             // of a V2 infohash.
-            => V1 == infoHash || (V2 != null && V2.Span.Slice (0, infoHash.Span.Length).SequenceEqual (infoHash.Span));
+            => V1 == infoHash || (!(V2 is null) && V2.Span.Slice (0, infoHash.Span.Length).SequenceEqual (infoHash.Span));
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as InfoHashes);
 
-        public bool Equals (InfoHashes other)
-            => other != null
+        public bool Equals (InfoHashes? other)
+            => !(other is null)
             && other.V1 == V1
             && other.V2 == V2;
 
         public override int GetHashCode ()
-            => (V1 ?? V2).GetHashCode ();
+            => (V1 ?? V2)!.GetHashCode ();
 
         public int GetMaxByteCount ()
-            => (V1 == null ? 0 : 20) + (V2 == null ? 0 : 32);
+            => (V1 is null ? 0 : 20) + (V2 is null ? 0 : 32);
 
-        public static bool operator == (InfoHashes left, InfoHashes right)
+        public static bool operator == (InfoHashes? left, InfoHashes? right)
         {
             if (left is null)
                 return right is null;
@@ -128,7 +128,7 @@ namespace MonoTorrent
             return left.V1 == right.V1 && left.V2 == right.V2;
         }
 
-        public static bool operator != (InfoHashes left, InfoHashes right)
+        public static bool operator != (InfoHashes? left, InfoHashes? right)
             => !(left == right);
     }
 }

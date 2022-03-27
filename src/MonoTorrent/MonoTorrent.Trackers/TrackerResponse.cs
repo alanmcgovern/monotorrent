@@ -65,8 +65,8 @@ namespace MonoTorrent.Trackers
             int? complete = null,
             int? incomplete = null,
             int? downloaded = null,
-            string warningMessage = null,
-            string failureMessage = null
+            string warningMessage = "",
+            string failureMessage = ""
             )
         {
             State = state;

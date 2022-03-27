@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
 {
     internal struct EnsureThreadPool : INotifyCompletion
     {
-        static readonly WaitCallback Callback = (state) => ((Action)state).Invoke();
+        static readonly WaitCallback Callback = (state) => ((Action) state!).Invoke ();
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public EnsureThreadPool GetAwaiter()

@@ -51,7 +51,7 @@ namespace MonoTorrent.TrackerServer
         public ScrapeRequest (NameValueCollection collection, IPAddress address)
             : base (collection, address)
         {
-            InfoHashes = ParseHashes (Parameters["info_hash"]);
+            InfoHashes = Parameters["info_hash"] is string hashes ? ParseHashes (hashes) : Array.Empty<InfoHash> ();
         }
 
         static IList<InfoHash> ParseHashes (string infoHash)
