@@ -39,19 +39,13 @@ namespace MonoTorrent
         void Enqueue(T instance);
     }
 
-    internal class Cache<T> : ICache<T>
+    class Cache<T> : ICache<T>
         where T : class, ICacheable
     {
         readonly Queue<T> cache;
         readonly Func<T> Creator;
 
         public int Count => cache.Count;
-
-        public Cache()
-            : this(() => default)
-        {
-
-        }
 
         public Cache(Func<T> creator)
         {
@@ -64,8 +58,8 @@ namespace MonoTorrent
             if (cache.Count > 0)
                 return cache.Dequeue();
 
-            var instance = Creator();
-            instance?.Initialise();
+            var instance = Creator.Invoke();
+            instance.Initialise();
             return instance;
         }
 

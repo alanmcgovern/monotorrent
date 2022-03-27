@@ -41,10 +41,10 @@ namespace MonoTorrent.PieceWriter
     {
         internal readonly struct RentedStream : IDisposable
         {
-            internal readonly Stream Stream;
+            internal readonly Stream? Stream;
             readonly ReusableExclusiveSemaphore.Releaser Releaser;
 
-            public RentedStream (Stream stream, ReusableExclusiveSemaphore.Releaser releaser)
+            public RentedStream (Stream? stream, ReusableExclusiveSemaphore.Releaser releaser)
             {
                 Stream = stream;
                 Releaser = releaser;
@@ -60,7 +60,7 @@ namespace MonoTorrent.PieceWriter
         {
             public long LastUsedStamp = Stopwatch.GetTimestamp ();
             public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
-            public Stream Stream;
+            public Stream? Stream;
         }
 
         // A list of currently open filestreams. Note: The least recently used is at position 0
@@ -162,7 +162,7 @@ namespace MonoTorrent.PieceWriter
                 var oldest = Streams.OrderBy (t => t.Value.LastUsedStamp).Where (t => t.Value.Stream != null).FirstOrDefault ();
 
                 using (await oldest.Value.Locker.EnterAsync ()) {
-                    oldest.Value.Stream.Dispose ();
+                    oldest.Value.Stream?.Dispose ();
                     oldest.Value.Stream = null;
                     Count--;
                 }

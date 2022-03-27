@@ -115,7 +115,7 @@ namespace MonoTorrent.PieceWriter
                 using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
                 await SwitchToThreadpool ();
-                if (rented.Stream.Length < offset + buffer.Length)
+                if (rented.Stream!.Length < offset + buffer.Length)
                     return 0;
 
                 if (rented.Stream.Position != offset)
@@ -141,7 +141,7 @@ namespace MonoTorrent.PieceWriter
                 //
                 // We also want the Seek operation to execute on the threadpool.
                 await SwitchToThreadpool ();
-                rented.Stream.Seek (offset, SeekOrigin.Begin);
+                rented.Stream!.Seek (offset, SeekOrigin.Begin);
                 rented.Stream.Write (buffer);
             }
         }

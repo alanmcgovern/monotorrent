@@ -55,7 +55,9 @@ namespace MonoTorrent
                 int.Parse(ThisAssembly.Git.BaseVersion.Minor),
                 int.Parse(ThisAssembly.Git.BaseVersion.Patch)
             );
-            Initialize(version);
+            ClientVersion = "";
+            DhtClientVersion = "";
+            Initialize (version);
             Version = version;
         }
 

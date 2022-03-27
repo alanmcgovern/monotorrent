@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <UseMemoryExtensions>true</UseMemoryExtensions>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

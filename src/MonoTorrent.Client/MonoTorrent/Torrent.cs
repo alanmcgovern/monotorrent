@@ -345,6 +345,7 @@ namespace MonoTorrent
         /// of the .torrent file
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
+        /// <param name="hashesV1"></param>
         void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1 hashesV1)
         {
             InfoMetadata = dictionary.Encode ();
