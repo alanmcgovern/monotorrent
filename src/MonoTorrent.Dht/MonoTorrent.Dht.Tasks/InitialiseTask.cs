@@ -45,7 +45,7 @@ namespace MonoTorrent.Dht.Tasks
 
         readonly List<Node> initialNodes;
         readonly DhtEngine engine;
-        readonly TaskCompletionSource<object> initializationComplete;
+        readonly TaskCompletionSource<object?> initializationComplete;
 
         public InitialiseTask (DhtEngine engine)
             : this (engine, Enumerable.Empty<Node> ())
@@ -57,7 +57,7 @@ namespace MonoTorrent.Dht.Tasks
         {
             this.engine = engine;
             initialNodes = new List<Node> (nodes);
-            initializationComplete = new TaskCompletionSource<object> ();
+            initializationComplete = new TaskCompletionSource<object?> ();
         }
 
         public Task ExecuteAsync ()
@@ -73,7 +73,14 @@ namespace MonoTorrent.Dht.Tasks
                 if (initialNodes.Count > 0) {
                     await SendFindNode (initialNodes);
                 } else {
-                    var utorrent = new Node (NodeId.Create (), new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881));
+                    IPEndPoint endpoint;
+                    try {
+                        endpoint = new IPEndPoint (Dns.GetHostEntry ("router.bittorrent.com").AddressList[0], 6881);
+                    } catch {
+                        initializationComplete.TrySetResult (null);
+                        return;
+                    }
+                    var utorrent = new Node (NodeId.Create (), endpoint);
                     await SendFindNode (new[] { utorrent });
                 }
             } finally {

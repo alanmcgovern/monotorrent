@@ -52,7 +52,7 @@ namespace MonoTorrent.Dht
         public NodeId Max { get; }
         public NodeId Min { get; }
         public List<Node> Nodes { get; }
-        internal Node Replacement { get; set; }
+        internal Node? Replacement { get; set; }
 
         public Bucket ()
             : this (NodeId.Minimum, NodeId.Maximum)
@@ -119,17 +119,17 @@ namespace MonoTorrent.Dht
             LastChangedTimer.Restart ();
         }
 
-        public int CompareTo (Bucket other)
+        public int CompareTo (Bucket? other)
         {
             return Min.CompareTo (other?.Min);
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return Equals (obj as Bucket);
         }
 
-        public bool Equals (Bucket other)
+        public bool Equals (Bucket? other)
         {
             return Min.Equals (other?.Min) && Max.Equals (other?.Max);
         }

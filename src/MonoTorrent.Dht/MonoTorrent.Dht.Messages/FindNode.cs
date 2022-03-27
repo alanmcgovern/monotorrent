@@ -33,8 +33,8 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class FindNode : QueryMessage
     {
-        static readonly BEncodedString TargetKey = "target";
-        static readonly BEncodedString QueryName = "find_node";
+        static readonly BEncodedString TargetKey = new BEncodedString ("target");
+        static readonly BEncodedString QueryName = new BEncodedString ("find_node");
 
         public NodeId Target => new NodeId ((BEncodedString) Parameters[TargetKey]);
 
@@ -58,10 +58,10 @@ namespace MonoTorrent.Dht.Messages
         {
             base.Handle (engine, node);
 
-            var response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+            var response = new FindNodeResponse (engine.RoutingTable.LocalNode.Id, TransactionId!);
 
-            Node targetNode = engine.RoutingTable.FindNode (Target);
-            response.Nodes = targetNode != null
+            Node? targetNode = engine.RoutingTable.FindNode (Target);
+            response.Nodes = !(targetNode is null)
                 ? targetNode.CompactNode ()
                 : Node.CompactNode (engine.RoutingTable.GetClosest (Target));
 

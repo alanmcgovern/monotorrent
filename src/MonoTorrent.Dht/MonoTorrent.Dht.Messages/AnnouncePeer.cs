@@ -35,10 +35,10 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class AnnouncePeer : QueryMessage
     {
-        static readonly BEncodedString InfoHashKey = "info_hash";
-        static readonly BEncodedString QueryName = "announce_peer";
-        static readonly BEncodedString PortKey = "port";
-        static readonly BEncodedString TokenKey = "token";
+        static readonly BEncodedString InfoHashKey = new BEncodedString ("info_hash");
+        static readonly BEncodedString QueryName = new BEncodedString ("announce_peer");
+        static readonly BEncodedString PortKey = new BEncodedString ("port");
+        static readonly BEncodedString TokenKey = new BEncodedString ("token");
 
         internal NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
 

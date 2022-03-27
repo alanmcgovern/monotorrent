@@ -36,9 +36,9 @@ namespace MonoTorrent.Dht.Messages
 {
     class DhtMessageFactory
     {
-        static readonly BEncodedString QueryNameKey = "q";
-        static readonly BEncodedString MessageTypeKey = "y";
-        static readonly BEncodedString TransactionIdKey = "t";
+        static readonly BEncodedString QueryNameKey = new BEncodedString ("q");
+        static readonly BEncodedString MessageTypeKey = new BEncodedString ("y");
+        static readonly BEncodedString TransactionIdKey = new BEncodedString ("t");
         static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
 
         readonly Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
@@ -48,10 +48,10 @@ namespace MonoTorrent.Dht.Messages
 
         static DhtMessageFactory ()
         {
-            queryDecoders.Add ("announce_peer", d => new AnnouncePeer (d));
-            queryDecoders.Add ("find_node", d => new FindNode (d));
-            queryDecoders.Add ("get_peers", d => new GetPeers (d));
-            queryDecoders.Add ("ping", d => new Ping (d));
+            queryDecoders.Add (new BEncodedString ("announce_peer"), d => new AnnouncePeer (d));
+            queryDecoders.Add (new BEncodedString ("find_node"), d => new FindNode (d));
+            queryDecoders.Add (new BEncodedString ("get_peers"), d => new GetPeers (d));
+            queryDecoders.Add (new BEncodedString ("ping"), d => new Ping (d));
         }
 
         internal bool IsRegistered (BEncodedValue transactionId)
@@ -71,18 +71,18 @@ namespace MonoTorrent.Dht.Messages
 
         public DhtMessage DecodeMessage (BEncodedDictionary dictionary)
         {
-            if (!TryDecodeMessage (dictionary, out DhtMessage message, out string error))
-                throw new MessageException (ErrorCode.GenericError, error);
+            if (!TryDecodeMessage (dictionary, out DhtMessage? message, out string? error))
+                throw new MessageException (ErrorCode.GenericError, error!);
 
-            return message;
+            return message!;
         }
 
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message)
+        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage? message)
         {
-            return TryDecodeMessage (dictionary, out message, out string error);
+            return TryDecodeMessage (dictionary, out message, out string? error);
         }
 
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage message, out string error)
+        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage? message, out string? error)
         {
             message = null;
             error = null;
@@ -97,7 +97,7 @@ namespace MonoTorrent.Dht.Messages
                 message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]] (dictionary);
             } else if (messageType.Equals (ErrorMessage.ErrorType)) {
                 message = new ErrorMessage (dictionary);
-                messages.Remove (message.TransactionId);
+                messages.Remove (message.TransactionId!);
             } else {
                 var key = (BEncodedString) dictionary[TransactionIdKey];
                 if (messages.TryGetValue (key, out QueryMessage query)) {

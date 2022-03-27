@@ -61,7 +61,7 @@ namespace MonoTorrent.Dht
                 return LastSeen.TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
             }
         }
-        public BEncodedValue Token { get; set; }
+        public BEncodedValue? Token { get; set; }
 
         public Node (NodeId id, IPEndPoint endpoint)
         {
@@ -88,7 +88,7 @@ namespace MonoTorrent.Dht
         {
             byte[] buffer = new byte[6];
             CompactPort (buffer);
-            return buffer;
+            return new BEncodedString (buffer);
         }
 
         internal void CompactPort (Span<byte> buffer)
@@ -110,7 +110,7 @@ namespace MonoTorrent.Dht
         {
             byte[] buffer = new byte[26];
             CompactNode (buffer);
-            return buffer;
+            return new BEncodedString (buffer);
         }
 
         void CompactNode (Span<byte> buffer)
@@ -190,12 +190,12 @@ namespace MonoTorrent.Dht
             }
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return Equals (obj as Node);
         }
 
-        public bool Equals (Node other)
+        public bool Equals (Node? other)
         {
             return Id.Equals (other?.Id);
         }

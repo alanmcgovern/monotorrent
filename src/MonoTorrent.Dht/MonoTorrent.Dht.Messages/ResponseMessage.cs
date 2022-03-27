@@ -33,8 +33,8 @@ namespace MonoTorrent.Dht.Messages
 {
     abstract class ResponseMessage : DhtMessage
     {
-        static readonly BEncodedString ReturnValuesKey = "r";
-        internal static readonly BEncodedString ResponseType = "r";
+        static readonly BEncodedString ReturnValuesKey = new BEncodedString ("r");
+        internal static readonly BEncodedString ResponseType = new BEncodedString ("r");
 
         internal override NodeId Id => new NodeId ((BEncodedString) Parameters[IdKey]);
 

@@ -93,16 +93,16 @@ namespace MonoTorrent.Dht
         public ReadOnlyMemory<byte> AsMemory ()
             => Bytes;
 
-        public int CompareTo (object obj)
+        public int CompareTo (object? obj)
             => CompareTo (obj as NodeId);
 
-        public int CompareTo (NodeId other)
+        public int CompareTo (NodeId? other)
             => other is null ? 1 : Span.SequenceCompareTo (other.Span);
 
-        public override bool Equals (object obj)
-            => Equals (obj as NodeId);
+        public override bool Equals (object? obj)
+            => obj is NodeId node && node == this;
 
-        public bool Equals (NodeId other)
+        public bool Equals (NodeId? other)
             => this == other;
 
         public override int GetHashCode ()
@@ -157,7 +157,7 @@ namespace MonoTorrent.Dht
             return first.CompareTo (second) >= 0;
         }
 
-        public static bool operator == (NodeId first, NodeId second)
+        public static bool operator == (NodeId? first, NodeId? second)
         {
             if (first is null)
                 return second is null;
@@ -166,7 +166,7 @@ namespace MonoTorrent.Dht
             return first.Span.SequenceEqual (second.Span);
         }
 
-        public static bool operator != (NodeId first, NodeId second)
+        public static bool operator != (NodeId? first, NodeId? second)
             => !(first == second);
     }
 }

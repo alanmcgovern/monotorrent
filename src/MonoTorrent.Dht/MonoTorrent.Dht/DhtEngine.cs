@@ -66,8 +66,8 @@ namespace MonoTorrent.Dht
 
         #region Events
 
-        public event EventHandler<PeersFoundEventArgs> PeersFound;
-        public event EventHandler StateChanged;
+        public event EventHandler<PeersFoundEventArgs>? PeersFound;
+        public event EventHandler? StateChanged;
 
         #endregion Events
 
