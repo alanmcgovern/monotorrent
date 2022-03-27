@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
         /// The UDP port used for DHT communications. Set the port to 0 to choose a random available port.
         /// Set to null to disable DHT. Defaults to IPAddress.Any with port 0.
         /// </summary>
-        public IPEndPoint DhtEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
+        public IPEndPoint? DhtEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
 
         /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
@@ -147,7 +147,7 @@ namespace MonoTorrent.Client
         /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
         /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any with port 0.
         /// </summary>
-        public IPEndPoint ListenEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
+        public IPEndPoint? ListenEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -196,7 +196,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IPEndPoint ReportedAddress { get; }
+        public IPEndPoint? ReportedAddress { get; }
 
         /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If a magnet link is used
@@ -218,9 +218,9 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint dhtEndPoint, int diskCacheBytes, FastResumeMode fastResumeMode, IPEndPoint listenEndPoint,
+            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections,
-            int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint reportedAddress, bool usePartialFiles)
+            int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint? reportedAddress, bool usePartialFiles)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -262,12 +262,12 @@ namespace MonoTorrent.Client
         internal string GetMetadataPath (InfoHashes infoHashes)
             => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V1OrV2.ToHex ()}.torrent");
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as EngineSettings);
 
-        public bool Equals (EngineSettings other)
+        public bool Equals (EngineSettings? other)
         {
-            return other != null
+            return !(other is null)
                    && AllowedEncryption.SequenceEqual (other.AllowedEncryption)
                    && AllowHaveSuppression == other.AllowHaveSuppression
                    && AllowLocalPeerDiscovery == other.AllowLocalPeerDiscovery

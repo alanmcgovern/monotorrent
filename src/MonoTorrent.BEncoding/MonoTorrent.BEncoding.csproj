@@ -5,7 +5,6 @@
     <ReferenceReusableTasks>false</ReferenceReusableTasks>
     <UseMemoryExtensions>true</UseMemoryExtensions>
     <AllowUnsafeBlocks Condition="$(TargetFramework) == 'netstandard2.0'">true</AllowUnsafeBlocks>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

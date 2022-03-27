@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 using MonoTorrent.BEncoding;
@@ -124,13 +125,21 @@ namespace MonoTorrent.Client
             s.Write (data, 0, data.Length);
         }
 
-        public static bool TryLoad (Stream s, out FastResume fastResume)
+#if NETSTANDARD2_0
+        public static bool TryLoad (Stream s, out FastResume? fastResume)
+#else
+        public static bool TryLoad (Stream s, [NotNullWhen (true)] out FastResume? fastResume)
+#endif
         {
             fastResume = Load (s);
             return fastResume != null;
         }
 
-        public static bool TryLoad (string fastResumeFilePath, out FastResume fastResume)
+#if NETSTANDARD2_0
+        public static bool TryLoad (string fastResumeFilePath, out FastResume? fastResume)
+#else
+        public static bool TryLoad (string fastResumeFilePath, [NotNullWhen (true)] out FastResume? fastResume)
+#endif
         {
             fastResume = null;
             try {
@@ -144,7 +153,7 @@ namespace MonoTorrent.Client
             return fastResume != null;
         }
 
-        static FastResume Load (Stream s)
+        static FastResume? Load (Stream s)
         {
             try {
                 var data = (BEncodedDictionary) BEncodedDictionary.Decode (s);

@@ -44,7 +44,7 @@ namespace MonoTorrent.Connections.Peer
 
         bool IsIncoming { get; }
 
-        EndPoint EndPoint { get; }
+        EndPoint? EndPoint { get; }
 
         ReusableTask ConnectAsync ();
 

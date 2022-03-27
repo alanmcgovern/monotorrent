@@ -4,6 +4,7 @@
 
 	<PropertyGroup>
 		<IsPackable>false</IsPackable>
+		<Nullable></Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>

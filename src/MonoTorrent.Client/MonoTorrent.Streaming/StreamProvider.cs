@@ -42,7 +42,7 @@ namespace MonoTorrent.Streaming
     /// </summary>
     public class StreamProvider
     {
-        LocalStream ActiveStream { get; set; }
+        LocalStream? ActiveStream { get; set; }
         CancellationTokenSource Cancellation { get; set; }
         TorrentManager Manager { get; }
         IStreamingPieceRequester PieceRequester { get; }

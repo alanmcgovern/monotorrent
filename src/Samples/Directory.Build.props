@@ -4,6 +4,7 @@
 
 	<PropertyGroup>
       <UseGitInfo>false</UseGitInfo>
+      <Nullable></Nullable>
     </PropertyGroup>
 
 </Project>

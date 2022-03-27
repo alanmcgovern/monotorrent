@@ -48,7 +48,7 @@ namespace MonoTorrent.Connections.Peer
 #pragma warning restore 0067
 
 
-        public IPEndPoint LocalEndPoint => null;
+        public IPEndPoint? LocalEndPoint => null;
         public ListenerStatus Status => ListenerStatus.NotListening;
 
         public TimeSpan MinimumAnnounceInternal { get; }

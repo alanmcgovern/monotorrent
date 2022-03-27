@@ -179,14 +179,14 @@ namespace ClientSample
 
         void AppendSeparator (StringBuilder sb)
         {
-            AppendFormat (sb, "", null);
-            AppendFormat (sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
-            AppendFormat (sb, "", null);
+            AppendFormat (sb, "");
+            AppendFormat (sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
+            AppendFormat (sb, "");
         }
 
         void AppendFormat (StringBuilder sb, string str, params object[] formatting)
         {
-            if (formatting != null)
+            if (formatting != null && formatting.Length > 0)
                 sb.AppendFormat (str, formatting);
             else
                 sb.Append (str);

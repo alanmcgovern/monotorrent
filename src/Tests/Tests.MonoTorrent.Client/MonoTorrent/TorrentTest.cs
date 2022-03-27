@@ -55,7 +55,6 @@ namespace MonoTorrent.Common
             DateTime epochStart = new DateTime (1970, 1, 1, 0, 0, 0);
             TimeSpan span = current - epochStart;
             creationTime = (long) span.TotalSeconds;
-            Console.WriteLine ($"{creationTime}Creation seconds");
 
             torrentInfo = new BEncodedDictionary {
                 { "announce", new BEncodedString ("http://myannouceurl/announce") },
@@ -222,7 +221,7 @@ namespace MonoTorrent.Common
         {
             torrentInfo["nodes"] = new BEncodedString ("192.168.0.1:12345");
             torrent = Torrent.Load (torrentInfo);
-            Assert.IsNull (torrent.Nodes, "#1");
+            Assert.AreEqual (0, torrent.Nodes.Count, "#1");
         }
 
         /// <summary>

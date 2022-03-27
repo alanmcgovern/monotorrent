@@ -71,6 +71,8 @@ namespace MonoTorrent
         /// </summary>
         public InfoHash V1OrV2 => (V1 ?? V2)!;
 
+        public InfoHashes? Empty { get; set; }
+
         /// <summary>
         /// Creates an 'InfoHashes' object using the BitTorrent V1 and/or BitTorrent V2 info hashes.
         /// </summary>

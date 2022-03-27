@@ -50,7 +50,7 @@ namespace MonoTorrent.Trackers
 
         public AnnounceRequest (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
-                           ReadOnlyMemory<byte> peerId, string ipAddress, int port, bool supportsEncryption)
+                           ReadOnlyMemory<byte> peerId, string? ipAddress, int port, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;

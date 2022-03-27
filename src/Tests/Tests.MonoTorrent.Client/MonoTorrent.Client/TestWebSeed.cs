@@ -317,7 +317,6 @@ namespace MonoTorrent.Client
                     throw new Exception ("give up");
 
                 HttpListenerContext c = ((HttpListener) result.AsyncState).EndGetContext (result);
-                Console.WriteLine ("Got Context");
                 requestedUrl.Add (c.Request.Url.OriginalString);
                 Match match = null;
                 string range = c.Request.Headers["range"];

@@ -43,9 +43,6 @@ namespace MonoTorrent.Messages.Peer
         const byte ExtendedMessagingFlag = 0x10;
         const byte FastPeersFlag = 0x04;
 
-
-        #region Member Variables
-
         public override int ByteLength => Constants.HandshakeLengthV100;
 
         /// <summary>
@@ -57,18 +54,17 @@ namespace MonoTorrent.Messages.Peer
         /// <summary>
         /// The protocol string to send
         /// </summary>
-        public string? ProtocolString { get; private set; }
-
+        public string ProtocolString { get; private set; }
 
         /// <summary>
         /// The infohash of the torrent.
         /// </summary>
-        public InfoHash? InfoHash { get; private set; }
+        public InfoHash InfoHash { get; private set; }
 
         /// <summary>
         /// The ID of the peer (20 bytes).
         /// </summary>
-        public BEncodedString? PeerId { get; private set; }
+        public BEncodedString PeerId { get; private set; }
 
         /// <summary>
         /// True if the peer supports LibTorrent extended messaging.
@@ -79,14 +75,8 @@ namespace MonoTorrent.Messages.Peer
         /// True if the peer supports the Bittorrent FastPeerExtensions.
         /// </summary>
         public bool SupportsFastPeer { get; private set; }
-        #endregion
-
 
         #region Constructors
-        public HandshakeMessage ()
-        {
-
-        }
 
         public HandshakeMessage (InfoHash infoHash, BEncodedString peerId, string protocolString)
             : this (infoHash, peerId, protocolString, true, true)
@@ -137,6 +127,13 @@ namespace MonoTorrent.Messages.Peer
             Write (ref buffer, PeerId.Span);
 
             return written - buffer.Length;
+        }
+
+        public HandshakeMessage (ReadOnlySpan<byte> buffer)
+        {
+            Decode (buffer);
+            if (InfoHash is null || PeerId is null || ProtocolString is null)
+                throw new InvalidOperationException ();
         }
 
         public override void Decode (ReadOnlySpan<byte> buffer)

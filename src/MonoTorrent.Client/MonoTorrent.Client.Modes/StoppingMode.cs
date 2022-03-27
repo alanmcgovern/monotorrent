@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.Modes
         public async Task WaitForStoppingToComplete (TimeSpan timeout)
         {
             try {
-                Manager.Engine.ConnectionManager.CancelPendingConnects (Manager);
+                Manager.Engine!.ConnectionManager.CancelPendingConnects (Manager);
                 foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
                     Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
 

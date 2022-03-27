@@ -38,24 +38,14 @@ namespace MonoTorrent.Messages.Peer
     {
         internal static readonly byte MessageId = 5;
 
-        public static readonly BitfieldMessage UnknownLength = new BitfieldMessage ();
+        public static readonly BitfieldMessage UnknownLength = new BitfieldMessage (new BitField (1));
 
-        #region Member Variables
         /// <summary>
         /// The bitfield
         /// </summary>
-        public BitField? BitField { get; }
+        public BitField BitField { get; }
+
         bool CanDecode { get; }
-
-        #endregion
-
-
-        #region Constructors
-
-        BitfieldMessage ()
-        {
-
-        }
 
         /// <summary>
         /// Creates a new BitfieldMessage
@@ -67,7 +57,6 @@ namespace MonoTorrent.Messages.Peer
             CanDecode = true;
         }
 
-
         /// <summary>
         /// Creates a new BitfieldMessage
         /// </summary>
@@ -77,10 +66,6 @@ namespace MonoTorrent.Messages.Peer
             BitField = bitfield;
             CanDecode = false;
         }
-        #endregion
-
-
-        #region Methods
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
@@ -106,7 +91,6 @@ namespace MonoTorrent.Messages.Peer
         /// Returns the length of the message in bytes
         /// </summary>
         public override int ByteLength => ((BitField == null ? 0 : BitField.LengthInBytes) + 5);
-        #endregion
 
 
         #region Overridden Methods

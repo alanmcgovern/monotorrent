@@ -35,8 +35,7 @@ namespace MonoTorrent.Client.Modes
 {
     class HashingMode : Mode
     {
-
-        TaskCompletionSource<object> PausedCompletionSource { get; set; }
+        TaskCompletionSource<object?> PausedCompletionSource { get; set; }
 
         public override bool CanAcceptConnections => false;
         public override bool CanHandleMessages => false;
@@ -47,7 +46,7 @@ namespace MonoTorrent.Client.Modes
             : base (manager, diskManager, connectionManager, settings)
         {
             // Mark it as completed so we are *not* paused by default;
-            PausedCompletionSource = new TaskCompletionSource<object> ();
+            PausedCompletionSource = new TaskCompletionSource<object?> ();
             PausedCompletionSource.TrySetResult (null);
         }
 
@@ -57,7 +56,7 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             PausedCompletionSource?.TrySetResult (null);
-            PausedCompletionSource = new TaskCompletionSource<object> ();
+            PausedCompletionSource = new TaskCompletionSource<object?> ();
             Cancellation.Token.Register (() => PausedCompletionSource.TrySetCanceled ());
             Manager.RaiseTorrentStateChanged (new TorrentStateChangedEventArgs (Manager, TorrentState.Hashing, State));
         }
@@ -87,7 +86,7 @@ namespace MonoTorrent.Client.Modes
                 // bep52: Properly support this
                 using var hashBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> hashMemory);
                 var hashes = new PieceHash (hashMemory);
-                for (int index = 0; index < Manager.Torrent.PieceCount; index++) {
+                for (int index = 0; index < Manager.Torrent!.PieceCount; index++) {
                     if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
                         // so they also report that the piece is not available/downloaded.
@@ -112,7 +111,7 @@ namespace MonoTorrent.Client.Modes
                 }
             } else {
                 await PausedCompletionSource.Task;
-                for (int i = 0; i < Manager.Torrent.PieceCount; i++)
+                for (int i = 0; i < Manager.Torrent!.PieceCount; i++)
                     Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.PieceCount);
             }
         }

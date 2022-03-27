@@ -114,7 +114,7 @@ namespace MonoTorrent.TrackerServer
         /// The 20 byte identifier for the peer. This is shared with other peers when a non-compact response
         /// is returned.
         /// </summary>
-        public BEncodedString? PeerId => Parameters["peer_id"] is string value ? BEncodedString.UrlDecode (value) : null;
+        public BEncodedString PeerId => (Parameters["peer_id"] is string value ? BEncodedString.UrlDecode (value) : null) ?? BEncodedString.Empty;
 
         /// <summary>
         /// The port the client is listening for incoming connections on.

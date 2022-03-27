@@ -42,7 +42,11 @@ namespace MonoTorrent.BEncoding
     {
         public static readonly BEncodedString Empty = new BEncodedString (ReadOnlyMemory<byte>.Empty);
 
-        public static bool IsNullOrEmpty (BEncodedString? value)
+        public static bool IsNullOrEmpty (
+#if !NETSTANDARD2_0
+            [NotNullWhen (false)]
+#endif
+        BEncodedString? value)
             => value is null || value.Span.IsEmpty;
 
         public static BEncodedString FromMemory (ReadOnlyMemory<byte> buffer)

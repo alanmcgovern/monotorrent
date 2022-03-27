@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace MonoTorrent
@@ -57,7 +58,7 @@ namespace MonoTorrent
         /// <summary>
         /// The display name of the torrent, if available.
         /// </summary>
-        public string Name {
+        public string? Name {
             get;
         }
 
@@ -68,13 +69,13 @@ namespace MonoTorrent
             get;
         }
 
-        public MagnetLink (InfoHash infoHash, string name = null, IList<string> announceUrls = null, IEnumerable<string> webSeeds = null, long? size = null)
+        public MagnetLink (InfoHash infoHash, string? name = null, IList<string>? announceUrls = null, IEnumerable<string>? webSeeds = null, long? size = null)
             : this (InfoHashes.FromInfoHash (infoHash), name, announceUrls, webSeeds, size)
         {
 
         }
 
-        public MagnetLink (InfoHashes infoHashes, string name = null, IList<string> announceUrls = null, IEnumerable<string> webSeeds = null, long? size = null)
+        public MagnetLink (InfoHashes infoHashes, string? name = null, IList<string>? announceUrls = null, IEnumerable<string>? webSeeds = null, long? size = null)
         {
             InfoHashes = infoHashes ?? throw new ArgumentNullException (nameof (infoHashes));
 
@@ -101,7 +102,11 @@ namespace MonoTorrent
         /// <param name="uri"></param>
         /// <param name="magnetLink"></param>
         /// <returns></returns>
-        public static bool TryParse (string uri, out MagnetLink magnetLink)
+#if NETSTANDARD2_0
+        public static bool TryParse (string uri, out MagnetLink? magnetLink)
+#else
+        public static bool TryParse (string uri, [NotNullWhen(true)] out MagnetLink? magnetLink)
+#endif
         {
             try {
                 magnetLink = Parse (uri);
@@ -118,8 +123,8 @@ namespace MonoTorrent
         /// <returns></returns>
         public static MagnetLink FromUri (Uri uri)
         {
-            InfoHashes infoHashes = null;
-            string name = null;
+            InfoHashes? infoHashes = null;
+            string? name = null;
             var announceUrls = new List<string> ();
             var webSeeds = new List<string> ();
             long? size = null;

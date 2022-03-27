@@ -71,8 +71,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
         protected static readonly byte[] KeyBBytes = { (byte) 'k', (byte) 'e', (byte) 'y', (byte) 'B' };
 
         // Cryptors for the data transmission
-        public IEncryption Decryptor { get; private set; }
-        public IEncryption Encryptor { get; private set; }
+        public IEncryption? Decryptor { get; private set; }
+        public IEncryption? Encryptor { get; private set; }
 
         #region Private members
 
@@ -81,15 +81,15 @@ namespace MonoTorrent.Connections.Peer.Encryption
         readonly SHA1 hasher;
 
         // Cryptors for the handshaking
-        RC4 encryptor;
-        RC4 decryptor;
+        RC4? encryptor;
+        RC4? decryptor;
 
         IList<EncryptionType> allowedEncryption;
 
         readonly byte[] X; // A 160 bit random integer
         readonly byte[] Y; // 2^X mod P
 
-        protected IPeerConnection socket;
+        protected IPeerConnection? socket;
 
         // Data to be passed to initial ReceiveMessage requests
         Memory<byte> initialBuffer;
@@ -100,15 +100,15 @@ namespace MonoTorrent.Connections.Peer.Encryption
         #endregion
 
         #region Protected members
-        protected byte[] S;
-        protected InfoHash SKEY;
+        protected byte[]? S;
+        protected InfoHash? SKEY;
 
         protected byte[] VerificationConstant = new byte[8];
 
         protected byte[] CryptoProvide = { 0x00, 0x00, 0x00, 0x03 };
 
 
-        protected byte[] CryptoSelect;
+        protected byte[]? CryptoSelect;
 
         #endregion
 
@@ -122,6 +122,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             random.GetBytes (X);
             Y = ModuloCalculator.Calculate (ModuloCalculator.TWO, X);
 
+            this.allowedEncryption = allowedEncryption;
             SetMinCryptoAllowed (allowedEncryption);
         }
 
@@ -184,7 +185,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             using (NetworkIO.BufferPool.Rent (length, out SocketMemory toSend)) {
                 Y.AsSpan (0, 96).CopyTo (toSend.AsSpan ());
                 random.GetBytes (toSend.Span.Slice (96));
-                await NetworkIO.SendAsync (socket, toSend, null, null, null).ConfigureAwait (false);
+                await NetworkIO.SendAsync (socket!, toSend, null, null, null).ConfigureAwait (false);
             }
         }
 
@@ -223,7 +224,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             using (NetworkIO.BufferPool.Rent (syncData.Length, out SocketMemory synchronizeWindow)) {
                 while (bytesReceived < syncStopPoint) {
                     int received = syncData.Length - filled;
-                    await NetworkIO.ReceiveAsync (socket, synchronizeWindow.Slice (filled, received), null, null, null).ConfigureAwait (false);
+                    await NetworkIO.ReceiveAsync (socket!, synchronizeWindow.Slice (filled, received), null, null, null).ConfigureAwait (false);
 
                     bytesReceived += received;
                     bool matched = true;
@@ -272,11 +273,11 @@ namespace MonoTorrent.Connections.Peer.Encryption
                 initialBuffer = initialBuffer.Slice (toCopy);
 
                 if (toCopy != buffer.Length) {
-                    await NetworkIO.ReceiveAsync (socket, buffer.Slice (toCopy, buffer.Length - toCopy), null, null, null).ConfigureAwait (false);
+                    await NetworkIO.ReceiveAsync (socket!, buffer.Slice (toCopy, buffer.Length - toCopy), null, null, null).ConfigureAwait (false);
                     bytesReceived += buffer.Length - toCopy;
                 }
             } else {
-                await NetworkIO.ReceiveAsync (socket, buffer, null, null, null).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (socket!, buffer, null, null, null).ConfigureAwait (false);
                 bytesReceived += buffer.Length;
             }
         }
@@ -293,8 +294,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
         /// <param name="decryptionSalt">The salt to calculate the decryption key with</param>
         protected void CreateCryptors (byte[] encryptionSalt, byte[] decryptionSalt)
         {
-            encryptor = new RC4 (Hash (encryptionSalt, S, SKEY.Span.ToArray ()));
-            decryptor = new RC4 (Hash (decryptionSalt, S, SKEY.Span.ToArray ()));
+            encryptor = new RC4 (Hash (encryptionSalt, S!, SKEY!.Span.ToArray ()));
+            decryptor = new RC4 (Hash (decryptionSalt, S!, SKEY!.Span.ToArray ()));
         }
 
         /// <summary>
@@ -359,7 +360,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
         /// <param name="second"></param>
         /// <param name="third"></param>
         /// <returns>20-byte hash</returns>
-        protected byte[] Hash (byte[] first, byte[] second, byte[] third = null)
+        protected byte[] Hash (byte[] first, byte[] second, byte[]? third = null)
         {
             hasher.Initialize ();
             hasher.TransformBlock (first, 0, first.Length, first, 0);
@@ -379,14 +380,14 @@ namespace MonoTorrent.Connections.Peer.Encryption
         /// </summary>
         /// <param name="buffer">Buffer with the data to encrypt</param>
         protected void DoEncrypt (Span<byte> buffer)
-            => encryptor.Encrypt (buffer);
+            => encryptor!.Encrypt (buffer);
 
         /// <summary>
         /// Decrypts some data with the RC4 decryptor used in handshaking
         /// </summary>
         /// <param name="buffer">Buffer with the data to decrypt</param>
         protected void DoDecrypt (Span<byte> buffer)
-            => decryptor.Decrypt (buffer);
+            => decryptor!.Decrypt (buffer);
 
         void SetMinCryptoAllowed (IList<EncryptionType> allowedEncryption)
         {

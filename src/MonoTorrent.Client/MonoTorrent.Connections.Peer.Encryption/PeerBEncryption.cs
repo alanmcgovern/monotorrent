@@ -56,7 +56,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
         protected override async ReusableTask DoneReceiveY ()
         {
-            byte[] req1 = Hash (Req1Bytes, S);
+            byte[] req1 = Hash (Req1Bytes, S!);
             await SynchronizeAsync (req1, 628).ConfigureAwait (false); // 3 A->B: HASH('req1', S)
         }
 
@@ -111,7 +111,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             SelectCrypto (myCP.Span, false);
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
-            int finalBufferLength = VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length;
+            int finalBufferLength = VerificationConstant.Length + CryptoSelect!.Length + 2 + padD.Length;
             using (NetworkIO.BufferPool.Rent (finalBufferLength, out SocketMemory buffer)) {
                 var position = buffer.Memory;
                 Message.Write (ref position, VerificationConstant);
@@ -120,7 +120,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                 Message.Write (ref position, padD.Span);
                 DoEncrypt (buffer.Span);
 
-                await NetworkIO.SendAsync (socket, buffer).ConfigureAwait (false);
+                await NetworkIO.SendAsync (socket!, buffer).ConfigureAwait (false);
             }
 
             SelectCrypto (myCP.Span, true);
@@ -135,7 +135,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
         {
             for (int i = 0; i < PossibleSKEYs.Length; i++) {
                 byte[] req2 = Hash (Req2Bytes, PossibleSKEYs[i].Span.ToArray ());
-                byte[] req3 = Hash (Req3Bytes, S);
+                byte[] req3 = Hash (Req3Bytes, S!);
 
                 bool match = true;
                 for (int j = 0; j < req2.Length && match; j++)

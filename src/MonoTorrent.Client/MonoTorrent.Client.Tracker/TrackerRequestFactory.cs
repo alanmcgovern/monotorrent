@@ -43,7 +43,7 @@ namespace MonoTorrent.Trackers
 
         public AnnounceRequest CreateAnnounce (TorrentEvent clientEvent)
         {
-            ClientEngine engine = Manager.Engine;
+            ClientEngine engine = Manager.Engine!;
 
             bool requireEncryption = !engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText);
             bool supportsEncryption = EncryptionTypes.SupportsRC4 (engine.Settings.AllowedEncryption);
@@ -51,7 +51,7 @@ namespace MonoTorrent.Trackers
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
-            string ip = null;
+            string? ip = null;
             int port;
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
@@ -66,12 +66,12 @@ namespace MonoTorrent.Trackers
             // tracker optimisations might result in no peers being sent back.
             long bytesLeft = 1000;
             if (Manager.HasMetadata)
-                bytesLeft = (long) ((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent.Size);
+                bytesLeft = (long) ((1 - Manager.Bitfield.PercentComplete / 100.0) * Manager.Torrent!.Size);
 
             return new AnnounceRequest (Manager.Monitor.DataBytesReceived,
                                           Manager.Monitor.DataBytesSent,
                                           bytesLeft,
-                                          clientEvent, (Manager.InfoHashes.V1OrV2), requireEncryption, Manager.Engine.PeerId.AsMemory (),
+                                          clientEvent, (Manager.InfoHashes.V1OrV2), requireEncryption, Manager.Engine!.PeerId.AsMemory (),
                                           ip, port, supportsEncryption);
         }
 

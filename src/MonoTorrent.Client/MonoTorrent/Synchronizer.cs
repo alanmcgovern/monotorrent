@@ -50,16 +50,16 @@ namespace MonoTorrent
             return new Queue<Synchronizer> (all);
         }
 
-        public ReusableTaskCompletionSource<bool> Next => NextNode.Self;
+        public ReusableTaskCompletionSource<bool>? Next => NextNode?.Self;
         public ReusableTaskCompletionSource<bool> Self { get; } = new ReusableTaskCompletionSource<bool> ();
 
-        Synchronizer PreviousNode;
-        Synchronizer NextNode;
+        Synchronizer? PreviousNode;
+        Synchronizer? NextNode;
 
         public void Disconnect ()
         {
-            PreviousNode.NextNode = NextNode;
-            NextNode.PreviousNode = PreviousNode;
+            PreviousNode!.NextNode = NextNode;
+            NextNode!.PreviousNode = PreviousNode;
         }
     }
 }

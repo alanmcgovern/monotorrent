@@ -38,11 +38,11 @@ namespace MonoTorrent.Client.Listeners
     class NullPeerListener : IPeerConnectionListener
     {
 #pragma warning disable 0067
-        public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
-        public event EventHandler<EventArgs> StatusChanged;
+        public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
+        public event EventHandler<EventArgs>? StatusChanged;
 #pragma warning restore 0067
 
-        public IPEndPoint LocalEndPoint => null;
+        public IPEndPoint? LocalEndPoint => null;
 
         public ListenerStatus Status => ListenerStatus.NotListening;
 

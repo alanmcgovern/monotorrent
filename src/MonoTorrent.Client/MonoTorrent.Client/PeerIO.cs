@@ -53,9 +53,7 @@ namespace MonoTorrent.Client
 
                 decryptor.Decrypt (buffer.Span);
 
-                var message = new HandshakeMessage ();
-                message.Decode (buffer.AsSpan ());
-                return message;
+                return new HandshakeMessage (buffer.AsSpan ());
             }
         }
 
@@ -64,12 +62,12 @@ namespace MonoTorrent.Client
             return ReceiveMessageAsync (connection, decryptor, null, null, null, null);
         }
 
-        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentManagerInfo torrentData)
+        public static async ReusableTask<PeerMessage> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter? rateLimiter, ConnectionMonitor? peerMonitor, ConnectionMonitor? managerMonitor, ITorrentManagerInfo? torrentData)
         {
             return (await ReceiveMessageAsync (connection, decryptor, rateLimiter, peerMonitor, managerMonitor, torrentData, default)).message;
         }
 
-        public static async ReusableTask<(PeerMessage message, PeerMessage.Releaser releaser)> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, ITorrentManagerInfo torrentData, SocketMemory buffer)
+        public static async ReusableTask<(PeerMessage message, PeerMessage.Releaser releaser)> ReceiveMessageAsync (IPeerConnection connection, IEncryption decryptor, IRateLimiter? rateLimiter, ConnectionMonitor? peerMonitor, ConnectionMonitor? managerMonitor, ITorrentManagerInfo? torrentData, SocketMemory buffer)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -127,7 +125,7 @@ namespace MonoTorrent.Client
             return SendMessageAsync (connection, encryptor, message, null, null, null);
         }
 
-        public static async ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, SocketMemory buffer = default)
+        public static async ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter? rateLimiter, ConnectionMonitor? peerMonitor, ConnectionMonitor? managerMonitor, SocketMemory buffer = default)
         {
             await MainLoop.SwitchToThreadpool ();
 

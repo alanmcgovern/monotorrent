@@ -35,6 +35,14 @@ using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
 {
+    class NullTransferMonitor : ITransferMonitor
+    {
+        public long BytesSent { get; }
+        public long BytesReceived { get; }
+        public long ReceiveRate { get; }
+        public long SendRate { get; }
+    }
+
     class NullDhtEngine : IDhtEngine
     {
 #pragma warning disable 0067
@@ -52,7 +60,7 @@ namespace MonoTorrent.Dht
         public TimeSpan AnnounceInterval { get; }
         public bool Disposed => false;
         public TimeSpan MinimumAnnounceInterval { get; }
-        public ITransferMonitor Monitor { get; }
+        public ITransferMonitor Monitor { get; } = new NullTransferMonitor ();
 
         public DhtState State => DhtState.NotReady;
 

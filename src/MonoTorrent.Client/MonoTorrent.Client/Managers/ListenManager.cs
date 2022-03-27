@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
                     return;
                 }
                 if (!e.Connection.IsIncoming) {
-                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash));
+                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash!));
                     var id = new PeerId (peer, e.Connection, new MutableBitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
@@ -106,7 +106,7 @@ namespace MonoTorrent.Client
 
                 var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories);
-                if (!await HandleHandshake (peer, e.Connection, result.Handshake, result.Decryptor, result.Encryptor))
+                if (!await HandleHandshake (peer, e.Connection, result.Handshake!, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch {
                 e.Connection.Dispose ();
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
 
         async ReusableTask<bool> HandleHandshake (Peer peer, IPeerConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
-            TorrentManager man = null;
+            TorrentManager? man = null;
             if (message.ProtocolString != Constants.ProtocolStringV100)
                 return false;
 

@@ -60,12 +60,7 @@ namespace MonoTorrent
         {
             IgnoreHidden = ignoreHidden;
             Path = path;
-            LoadFiles ();
-        }
 
-        void LoadFiles ()
-        {
-            char sep = System.IO.Path.DirectorySeparatorChar;
             string fullPath = System.IO.Path.GetFullPath (Path);
             if (File.Exists (fullPath)) {
                 TorrentName = System.IO.Path.GetFileName (fullPath);
@@ -73,6 +68,7 @@ namespace MonoTorrent
                 return;
             }
 
+            char sep = System.IO.Path.DirectorySeparatorChar;
             if (!fullPath.EndsWith (sep.ToString ()))
                 fullPath += sep.ToString ();
 

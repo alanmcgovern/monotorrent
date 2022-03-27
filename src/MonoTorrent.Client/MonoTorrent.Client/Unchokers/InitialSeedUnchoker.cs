@@ -204,7 +204,7 @@ namespace MonoTorrent.Client
                 advertised++;
                 data.TotalPieces++;
                 data.CurrentPieces[index] = true;
-                advertisedPieces.Add (new SeededPiece (data.Peer, index, Manager.Torrent.PieceLength / Constants.BlockSize));
+                advertisedPieces.Add (new SeededPiece (data.Peer, index, Manager.Torrent!.PieceLength / Constants.BlockSize));
                 (var message, var releaser) = PeerMessage.Rent<HaveMessage> ();
                 message.Initialize (index);
                 data.Peer.MessageQueue.Enqueue (message, releaser);

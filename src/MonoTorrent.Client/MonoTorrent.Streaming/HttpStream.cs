@@ -40,7 +40,7 @@ namespace MonoTorrent.Streaming
     {
         CancellationTokenSource Cancellation { get; }
 
-        CancellationTokenSource CurrentContextCts { get; set; }
+        CancellationTokenSource? CurrentContextCts { get; set; }
 
         HttpListener Listener { get; }
 

@@ -67,10 +67,10 @@ namespace MonoTorrent.Client
 
 
 
-            ITorrentManagerInfo Manager { get; set; }
+            ITorrentManagerInfo? Manager { get; set; }
             int PieceIndex { get; set; }
-            bool UseV1 => Manager.InfoHashes.V1 != null;
-            bool UseV2 => Manager.InfoHashes.V2 != null;
+            bool UseV1 => Manager?.InfoHashes.V1 != null;
+            bool UseV2 => Manager?.InfoHashes.V2 != null;
 
             public IncrementalHashData ()
             {
@@ -120,10 +120,13 @@ namespace MonoTorrent.Client
 
             public bool TryGetHashAndReset (PieceHash dest)
             {
+                if (Manager is null)
+                    return false;
+
                 if (UseV1 && (!SHA1Hasher.TryGetHashAndReset (dest.V1Hash.Span, out int written) || written != dest.V1Hash.Length))
                     return false;
 
-                if (UseV2) {
+                if (Manager != null && UseV2) {
                     var file = Manager.Files[Manager.Files.FindFileByPieceIndex (PieceIndex)];
                     var finalLayer = file.Length < Manager.PieceLength ? Math.Min (Manager.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (Manager.BytesPerPiece (PieceIndex), 2)))) : Manager.PieceLength;
                     if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, finalLayer, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
@@ -136,13 +139,13 @@ namespace MonoTorrent.Client
 
         struct BufferedIO
         {
-            public readonly ITorrentManagerInfo manager;
+            public readonly ITorrentManagerInfo? manager;
             public readonly BlockInfo request;
             public readonly Memory<byte> buffer;
             public readonly ReusableTaskCompletionSource<bool> tcs;
             public readonly bool preferSkipCache;
 
-            public BufferedIO (ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
+            public BufferedIO (ITorrentManagerInfo? manager, BlockInfo request, Memory<byte> buffer, bool preferSkipCache, ReusableTaskCompletionSource<bool> tcs)
             {
                 this.manager = manager;
                 this.request = request;
@@ -240,7 +243,7 @@ namespace MonoTorrent.Client
         /// </summary>
         IBlockCache Cache { get; }
 
-        internal DiskManager (EngineSettings settings, Factories factories, IPieceWriter writer = null)
+        internal DiskManager (EngineSettings settings, Factories factories, IPieceWriter? writer = null)
         {
             ReadLimiter = new RateLimiter ();
             ReadQueue = new Queue<BufferedIO> ();
@@ -296,7 +299,7 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal Func<ITorrentManagerInfo, int, PieceHash, Task<bool>> GetHashAsyncOverride;
+        internal Func<ITorrentManagerInfo, int, PieceHash, Task<bool>>? GetHashAsyncOverride;
 
         internal async ReusableTask<bool> GetHashAsync (ITorrentManagerInfo manager, int pieceIndex, PieceHash dest)
         {
@@ -477,7 +480,7 @@ namespace MonoTorrent.Client
                     incrementalHash.PrepareForFirstUse (manager, pieceIndex);
                 }
 
-                ReusableTaskCompletionSource<bool> tcs = null;
+                ReusableTaskCompletionSource<bool>? tcs = null;
                 ReusableTask writeTask = default;
 
                 using (incrementalHash == null ? default : await incrementalHash.Locker.EnterAsync ()) {
@@ -500,7 +503,7 @@ namespace MonoTorrent.Client
                         // to process. If it's for a different piece it will run concurrently with the remainder of
                         // this method.
                         await MainLoop.SwitchToThreadpool ();
-                        incrementalHash.AppendData (buffer.Slice (0, request.RequestLength));
+                        incrementalHash!.AppendData (buffer.Slice (0, request.RequestLength));
                     }
                 }
 
@@ -538,7 +541,7 @@ namespace MonoTorrent.Client
                 io = WriteQueue.Peek ();
                 // This means we wanted to wait until all the writes had been flushed
                 // before we attempt to generate the hash of a given piece.
-                if (io.manager == null && io.buffer.IsEmpty) {
+                if (io.manager == null) {
                     io = WriteQueue.Dequeue ();
                     io.tcs.SetResult (true);
                     continue;
@@ -547,7 +550,7 @@ namespace MonoTorrent.Client
                 if (!force && !WriteLimiter.TryProcess (io.request.RequestLength))
                     break;
 
-                io = WriteQueue.Dequeue ();
+                _ = WriteQueue.Dequeue ();
 
                 try {
                     await Cache.WriteAsync (io.manager, io.request, io.buffer, io.preferSkipCache);
@@ -558,10 +561,14 @@ namespace MonoTorrent.Client
             }
 
             while (ReadQueue.Count > 0) {
-                if (!force && !ReadLimiter.TryProcess (ReadQueue.Peek ().request.RequestLength))
+                io = ReadQueue.Peek ();
+                if (io.manager == null)
+                    continue;
+
+                if (!force && !ReadLimiter.TryProcess (io.request.RequestLength))
                     break;
 
-                io = ReadQueue.Dequeue ();
+                _ = ReadQueue.Dequeue ();
 
                 try {
                     bool result = await Cache.ReadAsync (io.manager, io.request, io.buffer);

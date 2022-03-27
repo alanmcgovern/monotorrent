@@ -121,7 +121,7 @@ namespace MonoTorrent.Streaming
             cancellationToken.ThrowIfCancellationRequested ();
 
             // Flush any pending data.
-            await Manager.Engine.DiskManager.FlushAsync (Manager, startPiece, endPiece);
+            await Manager.Engine!.DiskManager.FlushAsync (Manager, startPiece, endPiece);
 
             if (!await Manager.Engine.DiskManager.ReadAsync (File, Position, new Memory<byte> (buffer, offset, count)).ConfigureAwait (false))
                 throw new InvalidOperationException ("Could not read the requested data from the torrent");

@@ -126,12 +126,12 @@ namespace MonoTorrent.Client
             WebSeedSpeedTrigger = webSeedSpeedTrigger;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as TorrentSettings);
 
-        public bool Equals (TorrentSettings other)
+        public bool Equals (TorrentSettings? other)
         {
-            return other != null
+            return !(other is null)
                 && AllowDht == other.AllowDht
                 && AllowInitialSeeding == other.AllowInitialSeeding
                 && AllowPeerExchange == other.AllowPeerExchange

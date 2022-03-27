@@ -73,21 +73,21 @@ namespace MonoTorrent.Connections.Peer
 
         Factories RequestCreator { get; }
 
-        HttpClient Requester { get; set; }
+        HttpClient? Requester { get; set; }
 
         public TimeSpan ConnectionTimeout {
             get; set;
         }
 
-        HttpRequestData CurrentRequest { get; set; }
+        HttpRequestData? CurrentRequest { get; set; }
 
-        Stream DataStream { get; set; }
+        Stream? DataStream { get; set; }
 
         long DataStreamCount { get; set; }
 
-        WebResponse DataStreamResponse { get; set; }
+        WebResponse? DataStreamResponse { get; set; }
 
-        EndPoint IPeerConnection.EndPoint => null;
+        EndPoint? IPeerConnection.EndPoint => null;
 
         public bool IsIncoming => false;
 
@@ -97,7 +97,7 @@ namespace MonoTorrent.Connections.Peer
 
         List<BlockInfo> RequestMessages { get; } = new List<BlockInfo> ();
 
-        TaskCompletionSource<object> SendResult { get; set; }
+        TaskCompletionSource<object?>? SendResult { get; set; }
 
         public Uri Uri { get; }
 
@@ -212,7 +212,7 @@ namespace MonoTorrent.Connections.Peer
 
                             CurrentRequest = null;
 
-                            SendResult.TrySetResult (null);
+                            SendResult!.TrySetResult (null);
                         }
                     }
                     return result + written;
@@ -241,7 +241,7 @@ namespace MonoTorrent.Connections.Peer
 
         public async ReusableTask<int> SendAsync (SocketMemory socketBuffer)
         {
-            SendResult = new TaskCompletionSource<object> ();
+            SendResult = new TaskCompletionSource<object?> ();
 
             List<BlockInfo> bundle = DecodeMessages (socketBuffer.Memory.Span);
             if (bundle.Count > 0) {

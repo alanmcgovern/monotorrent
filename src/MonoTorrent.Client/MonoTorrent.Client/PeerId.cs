@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
@@ -36,8 +37,39 @@ using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages.Peer.Libtorrent;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
+    class NullPeerConnection : IPeerConnection
+    {
+        public byte[] AddressBytes { get; } = Array.Empty<byte> ();
+        public bool CanReconnect { get; }
+        public bool Disposed { get; }
+        public bool IsIncoming { get; }
+        public EndPoint? EndPoint { get; }
+        public Uri Uri { get; } = new Uri ("test://1234.com:3434");
+
+        public ReusableTask ConnectAsync ()
+        {
+            throw new NotImplementedException ();
+        }
+
+        public void Dispose ()
+        {
+            throw new NotImplementedException ();
+        }
+
+        public ReusableTask<int> ReceiveAsync (SocketMemory buffer)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public ReusableTask<int> SendAsync (SocketMemory buffer)
+        {
+            throw new NotImplementedException ();
+        }
+    }
     public partial class PeerId
     {
         /// <summary>
@@ -74,11 +106,10 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested)
         {
-            var peer = new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345"))) {
+            var peer = new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345")), new NullPeerConnection () , new MutableBitField (bitfieldLength).SetAll (seeder)) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
-                MutableBitField = new MutableBitField (bitfieldLength).SetAll (seeder)
             };
             peer.MessageQueue.SetReady ();
             peer.MessageQueue.BeginProcessing (force: true);
@@ -167,7 +198,7 @@ namespace MonoTorrent.Client
         internal int MaxSupportedPendingRequests { get; set; }
         internal MessageQueue MessageQueue { get; set; }
         internal Peer Peer { get; }
-        internal PeerExchangeManager PeerExchangeManager { get; set; }
+        internal PeerExchangeManager? PeerExchangeManager { get; set; }
         internal ushort Port { get; set; }
         internal List<int> SuggestedPieces { get; }
 
@@ -175,7 +206,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        PeerId (Peer peer)
+        internal PeerId (Peer peer, IPeerConnection connection, MutableBitField bitfield)
         {
             Peer = peer;
 
@@ -197,14 +228,12 @@ namespace MonoTorrent.Client
             Monitor = new ConnectionMonitor ();
 
             InitializeTyrant ();
-        }
 
-        internal PeerId (Peer peer, IPeerConnection connection, MutableBitField bitfield)
-            : this (peer)
-        {
             Connection = connection ?? throw new ArgumentNullException (nameof (connection));
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
             MutableBitField = bitfield;
+            Decryptor = PlainTextEncryption.Instance;
+            Encryptor = PlainTextEncryption.Instance;
         }
 
         #endregion

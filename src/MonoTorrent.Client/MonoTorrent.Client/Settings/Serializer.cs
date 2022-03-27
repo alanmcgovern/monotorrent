@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
                     property.SetValue (builder, IPAddress.Parse (((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPEndPoint)) {
                     var list = (BEncodedList) value;
-                    IPEndPoint endPoint = null;
+                    IPEndPoint? endPoint = null;
                     if (list.Count == 2) {
                         var ipAddress = (BEncodedString) list.Single (t => t is BEncodedString);
                         var port = (BEncodedNumber) list.Single (t => t is BEncodedNumber);
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
             var dict = new BEncodedDictionary ();
             var props = builder.GetType ().GetProperties ();
             foreach (var property in props) {
-                BEncodedValue convertedValue = property.GetValue (builder) switch {
+                BEncodedValue? convertedValue = property.GetValue (builder) switch {
                     bool value => convertedValue = new BEncodedString (value.ToString ()),
                     IList<EncryptionType> value => convertedValue = new BEncodedList (value.Select (v => (BEncodedString) v.ToString ())),
                     string value => new BEncodedString (value),

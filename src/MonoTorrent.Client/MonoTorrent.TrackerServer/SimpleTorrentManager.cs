@@ -135,8 +135,8 @@ namespace MonoTorrent.TrackerServer
         /// <param name="compact">True if the peers should be in compact form</param>
         internal void GetPeers (BEncodedDictionary response, int count, bool compact)
         {
-            byte[] compactResponse = null;
-            BEncodedList nonCompactResponse = null;
+            byte[]? compactResponse = null;
+            BEncodedList? nonCompactResponse = null;
 
             int total = Math.Min (Peers.Count, count);
             // If we have a compact response, we need to create a single BencodedString
@@ -158,15 +158,15 @@ namespace MonoTorrent.TrackerServer
                 if (compact) {
                     Buffer.BlockCopy (current.CompactEntry, 0, compactResponse, (total - 1) * 6, 6);
                 } else {
-                    nonCompactResponse.Add (current.NonCompactEntry);
+                    nonCompactResponse!.Add (current.NonCompactEntry);
                 }
                 total--;
             }
 
             if (compact)
-                response.Add (TrackerServer.PeersKey, (BEncodedString) compactResponse);
+                response.Add (TrackerServer.PeersKey, (BEncodedString) compactResponse!);
             else
-                response.Add (TrackerServer.PeersKey, nonCompactResponse);
+                response.Add (TrackerServer.PeersKey, nonCompactResponse!);
         }
 
         internal void ClearZombiePeers (DateTime cutoff)

@@ -162,8 +162,8 @@ namespace MonoTorrent.Client
 
         #region Events
 
-        public event EventHandler<StatsUpdateEventArgs> StatsUpdate;
-        public event EventHandler<CriticalExceptionEventArgs> CriticalException;
+        public event EventHandler<StatsUpdateEventArgs>? StatsUpdate;
+        public event EventHandler<CriticalExceptionEventArgs>? CriticalException;
 
         #endregion
 
@@ -312,6 +312,7 @@ namespace MonoTorrent.Client
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;
+            LocalPeerDiscovery = new NullLocalPeerDiscovery ();
 
             RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery ? Factories.CreateLocalPeerDiscovery () : null);
         }
@@ -374,7 +375,7 @@ namespace MonoTorrent.Client
             return await AddAsync (null, torrent, saveDirectory, settings);
         }
 
-        async Task<TorrentManager> AddAsync (MagnetLink magnetLink, Torrent torrent, string saveDirectory, TorrentSettings settings)
+        async Task<TorrentManager> AddAsync (MagnetLink? magnetLink, Torrent? torrent, string saveDirectory, TorrentSettings settings)
         {
             await MainLoop;
 
@@ -385,8 +386,10 @@ namespace MonoTorrent.Client
                 manager = new TorrentManager (this, magnetLink, saveDirectory, settings);
                 if (Settings.AutoSaveLoadMagnetLinkMetadata && Torrent.TryLoad (metadataSaveFilePath, out torrent) && torrent.InfoHashes == magnetLink.InfoHashes)
                     manager.SetMetadata (torrent);
-            } else {
+            } else if (torrent != null) {
                 manager = new TorrentManager (this, torrent, saveDirectory, settings);
+            } else {
+                throw new InvalidOperationException ($"You must pass a non-null {nameof (magnetLink)} or {nameof (torrent)}");
             }
 
             await Register (manager, true);
@@ -533,7 +536,7 @@ namespace MonoTorrent.Client
             Disposed = true;
             MainLoop.QueueWait (() => {
                 PeerListener.Stop ();
-                listenManager.SetListener (null);
+                listenManager.SetListener (new NullPeerListener ());
 
                 DhtListener.Stop ();
                 DhtEngine.Dispose ();
@@ -580,7 +583,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // The torrent is marked as private, so we can't add random people
-                if (manager.HasMetadata && manager.Torrent.IsPrivate) {
+                if (manager.HasMetadata && manager.Torrent!.IsPrivate) {
                     manager.RaisePeersFound (new LocalPeersAdded (manager, 0, 0));
                 } else {
                     // Add new peer to matched Torrent
@@ -647,7 +650,7 @@ namespace MonoTorrent.Client
                 await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
         }
 
-        void RegisterLocalPeerDiscovery (ILocalPeerDiscovery localPeerDiscovery)
+        void RegisterLocalPeerDiscovery (ILocalPeerDiscovery? localPeerDiscovery)
         {
             if (LocalPeerDiscovery != null) {
                 LocalPeerDiscovery.PeerFound -= HandleLocalPeerFound;
@@ -815,13 +818,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTasks.ReusableTask<byte[]> MaybeLoadDhtNodes ()
+        async ReusableTasks.ReusableTask<ReadOnlyMemory<byte>> MaybeLoadDhtNodes ()
         {
             if (!Settings.AutoSaveLoadDhtCache)
-                return null;
+                return ReadOnlyMemory<byte>.Empty;
 
             var savePath = Settings.GetDhtNodeCacheFilePath ();
-            return await Task.Run (() => File.Exists (savePath) ? File.ReadAllBytes (savePath) : null);
+            return await Task.Run (() => File.Exists (savePath) ? File.ReadAllBytes (savePath) : ReadOnlyMemory<byte>.Empty);
         }
 
         async ReusableTasks.ReusableTask MaybeSaveDhtNodes ()
@@ -905,7 +908,7 @@ namespace MonoTorrent.Client
                     DhtListener = new NullDhtListener ();
                     await RegisterDht (new NullDhtEngine ());
                 } else {
-                    DhtListener = Factories.CreateDhtListener (Settings.DhtEndPoint) ?? new NullDhtListener ();
+                    DhtListener = (Settings.DhtEndPoint is null ? null : Factories.CreateDhtListener (Settings.DhtEndPoint)) ?? new NullDhtListener ();
                     if (IsRunning)
                         DhtListener.Start ();
 
