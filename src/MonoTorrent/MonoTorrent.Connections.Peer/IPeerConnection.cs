@@ -36,15 +36,13 @@ namespace MonoTorrent.Connections.Peer
 {
     public interface IPeerConnection : IDisposable
     {
-        byte[] AddressBytes { get; }
+        byte[]? AddressBytes { get; }
 
         bool CanReconnect { get; }
 
         bool Disposed { get; }
 
         bool IsIncoming { get; }
-
-        EndPoint EndPoint { get; }
 
         ReusableTask ConnectAsync ();
 

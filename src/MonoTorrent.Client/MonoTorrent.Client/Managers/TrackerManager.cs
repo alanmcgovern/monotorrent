@@ -44,8 +44,8 @@ namespace MonoTorrent.Trackers
     /// </summary>
     class TrackerManager : ITrackerManager
     {
-        public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
+        public event EventHandler<AnnounceResponseEventArgs>? AnnounceComplete;
+        public event EventHandler<ScrapeResponseEventArgs>? ScrapeComplete;
 
         public SemaphoreSlim AnnounceLimiter { get; }
 

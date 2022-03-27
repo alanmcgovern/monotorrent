@@ -109,9 +109,9 @@ namespace MonoTorrent.PiecePicking
 
         // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
-        MutableBitField CanRequestBitField;
-        PickedPieces Requests { get; set; }
-        ITorrentManagerInfo TorrentData { get; set; }
+        MutableBitField? CanRequestBitField;
+        PickedPieces? Requests { get; set; }
+        ITorrentManagerInfo? TorrentData { get; set; }
 
         public StandardPicker ()
         {
@@ -124,8 +124,10 @@ namespace MonoTorrent.PiecePicking
 
         public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
         {
-            IList<BlockInfo> cancelled = null;
+            if (Requests == null)
+                return Array.Empty<BlockInfo> ();
 
+            IList<BlockInfo>? cancelled = null;
             foreach (var piece in Requests.Values) {
                 if (piece.Index < startIndex || piece.Index > endIndex)
                     continue;
@@ -156,6 +158,9 @@ namespace MonoTorrent.PiecePicking
         readonly Stack<Piece> toRemove = new Stack<Piece> ();
         int CancelWhere (Predicate<Block> predicate)
         {
+            if (Requests == null)
+                return 0;
+
             int count = 0;
             foreach (var piece in Requests.Values) {
                 Block[] blocks = piece.Blocks;
@@ -180,25 +185,30 @@ namespace MonoTorrent.PiecePicking
         public int CurrentReceivedCount ()
         {
             int count = 0;
-            foreach (var piece in Requests.Values)
-                count += piece.TotalReceived;
+            if (Requests != null)
+                foreach (var piece in Requests.Values)
+                    count += piece.TotalReceived;
             return count;
         }
 
         public int CurrentRequestCount ()
         {
             int count = 0;
-            foreach (var piece in Requests.Values)
-                count += piece.TotalRequested - piece.TotalReceived;
+            if (Requests != null)
+                foreach (var piece in Requests.Values)
+                    count += piece.TotalRequested - piece.TotalReceived;
             return count;
         }
 
         public IList<ActivePieceRequest> ExportActiveRequests ()
         {
+            if (Requests == null)
+                return Array.Empty<ActivePieceRequest> ();
+
             var list = new List<ActivePieceRequest> ();
             foreach (var piece in Requests.Values) {
                 foreach (var block in piece.Blocks) {
-                    if (block.Requested)
+                    if (block.RequestedOff != null)
                         list.Add (new ActivePieceRequest (block.PieceIndex, block.StartOffset, block.RequestLength, block.RequestedOff, block.Received));
                 }
             }
@@ -257,7 +267,8 @@ namespace MonoTorrent.PiecePicking
 
         public void Reset ()
         {
-            Requests = new PickedPieces (TorrentData.PieceCount ());
+            if (TorrentData != null)
+                Requests = new PickedPieces (TorrentData.PieceCount ());
         }
 
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
@@ -265,11 +276,10 @@ namespace MonoTorrent.PiecePicking
 
         public bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            pieceComplete = false;
-            peersInvolved = null;
-
-            if (!Requests.TryGetValue (request.PieceIndex, out Piece primaryPiece)) {
+            if (Requests == null || !Requests.TryGetValue (request.PieceIndex, out Piece primaryPiece)) {
                 //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
+                pieceComplete = false;
+                peersInvolved = Array.Empty<IPeer> ();
                 return false;
             }
 
@@ -313,7 +323,7 @@ namespace MonoTorrent.PiecePicking
         bool ValidateRequestWithPiece (IPeer peer, BlockInfo request, Piece piece, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
             pieceComplete = false;
-            peersInvolved = null;
+            peersInvolved = Array.Empty<IPeer> ();
 
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf (piece.Blocks, request.StartOffset, request.RequestLength);
@@ -345,6 +355,9 @@ namespace MonoTorrent.PiecePicking
 
         BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests, bool allowAbandoned, bool allowAny)
         {
+            if (Requests is null || TorrentData is null)
+                return null;
+
             if (Requests.TryGetMostRecentRequest (peer, out Piece mostRecent)) {
                 foreach (ref Block block in mostRecent.Blocks.AsSpan ())
                     if (!block.Requested && !block.Received)
@@ -385,7 +398,7 @@ namespace MonoTorrent.PiecePicking
                         var newPiece = PieceCache.Dequeue ().Initialise (primaryPiece.Index, TorrentData.BytesPerPiece (primaryPiece.Index));
                         for (int i = 0; i < primaryPiece.BlockCount; i++)
                             if (primaryPiece.Blocks[i].Received)
-                                newPiece.Blocks[i].TrySetReceived (primaryPiece.Blocks[i].RequestedOff);
+                                newPiece.Blocks[i].TrySetReceived (primaryPiece.Blocks[i].RequestedOff!);
                         extraPieces.Add (newPiece);
                     }
 
@@ -424,7 +437,7 @@ namespace MonoTorrent.PiecePicking
 
         BlockInfo? GetFromList (IPeer peer, BitField bitfield, IList<int> pieces)
         {
-            if (!peer.SupportsFastPeer)
+            if (!peer.SupportsFastPeer || Requests is null || TorrentData is null)
                 return null;
 
             for (int i = 0; i < pieces.Count; i++) {
@@ -444,6 +457,9 @@ namespace MonoTorrent.PiecePicking
 
         int GetStandardRequest (IPeer peer, BitField current, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
+            if (TorrentData == null || Requests == null)
+                return 0;
+
             int piecesNeeded = (requests.Length * Piece.BlockSize) / TorrentData.PieceLength;
             if ((requests.Length * Piece.BlockSize) % TorrentData.PieceLength != 0)
                 piecesNeeded++;
@@ -466,6 +482,9 @@ namespace MonoTorrent.PiecePicking
 
         int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
+            if (CanRequestBitField == null || Requests == null)
+                return 0;
+
             // This is the easiest case to consider - special case it
             if (pieceCount == 1) {
                 return CanRequestBitField.From (bitfield).NAnd (Requests.AlreadyRequestedBitfield).FirstTrue (pieceStartIndex, pieceEndIndex);

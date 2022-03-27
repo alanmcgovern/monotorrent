@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
@@ -41,8 +42,12 @@ namespace MonoTorrent.BEncoding
     {
         public static readonly BEncodedString Empty = new BEncodedString (ReadOnlyMemory<byte>.Empty);
 
-        public static bool IsNullOrEmpty (BEncodedString value)
-            => value == null || value.Span.IsEmpty;
+        public static bool IsNullOrEmpty (
+#if !NETSTANDARD2_0
+            [NotNullWhen (false)]
+#endif
+        BEncodedString? value)
+            => value is null || value.Span.IsEmpty;
 
         public static BEncodedString FromMemory (ReadOnlyMemory<byte> buffer)
             => buffer.Length == 0 ? Empty : new BEncodedString (buffer);
@@ -56,14 +61,23 @@ namespace MonoTorrent.BEncoding
             return new BEncodedString (new ReadOnlyMemory<byte> (HttpUtility.UrlDecodeToBytes (urlEncodedValue, Encoding.UTF8)));
         }
 
-        public static implicit operator BEncodedString (string value)
-            => value == null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
+#if !NETSTANDARD2_0
+        [return: NotNullIfNotNull ("value")]
+#endif
+        public static implicit operator BEncodedString? (string? value)
+            => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
-        public static implicit operator BEncodedString (char[] value)
-            => value == null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
+#if !NETSTANDARD2_0
+        [return: NotNullIfNotNull ("value")]
+#endif
+        public static implicit operator BEncodedString? (char[]? value)
+            => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
-        public static implicit operator BEncodedString (byte[] value)
-            => value == null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
+#if !NETSTANDARD2_0
+        [return: NotNullIfNotNull ("value")]
+#endif
+        public static implicit operator BEncodedString? (byte[]? value)
+            => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
         readonly ReadOnlyMemory<byte> TextBytes;
 
@@ -189,13 +203,13 @@ namespace MonoTorrent.BEncoding
             return prefix + TextBytes.Length;
         }
 
-        public int CompareTo (object other)
+        public int CompareTo (object? other)
             => CompareTo (other as BEncodedString);
 
-        public int CompareTo (BEncodedString other)
-            => other == null ? 1 : Span.SequenceCompareTo (other.Span);
+        public int CompareTo (BEncodedString? other)
+            => other is null ? 1 : Span.SequenceCompareTo (other.Span);
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             if (obj is BEncodedString other)
                 return Equals (other);
@@ -204,8 +218,8 @@ namespace MonoTorrent.BEncoding
             return false;
         }
 
-        public bool Equals (BEncodedString other)
-            => other != null && Span.SequenceEqual (other.Span);
+        public bool Equals (BEncodedString? other)
+            => !(other is null) && Span.SequenceEqual (other.Span);
 
         public override int GetHashCode ()
         {

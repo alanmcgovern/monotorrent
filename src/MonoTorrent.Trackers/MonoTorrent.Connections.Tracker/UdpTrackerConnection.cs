@@ -47,7 +47,7 @@ namespace MonoTorrent.Connections.Tracker
 
         public Uri Uri { get; }
 
-        Task<long> ConnectionIdTask { get; set; }
+        Task<long>? ConnectionIdTask { get; set; }
         ValueStopwatch LastConnected;
         int MaxRetries { get; } = 3;
         public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
@@ -72,10 +72,12 @@ namespace MonoTorrent.Connections.Tracker
                 if (errorString != null) {
                     ConnectionIdTask = null;
                     return new AnnounceResponse (TrackerState.InvalidResponse, failureMessage: errorString);
+                } else if (response != null) {
+                    var announce = (AnnounceResponseMessage) response;
+                    return new AnnounceResponse (TrackerState.Ok, announce.Peers, minUpdateInterval: announce.Interval);
+                } else {
+                    throw new NotSupportedException ($"There was no error and no {nameof (AnnounceResponseMessage)} was received");
                 }
-
-                var announce = (AnnounceResponseMessage) response;
-                return new AnnounceResponse (TrackerState.Ok, announce.Peers, minUpdateInterval: announce.Interval);
             } catch (OperationCanceledException) {
                 ConnectionIdTask = null;
                 return new AnnounceResponse (TrackerState.Offline, failureMessage: "Announce could not be completed");
@@ -100,16 +102,17 @@ namespace MonoTorrent.Connections.Tracker
                 if (errorString != null) {
                     ConnectionIdTask = null;
                     return new ScrapeResponse (TrackerState.InvalidResponse, failureMessage: errorString);
+                } else if (rawResponse is ScrapeResponseMessage response) {
+                    int? complete = null, incomplete = null, downloaded = null;
+                    if (response.Scrapes.Count == 1) {
+                        complete = response.Scrapes[0].Seeds;
+                        downloaded = response.Scrapes[0].Complete;
+                        incomplete = response.Scrapes[0].Leeches;
+                    }
+                    return new ScrapeResponse (TrackerState.Ok, complete: complete, downloaded: downloaded, incomplete: incomplete);
+                } else {
+                    throw new InvalidOperationException ($"There was no error and no {nameof (ScrapeResponseMessage)} was received");
                 }
-
-                int? complete = null, incomplete = null, downloaded = null;
-                var response = (ScrapeResponseMessage) rawResponse;
-                if (response.Scrapes.Count == 1) {
-                    complete = response.Scrapes[0].Seeds;
-                    downloaded = response.Scrapes[0].Complete;
-                    incomplete = response.Scrapes[0].Leeches;
-                }
-                return new ScrapeResponse (TrackerState.Ok, complete: complete, downloaded: downloaded, incomplete: incomplete);
             } catch (OperationCanceledException) {
                 ConnectionIdTask = null;
                 return new ScrapeResponse (TrackerState.Offline, failureMessage: "Scrape could not be completed");
@@ -133,16 +136,17 @@ namespace MonoTorrent.Connections.Tracker
             if (errorString != null) {
                 ConnectionIdTask = null;
                 throw new TrackerException (errorString);
+            } else if (rawResponse is ConnectResponseMessage response) {
+                // Reset the timer after we receive the response so we get maximum benefit from our
+                // 2 minute allowance to use the connection id. 
+                LastConnected.Restart ();
+                return response.ConnectionId;
+            } else {
+                throw new InvalidOperationException ($"There was no error and no {nameof (ConnectResponseMessage)} was received");
             }
-
-            var response = (ConnectResponseMessage) rawResponse;
-            // Reset the timer after we receive the response so we get maximum benefit from our
-            // 2 minute allowance to use the connection id. 
-            LastConnected.Restart ();
-            return response.ConnectionId;
         }
 
-        async Task<(UdpTrackerMessage, string)> SendAndReceiveAsync (UdpTrackerMessage msg)
+        async Task<(UdpTrackerMessage?, string?)> SendAndReceiveAsync (UdpTrackerMessage msg)
         {
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (RetryDelay.TotalSeconds * MaxRetries));
 
@@ -162,7 +166,7 @@ namespace MonoTorrent.Connections.Tracker
             }
         }
 
-        async Task<(UdpTrackerMessage, string)> ReceiveAsync (UdpClient client, int transactionId, CancellationToken token)
+        async Task<(UdpTrackerMessage?, string?)> ReceiveAsync (UdpClient client, int transactionId, CancellationToken token)
         {
             while (!token.IsCancellationRequested) {
                 UdpReceiveResult received = await client.ReceiveAsync ();

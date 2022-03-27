@@ -34,7 +34,7 @@ namespace MonoTorrent.Connections
 {
     public abstract class SocketListener : Listener, ISocketListener
     {
-        public IPEndPoint LocalEndPoint { get; protected set; }
+        public IPEndPoint? LocalEndPoint { get; protected set; }
 
         protected IPEndPoint OriginalEndPoint { get; set; }
 

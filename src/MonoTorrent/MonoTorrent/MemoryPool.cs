@@ -52,7 +52,7 @@ namespace MonoTorrent
                     if (ArraySegments[i].Segment.Count >= capacity) {
                         var buffer = ArraySegments[i];
                         ArraySegments.RemoveAt (i);
-                        segment = new ArraySegment<byte> (buffer.Segment.Array, buffer.Segment.Offset, capacity);
+                        segment = new ArraySegment<byte> (buffer.Segment.Array!, buffer.Segment.Offset, capacity);
                         return new ArraySegmentReleaser (ArraySegments, buffer);
                     }
                 }
@@ -62,7 +62,7 @@ namespace MonoTorrent
             // profile, and it uses buffers of size [96 + Rand(0, 512)]. If we always generate 1kB buffers
             // we can probably end up creating and reusing one buffer for the entire lifespan of the engine.
             var byteBuffer = new ByteBuffer (new ArraySegment<byte> (new byte[capacity]));
-            segment = new ArraySegment<byte> (byteBuffer.Segment.Array, byteBuffer.Segment.Offset, capacity);
+            segment = new ArraySegment<byte> (byteBuffer.Segment.Array!, byteBuffer.Segment.Offset, capacity);
             return new ArraySegmentReleaser (ArraySegments, byteBuffer);
         }
 

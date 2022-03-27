@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages.Peer.FastPeer;
@@ -54,7 +55,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal bool TryDequeue (out PeerMessage message, out PeerMessage.Releaser releaser)
+#if NETSTANDARD2_0
+        internal bool TryDequeue (out PeerMessage? message, out PeerMessage.Releaser releaser)
+#else
+        internal bool TryDequeue ([NotNullWhen (true)] out PeerMessage? message, out PeerMessage.Releaser releaser)
+#endif
         {
             lock (SendQueue) {
                 if (!Ready)

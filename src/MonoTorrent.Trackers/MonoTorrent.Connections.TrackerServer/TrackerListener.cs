@@ -40,9 +40,9 @@ namespace MonoTorrent.Connections.TrackerServer
     {
         public ListenerStatus Status { get; private set; }
 
-        public event EventHandler<ScrapeRequest> ScrapeReceived;
-        public event EventHandler<AnnounceRequest> AnnounceReceived;
-        public event EventHandler<EventArgs> StatusChanged;
+        public event EventHandler<ScrapeRequest>? ScrapeReceived;
+        public event EventHandler<AnnounceRequest>? AnnounceReceived;
+        public event EventHandler<EventArgs>? StatusChanged;
 
         protected TrackerListener ()
         {

@@ -75,7 +75,7 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ($"The root value was not a BEncodedDictionary");
 
             buffer = buffer.Slice (1);
-            BEncodedString oldkey = null;
+            BEncodedString? oldkey = null;
             ReadOnlySpan<byte> infoBuffer = default;
             Memory<byte> infoHashSHA1 = default;
             Memory<byte> infoHashSHA256 = default;
@@ -113,7 +113,7 @@ namespace MonoTorrent.BEncoding
 
         static BEncodedDictionary DecodeDictionary (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
         {
-            BEncodedString oldkey = null;
+            BEncodedString? oldkey = null;
             var dictionary = new BEncodedDictionary ();
             while (buffer.Length > 0) {
                 if (buffer[0] == 'e') {

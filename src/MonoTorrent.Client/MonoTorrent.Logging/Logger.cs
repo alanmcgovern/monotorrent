@@ -26,6 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+#nullable enable
 
 using System;
 
@@ -38,9 +39,9 @@ namespace MonoTorrent.Logging
         internal static Logger Create (string name)
             => new Logger (LoggerFactory.Create (name));
 
-        ILogger Writer { get; }
+        ILogger? Writer { get; }
 
-        internal Logger (ILogger writer)
+        internal Logger (ILogger? writer)
         {
             Writer = writer;
         }

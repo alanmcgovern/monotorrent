@@ -150,7 +150,6 @@ namespace MonoTorrent.Messages.Peer
             byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
             int length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100, false, false).Encode (buffer.AsSpan (offset));
 
-            Console.WriteLine (BitConverter.ToString (buffer, offset, length));
             byte[] peerId = Encoding.ASCII.GetBytes ("12312312345645645678");
             byte[] protocolVersion = Encoding.ASCII.GetBytes (Constants.ProtocolStringV100);
             Assert.AreEqual (19, buffer[offset], "1");
@@ -170,8 +169,7 @@ namespace MonoTorrent.Messages.Peer
             byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
             HandshakeMessage orig = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100);
             orig.Encode (buffer.AsSpan (offset));
-            HandshakeMessage dec = new HandshakeMessage ();
-            dec.Decode (buffer.AsSpan (offset, HandshakeMessage.HandshakeLength));
+            HandshakeMessage dec = new HandshakeMessage (buffer.AsSpan (offset, HandshakeMessage.HandshakeLength));
             Assert.IsTrue (orig.Equals (dec));
             Assert.AreEqual (orig.Encode (), dec.Encode ());
         }

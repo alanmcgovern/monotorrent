@@ -36,10 +36,10 @@ namespace MonoTorrent.Dht
     struct SendQueryEventArgs
     {
         public IPEndPoint EndPoint { get; }
-        public ErrorMessage Error { get; }
+        public ErrorMessage? Error { get; }
         public Node Node { get; }
         public QueryMessage Query { get; }
-        public ResponseMessage Response { get; }
+        public ResponseMessage? Response { get; }
         public bool TimedOut => Response == null && Error == null;
 
         public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query)

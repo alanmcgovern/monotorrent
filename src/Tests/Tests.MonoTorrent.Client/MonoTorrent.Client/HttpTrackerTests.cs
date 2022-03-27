@@ -94,10 +94,9 @@ namespace MonoTorrent.TrackerServer
                         .Select (t => (byte) t);
 
             infoHash = new InfoHash (infoHashBytes.Concat (infoHashBytes).ToArray ());
-            announceParams = new MonoTorrent.Trackers.AnnounceRequest ()
+            announceParams = new MonoTorrent.Trackers.AnnounceRequest (infoHash)
                 .WithPort (5555)
-                .WithPeerId (peerId.Span.ToArray ())
-                .WithInfoHash (infoHash);
+                .WithPeerId (peerId.Span.ToArray ());
 
             scrapeParams = new MonoTorrent.Trackers.ScrapeRequest (infoHash);
         }
@@ -154,8 +153,8 @@ namespace MonoTorrent.TrackerServer
             Assert.IsTrue (argsTask.Task.Wait (5000), "#1");
 
             var args = argsTask.Task.Result;
-            Assert.AreEqual (peerId, (BEncodedString) announceParams.PeerId, "#1");
-            Assert.AreEqual ((BEncodedString) announceParams.PeerId, args.PeerId, "#2");
+            Assert.AreEqual (peerId, BEncodedString.FromMemory (announceParams.PeerId), "#1");
+            Assert.AreEqual (BEncodedString.FromMemory (announceParams.PeerId), args.PeerId, "#2");
 
             Assert.AreEqual (infoHash, args.InfoHash, "#3");
             Assert.IsTrue (announceParams.InfoHash == args.InfoHash, "#3");

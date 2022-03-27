@@ -38,16 +38,16 @@ namespace MonoTorrent.Dht.Messages
     {
         internal static bool UseVersionKey = true;
 
-        protected static readonly BEncodedString IdKey = "id";
-        static readonly BEncodedString TransactionIdKey = "t";
-        static readonly BEncodedString VersionKey = "v";
-        static readonly BEncodedString MessageTypeKey = "y";
-        static readonly BEncodedString DhtVersion = GitInfoHelper.DhtClientVersion;
+        protected static readonly BEncodedString IdKey = new BEncodedString ("id");
+        static readonly BEncodedString TransactionIdKey = new BEncodedString ("t");
+        static readonly BEncodedString VersionKey = new BEncodedString ("v");
+        static readonly BEncodedString MessageTypeKey = new BEncodedString ("y");
+        static readonly BEncodedString DhtVersion = new BEncodedString (GitInfoHelper.DhtClientVersion);
 
         protected BEncodedDictionary properties = new BEncodedDictionary ();
 
         public BEncodedString ClientVersion
-             => (BEncodedString) properties.GetValueOrDefault (VersionKey) ?? BEncodedString.Empty;
+             => (BEncodedString?) properties.GetValueOrDefault (VersionKey) ?? BEncodedString.Empty;
 
         internal abstract NodeId Id {
             get;
@@ -56,14 +56,18 @@ namespace MonoTorrent.Dht.Messages
         public BEncodedString MessageType => (BEncodedString) properties[MessageTypeKey];
 
         public BEncodedValue TransactionId {
-            get => properties[TransactionIdKey];
-            set => properties[TransactionIdKey] = value;
+            get => properties.GetValueOrDefault (TransactionIdKey)!; // FIXME: Can this be made true without the null forgiving operator?
+            set {
+                if (value == null)
+                    properties.Remove (TransactionIdKey);
+                else
+                    properties[TransactionIdKey] = value;
+            }
         }
 
 
         protected DhtMessage (BEncodedString messageType)
         {
-            properties.Add (TransactionIdKey, null);
             properties.Add (MessageTypeKey, messageType);
             if (UseVersionKey)
                 properties.Add (VersionKey, DhtVersion);

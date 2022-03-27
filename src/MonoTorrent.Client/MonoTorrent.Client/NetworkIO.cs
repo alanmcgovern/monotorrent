@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
             return ReceiveAsync (connection, buffer, null, null, null);
         }
 
-        public static async ReusableTask ReceiveAsync (IPeerConnection connection, SocketMemory buffer, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask ReceiveAsync (IPeerConnection connection, SocketMemory buffer, IRateLimiter? rateLimiter, SpeedMonitor? peerMonitor, SpeedMonitor? managerMonitor)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -155,7 +155,7 @@ namespace MonoTorrent.Client
             return SendAsync (connection, buffer, null, null, null);
         }
 
-        public static async ReusableTask SendAsync (IPeerConnection connection, SocketMemory buffer, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
+        public static async ReusableTask SendAsync (IPeerConnection connection, SocketMemory buffer, IRateLimiter? rateLimiter, SpeedMonitor? peerMonitor, SpeedMonitor? managerMonitor)
         {
             await MainLoop.SwitchToThreadpool ();
 

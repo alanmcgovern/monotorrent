@@ -26,6 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -83,10 +84,10 @@ namespace MonoTorrent
             PiecesRoot = piecesRoot;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as TorrentFile);
 
-        public bool Equals (TorrentFile other)
+        public bool Equals (TorrentFile? other)
             => Path == other?.Path && Length == other.Length;
 
         public override int GetHashCode ()

@@ -40,7 +40,7 @@ namespace MonoTorrent.PortForwarding
     public class MonoNatPortForwarder : IPortForwarder
     {
 
-        public event EventHandler MappingsChanged;
+        public event EventHandler? MappingsChanged;
 
         public bool Active => NatUtility.IsSearching;
 

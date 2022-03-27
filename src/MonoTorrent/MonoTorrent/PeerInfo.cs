@@ -44,11 +44,11 @@ namespace MonoTorrent
         public PeerInfo (Uri uri, ReadOnlyMemory<byte> peerId)
             => (Uri, PeerId) = (uri ?? throw new ArgumentNullException (nameof (peerId)), peerId);
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as PeerInfo);
 
-        public bool Equals (PeerInfo other)
-            => other != null
+        public bool Equals (PeerInfo? other)
+            => !(other is null)
             && Uri.Equals (other.Uri)
             && PeerId.Span.SequenceEqual (other.PeerId.Span);
 

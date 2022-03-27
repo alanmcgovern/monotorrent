@@ -91,7 +91,7 @@ namespace MonoTorrent.Connections
 
         internal static IList<EncryptionType> GetSupportedEncryption (IList<EncryptionType> peerEncryption, IList<EncryptionType> allowedEncryption)
         {
-            List<EncryptionType> result = null;
+            List<EncryptionType>? result = null;
             for (int i = 0; i < allowedEncryption.Count; i++) {
                 if (peerEncryption.Contains (allowedEncryption[i])) {
                     result ??= new List<EncryptionType> (3 - i);

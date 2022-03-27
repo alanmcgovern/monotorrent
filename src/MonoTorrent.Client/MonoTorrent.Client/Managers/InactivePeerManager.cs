@@ -12,7 +12,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal List<Uri> InactivePeerList { get; } = new List<Uri> ();
 
-        ConnectionManager ConnectionManager => TorrentManager.Engine?.ConnectionManager;
+        ConnectionManager ConnectionManager { get; }
         TorrentManager TorrentManager { get; }
 
         #endregion
@@ -22,9 +22,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Creates a new inactive peer manager for a torrent manager
         /// </summary>
-        public InactivePeerManager (TorrentManager torrentManager)
+        public InactivePeerManager (TorrentManager torrentManager, ConnectionManager connectionManager)
         {
             TorrentManager = torrentManager;
+            ConnectionManager = connectionManager;
         }
 
         #endregion
@@ -122,7 +123,7 @@ namespace MonoTorrent.Client
             // We've found a peer to disconnect
             // Add it to the inactive list for this torrent and disconnect it
             InactivePeerList.Add (TorrentManager.Peers.ConnectedPeers[peerToDisconnect].Uri);
-            ConnectionManager.CleanupSocket (TorrentManager, TorrentManager.Peers.ConnectedPeers[peerToDisconnect]);
+            ConnectionManager!.CleanupSocket (TorrentManager, TorrentManager.Peers.ConnectedPeers[peerToDisconnect]);
 
         }
 

@@ -228,7 +228,7 @@ namespace MonoTorrent
             return this;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is BitField other
             && TrueCount == other.TrueCount
             && Data.AsSpan ().SequenceEqual (other.Data);

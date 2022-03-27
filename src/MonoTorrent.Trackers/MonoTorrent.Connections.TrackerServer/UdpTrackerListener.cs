@@ -46,7 +46,7 @@ namespace MonoTorrent.Connections.TrackerServer
     {
         static readonly Logger logger = Logger.Create (nameof (UdpTrackerListener));
 
-        public IPEndPoint LocalEndPoint { get; private set; }
+        public IPEndPoint? LocalEndPoint { get; private set; }
 
         IPEndPoint OriginalEndPoint { get; }
 
@@ -63,6 +63,7 @@ namespace MonoTorrent.Connections.TrackerServer
 
         public UdpTrackerListener (IPEndPoint endPoint)
         {
+            Cancellation = new CancellationTokenSource ();
             ConnectionIDs = new Dictionary<IPAddress, long> ();
             OriginalEndPoint = endPoint;
         }
@@ -95,7 +96,7 @@ namespace MonoTorrent.Connections.TrackerServer
 
         async void ReceiveAsync (UdpClient client, CancellationToken token)
         {
-            Task sendTask = null;
+            Task? sendTask = null;
             while (!token.IsCancellationRequested) {
                 try {
                     UdpReceiveResult result = await client.ReceiveAsync ();
@@ -197,8 +198,8 @@ namespace MonoTorrent.Connections.TrackerServer
         NameValueCollection getCollection (AnnounceMessage announceMessage)
         {
             var res = new NameValueCollection {
-                { "info_hash", announceMessage.InfoHash.UrlEncode () },
-                { "peer_id", announceMessage.PeerId.UrlEncode () },
+                { "info_hash", announceMessage.InfoHash!.UrlEncode () },
+                { "peer_id", BEncodedString.FromMemory (announceMessage.PeerId).UrlEncode () },
                 { "port", announceMessage.Port.ToString () },
                 { "uploaded", announceMessage.Uploaded.ToString () },
                 { "downloaded", announceMessage.Downloaded.ToString () },

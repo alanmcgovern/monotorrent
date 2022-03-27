@@ -26,6 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
 
 using MonoTorrent.BEncoding;
 
@@ -33,10 +34,10 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class ErrorMessage : DhtMessage
     {
-        static readonly BEncodedString ErrorListKey = "e";
-        internal static readonly BEncodedString ErrorType = "e";
+        static readonly BEncodedString ErrorListKey = new BEncodedString ("e");
+        internal static readonly BEncodedString ErrorType = new BEncodedString ("e");
 
-        internal override NodeId Id => new NodeId (new byte[20]);
+        internal override NodeId Id => NodeId.Minimum;
         BEncodedList ErrorList => (BEncodedList) properties[ErrorListKey];
 
         ErrorCode ErrorCode => ((ErrorCode) ((BEncodedNumber) ErrorList[0]).Number);

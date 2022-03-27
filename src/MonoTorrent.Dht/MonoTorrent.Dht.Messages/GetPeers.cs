@@ -33,8 +33,8 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class GetPeers : QueryMessage
     {
-        static readonly BEncodedString InfoHashKey = "info_hash";
-        static readonly BEncodedString QueryName = "get_peers";
+        static readonly BEncodedString InfoHashKey = new BEncodedString ("info_hash");
+        static readonly BEncodedString QueryName = new BEncodedString ("get_peers");
 
         public NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
 

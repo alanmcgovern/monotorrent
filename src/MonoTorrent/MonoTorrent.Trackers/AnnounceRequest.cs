@@ -26,6 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
 
 namespace MonoTorrent.Trackers
 {
@@ -36,20 +37,20 @@ namespace MonoTorrent.Trackers
         public long BytesUploaded { get; private set; }
         public TorrentEvent ClientEvent { get; private set; }
         public InfoHash InfoHash { get; private set; }
-        public string IPAddress { get; private set; }
-        public byte[] PeerId { get; private set; }
+        public string? IPAddress { get; private set; }
+        public ReadOnlyMemory<byte> PeerId { get; private set; }
         public int Port { get; private set; }
         public bool RequireEncryption { get; private set; }
         public bool SupportsEncryption { get; private set; }
 
-        public AnnounceRequest ()
+        public AnnounceRequest (InfoHash infoHash)
         {
-
+            InfoHash = infoHash;
         }
 
         public AnnounceRequest (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
-                           byte[] peerId, string ipAddress, int port, bool supportsEncryption)
+                           ReadOnlyMemory<byte> peerId, string? ipAddress, int port, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;
@@ -123,7 +124,7 @@ namespace MonoTorrent.Trackers
             return clone;
         }
 
-        public AnnounceRequest WithPeerId (byte[] peerId)
+        public AnnounceRequest WithPeerId (ReadOnlyMemory<byte> peerId)
         {
             var clone = this;
             if (!peerId.Equals (PeerId)) {

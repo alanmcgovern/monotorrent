@@ -61,7 +61,7 @@ namespace MonoTorrent.Dht
                 return LastSeen.TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
             }
         }
-        public BEncodedValue Token { get; set; }
+        public BEncodedValue? Token { get; set; }
 
         public Node (NodeId id, IPEndPoint endpoint)
         {
@@ -88,7 +88,7 @@ namespace MonoTorrent.Dht
         {
             byte[] buffer = new byte[6];
             CompactPort (buffer);
-            return buffer;
+            return new BEncodedString (buffer);
         }
 
         internal void CompactPort (Span<byte> buffer)
@@ -110,7 +110,7 @@ namespace MonoTorrent.Dht
         {
             byte[] buffer = new byte[26];
             CompactNode (buffer);
-            return buffer;
+            return new BEncodedString (buffer);
         }
 
         void CompactNode (Span<byte> buffer)
@@ -143,17 +143,12 @@ namespace MonoTorrent.Dht
             return new Node (NodeId.FromMemory (id), new IPEndPoint (address, port));
         }
 
-        internal static IEnumerable<Node> FromCompactNode (byte[] buffer)
+        internal static IEnumerable<Node> FromCompactNode (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
-            for (int i = 0; (i + 26) <= buffer.Length; i += 26)
-                yield return FromCompactNode (buffer.AsSpan (i, 26));
-        }
-
-        internal static IEnumerable<Node> FromCompactNode (IEnumerable<byte[]> nodes)
-        {
-            foreach (var rawNode in nodes)
-                foreach (var node in FromCompactNode (rawNode))
-                    yield return node;
+            foreach (var rawNode in nodes) {
+                for (int i = 0; (i + 26) <= rawNode.Length; i += 26)
+                    yield return FromCompactNode (rawNode.Span.Slice (i, 26));
+            }
         }
 
         internal static IEnumerable<Node> FromCompactNode (BEncodedString nodes)
@@ -190,12 +185,12 @@ namespace MonoTorrent.Dht
             }
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return Equals (obj as Node);
         }
 
-        public bool Equals (Node other)
+        public bool Equals (Node? other)
         {
             return Id.Equals (other?.Id);
         }

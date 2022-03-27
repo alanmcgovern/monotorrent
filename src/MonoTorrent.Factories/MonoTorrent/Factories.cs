@@ -158,7 +158,7 @@ namespace MonoTorrent
             return dupe;
         }
 
-        public IPeerConnection CreatePeerConnection (Uri uri)
+        public IPeerConnection? CreatePeerConnection (Uri uri)
         {
             try {
                 if (PeerConnectionFuncs.TryGetValue (uri.Scheme, out var creator))
@@ -238,7 +238,7 @@ namespace MonoTorrent
             return dupe;
         }
 
-        public ITracker CreateTracker (Uri uri)
+        public ITracker? CreateTracker (Uri uri)
         {
             try {
                 if (TrackerFuncs.TryGetValue (uri.Scheme, out var creator))

@@ -37,17 +37,15 @@ namespace MonoTorrent.PiecePicking
     {
         bool RefreshAfterSeeking = false;
 
-        ITorrentManagerInfo TorrentData { get; set; }
+        ITorrentManagerInfo? TorrentData { get; set; }
 
-        IReadOnlyList<BitField> IgnoringBitfields { get; set; }
+        IReadOnlyList<BitField>? IgnoringBitfields { get; set; }
 
         public bool InEndgameMode => false;
 
-        public IPiecePicker Picker => LowPriorityPicker;
+        IPiecePicker? LowPriorityPicker { get; set; }
 
-        IPiecePicker LowPriorityPicker { get; set; }
-
-        IPiecePicker HighPriorityPicker { get; set; }
+        IPiecePicker? HighPriorityPicker { get; set; }
 
         /// <summary>
         /// This is the piece index of the block of data currently being consumed by the
@@ -62,7 +60,7 @@ namespace MonoTorrent.PiecePicking
 
         internal int LowPriorityCount => HighPriorityCount * 2;
 
-        MutableBitField Temp { get; set; }
+        MutableBitField? Temp { get; set; }
 
         public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<BitField> ignoringBitfields)
         {
@@ -85,7 +83,7 @@ namespace MonoTorrent.PiecePicking
 
         public void AddRequests (IReadOnlyList<IPeerWithMessaging> peers)
         {
-            if (!RefreshAfterSeeking)
+            if (!RefreshAfterSeeking || TorrentData is null)
                 return;
 
             RefreshAfterSeeking = false;
@@ -103,10 +101,10 @@ namespace MonoTorrent.PiecePicking
             if (bitfield.FirstFalse (start, end) != -1) {
                 foreach (var peer in allPeers.Where (p => p.CanCancelRequests)) {
                     if (HighPriorityPieceIndex > 0)
-                        peer.EnqueueCancellations (Picker.CancelRequests (peer, 0, HighPriorityPieceIndex - 1));
+                        peer.EnqueueCancellations (HighPriorityPicker!.CancelRequests (peer, 0, HighPriorityPieceIndex - 1));
 
                     if (HighPriorityPieceIndex + HighPriorityCount < bitfield.Length)
-                        peer.EnqueueCancellations (Picker.CancelRequests (peer, HighPriorityPieceIndex + HighPriorityCount, bitfield.Length - 1));
+                        peer.EnqueueCancellations (HighPriorityPicker!.CancelRequests (peer, HighPriorityPieceIndex + HighPriorityCount, bitfield.Length - 1));
                 }
             }
 
@@ -133,6 +131,9 @@ namespace MonoTorrent.PiecePicking
 
         public void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> allPeers)
         {
+            if (TorrentData is null)
+                return;
+
             // The first two pieces in the high priority set should be requested multiple times to ensure fast delivery
             var pieceCount = TorrentData.PieceCount ();
             for (int i = HighPriorityPieceIndex; i < pieceCount && i <= HighPriorityPieceIndex + 1; i++)
@@ -145,7 +146,7 @@ namespace MonoTorrent.PiecePicking
 
         void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> allPeers, int startPieceIndex, int endPieceIndex, int maxDuplicates, int preferredMaxRequests)
         {
-            if (!peer.CanRequestMorePieces)
+            if (!peer.CanRequestMorePieces || TorrentData == null)
                 return;
 
             int preferredRequestAmount = peer.PreferredRequestAmount (TorrentData.PieceLength);
@@ -160,7 +161,7 @@ namespace MonoTorrent.PiecePicking
             // into account that a peer which is choking us can *only* resume a 'fast piece' in the 'AmAllowedfastPiece' list.
             if (!peer.IsChoking) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    BlockInfo? request = Picker.ContinueAnyExistingRequest (peer, startPieceIndex, endPieceIndex, maxDuplicates);
+                    BlockInfo? request = LowPriorityPicker!.ContinueAnyExistingRequest (peer, startPieceIndex, endPieceIndex, maxDuplicates);
                     if (request != null)
                         peer.EnqueueRequest (request.Value);
                     else
@@ -171,7 +172,7 @@ namespace MonoTorrent.PiecePicking
             // If the peer supports fast peer and they are choking us, they'll still send pieces in the allowed fast set.
             if (peer.SupportsFastPeer && peer.IsChoking) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    BlockInfo? request = Picker.ContinueExistingRequest (peer, startPieceIndex, endPieceIndex);
+                    BlockInfo? request = LowPriorityPicker!.ContinueExistingRequest (peer, startPieceIndex, endPieceIndex);
                     if (request != null)
                         peer.EnqueueRequest (request.Value);
                     else
@@ -183,7 +184,7 @@ namespace MonoTorrent.PiecePicking
             // only be made to pieces which *can* be requested? Why not!
             // FIXME add a test for this.
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
-                MutableBitField filtered = null;
+                MutableBitField filtered = null!;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= GenerateAlreadyHaves ().Not ().And (peer.BitField);
 
@@ -199,7 +200,7 @@ namespace MonoTorrent.PiecePicking
 
         MutableBitField GenerateAlreadyHaves ()
         {
-            Temp.From (IgnoringBitfields[0]);
+            Temp!.From (IgnoringBitfields![0]);
             for (int i = 1; i < IgnoringBitfields.Count; i++)
                 Temp.Or (IgnoringBitfields[i]);
             return Temp;
@@ -216,7 +217,7 @@ namespace MonoTorrent.PiecePicking
 
                 for (int prioritised = start; prioritised <= start + 1 && prioritised <= end; prioritised++) {
                     if (available[prioritised]) {
-                        if ((requestCount = HighPriorityPicker.PickPiece (peer, available, otherPeers, prioritised, prioritised, requests)) > 0)
+                        if ((requestCount = HighPriorityPicker!.PickPiece (peer, available, otherPeers, prioritised, prioritised, requests)) > 0)
                             return requestCount;
                         if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, prioritised, prioritised, 3)) != null) {
                             requests[0] = request.Value;
@@ -225,12 +226,12 @@ namespace MonoTorrent.PiecePicking
                     }
                 }
 
-                if ((requestCount = HighPriorityPicker.PickPiece (peer, available, otherPeers, start, end, requests)) > 0)
+                if ((requestCount = HighPriorityPicker!.PickPiece (peer, available, otherPeers, start, end, requests)) > 0)
                     return requestCount;
             }
 
             var lowPriorityEndIndex = Math.Min (HighPriorityPieceIndex + LowPriorityCount, endIndex);
-            if ((requestCount = LowPriorityPicker.PickPiece (peer, available, otherPeers, HighPriorityPieceIndex, lowPriorityEndIndex, requests)) > 0)
+            if ((requestCount = LowPriorityPicker!.PickPiece (peer, available, otherPeers, HighPriorityPieceIndex, lowPriorityEndIndex, requests)) > 0)
                 return requestCount;
 
             // If we're downloading from the 'not important at all' section, queue up at most 2.
@@ -262,22 +263,23 @@ namespace MonoTorrent.PiecePicking
         /// <param name="position"></param>
         public void ReadToPosition (ITorrentManagerFile file, long position)
         {
-            HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
+            if (TorrentData != null)
+                HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
         }
 
         public bool ValidatePiece (IPeer peer, BlockInfo blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved)
-            => Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+            => HighPriorityPicker!.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
 
         public bool IsInteresting (IPeer peer, BitField bitfield)
-            => Picker.IsInteresting (peer, bitfield);
+            => HighPriorityPicker!.IsInteresting (peer, bitfield);
 
         public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
-            => Picker.CancelRequests (peer, startIndex, endIndex);
+            => HighPriorityPicker!.CancelRequests (peer, startIndex, endIndex);
 
         public void RequestRejected (IPeer peer, BlockInfo pieceRequest)
-            => Picker.RequestRejected (peer, pieceRequest);
+            => HighPriorityPicker!.RequestRejected (peer, pieceRequest);
 
         public int CurrentRequestCount ()
-            => Picker.CurrentRequestCount ();
+            => HighPriorityPicker!.CurrentRequestCount ();
     }
 }

@@ -67,7 +67,7 @@ namespace MonoTorrent.Messages.Peer
         int ReuseId;
 
         private protected static readonly Dictionary<Type, Queue<PeerMessage>> InstanceCache;
-        static readonly Dictionary<byte, Func<ITorrentManagerInfo, (PeerMessage, Releaser)>> messageDict;
+        static readonly Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> messageDict;
 
         static PeerMessage ()
         {
@@ -77,7 +77,7 @@ namespace MonoTorrent.Messages.Peer
                 { typeof (MessageBundle), new Queue<PeerMessage> () },
                 { typeof (RequestBundle), new Queue<PeerMessage> () }
             };
-            messageDict = new Dictionary<byte, Func<ITorrentManagerInfo, (PeerMessage, Releaser)>> ();
+            messageDict = new Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> ();
 
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
             //      - Handshake messages aren't registered as they are always the first message sent/received
@@ -101,7 +101,7 @@ namespace MonoTorrent.Messages.Peer
             Register (PortMessage.MessageId, data => GetInstance<PortMessage> (), true);
 
             // Currently uncached
-            Register (BitfieldMessage.MessageId, data => data.Files == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.PieceCount ()));
+            Register (BitfieldMessage.MessageId, data => data?.Files == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.PieceCount ()));
             Register (RejectRequestMessage.MessageId, data => GetInstance<RejectRequestMessage> ());
             Register (HashRequestMessage.MessageId, data => GetInstance<HashRequestMessage> ());
             Register (HashesMessage.MessageId, data => GetInstance<HashesMessage> ());
@@ -133,17 +133,17 @@ namespace MonoTorrent.Messages.Peer
             return releaser;
         }
 
-        static void Register<T> (byte identifier, Func<ITorrentManagerInfo, T> creator)
+        static void Register<T> (byte identifier, Func<ITorrentManagerInfo?, T> creator)
             where T: PeerMessage
             => Register (identifier, creator, false);
 
-        private protected static void Register<T> (byte identifier, Func<ITorrentManagerInfo, T> creator, bool reusable)
+        private protected static void Register<T> (byte identifier, Func<ITorrentManagerInfo?, T> creator, bool reusable)
             where T : PeerMessage
         {
             if (creator == null)
                 throw new ArgumentNullException (nameof (creator));
 
-            Func<ITorrentManagerInfo, (PeerMessage, Releaser)> wrapper;
+            Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> wrapper;
             if (reusable) {
                 lock (InstanceCache)
                     InstanceCache[typeof (T)] = new Queue<PeerMessage> ();
@@ -156,7 +156,7 @@ namespace MonoTorrent.Messages.Peer
                 messageDict.Add (identifier, wrapper);
         }
 
-        public static (PeerMessage message, Releaser releaser) DecodeMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo manager)
+        public static (PeerMessage message, Releaser releaser) DecodeMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo? manager)
         {
             if (buffer.Length < 4)
                 throw new ArgumentException ("A message must contain a 4 byte length prefix");
@@ -168,7 +168,7 @@ namespace MonoTorrent.Messages.Peer
             if (buffer[0] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer.Slice (1), manager);
 
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo, (PeerMessage, Releaser)> creator))
+            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> creator))
                 throw new MessageException ("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that

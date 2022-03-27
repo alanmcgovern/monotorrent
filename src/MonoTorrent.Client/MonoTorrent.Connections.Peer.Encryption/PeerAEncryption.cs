@@ -51,7 +51,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
         }
 
-        public PeerAEncryption (Factories factories, InfoHash infoHash, IList<EncryptionType> allowedEncryption, byte[] initialPayload)
+        public PeerAEncryption (Factories factories, InfoHash infoHash, IList<EncryptionType> allowedEncryption, byte[]? initialPayload)
             : base (factories, allowedEncryption)
         {
             if (allowedEncryption.Contains (EncryptionType.PlainText))
@@ -66,13 +66,13 @@ namespace MonoTorrent.Connections.Peer.Encryption
             CreateCryptors (KeyABytes, KeyBBytes);
 
             // 3 A->B: HASH('req1', S)
-            byte[] req1 = Hash (Req1Bytes, S);
+            byte[] req1 = Hash (Req1Bytes, S!);
 
             // ... HASH('req2', SKEY)
-            byte[] req2 = Hash (Req2Bytes, SKEY.Span.ToArray ());
+            byte[] req2 = Hash (Req2Bytes, SKEY!.Span.ToArray ());
 
             // ... HASH('req3', S)
-            byte[] req3 = Hash (Req3Bytes, S);
+            byte[] req3 = Hash (Req3Bytes, S!);
 
             // HASH('req2', SKEY) xor HASH('req3', S)
             for (int i = 0; i < req2.Length; i++)
@@ -98,7 +98,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                 Message.Write (ref position, InitialPayload);
                 DoEncrypt (before.Span);
 
-                await NetworkIO.SendAsync (socket, buffer).ConfigureAwait (false);
+                await NetworkIO.SendAsync (socket!, buffer).ConfigureAwait (false);
             }
             DoDecrypt (VerificationConstant);
             await SynchronizeAsync (VerificationConstant, 616).ConfigureAwait (false); // 4 B->A: ENCRYPT(VC)

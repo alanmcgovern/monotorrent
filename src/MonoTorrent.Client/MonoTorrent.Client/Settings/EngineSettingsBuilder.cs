@@ -47,9 +47,9 @@ namespace MonoTorrent.Client
             bool allowLocalPeerDiscovery = false,
             bool allowPortForwarding = false,
             bool automaticFastResume = false,
-            IPEndPoint dhtEndPoint = null,
-            IPEndPoint listenEndPoint = null,
-            string cacheDirectory = null,
+            IPEndPoint? dhtEndPoint = null,
+            IPEndPoint? listenEndPoint = null,
+            string? cacheDirectory = null,
             bool usePartialFiles = false)
         {
             return new EngineSettingsBuilder {
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
         /// Choose -1 to disable DHT. Defaults to 0.
         /// </summary>
-        public IPEndPoint DhtEndPoint { get; set; }
+        public IPEndPoint? DhtEndPoint { get; set; }
 
         /// <summary>
         /// When <see cref="EngineSettings.AutoSaveLoadFastResume"/> is true, this setting is used to control how fast
@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
-        public IPEndPoint ListenEndPoint { get; set; }
+        public IPEndPoint? ListenEndPoint { get; set; }
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -249,7 +249,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IPEndPoint ReportedAddress { get; set; }
+        public IPEndPoint? ReportedAddress { get; set; }
 
         /// <summary>
         /// If set to <see langword="true"/> then partially downloaded files will have ".!mt" appended to their filename. When the file is fully downloaded, the ".!mt" suffix will be removed.

@@ -111,12 +111,12 @@ namespace MonoTorrent.Client
             AllowedEncryption = allowedEncryption;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return Equals (obj as Peer);
         }
 
-        public bool Equals (Peer other)
+        public bool Equals (Peer? other)
         {
             if (other == null)
                 return false;

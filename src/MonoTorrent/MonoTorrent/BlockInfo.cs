@@ -39,7 +39,7 @@ namespace MonoTorrent
         public BlockInfo (int pieceIndex, int startOffset, int requestLength)
             => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is BlockInfo req && Equals (req);
 
         public bool Equals (BlockInfo other)

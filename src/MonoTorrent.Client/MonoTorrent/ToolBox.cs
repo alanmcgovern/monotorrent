@@ -40,14 +40,14 @@ namespace MonoTorrent
 
         class AsyncInvokerState : ICacheable
         {
-            public EventHandler<T> Handler { get; private set; }
-            public T Args { get; private set; }
-            public object Sender { get; set; }
+            public EventHandler<T>? Handler { get; private set; }
+            public T? Args { get; private set; }
+            public object? Sender { get; set; }
 
             public void Initialise ()
                 => Initialise (null, null, null);
 
-            public AsyncInvokerState Initialise (EventHandler<T> handler, object sender, T args)
+            public AsyncInvokerState Initialise (EventHandler<T>? handler, object? sender, T? args)
             {
                 Handler = handler;
                 Sender = sender;
@@ -63,8 +63,8 @@ namespace MonoTorrent
         }
 
         static readonly WaitCallback Invoker = (object o) => {
-            var state = (AsyncInvokerState) o;
-            state.Handler (state.Sender, state.Args);
+            var state = (AsyncInvokerState) o!;
+            state.Handler! (state.Sender, state.Args!);
             Cache.Enqueue (state);
         };
     }

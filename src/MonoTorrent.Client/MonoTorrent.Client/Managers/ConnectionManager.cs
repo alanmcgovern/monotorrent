@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
             public readonly ValueStopwatch Timer;
         }
 
-        public event EventHandler<AttemptConnectionEventArgs> BanPeer;
+        public event EventHandler<AttemptConnectionEventArgs>? BanPeer;
 
         internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
 
@@ -192,7 +192,7 @@ namespace MonoTorrent.Client
                 // Create a handshake message to send to the peer
                 var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2, LocalPeerId, Constants.ProtocolStringV100);
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, preferredEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, manager.Engine.Factories);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, preferredEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, manager.Engine!.Factories);
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
             } catch {
@@ -321,7 +321,7 @@ namespace MonoTorrent.Client
                 bool canReuse = (id.Connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
                     && id.Peer.AllowedEncryption.Count > 0
-                    && !manager.Engine.PeerId.Equals (id.PeerID);
+                    && !manager.Engine!.PeerId.Equals (id.PeerID);
 
                 manager.PieceManager.CancelRequests (id);
                 id.Peer.CleanedUpCount++;
@@ -362,7 +362,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Cancel all pending connection for the given <see cref="TorrentManager"/>, or which have exceeded <see cref="EngineSettings.ConnectionTimeout"/>
         /// </summary>
-        internal void CancelPendingConnects (TorrentManager manager)
+        internal void CancelPendingConnects (TorrentManager? manager)
         {
             foreach (AsyncConnectState pending in PendingConnects)
                 if (pending.Manager == manager || pending.Timer.Elapsed > Settings.ConnectionTimeout)
@@ -409,7 +409,7 @@ namespace MonoTorrent.Client
                 id.LastBlockReceived.Restart ();
 
                 // Send our handshake now that we've decided to keep the connection
-                var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2, manager.Engine.PeerId, Constants.ProtocolStringV100);
+                var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2, manager.Engine!.PeerId, Constants.ProtocolStringV100);
                 await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
 
                 manager.HandlePeerConnected (id);
@@ -443,7 +443,7 @@ namespace MonoTorrent.Client
             SocketMemory socketMemory = default;
 
             try {
-                while (id.MessageQueue.TryDequeue (out PeerMessage msg, out PeerMessage.Releaser msgReleaser)) {
+                while (id.MessageQueue.TryDequeue (out PeerMessage? msg, out PeerMessage.Releaser msgReleaser)) {
                     using var autorelease = msgReleaser;
 
                     if (socketMemory.IsEmpty || socketMemory.Length < msg.ByteLength) {

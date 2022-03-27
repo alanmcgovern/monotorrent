@@ -33,25 +33,25 @@ namespace MonoTorrent
 {
     class PieceHashes : IPieceHashes
     {
-        PieceHashesV1 V1 { get; }
-        PieceHashesV2 V2 { get; }
+        PieceHashesV1? V1 { get; }
+        PieceHashesV2? V2 { get; }
 
-        public int Count => ((IPieceHashes) V1 ?? (IPieceHashes) V2).Count;
+        public int Count => ((IPieceHashes?) V1 ?? (IPieceHashes?) V2)!.Count;
 
-        internal PieceHashes (PieceHashesV1 v1Hashes, PieceHashesV2 v2Hashes)
+        internal PieceHashes (PieceHashesV1? v1Hashes, PieceHashesV2? v2Hashes)
             => (V1, V2) = (v1Hashes, v2Hashes);
 
         public ReadOnlyPieceHash GetHash (int hashIndex)
         {
-            var v1 = V1 == null ? default : V1.GetHash (hashIndex);
-            var v2 = V2 == null ? default : V2.GetHash (hashIndex);
+            var v1 = V1 is null ? default : V1.GetHash (hashIndex);
+            var v2 = V2 is null ? default : V2.GetHash (hashIndex);
             return new ReadOnlyPieceHash (v1.V1Hash, v2.V2Hash);
         }
 
         public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
         {
-            return (V1 == null || V1.IsValid (hashes, hashIndex))
-                && (V2 == null || V2.IsValid (hashes, hashIndex));
+            return (V1 is null || V1.IsValid (hashes, hashIndex))
+                && (V2 is null || V2.IsValid (hashes, hashIndex));
         }
     }
 }

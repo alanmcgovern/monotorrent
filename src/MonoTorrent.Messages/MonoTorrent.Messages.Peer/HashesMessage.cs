@@ -44,14 +44,14 @@ namespace MonoTorrent.Messages.Peer
         public int Length { get; private set; }
         public int ProofLayers { get; private set; }
 
-        public List<ReadOnlyMemory<byte>> Hashes { get; private set; }
+        public IList<ReadOnlyMemory<byte>> Hashes { get; private set; }
 
         public HashesMessage ()
         {
-
+            Hashes = new List<ReadOnlyMemory<byte>> ().AsReadOnly ();
         }
 
-        public HashesMessage (ReadOnlyMemory<byte> piecesRoot, int baseLayer, int index, int length, int proofLayers, List<ReadOnlyMemory<byte>> hashes)
+        public HashesMessage (ReadOnlyMemory<byte> piecesRoot, int baseLayer, int index, int length, int proofLayers, IList<ReadOnlyMemory<byte>> hashes)
         {
             PiecesRoot = piecesRoot;
             BaseLayer = baseLayer;
@@ -69,9 +69,10 @@ namespace MonoTorrent.Messages.Peer
             Length = ReadInt (ref buffer);
             ProofLayers = ReadInt (ref buffer);
 
-            Hashes = new List<ReadOnlyMemory<byte>> ();
+            var hashes = new List<ReadOnlyMemory<byte>> ();
             while (buffer.Length > 0)
-                Hashes.Add (ReadBytes (ref buffer, 32));
+                hashes.Add (ReadBytes (ref buffer, 32));
+            Hashes = hashes.AsReadOnly ();
         }
 
         public override int Encode (Span<byte> buffer)

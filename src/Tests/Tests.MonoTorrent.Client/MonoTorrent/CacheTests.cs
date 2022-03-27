@@ -16,29 +16,11 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void Dequeue_NoAutocreate ()
-        {
-            var cache = new Cache<Cacheable> ();
-            Assert.AreEqual (0, cache.Count);
-            Assert.IsNull (cache.Dequeue ());
-        }
-
-        [Test]
         public void Dequeue_WithAutocreate ()
         {
             var cache = new Cache<Cacheable> (() => new Cacheable ()).Synchronize ();
             Assert.AreEqual (0, cache.Count);
             Assert.IsTrue (cache.Dequeue ().Initialised == 1);
-        }
-
-        [Test]
-        public void Enqueue ()
-        {
-            var item = new Cacheable ();
-            var cache = new Cache<Cacheable> ();
-            cache.Enqueue (item);
-            Assert.AreEqual (1, cache.Count);
-            Assert.AreEqual (1, item.Initialised);
         }
 
         [Test]

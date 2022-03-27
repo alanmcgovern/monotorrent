@@ -38,12 +38,12 @@ namespace MonoTorrent.Logging
         /// is the <see cref="Type.FullName"/> for the class the ILogger is associated with. You can
         /// return <see langword="null"/> for any class to disable logging for that class.
         /// </summary>
-        public static Func<string, ILogger> Factory { get; private set; }
+        public static Func<string, ILogger>? Factory { get; private set; }
 
-        public static ILogger Create (string name)
+        public static ILogger? Create (string name)
             => Factory?.Invoke (name);
 
-        public static void Register (Func<string, ILogger> creator)
+        public static void Register (Func<string, ILogger>? creator)
             => Factory = creator;
     }
 }

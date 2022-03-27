@@ -33,10 +33,10 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class FindNodeResponse : ResponseMessage
     {
-        static readonly BEncodedString NodesKey = "nodes";
+        static readonly BEncodedString NodesKey = new BEncodedString ("nodes");
 
         public BEncodedString Nodes {
-            get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey) ?? BEncodedString.Empty;
+            get => (BEncodedString?) Parameters.GetValueOrDefault (NodesKey) ?? BEncodedString.Empty;
             set => Parameters[NodesKey] = value;
         }
 

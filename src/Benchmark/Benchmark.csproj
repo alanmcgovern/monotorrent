@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net472;netcoreapp3.1;net6.0</TargetFrameworks>
     <UseGitInfo>false</UseGitInfo>
+    <Nullable></Nullable>
   </PropertyGroup>
 
   <ItemGroup>

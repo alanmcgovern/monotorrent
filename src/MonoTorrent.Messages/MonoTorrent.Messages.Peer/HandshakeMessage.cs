@@ -43,9 +43,6 @@ namespace MonoTorrent.Messages.Peer
         const byte ExtendedMessagingFlag = 0x10;
         const byte FastPeersFlag = 0x04;
 
-
-        #region Member Variables
-
         public override int ByteLength => Constants.HandshakeLengthV100;
 
         /// <summary>
@@ -58,7 +55,6 @@ namespace MonoTorrent.Messages.Peer
         /// The protocol string to send
         /// </summary>
         public string ProtocolString { get; private set; }
-
 
         /// <summary>
         /// The infohash of the torrent.
@@ -79,14 +75,8 @@ namespace MonoTorrent.Messages.Peer
         /// True if the peer supports the Bittorrent FastPeerExtensions.
         /// </summary>
         public bool SupportsFastPeer { get; private set; }
-        #endregion
-
 
         #region Constructors
-        public HandshakeMessage ()
-        {
-
-        }
 
         public HandshakeMessage (InfoHash infoHash, BEncodedString peerId, string protocolString)
             : this (infoHash, peerId, protocolString, true, true)
@@ -115,6 +105,9 @@ namespace MonoTorrent.Messages.Peer
         #region Methods
         public override int Encode (Span<byte> buffer)
         {
+            if (ProtocolString is null || InfoHash is null || PeerId is null)
+                throw new InvalidOperationException ();
+
             int written = buffer.Length;
 
             Write (ref buffer, (byte) ProtocolString.Length);
@@ -134,6 +127,13 @@ namespace MonoTorrent.Messages.Peer
             Write (ref buffer, PeerId.Span);
 
             return written - buffer.Length;
+        }
+
+        public HandshakeMessage (ReadOnlySpan<byte> buffer)
+        {
+            Decode (buffer);
+            if (InfoHash is null || PeerId is null || ProtocolString is null)
+                throw new InvalidOperationException ();
         }
 
         public override void Decode (ReadOnlySpan<byte> buffer)
@@ -170,7 +170,7 @@ namespace MonoTorrent.Messages.Peer
             var sb = new System.Text.StringBuilder ();
             sb.Append ("HandshakeMessage ");
             sb.Append (" PeerID ");
-            sb.Append (PeerId.Text);
+            sb.Append (PeerId?.Text ?? "");
             sb.Append (" FastPeer ");
             sb.Append (SupportsFastPeer);
             return sb.ToString ();
@@ -185,15 +185,14 @@ namespace MonoTorrent.Messages.Peer
             if (InfoHash != msg.InfoHash)
                 return false;
 
-            return PeerId.Equals (msg.PeerId)
+            return (PeerId is null ? msg.PeerId is null : PeerId.Equals (msg.PeerId))
                 && ProtocolString == msg.ProtocolString
                 && SupportsFastPeer == msg.SupportsFastPeer;
         }
 
         public override int GetHashCode ()
-        {
-            return (InfoHash.GetHashCode () ^ PeerId.GetHashCode () ^ ProtocolString.GetHashCode ());
-        }
+            => InfoHash == null ? 0 : InfoHash.GetHashCode ();
+
         #endregion
     }
 }

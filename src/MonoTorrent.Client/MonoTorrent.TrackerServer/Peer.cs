@@ -42,12 +42,15 @@ namespace MonoTorrent.TrackerServer
         {
             ClientAddress = endPoint;
             DictionaryKey = dictionaryKey;
+            PeerId = BEncodedString.Empty;
         }
 
         internal Peer (AnnounceRequest par, object dictionaryKey)
         {
             DictionaryKey = dictionaryKey;
             Update (par);
+            if (ClientAddress is null || PeerId is null)
+                throw new NotSupportedException ();
         }
 
 
@@ -108,12 +111,12 @@ namespace MonoTorrent.TrackerServer
         /// </summary>
         public int UploadSpeed { get; set; }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return Equals (obj as Peer);
         }
 
-        public bool Equals (Peer other)
+        public bool Equals (Peer? other)
         {
             if (other == null)
                 return false;

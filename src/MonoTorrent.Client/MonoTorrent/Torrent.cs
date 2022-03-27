@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -93,13 +94,11 @@ namespace MonoTorrent
         /// <param name="stream"></param>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        static Torrent Load (Stream stream, ReadOnlySpan<byte> buffer)
+        static Torrent Load (Stream? stream, ReadOnlySpan<byte> buffer)
         {
             try {
-                (var torrentDict, var infoHashes) = stream != null ? BEncodedDictionary.DecodeTorrent (stream) : BEncodedDictionary.DecodeTorrent (buffer);
-                var t = new Torrent ();
-                t.LoadInternal (torrentDict, infoHashes);
-                return t;
+                (var torrentDict, var infoHashes) = stream is null ? BEncodedDictionary.DecodeTorrent (buffer) : BEncodedDictionary.DecodeTorrent (stream);
+                return new Torrent (torrentDict, infoHashes);
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
             }
@@ -154,7 +153,11 @@ namespace MonoTorrent
         /// <param name="path">The path to load the .torrent file from</param>
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
         /// <returns>True if successful</returns>
-        public static bool TryLoad (string path, out Torrent torrent)
+#if NETSTANDARD2_0
+        public static bool TryLoad (string path, out Torrent? torrent)
+#else
+        public static bool TryLoad (string path, [NotNullWhen (true)] out Torrent? torrent)
+#endif
         {
             if (string.IsNullOrEmpty (path))
                 throw new ArgumentNullException ("Value must not be null or empty", nameof (path));
@@ -178,7 +181,11 @@ namespace MonoTorrent
         /// <param name="span">The Span to load the .torrent from</param>
         /// <param name="torrent">If loading was successful, it contains the Torrent</param>
         /// <returns>True if successful</returns>
-        public static bool TryLoad (ReadOnlySpan<byte> span, out Torrent torrent)
+#if NETSTANDARD2_0
+        public static bool TryLoad (ReadOnlySpan<byte> span, out Torrent? torrent)
+#else
+        public static bool TryLoad (ReadOnlySpan<byte> span, [NotNullWhen (true)] out Torrent? torrent)
+#endif
         {
             try {
                 torrent = Load (span);
@@ -196,7 +203,11 @@ namespace MonoTorrent
         /// <param name="stream">The stream containing the data to load</param>
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
         /// <returns>True if successful</returns>
-        public static bool TryLoad (Stream stream, out Torrent torrent)
+#if NETSTANDARD2_0
+        public static bool TryLoad (Stream stream, out Torrent? torrent)
+#else
+        public static bool TryLoad (Stream stream, [NotNullWhen (true)] out Torrent? torrent)
+#endif
         {
             if (stream is null)
                 throw new ArgumentNullException (nameof (stream));
@@ -316,22 +327,31 @@ namespace MonoTorrent
         /// </summary>
         public long Size { get; private set; }
 
-        Torrent ()
+        Torrent (BEncodedDictionary torrentInformation, RawInfoHashes infoHashes)
         {
+            AnnounceUrls = Array.Empty<IList<string>> ();
             Comment = string.Empty;
             CreatedBy = string.Empty;
             CreationDate = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             Encoding = string.Empty;
+            Files = Array.Empty<ITorrentFile> ();
             Name = string.Empty;
+            Nodes = new BEncodedList ();
             Publisher = string.Empty;
             PublisherUrl = string.Empty;
+            Source = "";
             HttpSeeds = new List<Uri> ();
+
+            LoadInternal (torrentInformation, infoHashes);
+
+            if (InfoHashes is null || InfoMetadata is null || PieceHashes is null)
+                throw new InvalidOperationException ("One of the required properties was unset after deserializing torrent metadata");
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as Torrent);
 
-        public bool Equals (Torrent other)
+        public bool Equals (Torrent? other)
             => InfoHashes == other?.InfoHashes;
 
         public override int GetHashCode ()
@@ -345,7 +365,8 @@ namespace MonoTorrent
         /// of the .torrent file
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
-        void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1 hashesV1)
+        /// <param name="hashesV1"></param>
+        void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1? hashesV1)
         {
             InfoMetadata = dictionary.Encode ();
             PieceLength = int.Parse (dictionary["piece length"].ToString ());
@@ -417,7 +438,7 @@ namespace MonoTorrent
                     case ("files"):
                         // This is the list of files using the v1 torrent format.
                         // Only load if we have not processed filesv2
-                        if (Files == null)
+                        if (Files.Count == 0)
                             Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength);
                         break;
 
@@ -450,15 +471,15 @@ namespace MonoTorrent
                 }
             }
 
-            if (Files != null)
+            if (Files.Count > 0)
                 Size = Files.Select (f => f.Length).Sum ();
 
-            if (Files == null && hasV1Data)   // Not a multi-file torrent
+            if (Files.Count == 0 && hasV1Data)   // Not a multi-file torrent
             {
                 long length = long.Parse (dictionary["length"].ToString ());
                 Size = length;
                 string path = Name;
-                int endPiece = Math.Min (hashesV1.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
+                int endPiece = Math.Min (hashesV1!.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
                 Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0) });
             }
         }
@@ -468,8 +489,8 @@ namespace MonoTorrent
             Check.TorrentInformation (torrentInformation);
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
 
-            PieceHashesV1 hashesV1 = null;
-            PieceHashesV2 hashesV2 = null;
+            PieceHashesV1? hashesV1 = null;
+            PieceHashesV2? hashesV2 = null;
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
                 switch (keypair.Key.Text) {
                     case ("announce"):
@@ -614,7 +635,7 @@ namespace MonoTorrent
             var files = new List<(string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)> ();
             foreach (BEncodedDictionary dict in list) {
                 long length = 0;
-                string path = null;
+                string? path = null;
                 ReadOnlyMemory<byte> md5sum = default;
                 ReadOnlyMemory<byte> ed2k = default;
                 ReadOnlyMemory<byte> sha1 = default;
@@ -627,7 +648,6 @@ namespace MonoTorrent
 
                         case ("ed2k"):
                             ed2k = ((BEncodedString) keypair.Value).AsMemory ();
-                            ;
                             break;
 
                         case ("length"):
@@ -661,6 +681,9 @@ namespace MonoTorrent
                             break; //FIXME: Log unknown values
                     }
                 }
+                if (path == null)
+                    // FIXME: Log invalid paths somewhere?
+                    continue;
 
                 PathValidator.Validate (path);
                 files.Add ((path, length, md5sum, ed2k, sha1));

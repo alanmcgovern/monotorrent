@@ -84,9 +84,8 @@ namespace MonoTorrent.Client
 
             public AnnounceRequest CreateAnnounce (TorrentEvent clientEvent)
             {
-                return new AnnounceRequest ()
-                    .WithClientEvent (clientEvent)
-                    .WithInfoHash (InfoHash);
+                return new AnnounceRequest (InfoHash)
+                    .WithClientEvent (clientEvent);
             }
 
             public ScrapeRequest CreateScrape ()

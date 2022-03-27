@@ -46,15 +46,15 @@ namespace MonoTorrent.Client.Modes
     {
         static readonly Logger logger = Logger.Create (nameof (MetadataMode));
 
-        MutableBitField bitField;
+        MutableBitField? bitField;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds (10);
-        PeerId currentId;
+        PeerId? currentId;
         string savePath;
         DateTime requestTimeout;
         bool stopWhenDone;
 
         bool HasAnnounced { get; set; }
-        internal MemoryStream Stream { get; set; }
+        MemoryStream? Stream { get; set; }
 
         public override bool CanHashCheck => true;
         public override TorrentState State => TorrentState.Metadata;
@@ -135,12 +135,12 @@ namespace MonoTorrent.Client.Modes
 
             switch (message.MetadataMessageType) {
                 case LTMetadata.MessageType.Data:
+                    if (Stream is null || bitField is null)
+                        throw new Exception ("Need extention handshake before ut_metadata message.");
+
                     // If we've already received everything successfully, do nothing!
                     if (bitField.AllTrue)
                         return;
-
-                    if (Stream == null)
-                        throw new Exception ("Need extention handshake before ut_metadata message.");
 
                     Stream.Seek (message.Piece * LTMetadata.BlockSize, SeekOrigin.Begin);
                     Stream.Write (message.MetadataPiece, 0, message.MetadataPiece.Length);
@@ -173,7 +173,7 @@ namespace MonoTorrent.Client.Modes
                                 dict.Add ("announce-list", announceTrackers);
                             }
                             var rawData = dict.Encode ();
-                            if (Torrent.TryLoad (rawData, out Torrent t)) {
+                            if (Torrent.TryLoad (rawData, out Torrent? t)) {
                                 if (stopWhenDone) {
                                     Manager.RaiseMetadataReceived (rawData);
                                     return;
@@ -243,7 +243,7 @@ namespace MonoTorrent.Client.Modes
         int pieceToRequest;
         void RequestNextNeededPiece (PeerId id)
         {
-            if (bitField.AllTrue)
+            if (bitField is null || bitField.AllTrue)
                 return;
 
             while (bitField[pieceToRequest % bitField.Length])

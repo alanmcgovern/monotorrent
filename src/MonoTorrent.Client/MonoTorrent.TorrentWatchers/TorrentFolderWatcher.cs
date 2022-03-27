@@ -36,8 +36,8 @@ namespace MonoTorrent.TorrentWatcher
     {
         #region Events
 
-        public event EventHandler<TorrentWatcherEventArgs> TorrentFound;
-        public event EventHandler<TorrentWatcherEventArgs> TorrentLost;
+        public event EventHandler<TorrentWatcherEventArgs>? TorrentFound;
+        public event EventHandler<TorrentWatcherEventArgs>? TorrentLost;
 
         #endregion Events
 
@@ -66,6 +66,12 @@ namespace MonoTorrent.TorrentWatcher
 
             this.torrentDirectory = torrentDirectory;
             this.watchFilter = watchFilter;
+
+            watcher = new FileSystemWatcher (torrentDirectory) {
+                Filter = watchFilter
+            };
+            watcher.Created += OnCreated;
+            watcher.Deleted += OnDeleted;
         }
 
         public TorrentFolderWatcher (DirectoryInfo torrentDirectory)
@@ -87,14 +93,6 @@ namespace MonoTorrent.TorrentWatcher
 
         public void Start ()
         {
-            if (watcher == null) {
-                watcher = new FileSystemWatcher (torrentDirectory) {
-                    Filter = watchFilter
-                };
-                //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
-                watcher.Created += OnCreated;
-                watcher.Deleted += OnDeleted;
-            }
             watcher.EnableRaisingEvents = true;
         }
 

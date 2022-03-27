@@ -34,7 +34,7 @@ namespace MonoTorrent.Connections.Peer
 {
     public interface IPeerConnectionListener : IListener
     {
-        IPEndPoint LocalEndPoint { get; }
+        IPEndPoint? LocalEndPoint { get; }
 
         event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
     }

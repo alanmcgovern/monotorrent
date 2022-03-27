@@ -89,10 +89,10 @@ namespace MonoTorrent
         public override int GetHashCode ()
             => MemoryMarshal.Read<int> (Hash.Span);
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => Equals (obj as InfoHash);
 
-        public bool Equals (InfoHash other)
+        public bool Equals (InfoHash? other)
             => this == other;
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace MonoTorrent
         public string UrlEncode ()
             => HttpUtility.UrlEncode (Hash.Span.ToArray ());
 
-        public static bool operator == (InfoHash left, InfoHash right)
+        public static bool operator == (InfoHash? left, InfoHash? right)
         {
             if (left is null)
                 return right is null;
@@ -129,7 +129,7 @@ namespace MonoTorrent
             return left.Hash.Span.SequenceEqual (right.Hash.Span);
         }
 
-        public static bool operator != (InfoHash left, InfoHash right)
+        public static bool operator != (InfoHash? left, InfoHash? right)
             => !(left == right);
 
         public static InfoHash FromBase32 (string infoHash)

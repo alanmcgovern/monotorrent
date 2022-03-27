@@ -35,10 +35,12 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 {
     public class LTMetadata : ExtensionMessage
     {
+        static readonly BEncodedDictionary EmptyDict = new BEncodedDictionary ();
+
         public static readonly ExtensionSupport Support = CreateSupport ("ut_metadata");
-        static readonly BEncodedString MessageTypeKey = "msg_type";
-        static readonly BEncodedString PieceKey = "piece";
-        static readonly BEncodedString TotalSizeKey = "total_size";
+        static readonly BEncodedString MessageTypeKey = new BEncodedString ("msg_type");
+        static readonly BEncodedString PieceKey = new BEncodedString ("piece");
+        static readonly BEncodedString TotalSizeKey = new BEncodedString ("total_size");
         public static readonly int BlockSize = 16 * 1024;
 
         public enum MessageType
@@ -48,7 +50,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             Reject = 2
         }
 
-        readonly BEncodedDictionary dict;
+        BEncodedDictionary dict;
 
         //this buffer contain all metadata when we send message 
         //and only a piece of metadata we receive message
@@ -63,11 +65,12 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         public LTMetadata ()
             : base (Support.MessageId)
         {
-
+            dict = EmptyDict;
+            MetadataPiece = Array.Empty<byte> ();
         }
 
         public LTMetadata (ExtensionSupports supportedExtensions, MessageType type, int piece)
-            : this (supportedExtensions, type, piece, null)
+            : this (supportedExtensions, type, piece, Array.Empty<byte> ())
         {
 
         }
@@ -110,7 +113,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            var d = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
+            var d = dict = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
 
             if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))
                 MetadataMessageType = (MessageType) ((BEncodedNumber) val).Number;

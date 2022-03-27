@@ -33,9 +33,9 @@ namespace MonoTorrent.Dht.Messages
 {
     abstract class QueryMessage : DhtMessage
     {
-        static readonly BEncodedString QueryArgumentsKey = "a";
-        static readonly BEncodedString QueryNameKey = "q";
-        internal static readonly BEncodedString QueryType = "q";
+        static readonly BEncodedString QueryArgumentsKey = new BEncodedString ("a");
+        static readonly BEncodedString QueryNameKey = new BEncodedString ("q");
+        internal static readonly BEncodedString QueryType = new BEncodedString ("q");
 
         internal override NodeId Id => new NodeId ((BEncodedString) Parameters[IdKey]);
 

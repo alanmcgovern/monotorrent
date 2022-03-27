@@ -33,13 +33,15 @@ using System.Threading;
 
 using ReusableTasks;
 
+#nullable enable
+
 namespace MonoTorrent
 {
     static class SemaphoreSlimExtensions
     {
         internal readonly struct Releaser : IDisposable
         {
-            readonly SemaphoreSlim Semaphore;
+            readonly SemaphoreSlim? Semaphore;
 
             public Releaser (SemaphoreSlim semaphore)
                 => Semaphore = semaphore;
@@ -47,6 +49,7 @@ namespace MonoTorrent
             public void Dispose ()
                 => Semaphore?.Release ();
         }
+
         internal static async ReusableTask<Releaser> EnterAsync (this SemaphoreSlim semaphore)
         {
             await semaphore.WaitAsync ().ConfigureAwait (false);
@@ -59,27 +62,25 @@ namespace MonoTorrent
     {
         public readonly struct Releaser : IDisposable
         {
-            readonly ReusableTaskCompletionSource<object> Task { get; }
+            static readonly object completed = new object ();
+
+            readonly ReusableTaskCompletionSource<object>? Task { get; }
 
             internal Releaser (ReusableTaskCompletionSource<object> task)
-            {
-                Task = task;
-            }
+                => Task = task;
 
             public void Dispose ()
-            {
-                Task?.SetResult (null);
-            }
+                => Task?.SetResult (completed);
         }
 
         static readonly Queue<ReusableTaskCompletionSource<object>> Cache = new Queue<ReusableTaskCompletionSource<object>> ();
 
-        ReusableTaskCompletionSource<object> current = null;
+        ReusableTaskCompletionSource<object>? current;
 
         public async ReusableTask<Releaser> EnterAsync ()
         {
             ReusableTaskCompletionSource<object> task;
-            ReusableTaskCompletionSource<object> existing;
+            ReusableTaskCompletionSource<object>? existing;
 
             lock (Cache) {
                 existing = current;

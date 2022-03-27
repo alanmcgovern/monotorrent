@@ -79,11 +79,9 @@ namespace MonoTorrent.Connections.Peer
 
         CancellationTokenSource ConnectCancellation { get; }
 
-        ISocketConnector Connector { get; }
+        ISocketConnector? Connector { get; }
 
         public bool Disposed { get; private set; }
-
-        EndPoint IPeerConnection.EndPoint => EndPoint;
 
         public IPEndPoint EndPoint { get; }
 
@@ -93,7 +91,7 @@ namespace MonoTorrent.Connections.Peer
 
         ReusableTaskCompletionSource<int> SendTcs { get; }
 
-        Socket Socket { get; set; }
+        Socket? Socket { get; set; }
 
         public Uri Uri { get; }
 
@@ -114,10 +112,10 @@ namespace MonoTorrent.Connections.Peer
 
         }
 
-        SocketPeerConnection (Uri uri, ISocketConnector connector, Socket socket, bool isIncoming)
+        SocketPeerConnection (Uri? uri, ISocketConnector? connector, Socket? socket, bool isIncoming)
         {
             if (uri == null) {
-                var endpoint = (IPEndPoint) socket.RemoteEndPoint;
+                var endpoint = (IPEndPoint) socket!.RemoteEndPoint;
                 uri = new Uri ($"{(socket.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6") }://{endpoint.Address}{':'}{endpoint.Port}");
             }
 
@@ -155,6 +153,9 @@ namespace MonoTorrent.Connections.Peer
 
         public async ReusableTask ConnectAsync ()
         {
+            if (Connector == null)
+                throw new InvalidOperationException ("This connection represents an incoming connection");
+
             Socket = await Connector.ConnectAsync (Uri, ConnectCancellation.Token);
             if (Disposed) {
                 Socket.Dispose ();
@@ -164,6 +165,9 @@ namespace MonoTorrent.Connections.Peer
 
         public ReusableTask<int> ReceiveAsync (SocketMemory buffer)
         {
+            if (Socket is null)
+                throw new InvalidOperationException ("The underlying socket is not connected");
+
             SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
             args.UserToken = ReceiveTcs;
 
@@ -185,6 +189,9 @@ namespace MonoTorrent.Connections.Peer
 
         public ReusableTask<int> SendAsync (SocketMemory buffer)
         {
+            if (Socket is null)
+                throw new InvalidOperationException ("The underlying socket is not connected");
+
             SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
             args.UserToken = SendTcs;
 

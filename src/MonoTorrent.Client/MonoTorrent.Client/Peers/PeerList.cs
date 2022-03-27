@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
             scanIndex = 0;
         }
 
-        public PeerId GetNextPeer ()
+        public PeerId? GetNextPeer ()
         {
             if (scanIndex < peers.Count) {
                 scanIndex++;
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
                 return null;
         }
 
-        public PeerId GetFirstInterestedChokedPeer ()
+        public PeerId? GetFirstInterestedChokedPeer ()
         {
             //Look for a choked peer
             foreach (PeerId peer in peers)
@@ -93,10 +93,10 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        public PeerId GetOUPeer ()
+        public PeerId? GetOUPeer ()
         {
             //Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
-            PeerId longestIntervalPeer = null;
+            PeerId? longestIntervalPeer = null;
             double longestIntervalPeerTime = 0;
             foreach (PeerId peer in peers)
                 if (peer.IsInterested && peer.AmChoking) {

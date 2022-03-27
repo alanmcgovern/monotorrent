@@ -35,6 +35,14 @@ using MonoTorrent.Connections.Dht;
 
 namespace MonoTorrent.Dht
 {
+    class NullTransferMonitor : ITransferMonitor
+    {
+        public long BytesSent { get; }
+        public long BytesReceived { get; }
+        public long ReceiveRate { get; }
+        public long SendRate { get; }
+    }
+
     class NullDhtEngine : IDhtEngine
     {
 #pragma warning disable 0067
@@ -52,11 +60,11 @@ namespace MonoTorrent.Dht
         public TimeSpan AnnounceInterval { get; }
         public bool Disposed => false;
         public TimeSpan MinimumAnnounceInterval { get; }
-        public ITransferMonitor Monitor { get; }
+        public ITransferMonitor Monitor { get; } = new NullTransferMonitor ();
 
         public DhtState State => DhtState.NotReady;
 
-        public void Add (IEnumerable<byte[]> nodes)
+        public void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
 
         }
@@ -76,9 +84,9 @@ namespace MonoTorrent.Dht
 
         }
 
-        public Task<byte[]> SaveNodesAsync ()
+        public Task<ReadOnlyMemory<byte>> SaveNodesAsync ()
         {
-            return Task.FromResult (new byte[0]);
+            return Task.FromResult (ReadOnlyMemory<byte>.Empty);
         }
 
         public Task SetListenerAsync (IDhtListener listener)

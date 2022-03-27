@@ -83,7 +83,7 @@ namespace MonoTorrent.Dht
             Buckets.Sort ();
         }
 
-        internal Node FindNode (NodeId id)
+        internal Node? FindNode (NodeId id)
         {
             foreach (Bucket b in Buckets)
                 foreach (Node n in b.Nodes)

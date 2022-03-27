@@ -77,11 +77,11 @@ namespace MonoTorrent.PieceWriter
                 => Block.GetHashCode ();
         }
 
-        public event EventHandler<BlockInfo> ReadFromCache;
-        public event EventHandler<BlockInfo> ReadThroughCache;
+        public event EventHandler<BlockInfo>? ReadFromCache;
+        public event EventHandler<BlockInfo>? ReadThroughCache;
 
-        public event EventHandler<BlockInfo> WrittenToCache;
-        public event EventHandler<BlockInfo> WrittenThroughCache;
+        public event EventHandler<BlockInfo>? WrittenToCache;
+        public event EventHandler<BlockInfo>? WrittenThroughCache;
 
         long cacheHits;
         long cacheMisses;

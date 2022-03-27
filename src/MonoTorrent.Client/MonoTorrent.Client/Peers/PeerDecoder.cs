@@ -54,18 +54,23 @@ namespace MonoTorrent
             return list;
         }
 
+        static readonly BEncodedString PeerIdKey = new BEncodedString ("peer id");
+        static readonly BEncodedString Peer_IdKey = new BEncodedString ("peer_id");
+        static readonly BEncodedString IPKey = new BEncodedString ("ip");
+        static readonly BEncodedString PortKey = new BEncodedString ("port");
+
         static PeerInfo DecodeFromDict (BEncodedDictionary dict)
         {
             BEncodedString peerId;
 
-            if (dict.ContainsKey ("peer id"))
-                peerId = (BEncodedString) dict["peer id"];
-            else if (dict.ContainsKey ("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
-                peerId = (BEncodedString) dict["peer_id"];
+            if (dict.ContainsKey (PeerIdKey))
+                peerId = (BEncodedString) dict[PeerIdKey];
+            else if (dict.ContainsKey (Peer_IdKey))       // HACK: Some trackers return "peer_id" instead of "peer id"
+                peerId = (BEncodedString) dict[Peer_IdKey];
             else
                 peerId = BEncodedString.Empty;
 
-            var connectionUri = new Uri ($"ipv4://{dict["ip"]}:{dict["port"]}");
+            var connectionUri = new Uri ($"ipv4://{dict[IPKey]}:{dict[PortKey]}");
             return new PeerInfo (connectionUri, peerId.AsMemory ());
         }
 

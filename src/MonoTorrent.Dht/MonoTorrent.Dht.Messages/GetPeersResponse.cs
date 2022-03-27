@@ -35,30 +35,36 @@ namespace MonoTorrent.Dht.Messages
 {
     sealed class GetPeersResponse : ResponseMessage
     {
-        static readonly BEncodedString NodesKey = "nodes";
-        static readonly BEncodedString TokenKey = "token";
-        static readonly BEncodedString ValuesKey = "values";
+        static readonly BEncodedString NodesKey = new BEncodedString ("nodes");
+        static readonly BEncodedString TokenKey = new BEncodedString ("token");
+        static readonly BEncodedString ValuesKey = new BEncodedString ("values");
 
         public BEncodedValue Token {
-            get => Parameters.GetValueOrDefault (TokenKey);
+            get => Parameters.GetValueOrDefault (TokenKey) ?? throw new InvalidOperationException ("The required parameter 'token' was not set.");
             set => Parameters[TokenKey] = value;
         }
 
-        public BEncodedString Nodes {
-            get => (BEncodedString) Parameters.GetValueOrDefault (NodesKey);
+        public BEncodedString? Nodes {
+            get => (BEncodedString?) Parameters.GetValueOrDefault (NodesKey);
             set {
                 if (Parameters.ContainsKey (ValuesKey))
                     throw new InvalidOperationException ("Already contains the values key");
-                Parameters[NodesKey] = value;
+                if (value is null)
+                    Parameters.Remove (NodesKey);
+                else
+                    Parameters[NodesKey] = value;
             }
         }
 
-        public BEncodedList Values {
-            get => (BEncodedList) Parameters.GetValueOrDefault (ValuesKey);
+        public BEncodedList? Values {
+            get => (BEncodedList?) Parameters.GetValueOrDefault (ValuesKey);
             set {
                 if (Parameters.ContainsKey (NodesKey))
                     throw new InvalidOperationException ("Already contains the nodes key");
-                Parameters[ValuesKey] = value;
+                if (value is null)
+                    Parameters.Remove (ValuesKey);
+                else
+                    Parameters[ValuesKey] = value;
             }
         }
 

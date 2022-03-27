@@ -764,7 +764,7 @@ namespace MonoTorrent.PiecePicking
             // Now the duplicate will be discarded as we've already received the primary request.
             Assert.IsFalse (picker.ValidatePiece (seeder2, request, out complete, out peersInvolved));
             Assert.IsFalse (complete);
-            Assert.IsNull (peersInvolved);
+            Assert.IsEmpty (peersInvolved);
         }
 
         [Test]
@@ -798,7 +798,7 @@ namespace MonoTorrent.PiecePicking
             // Now the primary will be discarded as we've already received the primary request.
             Assert.IsFalse (picker.ValidatePiece (seeder1, request, out complete, out peersInvolved));
             Assert.IsFalse (complete);
-            Assert.IsNull (peersInvolved);
+            Assert.IsEmpty (peersInvolved);
         }
 
         [Test]

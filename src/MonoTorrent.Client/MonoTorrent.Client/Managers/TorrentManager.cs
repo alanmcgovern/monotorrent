@@ -50,37 +50,37 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        internal event EventHandler<ReadOnlyMemory<byte>> MetadataReceived;
+        internal event EventHandler<ReadOnlyMemory<byte>>? MetadataReceived;
 
         /// <summary>
         /// This asynchronous event is raised whenever a new incoming, or outgoing, connection
         /// has successfully completed the handshake process and has been fully established.
         /// </summary>
-        public event EventHandler<PeerConnectedEventArgs> PeerConnected;
+        public event EventHandler<PeerConnectedEventArgs>? PeerConnected;
 
         /// <summary>
         /// This asynchronous event is raised whenever an established connection has been
         /// closed.
         /// </summary>
-        public event EventHandler<PeerDisconnectedEventArgs> PeerDisconnected;
+        public event EventHandler<PeerDisconnectedEventArgs>? PeerDisconnected;
 
         /// <summary>
         /// This asynchronous event is raised when an outgoing connection to a peer
         /// could not be established.
         /// </summary>
-        public event EventHandler<ConnectionAttemptFailedEventArgs> ConnectionAttemptFailed;
+        public event EventHandler<ConnectionAttemptFailedEventArgs>? ConnectionAttemptFailed;
 
         /// <summary>
         /// This event is raised synchronously and is only used supposed to be used by tests.
         /// </summary>
-        internal event Action<Mode, Mode> ModeChanged;
+        internal event Action<Mode, Mode>? ModeChanged;
 
         /// <summary>
         /// Raised whenever new peers are discovered and added. The object will be of type
         /// <see cref="TrackerPeersAdded"/>, <see cref="PeerExchangePeersAdded"/>, <see cref="LocalPeersAdded"/>
         /// or <see cref="DhtPeersAdded"/> depending on the source of the new peers.
         /// </summary>
-        public event EventHandler<PeersAddedEventArgs> PeersFound;
+        public event EventHandler<PeersAddedEventArgs>? PeersFound;
 
         public async Task SetFilePriorityAsync (ITorrentManagerFile file, Priority priority)
         {
@@ -115,14 +115,14 @@ namespace MonoTorrent.Client
         /// This asynchronous event is raised whenever a piece is hashed, either as part of
         /// regular downloading, or as part of a <see cref="HashCheckAsync(bool)"/>.
         /// </summary>
-        public event EventHandler<PieceHashedEventArgs> PieceHashed;
+        public event EventHandler<PieceHashedEventArgs>? PieceHashed;
 
         /// <summary>
         /// This asynchronous event is raised whenever the TorrentManager changes state.
         /// </summary>
-        public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
+        public event EventHandler<TorrentStateChangedEventArgs>? TorrentStateChanged;
 
-        internal event EventHandler<PeerAddedEventArgs> OnPeerFound;
+        internal event EventHandler<PeerAddedEventArgs>? OnPeerFound;
 
         #endregion
 
@@ -158,14 +158,14 @@ namespace MonoTorrent.Client
 
         internal RateLimiterGroup DownloadLimiters { get; }
 
-        public ClientEngine Engine { get; }
+        public ClientEngine? Engine { get; }
 
-        public Error Error { get; private set; }
+        public Error? Error { get; private set; }
 
-        IList<ITorrentFile> ITorrentInfo.Files => Torrent?.Files;
+        IList<ITorrentFile> ITorrentInfo.Files => Torrent?.Files ?? Array.Empty<ITorrentFile> ();
         public IList<ITorrentManagerFile> Files { get; private set; }
 
-        string ITorrentInfo.Name => Torrent == null ? null : Torrent.Name;
+        string? ITorrentInfo.Name => Torrent == null ? MagnetLink.Name : Torrent.Name;
 
         public int PieceLength => Torrent == null ? -1 : Torrent.PieceLength;
         public long Size => Torrent == null ? -1 : Torrent.Size;
@@ -206,7 +206,7 @@ namespace MonoTorrent.Client
         internal void SetNeedsHashCheck ()
         {
             HashChecked = false;
-            if (Engine.Settings.AutoSaveLoadFastResume) {
+            if (Engine != null && Engine.Settings.AutoSaveLoadFastResume) {
                 var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
                     File.Delete (path);
@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
         /// seek to a position which has not been downloaded already the required pieces will
         /// be prioritised next.
         /// </summary>
-        public StreamProvider StreamProvider { get; internal set; }
+        public StreamProvider? StreamProvider { get; internal set; }
 
         /// <summary>
         /// The tracker connection associated with this TorrentManager
@@ -370,7 +370,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The Torrent contained within this TorrentManager
         /// </summary>
-        public Torrent Torrent { get; private set; }
+        public Torrent? Torrent { get; private set; }
 
         /// <summary>
         /// The number of peers that we are currently uploading to
@@ -398,12 +398,15 @@ namespace MonoTorrent.Client
         {
         }
 
-        TorrentManager (ClientEngine engine, Torrent torrent, MagnetLink magnetLink, string savePath, TorrentSettings settings)
+        TorrentManager (ClientEngine engine, Torrent? torrent, MagnetLink? magnetLink, string savePath, TorrentSettings settings)
         {
             Engine = engine;
-            MagnetLink = magnetLink ?? new MagnetLink (torrent.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
+            Files = Array.Empty<ITorrentManagerFile> ();
+            MagnetLink = magnetLink ?? new MagnetLink (torrent!.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
             Torrent = torrent;
             Settings = settings;
+
+            ContainingDirectory = "";
 
             MetadataTask = new TaskCompletionSource<Torrent> ();
             MetadataPath = engine.Settings.GetMetadataPath (InfoHashes);
@@ -411,22 +414,23 @@ namespace MonoTorrent.Client
             var announces = Torrent?.AnnounceUrls;
             if (announces == null) {
                 announces = new List<IList<string>> ();
-                if (magnetLink.AnnounceUrls != null)
+                if (magnetLink?.AnnounceUrls != null)
                     announces.Add (magnetLink.AnnounceUrls);
             }
-            SetTrackerManager (new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false));
+            TrackerManager = new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
+            SetTrackerManager (TrackerManager);
 
-            MutableBitField = new MutableBitField (HasMetadata ? Torrent.PieceCount: 1);
-            PartialProgressSelector = new MutableBitField (HasMetadata ? Torrent.PieceCount : 1);
-            UnhashedPieces = new MutableBitField (HasMetadata ? Torrent.PieceCount : 1).SetAll (true);
+            MutableBitField = new MutableBitField (Torrent != null ? Torrent.PieceCount: 1);
+            PartialProgressSelector = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1);
+            UnhashedPieces = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
             SavePath = string.IsNullOrEmpty (savePath) ? Environment.CurrentDirectory : Path.GetFullPath (savePath);
             finishedPieces = new Queue<int> ();
             Monitor = new ConnectionMonitor ();
-            InactivePeerManager = new InactivePeerManager (this);
+            InactivePeerManager = new InactivePeerManager (this, engine.ConnectionManager);
             Peers = new PeerManager ();
             PieceManager = new PieceManager (this);
 
-            mode = new StoppedMode (this, null, null, null);
+            mode = new StoppedMode (this, engine.DiskManager, engine.ConnectionManager, engine.Settings);
             DownloadLimiter = new RateLimiter ();
             DownloadLimiters = new RateLimiterGroup {
                 new PauseLimiter(this),
@@ -547,7 +551,7 @@ namespace MonoTorrent.Client
             // will not be hashed, or downloaded.
             UnhashedPieces.SetAll (true);
 
-            var hashingMode = new HashingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            var hashingMode = new HashingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
             Mode = hashingMode;
 
             try {
@@ -581,7 +585,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine.DiskManager.MoveFileAsync (file, path);
+                await Engine!.DiskManager.MoveFileAsync (file, path);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
                 throw;
@@ -597,7 +601,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine.DiskManager.MoveFilesAsync (Files, newRoot, overWriteExisting);
+                await Engine!.DiskManager.MoveFilesAsync (Files, newRoot, overWriteExisting);
                 ContainingDirectory = SavePath = newRoot;
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
@@ -615,7 +619,7 @@ namespace MonoTorrent.Client
             if (Mode is HashingMode hashing) {
                 hashing.Pause ();
             } else if (Mode is DownloadMode) {
-                Mode = new PausedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new PausedMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
             }
         }
 
@@ -623,7 +627,7 @@ namespace MonoTorrent.Client
         {
             Torrent = torrent;
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
-                Engine.ConnectionManager.CleanupSocket (this, id);
+                Engine!.ConnectionManager.CleanupSocket (this, id);
             MutableBitField = new MutableBitField (Torrent.PieceCount);
             PartialProgressSelector = new MutableBitField (Torrent.PieceCount).SetAll (true);
             UnhashedPieces = new MutableBitField (Torrent.PieceCount).SetAll (true);
@@ -646,7 +650,7 @@ namespace MonoTorrent.Client
                 var downloadIncompleteFullPath = downloadCompleteFullPath + TorrentFileInfo.IncompleteFileSuffix;
 
                 // FIXME: Is this the best place to futz with actually moving files?
-                if (!Engine.Settings.UsePartialFiles) {
+                if (!Engine!.Settings.UsePartialFiles) {
                     if (File.Exists (downloadIncompleteFullPath) && !File.Exists (downloadCompleteFullPath))
                         File.Move (downloadIncompleteFullPath, downloadCompleteFullPath);
 
@@ -684,12 +688,12 @@ namespace MonoTorrent.Client
             // If the torrent was "paused", then just update the state to Downloading and forcefully
             // make sure the peers begin sending/receiving again
             if (State == TorrentState.Paused) {
-                Mode = new DownloadMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new DownloadMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
             } else if (Mode is HashingMode hashing && !HashChecked) {
                 if (State == TorrentState.HashingPaused)
                     hashing.Resume ();
             } else {
-                await Engine.StartAsync ();
+                await Engine!.StartAsync ();
                 StartTime = DateTime.Now;
                 if (!HasMetadata) {
                     Mode = new MetadataMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings, MetadataPath, metadataOnly);
@@ -705,12 +709,12 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
-            if (CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > Engine.LocalPeerDiscovery.MinimumAnnounceInternal)) {
+            if (Engine != null && CanUseLocalPeerDiscovery && (!LastLocalPeerAnnounceTimer.IsRunning || LastLocalPeerAnnounceTimer.Elapsed > Engine.LocalPeerDiscovery.MinimumAnnounceInternal)) {
                 if (Engine.PeerListener.LocalEndPoint != null) {
                     LastLocalPeerAnnounce = DateTime.Now;
                     LastLocalPeerAnnounceTimer.Restart ();
 
-                    await Engine?.LocalPeerDiscovery.Announce (InfoHashes.V1OrV2, Engine.PeerListener.LocalEndPoint);
+                    await Engine.LocalPeerDiscovery.Announce (InfoHashes.V1OrV2, Engine.PeerListener.LocalEndPoint!);
                 }
             }
         }
@@ -756,10 +760,10 @@ namespace MonoTorrent.Client
 
             if (State == TorrentState.Error) {
                 Error = null;
-                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new StoppedMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 await Engine.StopAsync ();
             } else if (State != TorrentState.Stopped) {
-                var stoppingMode = new StoppingMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                var stoppingMode = new StoppingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
                 await stoppingMode.WaitForStoppingToComplete (timeout);
 
@@ -819,7 +823,7 @@ namespace MonoTorrent.Client
         internal bool AddPeer (Peer peer, bool fromTrackers, bool prioritise)
         {
             Check.Peer (peer);
-            if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
+            if (HasMetadata && Torrent!.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
             if (Peers.Contains (peer))
@@ -829,7 +833,7 @@ namespace MonoTorrent.Client
             if (InactivePeerManager.InactivePeerList.Contains (peer.ConnectionUri))
                 return false;
 
-            if (Engine.PeerId.Equals (peer.PeerId))
+            if (Engine!.PeerId.Equals (peer.PeerId))
                 return false;
 
             if (Peers.TotalPeers < Settings.MaximumPeerDetails) {
@@ -863,7 +867,7 @@ namespace MonoTorrent.Client
         int AddPeers (IEnumerable<Peer> peers, bool fromTrackers)
         {
             Check.Peers (peers);
-            if (HasMetadata && Torrent.IsPrivate && !fromTrackers)
+            if (HasMetadata && Torrent!.IsPrivate && !fromTrackers)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
             int count = 0;
@@ -931,14 +935,14 @@ namespace MonoTorrent.Client
         internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count)
         {
             var files = Files;
-            List<Task> tasks = null;
+            List<Task>? tasks = null;
             for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
                 if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath));
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath));
                 } else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath));
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath));
                 }
             }
             if (tasks != null)
@@ -979,7 +983,7 @@ namespace MonoTorrent.Client
         {
             if (Disposed)
                 throw new InvalidOperationException ("This TorrentManager has been removed from it's Engine.");
-            if (Engine.Disposed)
+            if (Engine!.Disposed)
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
@@ -989,7 +993,7 @@ namespace MonoTorrent.Client
             CheckMetadata ();
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
-            if (InfoHashes != data.InfoHashes || Torrent.PieceCount != data.Bitfield.Length)
+            if (InfoHashes != data.InfoHashes || Torrent!.PieceCount != data.Bitfield.Length)
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
             for (int i = 0; i < Torrent.PieceCount; i++)
@@ -1009,7 +1013,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeDeleteFastResumeAsync ()
         {
-            if (!Engine.Settings.AutoSaveLoadFastResume)
+            if (!Engine!.Settings.AutoSaveLoadFastResume)
                 return;
 
             try {
@@ -1023,12 +1027,12 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeLoadFastResumeAsync ()
         {
-            if (!Engine.Settings.AutoSaveLoadFastResume || !HasMetadata)
+            if (!Engine!.Settings.AutoSaveLoadFastResume || !HasMetadata)
                 return;
 
             await MainLoop.SwitchToThreadpool ();
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);
-            if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume fastResume) && InfoHashes == fastResume.InfoHashes) {
+            if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume? fastResume) && InfoHashes == fastResume.InfoHashes) {
                 await ClientEngine.MainLoop;
                 LoadFastResume (fastResume);
             }
@@ -1036,7 +1040,7 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask MaybeWriteFastResumeAsync ()
         {
-            if (!Engine.Settings.AutoSaveLoadFastResume || !HashChecked)
+            if (!Engine!.Settings.AutoSaveLoadFastResume || !HashChecked)
                 return;
 
             ClientEngine.MainLoop.CheckThread ();
@@ -1080,7 +1084,7 @@ namespace MonoTorrent.Client
                 return false;
 
             Error = new Error (reason, ex);
-            Mode = new ErrorMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            Mode = new ErrorMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
             return true;
         }
 
