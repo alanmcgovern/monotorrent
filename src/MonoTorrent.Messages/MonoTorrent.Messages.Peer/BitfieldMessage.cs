@@ -38,18 +38,25 @@ namespace MonoTorrent.Messages.Peer
     {
         internal static readonly byte MessageId = 5;
 
-        public static readonly BitfieldMessage UnknownLength = new BitfieldMessage (null);
+        public static readonly BitfieldMessage UnknownLength = new BitfieldMessage ();
 
         #region Member Variables
         /// <summary>
         /// The bitfield
         /// </summary>
-        public BitField BitField { get; }
+        public BitField? BitField { get; }
+        bool CanDecode { get; }
 
         #endregion
 
 
         #region Constructors
+
+        BitfieldMessage ()
+        {
+
+        }
+
         /// <summary>
         /// Creates a new BitfieldMessage
         /// </summary>
@@ -57,6 +64,7 @@ namespace MonoTorrent.Messages.Peer
         public BitfieldMessage (int length)
         {
             BitField = new MutableBitField (length);
+            CanDecode = true;
         }
 
 
@@ -67,6 +75,7 @@ namespace MonoTorrent.Messages.Peer
         public BitfieldMessage (BitField bitfield)
         {
             BitField = bitfield;
+            CanDecode = false;
         }
         #endregion
 
@@ -75,7 +84,8 @@ namespace MonoTorrent.Messages.Peer
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            ((MutableBitField) BitField)?.From (buffer);
+            if (CanDecode && BitField is MutableBitField mutable)
+                mutable.From (buffer);
         }
 
         public override int Encode (Span<byte> buffer)
@@ -95,7 +105,7 @@ namespace MonoTorrent.Messages.Peer
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public override int ByteLength => (BitField.LengthInBytes + 5);
+        public override int ByteLength => ((BitField == null ? 0 : BitField.LengthInBytes) + 5);
         #endregion
 
 
@@ -114,13 +124,12 @@ namespace MonoTorrent.Messages.Peer
             if (!(obj is BitfieldMessage bf))
                 return false;
 
-            return BitField.Equals (bf.BitField);
+            return BitField == null ? bf.BitField == null : BitField.Equals (bf.BitField);
         }
 
         public override int GetHashCode ()
-        {
-            return BitField.GetHashCode ();
-        }
+            => BitField == null ? 0 : BitField.GetHashCode ();
+
         #endregion
     }
 }

@@ -57,18 +57,18 @@ namespace MonoTorrent.Messages.Peer
         /// <summary>
         /// The protocol string to send
         /// </summary>
-        public string ProtocolString { get; private set; }
+        public string? ProtocolString { get; private set; }
 
 
         /// <summary>
         /// The infohash of the torrent.
         /// </summary>
-        public InfoHash InfoHash { get; private set; }
+        public InfoHash? InfoHash { get; private set; }
 
         /// <summary>
         /// The ID of the peer (20 bytes).
         /// </summary>
-        public BEncodedString PeerId { get; private set; }
+        public BEncodedString? PeerId { get; private set; }
 
         /// <summary>
         /// True if the peer supports LibTorrent extended messaging.
@@ -115,6 +115,9 @@ namespace MonoTorrent.Messages.Peer
         #region Methods
         public override int Encode (Span<byte> buffer)
         {
+            if (ProtocolString is null || InfoHash is null || PeerId is null)
+                throw new InvalidOperationException ();
+
             int written = buffer.Length;
 
             Write (ref buffer, (byte) ProtocolString.Length);
@@ -170,7 +173,7 @@ namespace MonoTorrent.Messages.Peer
             var sb = new System.Text.StringBuilder ();
             sb.Append ("HandshakeMessage ");
             sb.Append (" PeerID ");
-            sb.Append (PeerId.Text);
+            sb.Append (PeerId?.Text ?? "");
             sb.Append (" FastPeer ");
             sb.Append (SupportsFastPeer);
             return sb.ToString ();
@@ -185,15 +188,14 @@ namespace MonoTorrent.Messages.Peer
             if (InfoHash != msg.InfoHash)
                 return false;
 
-            return PeerId.Equals (msg.PeerId)
+            return (PeerId is null ? msg.PeerId is null : PeerId.Equals (msg.PeerId))
                 && ProtocolString == msg.ProtocolString
                 && SupportsFastPeer == msg.SupportsFastPeer;
         }
 
         public override int GetHashCode ()
-        {
-            return (InfoHash.GetHashCode () ^ PeerId.GetHashCode () ^ ProtocolString.GetHashCode ());
-        }
+            => InfoHash == null ? 0 : InfoHash.GetHashCode ();
+
         #endregion
     }
 }

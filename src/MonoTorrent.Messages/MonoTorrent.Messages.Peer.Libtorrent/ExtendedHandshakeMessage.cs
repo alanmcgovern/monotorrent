@@ -44,7 +44,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         internal static readonly ExtensionSupport Support = new ExtensionSupport ("LT_handshake", 0);
 
-        string version;
+        string? version;
 
         public override int ByteLength =>
                 // FIXME Implement this properly

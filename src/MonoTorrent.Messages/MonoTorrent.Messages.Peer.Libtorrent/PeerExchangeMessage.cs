@@ -56,11 +56,11 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             peerDict = new BEncodedDictionary ();
         }
 
-        public PeerExchangeMessage (byte messageId, byte[] added, byte[] addedDotF, byte[] dropped)
+        public PeerExchangeMessage (byte messageId, byte[]? added, byte[]? addedDotF, byte[]? dropped)
             : this ()
         {
             ExtensionId = messageId;
-            Initialize ((byte[])added?.Clone (), (byte[]) addedDotF?.Clone (), (byte[]) dropped?.Clone ());
+            Initialize ((byte[]?)added?.Clone (), (byte[]?) addedDotF?.Clone (), (byte[]?) dropped?.Clone ());
         }
 
         public PeerExchangeMessage (ExtensionSupports supportedExtensions, byte[] added, byte[] addedDotF, byte[] dropped)
