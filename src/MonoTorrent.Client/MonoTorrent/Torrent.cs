@@ -636,7 +636,7 @@ namespace MonoTorrent
 
                         case ("path.utf-8"):
                             foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                if (!(string.IsNullOrEmpty (str.Text) || str.Text == Path.DirectorySeparatorChar)) {
+                                if (!BEncodedString.IsNullOrEmpty (str)) {
                                     sb.Append (str.Text);
                                     sb.Append (Path.DirectorySeparatorChar);
                                 }
