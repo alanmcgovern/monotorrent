@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         public event EventHandler StateChanged;
 
-        public void Add (IEnumerable<byte[]> nodes)
+        public void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
 
         }
@@ -74,8 +74,8 @@ namespace MonoTorrent.Client
             StateChanged?.Invoke (this, EventArgs.Empty);
         }
 
-        public Task<byte[]> SaveNodesAsync ()
-            => Task.FromResult (new byte[0]);
+        public Task<ReadOnlyMemory<byte>> SaveNodesAsync ()
+            => Task.FromResult (ReadOnlyMemory<byte>.Empty);
 
         public Task SetListenerAsync (IDhtListener listener)
         {

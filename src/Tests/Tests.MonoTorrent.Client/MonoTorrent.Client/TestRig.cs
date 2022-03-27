@@ -164,10 +164,9 @@ namespace MonoTorrent.Client
 
     public class CustomConnection : IPeerConnection
     {
-        public byte[] AddressBytes => ((IPEndPoint) EndPoint).Address.GetAddressBytes ();
+        public byte[] AddressBytes => IPAddress.Loopback.GetAddressBytes ();
         public bool CanReconnect => false;
         public bool Disposed { get; private set; } = false;
-        public EndPoint EndPoint => new IPEndPoint (IPAddress.Parse (Uri.Host), Uri.Port);
         public bool IsIncoming { get; }
         public int? ManualBytesReceived { get; set; }
         public int? ManualBytesSent { get; set; }

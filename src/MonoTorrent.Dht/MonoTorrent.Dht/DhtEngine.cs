@@ -116,7 +116,7 @@ namespace MonoTorrent.Dht
 
         #endregion Constructors
 
-        public void Add (IEnumerable<byte[]> nodes)
+        public void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
             // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
@@ -232,7 +232,7 @@ namespace MonoTorrent.Dht
                 await Task.WhenAll (refreshTasks).ConfigureAwait (false);
         }
 
-        public async Task<byte[]> SaveNodesAsync ()
+        public async Task<ReadOnlyMemory<byte>> SaveNodesAsync ()
         {
             await MainLoop;
 

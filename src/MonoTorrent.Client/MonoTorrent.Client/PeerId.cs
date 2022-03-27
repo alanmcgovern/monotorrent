@@ -47,7 +47,6 @@ namespace MonoTorrent.Client
         public bool CanReconnect { get; }
         public bool Disposed { get; }
         public bool IsIncoming { get; }
-        public EndPoint? EndPoint { get; }
         public Uri Uri { get; } = new Uri ("test://1234.com:3434");
 
         public ReusableTask ConnectAsync ()
@@ -177,7 +176,7 @@ namespace MonoTorrent.Client
         public bool SupportsLTMessages { get; internal set; }
         public Uri Uri => Peer.ConnectionUri;
 
-        internal byte[] AddressBytes => Connection.AddressBytes;
+        internal byte[]? AddressBytes => Connection.AddressBytes;
 
         /// <summary>
         /// The remote peer can request these and we'll fulfill the request if we're choking them

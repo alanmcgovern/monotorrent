@@ -49,9 +49,7 @@ namespace MonoTorrent.Client
 
         public bool IsIncoming { get; }
 
-        public EndPoint EndPoint => new IPEndPoint (IPAddress.Parse ("1.2.3.4"), 5678);
-
-        public Uri Uri => new Uri ($"ipv4://{EndPoint}");
+        public Uri Uri => new Uri ($"ipv4://1.2.3.4:5678");
 
         NullConnection (bool isIncoming)
         {

@@ -64,7 +64,7 @@ namespace MonoTorrent.Dht
 
         public DhtState State => DhtState.NotReady;
 
-        public void Add (IEnumerable<byte[]> nodes)
+        public void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
 
         }
@@ -84,9 +84,9 @@ namespace MonoTorrent.Dht
 
         }
 
-        public Task<byte[]> SaveNodesAsync ()
+        public Task<ReadOnlyMemory<byte>> SaveNodesAsync ()
         {
-            return Task.FromResult (new byte[0]);
+            return Task.FromResult (ReadOnlyMemory<byte>.Empty);
         }
 
         public Task SetListenerAsync (IDhtListener listener)

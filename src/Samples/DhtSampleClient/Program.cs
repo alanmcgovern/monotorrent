@@ -47,7 +47,7 @@ namespace ClientSample
                     engine.GetPeers (new InfoHash (b));
                     random.NextBytes (b);
                 }
-                File.WriteAllBytes ("mynodes", await engine.SaveNodesAsync ());
+                File.WriteAllBytes ("mynodes", (await engine.SaveNodesAsync ()).ToArray ());
             };
         }
     }

@@ -143,17 +143,12 @@ namespace MonoTorrent.Dht
             return new Node (NodeId.FromMemory (id), new IPEndPoint (address, port));
         }
 
-        internal static IEnumerable<Node> FromCompactNode (byte[] buffer)
+        internal static IEnumerable<Node> FromCompactNode (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
-            for (int i = 0; (i + 26) <= buffer.Length; i += 26)
-                yield return FromCompactNode (buffer.AsSpan (i, 26));
-        }
-
-        internal static IEnumerable<Node> FromCompactNode (IEnumerable<byte[]> nodes)
-        {
-            foreach (var rawNode in nodes)
-                foreach (var node in FromCompactNode (rawNode))
-                    yield return node;
+            foreach (var rawNode in nodes) {
+                for (int i = 0; (i + 26) <= rawNode.Length; i += 26)
+                    yield return FromCompactNode (rawNode.Span.Slice (i, 26));
+            }
         }
 
         internal static IEnumerable<Node> FromCompactNode (BEncodedString nodes)

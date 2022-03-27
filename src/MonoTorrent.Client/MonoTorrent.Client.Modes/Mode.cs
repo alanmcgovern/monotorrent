@@ -214,7 +214,7 @@ namespace MonoTorrent.Client.Modes
             id.SupportsLTMessages = message.SupportsExtendedMessaging;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
-            if (id.SupportsFastPeer && Manager != null && Manager.HasMetadata) {
+            if (id.SupportsFastPeer && id.AddressBytes != null && Manager != null && Manager.HasMetadata) {
                 lock (AllowedFastHasher)
                     id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes, Manager.InfoHashes, (uint) Manager.Torrent!.PieceCount);
             }

@@ -627,7 +627,7 @@ namespace MonoTorrent.Client
             manager.UploadLimiters.Add (uploadLimiters);
             if (DhtEngine != null && manager.Torrent?.Nodes != null && DhtEngine.State != DhtState.Ready) {
                 try {
-                    DhtEngine.Add (manager.Torrent.Nodes.OfType<BEncodedString> ().Select (t => t.AsMemory ().ToArray ()));
+                    DhtEngine.Add (manager.Torrent.Nodes.OfType<BEncodedString> ().Select (t => t.AsMemory ()));
                 } catch {
                     // FIXME: Should log this somewhere, though it's not critical
                 }
@@ -847,7 +847,7 @@ namespace MonoTorrent.Client
                 var savePath = Settings.GetDhtNodeCacheFilePath ();
                 var parentDir = Path.GetDirectoryName (savePath);
                 Directory.CreateDirectory (parentDir);
-                File.WriteAllBytes (savePath, nodes);
+                File.WriteAllBytes (savePath, nodes.ToArray ());
             }
         }
 

@@ -83,8 +83,6 @@ namespace MonoTorrent.Connections.Peer
 
         public bool Disposed { get; private set; }
 
-        EndPoint IPeerConnection.EndPoint => EndPoint;
-
         public IPEndPoint EndPoint { get; }
 
         public bool IsIncoming { get; }

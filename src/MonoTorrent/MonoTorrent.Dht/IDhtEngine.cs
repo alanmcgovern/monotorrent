@@ -69,10 +69,10 @@ namespace MonoTorrent.Dht
         TimeSpan MinimumAnnounceInterval { get; }
         DhtState State { get; }
 
-        void Add (IEnumerable<byte[]> nodes);
+        void Add (IEnumerable<ReadOnlyMemory<byte>> nodes);
         void Announce (InfoHash infoHash, int port);
         void GetPeers (InfoHash infoHash);
-        Task<byte[]> SaveNodesAsync ();
+        Task<ReadOnlyMemory<byte>> SaveNodesAsync ();
         Task SetListenerAsync (IDhtListener listener);
         Task StartAsync ();
         Task StartAsync (ReadOnlyMemory<byte> initialNodes);
