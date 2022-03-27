@@ -38,9 +38,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         public static readonly ExtensionSupport Support = CreateSupport ("ut_pex");
 
         BEncodedDictionary peerDict;
-        static readonly BEncodedString AddedKey = "added";
-        static readonly BEncodedString AddedDotFKey = "added.f";
-        static readonly BEncodedString DroppedKey = "dropped";
+        static readonly BEncodedString AddedKey = new BEncodedString ("added");
+        static readonly BEncodedString AddedDotFKey = new BEncodedString ("added.f");
+        static readonly BEncodedString DroppedKey = new BEncodedString ("dropped");
 
         public override int ByteLength => 4 + 1 + 1 + peerDict.LengthInBytes ();
 

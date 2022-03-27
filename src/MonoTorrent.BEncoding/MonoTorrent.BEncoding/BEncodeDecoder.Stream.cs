@@ -46,8 +46,8 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException ("Invalid data found. Aborting"); // Remove the leading 'd'
 
             int read;
-            byte[] infohashSHA1 = null;
-            byte[] infohashSHA256 = null;
+            byte[]? infohashSHA1 = null;
+            byte[]? infohashSHA256 = null;
             while ((read = reader.ReadByte ()) != -1) {
                 if (read == 'e')
                     return (torrent, new RawInfoHashes (infohashSHA1, infohashSHA256));
@@ -109,7 +109,7 @@ namespace MonoTorrent.BEncoding
         static BEncodedDictionary DecodeDictionary (Stream reader, bool strictDecoding)
         {
             int read;
-            BEncodedString oldkey = null;
+            BEncodedString? oldkey = null;
             var dictionary = new BEncodedDictionary ();
             while ((read = reader.ReadByte ()) != -1) {
                 if (read == 'e')

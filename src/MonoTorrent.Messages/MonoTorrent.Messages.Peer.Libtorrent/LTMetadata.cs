@@ -38,9 +38,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         static readonly BEncodedDictionary EmptyDict = new BEncodedDictionary ();
 
         public static readonly ExtensionSupport Support = CreateSupport ("ut_metadata");
-        static readonly BEncodedString MessageTypeKey = "msg_type";
-        static readonly BEncodedString PieceKey = "piece";
-        static readonly BEncodedString TotalSizeKey = "total_size";
+        static readonly BEncodedString MessageTypeKey = new BEncodedString ("msg_type");
+        static readonly BEncodedString PieceKey = new BEncodedString ("piece");
+        static readonly BEncodedString TotalSizeKey = new BEncodedString ("total_size");
         public static readonly int BlockSize = 16 * 1024;
 
         public enum MessageType

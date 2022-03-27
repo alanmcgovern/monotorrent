@@ -37,8 +37,8 @@ namespace MonoTorrent.TrackerServer
 {
     public abstract class TrackerRequest : EventArgs
     {
-        public static readonly string FailureKey = "failure reason";
-        public static readonly string WarningKey = "warning message";
+        public static readonly BEncodedString FailureKey = new BEncodedString ("failure reason");
+        public static readonly BEncodedString WarningKey = new BEncodedString ("warning message");
 
         public abstract bool IsValid { get; }
 

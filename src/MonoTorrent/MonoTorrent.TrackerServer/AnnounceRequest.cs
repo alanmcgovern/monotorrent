@@ -114,7 +114,7 @@ namespace MonoTorrent.TrackerServer
         /// The 20 byte identifier for the peer. This is shared with other peers when a non-compact response
         /// is returned.
         /// </summary>
-        public BEncodedString PeerId => BEncodedString.UrlDecode (Parameters["peer_id"]);
+        public BEncodedString? PeerId => Parameters["peer_id"] is string value ? BEncodedString.UrlDecode (value) : null;
 
         /// <summary>
         /// The port the client is listening for incoming connections on.
@@ -125,7 +125,7 @@ namespace MonoTorrent.TrackerServer
         /// The first time a peer announces to a tracker, we send it the TrackerId
         /// of this tracker. Subsequent announce requests should send that value.
         /// </summary>
-        public BEncodedString TrackerId => BEncodedString.UrlDecode (Parameters["trackerid"]);
+        public BEncodedString? TrackerId => Parameters["trackerid"] is string str ? BEncodedString.UrlDecode (str) : null;
 
         /// <summary>
         /// The total amount of bytes uploaded since the 'Started' event was sent.
@@ -152,12 +152,12 @@ namespace MonoTorrent.TrackerServer
                 if (keys.Contains (field))
                     continue;
 
-                Response.Add (FailureKey, (BEncodedString) ("mandatory announce parameter " + field + " in query missing"));
+                Response.Add (FailureKey, new BEncodedString ("mandatory announce parameter " + field + " in query missing"));
                 return null;
             }
             var hash = HttpUtility.UrlDecodeToBytes (Parameters["info_hash"]);
             if (hash is null || hash.Length != 20) {
-                Response.Add (FailureKey, (BEncodedString) (
+                Response.Add (FailureKey, new BEncodedString (
                     $"infohash was {hash?.Length ?? 0} bytes long, it must be 20 bytes long."));
                 return null;
             }

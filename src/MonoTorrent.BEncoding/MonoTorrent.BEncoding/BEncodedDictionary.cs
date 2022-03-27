@@ -169,12 +169,12 @@ namespace MonoTorrent.BEncoding
 
         public int Count => dictionary.Count;
 
-        public BEncodedValue GetValueOrDefault (BEncodedString key)
+        public BEncodedValue? GetValueOrDefault (BEncodedString key)
         {
             return GetValueOrDefault (key, null);
         }
 
-        public BEncodedValue GetValueOrDefault (BEncodedString key, BEncodedValue defaultValue)
+        public BEncodedValue? GetValueOrDefault (BEncodedString key, BEncodedValue? defaultValue)
         {
             return dictionary.TryGetValue (key, out BEncodedValue value) ? value : defaultValue;
         }

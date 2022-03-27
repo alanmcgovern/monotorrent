@@ -36,11 +36,11 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 {
     public sealed class ExtendedHandshakeMessage : ExtensionMessage
     {
-        static readonly BEncodedString MaxRequestKey = "reqq";
-        static readonly BEncodedString PortKey = "p";
-        static readonly BEncodedString SupportsKey = "m";
-        static readonly BEncodedString VersionKey = "v";
-        static readonly BEncodedString MetadataSizeKey = "metadata_size";
+        static readonly BEncodedString MaxRequestKey = new BEncodedString ("reqq");
+        static readonly BEncodedString PortKey = new BEncodedString("p");
+        static readonly BEncodedString SupportsKey = new BEncodedString ("m");
+        static readonly BEncodedString VersionKey = new BEncodedString ("v");
+        static readonly BEncodedString MetadataSizeKey = new BEncodedString ("metadata_size");
 
         internal static readonly ExtensionSupport Support = new ExtensionSupport ("LT_handshake", 0);
 
@@ -134,10 +134,10 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             var supportsDict = new BEncodedDictionary ();
 
             mainDict.Add (MaxRequestKey, (BEncodedNumber) MaxRequests);
-            mainDict.Add (VersionKey, (BEncodedString) Version);
+            mainDict.Add (VersionKey, new BEncodedString (Version));
             mainDict.Add (PortKey, (BEncodedNumber) LocalPort);
 
-            SupportedMessages.ForEach (delegate (ExtensionSupport s) { supportsDict.Add (s.Name, (BEncodedNumber) s.MessageId); });
+            SupportedMessages.ForEach (delegate (ExtensionSupport s) { supportsDict.Add (new BEncodedString (s.Name), (BEncodedNumber) s.MessageId); });
             mainDict.Add (SupportsKey, supportsDict);
 
             if (MetadataSize.HasValue)
