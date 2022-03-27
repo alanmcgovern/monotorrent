@@ -34,13 +34,14 @@ namespace MonoTorrent.Connections
 {
     public abstract class Listener : IListener
     {
-        public event EventHandler<EventArgs> StatusChanged;
+        public event EventHandler<EventArgs>? StatusChanged;
 
         CancellationTokenSource Cancellation { get; set; }
         public ListenerStatus Status { get; private set; }
 
         protected Listener ()
         {
+            Cancellation = new CancellationTokenSource ();
             Status = ListenerStatus.NotListening;
         }
 
@@ -55,7 +56,7 @@ namespace MonoTorrent.Connections
             if (Status == ListenerStatus.Listening)
                 return;
 
-            Cancellation?.Cancel ();
+            Cancellation.Cancel ();
             Cancellation = new CancellationTokenSource ();
             Cancellation.Token.Register (() => RaiseStatusChanged (ListenerStatus.NotListening));
 
@@ -72,8 +73,7 @@ namespace MonoTorrent.Connections
 
         public void Stop ()
         {
-            Cancellation?.Cancel ();
-            Cancellation = null;
+            Cancellation.Cancel ();
         }
     }
 }

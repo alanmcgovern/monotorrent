@@ -34,9 +34,9 @@ namespace MonoTorrent.Connections.Peer
     {
         public IPeerConnection Connection { get; }
 
-        public InfoHash InfoHash { get; }
+        public InfoHash? InfoHash { get; }
 
-        public PeerConnectionEventArgs (IPeerConnection connection, InfoHash infoHash)
+        public PeerConnectionEventArgs (IPeerConnection connection, InfoHash? infoHash)
         {
             if (!connection.IsIncoming && infoHash == null)
                 throw new InvalidOperationException ("An outgoing connection must specify the torrent manager it belongs to");
@@ -45,5 +45,4 @@ namespace MonoTorrent.Connections.Peer
             InfoHash = infoHash;
         }
     }
-
 }
