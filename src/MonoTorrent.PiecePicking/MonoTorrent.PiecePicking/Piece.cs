@@ -134,7 +134,8 @@ namespace MonoTorrent.PiecePicking
             {
                 PeersInvolved.Clear ();
                 foreach (var block in Blocks)
-                    PeersInvolved.Add (block.RequestedOff);
+                    if (block.RequestedOff != null)
+                        PeersInvolved.Add (block.RequestedOff);
 
                 var result = new IPeer[PeersInvolved.Count];
                 PeersInvolved.CopyTo (result);

@@ -34,13 +34,13 @@ namespace MonoTorrent.PiecePicking
 {
     public class StandardPieceRequester : IPieceRequester
     {
-        IReadOnlyList<BitField> IgnorableBitfields { get; set; }
+        IReadOnlyList<BitField>? IgnorableBitfields { get; set; }
         Memory<BlockInfo> RequestBufferCache { get; set; }
-        MutableBitField Temp { get; set; }
-        ITorrentManagerInfo TorrentData { get; set; }
+        MutableBitField? Temp { get; set; }
+        ITorrentManagerInfo? TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
-        public IPiecePicker Picker { get; private set; }
+        IPiecePicker? Picker { get; set; }
 
         public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<BitField> ignoringBitfields)
         {
@@ -59,8 +59,8 @@ namespace MonoTorrent.PiecePicking
 
         BitField ApplyIgnorables (BitField primary)
         {
-            Temp.From (primary);
-            for (int i = 0; i < IgnorableBitfields.Count; i++)
+            Temp!.From (primary);
+            for (int i = 0; i < IgnorableBitfields!.Count; i++)
                 Temp.NAnd (IgnorableBitfields[i]);
             return Temp;
         }
@@ -78,7 +78,7 @@ namespace MonoTorrent.PiecePicking
         {
             int maxRequests = peer.MaxPendingRequests;
 
-            if (!peer.CanRequestMorePieces)
+            if (!peer.CanRequestMorePieces || Picker == null || TorrentData == null)
                 return;
 
             // This is safe to invoke. 'ContinueExistingRequest' strongly guarantees that a peer will only
@@ -102,7 +102,7 @@ namespace MonoTorrent.PiecePicking
             // a Span<T> of the expected size - so slice the reused buffer if it's too large.
             var requestBuffer = RequestBufferCache.Span.Slice (0, count);
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
-                BitField filtered = null;
+                BitField filtered = null!;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= ApplyIgnorables (peer.BitField);
                     int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount () - 1, requestBuffer);
@@ -132,18 +132,22 @@ namespace MonoTorrent.PiecePicking
         }
 
         public bool ValidatePiece (IPeer peer, BlockInfo blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved)
-            => Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+        {
+            pieceComplete = false;
+            peersInvolved = Array.Empty<IPeer> ();
+            return Picker != null && Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+        }
 
         public bool IsInteresting (IPeer peer, BitField bitfield)
-            => Picker.IsInteresting (peer, bitfield);
+            => Picker != null && Picker.IsInteresting (peer, bitfield);
 
         public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
-            => Picker.CancelRequests (peer, startIndex, endIndex);
+            => Picker == null ? Array.Empty<BlockInfo> () : Picker.CancelRequests (peer, startIndex, endIndex);
 
         public void RequestRejected (IPeer peer, BlockInfo pieceRequest)
-            => Picker.RequestRejected (peer, pieceRequest);
+            => Picker?.RequestRejected (peer, pieceRequest);
 
         public int CurrentRequestCount ()
-            => Picker.CurrentRequestCount ();
+            => Picker == null ? 0 : Picker.CurrentRequestCount ();
     }
 }

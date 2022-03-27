@@ -62,8 +62,8 @@ namespace MonoTorrent.PiecePicking
         readonly List<Files> files = new List<Files> ();
         readonly List<BitField> prioritised = new List<BitField> ();
 
-        MutableBitField allPrioritisedPieces;
-        MutableBitField temp;
+        MutableBitField? allPrioritisedPieces;
+        MutableBitField? temp;
 
         public PriorityPicker (IPiecePicker picker)
             : base (picker)
@@ -86,6 +86,9 @@ namespace MonoTorrent.PiecePicking
 
         public override bool IsInteresting (IPeer peer, BitField bitfield)
         {
+            if (temp == null)
+                return false;
+
             if (ShouldRebuildSelectors ())
                 BuildSelectors ();
 
@@ -104,7 +107,7 @@ namespace MonoTorrent.PiecePicking
         public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             // Fast Path - the peer has nothing to offer
-            if (available.AllFalse)
+            if (available.AllFalse || temp == null)
                 return 0;
 
             // Rebuild if any file changed priority
@@ -147,14 +150,14 @@ namespace MonoTorrent.PiecePicking
             //
             // If all files are set to DoNotDownload we'll bail out early here.
             if (files.Count == 1 || files.TrueForAll (AllSamePriority)) {
-                allPrioritisedPieces.SetAll (false);
+                allPrioritisedPieces!.SetAll (false);
                 return;
             }
 
             // At least one file is not set to DoNotDownload
-            temp.SetAll (false);
+            temp!.SetAll (false);
             temp.SetTrue ((files[0].File.StartPieceIndex, files[0].File.EndPieceIndex));
-            allPrioritisedPieces.From (temp);
+            allPrioritisedPieces!.From (temp);
             for (int i = 1; i < files.Count && files[i].Priority != Priority.DoNotDownload; i++) {
                 allPrioritisedPieces.SetTrue ((files[i].File.StartPieceIndex, files[i].File.EndPieceIndex));
 

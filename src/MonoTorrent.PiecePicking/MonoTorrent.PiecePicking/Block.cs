@@ -58,7 +58,7 @@ namespace MonoTorrent.PiecePicking
 
             public int RequestLength { get; }
 
-            internal IPeer RequestedOff { get; private set; }
+            internal IPeer? RequestedOff { get; private set; }
 
             public int StartOffset { get; }
 
