@@ -102,6 +102,7 @@ namespace MonoTorrent.Common
             BEncodedList files = new BEncodedList ();
 
             BEncodedList path = new BEncodedList {
+                new BEncodedString (""),
                 new BEncodedString ("file1.txt")
             };
 
