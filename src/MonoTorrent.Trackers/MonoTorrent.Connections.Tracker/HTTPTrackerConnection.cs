@@ -45,21 +45,23 @@ namespace MonoTorrent.Connections.Tracker
 {
     public class HttpTrackerConnection : ITrackerConnection
     {
+        static readonly BEncodedString FilesKey = new BEncodedString ("files");
+
         static readonly Logger logger = Logger.Create (nameof (HttpTrackerConnection));
 
         static readonly Random random = new Random ();
 
         public bool CanScrape { get; }
 
-        public Uri ScrapeUri { get; }
+        public Uri? ScrapeUri { get; }
 
         public Uri Uri { get; }
 
         // FIXME: Make private?
-        public BEncodedString TrackerId { get; set; }
+        public BEncodedString? TrackerId { get; set; }
 
         // FIXME: Make private?
-        public BEncodedString Key { get; set; }
+        public BEncodedString? Key { get; set; }
 
 
 
@@ -126,7 +128,7 @@ namespace MonoTorrent.Connections.Tracker
             // proxies, and any DNS requests, are definitely not run on the main thread.
             await new ThreadSwitcher ();
 
-            string url = ScrapeUri.OriginalString;
+            string url = ScrapeUri!.OriginalString;
             // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
             if (url.IndexOf ('?') == -1)
                 url += $"?info_hash={parameters.InfoHash.UrlEncode ()}";
@@ -160,7 +162,7 @@ namespace MonoTorrent.Connections.Tracker
         {
             var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
-             .Add ("peer_id", ((BEncodedString) parameters.PeerId).UrlEncode ())
+             .Add ("peer_id", BEncodedString.FromMemory (parameters.PeerId).UrlEncode ())
              .Add ("port", parameters.Port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)
@@ -175,7 +177,7 @@ namespace MonoTorrent.Connections.Tracker
             if (!b.Contains ("key") && Key != null)
                 b.Add ("key", Key.UrlEncode ());
             if (!string.IsNullOrEmpty (parameters.IPAddress))
-                b.Add ("ip", parameters.IPAddress);
+                b.Add ("ip", parameters.IPAddress!);
 
             // If we have not successfully sent the started event to this tier, override the passed in started event
             // Otherwise append the event if it is not "none"
@@ -188,7 +190,7 @@ namespace MonoTorrent.Connections.Tracker
                 b.Add ("event", parameters.ClientEvent.ToString ().ToLower ());
 
             if (!BEncodedString.IsNullOrEmpty (TrackerId))
-                b.Add ("trackerid", TrackerId.UrlEncode ());
+                b.Add ("trackerid", TrackerId!.UrlEncode ());
 
             return b.ToUri ();
         }
@@ -246,7 +248,7 @@ namespace MonoTorrent.Connections.Tracker
         {
             int? complete = null, incomplete = null, downloaded = null;
             TimeSpan? minUpdateInterval = null, updateInterval = null;
-            string failureMessage = null, warningMessage = null;
+            string failureMessage = "", warningMessage = "";
             var peers = new List<PeerInfo> ();
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                 switch (keypair.Key.Text) {
@@ -316,11 +318,11 @@ namespace MonoTorrent.Connections.Tracker
             BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
 
             // FIXME: Log the failure?
-            if (!dict.ContainsKey ("files")) {
+            if (!dict.ContainsKey (FilesKey)) {
                 return new ScrapeResponse (TrackerState.Ok, warningMessage: "Tracker did not have data for this torrent");
             }
 
-            var files = (BEncodedDictionary) dict["files"];
+            var files = (BEncodedDictionary) dict[FilesKey];
             if (files.Count != 1)
                 throw new TrackerException ("The scrape response contained unexpected data");
 

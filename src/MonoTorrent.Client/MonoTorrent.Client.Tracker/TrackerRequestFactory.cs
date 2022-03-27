@@ -71,7 +71,7 @@ namespace MonoTorrent.Trackers
             return new AnnounceRequest (Manager.Monitor.DataBytesReceived,
                                           Manager.Monitor.DataBytesSent,
                                           bytesLeft,
-                                          clientEvent, (Manager.InfoHashes.V1OrV2), requireEncryption, Manager.Engine.PeerId.AsMemory ().ToArray (),
+                                          clientEvent, (Manager.InfoHashes.V1OrV2), requireEncryption, Manager.Engine.PeerId.AsMemory (),
                                           ip, port, supportsEncryption);
         }
 

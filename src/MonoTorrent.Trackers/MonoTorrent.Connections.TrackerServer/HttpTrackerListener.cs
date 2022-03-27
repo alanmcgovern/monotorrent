@@ -62,6 +62,7 @@ namespace MonoTorrent.Connections.TrackerServer
             if (string.IsNullOrEmpty (httpPrefix))
                 throw new ArgumentNullException (nameof (httpPrefix));
 
+            Cancellation = new CancellationTokenSource ();
             Prefix = httpPrefix;
         }
 

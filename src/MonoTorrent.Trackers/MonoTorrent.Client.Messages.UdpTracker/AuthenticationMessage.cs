@@ -35,7 +35,7 @@ namespace MonoTorrent.Messages.UdpTracker
     public class AuthenticationMessage : Message
     {
         byte usernameLength;
-        string username;
+        string username = "";
         ReadOnlyMemory<byte> password;
 
         public override int ByteLength => 4 + usernameLength + 8;

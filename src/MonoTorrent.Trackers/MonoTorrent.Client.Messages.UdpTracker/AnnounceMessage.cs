@@ -42,7 +42,7 @@ namespace MonoTorrent.Messages.UdpTracker
 
         public long Downloaded { get; set; }
 
-        public InfoHash InfoHash { get; set; }
+        public InfoHash? InfoHash { get; set; }
 
         public uint IP { get; set; }
 
@@ -52,7 +52,7 @@ namespace MonoTorrent.Messages.UdpTracker
 
         public int NumWanted { get; set; }
 
-        public BEncodedString PeerId { get; set; }
+        public ReadOnlyMemory<byte> PeerId { get; set; }
 
         public ushort Port { get; set; }
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.Messages.UdpTracker
 
         }
 
-        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest parameters)
+        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest? parameters)
             : base (1, transactionId)
         {
             ConnectionId = connectionId;
@@ -92,7 +92,7 @@ namespace MonoTorrent.Messages.UdpTracker
                 ThrowInvalidActionException ();
             TransactionId = ReadInt (ref buffer);
             InfoHash = InfoHash.FromMemory (ReadBytes (ref buffer, 20));
-            PeerId = BEncodedString.FromMemory (ReadBytes (ref buffer, 20));
+            PeerId = ReadBytes (ref buffer, 20);
             Downloaded = ReadLong (ref buffer);
             Left = ReadLong (ref buffer);
             Uploaded = ReadLong (ref buffer);
@@ -110,7 +110,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Write (ref buffer, ConnectionId);
             Write (ref buffer, Action);
             Write (ref buffer, TransactionId);
-            Write (ref buffer, InfoHash.Span);
+            Write (ref buffer, InfoHash!.Span);
             Write (ref buffer, PeerId.Span);
             Write (ref buffer, Downloaded);
             Write (ref buffer, Left);
