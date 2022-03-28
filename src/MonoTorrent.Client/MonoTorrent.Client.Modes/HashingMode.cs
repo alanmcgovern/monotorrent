@@ -80,6 +80,7 @@ namespace MonoTorrent.Client.Modes
             // Delete any existing fast resume data. We will need to recreate it after hashing completes.
             await Manager.MaybeDeleteFastResumeAsync ();
 
+            bool atLeastOneDoNotDownload = Manager.Files.Any (t => t.Priority == Priority.DoNotDownload);
             if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
                 int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
@@ -87,7 +88,7 @@ namespace MonoTorrent.Client.Modes
                 using var hashBuffer = MemoryPool.Default.Rent (Manager.InfoHashes.GetMaxByteCount (), out Memory<byte> hashMemory);
                 var hashes = new PieceHash (hashMemory);
                 for (int index = 0; index < Manager.Torrent!.PieceCount; index++) {
-                    if (!Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
+                    if (atLeastOneDoNotDownload && !Manager.Files.Any (f => index >= f.StartPieceIndex && index <= f.EndPieceIndex && f.Priority != Priority.DoNotDownload)) {
                         // If a file is marked 'do not download' ensure we update the TorrentFiles
                         // so they also report that the piece is not available/downloaded.
                         Manager.OnPieceHashed (index, false, piecesHashed, Manager.PartialProgressSelector.TrueCount);
