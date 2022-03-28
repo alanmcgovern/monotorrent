@@ -58,11 +58,50 @@ namespace MonoTorrent
 
         public static void InvokeAsync (EventHandler<T> handler, object sender, T args)
         {
+#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+            ThreadPool.UnsafeQueueUserWorkItem (EventInvokerWorkItem.GetOrCreate (handler, sender, args), false);
+#else
             var state = Cache.Dequeue ().Initialise (handler, sender, args);
             ThreadPool.QueueUserWorkItem (Invoker, state);
+#endif
         }
 
-        static readonly WaitCallback Invoker = (object o) => {
+#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+        internal class EventInvokerWorkItem : IThreadPoolWorkItem
+        {
+            static readonly Stack<EventInvokerWorkItem> Cache = new Stack<EventInvokerWorkItem> ();
+
+            EventHandler<T>? Handler { get; set; }
+            T? EventArgs { get; set; }
+            object? Sender { get; set; }
+
+            public static EventInvokerWorkItem GetOrCreate (EventHandler<T> handler, object sender, T args)
+            {
+                lock (Cache) {
+                    if (Cache.Count == 0) {
+                        return new EventInvokerWorkItem { Handler = handler, Sender = sender, EventArgs = args };
+                    } else {
+                        var worker = Cache.Pop ();
+                        worker.Handler = handler;
+                        worker.Sender = sender;
+                        worker.EventArgs = args;
+                        return worker;
+                    }
+                }
+            }
+
+            public void Execute ()
+            {
+                (var handler, var sender, var args) = (Handler, Sender, EventArgs);
+                (Handler, Sender, EventArgs) = (null, null, null);
+                lock (Cache)
+                    Cache.Push (this);
+                handler! (sender, args!);
+            }
+        }
+#endif
+
+        static readonly WaitCallback Invoker = (object? o) => {
             var state = (AsyncInvokerState) o!;
             state.Handler! (state.Sender, state.Args!);
             Cache.Enqueue (state);

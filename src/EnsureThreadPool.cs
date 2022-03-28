@@ -56,7 +56,11 @@ namespace MonoTorrent.Client
         [EditorBrowsable(EditorBrowsableState.Never)]
         public void OnCompleted(Action continuation)
         {
+#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+            ThreadPool.UnsafeQueueUserWorkItem (ThreadSwitcher.ThreadSwitcherWorkItem.GetOrCreate (continuation), false);
+#else
             ThreadPool.UnsafeQueueUserWorkItem(Callback, continuation);
+#endif
         }
     }
 }

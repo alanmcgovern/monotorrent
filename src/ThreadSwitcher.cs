@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -53,10 +54,48 @@ namespace MonoTorrent
 
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void OnCompleted(Action continuation)
+
+        [EditorBrowsable (EditorBrowsableState.Never)]
+        public void OnCompleted (Action continuation)
         {
-            ThreadPool.UnsafeQueueUserWorkItem(Callback, continuation);
+#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+            ThreadPool.UnsafeQueueUserWorkItem (ThreadSwitcherWorkItem.GetOrCreate (continuation), false);
+#else
+            ThreadPool.UnsafeQueueUserWorkItem (Callback, continuation);
+#endif
         }
+
+#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+
+        internal class ThreadSwitcherWorkItem : IThreadPoolWorkItem
+        {
+            static readonly Action EmptyAction = () => { };
+            static readonly Stack<ThreadSwitcherWorkItem> Cache = new Stack<ThreadSwitcherWorkItem> ();
+
+            public Action Continuation { get; private set; } = EmptyAction;
+
+            public static ThreadSwitcherWorkItem GetOrCreate (Action action)
+            {
+                lock (Cache) {
+                    if (Cache.Count == 0) {
+                        return new ThreadSwitcherWorkItem { Continuation = action };
+                    } else {
+                        var worker = Cache.Pop ();
+                        worker.Continuation = action;
+                        return worker;
+                    }
+                }
+            }
+
+            public void Execute ()
+            {
+                var continuation = Continuation;
+                Continuation = EmptyAction;
+                lock (Cache)
+                    Cache.Push (this);
+                continuation ();
+            }
+        }
+#endif
     }
 }
