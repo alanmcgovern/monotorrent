@@ -40,8 +40,11 @@ namespace MonoTorrent.PieceWriter
     {
         static readonly int DefaultMaxOpenFiles = 196;
 
+        // Don't pass FileOptions.RandomAccess
+        // https://docs.microsoft.com/en-GB/troubleshoot/windows-server/application-management/operating-system-performance-degrades
+        //
         static readonly Func<ITorrentManagerFile, FileAccess, Stream> DefaultStreamCreator =
-            (file, access) => new FileStream (file.FullPath, FileMode.OpenOrCreate, access, FileShare.ReadWrite, 1, FileOptions.RandomAccess);
+            (file, access) => new FileStream (file.FullPath, FileMode.OpenOrCreate, access, FileShare.ReadWrite, 1, FileOptions.None);
 
         SemaphoreSlim Limiter { get; set; }
 
