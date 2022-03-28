@@ -133,18 +133,16 @@ namespace MonoTorrent.Client
             bool disposed = false;
             Timer timer = null!;
 
-            void Callback(object? state)
-            {
-                if (!disposed && !task())
-                {
+            SendOrPostCallback callback = state => {
+                if (!disposed && !task ()) {
                     disposed = true;
-                    timer.Dispose();
+                    timer.Dispose ();
                 }
-            }
+            };
 
             timer = new Timer(state =>
             {
-                Post(Callback, null);
+                Post(callback, null);
             }, null, span, span);
         }
 
