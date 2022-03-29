@@ -87,11 +87,6 @@ namespace MonoTorrent.Client
         internal int MaxHalfOpenConnections => Settings.MaximumHalfOpenConnections;
 
         /// <summary>
-        /// The maximum number of open connections
-        /// </summary>
-        internal int MaxOpenConnections => Settings.MaximumConnections;
-
-        /// <summary>
         /// The number of open connections
         /// </summary>
         public int OpenConnections => openConnections;
@@ -143,7 +138,10 @@ namespace MonoTorrent.Client
 
             PendingConnects.Remove (state);
             manager.Peers.ConnectingToPeers.Remove (peer);
-            if (manager.Disposed || !manager.Mode.CanAcceptConnections) {
+            if (manager.Disposed ||
+                !manager.Mode.CanAcceptConnections ||
+                OpenConnections > Settings.MaximumConnections ||
+                manager.OpenConnections > manager.Settings.MaximumConnections) {
                 manager.Peers.AvailablePeers.Add (peer);
                 connection.Dispose ();
                 return;
@@ -179,7 +177,7 @@ namespace MonoTorrent.Client
         internal async void ProcessNewOutgoingConnection (TorrentManager manager, PeerId id)
         {
             // If we have too many open connections, close the connection
-            if (OpenConnections > MaxOpenConnections) {
+            if (OpenConnections > Settings.MaximumConnections) {
                 CleanupSocket (manager, id);
                 return;
             }
@@ -377,8 +375,8 @@ namespace MonoTorrent.Client
         internal async ReusableTask<bool> IncomingConnectionAcceptedAsync (TorrentManager manager, PeerId id)
         {
             try {
-                bool maxAlreadyOpen = OpenConnections >= Math.Min (MaxOpenConnections, Settings.MaximumConnections)
-                    || OpenConnections >= manager.Settings.MaximumConnections;
+                bool maxAlreadyOpen = OpenConnections >= Settings.MaximumConnections
+                    || manager.OpenConnections >= manager.Settings.MaximumConnections;
 
                 if (LocalPeerId.Equals (id.Peer.PeerId)) {
                     logger.Info ("Connected to self - disconnecting");
@@ -495,7 +493,7 @@ namespace MonoTorrent.Client
         internal void TryConnect ()
         {
             // If we have already reached our max connections globally, don't try to connect to a new peer
-            while (OpenConnections <= MaxOpenConnections && PendingConnects.Count < MaxHalfOpenConnections) {
+            while (OpenConnections <= Settings.MaximumConnections && PendingConnects.Count <= MaxHalfOpenConnections) {
                 Torrents.Sort (ActiveConnectionsComparer);
 
                 bool connected = false;
@@ -521,7 +519,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
-            if (manager.Peers.ConnectedPeers.Count >= Settings.MaximumConnections)
+            if ((manager.Peers.ConnectedPeers.Count + manager.Peers.ConnectingToPeers.Count) >= manager.Settings.MaximumConnections)
                 return false;
 
             // If the torrent isn't active, don't connect to a peer for it
