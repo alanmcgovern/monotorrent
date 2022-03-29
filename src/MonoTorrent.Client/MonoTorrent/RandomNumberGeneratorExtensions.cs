@@ -44,7 +44,7 @@ namespace System
     {
         public static async ReusableTask<int> ReadAsync (this Stream stream, Memory<byte> buffer)
         {
-            using (MemoryPool.Default.RentArraySegment (buffer.Length, out var segment)) {
+            using (MemoryPool.Default.Rent (buffer.Length, out ArraySegment<byte> segment)) {
                 int result = await stream.ReadAsync (segment.Array, segment.Offset, buffer.Length);
                 segment.AsSpan (0, result).CopyTo (buffer.Span);
                 return result;

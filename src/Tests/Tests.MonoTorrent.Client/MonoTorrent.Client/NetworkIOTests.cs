@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
                 await connectTask.WithTimeout ();
 
                 c.Dispose ();
-                using var releaser = MemoryPool.Default.Rent (123, out var buffer);
+                using var releaser = MemoryPool.Default.Rent (123, out Memory<byte> buffer);
                 Assert.AreEqual (0, await c.ReceiveAsync (buffer).WithTimeout ());
             } finally {
                 listener.Stop ();
@@ -118,7 +118,7 @@ namespace MonoTorrent.Client
                 await connectTask.WithTimeout ();
 
                 c.Dispose ();
-                using var releaser = MemoryPool.Default.Rent (123, out var buffer);
+                using var releaser = MemoryPool.Default.Rent (123, out Memory<byte> buffer);
                 Assert.AreEqual (0, await c.SendAsync (buffer).WithTimeout ());
             } finally {
                 listener.Stop ();
@@ -133,8 +133,8 @@ namespace MonoTorrent.Client
             var limiter = new RateLimiter ();
             limiter.UpdateChunks (oneMegabyte, oneMegabyte);
 
-            using var r1 = MemoryPool.Default.Rent (oneMegabyte, out var sendBuffer);
-            using var r2 = MemoryPool.Default.Rent (oneMegabyte, out var receiveBuffer);
+            using var r1 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> sendBuffer);
+            using var r2 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> receiveBuffer);
 
             await Outgoing.SendAsync (sendBuffer);
             await NetworkIO.ReceiveAsync (Incoming, receiveBuffer, limiter, null, null);
@@ -149,8 +149,8 @@ namespace MonoTorrent.Client
             var oneMegabyte = 1 * 1024 * 1024;
             var limiter = new RateLimiterGroup ();
 
-            using var r1 = MemoryPool.Default.Rent (oneMegabyte, out var sendBuffer);
-            using var r2 = MemoryPool.Default.Rent (oneMegabyte, out var receiveBuffer);
+            using var r1 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> sendBuffer);
+            using var r2 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> receiveBuffer);
 
             await Outgoing.SendAsync (sendBuffer);
             await NetworkIO.ReceiveAsync (Incoming, receiveBuffer, limiter, null, null);
@@ -187,8 +187,8 @@ namespace MonoTorrent.Client
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
-            using var r1 = MemoryPool.Default.Rent (16384, out var data);
-            using var r2 = MemoryPool.Default.Rent (16384, out var buffer);
+            using var r1 = MemoryPool.Default.Rent (16384, out Memory<byte> data);
+            using var r2 = MemoryPool.Default.Rent (16384, out Memory<byte> buffer);
             new Random ().NextBytes (data.Span);
 
             int sent = 0;
@@ -239,7 +239,7 @@ namespace MonoTorrent.Client
             var limiter = new RateLimiter ();
             limiter.UpdateChunks (oneMegabyte, oneMegabyte);
 
-            using var releaser = MemoryPool.Default.Rent (oneMegabyte, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> buffer);
             await NetworkIO.SendAsync (Incoming, buffer, limiter, null, null);
 
             var expectedChunks = (int) Math.Ceiling (oneMegabyte / (double) NetworkIO.ChunkLength);
@@ -252,7 +252,7 @@ namespace MonoTorrent.Client
             var oneMegabyte = 1 * 1024 * 1024;
             var limiter = new RateLimiterGroup ();
 
-            using var releaser = MemoryPool.Default.Rent (oneMegabyte, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> buffer);
             await NetworkIO.SendAsync (Incoming, buffer, limiter, null, null);
 
             Assert.AreEqual (1, Incoming.Sends.Count, "#1");
@@ -263,8 +263,8 @@ namespace MonoTorrent.Client
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
-            using var r1 = MemoryPool.Default.Rent (16384, out var sendBuffer);
-            using var r2 = MemoryPool.Default.Rent (16384, out var receiveBuffer);
+            using var r1 = MemoryPool.Default.Rent (16384, out Memory<byte> sendBuffer);
+            using var r2 = MemoryPool.Default.Rent (16384, out Memory<byte> receiveBuffer);
             new Random ().NextBytes (sendBuffer.Span);
             var task = NetworkIO.SendAsync (Outgoing, sendBuffer, null, null, null);
 
@@ -281,7 +281,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ZeroReceivedClosesConnection ()
         {
-            using var releaser = MemoryPool.Default.Rent (100, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (100, out Memory<byte> buffer);
             Incoming.ManualBytesReceived = 0;
             var receiveTask = NetworkIO.ReceiveAsync (Incoming, buffer, null, null, null);
 
@@ -293,7 +293,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ZeroSentClosesConnection ()
         {
-            using var releaser = MemoryPool.Default.Rent (100, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (100, out Memory<byte> buffer);
             Incoming.ManualBytesSent = 0;
             var task = NetworkIO.SendAsync (Incoming, buffer, null, null, null);
 

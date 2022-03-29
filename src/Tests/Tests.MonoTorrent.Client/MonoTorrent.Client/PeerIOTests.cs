@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task LargeMessageBodyLength ()
         {
-            using var releaser = MemoryPool.Default.Rent (4, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (4, out Memory<byte> buffer);
             Message.Write (buffer.Span, int.MaxValue);
 
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task NegativeMessageBodyLength ()
         {
-            using var releaser = MemoryPool.Default.Rent (20, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (20, out Memory<byte> buffer);
             Message.Write (buffer.Span, -6);
 
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task UnknownMessage ()
         {
-            using var releaser = MemoryPool.Default.Rent (20, out var data);
+            using var releaser = MemoryPool.Default.Rent (20, out Memory<byte> data);
             Message.Write (data.Span, 16);
             for (int i = 4; i < 16; i++)
                 data.Span [i] = byte.MaxValue;
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ZeroMessageBodyIsKeepAlive ()
         {
-            using var releaser = MemoryPool.Default.Rent (4, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (4, out Memory<byte> buffer);
 
             Message.Write (buffer.Span, 0);
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
@@ -114,7 +114,8 @@ namespace MonoTorrent.Client
         {
             var blockSize = Constants.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize);
-            msg.SetData (new MemoryPool ().Rent (blockSize));
+            var releaser = new MemoryPool ().Rent (blockSize, out Memory<byte> buffer);
+            msg.SetData ((releaser, buffer));
 
             Assert.DoesNotThrowAsync (() => {
                 return Task.WhenAll (
@@ -129,7 +130,8 @@ namespace MonoTorrent.Client
         {
             var blockSize = Constants.BlockSize - 1234;
             var msg = new PieceMessage (0, 0, blockSize);
-            msg.SetData (new MemoryPool ().Rent (blockSize));
+            var releaser = new MemoryPool ().Rent (blockSize, out Memory<byte> buffer);
+            msg.SetData ((releaser, buffer));
 
             var protocolSize = msg.ByteLength - blockSize;
             await Task.WhenAll (

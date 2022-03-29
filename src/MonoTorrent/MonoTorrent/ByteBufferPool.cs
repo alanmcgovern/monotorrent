@@ -66,6 +66,13 @@ namespace MonoTorrent
             return result;
         }
 
+        protected Releaser Rent (int capacity, out ArraySegment<byte> segment)
+        {
+            var result = Rent (capacity, out ByteBuffer buf);
+            segment = buf.Segment;
+            return result;
+        }
+
         Releaser Rent (int capacity, out ByteBuffer buffer)
         {
             if (capacity <= SmallMessageBufferSize)
@@ -81,7 +88,7 @@ namespace MonoTorrent
                     else
                         MassiveBuffers.Enqueue (buffer);
 
-                buffer = new ByteBuffer (new byte[capacity]);
+                buffer = new ByteBuffer (new ArraySegment<byte> (new byte[capacity]));
                 return new Releaser (MassiveBuffers, buffer);
             }
         }
@@ -100,7 +107,7 @@ namespace MonoTorrent
         {
             var buffer = new byte[count * bufferSize];
             for (int i = 0; i < count; i++)
-                bufferQueue.Enqueue (new ByteBuffer (new Memory<byte> (buffer, i * bufferSize, bufferSize)));
+                bufferQueue.Enqueue (new ByteBuffer (new ArraySegment<byte> (buffer, i * bufferSize, bufferSize)));
         }
     }
 }

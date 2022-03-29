@@ -97,8 +97,10 @@ namespace MonoTorrent.Client
             {
                 Manager = manager;
                 PieceIndex = pieceIndex;
-                if (UseV2)
-                    (BlockHashesReleaser, BlockHashes) = MemoryPool.Default.Rent (Manager.BlocksPerPiece (pieceIndex) * 32);
+                if (UseV2) {
+                    BlockHashesReleaser = MemoryPool.Default.Rent (Manager.BlocksPerPiece (pieceIndex) * 32, out Memory<byte> hashes);
+                    BlockHashes = hashes;
+                }
             }
 
             public void AppendData(ReadOnlyMemory<byte> buffer)

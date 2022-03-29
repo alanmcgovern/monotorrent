@@ -448,7 +448,7 @@ namespace MonoTorrent.Client
 
                     if (socketMemory.IsEmpty || socketMemory.Length < msg.ByteLength) {
                         socketMemoryReleaser.Dispose ();
-                        (socketMemoryReleaser, socketMemory) = NetworkIO.BufferPool.Rent (msg.ByteLength);
+                        socketMemoryReleaser = NetworkIO.BufferPool.Rent (msg.ByteLength, out socketMemory);
                     }
 
                     var buffer = socketMemory.Slice (0, msg.ByteLength);

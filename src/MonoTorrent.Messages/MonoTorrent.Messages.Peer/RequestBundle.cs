@@ -68,7 +68,7 @@ namespace MonoTorrent.Messages.Peer
 
         public void Initialize (Span<BlockInfo> requests)
         {
-            RequestsMemoryReleaser = Pool.Rent (MemoryMarshal.AsBytes (requests).Length, out var memory);
+            RequestsMemoryReleaser = Pool.Rent (MemoryMarshal.AsBytes (requests).Length, out Memory<byte> memory);
             RequestsMemory = memory;
             requests.CopyTo (Requests);
         }

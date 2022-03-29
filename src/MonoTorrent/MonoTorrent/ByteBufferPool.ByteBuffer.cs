@@ -39,15 +39,10 @@ namespace MonoTorrent
             // Used to prevent double-frees
             internal int Counter { get; set; }
 
-            public Memory<byte> Memory { get; private set; }
-            public Span<byte> Span => Memory.Span;
+            public Memory<byte> Memory => Segment.AsMemory ();
+            public Span<byte> Span => Segment.AsSpan ();
 
             public ArraySegment<byte> Segment { get; private set; }
-
-            public ByteBuffer (Memory<byte> memory)
-            {
-                Memory = memory;
-            }
 
             public ByteBuffer (ArraySegment<byte> segment)
             {

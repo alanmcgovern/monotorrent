@@ -113,7 +113,7 @@ namespace MonoTorrent.Messages
         {
             string result;
 #if NETSTANDARD2_0
-            using (MemoryPool.Default.RentArraySegment (length, out var segment)) {
+            using (MemoryPool.Default.Rent (length, out ArraySegment<byte> segment)) {
                 buffer.Slice (0, length).CopyTo (segment.AsSpan ());
                 result = Encoding.ASCII.GetString (segment.Array, segment.Offset, segment.Count);
             }

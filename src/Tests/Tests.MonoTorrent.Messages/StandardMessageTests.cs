@@ -261,14 +261,16 @@ namespace MonoTorrent.Messages.Peer
         public void PieceEncoding ()
         {
             PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize);
-            message.SetData (new MemoryPool ().Rent (Constants.BlockSize));
-            message.Encode (buffer.AsSpan (offset, message.ByteLength));
+            var releaser = new MemoryPool ().Rent (Constants.BlockSize, out Memory<byte> pieceBuffer);
+            message.SetData ((releaser, pieceBuffer));
+            message.Encode (buffer.AsSpan (0, message.ByteLength));
         }
         [Test]
         public void PieceDecoding ()
         {
             PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize);
-            message.SetData (new MemoryPool ().Rent (Constants.BlockSize));
+            var releaser = new MemoryPool ().Rent (Constants.BlockSize, out Memory<byte> buffer);
+            message.SetData ((releaser, buffer));
             EncodeDecode (message);
         }
 
