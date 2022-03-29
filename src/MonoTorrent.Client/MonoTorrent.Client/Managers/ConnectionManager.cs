@@ -256,12 +256,12 @@ namespace MonoTorrent.Client
         {
             await MainLoop.SwitchToThreadpool ();
 
-            SocketMemory currentBuffer = default;
+            Memory<byte> currentBuffer = default;
 
-            SocketMemory smallBuffer = default;
+            Memory<byte> smallBuffer = default;
             ByteBufferPool.Releaser smallReleaser = default;
 
-            SocketMemory largeBuffer = default;
+            Memory<byte> largeBuffer = default;
             ByteBufferPool.Releaser largeReleaser = default;
             try {
                 while (true) {
@@ -440,7 +440,7 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchToThreadpool ();
 
             ByteBufferPool.Releaser socketMemoryReleaser = default;
-            SocketMemory socketMemory = default;
+            Memory<byte> socketMemory = default;
 
             try {
                 while (id.MessageQueue.TryDequeue (out PeerMessage? msg, out PeerMessage.Releaser msgReleaser)) {
@@ -453,7 +453,7 @@ namespace MonoTorrent.Client
 
                     var buffer = socketMemory.Slice (0, msg.ByteLength);
                     if (msg is PieceMessage pm) {
-                        pm.SetData ((default, buffer.Memory.Slice (buffer.Length - pm.RequestLength)));
+                        pm.SetData ((default, buffer.Slice (buffer.Length - pm.RequestLength)));
                         try {
                             var request = new BlockInfo (pm.PieceIndex, pm.StartOffset, pm.RequestLength);
                             await DiskManager.ReadAsync (manager, request, pm.Data).ConfigureAwait (false);

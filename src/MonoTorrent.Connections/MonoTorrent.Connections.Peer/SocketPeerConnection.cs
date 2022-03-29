@@ -41,38 +41,6 @@ namespace MonoTorrent.Connections.Peer
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
-        /// <summary>
-        /// Where possible we will use a SocketAsyncEventArgs object which has already had
-        /// 'SetBuffer(byte[],int,int)' invoked on it for the given byte[]. Reusing these is
-        /// much more efficient than constantly calling SetBuffer on a different 'SocketAsyncEventArgs'
-        /// object.
-        /// </summary>
-        /// <param name="buffer">The buffer we wish to get the reusuable 'SocketAsyncEventArgs' for</param>
-        /// <returns></returns>
-        static SocketAsyncEventArgs GetSocketAsyncEventArgs (SocketMemory buffer)
-        {
-
-#if NETSTANDARD2_0
-            if (buffer.SocketArgs.Buffer == null)
-                buffer.SocketArgs.Completed += Handler;
-
-            if (!MemoryMarshal.TryGetArray (buffer.Memory, out ArraySegment<byte> segment))
-                throw new ArgumentException ("Could not retrieve the underlying buffer");
-
-            if (buffer.SocketArgs.Buffer == null)
-                buffer.SocketArgs.SetBuffer (segment.Array, segment.Offset, segment.Count);
-            else
-                buffer.SocketArgs.SetBuffer (segment.Offset, segment.Count);
-#else
-            if (buffer.SocketArgs.MemoryBuffer.IsEmpty)
-                buffer.SocketArgs.Completed += Handler;
-            buffer.SocketArgs.SetBuffer (buffer.Memory);
-#endif
-            return buffer.SocketArgs;
-        }
-
-#region Member Variables
-
         public byte[] AddressBytes => EndPoint.Address.GetAddressBytes ();
 
         public bool CanReconnect => !IsIncoming;
@@ -95,10 +63,10 @@ namespace MonoTorrent.Connections.Peer
 
         public Uri Uri { get; }
 
-#endregion
+        SocketAsyncEventArgs? ReceiveArgs { get; set; }
+        SocketAsyncEventArgs? SendArgs { get; set; }
 
-
-#region Constructors
+        #region Constructors
 
         public SocketPeerConnection (Socket socket, bool isIncoming)
             : this (null, null, socket, isIncoming)
@@ -138,7 +106,6 @@ namespace MonoTorrent.Connections.Peer
             SocketError error = e.SocketError;
             int transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;
-            e.UserToken = null;
 
             if (error != SocketError.Success)
                 tcs.SetException (new SocketException ((int) error));
@@ -146,10 +113,10 @@ namespace MonoTorrent.Connections.Peer
                 tcs.SetResult (transferred);
         }
 
-#endregion
+        #endregion
 
 
-#region Async Methods
+        #region Async Methods
 
         public async ReusableTask ConnectAsync ()
         {
@@ -163,13 +130,19 @@ namespace MonoTorrent.Connections.Peer
             }
         }
 
-        public ReusableTask<int> ReceiveAsync (SocketMemory buffer)
+        public ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
         {
             if (Socket is null)
                 throw new InvalidOperationException ("The underlying socket is not connected");
 
-            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
-            args.UserToken = ReceiveTcs;
+            if (ReceiveArgs == null) {
+                ReceiveArgs = new SocketAsyncEventArgs ();
+                ReceiveArgs.Completed += Handler;
+                ReceiveArgs .UserToken = ReceiveTcs;
+            }
+            SetBuffer (ReceiveArgs, buffer);
+
+            SocketAsyncEventArgs args = ReceiveArgs;
 
             AsyncFlowControl? control = null;
             if (!ExecutionContext.IsFlowSuppressed ())
@@ -187,13 +160,19 @@ namespace MonoTorrent.Connections.Peer
             return ReceiveTcs.Task;
         }
 
-        public ReusableTask<int> SendAsync (SocketMemory buffer)
+        public ReusableTask<int> SendAsync (Memory<byte> buffer)
         {
             if (Socket is null)
                 throw new InvalidOperationException ("The underlying socket is not connected");
 
-            SocketAsyncEventArgs args = GetSocketAsyncEventArgs (buffer);
-            args.UserToken = SendTcs;
+            if (SendArgs == null) {
+                SendArgs = new SocketAsyncEventArgs ();
+                SendArgs.Completed += Handler;
+                SendArgs.UserToken = SendTcs;
+            }
+            SetBuffer (SendArgs, buffer);
+
+            SocketAsyncEventArgs args = SendArgs;
 
             AsyncFlowControl? control = null;
             if (!ExecutionContext.IsFlowSuppressed ())
@@ -218,6 +197,17 @@ namespace MonoTorrent.Connections.Peer
             Socket?.Dispose ();
         }
 
-#endregion
+        static void SetBuffer (SocketAsyncEventArgs args, Memory<byte> buffer)
+        {
+#if NETSTANDARD2_0
+            if (!MemoryMarshal.TryGetArray (buffer, out ArraySegment<byte> segment))
+                throw new ArgumentException ("Could not retrieve the underlying buffer");
+            args.SetBuffer (segment.Array, segment.Offset, segment.Count);
+#else
+            args.SetBuffer (buffer);
+#endif
+        }
     }
+
+#endregion
 }

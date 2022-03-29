@@ -84,8 +84,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
             int bufferLength = req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                              + 2 + padC.Length + 2 + InitialPayload.Length;
 
-            using (NetworkIO.BufferPool.Rent (bufferLength, out SocketMemory buffer)) {
-                var position = buffer.Memory;
+            using (NetworkIO.BufferPool.Rent (bufferLength, out Memory<byte> buffer)) {
+                var position = buffer;
                 Message.Write (ref position, req1);
                 Message.Write (ref position, req2);
 
@@ -108,17 +108,17 @@ namespace MonoTorrent.Connections.Peer.Encryption
         {
             // The first 4 bytes are the crypto selector. The last 2 bytes are the length of padD.
             int verifyBytesLength = 4 + 2;
-            using (NetworkIO.BufferPool.Rent (verifyBytesLength, out SocketMemory verifyBytes)) {
+            using (NetworkIO.BufferPool.Rent (verifyBytesLength, out Memory<byte> verifyBytes)) {
                 await ReceiveMessageAsync (verifyBytes).ConfigureAwait (false); // crypto_select, len(padD) ...
-                DoDecrypt (verifyBytes.AsSpan ());
+                DoDecrypt (verifyBytes.Span);
 
-                short padDLength = Message.ReadShort (verifyBytes.AsSpan (4));
-                using (NetworkIO.BufferPool.Rent (padDLength, out SocketMemory padD)) {
+                short padDLength = Message.ReadShort (verifyBytes.Span.Slice (4));
+                using (NetworkIO.BufferPool.Rent (padDLength, out Memory<byte> padD)) {
 
                     await ReceiveMessageAsync (padD).ConfigureAwait (false);
-                    DoDecrypt (padD.AsSpan ());
+                    DoDecrypt (padD.Span);
                 }
-                SelectCrypto (verifyBytes.AsSpan (0, 4), true);
+                SelectCrypto (verifyBytes.Span.Slice (0, 4), true);
             }
         }
     }

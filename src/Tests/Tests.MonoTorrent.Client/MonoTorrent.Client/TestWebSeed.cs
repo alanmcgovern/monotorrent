@@ -106,7 +106,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_ReceiveFirst ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (100, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (100, out var buffer);
             var task = connection.ReceiveAsync (buffer).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendFirst ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
+            using var releaser = MemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
             requests.Encode (sendBuffer.Span);
             var task = connection.SendAsync (sendBuffer).AsTask ();
             connection.Dispose ();
@@ -125,8 +125,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendAndReceiveFirst ()
         {
-            using var r1 = SocketMemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
-            using var r2 = SocketMemoryPool.Default.Rent (100000, out var receiveBuffer);
+            using var r1 = MemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
+            using var r2 = MemoryPool.Default.Rent (100000, out var receiveBuffer);
 
             requests.Encode (sendBuffer.Span);
 
@@ -178,8 +178,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ReceiveFirst ()
         {
-            (_, var buffer) = new SocketMemoryPool ().Rent (1024 * 1024 * 3);
-            (_, var sendBuffer) = new SocketMemoryPool ().Rent (requests.ByteLength);
+            (_, var buffer) = new MemoryPool ().Rent (1024 * 1024 * 3);
+            (_, var sendBuffer) = new MemoryPool ().Rent (requests.ByteLength);
             requests.Encode (sendBuffer.Span);
 
             var receiveTask = NetworkIO.ReceiveAsync (connection, buffer.Slice (0, 4), null, null, null);
@@ -193,8 +193,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SendFirst ()
         {
-            using var r1 = SocketMemoryPool.Default.Rent (1024 * 1024 * 3, out var receiveBuffer);
-            using var r2 = SocketMemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
+            using var r1 = MemoryPool.Default.Rent (1024 * 1024 * 3, out var receiveBuffer);
+            using var r2 = MemoryPool.Default.Rent (requests.ByteLength, out var sendBuffer);
 
             requests.Encode (sendBuffer.Span);
 
@@ -214,7 +214,7 @@ namespace MonoTorrent.Client
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.MessageQueue.TryDequeue ();
 
-            using var releaser = SocketMemoryPool.Default.Rent (requests.ByteLength, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (requests.ByteLength, out var buffer);
             requests.Encode (buffer.Span);
             var sendTask = Send (buffer, 1);
 
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
             ChunkedRequest ();
         }
 
-        async Task Send (SocketMemory buffer, int maxBytesPerChunk = -1)
+        async Task Send (Memory<byte> buffer, int maxBytesPerChunk = -1)
         {
             if (maxBytesPerChunk == -1) {
                 await NetworkIO.SendAsync (connection, buffer, null, null, null);
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private async Task CompleteSendOrReceiveFirst (SocketMemory buffer)
+        private async Task CompleteSendOrReceiveFirst (Memory<byte> buffer)
         {
             var allRequests = new List<RequestMessage> ();
             var requestsBuffer = requests.Encode ().AsMemory ();
@@ -282,7 +282,7 @@ namespace MonoTorrent.Client
 
                 await NetworkIO.ReceiveAsync (connection, buffer.Slice (4, size), null, null, null);
 
-                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer.AsSpan (0, size + 4), rig.Manager).message;
+                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer.Span.Slice (0, size + 4), rig.Manager).message;
                 var request = allRequests[0];
                 Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
                 Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");

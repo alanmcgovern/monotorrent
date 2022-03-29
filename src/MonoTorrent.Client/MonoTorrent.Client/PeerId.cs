@@ -59,12 +59,12 @@ namespace MonoTorrent.Client
             throw new NotImplementedException ();
         }
 
-        public ReusableTask<int> ReceiveAsync (SocketMemory buffer)
+        public ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
         {
             throw new NotImplementedException ();
         }
 
-        public ReusableTask<int> SendAsync (SocketMemory buffer)
+        public ReusableTask<int> SendAsync (Memory<byte> buffer)
         {
             throw new NotImplementedException ();
         }

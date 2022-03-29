@@ -64,9 +64,9 @@ namespace MonoTorrent.Connections.Peer.Encryption
         {
             // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
             var length = 20 + VerificationConstant.Length + 4 + 2;
-            using (NetworkIO.BufferPool.Rent (length, out SocketMemory verifyBytes)) {
+            using (NetworkIO.BufferPool.Rent (length, out Memory<byte> verifyBytes)) {
                 await ReceiveMessageAsync (verifyBytes).ConfigureAwait (false);
-                await GotVerification (verifyBytes.Memory).ConfigureAwait (false);
+                await GotVerification (verifyBytes).ConfigureAwait (false);
             }
         }
 
@@ -93,16 +93,16 @@ namespace MonoTorrent.Connections.Peer.Encryption
             // encryption will be used on the response
             int lenInitialPayload;
             int lenPadC = Message.ReadShort (padCSpan.Span) + 2;
-            using (NetworkIO.BufferPool.Rent (lenPadC, out SocketMemory padC)) {
+            using (NetworkIO.BufferPool.Rent (lenPadC, out Memory<byte> padC)) {
                 await ReceiveMessageAsync (padC).ConfigureAwait (false); // padC
-                DoDecrypt (padC.AsSpan ());
-                lenInitialPayload = Message.ReadShort (padC.AsSpan (lenPadC - 2, 2));
+                DoDecrypt (padC.Span);
+                lenInitialPayload = Message.ReadShort (padC.Span.Slice (lenPadC - 2, 2));
             }
 
             InitialData = new byte[lenInitialPayload]; // ... ENCRYPT(IA)
-            using (NetworkIO.BufferPool.Rent (InitialData.Length, out SocketMemory receiveBuffer)) {
+            using (NetworkIO.BufferPool.Rent (InitialData.Length, out Memory<byte> receiveBuffer)) {
                 await ReceiveMessageAsync (receiveBuffer).ConfigureAwait (false);
-                receiveBuffer.Memory.CopyTo (InitialData);
+                receiveBuffer.CopyTo (InitialData);
                 DoDecrypt (InitialData); // ... ENCRYPT(IA)
             }
 
@@ -112,8 +112,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
             // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
             int finalBufferLength = VerificationConstant.Length + CryptoSelect!.Length + 2 + padD.Length;
-            using (NetworkIO.BufferPool.Rent (finalBufferLength, out SocketMemory buffer)) {
-                var position = buffer.Memory;
+            using (NetworkIO.BufferPool.Rent (finalBufferLength, out Memory<byte> buffer)) {
+                var position = buffer;
                 Message.Write (ref position, VerificationConstant);
                 Message.Write (ref position, CryptoSelect);
                 Message.Write (ref position, (short) padD.Length);

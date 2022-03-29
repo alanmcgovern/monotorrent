@@ -121,7 +121,7 @@ namespace MonoTorrent.Connections.Peer
             return ReusableTask.CompletedTask;
         }
 
-        public async ReusableTask<int> ReceiveAsync (SocketMemory socketBuffer)
+        public async ReusableTask<int> ReceiveAsync (Memory<byte> socketBuffer)
         {
             // This is a little tricky, so let's spell it out in comments...
             if (Disposed)
@@ -146,7 +146,7 @@ namespace MonoTorrent.Connections.Peer
                 // The message length counts as the first four bytes
                 CurrentRequest.SentLength = true;
                 CurrentRequest.TotalReceived += 4;
-                Message.Write (socketBuffer.AsSpan (), CurrentRequest.TotalToReceive - CurrentRequest.TotalReceived);
+                Message.Write (socketBuffer.Span, CurrentRequest.TotalToReceive - CurrentRequest.TotalReceived);
                 return 4;
             }
 
@@ -157,13 +157,13 @@ namespace MonoTorrent.Connections.Peer
 
                 // We have *only* written the messageLength to the stream
                 // Now we need to write the rest of the PieceMessage header
-                Message.Write (socketBuffer.AsSpan (written, 1), PieceMessage.MessageId);
+                Message.Write (socketBuffer.Span.Slice (written, 1), PieceMessage.MessageId);
                 written++;
 
-                Message.Write (socketBuffer.AsSpan (written, 4), CurrentRequest.BlockInfo.PieceIndex);
+                Message.Write (socketBuffer.Span.Slice (written, 4), CurrentRequest.BlockInfo.PieceIndex);
                 written += 4;
 
-                Message.Write (socketBuffer.AsSpan (written, 4), CurrentRequest.BlockInfo.StartOffset);
+                Message.Write (socketBuffer.Span.Slice (written, 4), CurrentRequest.BlockInfo.StartOffset);
                 written += 4;
 
                 socketBuffer = socketBuffer.Slice (written);
@@ -174,7 +174,7 @@ namespace MonoTorrent.Connections.Peer
             // If we have already connected to the server then DataStream will be non-null and we can just read the next bunch
             // of data from it.
             if (DataStream != null) {
-                int result = await DataStream.ReadAsync (socketBuffer.Memory);
+                int result = await DataStream.ReadAsync (socketBuffer);
                 socketBuffer = socketBuffer.Slice (result);
 
                 DataStreamCount -= result;
@@ -237,11 +237,11 @@ namespace MonoTorrent.Connections.Peer
             throw new WebException ("Unable to download the required data from the server");
         }
 
-        public async ReusableTask<int> SendAsync (SocketMemory socketBuffer)
+        public async ReusableTask<int> SendAsync (Memory<byte> socketBuffer)
         {
             SendResult = new TaskCompletionSource<object?> ();
 
-            List<BlockInfo> bundle = DecodeMessages (socketBuffer.Memory.Span);
+            List<BlockInfo> bundle = DecodeMessages (socketBuffer.Span);
             if (bundle.Count > 0) {
                 RequestMessages.AddRange (bundle);
                 // The RequestMessages are always sequential

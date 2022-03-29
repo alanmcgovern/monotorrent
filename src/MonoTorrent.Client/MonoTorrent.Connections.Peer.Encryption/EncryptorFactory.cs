@@ -76,9 +76,9 @@ namespace MonoTorrent.Connections.Peer.Encryption
             // If the connection is incoming, receive the handshake before
             // trying to decide what encryption to use
 
-            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out SocketMemory buffer)) {
+            using (NetworkIO.BufferPool.Rent (HandshakeMessage.HandshakeLength, out Memory<byte> buffer)) {
                 await NetworkIO.ReceiveAsync (connection, buffer, null, null, null).ConfigureAwait (false);
-                var message = new HandshakeMessage (buffer.AsSpan ());
+                var message = new HandshakeMessage (buffer.Span);
 
                 if (message.ProtocolString == Constants.ProtocolStringV100) {
                     if (supportsPlainText)
@@ -89,7 +89,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                     await MainLoop.SwitchToThreadpool ();
 
                     using var encSocket = new PeerBEncryption (factories, sKeys, preferredEncryption);
-                    await encSocket.HandshakeAsync (connection, buffer.Memory).ConfigureAwait (false);
+                    await encSocket.HandshakeAsync (connection, buffer).ConfigureAwait (false);
                     if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                         throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");
                     if (encSocket.Decryptor is RC4 && !supportsRC4Full)
@@ -101,8 +101,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
                     Memory<byte> data = encSocket.InitialData?.Length > 0 ? encSocket.InitialData : default;
                     if (data.IsEmpty) {
                         await NetworkIO.ReceiveAsync (connection, buffer, null, null, null).ConfigureAwait (false);
-                        encSocket.Decryptor!.Decrypt (buffer.AsSpan ());
-                        data = buffer.Memory;
+                        encSocket.Decryptor!.Decrypt (buffer.Span);
+                        data = buffer;
                     }
                     message.Decode (data.Span);
                     if (message.ProtocolString == Constants.ProtocolStringV100)
@@ -144,7 +144,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             } else if (supportsPlainText) {
                 if (handshake != null) {
                     int length = handshake.ByteLength;
-                    using (NetworkIO.BufferPool.Rent (length, out SocketMemory buffer)) {
+                    using (NetworkIO.BufferPool.Rent (length, out Memory<byte> buffer)) {
                         handshake.Encode (buffer.Span);
                         await NetworkIO.SendAsync (connection, buffer, null, null, null).ConfigureAwait (false);
                     }

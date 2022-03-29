@@ -33,15 +33,13 @@ namespace MonoTorrent
 {
     public partial class MemoryPool : ByteBufferPool
     {
-        public static MemoryPool Default = new MemoryPool ();
+        public static readonly MemoryPool Default = new MemoryPool ();
 
         List<ByteBuffer> ArraySegments { get; }
 
         public MemoryPool ()
-            : base (false)
         {
             ArraySegments = new List<ByteBuffer> ();
-
         }
 
 

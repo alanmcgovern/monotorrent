@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task LargeMessageBodyLength ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (4, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (4, out var buffer);
             Message.Write (buffer.Span, int.MaxValue);
 
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task NegativeMessageBodyLength ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (20, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (20, out var buffer);
             Message.Write (buffer.Span, -6);
 
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task UnknownMessage ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (20, out var data);
+            using var releaser = MemoryPool.Default.Rent (20, out var data);
             Message.Write (data.Span, 16);
             for (int i = 4; i < 16; i++)
                 data.Span [i] = byte.MaxValue;
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ZeroMessageBodyIsKeepAlive ()
         {
-            using var releaser = SocketMemoryPool.Default.Rent (4, out var buffer);
+            using var releaser = MemoryPool.Default.Rent (4, out var buffer);
 
             Message.Write (buffer.Span, 0);
             await NetworkIO.SendAsync (pair.Outgoing, buffer);

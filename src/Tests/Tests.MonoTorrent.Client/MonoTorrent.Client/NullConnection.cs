@@ -65,12 +65,12 @@ namespace MonoTorrent.Client
         {
         }
 
-        public ReusableTask<int> ReceiveAsync (SocketMemory buffer)
+        public ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
         }
 
-        public ReusableTask<int> SendAsync (SocketMemory buffer)
+        public ReusableTask<int> SendAsync (Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
         }

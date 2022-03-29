@@ -39,19 +39,14 @@ namespace MonoTorrent
             // Used to prevent double-frees
             internal int Counter { get; set; }
 
-            readonly SocketMemory socketMemory;
-
             public Memory<byte> Memory { get; private set; }
-            public SocketMemory SocketMemory => socketMemory.IsEmpty ? throw new InvalidOperationException ("SocketMemory can only be used if the ByteBuffer has a socketAsyncArgs") : socketMemory;
             public Span<byte> Span => Memory.Span;
 
             public ArraySegment<byte> Segment { get; private set; }
 
-            public ByteBuffer (Memory<byte> memory, bool createSocketAsyncArgs)
+            public ByteBuffer (Memory<byte> memory)
             {
                 Memory = memory;
-                if (createSocketAsyncArgs)
-                    socketMemory = new SocketMemory (Memory, new SocketAsyncEventArgs ());
             }
 
             public ByteBuffer (ArraySegment<byte> segment)

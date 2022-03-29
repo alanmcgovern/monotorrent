@@ -207,22 +207,22 @@ namespace MonoTorrent.Client
             Disposed = true;
         }
 
-        public async ReusableTask<int> ReceiveAsync (SocketMemory buffer)
+        public async ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
         {
             if (SlowConnection)
                 buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            var result = await ReadStream.ReadAsync(buffer.Memory);
+            var result = await ReadStream.ReadAsync(buffer);
             Receives.Add (result);
             return ManualBytesReceived ?? result;
         }
 
-        public async ReusableTask<int> SendAsync (SocketMemory buffer)
+        public async ReusableTask<int> SendAsync (Memory<byte> buffer)
         {
             if (SlowConnection)
                 buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            var data = buffer.Memory.ToArray ();
+            var data = buffer.ToArray ();
             await WriteStream.WriteAsync (data, 0, data.Length, CancellationToken.None);
             Sends.Add (buffer.Length);
             return ManualBytesSent ?? buffer.Length;

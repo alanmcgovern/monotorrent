@@ -45,15 +45,11 @@ namespace MonoTorrent
         Queue<ByteBuffer> SmallMessageBuffers { get; }
 
 
-        bool CreateSocketAsyncArgs { get; }
-
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
-        protected ByteBufferPool (bool createSocketAsyncArgs)
+        protected ByteBufferPool ()
         {
-            CreateSocketAsyncArgs = createSocketAsyncArgs;
-
             LargeMessageBuffers = new Queue<ByteBuffer> ();
             MassiveBuffers = new Queue<ByteBuffer> ();
             SmallMessageBuffers = new Queue<ByteBuffer> ();
@@ -61,13 +57,6 @@ namespace MonoTorrent
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
             AllocateBuffers (AllocateDelta * 4, LargeMessageBuffers, LargeMessageBufferSize);
             AllocateBuffers (AllocateDelta * 4, SmallMessageBuffers, SmallMessageBufferSize);
-        }
-
-        protected Releaser Rent (int capacity, out SocketMemory buffer)
-        {
-            var result = Rent (capacity, out ByteBuffer buf);
-            buffer = buf.SocketMemory;
-            return result;
         }
 
         protected Releaser Rent (int capacity, out Memory<byte> buffer)
@@ -92,7 +81,7 @@ namespace MonoTorrent
                     else
                         MassiveBuffers.Enqueue (buffer);
 
-                buffer = new ByteBuffer (new Memory<byte> (new byte[capacity]), CreateSocketAsyncArgs);
+                buffer = new ByteBuffer (new byte[capacity]);
                 return new Releaser (MassiveBuffers, buffer);
             }
         }
@@ -111,7 +100,7 @@ namespace MonoTorrent
         {
             var buffer = new byte[count * bufferSize];
             for (int i = 0; i < count; i++)
-                bufferQueue.Enqueue (new ByteBuffer (new Memory<byte> (buffer, i * bufferSize, bufferSize), CreateSocketAsyncArgs));
+                bufferQueue.Enqueue (new ByteBuffer (new Memory<byte> (buffer, i * bufferSize, bufferSize)));
         }
     }
 }

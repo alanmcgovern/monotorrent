@@ -95,7 +95,8 @@ namespace MonoTorrent
                 (var handler, var sender, var args) = (Handler, Sender, EventArgs);
                 (Handler, Sender, EventArgs) = (null, null, null);
                 lock (Cache)
-                    Cache.Push (this);
+                    if (Cache.Count < 50)
+                        Cache.Push (this);
                 handler! (sender, args!);
             }
         }
