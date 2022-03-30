@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
             // Allow 1 megabyte worth of data
             var oneMegabyte = 1 * 1024 * 1024;
             var limiter = new RateLimiter ();
-            limiter.UpdateChunks (oneMegabyte, oneMegabyte);
+            limiter.UpdateChunks (oneMegabyte, oneMegabyte, NetworkIO.ChunkLength);
 
             using var r1 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> sendBuffer);
             using var r2 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> receiveBuffer);
@@ -237,7 +237,7 @@ namespace MonoTorrent.Client
             // Allow 1 megabyte worth of data
             var oneMegabyte = 1 * 1024 * 1024;
             var limiter = new RateLimiter ();
-            limiter.UpdateChunks (oneMegabyte, oneMegabyte);
+            limiter.UpdateChunks (oneMegabyte, oneMegabyte, NetworkIO.ChunkLength);
 
             using var releaser = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> buffer);
             await NetworkIO.SendAsync (Incoming, buffer, limiter, null, null);

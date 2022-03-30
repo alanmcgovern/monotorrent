@@ -36,15 +36,18 @@ namespace MonoTorrent.Client.RateLimiters
         long savedError;
         long chunks;
 
+        public int? PreferredChunkSize { get; private set; }
+
         public bool Unlimited { get; set; }
 
         public RateLimiter ()
         {
-            UpdateChunks (0, 0);
+            UpdateChunks (0, 0, null);
         }
 
-        public void UpdateChunks (long maxRate, long actualRate)
+        public void UpdateChunks (long maxRate, long actualRate, int? preferredChunkSize)
         {
+            PreferredChunkSize = preferredChunkSize;
             Unlimited = maxRate == 0;
             if (Unlimited)
                 return;

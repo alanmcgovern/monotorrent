@@ -37,6 +37,8 @@ namespace MonoTorrent.Client.RateLimiters
         {
         }
 
+        public int? PreferredChunkSize => null;
+
         public bool Unlimited => true;
 
         public bool TryProcess (long amount)

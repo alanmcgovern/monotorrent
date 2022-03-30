@@ -33,6 +33,8 @@ namespace MonoTorrent.Client.RateLimiters
     {
         readonly TorrentManager manager;
 
+        public int? PreferredChunkSize => null;
+
         public bool Unlimited => manager.State != TorrentState.Paused;
 
         public PauseLimiter (TorrentManager manager)

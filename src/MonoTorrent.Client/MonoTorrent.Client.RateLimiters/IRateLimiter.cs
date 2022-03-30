@@ -31,7 +31,25 @@ namespace MonoTorrent.Client.RateLimiters
 {
     interface IRateLimiter
     {
+        /// <summary>
+        /// When this returns <see langword="null"/> there is no preference on
+        /// how large each chunk of work should be. Otherwise, work should be processed
+        /// in chunks of this size.
+        /// </summary>
+        int? PreferredChunkSize { get; }
+
+        /// <summary>
+        /// Returns true if there is sufficient capacity left in the rate limiter to
+        /// process the specified amount of data. Also returns true if
+        /// <see cref="Unlimited"/> returns true.
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <returns></returns>
         bool TryProcess (long amount);
+
+        /// <summary>
+        /// Returns true when the rate limiter is not actively enforcing a limit.
+        /// </summary>
         bool Unlimited { get; }
     }
 }
