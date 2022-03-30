@@ -495,7 +495,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return (!(obj is TorrentManager m)) ? false : Equals (m);
         }
@@ -506,7 +506,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals (TorrentManager other)
+        public bool Equals (TorrentManager? other)
             => other != null && other.InfoHashes == InfoHashes;
 
         /// <summary>
@@ -965,8 +965,10 @@ namespace MonoTorrent.Client
 
         internal void UpdateLimiters ()
         {
-            DownloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, Monitor.ReceiveRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumDownloadSpeed, Settings.MaximumDownloadSpeed));
-            UploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, Monitor.SendRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumUploadSpeed, Settings.MaximumUploadSpeed));
+            if (Engine != null) {
+                DownloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, Monitor.ReceiveRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumDownloadSpeed, Settings.MaximumDownloadSpeed));
+                UploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, Monitor.SendRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumUploadSpeed, Settings.MaximumUploadSpeed));
+            }
         }
         #endregion Internal Methods
 
@@ -1048,7 +1050,7 @@ namespace MonoTorrent.Client
 
             await MainLoop.SwitchToThreadpool ();
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);
-            var parentDirectory = Path.GetDirectoryName (fastResumePath);
+            var parentDirectory = Path.GetDirectoryName (fastResumePath)!;
             Directory.CreateDirectory (parentDirectory);
             File.WriteAllBytes (fastResumePath, fastResumeData);
         }
@@ -1066,7 +1068,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async void HandleTrackerAnnounceComplete (object o, AnnounceResponseEventArgs e)
+        async void HandleTrackerAnnounceComplete (object? o, AnnounceResponseEventArgs e)
         {
             if (e.Successful) {
                 await ClientEngine.MainLoop;

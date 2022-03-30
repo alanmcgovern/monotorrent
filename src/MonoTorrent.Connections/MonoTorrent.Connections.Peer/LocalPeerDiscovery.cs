@@ -157,9 +157,9 @@ namespace MonoTorrent.Connections.Peer
                     string[] receiveString = Encoding.ASCII.GetString (result.Buffer)
                         .Split (new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-                    string portString = receiveString.FirstOrDefault (t => t.StartsWith ("Port: ", StringComparison.Ordinal));
-                    string hashString = receiveString.FirstOrDefault (t => t.StartsWith ("Infohash: ", StringComparison.Ordinal));
-                    string cookieString = receiveString.FirstOrDefault (t => t.StartsWith ("cookie", StringComparison.Ordinal));
+                    string? portString = receiveString.FirstOrDefault (t => t.StartsWith ("Port: ", StringComparison.Ordinal));
+                    string? hashString = receiveString.FirstOrDefault (t => t.StartsWith ("Infohash: ", StringComparison.Ordinal));
+                    string? cookieString = receiveString.FirstOrDefault (t => t.StartsWith ("cookie", StringComparison.Ordinal));
 
                     // An invalid response was received if these are missing.
                     if (portString == null || hashString == null)
@@ -191,7 +191,7 @@ namespace MonoTorrent.Connections.Peer
             base.Start (token);
 
             var UdpClient = new UdpClient (OriginalEndPoint);
-            LocalEndPoint = (IPEndPoint) UdpClient.Client.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint?) UdpClient.Client.LocalEndPoint;
 
             token.Register (() => UdpClient.Dispose ());
 

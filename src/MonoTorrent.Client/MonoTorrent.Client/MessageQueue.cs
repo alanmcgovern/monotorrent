@@ -55,11 +55,7 @@ namespace MonoTorrent.Client
             }
         }
 
-#if NETSTANDARD2_0
-        internal bool TryDequeue (out PeerMessage? message, out PeerMessage.Releaser releaser)
-#else
         internal bool TryDequeue ([NotNullWhen (true)] out PeerMessage? message, out PeerMessage.Releaser releaser)
-#endif
         {
             lock (SendQueue) {
                 if (!Ready)

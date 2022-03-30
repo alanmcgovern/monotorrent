@@ -83,7 +83,7 @@ namespace MonoTorrent.Connections.Peer
         SocketPeerConnection (Uri? uri, ISocketConnector? connector, Socket? socket, bool isIncoming)
         {
             if (uri == null) {
-                var endpoint = (IPEndPoint) socket!.RemoteEndPoint;
+                var endpoint = (IPEndPoint) socket!.RemoteEndPoint!;
                 uri = new Uri ($"{(socket.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6") }://{endpoint.Address}{':'}{endpoint.Port}");
             }
 
@@ -98,11 +98,11 @@ namespace MonoTorrent.Connections.Peer
             SendTcs = new ReusableTaskCompletionSource<int> ();
         }
 
-        static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
+        static void HandleOperationCompleted (object? sender, SocketAsyncEventArgs e)
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken;
+            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken!;
             SocketError error = e.SocketError;
             int transferred = e.BytesTransferred;
             e.RemoteEndPoint = null;

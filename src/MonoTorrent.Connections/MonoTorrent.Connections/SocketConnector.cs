@@ -41,7 +41,7 @@ namespace MonoTorrent.Connections
     {
         static readonly Queue<SocketAsyncEventArgs> cache = new Queue<SocketAsyncEventArgs> ();
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
-        static readonly Action<object> SocketDisposer = (state) => ((Socket) state).Dispose ();
+        static readonly Action<object?> SocketDisposer = (state) => ((Socket) state!).Dispose ();
 
         static SocketAsyncEventArgs GetSocketAsyncEventArgs ()
         {
@@ -57,11 +57,11 @@ namespace MonoTorrent.Connections
             return args;
         }
 
-        static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
+        static void HandleOperationCompleted (object? sender, SocketAsyncEventArgs e)
         {
             // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
             // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken;
+            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken!;
             SocketError error = e.SocketError;
 
             if (error != SocketError.Success)

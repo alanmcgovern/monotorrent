@@ -67,7 +67,7 @@ namespace MonoTorrent.PieceWriter
             public CachedBlock SetFlushing ()
                 => new CachedBlock (Block, BufferReleaser, Buffer, true);
 
-            public override bool Equals (object obj)
+            public override bool Equals (object? obj)
                 => obj is CachedBlock block && Equals (block);
 
             public bool Equals (CachedBlock other)
@@ -142,7 +142,7 @@ namespace MonoTorrent.PieceWriter
             if (torrent == null)
                 throw new ArgumentNullException (nameof (torrent));
 
-            if (CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks)) {
+            if (CachedBlocks.TryGetValue (torrent, out List<CachedBlock>? blocks)) {
                 for (int i = 0; i < blocks.Count; i++) {
                     var cached = blocks[i];
                     if (cached.Block != block)
@@ -189,7 +189,7 @@ namespace MonoTorrent.PieceWriter
             if (preferSkipCache || Capacity < block.RequestLength) {
                 await WriteToFilesAsync (torrent, block, buffer);
             } else {
-                if (!CachedBlocks.TryGetValue (torrent, out List<CachedBlock> blocks))
+                if (!CachedBlocks.TryGetValue (torrent, out List<CachedBlock>? blocks))
                     CachedBlocks[torrent] = blocks = new List<CachedBlock> ();
 
                 if (CacheUsed > (Capacity - block.RequestLength)) {

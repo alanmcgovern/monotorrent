@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MonoTorrent
 {
@@ -46,10 +47,10 @@ namespace MonoTorrent
             return releaser;
         }
 
-        public new Releaser Rent (int capacity, out ArraySegment<byte> segment)
+        public new Releaser Rent (int capacity, [NotNullWhen(true)] out ArraySegment<byte> segment)
         {
             var releaser = base.Rent (capacity, out segment);
-            segment = new ArraySegment<byte> (segment.Array, segment.Offset, capacity);
+            segment = new ArraySegment<byte> (segment.Array!, segment.Offset, capacity);
             return releaser;
         }
     }

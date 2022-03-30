@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
             while (buffer.Length > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited || !rateLimiter.PreferredChunkSize.HasValue ? buffer.Length : Math.Min (rateLimiter.PreferredChunkSize.Value, buffer.Length);
+                int shouldRead = unlimited || !rateLimiter!.PreferredChunkSize.HasValue ? buffer.Length : Math.Min (rateLimiter.PreferredChunkSize.Value, buffer.Length);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
             while (buffer.Length > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited || !rateLimiter.PreferredChunkSize.HasValue ? buffer.Length : Math.Min (rateLimiter.PreferredChunkSize.Value, buffer.Length);
+                int shouldRead = unlimited || !rateLimiter!.PreferredChunkSize.HasValue ? buffer.Length : Math.Min (rateLimiter.PreferredChunkSize.Value, buffer.Length);
 
                 if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();

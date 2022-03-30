@@ -1,10 +1,10 @@
-//
-// HaveAllMessage.cs
+﻿//
+// NullabilityAttributes.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,44 +28,33 @@
 
 
 using System;
+using System.Diagnostics;
 
-namespace MonoTorrent.Messages.Peer.FastPeer
+#if NETSTANDARD2_0
+namespace MonoTorrent
 {
-    public class HaveAllMessage : PeerMessage, IFastPeerMessage
+    [AttributeUsage (AttributeTargets.Parameter, Inherited = false)]
+    sealed class MaybeNullWhenAttribute : Attribute
     {
-        public static HaveAllMessage Instance { get; } = new HaveAllMessage ();
-
-        internal static readonly byte MessageId = 0x0E;
-        readonly int messageLength = 1;
-
-        public override int ByteLength => messageLength + 4;
-
-        public HaveAllMessage ()
+        public MaybeNullWhenAttribute(bool returnValue)
         {
 
         }
+    }
 
-        public override void Decode (ReadOnlySpan<byte> buffer)
+    [AttributeUsage (AttributeTargets.Parameter, Inherited = false)]
+    sealed class NotNullWhenAttribute : Attribute
+    {
+        public NotNullWhenAttribute (bool returnValue)
         {
+
         }
+    }
 
-        public override int Encode (Span<byte> buffer)
-        {
-            int written = buffer.Length;
-
-            Write (ref buffer, messageLength);
-            Write (ref buffer, MessageId);
-
-            return written - buffer.Length;
-        }
-
-        public override bool Equals (object? obj)
-            => obj is HaveAllMessage;
-
-        public override int GetHashCode ()
-            => MessageId;
-
-        public override string ToString ()
-            => "HaveAllMessage";
+    [AttributeUsage (AttributeTargets.Parameter | AttributeTargets.Property | AttributeTargets.ReturnValue, AllowMultiple = true, Inherited = false)]
+    internal sealed class NotNullIfNotNullAttribute : Attribute
+    {
+        public NotNullIfNotNullAttribute (string parameterName) { }
     }
 }
+#endif

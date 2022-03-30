@@ -42,11 +42,7 @@ namespace MonoTorrent.BEncoding
     {
         public static readonly BEncodedString Empty = new BEncodedString (ReadOnlyMemory<byte>.Empty);
 
-        public static bool IsNullOrEmpty (
-#if !NETSTANDARD2_0
-            [NotNullWhen (false)]
-#endif
-        BEncodedString? value)
+        public static bool IsNullOrEmpty ([NotNullWhen (false)] BEncodedString? value)
             => value is null || value.Span.IsEmpty;
 
         public static BEncodedString FromMemory (ReadOnlyMemory<byte> buffer)
@@ -61,21 +57,15 @@ namespace MonoTorrent.BEncoding
             return new BEncodedString (new ReadOnlyMemory<byte> (HttpUtility.UrlDecodeToBytes (urlEncodedValue, Encoding.UTF8)));
         }
 
-#if !NETSTANDARD2_0
         [return: NotNullIfNotNull ("value")]
-#endif
         public static implicit operator BEncodedString? (string? value)
             => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
-#if !NETSTANDARD2_0
         [return: NotNullIfNotNull ("value")]
-#endif
         public static implicit operator BEncodedString? (char[]? value)
             => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
-#if !NETSTANDARD2_0
         [return: NotNullIfNotNull ("value")]
-#endif
         public static implicit operator BEncodedString? (byte[]? value)
             => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 

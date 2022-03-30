@@ -153,11 +153,7 @@ namespace MonoTorrent
         /// <param name="path">The path to load the .torrent file from</param>
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
         /// <returns>True if successful</returns>
-#if NETSTANDARD2_0
-        public static bool TryLoad (string path, out Torrent? torrent)
-#else
         public static bool TryLoad (string path, [NotNullWhen (true)] out Torrent? torrent)
-#endif
         {
             if (string.IsNullOrEmpty (path))
                 throw new ArgumentNullException ("Value must not be null or empty", nameof (path));
@@ -181,11 +177,7 @@ namespace MonoTorrent
         /// <param name="span">The Span to load the .torrent from</param>
         /// <param name="torrent">If loading was successful, it contains the Torrent</param>
         /// <returns>True if successful</returns>
-#if NETSTANDARD2_0
-        public static bool TryLoad (ReadOnlySpan<byte> span, out Torrent? torrent)
-#else
         public static bool TryLoad (ReadOnlySpan<byte> span, [NotNullWhen (true)] out Torrent? torrent)
-#endif
         {
             try {
                 torrent = Load (span);
@@ -203,11 +195,7 @@ namespace MonoTorrent
         /// <param name="stream">The stream containing the data to load</param>
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
         /// <returns>True if successful</returns>
-#if NETSTANDARD2_0
-        public static bool TryLoad (Stream stream, out Torrent? torrent)
-#else
         public static bool TryLoad (Stream stream, [NotNullWhen (true)] out Torrent? torrent)
-#endif
         {
             if (stream is null)
                 throw new ArgumentNullException (nameof (stream));
@@ -369,11 +357,11 @@ namespace MonoTorrent
         void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1? hashesV1)
         {
             InfoMetadata = dictionary.Encode ();
-            PieceLength = int.Parse (dictionary["piece length"].ToString ());
+            PieceLength = int.Parse (dictionary["piece length"].ToString ()!);
             bool hasV1Data = false;
             bool hasV2Data = false;
 
-            if (dictionary.TryGetValue ("meta version", out BEncodedValue metaVersion)) {
+            if (dictionary.TryGetValue ("meta version", out BEncodedValue? metaVersion)) {
                 if (metaVersion is BEncodedNumber metadataVersion) {
                     hasV2Data = metadataVersion.Number == 2;
                 }
@@ -404,7 +392,7 @@ namespace MonoTorrent
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
                     case ("source"):
-                        Source = keypair.Value.ToString ();
+                        Source = keypair.Value.ToString ()!;
                         break;
 
                     case ("sha1"):
@@ -416,23 +404,23 @@ namespace MonoTorrent
                         break;
 
                     case ("publisher-url.utf-8"):
-                        if (keypair.Value.ToString ().Length > 0)
-                            PublisherUrl = keypair.Value.ToString ();
+                        if (keypair.Value.ToString ()!.Length > 0)
+                            PublisherUrl = keypair.Value.ToString ()!;
                         break;
 
                     case ("publisher-url"):
-                        if ((string.IsNullOrEmpty (PublisherUrl)) && (keypair.Value.ToString ().Length > 0))
-                            PublisherUrl = keypair.Value.ToString ();
+                        if ((string.IsNullOrEmpty (PublisherUrl)) && (keypair.Value.ToString ()!.Length > 0))
+                            PublisherUrl = keypair.Value.ToString ()!;
                         break;
 
                     case ("publisher.utf-8"):
-                        if (keypair.Value.ToString ().Length > 0)
-                            Publisher = keypair.Value.ToString ();
+                        if (keypair.Value.ToString ()!.Length > 0)
+                            Publisher = keypair.Value.ToString ()!;
                         break;
 
                     case ("publisher"):
-                        if ((string.IsNullOrEmpty (Publisher)) && (keypair.Value.ToString ().Length > 0))
-                            Publisher = keypair.Value.ToString ();
+                        if ((string.IsNullOrEmpty (Publisher)) && (keypair.Value.ToString ()!.Length > 0))
+                            Publisher = keypair.Value.ToString ()!;
                         break;
 
                     case ("files"):
@@ -447,13 +435,13 @@ namespace MonoTorrent
                         Files = LoadTorrentFilesV2 ((BEncodedDictionary) dictionary["file tree"], PieceLength);
                         break;
                     case ("name.utf-8"):
-                        if (keypair.Value.ToString ().Length > 0)
-                            Name = keypair.Value.ToString ();
+                        if (keypair.Value.ToString ()!.Length > 0)
+                            Name = keypair.Value.ToString ()!;
                         break;
 
                     case ("name"):
-                        if ((string.IsNullOrEmpty (Name)) && (keypair.Value.ToString ().Length > 0))
-                            Name = keypair.Value.ToString ();
+                        if ((string.IsNullOrEmpty (Name)) && (keypair.Value.ToString ()!.Length > 0))
+                            Name = keypair.Value.ToString ()!;
                         break;
 
                     case ("piece length"):  // Already handled
@@ -476,7 +464,7 @@ namespace MonoTorrent
 
             if (Files.Count == 0 && hasV1Data)   // Not a multi-file torrent
             {
-                long length = long.Parse (dictionary["length"].ToString ());
+                long length = long.Parse (dictionary["length"].ToString ()!);
                 Size = length;
                 string path = Name;
                 int endPiece = Math.Min (hashesV1!.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
@@ -498,17 +486,17 @@ namespace MonoTorrent
                         if (torrentInformation.ContainsKey ("announce-list"))
                             break;
                         AnnounceUrls = new List<IList<string>> {
-                            new List<string> { keypair.Value.ToString () }.AsReadOnly ()
+                            new List<string> { keypair.Value.ToString ()! }.AsReadOnly ()
                         }.AsReadOnly ();
                         break;
 
                     case ("creation date"):
                         try {
                             try {
-                                CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString ()));
+                                CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString ()!));
                             } catch (Exception e) {
                                 if (e is ArgumentOutOfRangeException)
-                                    CreationDate = UnixEpoch.AddMilliseconds (long.Parse (keypair.Value.ToString ()));
+                                    CreationDate = UnixEpoch.AddMilliseconds (long.Parse (keypair.Value.ToString ()!));
                                 else
                                     throw;
                             }
@@ -528,30 +516,30 @@ namespace MonoTorrent
                         break;
 
                     case ("comment.utf-8"):
-                        if (keypair.Value.ToString ().Length != 0)
-                            Comment = keypair.Value.ToString ();       // Always take the UTF-8 version
+                        if (keypair.Value.ToString ()!.Length != 0)
+                            Comment = keypair.Value.ToString ()!;       // Always take the UTF-8 version
                         break;                                          // even if there's an existing value
 
                     case ("comment"):
                         if (string.IsNullOrEmpty (Comment))
-                            Comment = keypair.Value.ToString ();
+                            Comment = keypair.Value.ToString ()!;
                         break;
 
                     case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
-                        PublisherUrl = keypair.Value.ToString ();      // even if there's an existing value
+                        PublisherUrl = keypair.Value.ToString ()!;      // even if there's an existing value
                         break;
 
                     case ("publisher-url"):
                         if (string.IsNullOrEmpty (PublisherUrl))
-                            PublisherUrl = keypair.Value.ToString ();
+                            PublisherUrl = keypair.Value.ToString ()!;
                         break;
 
                     case ("created by"):
-                        CreatedBy = keypair.Value.ToString ();
+                        CreatedBy = keypair.Value.ToString ()!;
                         break;
 
                     case ("encoding"):
-                        Encoding = keypair.Value.ToString ();
+                        Encoding = keypair.Value.ToString ()!;
                         break;
 
                     case ("info"):
@@ -572,7 +560,7 @@ namespace MonoTorrent
                                 var tier = new List<string> (bencodedTier.Count);
 
                                 for (int k = 0; k < bencodedTier.Count; k++)
-                                    tier.Add (bencodedTier[k].ToString ());
+                                    tier.Add (bencodedTier[k].ToString ()!);
 
                                 var resultTier = new List<string> ();
                                 for (int k = 0; k < tier.Count; k++)
@@ -599,12 +587,12 @@ namespace MonoTorrent
 
                     case ("url-list"):
                         if (keypair.Value is BEncodedString httpSeedString) {
-                            if (Uri.TryCreate (httpSeedString.Text, UriKind.Absolute, out Uri httpSeedUri)) {
+                            if (Uri.TryCreate (httpSeedString.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
                                 HttpSeeds.Add (httpSeedUri);
                             }
                         } else if (keypair.Value is BEncodedList httpSeedList) {
                             foreach (BEncodedString str in httpSeedList)
-                                if (Uri.TryCreate (str.Text, UriKind.Absolute, out Uri httpSeedUri)) {
+                                if (Uri.TryCreate (str.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
                                     HttpSeeds.Add (httpSeedUri);
                                 }
                         }
@@ -651,7 +639,7 @@ namespace MonoTorrent
                             break;
 
                         case ("length"):
-                            length = long.Parse (keypair.Value.ToString ());
+                            length = long.Parse (keypair.Value.ToString ()!);
                             break;
 
                         case ("path.utf-8"):
@@ -705,7 +693,7 @@ namespace MonoTorrent
                 if (file.Length < actualPieceLength)
                     continue;
 
-                if (!hashes.TryGetValue (BEncodedString.FromMemory (file.PiecesRoot), out BEncodedValue hashValue))
+                if (!hashes.TryGetValue (BEncodedString.FromMemory (file.PiecesRoot), out BEncodedValue? hashValue))
                     throw new TorrentException ($"the 'piece layers' dictionary did not contain an entry for the file '{file.Path}'");
                 if (!(hashValue is BEncodedString hash))
                     throw new TorrentException ("The 'piece layers' dictionary should contain BEncodedStrings");

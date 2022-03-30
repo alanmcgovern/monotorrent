@@ -105,7 +105,7 @@ namespace MonoTorrent.Connections.TrackerServer
         async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
         {
             using (context.Response) {
-                bool isScrape = context.Request.RawUrl.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
+                bool isScrape = context.Request.RawUrl!.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
 
                 if (IncompleteAnnounce || IncompleteScrape) {
                     await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024, token);

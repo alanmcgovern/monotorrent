@@ -78,7 +78,7 @@ namespace MonoTorrent.BEncoding
         public byte[] TransformFinalBlock ()
         {
             algorithm.TransformFinalBlock (read_one_buffer, 0, 0);
-            return algorithm.Hash;
+            return algorithm.Hash!;
         }
 
         public override void Flush ()

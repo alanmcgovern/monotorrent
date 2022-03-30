@@ -115,7 +115,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             var d = dict = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
 
-            if (d.TryGetValue (MessageTypeKey, out BEncodedValue val))
+            if (d.TryGetValue (MessageTypeKey, out BEncodedValue? val))
                 MetadataMessageType = (MessageType) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (PieceKey, out val))
                 Piece = (int) ((BEncodedNumber) val).Number;

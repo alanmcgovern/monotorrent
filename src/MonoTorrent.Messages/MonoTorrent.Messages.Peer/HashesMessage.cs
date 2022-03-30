@@ -90,7 +90,7 @@ namespace MonoTorrent.Messages.Peer
             return original - buffer.Length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             if (!(obj is HashesMessage other))
                 return false;

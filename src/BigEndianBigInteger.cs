@@ -128,7 +128,7 @@ namespace MonoTorrent
         public int CompareTo (BigEndianBigInteger other)
             => Value.CompareTo (other.Value);
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is BigEndianBigInteger val && Equals (val);
 
         public bool Equals (BigEndianBigInteger other)

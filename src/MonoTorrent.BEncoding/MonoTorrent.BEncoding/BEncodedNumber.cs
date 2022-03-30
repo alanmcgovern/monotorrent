@@ -108,22 +108,16 @@ namespace MonoTorrent.BEncoding
             // Add 2 for the 'i' and 'e'. Special case '0' as we can't Log10 it. Add 1 if the number is negative. Then calculate digits!
             => 2 + (Number == 0 ? 1 : (Number > 0 ? 1 : 2) + (int) Math.Log10 (Math.Abs ((double)Number)));
 
-        public int CompareTo (object other)
+        public int CompareTo (object? other)
         {
             if (other is BEncodedNumber || other is long || other is int)
                 return CompareTo ((BEncodedNumber) other);
 
-            return -1;
+            return 1;
         }
 
-        public int CompareTo (BEncodedNumber other)
-        {
-            if (other == null)
-                throw new ArgumentNullException (nameof (other));
-
-            return Number.CompareTo (other.Number);
-        }
-
+        public int CompareTo (BEncodedNumber? other)
+            => other == null ? 1 : Number.CompareTo (other.Number);
 
         public int CompareTo (long other)
             => Number.CompareTo (other);
@@ -133,7 +127,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is BEncodedNumber obj2 ? Number == obj2.Number : false;
 
         /// <summary>

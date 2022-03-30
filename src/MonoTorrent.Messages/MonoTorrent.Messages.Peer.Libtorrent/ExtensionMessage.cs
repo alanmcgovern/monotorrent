@@ -95,7 +95,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         public static (PeerMessage message, Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo? manager)
         {
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> creator))
+            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>? creator))
                 throw new MessageException ("Unknown extension message received");
 
             (PeerMessage message, Releaser releaser) = creator (manager);

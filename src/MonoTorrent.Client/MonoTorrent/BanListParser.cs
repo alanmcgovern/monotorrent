@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
         {
             var reader = new StreamReader (stream);
 
-            string result;
+            string? result;
             var r = new Regex (@"([0-9]{1,3}\.){3,3}[0-9]{1,3}");
 
             while ((result = reader.ReadLine ()) != null) {

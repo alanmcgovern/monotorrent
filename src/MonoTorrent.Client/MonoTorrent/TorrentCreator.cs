@@ -436,7 +436,7 @@ namespace MonoTorrent
                 // If the buffer and file are both null then all files have been fully read.
                 if (buffer == null && file == null) {
                     shaHasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                    Array.Copy (shaHasher.Hash, 0, hashes, piece * 20, shaHasher.Hash.Length);
+                    Array.Copy (shaHasher.Hash!, 0, hashes, piece * 20, shaHasher.Hash!.Length);
                     break;
                 }
 
@@ -467,7 +467,7 @@ namespace MonoTorrent
 
                         if (bytesNeededForPiece == 0) {
                             shaHasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                            Array.Copy (shaHasher.Hash, 0, hashes, piece * 20, shaHasher.Hash.Length);
+                            Array.Copy (shaHasher.Hash!, 0, hashes, piece * 20, shaHasher.Hash!.Length);
                             shaHasher.Initialize ();
                             pieceHashedBytes = 0;
                             piece++;

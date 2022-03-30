@@ -156,7 +156,7 @@ namespace MonoTorrent.TrackerServer
             while (total > 0) {
                 Peer current = PeersList[(start++) % PeersList.Count];
                 if (compact) {
-                    Buffer.BlockCopy (current.CompactEntry, 0, compactResponse, (total - 1) * 6, 6);
+                    Buffer.BlockCopy (current.CompactEntry, 0, compactResponse!, (total - 1) * 6, 6);
                 } else {
                     nonCompactResponse!.Add (current.NonCompactEntry);
                 }
@@ -226,7 +226,7 @@ namespace MonoTorrent.TrackerServer
         internal void Update (AnnounceRequest par)
         {
             object peerKey = Comparer.GetKey (par);
-            if (!Peers.TryGetValue (peerKey, out Peer peer)) {
+            if (!Peers.TryGetValue (peerKey, out Peer? peer)) {
                 peer = new Peer (par, peerKey);
                 Add (peer);
             } else {

@@ -96,7 +96,7 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             return written - buffer.Length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is RejectRequestMessage msg
             && PieceIndex == msg.PieceIndex
             && StartOffset == msg.StartOffset

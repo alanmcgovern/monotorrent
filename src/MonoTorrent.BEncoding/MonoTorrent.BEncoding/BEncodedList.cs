@@ -99,7 +99,7 @@ namespace MonoTorrent.BEncoding
             return length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             if (!(obj is BEncodedList other))
                 return false;

@@ -222,14 +222,9 @@ namespace MonoTorrent.Connections.Tracker
             return (BEncodedDictionary) BEncodedValue.Decode (dataStream);
         }
 
-        public override bool Equals (object obj)
-        {
-            if (!(obj is HttpTrackerConnection tracker))
-                return false;
-
+        public override bool Equals (object? obj)
             // If the announce URL matches, then CanScrape and the scrape URL must match too
-            return (Uri.Equals (tracker.Uri));
-        }
+            => obj is HttpTrackerConnection tracker && (Uri.Equals (tracker.Uri));
 
         public override int GetHashCode ()
         {
@@ -269,11 +264,11 @@ namespace MonoTorrent.Connections.Tracker
                         break;
 
                     case ("min interval"):
-                        minUpdateInterval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()));
+                        minUpdateInterval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()!));
                         break;
 
                     case ("interval"):
-                        updateInterval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()));
+                        updateInterval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()!));
                         break;
 
                     case ("peers"):
@@ -284,11 +279,11 @@ namespace MonoTorrent.Connections.Tracker
                         break;
 
                     case ("failure reason"):
-                        failureMessage = keypair.Value.ToString ();
+                        failureMessage = keypair.Value.ToString ()!;
                         break;
 
                     case ("warning message"):
-                        warningMessage = keypair.Value.ToString ();
+                        warningMessage = keypair.Value.ToString ()!;
                         break;
 
                     default:

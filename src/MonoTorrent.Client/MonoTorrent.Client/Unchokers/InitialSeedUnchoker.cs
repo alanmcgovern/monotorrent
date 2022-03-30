@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
 
             // Place the peer at the end of the list so the rest of the peers
             // will get an opportunity to unchoke before this peer gets tried again
-            ChokeData data = peers.Find (d => d.Peer == id);
+            ChokeData data = peers.Find (d => d.Peer == id)!;
             peers.Remove (data);
             peers.Add (data);
         }
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
 
         public void SentBlock (PeerId peer, int pieceIndex)
         {
-            SeededPiece piece = advertisedPieces.Find (p => p.Peer == peer && p.Index == pieceIndex);
+            SeededPiece? piece = advertisedPieces.Find (p => p.Peer == peer && p.Index == pieceIndex);
             if (piece == null)
                 return;
 

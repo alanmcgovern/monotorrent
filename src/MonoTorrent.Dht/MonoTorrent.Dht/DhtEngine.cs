@@ -314,7 +314,7 @@ namespace MonoTorrent.Dht
 
             var tcs = new TaskCompletionSource<object> ();
 
-            void handler (object o, EventArgs e)
+            void handler (object? o, EventArgs e)
             {
                 if (State == state) {
                     StateChanged -= handler;

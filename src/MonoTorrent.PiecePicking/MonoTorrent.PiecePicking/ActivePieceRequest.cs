@@ -56,7 +56,7 @@ namespace MonoTorrent.PiecePicking
             Received = received;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is ActivePieceRequest req && Equals (req);
 
         public bool Equals (ActivePieceRequest other)

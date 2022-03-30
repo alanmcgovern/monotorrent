@@ -23,6 +23,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MemoryExtensions.cs" Condition="'$(UseMemoryExtensions)' == 'true'" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" Link="Linked\%(FileName)%(Extension)" Condition="$(ProjectName) == 'MonoTorrent.Dht' or $(ProjectName) == 'MonoTorrent.Client'" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Include="$(MSBuildThisFileDirectory)NullabilityAttributes.cs" Link="Linked\%(FileName)%(Extension)" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
   </ItemGroup>
 
 

@@ -368,7 +368,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
             if (third != null)
                 hasher.TransformBlock (third, 0, third.Length, third, 0);
             hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-            return hasher.Hash;
+            return hasher.Hash!;
         }
 
         #endregion

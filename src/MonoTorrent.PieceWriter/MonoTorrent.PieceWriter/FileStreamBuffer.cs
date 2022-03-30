@@ -82,7 +82,7 @@ namespace MonoTorrent.PieceWriter
 
         internal async ReusableTask<bool> CloseStreamAsync (ITorrentManagerFile file)
         {
-            if (Streams.TryGetValue (file, out StreamData data)) {
+            if (Streams.TryGetValue (file, out StreamData? data)) {
                 using var releaser = await data.Locker.EnterAsync ();
                 if (data.Stream != null) {
                     data.Stream.Dispose ();
@@ -104,7 +104,7 @@ namespace MonoTorrent.PieceWriter
 
         internal async ReusableTask<RentedStream> GetStream (ITorrentManagerFile file)
         {
-            if (Streams.TryGetValue (file, out StreamData data)) {
+            if (Streams.TryGetValue (file, out StreamData? data)) {
                 var releaser = await data.Locker.EnterAsync ();
                 if (data.Stream == null) {
                     releaser.Dispose ();
@@ -118,7 +118,7 @@ namespace MonoTorrent.PieceWriter
 
         internal async ReusableTask<RentedStream> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
         {
-            if (!Streams.TryGetValue (file, out StreamData data))
+            if (!Streams.TryGetValue (file, out StreamData? data))
                 data = Streams[file] = new StreamData ();
 
             var releaser = await data.Locker.EnterAsync ();
@@ -133,8 +133,8 @@ namespace MonoTorrent.PieceWriter
 
             if (data.Stream == null) {
                 if (!File.Exists (file.FullPath)) {
-                    if (!string.IsNullOrEmpty (Path.GetDirectoryName (file.FullPath)))
-                        Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
+                    if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
+                        Directory.CreateDirectory (parentDirectory);
                     NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
                 }
                 data.Stream = StreamCreator (file, access);

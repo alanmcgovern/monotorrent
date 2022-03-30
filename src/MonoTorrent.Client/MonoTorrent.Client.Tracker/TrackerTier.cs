@@ -122,7 +122,7 @@ namespace MonoTorrent.Trackers
         {
             var trackerList = new List<ITracker> ();
             foreach (string trackerUrl in trackerUrls) {
-                if (!Uri.TryCreate (trackerUrl, UriKind.Absolute, out Uri result)) {
+                if (!Uri.TryCreate (trackerUrl, UriKind.Absolute, out Uri? result)) {
                     logger.InfoFormatted ("Invalid tracker Url specified: {0}", trackerUrl);
                     continue;
                 }

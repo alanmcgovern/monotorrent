@@ -87,7 +87,7 @@ namespace MonoTorrent.Dht.Messages
             message = null;
             error = null;
 
-            if (!dictionary.TryGetValue (MessageTypeKey, out BEncodedValue messageType)) {
+            if (!dictionary.TryGetValue (MessageTypeKey, out BEncodedValue? messageType)) {
                 message = null;
                 error = "The BEncodedDictionary did not contain the 'q' key, so the message type could not be identified";
                 return false;
@@ -100,7 +100,7 @@ namespace MonoTorrent.Dht.Messages
                 messages.Remove (message.TransactionId!);
             } else {
                 var key = (BEncodedString) dictionary[TransactionIdKey];
-                if (messages.TryGetValue (key, out QueryMessage query)) {
+                if (messages.TryGetValue (key, out QueryMessage? query)) {
                     messages.Remove (key);
                     try {
                         message = query.CreateResponse (dictionary);

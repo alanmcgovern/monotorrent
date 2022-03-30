@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace MonoTorrent.BEncoding
@@ -110,7 +111,7 @@ namespace MonoTorrent.BEncoding
                 return false;
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
-                if (!other.TryGetValue (keypair.Key, out BEncodedValue val))
+                if (!other.TryGetValue (keypair.Key, out BEncodedValue? val))
                     return false;
 
                 if (!keypair.Value.Equals (val))
@@ -176,7 +177,7 @@ namespace MonoTorrent.BEncoding
 
         public BEncodedValue? GetValueOrDefault (BEncodedString key, BEncodedValue? defaultValue)
         {
-            return dictionary.TryGetValue (key, out BEncodedValue value) ? value : defaultValue;
+            return dictionary.TryGetValue (key, out BEncodedValue? value) ? value : defaultValue;
         }
 
         public bool IsReadOnly => false;
@@ -191,7 +192,9 @@ namespace MonoTorrent.BEncoding
             return dictionary.Remove (item.Key);
         }
 
-        public bool TryGetValue (BEncodedString key, out BEncodedValue value)
+#pragma warning disable 8767
+        public bool TryGetValue (BEncodedString key, [MaybeNullWhen (false)] out BEncodedValue value)
+#pragma warning restore 8767
         {
             return dictionary.TryGetValue (key, out value);
         }

@@ -106,7 +106,7 @@ namespace MonoTorrent.Messages.Peer
             return origLength - buffer.Length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is PieceMessage message
                 && message.PieceIndex == PieceIndex
                 && message.StartOffset == StartOffset

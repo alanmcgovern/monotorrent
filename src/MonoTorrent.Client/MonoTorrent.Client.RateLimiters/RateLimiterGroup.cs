@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.RateLimiters
                 int? preferredChunkSize = null;
                 for (int i = 0; i < limiters.Count; i++)
                     if (limiters[i].PreferredChunkSize.HasValue)
-                        preferredChunkSize = preferredChunkSize.HasValue ? Math.Min (limiters[i].PreferredChunkSize.Value, preferredChunkSize.Value) : limiters[i].PreferredChunkSize.Value;
+                        preferredChunkSize = preferredChunkSize.HasValue ? Math.Min (limiters[i].PreferredChunkSize!.Value, preferredChunkSize.Value) : limiters[i].PreferredChunkSize!.Value;
                 return preferredChunkSize;
             }
         }

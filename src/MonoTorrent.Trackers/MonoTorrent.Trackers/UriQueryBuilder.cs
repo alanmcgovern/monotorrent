@@ -66,7 +66,7 @@ namespace MonoTorrent.Trackers
             if (value == null)
                 throw new ArgumentNullException (nameof (value));
 
-            queryParams[key] = value.ToString ();
+            queryParams[key] = value.ToString ()!;
             return this;
         }
 

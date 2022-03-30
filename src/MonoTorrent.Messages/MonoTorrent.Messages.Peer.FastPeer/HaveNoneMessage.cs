@@ -59,7 +59,7 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             return written - buffer.Length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is HaveNoneMessage;
 
         public override int GetHashCode ()

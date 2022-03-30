@@ -58,7 +58,7 @@ namespace MonoTorrent.Connections.Peer
             });
 
             listener.Bind (OriginalEndPoint);
-            LocalEndPoint = (IPEndPoint) listener.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint?) listener.LocalEndPoint;
 
             listener.Listen (6);
 
@@ -68,7 +68,7 @@ namespace MonoTorrent.Connections.Peer
                 OnSocketReceived (listener, connectArgs);
         }
 
-        void OnSocketReceived (object sender, SocketAsyncEventArgs e)
+        void OnSocketReceived (object? sender, SocketAsyncEventArgs e)
         {
             Socket? socket = null;
             try {
@@ -80,14 +80,14 @@ namespace MonoTorrent.Connections.Peer
                 if (e.SocketError != SocketError.Success)
                     throw new SocketException ((int) e.SocketError);
 
-                var connection = new SocketPeerConnection (socket, true);
+                var connection = new SocketPeerConnection (socket!, true);
                 ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, null));
             } catch {
                 socket?.Close ();
             }
 
             try {
-                if (!((Socket) sender).AcceptAsync (e))
+                if (!((Socket) sender!).AcceptAsync (e))
                     OnSocketReceived (sender, e);
             } catch {
                 return;

@@ -101,7 +101,7 @@ namespace MonoTorrent.PieceWriter
             if (overwrite)
                 File.Delete (newPath);
             if (File.Exists (file.FullPath)) {
-                Directory.CreateDirectory (Path.GetDirectoryName (newPath));
+                Directory.CreateDirectory (Path.GetDirectoryName (newPath)!);
                 File.Move (file.FullPath, newPath);
             }
         }

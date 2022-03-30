@@ -65,7 +65,7 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException (nameof (node));
 
-            Bucket bucket = Buckets.Find (b => b.CanContain (node));
+            Bucket bucket = Buckets.Find (b => b.CanContain (node))!;
             if (bucket.Nodes.Contains (node))
                 return false;
 

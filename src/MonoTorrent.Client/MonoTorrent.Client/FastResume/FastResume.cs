@@ -125,21 +125,13 @@ namespace MonoTorrent.Client
             s.Write (data, 0, data.Length);
         }
 
-#if NETSTANDARD2_0
-        public static bool TryLoad (Stream s, out FastResume? fastResume)
-#else
         public static bool TryLoad (Stream s, [NotNullWhen (true)] out FastResume? fastResume)
-#endif
         {
             fastResume = Load (s);
             return fastResume != null;
         }
 
-#if NETSTANDARD2_0
-        public static bool TryLoad (string fastResumeFilePath, out FastResume? fastResume)
-#else
         public static bool TryLoad (string fastResumeFilePath, [NotNullWhen (true)] out FastResume? fastResume)
-#endif
         {
             fastResume = null;
             try {

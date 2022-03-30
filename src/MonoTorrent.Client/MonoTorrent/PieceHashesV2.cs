@@ -64,7 +64,7 @@ namespace MonoTorrent
                     continue;
 
                 // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
-                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedValue layer))
+                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedValue? layer))
                     return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, ((BEncodedString) layer).AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
 
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!

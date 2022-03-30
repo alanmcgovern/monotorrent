@@ -84,11 +84,11 @@ namespace MonoTorrent.Client
                     foreach (BEncodedDictionary file in (BEncodedList) torrent[nameof (manager.Files)]) {
                         TorrentFileInfo torrentFile;
                         torrentFile = (TorrentFileInfo) manager.Files.Single (t => t.Path == ((BEncodedString) file[nameof (torrentFile.Path)]).Text);
-                        torrentFile.Priority = (Priority) Enum.Parse (typeof (Priority), file[nameof (torrentFile.Priority)].ToString ());
+                        torrentFile.Priority = (Priority) Enum.Parse (typeof (Priority), file[nameof (torrentFile.Priority)].ToString ()!);
                         torrentFile.FullPath = ((BEncodedString) file[nameof (torrentFile.FullPath)]).Text;
                     }
                 } else {
-                    var magnetLink = MagnetLink.Parse (torrent[nameof (manager.MagnetLink)].ToString ());
+                    var magnetLink = MagnetLink.Parse (torrent[nameof (manager.MagnetLink)].ToString ()!);
                     if (streaming)
                         await clientEngine.AddStreamingAsync (magnetLink, saveDirectory, torrentSettings);
                     else
@@ -337,7 +337,7 @@ namespace MonoTorrent.Client
 
             var metadataCachePath = Settings.GetMetadataPath (torrent.InfoHashes);
             if (metadataPath != metadataCachePath) {
-                Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
+                Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath)!);
                 File.Copy (metadataPath, metadataCachePath, true);
             }
             return await AddAsync (null, torrent, saveDirectory, settings);
@@ -369,7 +369,7 @@ namespace MonoTorrent.Client
             }
 
             var metadataCachePath = Settings.GetMetadataPath (torrent.InfoHashes);
-            Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath));
+            Directory.CreateDirectory (Path.GetDirectoryName (metadataCachePath)!);
             File.WriteAllBytes (metadataCachePath, editor.ToDictionary ().Encode ());
 
             return await AddAsync (null, torrent, saveDirectory, settings);
@@ -572,12 +572,12 @@ namespace MonoTorrent.Client
             return data;
         }
 
-        async void HandleLocalPeerFound (object sender, LocalPeerFoundEventArgs args)
+        async void HandleLocalPeerFound (object? sender, LocalPeerFoundEventArgs args)
         {
             try {
                 await MainLoop;
 
-                TorrentManager manager = allTorrents.FirstOrDefault (t => t.InfoHashes.Contains (args.InfoHash));
+                TorrentManager? manager = allTorrents.FirstOrDefault (t => t.InfoHashes.Contains (args.InfoHash));
                 // There's no TorrentManager in the engine
                 if (manager == null)
                     return;
@@ -669,12 +669,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        async void DhtEnginePeersFound (object o, PeersFoundEventArgs e)
+        async void DhtEnginePeersFound (object? o, PeersFoundEventArgs e)
         {
             await MainLoop;
 
-            TorrentManager manager = allTorrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash));
-
+            TorrentManager? manager = allTorrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash));
             if (manager == null)
                 return;
 
@@ -688,7 +687,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async void DhtEngineStateChanged (object o, EventArgs e)
+        async void DhtEngineStateChanged (object? o, EventArgs e)
         {
             if (DhtEngine.State != DhtState.Ready)
                 return;
@@ -869,7 +868,7 @@ namespace MonoTorrent.Client
             // concurrently.
             using (await dhtNodeLocker.EnterAsync ().ConfigureAwait (false)) {
                 var savePath = Settings.GetDhtNodeCacheFilePath ();
-                var parentDir = Path.GetDirectoryName (savePath);
+                var parentDir = Path.GetDirectoryName (savePath)!;
                 Directory.CreateDirectory (parentDir);
                 File.WriteAllBytes (savePath, nodes.ToArray ());
             }

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 // using MonoTorrent.Logging;
@@ -76,19 +77,19 @@ namespace MonoTorrent.PiecePicking
 
                 for (int i = 0; i < peersInvolved.Count; i++) {
                     var involvedPeer = peersInvolved[i];
-                    if (mostRecentRequest.TryGetValue (involvedPeer, out Piece piece))
+                    if (mostRecentRequest.TryGetValue (involvedPeer, out Piece? piece))
                         if (piece.Index == index)
                             mostRecentRequest.Remove (involvedPeer);
                 }
             }
 
-            internal bool TryGetValue (int pieceIndex, out Piece piece)
+            internal bool TryGetValue (int pieceIndex, [MaybeNullWhen (false)] out Piece piece)
                 => requests.TryGetValue (pieceIndex, out piece);
 
-            internal bool TryGetDuplicates (int pieceIndex, out List<Piece> extraPieces)
+            internal bool TryGetDuplicates (int pieceIndex, [MaybeNullWhen (false)] out List<Piece> extraPieces)
                 => duplicates.TryGetValue (pieceIndex, out extraPieces);
 
-            internal bool TryGetMostRecentRequest (IPeer peer, out Piece mostRecent)
+            internal bool TryGetMostRecentRequest (IPeer peer, [MaybeNullWhen (false)] out Piece mostRecent)
                 => mostRecentRequest.TryGetValue (peer, out mostRecent);
 
             internal void CreateDuplicates (int index, List<Piece> extraPieces)
@@ -276,7 +277,7 @@ namespace MonoTorrent.PiecePicking
 
         public bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved)
         {
-            if (Requests == null || !Requests.TryGetValue (request.PieceIndex, out Piece primaryPiece)) {
+            if (Requests == null || !Requests.TryGetValue (request.PieceIndex, out Piece? primaryPiece)) {
                 //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
                 pieceComplete = false;
                 peersInvolved = Array.Empty<IPeer> ();
@@ -287,7 +288,7 @@ namespace MonoTorrent.PiecePicking
 
             // If there are no duplicate requests, exit early! Otherwise we'll need to do book keeping to
             // ensure our received piece is not re-requested again.
-            if (!Requests.TryGetDuplicates (request.PieceIndex, out List<Piece> extraPieces)) {
+            if (!Requests.TryGetDuplicates (request.PieceIndex, out List<Piece>? extraPieces)) {
                 if (pieceComplete) {
                     Requests.Remove (request.PieceIndex, peersInvolved);
                     PieceCache.Enqueue (primaryPiece);
@@ -358,7 +359,7 @@ namespace MonoTorrent.PiecePicking
             if (Requests is null || TorrentData is null)
                 return null;
 
-            if (Requests.TryGetMostRecentRequest (peer, out Piece mostRecent)) {
+            if (Requests.TryGetMostRecentRequest (peer, out Piece? mostRecent)) {
                 foreach (ref Block block in mostRecent.Blocks.AsSpan ())
                     if (!block.Requested && !block.Received)
                         return block.CreateRequest (peer);
@@ -389,7 +390,7 @@ namespace MonoTorrent.PiecePicking
                     if (primaryPiece.Index < startIndex || primaryPiece.Index > endIndex || !peer.BitField[primaryPiece.Index])
                         continue;
 
-                    if (!Requests.TryGetDuplicates (primaryPiece.Index, out List<Piece> extraPieces)) {
+                    if (!Requests.TryGetDuplicates (primaryPiece.Index, out List<Piece>? extraPieces)) {
                         extraPieces = new List<Piece> ();
                         Requests.CreateDuplicates (primaryPiece.Index, extraPieces);
                     }

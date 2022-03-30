@@ -57,11 +57,11 @@ namespace MonoTorrent.Client
             T builder = new T ();
             var props = builder.GetType ().GetProperties ();
             foreach (var property in props) {
-                if (!dict.TryGetValue (property.Name, out BEncodedValue value))
+                if (!dict.TryGetValue (property.Name, out BEncodedValue? value))
                     continue;
 
                 if (property.PropertyType == typeof (bool)) {
-                    property.SetValue (builder, bool.Parse (value.ToString ()));
+                    property.SetValue (builder, bool.Parse (value.ToString ()!));
                 } else if (property.PropertyType == typeof (string)) {
                     property.SetValue (builder, ((BEncodedString) value).Text);
                 } else if (property.PropertyType == typeof (FastResumeMode)) {
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
                     }
                     property.SetValue (builder, endPoint);
                 } else if (property.PropertyType == typeof (IList<EncryptionType>)) {
-                    var list = (IList<EncryptionType>) property.GetValue (builder);
+                    var list = (IList<EncryptionType>) property.GetValue (builder)!;
                     list.Clear ();
                     foreach (BEncodedString encryptionType in (BEncodedList) value)
                         list.Add ((EncryptionType) Enum.Parse (typeof (EncryptionType), encryptionType.Text));

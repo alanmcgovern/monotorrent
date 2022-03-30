@@ -62,7 +62,7 @@ namespace MonoTorrent.Dht
             sha1.TransformBlock (n, 0, n.Length, n, 0);
             sha1.TransformFinalBlock (secret, 0, secret.Length);
 
-            return new BEncodedString (sha1.Hash);
+            return new BEncodedString (sha1.Hash!);
         }
 
         public void RefreshTokens ()

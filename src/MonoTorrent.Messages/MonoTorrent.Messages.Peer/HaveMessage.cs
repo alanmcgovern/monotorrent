@@ -79,7 +79,7 @@ namespace MonoTorrent.Messages.Peer
             PieceIndex = ReadInt (ref buffer);
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is HaveMessage msg
             && PieceIndex == msg.PieceIndex;
 

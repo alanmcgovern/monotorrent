@@ -79,15 +79,11 @@ namespace MonoTorrent.PiecePicking
                 Initialise (pieceIndex, length);
             }
 
-            public int CompareTo (Piece other)
-            {
-                return other == null ? 1 : Index.CompareTo (other.Index);
-            }
+            public int CompareTo (Piece? other)
+                => other == null ? 1 : Index.CompareTo (other.Index);
 
-            public override bool Equals (object obj)
-            {
-                return (!(obj is Piece p)) ? false : Index.Equals (p.Index);
-            }
+            public override bool Equals (object? obj)
+                => obj is Piece p && Index.Equals (p.Index);
 
             public System.Collections.IEnumerator GetEnumerator ()
             {

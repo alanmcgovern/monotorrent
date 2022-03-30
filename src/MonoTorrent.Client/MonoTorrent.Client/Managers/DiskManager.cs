@@ -311,7 +311,7 @@ namespace MonoTorrent.Client
 
             await IOLoop;
 
-            if (IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash)) {
+            if (IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData? incrementalHash)) {
                 // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
                 IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
 
@@ -477,7 +477,7 @@ namespace MonoTorrent.Client
 
             try {
                 int pieceIndex = request.PieceIndex;
-                if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData incrementalHash) && request.StartOffset == 0) {
+                if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData? incrementalHash) && request.StartOffset == 0) {
                     incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
                     incrementalHash.PrepareForFirstUse (manager, pieceIndex);
                 }

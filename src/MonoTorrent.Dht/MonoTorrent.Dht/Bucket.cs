@@ -121,7 +121,7 @@ namespace MonoTorrent.Dht
 
         public int CompareTo (Bucket? other)
         {
-            return Min.CompareTo (other?.Min);
+            return other == null ? 1 : Min.CompareTo (other.Min);
         }
 
         public override bool Equals (object? obj)

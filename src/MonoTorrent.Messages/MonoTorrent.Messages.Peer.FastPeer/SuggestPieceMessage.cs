@@ -90,7 +90,7 @@ namespace MonoTorrent.Messages.Peer.FastPeer
 
 
         #region Overidden Methods
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return (obj as SuggestPieceMessage)?.PieceIndex == PieceIndex;
         }

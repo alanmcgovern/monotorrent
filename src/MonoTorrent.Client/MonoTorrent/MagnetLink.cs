@@ -102,11 +102,7 @@ namespace MonoTorrent
         /// <param name="uri"></param>
         /// <param name="magnetLink"></param>
         /// <returns></returns>
-#if NETSTANDARD2_0
-        public static bool TryParse (string uri, out MagnetLink? magnetLink)
-#else
         public static bool TryParse (string uri, [NotNullWhen(true)] out MagnetLink? magnetLink)
-#endif
         {
             try {
                 magnetLink = Parse (uri);

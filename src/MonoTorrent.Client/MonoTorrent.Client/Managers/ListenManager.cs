@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
             Listener.ConnectionReceived += ConnectionReceived;
         }
 
-        async void ConnectionReceived (object sender, PeerConnectionEventArgs e)
+        async void ConnectionReceived (object? sender, PeerConnectionEventArgs e)
         {
             await ClientEngine.MainLoop;
             var peer = new Peer ("", e.Connection.Uri, EncryptionTypes.All);
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
                     return;
                 }
                 if (!e.Connection.IsIncoming) {
-                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash!));
+                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash!))!;
                     var id = new PeerId (peer, e.Connection, new MutableBitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();

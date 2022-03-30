@@ -93,7 +93,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             var d = ReadBencodedValue<BEncodedDictionary> (ref buffer, false);
 
-            if (d.TryGetValue (MaxRequestKey, out BEncodedValue val))
+            if (d.TryGetValue (MaxRequestKey, out BEncodedValue? val))
                 MaxRequests = (int) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (VersionKey, out val))
                 version = ((BEncodedString) val).Text;

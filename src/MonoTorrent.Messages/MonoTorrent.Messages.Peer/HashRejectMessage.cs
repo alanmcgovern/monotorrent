@@ -80,7 +80,7 @@ namespace MonoTorrent.Messages.Peer
             return written - buffer.Length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is HashRequestMessage other
                 && PiecesRoot.Span.SequenceEqual (other.PiecesRoot.Span)
                 && BaseLayer == other.BaseLayer

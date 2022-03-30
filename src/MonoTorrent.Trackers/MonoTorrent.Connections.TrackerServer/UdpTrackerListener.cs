@@ -83,7 +83,7 @@ namespace MonoTorrent.Connections.TrackerServer
                 listener.Dispose ();
             });
 
-            LocalEndPoint = (IPEndPoint) listener.Client.LocalEndPoint;
+            LocalEndPoint = (IPEndPoint?) listener.Client.LocalEndPoint;
 
             ReceiveAsync (listener, token);
             RaiseStatusChanged (ListenerStatus.Listening);
@@ -158,7 +158,7 @@ namespace MonoTorrent.Connections.TrackerServer
             UdpTrackerMessage m;
             BEncodedDictionary dict = Handle (getCollection (announceMessage), remotePeer.Address, false);
             if (dict.ContainsKey (TrackerRequest.FailureKey)) {
-                m = new ErrorMessage (announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString ());
+                m = new ErrorMessage (announceMessage.TransactionId, dict[TrackerRequest.FailureKey].ToString ()!);
             } else {
                 TimeSpan interval = TimeSpan.Zero;
                 int leechers = 0;
@@ -175,7 +175,7 @@ namespace MonoTorrent.Connections.TrackerServer
                             break;
 
                         case ("interval"):
-                            interval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()));
+                            interval = TimeSpan.FromSeconds (int.Parse (keypair.Value.ToString ()!));
                             break;
 
                         case ("peers"):
@@ -220,7 +220,7 @@ namespace MonoTorrent.Connections.TrackerServer
             UdpTrackerMessage m;
             byte[] data;
             if (val.ContainsKey (TrackerRequest.FailureKey)) {
-                m = new ErrorMessage (scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString ());
+                m = new ErrorMessage (scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString ()!);
             } else {
                 var scrapes = new List<ScrapeDetails> ();
 

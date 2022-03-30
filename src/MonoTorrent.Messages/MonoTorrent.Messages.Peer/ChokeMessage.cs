@@ -68,7 +68,7 @@ namespace MonoTorrent.Messages.Peer
             // No decoding needed
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
             => obj is ChokeMessage;
 
         public override int GetHashCode ()

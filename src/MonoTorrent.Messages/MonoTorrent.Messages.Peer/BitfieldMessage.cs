@@ -103,7 +103,7 @@ namespace MonoTorrent.Messages.Peer
             return "BitfieldMessage";
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             if (!(obj is BitfieldMessage bf))
                 return false;

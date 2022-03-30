@@ -45,8 +45,8 @@ namespace MonoTorrent.PiecePicking
                 File = file;
             }
 
-            public int CompareTo (Files other)
-                => (int) other.Priority - (int) Priority;
+            public int CompareTo (Files? other)
+                => other == null ? 1 : (int) other.Priority - (int) Priority;
 
             public bool TryRefreshPriority ()
             {

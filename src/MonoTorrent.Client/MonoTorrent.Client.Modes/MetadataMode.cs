@@ -181,8 +181,8 @@ namespace MonoTorrent.Client.Modes
 
                                 try {
                                     if (this.Settings.AutoSaveLoadMagnetLinkMetadata) {
-                                        if (!Directory.Exists (Path.GetDirectoryName (savePath)))
-                                            Directory.CreateDirectory (Path.GetDirectoryName (savePath));
+                                        if (Path.GetDirectoryName (savePath) is string parentDir && !Directory.Exists (parentDir))
+                                            Directory.CreateDirectory (parentDir);
                                         File.Delete (savePath);
                                         File.WriteAllBytes (savePath, dict.Encode ());
                                     }

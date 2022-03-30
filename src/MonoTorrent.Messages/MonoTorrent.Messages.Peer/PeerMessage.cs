@@ -168,7 +168,7 @@ namespace MonoTorrent.Messages.Peer
             if (buffer[0] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer.Slice (1), manager);
 
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> creator))
+            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>? creator))
                 throw new MessageException ("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that

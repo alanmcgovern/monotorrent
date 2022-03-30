@@ -177,7 +177,7 @@ namespace MonoTorrent.Messages.Peer
         }
 
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             if (!(obj is HandshakeMessage msg))
                 return false;

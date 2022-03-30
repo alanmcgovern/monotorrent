@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
             manager.OnPeerFound += OnAdd;
         }
 
-        internal void OnAdd (object source, PeerAddedEventArgs e)
+        internal void OnAdd (object? source, PeerAddedEventArgs e)
         {
             addedPeers.Add (e.Peer);
         }

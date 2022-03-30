@@ -109,7 +109,7 @@ namespace MonoTorrent.PieceWriter
         static bool CanCreateSparse (string volume)
         {
             // Ensure full path is supplied
-            volume = Path.GetPathRoot (volume);
+            volume = Path.GetPathRoot (volume)!;
 
             var volumeName = new StringBuilder (MAX_PATH);
             var systemName = new StringBuilder (MAX_PATH);

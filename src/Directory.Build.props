@@ -5,7 +5,7 @@
     <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
     <CI Condition="'$(CI)' == '' ">false</CI>
 
-    <NoWarn>1701;1702;1591;0419</NoWarn>
+    <NoWarn>1701;1702;1591;0419;netsdk1138</NoWarn>
 
     <LangVersion>8.0</LangVersion>
     <DebugType>portable</DebugType>

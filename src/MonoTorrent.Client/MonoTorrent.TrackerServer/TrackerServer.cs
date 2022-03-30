@@ -222,7 +222,7 @@ namespace MonoTorrent.TrackerServer
                 throw new ArgumentNullException (nameof (trackable));
 
             lock (Torrents)
-                if (Torrents.TryGetValue (trackable.InfoHash, out SimpleTorrentManager value))
+                if (Torrents.TryGetValue (trackable.InfoHash, out SimpleTorrentManager? value))
                     return value;
 
             return null;
@@ -246,7 +246,7 @@ namespace MonoTorrent.TrackerServer
             return Listeners.Contains (listener);
         }
 
-        void ListenerReceivedAnnounce (object sender, AnnounceRequest e)
+        void ListenerReceivedAnnounce (object? sender, AnnounceRequest e)
         {
             if (Disposed) {
                 e.Response.Add (TrackerRequest.FailureKey, (BEncodedString) "The tracker has been shut down");
@@ -254,7 +254,7 @@ namespace MonoTorrent.TrackerServer
             }
 
             Requests.AnnounceReceived ();
-            SimpleTorrentManager manager;
+            SimpleTorrentManager? manager;
 
             // Check to see if we're monitoring the requested torrent
             lock (Torrents) {
@@ -300,7 +300,7 @@ namespace MonoTorrent.TrackerServer
             //    par.TrackerId = "monotorrent-tracker";
         }
 
-        void ListenerReceivedScrape (object sender, ScrapeRequest e)
+        void ListenerReceivedScrape (object? sender, ScrapeRequest e)
         {
             if (Disposed) {
                 e.Response.Add (TrackerRequest.FailureKey, (BEncodedString) "The tracker has been shut down");
@@ -321,7 +321,7 @@ namespace MonoTorrent.TrackerServer
             var managers = new List<ITrackerItem> ();
             var files = new BEncodedDictionary ();
             for (int i = 0; i < e.InfoHashes.Count; i++) {
-                if (!Torrents.TryGetValue (e.InfoHashes[i], out SimpleTorrentManager manager))
+                if (!Torrents.TryGetValue (e.InfoHashes[i], out SimpleTorrentManager? manager))
                     continue;
 
                 managers.Add (manager);

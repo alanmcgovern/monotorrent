@@ -175,7 +175,7 @@ namespace MonoTorrent.Dht
                         port = ((BEncodedNumber) val).Number;
                 }
 
-                IPAddress.TryParse (host, out IPAddress address);
+                IPAddress.TryParse (host, out IPAddress? address);
 
                 //REM: bad design from bitcomet we do not have node id so create it...
                 //or use torrent infohash?

@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
                 AutoSaveLoadFastResume = automaticFastResume,
-                CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location), "test_cache_dir"),
+                CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location)!, "test_cache_dir"),
                 DhtEndPoint = dhtEndPoint,
                 ListenEndPoint = listenEndPoint,
                 UsePartialFiles = usePartialFiles,

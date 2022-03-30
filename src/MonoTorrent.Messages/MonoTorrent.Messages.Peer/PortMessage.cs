@@ -84,7 +84,7 @@ namespace MonoTorrent.Messages.Peer
             return written - buffer.Length;
         }
 
-        public override bool Equals (object obj)
+        public override bool Equals (object? obj)
         {
             return (!(obj is PortMessage msg)) ? false : (port == msg.port);
         }
