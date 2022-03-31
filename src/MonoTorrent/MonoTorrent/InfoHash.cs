@@ -175,6 +175,26 @@ namespace MonoTorrent
             return InfoHash.FromMemory (hash);
         }
 
+        public static InfoHash FromMultiHash (string multiHash)
+        {
+            if (multiHash is null)
+                throw new ArgumentNullException (nameof (multiHash));
+
+            // the following may be too strict for 'truncated' sha-256 hashes which are allowed ??
+            if (multiHash.Length != 68)
+                throw new ArgumentException ("V2 multihashes must be 68 characters long.", nameof (multiHash));
+
+            byte[] hash = new byte[multiHash.Length / 2];
+            for (int i = 0; i < hash.Length; i++)
+                hash[i] = byte.Parse (multiHash.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+
+            // first two bytes are varints encoding hash type and length, but we'll only support sha-256 for now.
+            if (hash[0] != 0x12 || hash[1] != 0x20)
+                throw new ArgumentException ("Only sha-256 hashes are supported in V2 multihashes for now.");
+
+            return InfoHash.FromMemory (new ReadOnlyMemory<byte> (hash, 2, 32));
+        }
+
         /// <summary>
         /// Stores the supplied value internally.
         /// </summary>

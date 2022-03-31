@@ -142,19 +142,23 @@ namespace MonoTorrent
                         switch (keyval[1].Substring (0, 9)) {
                             case "urn:sha1:"://base32 hash
                             case "urn:btih:":
-                                if (infoHashes != null)
-                                    throw new FormatException ("More than one infohash in magnet link is not allowed.");
+                                if (infoHashes?.V1 != null)
+                                    throw new FormatException ("More than one v1 infohash in magnet link is not allowed.");
 
-                                // BEP52: Support v2 magnet links
                                 if (val.Length == 32)
-                                    infoHashes = InfoHashes.FromV1 (InfoHash.FromBase32 (val));
+                                    infoHashes = new InfoHashes (InfoHash.FromBase32 (val), infoHashes?.V2);
                                 else if (val.Length == 40)
-                                    infoHashes = InfoHashes.FromV1 (InfoHash.FromHex (val));
+                                    infoHashes = new InfoHashes (InfoHash.FromHex (val), infoHashes?.V2);
                                 else
                                     throw new FormatException ("Infohash must be base32 or hex encoded.");
                                 break;
+
                             case "urn:btmh:":
-                                // placeholder to parse v2 multihash
+                                if (infoHashes?.V2 != null)
+                                    throw new FormatException ("More than one v2 multihash in magnet link is not allowed.");
+
+                                // BEP52: Support v2 magnet links
+                                infoHashes = new InfoHashes (infoHashes?.V1, InfoHash.FromMultiHash (val));
                                 break;
                         }
                         break;

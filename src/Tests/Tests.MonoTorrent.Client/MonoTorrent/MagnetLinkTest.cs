@@ -223,8 +223,34 @@ namespace MonoTorrent.Common
         [Test]
         public void ShouldAcceptHybridV1V2Uri ()
         {
-            Assert.DoesNotThrow (() => MagnetLink.FromUri (new Uri ("magnet:?xt=urn:btih:631a31dd0a46257d5078c0dee4e66e26f73e42ac&xt=urn:btmh:1220d8dd32ac93357c368556af3ac1d95c9d76bd0dff6fa9833ecdac3d53134efabb&dn=bittorrent-v1-v2-hybrid-test")));
+            var link = MagnetLink.FromUri (new Uri ("magnet:?xt=urn:btih:631a31dd0a46257d5078c0dee4e66e26f73e42ac&xt=urn:btmh:1220d8dd32ac93357c368556af3ac1d95c9d76bd0dff6fa9833ecdac3d53134efabb&dn=bittorrent-v1-v2-hybrid-test"));
+            Assert.IsNotNull (link.InfoHashes.V1);
+            Assert.IsNotNull (link.InfoHashes.V2);
+            Assert.AreEqual ("631a31dd0a46257d5078c0dee4e66e26f73e42ac", link.InfoHashes.V1.ToHex ().ToLowerInvariant ());
+            Assert.AreEqual ("d8dd32ac93357c368556af3ac1d95c9d76bd0dff6fa9833ecdac3d53134efabb", link.InfoHashes.V2.ToHex ().ToLowerInvariant ());
         }
 
+        [Test]
+        public void ShouldAcceptV2Uri ()
+        {
+            var link = MagnetLink.FromUri (new Uri ("magnet:?xt=urn:btmh:1220caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e&dn=bittorrent-v2-test"));
+            Assert.IsNull (link.InfoHashes.V1);
+            Assert.IsNotNull (link.InfoHashes.V2);
+            Assert.AreEqual ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e", link.InfoHashes.V2.ToHex ().ToLowerInvariant ());
+        }
+
+        [Test]
+        public void ThrowsOnMultipleV2Uri ()
+        {
+            Assert.Throws<FormatException> (() => MagnetLink.FromUri (
+                new Uri ("magnet:?xt=urn:btmh:1220caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e&xt=urn:btmh:1220caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e&dn=bittorrent-v2-test")));
+        }
+
+        [Test]
+        public void ThrowsOnMultipleV1Uri ()
+        {
+            Assert.Throws<FormatException> (() => MagnetLink.FromUri (
+                new Uri ("magnet:?xt=urn:btih:631a31dd0a46257d5078c0dee4e66e26f73e42ac&xt=urn:btih:631a31dd0a46257d5078c0dee4e66e26f73e42ac&dn=bittorrent-v1-test")));
+        }
     }
 }
