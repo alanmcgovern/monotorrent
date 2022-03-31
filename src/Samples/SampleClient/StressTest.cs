@@ -75,9 +75,9 @@ namespace ClientSample
                     AllowedEncryption = new[] { EncryptionType.PlainText },
                     DiskCacheBytes = DataSize,
                     ListenEndPoint = new IPEndPoint (IPAddress.Any, port++)
-                }.ToSettings ()
+                }.ToSettings (),
+                Factories.Default.WithPieceWriterCreator (maxOpenFiles => new NullWriter ())
             );
-            await seeder.ChangePieceWriterAsync (new NullWriter ());
 
             var downloaders = Enumerable.Range (port, 16).Select (p => {
                 return new ClientEngine (
@@ -85,11 +85,10 @@ namespace ClientSample
                         AllowedEncryption = new[] { EncryptionType.PlainText },
                         DiskCacheBytes = DataSize,
                         ListenEndPoint = new IPEndPoint (IPAddress.Any, p),
-                    }.ToSettings ()
+                    }.ToSettings (),
+                    Factories.Default.WithPieceWriterCreator (maxOpenFiles => new NullWriter ())
                 );
             }).ToArray ();
-            foreach (var engine in downloaders)
-                await engine.ChangePieceWriterAsync (new NullWriter ());
 
             Directory.CreateDirectory (DataDir);
             // Generate some fake data on-disk

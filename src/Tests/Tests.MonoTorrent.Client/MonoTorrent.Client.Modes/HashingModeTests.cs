@@ -132,9 +132,7 @@ namespace MonoTorrent.Client.Modes
             var pieceHashed = new TaskCompletionSource<byte[]> ();
             var secondPieceHashed = new TaskCompletionSource<byte[]> ();
 
-            var writer = new TestWriter ();
-            writer.FilesThatExist.AddRange (Manager.Files);
-            await Manager.Engine.ChangePieceWriterAsync (writer);
+            PieceWriter.FilesThatExist.AddRange (Manager.Files);
 
             Manager.Engine.DiskManager.GetHashAsyncOverride = async (torrentdata, pieceIndex, dest) => {
                 pieceTryHash.TrySetResult (null);

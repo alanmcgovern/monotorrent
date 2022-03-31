@@ -195,11 +195,14 @@ namespace MonoTorrent.Client
         [Test]
         public async Task DeleteBeforeHashing ()
         {
+            TestWriter testWriter = null;
             using var tmpDir = TempDir.Create ();
             using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
                 AutoSaveLoadFastResume = true,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            }.ToSettings (),
+                Factories.Default.WithPieceWriterCreator (maxOpenFiles => (testWriter = new TestWriter ()))
+            );
 
             var first = new TaskCompletionSource<object> ();
             var second = new TaskCompletionSource<object> ();
@@ -209,10 +212,7 @@ namespace MonoTorrent.Client
             Directory.CreateDirectory (Path.GetDirectoryName (path));
             File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (true), new MutableBitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
-            await engine.ChangePieceWriterAsync (new TestWriter {
-                FilesThatExist = new System.Collections.Generic.List<ITorrentManagerFile> (manager.Files)
-            });
-
+            testWriter.FilesThatExist = new System.Collections.Generic.List<ITorrentManagerFile> (manager.Files);
             Assert.IsTrue (manager.HashChecked);
             manager.Engine.DiskManager.GetHashAsyncOverride = (torrent, pieceIndex, dest) => {
                 first.SetResult (null);

@@ -485,7 +485,7 @@ namespace MonoTorrent.Client
             return manager != null && await RemoveAsync (manager, mode);
         }
 
-        public async Task ChangePieceWriterAsync (IPieceWriter writer)
+        async Task ChangePieceWriterAsync (IPieceWriter writer)
         {
             writer = writer ?? throw new ArgumentNullException (nameof (writer));
 
