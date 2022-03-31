@@ -56,18 +56,24 @@ namespace MonoTorrent.Client
         internal static readonly MainLoop MainLoop = new MainLoop ("Client Engine Loop");
         static readonly Logger Log = Logger.Create (nameof (ClientEngine));
 
-        public static async Task<ClientEngine> RestoreStateAsync (string pathToStateFile)
+        public static Task<ClientEngine> RestoreStateAsync (string pathToStateFile)
+            => RestoreStateAsync (pathToStateFile, Factories.Default);
+
+        public static async Task<ClientEngine> RestoreStateAsync (string pathToStateFile, Factories factories)
         {
             await MainLoop.SwitchThread ();
-            return await RestoreStateAsync (File.ReadAllBytes (pathToStateFile));
+            return await RestoreStateAsync (File.ReadAllBytes (pathToStateFile), factories);
         }
 
-        public static async Task<ClientEngine> RestoreStateAsync (ReadOnlyMemory<byte> buffer)
+        public static Task<ClientEngine> RestoreStateAsync (ReadOnlyMemory<byte> buffer)
+            => RestoreStateAsync (buffer, Factories.Default);
+
+        public static async Task<ClientEngine> RestoreStateAsync (ReadOnlyMemory<byte> buffer, Factories factories)
         {
             var state = BEncodedValue.Decode<BEncodedDictionary> (buffer.Span);
             var engineSettings = Serializer.DeserializeEngineSettings ((BEncodedDictionary) state["Settings"]);
 
-            var clientEngine = new ClientEngine (engineSettings);
+            var clientEngine = new ClientEngine (engineSettings, factories);
             TorrentManager manager;
             foreach (BEncodedDictionary torrent in (BEncodedList) state[nameof (clientEngine.Torrents)]) {
                 var saveDirectory = ((BEncodedString) torrent[nameof (manager.SavePath)]).Text;
