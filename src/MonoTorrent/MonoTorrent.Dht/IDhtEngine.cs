@@ -67,6 +67,7 @@ namespace MonoTorrent.Dht
         bool Disposed { get; }
         ITransferMonitor Monitor { get; }
         TimeSpan MinimumAnnounceInterval { get; }
+        int NodeCount { get; }
         DhtState State { get; }
 
         void Add (IEnumerable<ReadOnlyMemory<byte>> nodes);

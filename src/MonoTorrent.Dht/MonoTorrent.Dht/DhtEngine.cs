@@ -88,6 +88,7 @@ namespace MonoTorrent.Dht
         internal TimeSpan BucketRefreshTimeout { get; set; }
         internal NodeId LocalId => RoutingTable.LocalNode.Id;
         internal MessageLoop MessageLoop { get; }
+        public int NodeCount => RoutingTable.CountNodes ();
         internal RoutingTable RoutingTable { get; }
         internal TokenManager TokenManager { get; }
         internal Dictionary<NodeId, List<Node>> Torrents { get; }

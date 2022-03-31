@@ -203,7 +203,9 @@ namespace MonoTorrent.Client
 
         public ConnectionManager ConnectionManager { get; }
 
-        public IDhtEngine DhtEngine { get; private set; }
+        public IDht Dht { get; private set; }
+
+        internal IDhtEngine DhtEngine { get; private set; }
 
         IDhtListener DhtListener { get; set; }
 
@@ -314,6 +316,7 @@ namespace MonoTorrent.Client
 
             DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
             DhtEngine = (settings.DhtEndPoint == null ? null : Factories.CreateDht ()) ?? new NullDhtEngine ();
+            Dht = new DhtEngineWrapper (DhtEngine);
             DhtEngine.SetListenerAsync (DhtListener).GetAwaiter ().GetResult ();
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
@@ -649,6 +652,7 @@ namespace MonoTorrent.Client
                 DhtEngine.Dispose ();
             }
             DhtEngine = engine ?? new NullDhtEngine ();
+            Dht = new DhtEngineWrapper (DhtEngine);
 
             DhtEngine.StateChanged += DhtEngineStateChanged;
             DhtEngine.PeersFound += DhtEnginePeersFound;

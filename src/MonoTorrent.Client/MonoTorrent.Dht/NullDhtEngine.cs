@@ -32,8 +32,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Dht;
+using MonoTorrent.Dht;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Client
 {
     class NullTransferMonitor : ITransferMonitor
     {
@@ -60,6 +61,7 @@ namespace MonoTorrent.Dht
         public TimeSpan AnnounceInterval { get; }
         public bool Disposed => false;
         public TimeSpan MinimumAnnounceInterval { get; }
+        public int NodeCount => 0;
         public ITransferMonitor Monitor { get; } = new NullTransferMonitor ();
 
         public DhtState State => DhtState.NotReady;
