@@ -55,7 +55,7 @@ namespace MonoTorrent.Messages
         protected T ReadBencodedValue<T> (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
             where T : BEncodedValue
         {
-            var value = BEncodedValue.Decode (buffer.ToArray (), strictDecoding);
+            var value = BEncodedValue.Decode (buffer, strictDecoding);
             buffer = buffer.Slice (value.LengthInBytes ());
             return (T) value;
         }

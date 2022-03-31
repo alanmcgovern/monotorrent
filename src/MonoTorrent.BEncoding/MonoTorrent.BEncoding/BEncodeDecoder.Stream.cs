@@ -178,7 +178,7 @@ namespace MonoTorrent.BEncoding
                     var bytes = new byte[length];
                     if (reader.Read (bytes, 0, length) != length)
                         throw new BEncodingException ("Couldn't decode string");
-                    return BEncodedString.FromMemory (new ReadOnlyMemory<byte> (bytes));
+                    return BEncodedString.FromMemory (bytes);
                 }
 
                 if (read < '0' || read > '9')

@@ -38,6 +38,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
     /// </summary>
     class RC4 : IEncryption
     {
+        static readonly Memory<byte> Discarder = new byte[1024];
         static readonly RandomNumberGenerator random = new RNGCryptoServiceProvider ();
 
         readonly byte[] S;
@@ -61,9 +62,9 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
             x = 0;
 
-            byte[] wasteBuffer = new byte[1024];
-            random.GetBytes (wasteBuffer);
-            Encrypt (wasteBuffer);
+            // We need to discard the first 1024 bytes. The contents of the 'discarder' buffer
+            // are irrelevant, we just to ensure we consume the first 1024 bytes of the encoder.
+            Encrypt (Discarder.Span);
         }
 
         public void Decrypt (Span<byte> buffer)
