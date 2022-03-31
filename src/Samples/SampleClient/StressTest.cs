@@ -139,14 +139,14 @@ namespace ClientSample
             }
 
             while (true) {
-                long downTotal = seeder.TotalDownloadSpeed;
-                long upTotal = seeder.TotalUploadSpeed;
+                long downTotal = seeder.TotalDownloadRate;
+                long upTotal = seeder.TotalUploadRate;
                 long totalConnections = 0;
                 long dataDown = seeder.Torrents[0].Monitor.DataBytesReceived + seeder.Torrents[0].Monitor.ProtocolBytesReceived;
                 long dataUp = seeder.Torrents[0].Monitor.DataBytesSent + seeder.Torrents[0].Monitor.ProtocolBytesSent;
                 foreach (var engine in downloaders) {
-                    downTotal += engine.TotalDownloadSpeed;
-                    upTotal += engine.TotalUploadSpeed;
+                    downTotal += engine.TotalDownloadRate;
+                    upTotal += engine.TotalUploadRate;
 
                     dataDown += engine.Torrents[0].Monitor.DataBytesReceived + engine.Torrents[0].Monitor.ProtocolBytesReceived;
                     dataUp += engine.Torrents[0].Monitor.DataBytesSent + engine.Torrents[0].Monitor.ProtocolBytesSent;

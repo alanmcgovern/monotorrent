@@ -53,9 +53,9 @@ namespace MonoTorrent.Client
         [EditorBrowsable (EditorBrowsableState.Never)]
         public long DataBytesUploaded => DataBytesSent;
 
-        [Obsolete ("Use ReceiveRate instead")]
+        [Obsolete ("Use DownloadRate instead")]
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public long DownloadSpeed => ReceiveRate;
+        public long DownloadSpeed => DownloadRate;
 
         [Obsolete ("Use ProtocolBytesReceived instead")]
         [EditorBrowsable (EditorBrowsableState.Never)]
@@ -65,9 +65,9 @@ namespace MonoTorrent.Client
         [EditorBrowsable (EditorBrowsableState.Never)]
         public long ProtocolBytesUploaded => ProtocolBytesSent;
 
-        [Obsolete ("Use SendRate instead")]
+        [Obsolete ("Use UploadRate instead")]
         [EditorBrowsable (EditorBrowsableState.Never)]
-        public long UploadSpeed => SendRate;
+        public long UploadSpeed => UploadRate;
 
         /// <summary>
         /// Total bytes of <see cref="ITorrentFile"/> data received from this peer. This value tracks the size of the payload of each <see cref="PieceMessage"/> received from this peer, which is <see cref="PieceMessage.RequestLength"/> bytes.
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Current receive rate, in bytes/second, for this peer. This value includes 'data' as well as 'protocol'.
         /// </summary>
-        public long ReceiveRate => DataDown.Rate + ProtocolDown.Rate;
+        public long DownloadRate => DataDown.Rate + ProtocolDown.Rate;
 
         /// <summary>
         /// Total bytes of protocol data received from this peer. This value tracks the size of each <see cref="PeerMessage"/> received from this peer, excluding the payload portion of each <see cref="PieceMessage"/>, which is <see cref="PieceMessage.RequestLength"/> bytes.
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Current send rate, in bytes/second, for this peer. This value includes 'data' as well as 'protocol'.
         /// </summary>
-        public long SendRate => DataUp.Rate + ProtocolUp.Rate;
+        public long UploadRate => DataUp.Rate + ProtocolUp.Rate;
 
         internal ConnectionMonitor ()
             : this (12)

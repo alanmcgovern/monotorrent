@@ -40,8 +40,8 @@ namespace MonoTorrent.Client
     {
         public long BytesSent { get; }
         public long BytesReceived { get; }
-        public long ReceiveRate { get; }
-        public long SendRate { get; }
+        public long DownloadRate { get; }
+        public long UploadRate { get; }
     }
 
     class NullDhtEngine : IDhtEngine

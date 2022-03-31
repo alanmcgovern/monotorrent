@@ -235,20 +235,20 @@ namespace MonoTorrent.Client
 
         public IList<TorrentManager> Torrents { get; }
 
-        public long TotalDownloadSpeed {
+        public long TotalDownloadRate {
             get {
                 long total = 0;
                 for (int i = 0; i < publicTorrents.Count; i++)
-                    total += publicTorrents[i].Monitor.ReceiveRate;
+                    total += publicTorrents[i].Monitor.DownloadRate;
                 return total;
             }
         }
 
-        public long TotalUploadSpeed {
+        public long TotalUploadRate {
             get {
                 long total = 0;
                 for (int i = 0; i < publicTorrents.Count; i++)
-                    total += publicTorrents[i].Monitor.SendRate;
+                    total += publicTorrents[i].Monitor.UploadRate;
                 return total;
             }
         }
@@ -784,8 +784,8 @@ namespace MonoTorrent.Client
             tickCount++;
 
             if (tickCount % 2 == 0) {
-                downloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, TotalDownloadSpeed, PreferredChunkSize (Settings.MaximumDownloadSpeed, 0));
-                uploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, TotalUploadSpeed, PreferredChunkSize(Settings.MaximumDownloadSpeed, 0));
+                downloadLimiter.UpdateChunks (Settings.MaximumDownloadRate, TotalDownloadRate, PreferredChunkSize (Settings.MaximumDownloadRate, 0));
+                uploadLimiter.UpdateChunks (Settings.MaximumUploadRate, TotalUploadRate, PreferredChunkSize(Settings.MaximumUploadRate, 0));
             }
 
             ConnectionManager.CancelPendingConnects ();

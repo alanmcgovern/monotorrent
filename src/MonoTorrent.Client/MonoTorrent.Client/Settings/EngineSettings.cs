@@ -155,9 +155,9 @@ namespace MonoTorrent.Client
         public int MaximumConnections { get; } = 150;
 
         /// <summary>
-        /// The maximum download speed, in bytes per second, overall. A value of 0 means unlimited. Defaults to 0.
+        /// The maximum download rate, in bytes per second, overall. A value of 0 means unlimited. Defaults to 0.
         /// </summary>
-        public int MaximumDownloadSpeed { get; }
+        public int MaximumDownloadRate { get; }
 
         /// <summary>
         /// The maximum number of concurrent connection attempts overall. Defaults to 8.
@@ -165,9 +165,9 @@ namespace MonoTorrent.Client
         public int MaximumHalfOpenConnections { get; } = 8;
 
         /// <summary>
-        /// The maximum upload speed, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.
+        /// The maximum upload rate, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.
         /// </summary>
-        public int MaximumUploadSpeed { get; }
+        public int MaximumUploadRate { get; }
 
         /// <summary>
         /// The maximum number of files which can be opened concurrently. On platforms which limit the maximum
@@ -177,16 +177,16 @@ namespace MonoTorrent.Client
         public int MaximumOpenFiles { get; } = 196;
 
         /// <summary>
-        /// The maximum disk read speed, in bytes per second. A value of 0 means unlimited. This is
+        /// The maximum disk read rate, in bytes per second. A value of 0 means unlimited. This is
         /// typically only useful for non-SSD drives to prevent the hashing process from saturating
         /// the available drive bandwidth. Defaults to 0.
         /// </summary>
         public int MaximumDiskReadRate { get; }
 
         /// <summary>
-        /// The maximum disk write speed, in bytes per second. A value of 0 means unlimited. This is
+        /// The maximum disk write rate, in bytes per second. A value of 0 means unlimited. This is
         /// typically only useful for non-SSD drives to prevent the downloading process from saturating
-        /// the available drive bandwidth. If the download speed exceeds the max write rate then the
+        /// the available drive bandwidth. If the download rate exceeds the max write rate then the
         /// download will be throttled. Defaults to 0.
         /// </summary>
         public int MaximumDiskWriteRate { get; }
@@ -219,8 +219,8 @@ namespace MonoTorrent.Client
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
             TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
-            int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadSpeed, int maximumHalfOpenConnections,
-            int maximumOpenFiles, int maximumUploadSpeed, IPEndPoint? reportedAddress, bool usePartialFiles)
+            int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
+            int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -239,10 +239,10 @@ namespace MonoTorrent.Client
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
             MaximumDiskWriteRate = maximumDiskWriteRate;
-            MaximumDownloadSpeed = maximumDownloadSpeed;
+            MaximumDownloadRate = maximumDownloadRate;
             MaximumHalfOpenConnections = maximumHalfOpenConnections;
             MaximumOpenFiles = maximumOpenFiles;
-            MaximumUploadSpeed = maximumUploadSpeed;
+            MaximumUploadRate = maximumUploadRate;
             ReportedAddress = reportedAddress;
             UsePartialFiles = usePartialFiles;
         }
@@ -283,10 +283,10 @@ namespace MonoTorrent.Client
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate
                    && MaximumDiskWriteRate == other.MaximumDiskWriteRate
-                   && MaximumDownloadSpeed == other.MaximumDownloadSpeed
+                   && MaximumDownloadRate == other.MaximumDownloadRate
                    && MaximumHalfOpenConnections == other.MaximumHalfOpenConnections
                    && MaximumOpenFiles == other.MaximumOpenFiles
-                   && MaximumUploadSpeed == other.MaximumUploadSpeed
+                   && MaximumUploadRate == other.MaximumUploadRate
                    && ReportedAddress == other.ReportedAddress
                    && UsePartialFiles == other.UsePartialFiles
                    ;
@@ -295,8 +295,8 @@ namespace MonoTorrent.Client
         public override int GetHashCode ()
         {
             return MaximumConnections +
-                   MaximumDownloadSpeed +
-                   MaximumUploadSpeed +
+                   MaximumDownloadRate +
+                   MaximumUploadRate +
                    MaximumHalfOpenConnections +
                    ListenEndPoint?.GetHashCode () ?? 0 +
                    AllowedEncryption.GetHashCode () +

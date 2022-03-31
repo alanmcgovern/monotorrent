@@ -83,7 +83,7 @@ namespace ClientSample
                     while (Engine.IsRunning) {
                         sb.Remove (0, sb.Length);
 
-                        AppendFormat (sb, $"Transfer Rate:      {Engine.TotalDownloadSpeed / 1024.0:0.00}kB/sec down / {Engine.TotalUploadSpeed / 1024.0:0.00}kB/sec up");
+                        AppendFormat (sb, $"Transfer Rate:      {Engine.TotalDownloadRate / 1024.0:0.00}kB/sec down / {Engine.TotalUploadRate / 1024.0:0.00}kB/sec up");
                         AppendFormat (sb, $"Memory Cache:       {Engine.DiskManager.CacheBytesUsed / 1024.0:0.00}/{Engine.Settings.DiskCacheBytes / 1024.0:0.00} kB");
                         AppendFormat (sb, $"Disk IO Rate:       {Engine.DiskManager.ReadRate / 1024.0:0.00} kB/s read / {Engine.DiskManager.WriteRate / 1024.0:0.00} kB/s write");
                         AppendFormat (sb, $"Disk IO Total:      {Engine.DiskManager.TotalBytesRead / 1024.0:0.00} kB read / {Engine.DiskManager.TotalBytesWritten / 1024.0:0.00} kB written");
@@ -102,7 +102,7 @@ namespace ClientSample
                             AppendFormat (sb, $"State:              {manager.State}");
                             AppendFormat (sb, $"Name:               {(manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name)}");
                             AppendFormat (sb, $"Progress:           {manager.Progress:0.00}");
-                            AppendFormat (sb, $"Transfer Rate:      {manager.Monitor.ReceiveRate / 1024.0:0.00}kB/s down / {manager.Monitor.SendRate / 1024.0:0.00} kB/s up");
+                            AppendFormat (sb, $"Transfer Rate:      {manager.Monitor.DownloadRate / 1024.0:0.00}kB/s down / {manager.Monitor.UploadRate / 1024.0:0.00} kB/s up");
                             AppendFormat (sb, $"Total transferred:  {manager.Monitor.DataBytesReceived / (1024.0 * 1024.0):0.00} MB down / {manager.Monitor.DataBytesSent / (1024.0 * 1024.0):0.00} MB up");
                             AppendFormat (sb, $"Tracker Status");
                             foreach (var tier in manager.TrackerManager.Tiers)
@@ -115,9 +115,9 @@ namespace ClientSample
                             AppendFormat (sb, "Outgoing:");
                             foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Outgoing)) {
                                 AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
-                                                                                            p.Monitor.ReceiveRate / 1024.0,
+                                                                                            p.Monitor.DownloadRate / 1024.0,
                                                                                             p.AmRequestingPiecesCount,
-                                                                                            p.Monitor.SendRate / 1024.0,
+                                                                                            p.Monitor.UploadRate / 1024.0,
                                                                                             p.EncryptionType,
                                                                                             string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
                             }
@@ -125,9 +125,9 @@ namespace ClientSample
                             AppendFormat (sb, "Incoming:");
                             foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Incoming)) {
                                 AppendFormat (sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0} - {4} ({5})", p.Uri,
-                                                                                            p.Monitor.ReceiveRate / 1024.0,
+                                                                                            p.Monitor.DownloadRate / 1024.0,
                                                                                             p.AmRequestingPiecesCount,
-                                                                                            p.Monitor.SendRate / 1024.0,
+                                                                                            p.Monitor.UploadRate / 1024.0,
                                                                                             p.EncryptionType,
                                                                                             string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
                             }

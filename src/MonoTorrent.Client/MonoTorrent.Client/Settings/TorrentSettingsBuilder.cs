@@ -36,8 +36,8 @@ namespace MonoTorrent.Client
     public class TorrentSettingsBuilder
     {
         int maximumConnections;
-        int maximumDownloadSpeed;
-        int maximumUploadSpeed;
+        int maximumDownloadRate;
+        int maximumUploadRate;
         int uploadSlots;
 
         /// <summary>
@@ -73,19 +73,19 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The maximum download speed, in bytes per second, for this torrent. A value of 0 means unlimited. Defaults to 0.
+        /// The maximum download rate, in bytes per second, for this torrent. A value of 0 means unlimited. Defaults to 0.
         /// </summary>
-        public int MaximumDownloadSpeed {
-            get => maximumDownloadSpeed;
-            set => maximumDownloadSpeed = CheckZeroOrPositive (value);
+        public int MaximumDownloadRate {
+            get => maximumDownloadRate;
+            set => maximumDownloadRate = CheckZeroOrPositive (value);
         }
 
         /// <summary>
-        /// The maximum upload speed, in bytes per second, for this torrent. A value of 0 means unlimited. defaults to 0.
+        /// The maximum upload rate, in bytes per second, for this torrent. A value of 0 means unlimited. defaults to 0.
         /// </summary>
-        public int MaximumUploadSpeed {
-            get => maximumUploadSpeed;
-            set => maximumUploadSpeed = CheckZeroOrPositive (value);
+        public int MaximumUploadRate {
+            get => maximumUploadRate;
+            set => maximumUploadRate = CheckZeroOrPositive (value);
         }
 
         /// <summary>
@@ -119,8 +119,8 @@ namespace MonoTorrent.Client
             AllowPeerExchange = settings.AllowPeerExchange;
             CreateContainingDirectory = settings.CreateContainingDirectory;
             MaximumConnections = settings.MaximumConnections;
-            MaximumDownloadSpeed = settings.MaximumDownloadSpeed;
-            MaximumUploadSpeed = settings.MaximumUploadSpeed;
+            MaximumDownloadRate = settings.MaximumDownloadRate;
+            MaximumUploadRate = settings.MaximumUploadRate;
             UploadSlots = settings.UploadSlots;
             WebSeedDelay = settings.WebSeedDelay;
             WebSeedSpeedTrigger = settings.WebSeedSpeedTrigger;
@@ -133,8 +133,8 @@ namespace MonoTorrent.Client
                 AllowInitialSeeding,
                 AllowPeerExchange,
                 MaximumConnections,
-                MaximumDownloadSpeed,
-                MaximumUploadSpeed,
+                MaximumDownloadRate,
+                MaximumUploadRate,
                 UploadSlots,
                 WebSeedDelay,
                 WebSeedSpeedTrigger,

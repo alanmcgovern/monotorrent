@@ -68,10 +68,10 @@ namespace MonoTorrent.Client
         int maximumConnections;
         int maximumDiskReadRate;
         int maximumDiskWriteRate;
-        int maximumDownloadSpeed;
+        int maximumDownloadRate;
         int maximumHalfOpenConnections;
         int maximumOpenFiles;
-        int maximumUploadSpeed;
+        int maximumUploadRate;
 
         /// <summary>
         /// A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
@@ -190,11 +190,11 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The maximum download speed, in bytes per second, overall. A value of 0 means unlimited. Defaults to 0.
+        /// The maximum download rate, in bytes per second, overall. A value of 0 means unlimited. Defaults to 0.
         /// </summary>
-        public int MaximumDownloadSpeed {
-            get => maximumDownloadSpeed;
-            set => maximumDownloadSpeed = CheckZeroOrPositive (value);
+        public int MaximumDownloadRate {
+            get => maximumDownloadRate;
+            set => maximumDownloadRate = CheckZeroOrPositive (value);
         }
 
         /// <summary>
@@ -206,11 +206,11 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The maximum upload speed, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.
+        /// The maximum upload rate, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.
         /// </summary>
-        public int MaximumUploadSpeed {
-            get => maximumUploadSpeed;
-            set => maximumUploadSpeed = CheckZeroOrPositive (value);
+        public int MaximumUploadRate {
+            get => maximumUploadRate;
+            set => maximumUploadRate = CheckZeroOrPositive (value);
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The maximum disk read speed, in bytes per second. A value of 0 means unlimited. This is
+        /// The maximum disk read rate, in bytes per second. A value of 0 means unlimited. This is
         /// typically only useful for non-SSD drives to prevent the hashing process from saturating
         /// the available drive bandwidth. Defaults to 0.
         /// </summary>
@@ -234,9 +234,9 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// The maximum disk write speed, in bytes per second. A value of 0 means unlimited. This is
+        /// The maximum disk write rate, in bytes per second. A value of 0 means unlimited. This is
         /// typically only useful for non-SSD drives to prevent the downloading process from saturating
-        /// the available drive bandwidth. If the download speed exceeds the max write rate then the
+        /// the available drive bandwidth. If the download rate exceeds the max write rate then the
         /// download will be throttled. Defaults to 0.
         /// </summary>
         public int MaximumDiskWriteRate {
@@ -282,10 +282,10 @@ namespace MonoTorrent.Client
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
             MaximumDiskWriteRate = settings.MaximumDiskWriteRate;
-            MaximumDownloadSpeed = settings.MaximumDownloadSpeed;
+            MaximumDownloadRate = settings.MaximumDownloadRate;
             MaximumHalfOpenConnections = settings.MaximumHalfOpenConnections;
             MaximumOpenFiles = settings.MaximumOpenFiles;
-            MaximumUploadSpeed = settings.MaximumUploadSpeed;
+            MaximumUploadRate = settings.MaximumUploadRate;
             ReportedAddress = settings.ReportedAddress;
             UsePartialFiles = settings.UsePartialFiles;
         }
@@ -316,10 +316,10 @@ namespace MonoTorrent.Client
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,
                 maximumDiskWriteRate: MaximumDiskWriteRate,
-                maximumDownloadSpeed: MaximumDownloadSpeed,
+                maximumDownloadRate: MaximumDownloadRate,
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
-                maximumUploadSpeed: MaximumUploadSpeed,
+                maximumUploadRate: MaximumUploadRate,
                 reportedAddress: ReportedAddress,
                 usePartialFiles: UsePartialFiles
             );

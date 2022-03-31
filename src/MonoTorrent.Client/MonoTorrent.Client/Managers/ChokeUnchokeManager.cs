@@ -198,7 +198,7 @@ namespace MonoTorrent.Client
                         //Calculate the latest up/downloadrate
                         connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesSent - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds;
                         connectedPeer.LastReviewDownloadRate = Math.Max ((connectedPeer.Monitor.DataBytesReceived - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview.Elapsed.TotalSeconds,
-                            connectedPeer.Monitor.ReceiveRate);
+                            connectedPeer.Monitor.DownloadRate);
                     } else if (connectedPeer.IsInterested)
                         //All other interested peers are candidates for optimistic unchoking
                         optimisticUnchokeCandidates.Add (connectedPeer);

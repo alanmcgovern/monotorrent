@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        long IPeer.DownloadSpeed => Monitor.ReceiveRate;
+        long IPeer.DownloadSpeed => Monitor.DownloadRate;
         List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
         bool IPeer.IsChoking => IsChoking;
         int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;

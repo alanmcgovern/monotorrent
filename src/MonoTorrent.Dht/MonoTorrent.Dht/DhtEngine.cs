@@ -50,8 +50,8 @@ namespace MonoTorrent.Dht
 
     class TransferMonitor : ITransferMonitor
     {
-        long ITransferMonitor.SendRate => SendMonitor.Rate;
-        long ITransferMonitor.ReceiveRate => ReceiveMonitor.Rate;
+        long ITransferMonitor.UploadRate => SendMonitor.Rate;
+        long ITransferMonitor.DownloadRate => ReceiveMonitor.Rate;
         long ITransferMonitor.BytesSent => SendMonitor.Total;
         long ITransferMonitor.BytesReceived => ReceiveMonitor.Total;
 

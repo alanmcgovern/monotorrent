@@ -48,14 +48,14 @@ namespace MonoTorrent.Dht
         long BytesReceived { get; }
 
         /// <summary>
-        /// Estimate of the amount of data sent every second, in bytes/second.
+        /// Estimate of the amount of data received every second, in bytes/second.
         /// </summary>
-        long ReceiveRate { get; }
+        long DownloadRate { get; }
 
         /// <summary>
         /// Estimate of the amount of data sent every second, in bytes/second.
         /// </summary>
-        long SendRate { get; }
+        long UploadRate { get; }
     }
 
     public interface IDhtEngine : IDisposable

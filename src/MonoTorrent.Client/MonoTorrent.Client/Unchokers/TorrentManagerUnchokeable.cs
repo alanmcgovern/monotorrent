@@ -14,13 +14,13 @@ namespace MonoTorrent.Client
 
         public bool Seeding => Manager.Complete;
 
-        public long DownloadSpeed => Manager.Monitor.ReceiveRate;
+        public long DownloadSpeed => Manager.Monitor.DownloadRate;
 
-        public long UploadSpeed => Manager.Monitor.SendRate;
+        public long UploadSpeed => Manager.Monitor.UploadRate;
 
-        public long MaximumDownloadSpeed => Manager.Settings.MaximumDownloadSpeed;
+        public long MaximumDownloadSpeed => Manager.Settings.MaximumDownloadRate;
 
-        public long MaximumUploadSpeed => Manager.Settings.MaximumUploadSpeed;
+        public long MaximumUploadSpeed => Manager.Settings.MaximumUploadRate;
 
         public int UploadSlots => Manager.Settings.UploadSlots;
 

@@ -585,7 +585,7 @@ namespace MonoTorrent.Client.Modes
                     id.LastPeerExchangeReview.Restart ();
                 }
 
-                int maxRequests = PieceManager.NormalRequestAmount + (int) (id.Monitor.ReceiveRate / 1024.0 / PieceManager.BonusRequestPerKb);
+                int maxRequests = PieceManager.NormalRequestAmount + (int) (id.Monitor.DownloadRate / 1024.0 / PieceManager.BonusRequestPerKb);
                 maxRequests = Math.Min (id.MaxSupportedPendingRequests, maxRequests);
                 maxRequests = Math.Max (2, maxRequests);
                 id.MaxPendingRequests = maxRequests;
@@ -636,7 +636,7 @@ namespace MonoTorrent.Client.Modes
 
         void DownloadLogic (int counter)
         {
-            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.ReceiveRate < Manager.Settings.WebSeedSpeedTrigger) {
+            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.DownloadRate < Manager.Settings.WebSeedSpeedTrigger) {
                 foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
                     BEncodedString peerId = CreatePeerId ();
 

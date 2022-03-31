@@ -966,8 +966,8 @@ namespace MonoTorrent.Client
         internal void UpdateLimiters ()
         {
             if (Engine != null) {
-                DownloadLimiter.UpdateChunks (Settings.MaximumDownloadSpeed, Monitor.ReceiveRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumDownloadSpeed, Settings.MaximumDownloadSpeed));
-                UploadLimiter.UpdateChunks (Settings.MaximumUploadSpeed, Monitor.SendRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumUploadSpeed, Settings.MaximumUploadSpeed));
+                DownloadLimiter.UpdateChunks (Settings.MaximumDownloadRate, Monitor.DownloadRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumDownloadRate, Settings.MaximumDownloadRate));
+                UploadLimiter.UpdateChunks (Settings.MaximumUploadRate, Monitor.UploadRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumUploadRate, Settings.MaximumUploadRate));
             }
         }
         #endregion Internal Methods
