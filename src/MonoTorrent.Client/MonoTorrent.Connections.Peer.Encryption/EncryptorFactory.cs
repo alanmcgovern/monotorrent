@@ -132,8 +132,13 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
             // First switch to the threadpool as creating encrypted sockets runs expensive computations in the ctor
             await MainLoop.SwitchToThreadpool ();
+
+            Memory<byte> handshakeBuffer = default;
+            using var releaser = handshake == null ? default : NetworkIO.BufferPool.Rent (handshake.ByteLength, out handshakeBuffer);
+            handshake?.Encode (handshakeBuffer.Span);
+
             if (preferredEncryption[0] != EncryptionType.PlainText) {
-                using var encSocket = new PeerAEncryption (factories, infoHash, preferredEncryption, handshake?.Encode ());
+                using var encSocket = new PeerAEncryption (factories, infoHash, preferredEncryption, handshakeBuffer);
                 await encSocket.HandshakeAsync (connection).ConfigureAwait (false);
                 if (encSocket.Decryptor is RC4Header && !supportsRC4Header)
                     throw new EncryptionException ("Decryptor was RC4Header but that is not allowed");
@@ -142,13 +147,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
                 return new EncryptorResult (encSocket.Decryptor!, encSocket.Encryptor!, null);
             } else if (supportsPlainText) {
-                if (handshake != null) {
-                    int length = handshake.ByteLength;
-                    using (NetworkIO.BufferPool.Rent (length, out Memory<byte> buffer)) {
-                        handshake.Encode (buffer.Span);
-                        await NetworkIO.SendAsync (connection, buffer, null, null, null).ConfigureAwait (false);
-                    }
-                }
+                if (handshakeBuffer.Length > 0)
+                    await NetworkIO.SendAsync (connection, handshakeBuffer, null, null, null).ConfigureAwait (false);
                 return new EncryptorResult (PlainTextEncryption.Instance, PlainTextEncryption.Instance, null);
             }
 

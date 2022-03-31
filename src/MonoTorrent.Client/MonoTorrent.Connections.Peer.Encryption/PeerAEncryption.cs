@@ -43,7 +43,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
     /// </summary>
     sealed class PeerAEncryption : EncryptedSocket
     {
-        public byte[] InitialPayload { get; }
+        public ReadOnlyMemory<byte> InitialPayload { get; }
 
         public PeerAEncryption (Factories factories, InfoHash infoHash, IList<EncryptionType> allowedEncryption)
             : this (factories, infoHash, allowedEncryption, null)
@@ -51,13 +51,13 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
         }
 
-        public PeerAEncryption (Factories factories, InfoHash infoHash, IList<EncryptionType> allowedEncryption, byte[]? initialPayload)
+        public PeerAEncryption (Factories factories, InfoHash infoHash, IList<EncryptionType> allowedEncryption, ReadOnlyMemory<byte> initialPayload)
             : base (factories, allowedEncryption)
         {
             if (allowedEncryption.Contains (EncryptionType.PlainText))
                 throw new NotSupportedException ("'PlainText' is an unsupported RC4 encryption type.");
 
-            InitialPayload = initialPayload ?? Array.Empty<byte> ();
+            InitialPayload = initialPayload;
             SKEY = infoHash;
         }
 
@@ -95,7 +95,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
                 Message.Write (ref position, (short) padC.Length);
                 Message.Write (ref position, padC.Span);
                 Message.Write (ref position, (short) InitialPayload.Length);
-                Message.Write (ref position, InitialPayload);
+                Message.Write (ref position, InitialPayload.Span);
                 DoEncrypt (before.Span);
 
                 await NetworkIO.SendAsync (socket!, buffer).ConfigureAwait (false);
