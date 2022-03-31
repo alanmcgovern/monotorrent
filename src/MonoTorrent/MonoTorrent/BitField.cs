@@ -463,17 +463,20 @@ namespace MonoTorrent
             return this;
         }
 
-        public byte[] ToByteArray ()
+        public byte[] ToBytes ()
         {
             byte[] data = new byte[LengthInBytes];
             ToBytes (data);
             return data;
         }
 
-        public void ToBytes (Span<byte> buffer)
+        public int ToBytes (Span<byte> buffer)
         {
             if (buffer == null)
                 throw new ArgumentNullException (nameof (buffer));
+            if (buffer.Length < LengthInBytes)
+                throw new ArgumentOutOfRangeException ($"The buffer must be able to store at least {LengthInBytes} bytes");
+
 
             int end = Length / 32;
             int offset = 0;
@@ -489,6 +492,8 @@ namespace MonoTorrent
                 buffer[offset++] = (byte) (Data[Data.Length - 1] >> shift);
                 shift -= 8;
             }
+
+            return offset;
         }
 
         [ExcludeFromCodeCoverage]

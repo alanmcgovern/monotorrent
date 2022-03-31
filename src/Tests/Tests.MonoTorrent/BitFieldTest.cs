@@ -93,7 +93,7 @@ namespace MonoTorrent
             var bf = new BitField (17);
             bf.From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
             Assert.AreEqual (17, bf.TrueCount);
-            Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, (byte)(1 << 7) }.SequenceEqual (bf.ToByteArray ()));
+            Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, (byte)(1 << 7) }.SequenceEqual (bf.ToBytes ()));
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace MonoTorrent
             var bf = new BitField (32);
             bf.From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
             Assert.AreEqual (32, bf.TrueCount);
-            Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue }.SequenceEqual (bf.ToByteArray ()));
+            Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue }.SequenceEqual (bf.ToBytes ()));
         }
 
         [Test]
@@ -163,7 +163,7 @@ namespace MonoTorrent
         public void ToByteArray ()
         {
             BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false });
-            BitField second = new BitField (first.ToByteArray (), first.Length);
+            BitField second = new BitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -173,7 +173,7 @@ namespace MonoTorrent
         public void ToByteArray2 ()
         {
             BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true });
-            BitField second = new BitField (first.ToByteArray (), first.Length);
+            BitField second = new BitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -183,7 +183,7 @@ namespace MonoTorrent
         public void ToByteArray3 ()
         {
             BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
-            BitField second = new BitField (first.ToByteArray (), first.Length);
+            BitField second = new BitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -196,7 +196,7 @@ namespace MonoTorrent
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true, false});
-            BitField second = new BitField (first.ToByteArray (), first.Length);
+            BitField second = new BitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -209,7 +209,7 @@ namespace MonoTorrent
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true});
-            BitField second = new BitField (first.ToByteArray (), first.Length);
+            BitField second = new BitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -222,7 +222,7 @@ namespace MonoTorrent
                                                         false, false, true, false, true, false, true, false,
                                                         true, false, false, false, true, true, true, false, true,
                                                         true, false, false, true, false, false, true});
-            BitField second = new BitField (first.ToByteArray (), first.Length);
+            BitField second = new BitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -372,15 +372,15 @@ namespace MonoTorrent
         {
             var bf = new MutableBitField (25);
             Assert.AreEqual (0, bf.TrueCount);
-            Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToByteArray ()));
+            Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToBytes ()));
 
             bf.Not ();
             Assert.AreEqual (25, bf.TrueCount);
-            Assert.IsTrue (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, 1 << 7 }.SequenceEqual (bf.ToByteArray ()));
+            Assert.IsTrue (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, 1 << 7 }.SequenceEqual (bf.ToBytes ()));
 
             bf.Not ();
             Assert.AreEqual (0, bf.TrueCount);
-            Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToByteArray ()));
+            Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToBytes ()));
         }
 
         [Test]
