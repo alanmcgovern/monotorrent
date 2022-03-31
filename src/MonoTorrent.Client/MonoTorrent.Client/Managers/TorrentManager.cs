@@ -989,9 +989,13 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
-        public void LoadFastResume (FastResume data)
+        public async Task LoadFastResumeAsync (FastResume data)
         {
-            Check.Data (data);
+            if (data == null)
+                throw new ArgumentNullException (nameof (data));
+
+            await ClientEngine.MainLoop;
+
             CheckMetadata ();
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
@@ -1005,8 +1009,10 @@ namespace MonoTorrent.Client
             HashChecked = true;
         }
 
-        public FastResume SaveFastResume ()
+        public async Task<FastResume> SaveFastResumeAsync ()
         {
+            await ClientEngine.MainLoop;
+
             CheckMetadata ();
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
@@ -1035,8 +1041,7 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchToThreadpool ();
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);
             if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume? fastResume) && InfoHashes == fastResume.InfoHashes) {
-                await ClientEngine.MainLoop;
-                LoadFastResume (fastResume);
+                await LoadFastResumeAsync (fastResume);
             }
         }
 
@@ -1046,7 +1051,7 @@ namespace MonoTorrent.Client
                 return;
 
             ClientEngine.MainLoop.CheckThread ();
-            var fastResumeData = SaveFastResume ().Encode ();
+            var fastResumeData = (await SaveFastResumeAsync ()).Encode ();
 
             await MainLoop.SwitchToThreadpool ();
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);

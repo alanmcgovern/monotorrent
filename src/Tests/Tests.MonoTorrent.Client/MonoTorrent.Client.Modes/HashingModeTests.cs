@@ -201,7 +201,7 @@ namespace MonoTorrent.Client.Modes
 
             var origUnhashed = new BitField (Manager.UnhashedPieces);
             var origBitfield = new BitField (Manager.Bitfield);
-            Manager.LoadFastResume (Manager.SaveFastResume ());
+            await Manager.LoadFastResumeAsync (await Manager.SaveFastResumeAsync ());
 
             Assert.AreEqual (origUnhashed, Manager.UnhashedPieces, "#3");
             Assert.AreEqual (origBitfield, Manager.Bitfield, "#4");
@@ -370,7 +370,7 @@ namespace MonoTorrent.Client.Modes
             });
 
             var bf = new MutableBitField (Manager.PieceCount ()).SetAll (true);
-            Manager.LoadFastResume (new FastResume (Manager.InfoHashes, bf, Manager.UnhashedPieces.SetAll (false)));
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
             foreach (var file in Manager.Files)

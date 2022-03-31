@@ -194,7 +194,7 @@ namespace MonoTorrent.Client.Modes
         public async Task AnnounceWhenComplete ()
         {
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
-            Manager.LoadFastResume (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
 
             Manager.MutableBitField[0] = false;
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -302,7 +302,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PauseSeeding ()
         {
-            Manager.LoadFastResume (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
 
             Assert.AreEqual (TorrentState.Seeding, Manager.State);

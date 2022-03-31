@@ -61,7 +61,7 @@ namespace MonoTorrent.PiecePicking
         TorrentManager torrentManager;
 
         [SetUp]
-        public void Setup ()
+        public async Task Setup ()
         {
             int pieceCount = 40;
             int pieceLength = 256 * 1024;
@@ -73,7 +73,7 @@ namespace MonoTorrent.PiecePicking
             peers = new List<PeerId> ();
 
             torrentManager = TestRig.CreateSingleFileManager (torrentData.Size, torrentData.PieceLength);
-            torrentManager.LoadFastResume (new FastResume (torrentManager.InfoHashes, new MutableBitField (pieceCount).SetAll (true), new MutableBitField (pieceCount).SetAll (false)));
+            await torrentManager.LoadFastResumeAsync (new FastResume (torrentManager.InfoHashes, new MutableBitField (pieceCount).SetAll (true), new MutableBitField (pieceCount).SetAll (false)));
 
             manager = new PieceManager (torrentManager);
             manager.Initialise ();
