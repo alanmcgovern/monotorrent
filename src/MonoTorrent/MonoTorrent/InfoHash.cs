@@ -168,7 +168,7 @@ namespace MonoTorrent
             if (infoHash.Length != 40 && infoHash.Length != 64)
                 throw new ArgumentException ("V1 InfoHashes must be 40 characters long, V2 infohashes must be 64 characters long.", nameof (infoHash));
 
-            byte[] hash = HexStringToByteArray(infoHash);
+            byte[] hash = HexStringToByteArray (infoHash);
             return InfoHash.FromMemory (hash);
         }
 
