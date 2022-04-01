@@ -168,10 +168,7 @@ namespace MonoTorrent
             if (infoHash.Length != 40 && infoHash.Length != 64)
                 throw new ArgumentException ("V1 InfoHashes must be 40 characters long, V2 infohashes must be 64 characters long.", nameof (infoHash));
 
-            byte[] hash = new byte[infoHash.Length / 2];
-            for (int i = 0; i < hash.Length; i++)
-                hash[i] = byte.Parse (infoHash.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
-
+            byte[] hash = HexStringToByteArray(infoHash);
             return InfoHash.FromMemory (hash);
         }
 
@@ -184,9 +181,7 @@ namespace MonoTorrent
             if (multiHash.Length != 68)
                 throw new ArgumentException ("V2 multihashes must be 68 characters long.", nameof (multiHash));
 
-            byte[] hash = new byte[multiHash.Length / 2];
-            for (int i = 0; i < hash.Length; i++)
-                hash[i] = byte.Parse (multiHash.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+            byte[] hash = HexStringToByteArray (multiHash);
 
             // first two bytes are varints encoding hash type and length, but we'll only support sha-256 for now.
             if (hash[0] != 0x12 || hash[1] != 0x20)
@@ -207,6 +202,14 @@ namespace MonoTorrent
             if (infoHash is null)
                 throw new ArgumentNullException (nameof (infoHash));
             return new InfoHash (new ReadOnlyMemory<byte> (HttpUtility.UrlDecodeToBytes (infoHash)));
+        }
+
+        static byte[] HexStringToByteArray (string hexString)
+        {
+            var result = new byte[hexString.Length / 2];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = byte.Parse (hexString.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+            return result;
         }
     }
 }
