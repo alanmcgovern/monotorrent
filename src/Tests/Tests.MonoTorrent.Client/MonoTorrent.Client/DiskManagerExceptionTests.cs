@@ -104,18 +104,8 @@ namespace MonoTorrent.Client
             }
         }
 
-        class TestTorrentData : ITorrentManagerInfo
-        {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; set; }
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
-            public string Name => "Test Torrent";
-            public int PieceLength { get; set; }
-            public long Size { get; set; }
-        }
-
         byte[] buffer;
-        TestTorrentData data;
+        ITorrentManagerInfo data;
         DiskManager diskManager;
         ExceptionWriter writer;
 
@@ -131,11 +121,11 @@ namespace MonoTorrent.Client
             );
 
             buffer = new byte[Constants.BlockSize];
-            data = new TestTorrentData {
-                Files = files,
-                Size = files.Sum (f => f.Length),
-                PieceLength = pieceLength
-            };
+            data = TestTorrentManagerInfo.Create (
+                files: files,
+                size: files.Sum (f => f.Length),
+                pieceLength: pieceLength
+            );
 
             writer = new ExceptionWriter ();
             diskManager = new DiskManager (new EngineSettings (), Factories.Default, writer);

@@ -162,13 +162,7 @@ namespace MonoTorrent.Client
 
         public Error? Error { get; private set; }
 
-        IList<ITorrentFile> ITorrentInfo.Files => Torrent?.Files ?? Array.Empty<ITorrentFile> ();
         public IList<ITorrentManagerFile> Files { get; private set; }
-
-        string? ITorrentInfo.Name => Torrent == null ? MagnetLink.Name : Torrent.Name;
-
-        public int PieceLength => Torrent == null ? -1 : Torrent.PieceLength;
-        public long Size => Torrent == null ? -1 : Torrent.Size;
 
         internal Mode Mode {
             get => mode;
@@ -371,6 +365,18 @@ namespace MonoTorrent.Client
         /// The Torrent contained within this TorrentManager
         /// </summary>
         public Torrent? Torrent { get; private set; }
+
+        public string Name {
+            get {
+                if (!string.IsNullOrEmpty (Torrent?.Name))
+                    return Torrent.Name;
+                if (!string.IsNullOrEmpty (MagnetLink?.Name))
+                    return MagnetLink.Name;
+                return "";
+            }
+        }
+
+        ITorrentInfo? ITorrentManagerInfo.TorrentInfo => Torrent;
 
         /// <summary>
         /// The number of peers that we are currently uploading to

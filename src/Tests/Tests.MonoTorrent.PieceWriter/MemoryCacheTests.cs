@@ -120,16 +120,6 @@ namespace MonoTorrent.PieceWriter
         }
     }
 
-    class TorrentData : ITorrentManagerInfo
-    {
-        IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-        public IList<ITorrentManagerFile> Files { get; set; }
-        public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]),  null);
-        public string Name => "Test Torrent";
-        public int PieceLength { get; set; }
-        public long Size { get; set; }
-    }
-
     public class MemoryCacheTests
     {
         MemoryCache cache;
@@ -141,11 +131,7 @@ namespace MonoTorrent.PieceWriter
         {
             var pieceLength = Constants.BlockSize * 8;
             var files = TorrentFileInfo.Create (pieceLength, ("Relative/Path.txt", Constants.BlockSize * 5, "Full/Path/Relative/Path.txt"));
-            torrent = new TorrentData {
-                Files = files,
-                PieceLength = pieceLength,
-                Size = files.Single ().Length,
-            };
+            torrent = TestTorrentManagerInfo.Create (pieceLength: pieceLength, size: files.Single ().Length, files: files);
 
             writer = new MemoryWriter ();
             cache = new MemoryCache (new MemoryPool (), Constants.BlockSize * 4, writer);
@@ -248,11 +234,11 @@ namespace MonoTorrent.PieceWriter
             var data1 = new byte[] { 1, 1, 1 };
             var data2 = new byte[] { 2, 2, 2 };
 
-            var torrent2 = new TorrentData {
-                Files = torrent.Files,
-                PieceLength = torrent.PieceLength,
-                Size = torrent.Size
-            };
+            var torrent2 = TestTorrentManagerInfo.Create (
+                files: torrent.TorrentInfo.Files,
+                pieceLength: torrent.TorrentInfo.PieceLength,
+                size: torrent.TorrentInfo.Size
+            );
 
             var memory = new MemoryCache (new MemoryPool (), 1024, new NullWriter ());
             await memory.WriteAsync (torrent, new BlockInfo (0, 0, 3), data1, false);

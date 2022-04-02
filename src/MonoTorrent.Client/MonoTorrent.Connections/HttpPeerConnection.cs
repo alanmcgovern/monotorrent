@@ -282,8 +282,8 @@ namespace MonoTorrent.Connections.Peer
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            long startOffset = TorrentData.PieceIndexToByteOffset (start.PieceIndex) + start.StartOffset;
-            long endOffset = TorrentData.PieceIndexToByteOffset (end.PieceIndex) + end.StartOffset + end.RequestLength;
+            long startOffset = TorrentData.TorrentInfo!.PieceIndexToByteOffset (start.PieceIndex) + start.StartOffset;
+            long endOffset = TorrentData.TorrentInfo!.PieceIndexToByteOffset (end.PieceIndex) + end.StartOffset + end.RequestLength;
 
             foreach (var file in TorrentData.Files) {
                 Uri u = uri;

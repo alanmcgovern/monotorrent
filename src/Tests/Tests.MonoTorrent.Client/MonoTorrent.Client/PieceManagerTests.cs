@@ -41,20 +41,6 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class PieceManagerTests
     {
-        class TestTorrentData : ITorrentManagerInfo
-        {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; set; }
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), new InfoHash (new byte[32]));
-            public string Name => "Test Torrent";
-            public int PieceLength { get; set; }
-            public long Size { get; set; }
-
-            public int BlocksPerPiece => PieceLength / Constants.BlockSize;
-            public int PieceCount => (int) Math.Ceiling ((double) Size / PieceLength);
-            public int TotalBlocks => (int) Math.Ceiling ((double) Size / Constants.BlockSize);
-        }
-
         PeerId peer;
         List<PeerId> peers;
         PieceManager manager;
@@ -65,14 +51,14 @@ namespace MonoTorrent.PiecePicking
         {
             int pieceCount = 40;
             int pieceLength = 256 * 1024;
-            var torrentData = new TestTorrentData {
-                Files = TorrentFileInfo.Create (pieceLength, ("File", pieceLength * pieceCount, "full/path/File")),
-                PieceLength = pieceLength,
-                Size = pieceLength * pieceCount
-            };
+            var torrentData = TestTorrentManagerInfo.Create (
+                files: TorrentFileInfo.Create (pieceLength, ("File", pieceLength * pieceCount, "full/path/File")),
+                pieceLength: pieceLength,
+                size: pieceLength * pieceCount
+            );
             peers = new List<PeerId> ();
 
-            torrentManager = TestRig.CreateSingleFileManager (torrentData.Size, torrentData.PieceLength);
+            torrentManager = TestRig.CreateSingleFileManager (torrentData.TorrentInfo.Size, torrentData.TorrentInfo.PieceLength);
             await torrentManager.LoadFastResumeAsync (new FastResume (torrentManager.InfoHashes, new MutableBitField (pieceCount).SetAll (true), new MutableBitField (pieceCount).SetAll (false)));
 
             manager = new PieceManager (torrentManager);

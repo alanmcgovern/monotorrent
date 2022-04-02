@@ -369,7 +369,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Files[3],
             });
 
-            var bf = new MutableBitField (Manager.PieceCount ()).SetAll (true);
+            var bf = new MutableBitField (Manager.Torrent.PieceCount ()).SetAll (true);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");

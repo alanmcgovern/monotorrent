@@ -383,7 +383,7 @@ namespace MonoTorrent.Client.Modes
             // Increment the number of blocks, and keep storing 'peersInvolved' until it's non-null. It will be non-null when the
             // final piece is received.
             data = (data.blocksWritten + 1, data.peersInvolved ?? peersInvolved);
-            if (data.blocksWritten != Manager.BlocksPerPiece (block.PieceIndex)) {
+            if (data.blocksWritten != Manager.Torrent!.BlocksPerPiece (block.PieceIndex)) {
                 BlocksWrittenPerPiece[block.PieceIndex] = data;
                 return;
             }

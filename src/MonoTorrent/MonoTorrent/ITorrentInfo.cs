@@ -68,8 +68,11 @@ namespace MonoTorrent
         static bool IsV2Only (this ITorrentInfo self)
             => self.InfoHashes.V1 == null && self.InfoHashes.V2 != null;
 
+        static bool IsHybrid (this ITorrentManagerInfo self)
+            => self.InfoHashes.IsHybrid;
+
         static bool IsHybrid (this ITorrentInfo self)
-            => self.InfoHashes.V1 != null && self.InfoHashes.V2 != null;
+            => self.InfoHashes.IsHybrid;
 
         public static int BlocksPerPiece (this ITorrentInfo self, int pieceIndex)
             => (BytesPerPiece (self, pieceIndex) + Constants.BlockSize - 1) / Constants.BlockSize;

@@ -75,8 +75,8 @@ namespace MonoTorrent.PiecePicking
         {
             base.Initialise (torrentData);
 
-            allPrioritisedPieces = new MutableBitField (torrentData.PieceCount ());
-            temp = new MutableBitField (torrentData.PieceCount ());
+            allPrioritisedPieces = new MutableBitField (torrentData.TorrentInfo!.PieceCount ());
+            temp = new MutableBitField (torrentData.TorrentInfo!.PieceCount ());
 
             files.Clear ();
             for (int i = 0; i < torrentData.Files.Count; i++)

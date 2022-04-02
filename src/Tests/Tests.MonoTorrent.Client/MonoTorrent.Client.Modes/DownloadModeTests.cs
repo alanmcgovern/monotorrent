@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new MutableBitField (Manager.PieceCount ()));
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new MutableBitField (Manager.Torrent.PieceCount ()));
         }
 
         [TearDown]
@@ -194,7 +194,7 @@ namespace MonoTorrent.Client.Modes
         public async Task AnnounceWhenComplete ()
         {
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
-            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.Torrent.PieceCount ()).SetAll (true), new MutableBitField (Manager.Torrent.PieceCount ())));
 
             Manager.MutableBitField[0] = false;
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -302,7 +302,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task PauseSeeding ()
         {
-            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.PieceCount ()).SetAll (true), new MutableBitField (Manager.PieceCount ())));
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.Torrent.PieceCount ()).SetAll (true), new MutableBitField (Manager.Torrent.PieceCount ())));
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
 
             Assert.AreEqual (TorrentState.Seeding, Manager.State);

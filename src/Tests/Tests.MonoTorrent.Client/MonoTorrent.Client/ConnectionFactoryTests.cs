@@ -9,16 +9,6 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class PeerConnectionFactoryTests
     {
-        class TorrentData : ITorrentManagerInfo
-        {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; }
-            public InfoHashes InfoHashes { get; } = new InfoHashes (null, new InfoHash (new byte[32]));
-            public string Name { get; }
-            public int PieceLength { get; }
-            public long Size { get; }
-        }
-
         [Test]
         public void InvalidPort ()
         {

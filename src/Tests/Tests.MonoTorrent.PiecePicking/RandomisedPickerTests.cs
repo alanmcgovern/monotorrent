@@ -40,24 +40,22 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class RandomisedPickerTests
     {
-        class OnePieceTorrentData : ITorrentManagerInfo
+        TestTorrentManagerInfo CreateOnePieceTorrentData ()
         {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024);
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
-            public string Name => "Test Torrent";
-            public int PieceLength { get; } = 64 * 1024;
-            public long Size { get; } = 64 * 1024;
+            return TestTorrentManagerInfo.Create (
+                size: 64 * 1024,
+                pieceLength: 64 * 1024,
+                files: TorrentFileInfo.Create (64 * 1024, 64 * 1024)
+            );
         }
 
-        class TestTorrentData : ITorrentManagerInfo
+        TestTorrentManagerInfo CreateTestTorrentData ()
         {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; } = TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40);
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
-            public string Name => "Test Torrent";
-            public int PieceLength { get; } = 64 * 1024;
-            public long Size { get; } = 64 * 1024 * 40;
+            return TestTorrentManagerInfo.Create (
+                size: 64 * 1024 * 40,
+                pieceLength: 64 * 1024,
+                files: TorrentFileInfo.Create (64 * 1024, 64 * 1024 * 40)
+            );
         }
 
         PiecePickerFilterChecker checker;
@@ -70,7 +68,7 @@ namespace MonoTorrent.PiecePicking
             checker = new PiecePickerFilterChecker (new StandardPicker ());
             picker = new RandomisedPicker (checker);
             seeder = PeerId.CreateNull (40, true, false, true);
-            picker.Initialise (new TestTorrentData ());
+            picker.Initialise (TestTorrentManagerInfo.Create (pieceLength: Constants.BlockSize * 2, size: Constants.BlockSize * 2 * 40));
         }
 
         [Test]
@@ -95,7 +93,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void SinglePieceBitfield ()
         {
-            picker.Initialise (new OnePieceTorrentData ());
+            picker.Initialise (CreateOnePieceTorrentData ());
             picker.PickPiece (seeder, new MutableBitField (1).SetAll (true), new List<PeerId> ());
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");

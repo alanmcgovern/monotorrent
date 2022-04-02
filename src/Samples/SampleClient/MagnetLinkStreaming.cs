@@ -65,9 +65,9 @@ namespace ClientSample
             // Then the last piece
             await TimedRead (manager, stream, stream.Length - 2, times, token);
             // Then the 3rd last piece
-            await TimedRead (manager, stream, stream.Length - manager.PieceLength * 3, times, token);
+            await TimedRead (manager, stream, stream.Length - manager.Torrent.PieceLength * 3, times, token);
             // Then the 5th piece
-            await TimedRead (manager, stream, manager.PieceLength * 5, times, token);
+            await TimedRead (manager, stream, manager.Torrent.PieceLength * 5, times, token);
             // Then 1/3 of the way in
             await TimedRead (manager, stream, stream.Length / 3, times, token);
             // Then 2/3 of the way in
@@ -91,7 +91,7 @@ namespace ClientSample
             stream.Seek (position, SeekOrigin.Begin);
             await stream.ReadAsync (new byte[1], 0, 1, token);
             lock (times)
-                times.Add (($"Read piece: {manager.ByteOffsetToPieceIndex (stream.Position - 1)}. Time since seeking: ", stopwatch.Elapsed));
+                times.Add (($"Read piece: {manager.Torrent.ByteOffsetToPieceIndex (stream.Position - 1)}. Time since seeking: ", stopwatch.Elapsed));
         }
     }
 }

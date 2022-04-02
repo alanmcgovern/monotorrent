@@ -55,6 +55,8 @@ namespace MonoTorrent
         public static InfoHashes FromV2 (InfoHash infoHash)
             => new InfoHashes (null, infoHash);
 
+        public bool IsHybrid => !(V1 is null) && !(V2 is null);
+
         /// <summary>
         /// The SHA1 hash of the torrent's 'info' dictionary. Used by V1 torrents and hybrid v1/v2 torrents.
         /// </summary>
@@ -70,8 +72,6 @@ namespace MonoTorrent
         /// As a result, the V1 hash will be returned if both the V1 and V2 hash are non-null.
         /// </summary>
         public InfoHash V1OrV2 => (V1 ?? V2)!;
-
-        public InfoHashes? Empty { get; set; }
 
         /// <summary>
         /// Creates an 'InfoHashes' object using the BitTorrent V1 and/or BitTorrent V2 info hashes.

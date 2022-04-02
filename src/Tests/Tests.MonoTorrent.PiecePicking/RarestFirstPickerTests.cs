@@ -40,24 +40,12 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class RarestFirstPickerTests
     {
-        class TestTorrentData : ITorrentManagerInfo
-        {
-            public int BlocksPerPiece => PieceLength / Constants.BlockSize;
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; set; }
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), new InfoHash (new byte[32]));
-            public string Name => "Test Torrent";
-            public int PieceLength { get; set; }
-            public int Pieces => (int) Math.Ceiling ((double) Size / PieceLength);
-            public long Size { get; set; }
-        }
-
         MutableBitField bitfield;
         PiecePickerFilterChecker checker;
         PeerId peer;
         List<PeerId> peers;
         RarestFirstPicker picker;
-        TestTorrentData torrentData;
+        ITorrentManagerInfo torrentData;
 
         [SetUp]
         public void Setup ()
@@ -67,11 +55,11 @@ namespace MonoTorrent.PiecePicking
             int size = pieces * pieceLength;
 
             bitfield = new MutableBitField (pieces);
-            torrentData = new TestTorrentData {
-                Files = TorrentFileInfo.Create (pieceLength, ("Test", size, "Full/Path/Test")),
-                PieceLength = pieceLength,
-                Size = size
-            };
+            torrentData = TestTorrentManagerInfo.Create (
+                files: TorrentFileInfo.Create (pieceLength, ("Test", size, "Full/Path/Test")),
+                pieceLength: pieceLength,
+                size: size
+            );
 
             checker = new PiecePickerFilterChecker ();
             picker = new RarestFirstPicker (checker);
@@ -99,19 +87,19 @@ namespace MonoTorrent.PiecePicking
 
             // Two peers have piece 25
             Assert.AreEqual (25, checker.Picks[0].available.FirstTrue (), "#1");
-            Assert.AreEqual (-1, checker.Picks[0].available.FirstFalse (25, torrentData.Pieces - 1), "#2");
+            Assert.AreEqual (-1, checker.Picks[0].available.FirstFalse (25, torrentData.TorrentInfo.PieceCount () - 1), "#2");;
 
             // Three peers have piece 20
             Assert.AreEqual (20, checker.Picks[1].available.FirstTrue (), "#3");
-            Assert.AreEqual (-1, checker.Picks[1].available.FirstFalse (20, torrentData.Pieces - 1), "#4");
+            Assert.AreEqual (-1, checker.Picks[1].available.FirstFalse (20, torrentData.TorrentInfo.PieceCount () - 1), "#4");
 
             // Three peers have piece 20
             Assert.AreEqual (15, checker.Picks[2].available.FirstTrue (), "#4");
-            Assert.AreEqual (-1, checker.Picks[2].available.FirstFalse (15, torrentData.Pieces - 1), "#6");
+            Assert.AreEqual (-1, checker.Picks[2].available.FirstFalse (15, torrentData.TorrentInfo.PieceCount () - 1), "#6");
 
             // Three peers have piece 20
             Assert.AreEqual (10, checker.Picks[3].available.FirstTrue (), "#5");
-            Assert.AreEqual (-1, checker.Picks[3].available.FirstFalse (10, torrentData.Pieces - 1), "#8");
+            Assert.AreEqual (-1, checker.Picks[3].available.FirstFalse (10, torrentData.TorrentInfo.PieceCount () - 1), "#8");
         }
 
         [Test]

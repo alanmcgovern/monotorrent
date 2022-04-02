@@ -37,65 +37,55 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class TorrentDataExtensionsTests
     {
-        class Data : ITorrentManagerInfo
-        {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; set; }
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
-            public string Name => "Test Torrent";
-            public int PieceLength { get; set; }
-            public long Size { get; set; }
-        }
-
         [Test]
         public void BlocksPerPiece ()
         {
-            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 2, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (0));
-            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (1));
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4 + 1, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (2));
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 5 - 1, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (2));
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 2, pieceLength: Constants.BlockSize * 2).TorrentInfo.BlocksPerPiece (0));
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.BlocksPerPiece (1));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4 + 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.BlocksPerPiece (2));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 5 - 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.BlocksPerPiece (2));
 
-            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.BlocksPerPiece (0));
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: (long) (int.MaxValue) * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.BlocksPerPiece (0));
 
-            Assert.AreEqual (142, new Data { Size = 16 * 1024 * 1024, PieceLength = 2318336 }.BlocksPerPiece (0));
+            Assert.AreEqual (142, TestTorrentManagerInfo.Create (size: 16 * 1024 * 1024, pieceLength: 2318336).TorrentInfo.BlocksPerPiece (0));
         }
 
         [Test]
         public void ByteOffsetToPieceIndex ()
         {
-            Assert.AreEqual (0, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (0));
-            Assert.AreEqual (0, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (1));
-            Assert.AreEqual (0, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 2 - 1));
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 2));
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 2 + 1));
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 3 - 1));
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 3));
-            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 4));
+            Assert.AreEqual (0, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (0));
+            Assert.AreEqual (0, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (1));
+            Assert.AreEqual (0, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 2 - 1));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 2));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 2 + 1));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 3 - 1));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 3));
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 4));
 
-            Assert.AreEqual (2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.ByteOffsetToPieceIndex (Constants.BlockSize * 4));
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: (long) (int.MaxValue) * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.ByteOffsetToPieceIndex (Constants.BlockSize * 4));
         }
 
         [Test]
         public void BytesPerPiece ()
         {
-            Assert.AreEqual (Constants.BlockSize * 2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (0));
-            Assert.AreEqual (Constants.BlockSize * 2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (1));
+            Assert.AreEqual (Constants.BlockSize * 2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.BytesPerPiece (0));
+            Assert.AreEqual (Constants.BlockSize * 2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.BytesPerPiece (1));
 
-            Assert.AreEqual (1, new Data { Size = Constants.BlockSize * 4 + 1, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (2));
-            Assert.AreEqual (Constants.BlockSize - 1, new Data { Size = Constants.BlockSize * 5 - 1, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (2));
+            Assert.AreEqual (1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4 + 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.BytesPerPiece (2));
+            Assert.AreEqual (Constants.BlockSize - 1, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 5 - 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.BytesPerPiece (2));
 
-            Assert.AreEqual (Constants.BlockSize * 2, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.BytesPerPiece (2));
+            Assert.AreEqual (Constants.BlockSize * 2, TestTorrentManagerInfo.Create (size: (long) (int.MaxValue) * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.BytesPerPiece (2));
         }
 
         [Test]
         public void PieceCount ()
         {
-            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 2 + 1, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
-            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4 - 1, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
-            Assert.AreEqual (2, new Data { Size = Constants.BlockSize * 4, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
-            Assert.AreEqual (3, new Data { Size = Constants.BlockSize * 4 + 1, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 2 + 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.PieceCount ());
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4 - 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.PieceCount ());
+            Assert.AreEqual (2, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.PieceCount ());
+            Assert.AreEqual (3, TestTorrentManagerInfo.Create (size: Constants.BlockSize * 4 + 1, pieceLength: Constants.BlockSize * 2).TorrentInfo.PieceCount ());
 
-            Assert.AreEqual (262144, new Data { Size = (long) (int.MaxValue) * 4, PieceLength = Constants.BlockSize * 2 }.PieceCount ());
+            Assert.AreEqual (262144, TestTorrentManagerInfo.Create (size: (long) (int.MaxValue) * 4, pieceLength: Constants.BlockSize * 2).TorrentInfo.PieceCount ());
         }
     }
 }

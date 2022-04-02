@@ -194,17 +194,26 @@ namespace MyBenchmarks
     [MemoryDiagnoser]
     public class StandardPickerBenchmark
     {
+        class TorrentInfo : ITorrentInfo
+        {
+            const int PieceCount = 500;
+
+            IList<ITorrentFile> ITorrentInfo.Files => Array.Empty<ITorrentFile> ();
+            public int PieceLength { get; } = 32768;
+            public long Size { get; } = 32768 * PieceCount;
+            public InfoHashes InfoHashes { get; } = new InfoHashes (new InfoHash (new byte[20]), new InfoHash (new byte[32]));
+            public string Name => "Name";
+        }
+
         class TorrentData : ITorrentManagerInfo
         {
             const int PieceCount = 500;
 
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; }
             public InfoHashes InfoHashes { get; } = new InfoHashes (new InfoHash (new byte[20]), new InfoHash (new byte[32]));
+            public IList<ITorrentManagerFile> Files { get; }
             public string Name { get; } = "Name";
-            public int PieceLength { get; } = 32768;
-            public long Size { get; } = 32768 * PieceCount;
 
+            public ITorrentInfo TorrentInfo => new TorrentInfo ();
             public IPeer CreatePeer ()
                 => new Peer (PieceCount);
         }
@@ -242,7 +251,7 @@ namespace MyBenchmarks
             Data = new TorrentData ();
             Picker = new StandardPicker ();
             Requester = Data.CreatePeer ();
-            Requested = new Queue<BlockInfo> ((int)(Data.PieceCount () * Data.BlocksPerPiece (0)));
+            Requested = new Queue<BlockInfo> ((int)(Data.TorrentInfo.PieceCount () * Data.TorrentInfo.BlocksPerPiece (0)));
 
 
             Random = new Random (1234);

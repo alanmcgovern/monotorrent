@@ -101,7 +101,7 @@ namespace MonoTorrent.Messages.Peer
             Register (PortMessage.MessageId, data => GetInstance<PortMessage> (), true);
 
             // Currently uncached
-            Register (BitfieldMessage.MessageId, data => data?.Files == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.PieceCount ()));
+            Register (BitfieldMessage.MessageId, data => data?.TorrentInfo == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.TorrentInfo.PieceCount ()));
             Register (RejectRequestMessage.MessageId, data => GetInstance<RejectRequestMessage> ());
             Register (HashRequestMessage.MessageId, data => GetInstance<HashRequestMessage> ());
             Register (HashesMessage.MessageId, data => GetInstance<HashesMessage> ());

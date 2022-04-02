@@ -112,7 +112,7 @@ namespace MonoTorrent.PiecePicking
 
         MutableBitField? CanRequestBitField;
         PickedPieces? Requests { get; set; }
-        ITorrentManagerInfo? TorrentData { get; set; }
+        ITorrentInfo? TorrentData { get; set; }
 
         public StandardPicker ()
         {
@@ -218,8 +218,9 @@ namespace MonoTorrent.PiecePicking
 
         public void Initialise (ITorrentManagerInfo torrentData)
         {
-            TorrentData = torrentData;
-            CanRequestBitField = new MutableBitField (torrentData.PieceCount ());
+            TorrentData = torrentData.TorrentInfo!;
+
+            CanRequestBitField = new MutableBitField (TorrentData.PieceCount ());
             Requests = new PickedPieces (TorrentData.PieceCount ());
         }
 

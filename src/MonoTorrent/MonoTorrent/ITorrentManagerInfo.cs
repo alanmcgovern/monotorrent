@@ -31,11 +31,17 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public interface ITorrentManagerInfo : ITorrentInfo
+    public interface ITorrentManagerInfo
     {
         /// <summary>
         /// The files contained within the Torrent
         /// </summary>
-        new IList<ITorrentManagerFile> Files { get; }
+        IList<ITorrentManagerFile> Files { get; }
+
+        InfoHashes InfoHashes { get; }
+
+        string Name { get; }
+
+        ITorrentInfo? TorrentInfo { get; }
     }
 }

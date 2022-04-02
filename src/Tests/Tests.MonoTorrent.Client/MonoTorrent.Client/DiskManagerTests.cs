@@ -89,16 +89,10 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class DiskManagerTests
     {
-        class TestTorrentData : ITorrentManagerInfo
+        class TestTorrentData : TestTorrentManagerInfo
         {
             public byte[][] Data { get; set; }
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; set; }
             public byte[][] Hashes { get; set; }
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
-            public string Name => "Test Torrent";
-            public int PieceLength { get; set; }
-            public long Size { get; set; }
         }
 
         class PieceWriter : IPieceWriter
@@ -198,13 +192,13 @@ namespace MonoTorrent.Client
                 .Select (t => SHA1.Create ().ComputeHash (t))
                 .ToArray ();
 
-            fileData = new TestTorrentData {
-                Data = fileBytes,
-                Files = files.ToArray (),
-                Hashes = hashes,
-                Size = files.Sum (f => f.Length),
-                PieceLength = pieceLength
-            };
+            fileData = TestTorrentData.Create<TestTorrentData> (
+                    files: files.ToArray (),
+                    size: files.Sum (f => f.Length),
+                    pieceLength: pieceLength
+            );
+            fileData.Data = fileBytes;
+            fileData.Hashes = hashes;
         }
 
         [SetUp]
@@ -492,7 +486,7 @@ namespace MonoTorrent.Client
         {
             var buffer = new byte[Constants.BlockSize];
             var allData = fileData.Data.SelectMany (t => t).Partition (Constants.BlockSize).ToArray ();
-            int blocksPerPiece = fileData.PieceLength / Constants.BlockSize;
+            int blocksPerPiece = fileData.TorrentInfo.PieceLength / Constants.BlockSize;
             for (int i = 0; i < allData.Length; i++) {
                 var pieceIndex = i / blocksPerPiece;
                 var offset = (i % blocksPerPiece) * Constants.BlockSize;
@@ -525,10 +519,8 @@ namespace MonoTorrent.Client
             var emptyBytes = new byte[Constants.BlockSize];
             var otherData = new TestTorrentData {
                 Data = fileData.Data,
-                Files = fileData.Files,
                 Hashes = fileData.Hashes,
-                PieceLength = fileData.PieceLength,
-                Size = fileData.Size
+                TorrentInfo = fileData.TorrentInfo
             };
 
             int offset = 0;
@@ -536,7 +528,7 @@ namespace MonoTorrent.Client
                 var buffer = new byte[Constants.BlockSize];
                 Buffer.BlockCopy (block, 0, buffer, 0, block.Length);
 
-                var request = new BlockInfo (offset / fileData.PieceLength, offset % fileData.PieceLength, block.Length);
+                var request = new BlockInfo (offset / fileData.TorrentInfo.PieceLength, offset % fileData.TorrentInfo.PieceLength, block.Length);
                 await Task.WhenAll (
                     diskManager.WriteAsync (fileData, request, buffer).AsTask (),
                     // Attempt to 'overwrite' the data from the primary torrent by writing the same block
@@ -558,7 +550,7 @@ namespace MonoTorrent.Client
                 Assert.IsTrue (await diskManager.GetHashAsync (fileData, i, hashes));
                 Assert.IsTrue (fileData.Hashes[i].AsSpan ().SequenceEqual (hashes.V1Hash.Span), "#3." + i);
             }
-            Assert.AreEqual (fileData.Size + otherData.Size, diskManager.TotalBytesWritten, "#4");
+            Assert.AreEqual (fileData.TorrentInfo.Size + otherData.TorrentInfo.Size, diskManager.TotalBytesWritten, "#4");
         }
 
         [Test]
@@ -581,7 +573,7 @@ namespace MonoTorrent.Client
             var blocks = fileData.Data
                 .SelectMany (t => t)
                 .Partition (Constants.BlockSize)
-                .Take (fileData.PieceLength / Constants.BlockSize)
+                .Take (fileData.TorrentInfo.PieceLength / Constants.BlockSize)
                 .ToArray ();
 
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 1, Constants.BlockSize), blocks[1]);
@@ -614,7 +606,7 @@ namespace MonoTorrent.Client
 
             var blocks = fileData.Data
                 .SelectMany (t => t).Partition (Constants.BlockSize)
-                .Take (fileData.PieceLength / Constants.BlockSize)
+                .Take (fileData.TorrentInfo.PieceLength / Constants.BlockSize)
                 .ToArray ();
 
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 0, Constants.BlockSize), blocks[0]);
@@ -643,7 +635,7 @@ namespace MonoTorrent.Client
             var blocks = fileData.Data
                 .SelectMany (t => t)
                 .Partition (Constants.BlockSize)
-                .Take (fileData.PieceLength / Constants.BlockSize)
+                .Take (fileData.TorrentInfo.PieceLength / Constants.BlockSize)
                 .ToArray ();
 
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 0, Constants.BlockSize), blocks[0]);
@@ -672,7 +664,7 @@ namespace MonoTorrent.Client
             var blocks = fileData.Data
                 .SelectMany (t => t)
                 .Partition (Constants.BlockSize)
-                .Take (fileData.PieceLength / Constants.BlockSize)
+                .Take (fileData.TorrentInfo.PieceLength / Constants.BlockSize)
                 .ToArray ();
 
             await diskManager.WriteAsync (fileData, new BlockInfo (0, Constants.BlockSize * 2, Constants.BlockSize), blocks[2]);
@@ -702,7 +694,7 @@ namespace MonoTorrent.Client
 
             var tasks = new List<Task> ();
             for (int i = 0; i < SpeedMonitor.DefaultAveragePeriod + 1; i++)
-                tasks.Add (diskManager.WriteAsync (fileData, new BlockInfo (i / (fileData.PieceLength / Constants.BlockSize), i, Constants.BlockSize), buffer).AsTask ());
+                tasks.Add (diskManager.WriteAsync (fileData, new BlockInfo (i / (fileData.TorrentInfo.PieceLength / Constants.BlockSize), i, Constants.BlockSize), buffer).AsTask ());
             while (diskManager.PendingWriteBytes > 0) {
                 await diskManager.Tick (1000).WithTimeout ();
                 var done = await Task.WhenAny (tasks).WithTimeout ();

@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
                 Manager = manager;
                 PieceIndex = pieceIndex;
                 if (UseV2) {
-                    BlockHashesReleaser = MemoryPool.Default.Rent (Manager.BlocksPerPiece (pieceIndex) * 32, out Memory<byte> hashes);
+                    BlockHashesReleaser = MemoryPool.Default.Rent (Manager.TorrentInfo!.BlocksPerPiece (pieceIndex) * 32, out Memory<byte> hashes);
                     BlockHashes = hashes;
                 }
             }
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
 
                 if (Manager != null && UseV2) {
                     var file = Manager.Files[Manager.Files.FindFileByPieceIndex (PieceIndex)];
-                    var finalLayer = file.Length < Manager.PieceLength ? Math.Min (Manager.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (Manager.BytesPerPiece (PieceIndex), 2)))) : Manager.PieceLength;
+                    var finalLayer = file.Length < Manager.TorrentInfo!.PieceLength ? Math.Min (Manager.TorrentInfo!.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (Manager.TorrentInfo.BytesPerPiece (PieceIndex), 2)))) : Manager.TorrentInfo.PieceLength;
                     if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, finalLayer, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
                         return false;
                 }
@@ -320,7 +320,7 @@ namespace MonoTorrent.Client
                 // will process requests in the order they have been received. This means we can optimise
                 // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
                 // we'll compute the final hash by reading the data from disk.
-                if (incrementalHash.NextOffsetToHash == manager.BytesPerPiece (pieceIndex)) {
+                if (incrementalHash.NextOffsetToHash == manager.TorrentInfo!.BytesPerPiece (pieceIndex)) {
                     if (!incrementalHash.TryGetHashAndReset (dest))
                         throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
                     IncrementalHashCache.Enqueue (incrementalHash);
@@ -343,7 +343,7 @@ namespace MonoTorrent.Client
             using var releaser = await incrementalHash.Locker.EnterAsync ();
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             int startOffset = incrementalHash.NextOffsetToHash;
-            int endOffset = manager.BytesPerPiece (pieceIndex);
+            int endOffset = manager.TorrentInfo!.BytesPerPiece (pieceIndex);
             using (BufferPool.Rent (Constants.BlockSize, out Memory<byte> hashBuffer)) {
                 try {
 
@@ -389,7 +389,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public Task FlushAsync (ITorrentManagerInfo manager)
         {
-            return FlushAsync (manager, 0, manager.PieceCount () - 1);
+            return FlushAsync (manager, 0, manager.TorrentInfo!.PieceCount () - 1);
         }
 
         /// <summary>
@@ -521,7 +521,7 @@ namespace MonoTorrent.Client
 
         async ReusableTask TryIncrementallyHashFromMemory (ITorrentManagerInfo torrent, int pieceIndex, IncrementalHashData incrementalHash)
         {
-            var sizeOfPiece = torrent.BytesPerPiece (pieceIndex);
+            var sizeOfPiece = torrent.TorrentInfo!.BytesPerPiece (pieceIndex);
             using var releaser = BufferPool.Rent (Constants.BlockSize, out Memory<byte> buffer);
             while (incrementalHash.NextOffsetToHash < sizeOfPiece) {
                 var remaining = Math.Min (Constants.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);

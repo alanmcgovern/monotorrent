@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
         internal void CancelRequests (PeerId id)
         {
             if (Initialised)
-                Requester.CancelRequests (id, 0, Manager.PieceCount () - 1);
+                Requester.CancelRequests (id, 0, Manager.Torrent!.PieceCount () - 1);
         }
 
         internal void RequestRejected (PeerId id, BlockInfo pieceRequest)

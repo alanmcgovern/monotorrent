@@ -39,16 +39,6 @@ namespace MonoTorrent.Messages.Peer
     [TestFixture]
     public class StandardMessageTests
     {
-        class TestTorrentData : ITorrentManagerInfo
-        {
-            IList<ITorrentFile> ITorrentInfo.Files => Files.ToArray<ITorrentFile> ();
-            public IList<ITorrentManagerFile> Files { get; set; }
-            public InfoHashes InfoHashes => new InfoHashes (new InfoHash (new byte[20]), null);
-            public string Name => "Test Torrent";
-            public int PieceLength { get; set; }
-            public long Size { get; set; }
-        }
-
         byte[] buffer;
         int offset;
         ITorrentManagerInfo torrentData;
@@ -61,11 +51,10 @@ namespace MonoTorrent.Messages.Peer
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = 0xff;
 
-            torrentData = new TestTorrentData {
-                Files = new List<ITorrentManagerFile> (),
-                PieceLength = 16 * Constants.BlockSize,
-                Size = 40 * 16 * Constants.BlockSize,
-            };
+            torrentData = TestTorrentManagerInfo.Create (
+                pieceLength: 16 * Constants.BlockSize,
+                size: 40 * 16 * Constants.BlockSize
+            );
         }
 
         [Test]
@@ -76,7 +65,7 @@ namespace MonoTorrent.Messages.Peer
                                        false, true, false, true, false, false, true, false, true, false,
                                        true, true, false, false, true, false, false, true, true, false };
 
-            Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.Size / torrentData.PieceLength), "#0");
+            Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.TorrentInfo.Size / torrentData.TorrentInfo.PieceLength), "#0");
             byte[] encoded = new BitfieldMessage (new BitField (data)).Encode ();
 
             BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded, torrentData).message;
