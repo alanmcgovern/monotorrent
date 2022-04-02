@@ -190,6 +190,31 @@ namespace MonoTorrent.Client.Modes
             Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
         }
 
+
+        [Test]
+        public async Task AnnounceWithTruncatedInfoHash ()
+        {
+            var link = new MagnetLink (new InfoHashes (null, new InfoHash (new byte[32])));
+            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var manager = await engine.AddAsync (link, "");
+            var args = new TrackerRequestFactory (manager).CreateAnnounce (TorrentEvent.None);
+            Assert.AreEqual (20, args.InfoHash.Span.Length);
+            Assert.IsTrue (manager.InfoHashes.Contains (args.InfoHash));
+            Assert.IsNull (manager.InfoHashes.V1);
+        }
+
+        [Test]
+        public async Task ScrapeWithTruncatedInfoHash ()
+        {
+            var link = new MagnetLink (new InfoHashes (null, new InfoHash (new byte[32])));
+            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var manager = await engine.AddAsync (link, "");
+            var args = new TrackerRequestFactory (manager).CreateScrape ();
+            Assert.AreEqual (20, args.InfoHash.Span.Length);
+            Assert.IsTrue (manager.InfoHashes.Contains (args.InfoHash));
+            Assert.IsNull (manager.InfoHashes.V1);
+        }
+
         [Test]
         public async Task AnnounceWhenComplete ()
         {
