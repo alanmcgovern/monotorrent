@@ -603,7 +603,6 @@ namespace MonoTorrent
                 }
             }
 
-            PieceHashes = new PieceHashes (hashesV1, hashesV2);
             if (SupportsV2Torrents && SupportsV1V2Torrents) {
                 InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), Files[0].PiecesRoot.IsEmpty ? default : InfoHash.FromMemory (infoHashes.SHA256));
             } else if (SupportsV2Torrents) {
@@ -614,6 +613,7 @@ namespace MonoTorrent
             } else {
                 InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
             }
+            PieceHashes = new PieceHashes (InfoHashes.V1 is null ? null : hashesV1, InfoHashes.V2 is null ? null : hashesV2);
         }
 
         static IList<ITorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
