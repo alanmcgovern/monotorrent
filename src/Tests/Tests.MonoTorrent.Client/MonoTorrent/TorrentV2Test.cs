@@ -43,14 +43,17 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentV2Test
     {
+        string HybridTorrentPath => Path.Combine (Path.GetDirectoryName (typeof (TorrentV2Test).Assembly.Location), "MonoTorrent", "bittorrent-v2-hybrid-test.torrent");
         string V2OnlyTorrentPath => Path.Combine (Path.GetDirectoryName (typeof (TorrentV2Test).Assembly.Location), "MonoTorrent", "bittorrent-v2-test.torrent");
 
+        Torrent HybridTorrent;
         Torrent V2OnlyTorrent;
 
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
             Torrent.SupportsV2Torrents = true;
+            HybridTorrent = Torrent.Load (HybridTorrentPath);
             V2OnlyTorrent = Torrent.Load (V2OnlyTorrentPath);
             Torrent.SupportsV2Torrents = false;
         }
@@ -111,6 +114,17 @@ namespace MonoTorrent.Common
             Assert.IsFalse (V2OnlyTorrent.PieceHashes.GetHash (0).V2Hash.IsEmpty);
 
             Assert.AreEqual (InfoHash.FromHex ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e"), V2OnlyTorrent.InfoHashes.V2);
+        }
+
+        [Test]
+        public void LoadHybridTorrent ()
+        {
+            Assert.IsFalse (Torrent.SupportsV1V2Torrents);
+
+            Assert.IsNull (HybridTorrent.InfoHashes.V1);
+            Assert.IsNotNull (HybridTorrent.InfoHashes.V2);
+            Assert.IsTrue (HybridTorrent.PieceHashes.GetHash (0).V1Hash.IsEmpty);
+            Assert.IsFalse (HybridTorrent.PieceHashes.GetHash (0).V2Hash.IsEmpty);
         }
 
         [Test]
