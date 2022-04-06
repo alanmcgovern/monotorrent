@@ -46,7 +46,7 @@
       </PackageDescription>
       <PackageId>MonoTorrent</PackageId>
       <PackageLicenseFile>LICENSE</PackageLicenseFile>
-      <PackageProjectUrl>https://github.com/mono/monotorrent</PackageProjectUrl>
+      <PackageProjectUrl>https://github.com/alanmcgovern/monotorrent</PackageProjectUrl>
       <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
       <PackageVersion>$(MonoTorrentFileVersion)$(MonoTorrentReleaseSuffix)</PackageVersion>
       <PackageTags>bittorrent;torrent;library;tracker;dht;c#;csharp;dotnet;.NET;p2p</PackageTags>
@@ -58,7 +58,7 @@
       <RepositoryType>git</RepositoryType>
       <RepositoryBranch>$(GitBranch)</RepositoryBranch>
       <RepositoryCommit>$(GitSha)</RepositoryCommit>
-      <RepositoryUrl>https://github.com/mono/monotorrent</RepositoryUrl>
+      <RepositoryUrl>https://github.com/alanmcgovern/monotorrent</RepositoryUrl>
 
       <Copyright>Alan McGovern, Gregor Burger</Copyright>
     </PropertyGroup>
