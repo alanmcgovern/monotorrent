@@ -60,6 +60,8 @@ namespace MonoTorrent.Client
 
         public ReadOnlyMemory<byte> PiecesRoot => TorrentFile.PiecesRoot;
 
+        public bool IsPadding { get; set; } = false;
+
         public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
         {
             TorrentFile = torrentFile;

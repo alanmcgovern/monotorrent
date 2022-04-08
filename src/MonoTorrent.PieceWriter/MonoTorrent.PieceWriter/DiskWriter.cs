@@ -114,16 +114,22 @@ namespace MonoTorrent.PieceWriter
             if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+            if (file.IsPadding) {
+                var zeroes = new byte[buffer.Length];
+                zeroes.CopyTo (buffer);
+                return buffer.Length;
+            } else {
+                using (await Limiter.EnterAsync ()) {
+                    using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
-                await SwitchToThreadpool ();
-                if (rented.Stream!.Length < offset + buffer.Length)
-                    return 0;
+                    await SwitchToThreadpool ();
+                    if (rented.Stream!.Length < offset + buffer.Length)
+                        return 0;
 
-                if (rented.Stream.Position != offset)
-                    rented.Stream.Seek (offset, SeekOrigin.Begin);
-                return rented.Stream.Read (buffer);
+                    if (rented.Stream.Position != offset)
+                        rented.Stream.Seek (offset, SeekOrigin.Begin);
+                    return rented.Stream.Read (buffer);
+                }
             }
         }
 

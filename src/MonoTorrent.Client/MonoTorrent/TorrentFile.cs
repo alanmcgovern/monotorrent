@@ -35,6 +35,27 @@ using System.Text;
 
 namespace MonoTorrent
 {
+    // l = symlink, x = executable, h = hidden, p = padding file. Characters appear in no particular order and unknown characters should be ignored.
+    [Flags]
+    public enum TorrentFileAttributes
+    {
+        None = 0,
+        Symlink = 1,
+        Executable = 2,
+        Hidden = 4,
+        Padding = 8,
+    };
+
+    public class TorrentFileTuple
+    {
+        public string? path = default;
+        public long length = 0;
+        public ReadOnlyMemory<byte> md5sum = default;
+        public ReadOnlyMemory<byte> ed2k = default;
+        public ReadOnlyMemory<byte> sha1 = default;
+        public TorrentFileAttributes attributes = TorrentFileAttributes.None;
+    }
+
     public sealed class TorrentFile : IEquatable<TorrentFile>, ITorrentFile
     {
         /// <summary>
@@ -66,13 +87,15 @@ namespace MonoTorrent
 
         public ReadOnlyMemory<byte> PiecesRoot { get; }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty)
+        public TorrentFileAttributes Attributes { get; }
+
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, TorrentFileAttributes attributes)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, attributes)
         {
 
         }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> piecesRoot)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> piecesRoot, TorrentFileAttributes attributes)
         {
             Path = path;
             Length = length;
@@ -82,6 +105,7 @@ namespace MonoTorrent
             OffsetInTorrent = offsetInTorrent;
 
             PiecesRoot = piecesRoot;
+            Attributes = attributes;
         }
 
         public override bool Equals (object? obj)
@@ -109,9 +133,9 @@ namespace MonoTorrent
             => Create (pieceLength, lengths.Select ((length, index) => ("File_" + index, length)).ToArray ());
 
         internal static ITorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
-            => Create (pieceLength, files.Select (t => (t.torrentPath, t.length, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty)).ToArray ());
+            => Create (pieceLength, files.Select (t => new TorrentFileTuple { path = t.torrentPath, length = t.length }).ToArray ());
 
-        internal static ITorrentFile[] Create (int pieceLength, params (string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)[] files)
+        internal static ITorrentFile[] Create (int pieceLength, TorrentFileTuple[] files)
         {
             long totalSize = 0;
             var results = new List<ITorrentFile> (files.Length);
@@ -130,7 +154,7 @@ namespace MonoTorrent
                     startOffsetInTorrent = i > 0 ? results[i - 1].OffsetInTorrent : 0;
                 }
 
-                results.Add (new TorrentFile (files[i].path, length, pieceStart, pieceEnd, startOffsetInTorrent));
+                results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes));
                 totalSize += length;
             }
 

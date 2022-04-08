@@ -71,9 +71,17 @@ namespace MonoTorrent.Client
 
             if ((offset + buffer.Length) > file.Length)
                 throw new ArgumentOutOfRangeException ("Tried to read past the end of the file");
-            if (!DontWrite)
-                for (int i = 0; i < buffer.Length; i++)
-                    buffer.Span[i] = (byte) i;
+
+            if (!DontWrite) {
+                if (file.IsPadding) {
+                    for (int i = 0; i < buffer.Length; i++)
+                        buffer.Span[i] = (byte) 0;
+                } else {
+                    for (int i = 0; i < buffer.Length; i++)
+                        buffer.Span[i] = (byte) i;
+                }
+            }
+
             return ReusableTask.FromResult (buffer.Length);
         }
 

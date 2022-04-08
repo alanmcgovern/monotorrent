@@ -56,6 +56,7 @@ namespace MonoTorrent
             public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
             public long Length { get; set; }
             public ReadOnlyMemory<byte> PiecesRoot { get; }
+            public bool IsPadding { get; set; } = false;
 
             internal InputFile (string path, long length)
                 : this (path, path, length)
@@ -122,6 +123,7 @@ namespace MonoTorrent
 
         public List<string> GetrightHttpSeeds { get; }
         public bool StoreMD5 { get; set; }
+        public bool UsePadding { get; set; } = false;
 
         internal TimeSpan ReadAllData_DequeueBufferTime;
         internal TimeSpan ReadAllData_EnqueueFilledBufferTime;
@@ -221,6 +223,16 @@ namespace MonoTorrent
             return await CreateAsync (name, files, CancellationToken.None);
         }
 
+        private IEnumerable<InputFile> PadMaybe(InputFile x)
+        {
+            yield return x;
+            if (x.Length % PieceLength != 0) {
+                yield return new InputFile ( Path.Combine(".pad", $"{x.Length % PieceLength}"), x.Length % PieceLength) {
+                    IsPadding = true
+                };
+            }
+        }
+
         internal async Task<BEncodedDictionary> CreateAsync (string name, List<InputFile> files, CancellationToken token)
         {
             if (!InfoDict.ContainsKey (PieceLengthKey))
@@ -231,6 +243,15 @@ namespace MonoTorrent
 
             info["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
+
+            // when padding is enabled, insert virtual padding files into the files list
+            if(UsePadding && files.Count>1)
+            {
+                files = files
+                    .Select (PadMaybe)
+                    .SelectMany (x => x)
+                    .ToList ();
+            }
 
             info["pieces"] = (BEncodedString) await CalcPiecesHash (files, token);
 
@@ -512,6 +533,9 @@ namespace MonoTorrent
             fileDict["path"] = filePath;
             if (file.MD5 != null)
                 fileDict["md5sum"] = (BEncodedString) file.MD5;
+
+            if (file.IsPadding)
+                fileDict["attr"] = (BEncodedString)"p";
 
             return fileDict;
         }

@@ -55,6 +55,8 @@ namespace MonoTorrent
         /// The priority of the file when downloading.
         /// </summary>
         Priority Priority { get; }
+
+        bool IsPadding { get; }
     }
 
     public static class ITorrentFileInfoExtensions
