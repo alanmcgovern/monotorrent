@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -20,8 +21,6 @@ namespace MonoTorrent.Common
         const long PieceLength = 64 * 1024;
         const string Publisher = "My Publisher";
         const string PublisherUrl = "www.mypublisher.com";
-        readonly BEncodedString CustomKey = "Custom Key";
-        readonly BEncodedString CustomValue = "My custom value";
 
         List<List<string>> announces;
         TorrentCreator creator;
@@ -44,7 +43,6 @@ namespace MonoTorrent.Common
             creator.PieceLength = PieceLength;
             creator.Publisher = Publisher;
             creator.PublisherUrl = PublisherUrl;
-            //creator.SetCustom (CustomKey, CustomValue);
 
             files = new List<TorrentCreator.InputFile> {
                 new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength * 2.30)),
@@ -64,47 +62,17 @@ namespace MonoTorrent.Common
             BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
             Torrent torrent = Torrent.Load (dict);
 
-            VerifyCommonParts (torrent);
-            for (int i = 0; i < torrent.Files.Count; i++)
-                Assert.IsTrue (files.Exists (f => f.Path.Equals (torrent.Files[i].Path)));
-        }
+            // all non-padding files start exactly at piece boundaries
+            foreach(var f in torrent.Files.Where(x => !x.IsPadding))
+            {
+                Assert.IsTrue (f.OffsetInTorrent % torrent.PieceLength == 0);
+            }
 
-        [Test]
-        public async Task LargeMultiTorrent ()
-        {
-            string name1 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File1");
-            string name2 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File2");
-            string name3 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File3");
-            string name4 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File4");
-            string name5 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File5");
-            files = new List<TorrentCreator.InputFile> {
-                new TorrentCreator.InputFile(name1, (long)(PieceLength * 200.30)),
-                new TorrentCreator.InputFile(name2, (long)(PieceLength * 42000.5)),
-                new TorrentCreator.InputFile(name3, (long)(PieceLength * 300.17)),
-                new TorrentCreator.InputFile(name4, (long)(PieceLength * 100.22)),
-                new TorrentCreator.InputFile(name5, (long)(PieceLength * 600.94)),
-            };
-
-            Torrent torrent = Torrent.Load (await creator.CreateAsync ("BaseDir", files));
-            Assert.AreEqual (5, torrent.Files.Count, "#1");
-            Assert.AreEqual (name1, torrent.Files[0].Path, "#2");
-            Assert.AreEqual (name2, torrent.Files[1].Path, "#3");
-            Assert.AreEqual (name3, torrent.Files[2].Path, "#4");
-            Assert.AreEqual (name4, torrent.Files[3].Path, "#5");
-            Assert.AreEqual (name5, torrent.Files[4].Path, "#6");
-        }
-
-        void VerifyCommonParts (Torrent torrent)
-        {
-            Assert.AreEqual (Comment, torrent.Comment, "#1");
-            Assert.AreEqual (CreatedBy, torrent.CreatedBy, "#2");
-            Assert.IsTrue ((DateTime.UtcNow - torrent.CreationDate) < TimeSpan.FromSeconds (5), "#3");
-            Assert.AreEqual (PieceLength, torrent.PieceLength, "#4");
-            Assert.AreEqual (Publisher, torrent.Publisher, "#5");
-            Assert.AreEqual (PublisherUrl, torrent.PublisherUrl, "#6");
-            Assert.AreEqual (2, torrent.AnnounceUrls.Count, "#7");
-            Assert.AreEqual (2, torrent.AnnounceUrls[0].Count, "#8");
-            Assert.AreEqual (2, torrent.AnnounceUrls[1].Count, "#9");
+            // all padding files are smaller than piecelength and must not cross piece boundaries
+            foreach (var f in torrent.Files.Where (x => x.IsPadding)) {
+                Assert.AreEqual (f.StartPieceIndex, f.EndPieceIndex);
+                Assert.IsTrue (f.Length < torrent.PieceLength);
+            }
         }
     }
 }

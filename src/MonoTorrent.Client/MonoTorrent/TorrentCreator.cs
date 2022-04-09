@@ -227,7 +227,8 @@ namespace MonoTorrent
         {
             yield return x;
             if (x.Length % PieceLength != 0) {
-                yield return new InputFile ( Path.Combine(".pad", $"{x.Length % PieceLength}"), x.Length % PieceLength) {
+                long padLength = PieceLength - (x.Length % PieceLength);
+                yield return new InputFile ( Path.Combine(".pad", $"{padLength}"), padLength) {
                     IsPadding = true
                 };
             }
