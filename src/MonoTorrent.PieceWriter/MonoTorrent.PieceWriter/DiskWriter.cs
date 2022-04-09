@@ -115,8 +115,7 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             if (file.IsPadding) {
-                var zeroes = new byte[buffer.Length];
-                zeroes.CopyTo (buffer);
+                buffer.Span.Clear();
                 return buffer.Length;
             } else {
                 using (await Limiter.EnterAsync ()) {

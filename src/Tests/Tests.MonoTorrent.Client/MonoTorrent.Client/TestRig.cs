@@ -74,8 +74,7 @@ namespace MonoTorrent.Client
 
             if (!DontWrite) {
                 if (file.IsPadding) {
-                    for (int i = 0; i < buffer.Length; i++)
-                        buffer.Span[i] = (byte) 0;
+                    buffer.Span.Clear ();
                 } else {
                     for (int i = 0; i < buffer.Length; i++)
                         buffer.Span[i] = (byte) i;
