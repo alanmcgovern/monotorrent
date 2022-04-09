@@ -70,6 +70,7 @@ namespace MonoTorrent.Common
 
             // all padding files are smaller than piecelength and must not cross piece boundaries
             foreach (var f in torrent.Files.Where (x => x.IsPadding)) {
+                Assert.AreEqual ($".pad\\{f.Length}", f.Path);
                 Assert.AreEqual (f.StartPieceIndex, f.EndPieceIndex);
                 Assert.IsTrue (f.Length < torrent.PieceLength);
             }
