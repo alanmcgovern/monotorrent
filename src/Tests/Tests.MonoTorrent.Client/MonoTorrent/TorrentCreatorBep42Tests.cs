@@ -62,8 +62,11 @@ namespace MonoTorrent.Common
             BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
             Torrent torrent = Torrent.Load (dict);
 
+            Assert.AreEqual (5, torrent.Files.Count (f => !f.IsPadding));
+            Assert.AreEqual (4, torrent.Files.Count (f => f.IsPadding));
+
             // all non-padding files start exactly at piece boundaries
-            foreach(var f in torrent.Files.Where(x => !x.IsPadding))
+            foreach (var f in torrent.Files.Where(x => !x.IsPadding))
             {
                 Assert.IsTrue (f.OffsetInTorrent % torrent.PieceLength == 0);
             }

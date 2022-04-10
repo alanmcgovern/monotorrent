@@ -246,11 +246,13 @@ namespace MonoTorrent
             AddCommonStuff (torrent);
 
             // when padding is enabled, insert virtual padding files into the files list
-            if(UsePadding && files.Count>1)
+            if(UsePadding)
             {
                 files = files
+                    .Take (files.Count - 1)     // don't pad the last file
                     .Select (PadMaybe)
                     .SelectMany (x => x)
+                    .Append (files.Last ())     // but we still need the last file in the new list
                     .ToList ();
             }
 
