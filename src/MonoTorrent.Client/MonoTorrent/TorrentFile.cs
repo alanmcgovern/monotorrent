@@ -70,7 +70,7 @@ namespace MonoTorrent
         public long Length { get; }
 
         /// <summary>
-        /// The padded length of the file in bytes
+        /// bep-0047 padding length in bytes
         /// </summary>
         public long Padding { get; }
 
