@@ -50,6 +50,7 @@ namespace MonoTorrent
     {
         public string? path = default;
         public long length = 0;
+        public long padding = 0;
         public ReadOnlyMemory<byte> md5sum = default;
         public ReadOnlyMemory<byte> ed2k = default;
         public ReadOnlyMemory<byte> sha1 = default;
@@ -67,6 +68,11 @@ namespace MonoTorrent
         /// The length of the file in bytes
         /// </summary>
         public long Length { get; }
+
+        /// <summary>
+        /// The padded length of the file in bytes
+        /// </summary>
+        public long Padding { get; }
 
         /// <summary>
         /// In the case of a single torrent file, this is the name of the file.
@@ -91,16 +97,16 @@ namespace MonoTorrent
 
         public bool IsPadding => ((Attributes & TorrentFileAttributes.Padding) != 0);
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, TorrentFileAttributes attributes)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, attributes)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, TorrentFileAttributes attributes, long padding)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, attributes, padding)
         {
-
         }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> piecesRoot, TorrentFileAttributes attributes)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> piecesRoot, TorrentFileAttributes attributes, long padding)
         {
             Path = path;
             Length = length;
+            Padding = padding;
 
             StartPieceIndex = startIndex;
             EndPieceIndex = endIndex;
@@ -140,24 +146,36 @@ namespace MonoTorrent
         internal static ITorrentFile[] Create (int pieceLength, TorrentFileTuple[] files)
         {
             long totalSize = 0;
+
+            // register padding file byte counts into padding field of the real predecessor file
+            for (int t = 0, real = -1; t < files.Length; t++) {
+                if ((files[t].attributes & TorrentFileAttributes.Padding) != 0) {
+                    if (real < 0) {
+                        // this will only happen if the first file is a padding file, bep-0047 doesn't seem to forbid that
+                        totalSize += files[t].length;
+                    } else {
+                        // add the count to it will also work in case of consecutive padding files, also slightly edge-case-y
+                        files[real].padding += files[t].length;
+                    }
+                } else {
+                    real = t;
+                }
+            }
+
+            // now we can forget the padding tuples
+            files = files.Where (f => (f.attributes & TorrentFileAttributes.Padding) == 0).ToArray ();
+          
             var results = new List<ITorrentFile> (files.Length);
             for (int i = 0; i < files.Length; i++) {
                 var length = files[i].length;
+                var padding = files[i].padding;
 
                 var pieceStart = (int) (totalSize / pieceLength);
-                var pieceEnd = (int) ((totalSize + length) / pieceLength);
+                var pieceEnd = length > 0 ? (int) ((totalSize + length - 1) / pieceLength) : pieceStart;
                 var startOffsetInTorrent = totalSize;
-                if ((totalSize + length) % pieceLength == 0)
-                    pieceEnd--;
 
-                if (length == 0) {
-                    pieceStart = i > 0 ? results[i - 1].StartPieceIndex : 0;
-                    pieceEnd = i > 0 ? results[i - 1].StartPieceIndex : 0;
-                    startOffsetInTorrent = i > 0 ? results[i - 1].OffsetInTorrent : 0;
-                }
-
-                results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes));
-                totalSize += length;
+                results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes, padding));
+                totalSize += (length + padding);
             }
 
             // If a zero length file starts at offset 100, it also ends at offset 100 as it's length is zero.

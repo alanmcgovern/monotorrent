@@ -58,6 +58,8 @@ namespace MonoTorrent.Client
 
         public long Length => TorrentFile.Length;
 
+        public long Padding => TorrentFile.Padding;
+
         public ReadOnlyMemory<byte> PiecesRoot => TorrentFile.PiecesRoot;
 
         public bool IsPadding { get; set; } = false;

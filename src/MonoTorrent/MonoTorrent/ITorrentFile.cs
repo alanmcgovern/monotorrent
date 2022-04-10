@@ -54,6 +54,11 @@ namespace MonoTorrent
         long Length { get; }
 
         /// <summary>
+        /// bep-0047 padding.
+        /// </summary>
+        long Padding { get; }
+
+        /// <summary>
         /// The offset, relative to the first byte in the torrent, where this file begins.
         /// </summary>
         long OffsetInTorrent { get; }

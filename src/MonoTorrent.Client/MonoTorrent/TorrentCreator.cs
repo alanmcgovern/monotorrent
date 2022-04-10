@@ -55,6 +55,7 @@ namespace MonoTorrent
             public byte[]? MD5 { get; set; }
             public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
             public long Length { get; set; }
+            public long Padding { get; set; } = 0;
             public ReadOnlyMemory<byte> PiecesRoot { get; }
             public bool IsPadding { get; set; } = false;
 
