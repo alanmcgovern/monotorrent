@@ -150,7 +150,8 @@ namespace MonoTorrent
                 if ((files[t].attributes & TorrentFileAttributes.Padding) != 0) {
                     if (real < 0) {
                         // this will only happen if the first file is a padding file, bep-0047 doesn't seem to forbid that
-                        totalSize += files[t].length;
+                        // Do not try to handle this, it would be very messy.
+                        throw new ArgumentException ("Can not handle torrent that starts with padding");
                     } else {
                         // add the count to it will also work in case of consecutive padding files, also slightly edge-case-y
                         files[real].padding += files[t].length;
@@ -170,6 +171,13 @@ namespace MonoTorrent
 
                 var pieceStart = (int) (totalSize / pieceLength);
                 var pieceEnd = length > 0 ? (int) ((totalSize + length - 1) / pieceLength) : pieceStart;
+                var pieceEndWithPadding = (length+padding) > 0 ? (int) ((totalSize + (length+padding) - 1) / pieceLength) : pieceStart;
+
+                // catch pathological case of too much padding
+                if(pieceEnd != pieceEndWithPadding) {
+                    throw new ArgumentException ("A file in the torrent has more padding than needed.");
+                }
+
                 var startOffsetInTorrent = totalSize;
 
                 results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes, padding));
