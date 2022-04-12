@@ -235,7 +235,7 @@ namespace MonoTorrent
             AddCommonStuff (torrent);
 
             foreach(var file in files.Take(files.Count-1)) {
-                file.Padding = UsePadding ? PieceLength - (file.Length % PieceLength) : 0;
+                file.Padding = (UsePadding && file.Length>0) ? PieceLength - (file.Length % PieceLength) : 0;
             }
             files.Last ().Padding = 0;
 
