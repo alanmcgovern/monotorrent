@@ -40,7 +40,8 @@ namespace MonoTorrent.Client
         HashingPaused,
         Stopping,
         Error,
-        Metadata
+        Metadata,
+        FetchingHashes
     }
 }
 
