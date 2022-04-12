@@ -317,7 +317,7 @@ namespace MonoTorrent
             var emptyBuffers = new AsyncProducerConsumerQueue<byte[]> (4);
 
             // Make this buffer one element larger so it can fit the placeholder which indicates a file has been completely read.
-            var filledBuffers = new AsyncProducerConsumerQueue<(byte[]?, int, InputFile?)> (emptyBuffers.Capacity + 1);
+            var filledBuffers = new AsyncProducerConsumerQueue<(byte[]?, int, int, InputFile?)> (emptyBuffers.Capacity + 1);
 
             // This is the IPieceWriter which we'll use to get our filestream. Each thread gets it's own writer.
             using IPieceWriter writer = Factories.CreatePieceWriter (3);
@@ -365,13 +365,15 @@ namespace MonoTorrent
             return await hashAllTask;
         }
 
-        async Task ReadAllDataAsync (long startOffset, long totalBytesToRead, Synchronizer synchronizer, IList<InputFile> files, IPieceWriter writer, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[]?, int, InputFile?)> filledBuffers, CancellationToken token)
+        async Task ReadAllDataAsync (long startOffset, long totalBytesToRead, Synchronizer synchronizer, IList<InputFile> files, IPieceWriter writer, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[]?, int, int, InputFile?)> filledBuffers, CancellationToken token)
         {
             await MainLoop.SwitchToThreadpool ();
 
             await synchronizer.Self.Task;
             foreach (var file in files) {
                 long fileRead = 0;
+
+                // skip files that we already hashed
                 if (startOffset >= (file.Length+file.Padding)) {
                     startOffset -= (file.Length+file.Padding);
                     continue;
@@ -389,9 +391,11 @@ namespace MonoTorrent
                     int toRead = (int) Math.Min (buffer.Length, (file.Length+file.Padding) - fileRead);
                     toRead = (int) Math.Min (totalBytesToRead, toRead);
 
-                    int read;
+                    // 'read' is the total of file bytes + padding bytes that were read
+                    // 'padding' is only the number of padding bytes that were read
+                    // we need those two so the MD5 hasher can hash files without padding
                     // FIXME: thread safety
-                    read = await writer.ReadAsync (file, fileRead, new Memory<byte> (buffer, 0, toRead));
+                    (var read, var padding) = await writer.PaddingAwareReadAsyncForCreator (file, fileRead, new Memory<byte> (buffer, 0, toRead));
                     if (read != toRead)
                         throw new InvalidOperationException ("The required data could not be read from the file.");
                     fileRead += read;
@@ -399,7 +403,7 @@ namespace MonoTorrent
                     ReadAllData_ReadTime += timer.Elapsed;
 
                     timer.Restart ();
-                    await filledBuffers.EnqueueAsync ((buffer, read, file), token);
+                    await filledBuffers.EnqueueAsync ((buffer, read, padding, file), token);
                     ReadAllData_EnqueueFilledBufferTime += timer.Elapsed;
 
                     if (emptyBuffers.Count == 0 && synchronizer.Next != synchronizer.Self) {
@@ -411,10 +415,10 @@ namespace MonoTorrent
             ReusableTaskCompletionSource<bool>? next = synchronizer.Next;
             synchronizer.Disconnect ();
             next!.SetResult (true);
-            await filledBuffers.EnqueueAsync ((null, 0, null), token);
+            await filledBuffers.EnqueueAsync ((null, 0, 0, null), token);
         }
 
-        async Task<byte[]> HashAllDataAsync (long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[]?, int, InputFile?)> filledBuffers, CancellationToken token)
+        async Task<byte[]> HashAllDataAsync (long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[]?, int, int, InputFile?)> filledBuffers, CancellationToken token)
         {
             await MainLoop.SwitchToThreadpool ();
 
@@ -437,7 +441,7 @@ namespace MonoTorrent
             long totalRead = 0;
             while (true) {
                 var timer = ValueStopwatch.StartNew ();
-                (byte[]? buffer, int count, InputFile? file) = await filledBuffers.DequeueAsync (token);
+                (byte[]? buffer, int count, int padding, InputFile? file) = await filledBuffers.DequeueAsync (token);
                 Hashing_DequeueFilledTime += timer.Elapsed;
 
                 // If the buffer and file are both null then all files have been fully read.
@@ -457,10 +461,10 @@ namespace MonoTorrent
                         md5Hasher.Initialize ();
                     }
                 } else {
-                    fileRead += count;
+                    fileRead += (count - padding);
                     totalRead += count;
 
-                    md5Hasher?.TransformBlock (buffer, 0, count, buffer, 0);
+                    md5Hasher?.TransformBlock (buffer, 0, count - padding, buffer, 0);
                     int bufferRead = 0;
 
                     timer.Restart ();
@@ -544,7 +548,7 @@ namespace MonoTorrent
             fileDict["length"] = new BEncodedNumber (file.Padding);
             fileDict["path"] = filePath;
 
-            // TODO JMIK: do padding files have MD5 hashes?
+            // TODO JMIK: do padding files have MD5 hashes? It's easy to add an all-zero MD5 hash calculation here
             //if (file.MD5 != null)
             //    fileDict["md5sum"] = (BEncodedString) file.MD5;
 

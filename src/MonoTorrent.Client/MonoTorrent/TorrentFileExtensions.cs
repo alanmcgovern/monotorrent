@@ -7,7 +7,7 @@ namespace MonoTorrent
     {
         static readonly Func<ITorrentManagerFile, long, int> OffsetComparator = (file, offset) => {
             var fileStart = file.OffsetInTorrent;
-            var fileEnd = fileStart + file.Length;
+            var fileEnd = fileStart + file.Length + file.Padding;
             if (offset >= fileStart && offset < fileEnd)
                 return 0;
             if (offset >= fileEnd)

@@ -95,8 +95,6 @@ namespace MonoTorrent
 
         public TorrentFileAttributes Attributes { get; }
 
-        public bool IsPadding => ((Attributes & TorrentFileAttributes.Padding) != 0);
-
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, TorrentFileAttributes attributes, long padding)
             : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, attributes, padding)
         {
