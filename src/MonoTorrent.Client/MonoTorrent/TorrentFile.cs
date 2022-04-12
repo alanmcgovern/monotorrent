@@ -46,7 +46,7 @@ namespace MonoTorrent
         Padding = 8,
     };
 
-    public class TorrentFileTuple
+    internal class TorrentFileTuple
     {
         public string? path = default;
         public long length = 0;
