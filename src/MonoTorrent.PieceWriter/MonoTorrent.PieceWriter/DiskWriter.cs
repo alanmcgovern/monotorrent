@@ -106,7 +106,39 @@ namespace MonoTorrent.PieceWriter
             }
         }
 
+        private static (int todoFile,int todoPad) Partition(ITorrentManagerFile file, long offset, int todo)
+        {
+            int todoFile = (offset + todo) > file.Length ? (int)Math.Max (0, file.Length - offset) : todo;
+            int todoPad = (int)Math.Min(todo - todoFile, file.Padding);
+            return (todoFile, todoPad);
+        }
+
         public async ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
+        {
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
+
+            if (offset < 0 || offset + buffer.Length > (file.Length + file.Padding))
+                throw new ArgumentOutOfRangeException (nameof (offset));
+
+            (var todoFile, var todoPad) = Partition (file, offset, buffer.Length);
+
+            int done = 0;
+
+            if(todoFile > 0) {
+                done += await ReadAsyncReal(file, offset, buffer.Slice(0,todoFile));
+                if(done < todoFile) return done;
+            }
+
+            if (todoPad > 0) {
+                buffer.Slice (done, todoPad).Span.Clear ();
+                done += todoPad;
+            }
+
+            return done;
+        }
+
+        private async ReusableTask<int> ReadAsyncReal(ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
@@ -114,21 +146,16 @@ namespace MonoTorrent.PieceWriter
             if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            if (file.IsPadding) {
-                buffer.Span.Clear();
-                return buffer.Length;
-            } else {
-                using (await Limiter.EnterAsync ()) {
-                    using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+            using (await Limiter.EnterAsync ()) {
+                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
 
-                    await SwitchToThreadpool ();
-                    if (rented.Stream!.Length < offset + buffer.Length)
-                        return 0;
+                await SwitchToThreadpool ();
+                if (rented.Stream!.Length < offset + buffer.Length)
+                    return 0;
 
-                    if (rented.Stream.Position != offset)
-                        rented.Stream.Seek (offset, SeekOrigin.Begin);
-                    return rented.Stream.Read (buffer);
-                }
+                if (rented.Stream.Position != offset)
+                    rented.Stream.Seek (offset, SeekOrigin.Begin);
+                return rented.Stream.Read (buffer);
             }
         }
 

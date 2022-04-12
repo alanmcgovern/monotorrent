@@ -57,7 +57,6 @@ namespace MonoTorrent
             public long Length { get; set; }
             public long Padding { get; set; } = 0;
             public ReadOnlyMemory<byte> PiecesRoot { get; }
-            public bool IsPadding { get; set; } = false;
 
             internal InputFile (string path, long length)
                 : this (path, path, length)
@@ -224,17 +223,6 @@ namespace MonoTorrent
             return await CreateAsync (name, files, CancellationToken.None);
         }
 
-        private IEnumerable<InputFile> PadMaybe(InputFile x)
-        {
-            yield return x;
-            if (x.Length % PieceLength != 0) {
-                long padLength = PieceLength - (x.Length % PieceLength);
-                yield return new InputFile ( Path.Combine(".pad", $"{padLength}"), padLength) {
-                    IsPadding = true
-                };
-            }
-        }
-
         internal async Task<BEncodedDictionary> CreateAsync (string name, List<InputFile> files, CancellationToken token)
         {
             if (!InfoDict.ContainsKey (PieceLengthKey))
@@ -246,16 +234,10 @@ namespace MonoTorrent
             info["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
 
-            // when padding is enabled, insert virtual padding files into the files list
-            if(UsePadding)
-            {
-                files = files
-                    .Take (files.Count - 1)     // don't pad the last file
-                    .Select (PadMaybe)
-                    .SelectMany (x => x)
-                    .Append (files.Last ())     // but we still need the last file in the new list
-                    .ToList ();
+            foreach(var file in files.Take(files.Count-1)) {
+                file.Padding = UsePadding ? PieceLength - (file.Length % PieceLength) : 0;
             }
+            files.Last ().Padding = 0;
 
             info["pieces"] = (BEncodedString) await CalcPiecesHash (files, token);
 
@@ -303,7 +285,7 @@ namespace MonoTorrent
 
         async Task<byte[]> CalcPiecesHash (List<InputFile> files, CancellationToken token)
         {
-            long totalLength = files.Sum (t => t.Length);
+            long totalLength = files.Sum (t => (t.Length + t.Padding));
             int pieceCount = (int) ((totalLength + PieceLength - 1) / PieceLength);
 
             // If the torrent will not give us at least 8 pieces per thread, try fewer threads. Then just run it
@@ -390,21 +372,21 @@ namespace MonoTorrent
             await synchronizer.Self.Task;
             foreach (var file in files) {
                 long fileRead = 0;
-                if (startOffset >= file.Length) {
-                    startOffset -= file.Length;
+                if (startOffset >= (file.Length+file.Padding)) {
+                    startOffset -= (file.Length+file.Padding);
                     continue;
                 }
 
                 fileRead = startOffset;
                 startOffset = 0;
 
-                while (fileRead < file.Length && totalBytesToRead > 0) {
+                while (fileRead < (file.Length+file.Padding) && totalBytesToRead > 0) {
                     var timer = ValueStopwatch.StartNew ();
                     byte[] buffer = await emptyBuffers.DequeueAsync (token).ConfigureAwait (false);
                     ReadAllData_DequeueBufferTime += timer.Elapsed;
 
                     timer.Restart ();
-                    int toRead = (int) Math.Min (buffer.Length, file.Length - fileRead);
+                    int toRead = (int) Math.Min (buffer.Length, (file.Length+file.Padding) - fileRead);
                     toRead = (int) Math.Min (totalBytesToRead, toRead);
 
                     int read;
@@ -512,7 +494,10 @@ namespace MonoTorrent
         void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<InputFile> mappings)
         {
             var info = (BEncodedDictionary) dictionary["info"];
-            List<BEncodedValue> files = mappings.ConvertAll (ToFileInfoDict);
+            List<BEncodedValue> files = mappings
+                .Select (ToFileInfoDicts)
+                .SelectMany (x => x)
+                .ToList ();
             info.Add ("files", new BEncodedList (files));
         }
 
@@ -522,6 +507,13 @@ namespace MonoTorrent
             infoDict.Add ("length", new BEncodedNumber (mappings[0].Length));
             if (mappings[0].MD5 != null)
                 infoDict["md5sum"] = (BEncodedString) mappings[0].MD5!;
+        }
+
+        // converts InputFile into one BEncodedDictionary when there's no padding, or two BEncodedDictionaries when there is.
+        static BEncodedValue[] ToFileInfoDicts (InputFile file)
+        {
+            return (file.Padding > 0) ?
+                new[] { ToFileInfoDict (file), ToPaddingFileInfoDict (file) } : new[] { ToFileInfoDict (file) };
         }
 
         static BEncodedValue ToFileInfoDict (InputFile file)
@@ -538,9 +530,25 @@ namespace MonoTorrent
             if (file.MD5 != null)
                 fileDict["md5sum"] = (BEncodedString) file.MD5;
 
-            if (file.IsPadding)
-                fileDict["attr"] = (BEncodedString)"p";
+            return fileDict;
+        }
 
+        static BEncodedValue ToPaddingFileInfoDict (InputFile file)
+        {
+            var fileDict = new BEncodedDictionary ();
+
+            var filePath = new BEncodedList ();
+            filePath.Add (new BEncodedString (".pad"));
+            filePath.Add (new BEncodedString ($"{file.Padding}"));
+
+            fileDict["length"] = new BEncodedNumber (file.Padding);
+            fileDict["path"] = filePath;
+
+            // TODO JMIK: do padding files have MD5 hashes?
+            //if (file.MD5 != null)
+            //    fileDict["md5sum"] = (BEncodedString) file.MD5;
+
+            fileDict["attr"] = (BEncodedString) "p";
             return fileDict;
         }
 

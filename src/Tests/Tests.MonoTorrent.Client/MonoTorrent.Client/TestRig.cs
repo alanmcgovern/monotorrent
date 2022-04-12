@@ -69,17 +69,18 @@ namespace MonoTorrent.Client
             if (!Paths.Contains (file.FullPath))
                 Paths.Add (file.FullPath);
 
-            if ((offset + buffer.Length) > file.Length)
+            if ((offset + buffer.Length) > (file.Length + file.Padding))
                 throw new ArgumentOutOfRangeException ("Tried to read past the end of the file");
 
-            if (!DontWrite) {
-                if (file.IsPadding) {
-                    buffer.Span.Clear ();
-                } else {
-                    for (int i = 0; i < buffer.Length; i++)
-                        buffer.Span[i] = (byte) i;
-                }
-            }
+            // TODO fixme
+            //if (!DontWrite) {
+            //    if (file.IsPadding) {
+            //        buffer.Span.Clear ();
+            //    } else {
+            //        for (int i = 0; i < buffer.Length; i++)
+            //            buffer.Span[i] = (byte) i;
+            //    }
+            //}
 
             return ReusableTask.FromResult (buffer.Length);
         }

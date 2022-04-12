@@ -67,7 +67,5 @@ namespace MonoTorrent
         /// The root of the merkle tree constructed for this file. Generated using a SHA256 hash by BEP52 compliant torrents.
         /// </summary>
         ReadOnlyMemory<byte> PiecesRoot { get; }
-
-        bool IsPadding { get; }
     }
 }
