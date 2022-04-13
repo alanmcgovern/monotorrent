@@ -116,6 +116,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual (InfoHash.FromHex ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e"), V2OnlyTorrent.InfoHashes.V2);
         }
 
+        // TODO: fails with MonoTorrent.TorrentException : the 'piece layers' dictionary did not contain an entry for the file 'tbl-tint.mpg'
         [Test]
         public void LoadHybridTorrent ()
         {
