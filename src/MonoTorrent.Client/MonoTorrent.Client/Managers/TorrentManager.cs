@@ -411,8 +411,9 @@ namespace MonoTorrent.Client
             Engine = engine;
             Files = Array.Empty<ITorrentManagerFile> ();
             MagnetLink = magnetLink ?? new MagnetLink (torrent!.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
-            Torrent = torrent;
+            PieceHashes = new PieceHashes (null, null);
             Settings = settings;
+            Torrent = torrent;
 
             ContainingDirectory = "";
 
