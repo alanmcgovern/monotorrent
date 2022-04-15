@@ -36,7 +36,7 @@ namespace MonoTorrent
         PieceHashesV1? V1 { get; }
         PieceHashesV2? V2 { get; }
 
-        public int Count => ((IPieceHashes?) V1 ?? (IPieceHashes?) V2)!.Count;
+        public int Count => V1?.Count ?? V2?.Count ?? 0;
 
         internal PieceHashes (PieceHashesV1? v1Hashes, PieceHashesV2? v2Hashes)
             => (V1, V2) = (v1Hashes, v2Hashes);
@@ -51,7 +51,8 @@ namespace MonoTorrent
         public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
         {
             return (V1 is null || V1.IsValid (hashes, hashIndex))
-                && (V2 is null || V2.IsValid (hashes, hashIndex));
+                && (V2 is null || V2.IsValid (hashes, hashIndex))
+                && !(V1 is null && V2 is null);
         }
     }
 }

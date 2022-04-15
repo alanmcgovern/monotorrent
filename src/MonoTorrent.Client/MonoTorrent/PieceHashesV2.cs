@@ -39,14 +39,14 @@ namespace MonoTorrent
     {
         readonly int HashCodeLength;
         readonly IList<ITorrentFile> Files;
-        readonly BEncodedDictionary Layers;
+        readonly Dictionary<BEncodedString, BEncodedString> Layers;
 
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>
         public int Count { get; }
 
-        internal PieceHashesV2 (IList<ITorrentFile> files, BEncodedDictionary layers)
+        internal PieceHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> layers)
             => (Files, Layers, HashCodeLength, Count) = (files, layers, 32, files.Last ().EndPieceIndex + 1);
 
         /// <summary>
@@ -64,8 +64,8 @@ namespace MonoTorrent
                     continue;
 
                 // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
-                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedValue? layer))
-                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, ((BEncodedString) layer).AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
+                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedString? layer))
+                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layer.AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
 
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
                 return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot);

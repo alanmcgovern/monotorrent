@@ -107,7 +107,7 @@ namespace MonoTorrent.Client.Modes
                         Cancellation.Token.ThrowIfCancellationRequested ();
                     }
 
-                    bool hashPassed = successful && Manager.Torrent.PieceHashes.IsValid (hashes, index);
+                    bool hashPassed = successful && Manager.PieceHashes.IsValid (hashes, index);
                     Manager.OnPieceHashed (index, hashPassed, ++piecesHashed, Manager.PartialProgressSelector.TrueCount);
                 }
             } else {
