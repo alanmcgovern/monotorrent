@@ -389,6 +389,7 @@ namespace MonoTorrent.Client
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
+        internal MutableBitField PendingV2PieceHashes { get; private set; }
         internal IPieceHashes PieceHashes { get; set; }
 
         #endregion
@@ -429,6 +430,7 @@ namespace MonoTorrent.Client
             TrackerManager = new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
             SetTrackerManager (TrackerManager);
 
+            PendingV2PieceHashes = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
             MutableBitField = new MutableBitField (Torrent != null ? Torrent.PieceCount: 1);
             PartialProgressSelector = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1);
             UnhashedPieces = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
@@ -639,6 +641,7 @@ namespace MonoTorrent.Client
                 Engine!.ConnectionManager.CleanupSocket (this, id);
             MutableBitField = new MutableBitField (Torrent.PieceCount);
             PartialProgressSelector = new MutableBitField (Torrent.PieceCount).SetAll (true);
+            PendingV2PieceHashes = new MutableBitField (Torrent.PieceCount);
             UnhashedPieces = new MutableBitField (Torrent.PieceCount).SetAll (true);
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
@@ -674,6 +677,13 @@ namespace MonoTorrent.Client
             }).Cast<ITorrentManagerFile> ().ToList ().AsReadOnly ();
 
             PieceHashes = Torrent.CreatePieceHashes ();
+            // If this torrent is supposed to have V2 hashes *and* we do not have them, mark them as missing.
+            // This will cause all pieces to be treated as 'not downloadable' and no peers will be treated as interesting.
+            // Otherwise set everything here to 'false' so the engine knows all pieces can be requested/verified.
+            //
+            // This will be set to 'false' when the V2 hashes have been fully requested, allowing all pieces to be
+            // downloaded normally.
+            PendingV2PieceHashes.SetAll (Torrent.InfoHashes.V2 != null && !PieceHashes.HasV2Hashes);
             PieceManager.Initialise ();
             MetadataTask.SetResult (Torrent);
         }

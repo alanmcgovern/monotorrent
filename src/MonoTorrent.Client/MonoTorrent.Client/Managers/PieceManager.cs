@@ -119,6 +119,7 @@ namespace MonoTorrent.Client
 
                 var ignorableBitfieds = new[] {
                     Manager.Bitfield,
+                    Manager.PendingV2PieceHashes,
                     PendingHashCheckPieces,
                     Manager.UnhashedPieces,
                 };
