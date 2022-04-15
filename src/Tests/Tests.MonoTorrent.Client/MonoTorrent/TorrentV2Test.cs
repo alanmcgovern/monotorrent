@@ -109,9 +109,9 @@ namespace MonoTorrent.Common
             Assert.IsNull (V2OnlyTorrent.InfoHashes.V1);
             Assert.IsNotNull (V2OnlyTorrent.InfoHashes.V2);
 
-            Assert.IsTrue (V2OnlyTorrent.PieceHashes.GetHash (V2OnlyTorrent.PieceCount - 1).V1Hash.IsEmpty);
-            Assert.IsFalse (V2OnlyTorrent.PieceHashes.GetHash (V2OnlyTorrent.PieceCount - 1).V2Hash.IsEmpty);
-            Assert.IsFalse (V2OnlyTorrent.PieceHashes.GetHash (0).V2Hash.IsEmpty);
+            Assert.IsTrue (V2OnlyTorrent.CreatePieceHashes ().GetHash (V2OnlyTorrent.PieceCount - 1).V1Hash.IsEmpty);
+            Assert.IsFalse (V2OnlyTorrent.CreatePieceHashes ().GetHash (V2OnlyTorrent.PieceCount - 1).V2Hash.IsEmpty);
+            Assert.IsFalse (V2OnlyTorrent.CreatePieceHashes ().GetHash (0).V2Hash.IsEmpty);
 
             Assert.AreEqual (InfoHash.FromHex ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e"), V2OnlyTorrent.InfoHashes.V2);
         }
@@ -123,8 +123,8 @@ namespace MonoTorrent.Common
 
             Assert.IsNull (HybridTorrent.InfoHashes.V1);
             Assert.IsNotNull (HybridTorrent.InfoHashes.V2);
-            Assert.IsTrue (HybridTorrent.PieceHashes.GetHash (0).V1Hash.IsEmpty);
-            Assert.IsFalse (HybridTorrent.PieceHashes.GetHash (0).V2Hash.IsEmpty);
+            Assert.IsTrue (HybridTorrent.CreatePieceHashes ().GetHash (0).V1Hash.IsEmpty);
+            Assert.IsFalse (HybridTorrent.CreatePieceHashes ().GetHash (0).V2Hash.IsEmpty);
         }
 
         [Test]

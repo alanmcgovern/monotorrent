@@ -389,6 +389,8 @@ namespace MonoTorrent.Client
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
+        internal IPieceHashes PieceHashes { get; set; }
+
         #endregion
 
         #region Constructors
@@ -670,6 +672,7 @@ namespace MonoTorrent.Client
                 };
             }).Cast<ITorrentManagerFile> ().ToList ().AsReadOnly ();
 
+            PieceHashes = Torrent.CreatePieceHashes ();
             PieceManager.Initialise ();
             MetadataTask.SetResult (Torrent);
         }

@@ -406,7 +406,7 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            bool result = successful && Manager.Torrent!.PieceHashes.IsValid (hashes, block.PieceIndex);
+            bool result = successful && Manager.PieceHashes.IsValid (hashes, block.PieceIndex);
             Manager.OnPieceHashed (block.PieceIndex, result, 1, 1);
             Manager.PieceManager.PieceHashed (block.PieceIndex);
             if (!result)
@@ -718,7 +718,7 @@ namespace MonoTorrent.Client.Modes
                                 var successful = await DiskManager.GetHashAsync (Manager, index, hashes);
                                 Cancellation.Token.ThrowIfCancellationRequested ();
 
-                                bool hashPassed = successful && Manager.Torrent!.PieceHashes.IsValid (hashes, index);
+                                bool hashPassed = successful && Manager.PieceHashes.IsValid (hashes, index);
                                 Manager.OnPieceHashed (index, hashPassed, 1, 1);
 
                                 if (hashPassed)

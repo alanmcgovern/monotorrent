@@ -283,12 +283,7 @@ namespace MonoTorrent
         /// <summary>
         /// The number of pieces in the torrent.
         /// </summary>
-        public int PieceCount => PieceHashes.Count;
-
-        /// <summary>
-        /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
-        /// </summary>
-        public IPieceHashes PieceHashes { get; private set; }
+        public int PieceCount => Files[Files.Count - 1].EndPieceIndex + 1;
 
         /// <summary>
         /// The name of the Publisher
@@ -315,6 +310,9 @@ namespace MonoTorrent
         /// </summary>
         public long Size { get; private set; }
 
+        PieceHashesV1? PieceHashesV1 { get; set; }
+        PieceHashesV2? PieceHashesV2 { get; set; }
+
         Torrent (BEncodedDictionary torrentInformation, RawInfoHashes infoHashes)
         {
             AnnounceUrls = Array.Empty<IList<string>> ();
@@ -332,9 +330,22 @@ namespace MonoTorrent
 
             LoadInternal (torrentInformation, infoHashes);
 
-            if (InfoHashes is null || InfoMetadata is null || PieceHashes is null)
+            if (InfoHashes is null || InfoMetadata is null)
                 throw new InvalidOperationException ("One of the required properties was unset after deserializing torrent metadata");
         }
+
+
+        /// <summary>
+        /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
+        /// </summary>
+        public IPieceHashes CreatePieceHashes ()
+            => new PieceHashes (PieceHashesV1, PieceHashesV2);
+
+        /// <summary>
+        /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
+        /// </summary>
+        public IPieceHashes CreatePieceHashes (Dictionary<BEncodedString, BEncodedString> pieceHashes)
+            => new PieceHashes (PieceHashesV1, LoadHashesV2 (Files, pieceHashes, PieceLength));
 
         public override bool Equals (object? obj)
             => Equals (obj as Torrent);
@@ -582,7 +593,8 @@ namespace MonoTorrent
                         break;
 
                     case "piece layers":
-                        hashesV2 = LoadHashesV2 (Files, (BEncodedDictionary) keypair.Value, PieceLength);
+                        var dict = (BEncodedDictionary) keypair.Value;
+                        hashesV2 = LoadHashesV2 (Files, dict.ToDictionary (t => t.Key, t => (BEncodedString) t.Value), PieceLength);
                         break;
 
                     case ("url-list"):
@@ -613,7 +625,8 @@ namespace MonoTorrent
             } else {
                 InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
             }
-            PieceHashes = new PieceHashes (InfoHashes.V1 is null ? null : hashesV1, InfoHashes.V2 is null ? null : hashesV2);
+            PieceHashesV1 = InfoHashes.V1 is null ? null : hashesV1;
+            PieceHashesV2 = InfoHashes.V2 is null ? null : hashesV2;
         }
 
         static IList<ITorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
@@ -684,16 +697,16 @@ namespace MonoTorrent
             return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
         }
 
-        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, BEncodedDictionary hashes, int actualPieceLength)
+        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> hashes, int pieceLength)
         {
             using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 
             for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
                 var file = files[fileIndex];
-                if (file.Length < actualPieceLength)
+                if (file.Length < pieceLength)
                     continue;
 
-                if (!hashes.TryGetValue (BEncodedString.FromMemory (file.PiecesRoot), out BEncodedValue? hashValue))
+                if (!hashes.TryGetValue (BEncodedString.FromMemory (file.PiecesRoot), out BEncodedString? hashValue))
                     throw new TorrentException ($"the 'piece layers' dictionary did not contain an entry for the file '{file.Path}'");
                 if (!(hashValue is BEncodedString hash))
                     throw new TorrentException ("The 'piece layers' dictionary should contain BEncodedStrings");
@@ -702,7 +715,7 @@ namespace MonoTorrent
                     throw new TorrentException ($"The piece layer for {file.Path} was not a valid array of SHA256 hashes");
 
                 Span<byte> computedHash = stackalloc byte[32];
-                if (!MerkleHash.TryHash (hasher, hash.AsMemory (), actualPieceLength, computedHash, out int written) || written != 32)
+                if (!MerkleHash.TryHash (hasher, hash.AsMemory (), pieceLength, computedHash, out int written) || written != 32)
                     throw new InvalidOperationException ($"Could not compute merkle hash for file '{file.Path}'");
 
                 if (!computedHash.SequenceEqual (file.PiecesRoot.Span))
