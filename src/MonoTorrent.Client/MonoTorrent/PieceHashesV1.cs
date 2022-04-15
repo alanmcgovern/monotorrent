@@ -36,6 +36,10 @@ namespace MonoTorrent
         readonly int HashCodeLength;
         readonly ReadOnlyMemory<byte> HashData;
 
+        public bool HasV1Hashes => true;
+
+        public bool HasV2Hashes => false;
+
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
         /// </summary>

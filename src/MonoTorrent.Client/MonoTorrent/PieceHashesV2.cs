@@ -46,6 +46,10 @@ namespace MonoTorrent
         /// </summary>
         public int Count { get; }
 
+        public bool HasV1Hashes => false;
+
+        public bool HasV2Hashes => true;
+
         internal PieceHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> layers)
             => (Files, Layers, HashCodeLength, Count) = (files, layers, 32, files.Last ().EndPieceIndex + 1);
 
