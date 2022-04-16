@@ -180,18 +180,23 @@ namespace MonoTorrent
         private protected BitField NAnd (BitField value)
         {
             Check (value);
-
-            int count = 0;
-            var data = Data;
-            var valueData = value.Data;
-            for (int i = 0; i < data.Length && i < valueData.Length; i++) {
-                var result = data[i] & (~valueData[i]);
-                count += CountBits (result);
-                data[i] = result;
+            if (AllFalse || value.AllFalse)
+                return this;
+            else if (value.AllTrue) {
+                SetAll (false);
+                return this;
+            } else {
+                int count = 0;
+                var data = Data;
+                var valueData = value.Data;
+                for (int i = 0; i < data.Length && i < valueData.Length; i++) {
+                    var result = data[i] & (~valueData[i]);
+                    count += CountBits (result);
+                    data[i] = result;
+                }
+                TrueCount = count;
+                return this;
             }
-            TrueCount = count;
-
-            return this;
         }
 
         private protected BitField Or (BitField value)

@@ -358,6 +358,18 @@ namespace MonoTorrent
         }
 
         [Test]
+        public void NAnd ()
+        {
+            BitField allTrue = new MutableBitField (10).SetAll (true);
+            BitField allFalse = new MutableBitField (10).SetAll (false);
+
+            Assert.IsTrue (new MutableBitField (allTrue).NAnd (allTrue).AllFalse);
+            Assert.IsTrue (new MutableBitField (allTrue).NAnd (allFalse).AllTrue);
+            Assert.IsTrue (new MutableBitField (allFalse).NAnd (allTrue).AllFalse);
+            Assert.IsTrue (new MutableBitField (allFalse).NAnd (allFalse).AllFalse);
+        }
+
+        [Test]
         public void Not ()
         {
             bf.Not ();
