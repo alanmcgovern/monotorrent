@@ -32,6 +32,21 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
 {
+    public class PieceRequesterSettings
+    {
+        public static PieceRequesterSettings Default { get; } = new PieceRequesterSettings ();
+
+        public bool AllowPrioritisation { get; }
+        public bool AllowRandomised { get; }
+        public bool AllowRarestFirst { get; }
+
+        public PieceRequesterSettings (
+            bool allowPrioritisation = true,
+            bool allowRandomised = true,
+            bool allowRarestFirst = true)
+            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst) = (allowPrioritisation, allowRandomised, allowRarestFirst);
+    }
+
     public class StandardPieceRequester : IPieceRequester
     {
         IReadOnlyList<ReadOnlyBitField>? IgnorableBitfields { get; set; }
@@ -41,6 +56,10 @@ namespace MonoTorrent.PiecePicking
 
         public bool InEndgameMode { get; private set; }
         IPiecePicker? Picker { get; set; }
+        PieceRequesterSettings Settings { get; }
+
+        public StandardPieceRequester (PieceRequesterSettings settings)
+            => Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
         public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<ReadOnlyBitField> ignoringBitfields)
         {
@@ -50,10 +69,14 @@ namespace MonoTorrent.PiecePicking
             Temp = new BitField (TorrentData.PieceCount ());
 
             IPiecePicker picker = new StandardPicker ();
-            picker = new RandomisedPicker (picker);
-            picker = new RarestFirstPicker (picker);
-            Picker = new PriorityPicker (picker);
+            if (Settings.AllowRandomised)
+                picker = new RandomisedPicker (picker);
+            if (Settings.AllowRarestFirst)
+                picker = new RarestFirstPicker (picker);
+            if (Settings.AllowPrioritisation)
+                picker = new PriorityPicker (picker);
 
+            Picker = picker;
             Picker.Initialise (torrentData);
         }
 
