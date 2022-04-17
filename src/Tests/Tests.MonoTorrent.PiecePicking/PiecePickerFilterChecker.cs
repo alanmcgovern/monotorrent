@@ -35,8 +35,8 @@ namespace MonoTorrent.PiecePicking
     class PiecePickerFilterChecker : PiecePickerFilter
     {
         public List<ITorrentManagerInfo> Initialised;
-        public List<(IPeer peer, BitField bitfield)> Interesting;
-        public List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> Picks;
+        public List<(IPeer peer, ReadOnlyBitField bitfield)> Interesting;
+        public List<(IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> Picks;
 
         public PiecePickerFilterChecker ()
             : this (null)
@@ -47,8 +47,8 @@ namespace MonoTorrent.PiecePicking
             : base (next)
         {
             Initialised = new List<ITorrentManagerInfo> ();
-            Interesting = new List<(IPeer peer, BitField bitfield)> ();
-            Picks = new List<(IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> ();
+            Interesting = new List<(IPeer peer, ReadOnlyBitField bitfield)> ();
+            Picks = new List<(IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> ();
         }
 
         public override void Initialise (ITorrentManagerInfo torrentData)
@@ -57,15 +57,15 @@ namespace MonoTorrent.PiecePicking
             Next?.Initialise (torrentData);
         }
 
-        public override bool IsInteresting (IPeer peer, BitField bitfield)
+        public override bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
         {
             Interesting.Add ((peer, bitfield));
             return Next == null ? !bitfield.AllFalse : Next.IsInteresting (peer, bitfield);
         }
 
-        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
-            Picks.Add ((peer, new BitField (available), new List<IPeer> (otherPeers).AsReadOnly (), requests.Length, startIndex, endIndex));
+            Picks.Add ((peer, new ReadOnlyBitField (available), new List<IPeer> (otherPeers).AsReadOnly (), requests.Length, startIndex, endIndex));
             return Next == null ? 0 : Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
         }
     }

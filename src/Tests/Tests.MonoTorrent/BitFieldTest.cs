@@ -38,7 +38,7 @@ namespace MonoTorrent
     [TestFixture]
     public class BitFieldTest
     {
-        MutableBitField bf;
+        BitField bf;
         bool[] initalValues;
         byte[] initialByteValues;
         bool[] secondValues;
@@ -50,31 +50,31 @@ namespace MonoTorrent
             initalValues = new[] { true, false, true, false, true, false, true, true, true, false, false, true };
             secondValues = new[] { true, true, false, false, true, false, true, false, true, false, false, true };
             initialByteValues = new byte[] { 171, 144 };
-            bf = new MutableBitField (initalValues);
+            bf = new BitField (initalValues);
         }
 
         [Test]
         public void Constructor_Null ()
         {
-            Assert.Throws<ArgumentNullException> (() => new BitField ((BitField) null));
-            Assert.Throws<ArgumentNullException> (() => new BitField ((bool[]) null));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (null, 2));
+            Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField ((ReadOnlyBitField) null));
+            Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField ((bool[]) null));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (null, 2));
 
         }
         [Test]
         public void Constructor_TooSmall ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (Array.Empty<bool> ()));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (0));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (-1));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (Array.Empty<byte> (), 1));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (new byte[1], 0));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (Array.Empty<bool> ()));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (0));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (-1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (Array.Empty<byte> (), 1));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (new byte[1], 0));
         }
         [Test]
         public void ConstructorIntTest ()
         {
-            BitField bf2 = new BitField (initialByteValues, initalValues.Length);
-            Assert.AreEqual (bf, bf2, "#1");
+            ReadOnlyBitField bf2 = new ReadOnlyBitField (initialByteValues, initalValues.Length);
+            Assert.IsTrue (bf.SequenceEqual (bf2), "#1");
             Assert.AreEqual (initalValues.Count (b => b), bf2.TrueCount, "#1");
         }
 
@@ -90,8 +90,7 @@ namespace MonoTorrent
         [Test]
         public void ExtraBitsAtEnd ()
         {
-            var bf = new BitField (17);
-            bf.From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
+            ReadOnlyBitField bf = new BitField (17).From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
             Assert.AreEqual (17, bf.TrueCount);
             Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, (byte)(1 << 7) }.SequenceEqual (bf.ToBytes ()));
         }
@@ -99,8 +98,7 @@ namespace MonoTorrent
         [Test]
         public void ExtraBitsAtEnd2 ()
         {
-            var bf = new BitField (32);
-            bf.From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
+            ReadOnlyBitField bf = new BitField (32).From (new byte[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue });
             Assert.AreEqual (32, bf.TrueCount);
             Assert.IsTrue (new[] { byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue }.SequenceEqual (bf.ToBytes ()));
         }
@@ -118,7 +116,7 @@ namespace MonoTorrent
         [Test]
         public void FirstTrue_2 ()
         {
-            var b = new MutableBitField (1025);
+            var b = new BitField (1025);
             b[1024] = true;
             Assert.AreEqual (1024, b.FirstTrue (0, b.Length - 1));
         }
@@ -126,7 +124,7 @@ namespace MonoTorrent
         [Test]
         public void FirstTrue_3 ()
         {
-            var b = new MutableBitField (65);
+            var b = new BitField (65);
             b[0] = true;
             Assert.AreEqual (0, b.FirstTrue (0, 0));
             Assert.AreEqual (0, b.FirstTrue (0, 1));
@@ -155,15 +153,15 @@ namespace MonoTorrent
             list.Add (byte.MaxValue);
             list.Add (byte.MaxValue);
 
-            BitField b = new BitField (list.ToArray (), initalValues.Length);
-            Assert.AreEqual (b, bf, "#1");
+            ReadOnlyBitField b = new ReadOnlyBitField (list.ToArray (), initalValues.Length);
+            Assert.IsTrue (b.SequenceEqual (bf), "#1");
         }
 
         [Test]
         public void ToByteArray ()
         {
-            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false });
-            BitField second = new BitField (first.ToBytes (), first.Length);
+            ReadOnlyBitField first = new ReadOnlyBitField (new[] { true, false, true, false, true, false, true, true, true, false, false });
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -172,8 +170,8 @@ namespace MonoTorrent
         [Test]
         public void ToByteArray2 ()
         {
-            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true });
-            BitField second = new BitField (first.ToBytes (), first.Length);
+            ReadOnlyBitField first = new ReadOnlyBitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true });
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -182,8 +180,8 @@ namespace MonoTorrent
         [Test]
         public void ToByteArray3 ()
         {
-            BitField first = new BitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
-            BitField second = new BitField (first.ToBytes (), first.Length);
+            ReadOnlyBitField first = new ReadOnlyBitField (new[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -192,11 +190,11 @@ namespace MonoTorrent
         [Test]
         public void ToByteArray4 ()
         {
-            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false,
+            ReadOnlyBitField first = new ReadOnlyBitField (new[] {  true, false, true, false, true, false, true, false,
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true, false});
-            BitField second = new BitField (first.ToBytes (), first.Length);
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -205,11 +203,11 @@ namespace MonoTorrent
         [Test]
         public void ToByteArray5 ()
         {
-            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false,
+            ReadOnlyBitField first = new ReadOnlyBitField (new[] {  true, false, true, false, true, false, true, false,
                                                         false, false, true, false, true, false, false, false,
                                                         true, false, false, false, true, true, true, false,
                                                         true, false, false, true, false, false, true});
-            BitField second = new BitField (first.ToBytes (), first.Length);
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -218,11 +216,11 @@ namespace MonoTorrent
         [Test]
         public void ToByteArray6 ()
         {
-            BitField first = new BitField (new[] {  true, false, true, false, true, false, true, false, true,
+            ReadOnlyBitField first = new ReadOnlyBitField (new[] {  true, false, true, false, true, false, true, false, true,
                                                         false, false, true, false, true, false, true, false,
                                                         true, false, false, false, true, true, true, false, true,
                                                         true, false, false, true, false, false, true});
-            BitField second = new BitField (first.ToBytes (), first.Length);
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
             for (int i = 0; i < first.Length; i++) {
                 Assert.AreEqual (first[i], second[i], "#" + i);
             }
@@ -231,23 +229,22 @@ namespace MonoTorrent
         [Test]
         public void Clone ()
         {
-            BitField clone = new BitField (bf);
-            Assert.AreEqual (bf, clone);
-            Assert.IsTrue (bf.Equals (clone));
-            Assert.AreEqual (bf.GetHashCode (), clone.GetHashCode ());
+            ReadOnlyBitField clone = new ReadOnlyBitField (bf);
+            Assert.IsTrue (bf.SequenceEqual (clone));
+            Assert.IsTrue (bf.SequenceEqual (clone));
         }
 
         [Test]
         public void Get_OutOfRange ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new BitField (10)[-1]));
-            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new BitField (10)[10]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new ReadOnlyBitField (10)[-1]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new ReadOnlyBitField (10)[10]));
         }
 
         [Test]
         public void LargeBitfield ()
         {
-            var bf = new MutableBitField (1000);
+            var bf = new BitField (1000);
             bf.SetAll (true);
             Assert.AreEqual (1000, bf.TrueCount);
         }
@@ -261,21 +258,21 @@ namespace MonoTorrent
         [Test]
         public void LengthInBytes ()
         {
-            Assert.AreEqual (1, new BitField (1).LengthInBytes, "#1");
-            Assert.AreEqual (1, new BitField (8).LengthInBytes, "#2");
-            Assert.AreEqual (2, new BitField (9).LengthInBytes, "#3");
-            Assert.AreEqual (2, new BitField (15).LengthInBytes, "#4");
-            Assert.AreEqual (2, new BitField (16).LengthInBytes, "#5");
-            Assert.AreEqual (3, new BitField (17).LengthInBytes, "#6");
+            Assert.AreEqual (1, new ReadOnlyBitField (1).LengthInBytes, "#1");
+            Assert.AreEqual (1, new ReadOnlyBitField (8).LengthInBytes, "#2");
+            Assert.AreEqual (2, new ReadOnlyBitField (9).LengthInBytes, "#3");
+            Assert.AreEqual (2, new ReadOnlyBitField (15).LengthInBytes, "#4");
+            Assert.AreEqual (2, new ReadOnlyBitField (16).LengthInBytes, "#5");
+            Assert.AreEqual (3, new ReadOnlyBitField (17).LengthInBytes, "#6");
         }
 
         [Test]
         public void And ()
         {
-            BitField bf2 = new BitField (secondValues);
+            ReadOnlyBitField bf2 = new ReadOnlyBitField (secondValues);
             bf.And (bf2);
 
-            Assert.AreEqual (new BitField (secondValues), bf2, "#1: bf2 should be unmodified");
+            Assert.IsTrue (new ReadOnlyBitField (secondValues).SequenceEqual (bf2), "#1: bf2 should be unmodified");
             for (int i = 0; i < bf.Length; i++)
                 Assert.AreEqual (initalValues[i] && secondValues[i], bf[i], "#2");
 
@@ -298,8 +295,8 @@ namespace MonoTorrent
             r.NextBytes (b);
 
             for (int i = 1; i < a.Length * 8; i++) {
-                var first = new MutableBitField (a, i);
-                var second = new MutableBitField (b, i);
+                var first = new BitField (a, i);
+                var second = new BitField (b, i);
 
                 first.And (second);
             }
@@ -308,24 +305,24 @@ namespace MonoTorrent
         [Test]
         public void And_DifferentLength ()
         {
-            Assert.Throws<ArgumentException> (() => new MutableBitField (10).And (new MutableBitField (3)));
+            Assert.Throws<ArgumentException> (() => new BitField (10).And (new BitField (3)));
         }
 
         [Test]
         public void CountTrue_InvalidSelector ()
         {
-            Assert.Throws<ArgumentNullException> (() => new BitField (10).CountTrue (null));
-            Assert.Throws<ArgumentException> (() => new BitField (10).CountTrue (new BitField (5)));
+            Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField (10).CountTrue (null));
+            Assert.Throws<ArgumentException> (() => new ReadOnlyBitField (10).CountTrue (new ReadOnlyBitField (5)));
         }
 
         [Test]
         public void Equals_False ()
         {
-            var bf = new MutableBitField (10).SetAll (true);
-            var other = new MutableBitField (bf).Set (5, false);
+            var bf = new BitField (10).SetAll (true);
+            var other = new BitField (bf).Set (5, false);
             Assert.IsFalse (bf.Equals (other));
             Assert.IsFalse (bf.Equals (null));
-            Assert.IsFalse (bf.Equals (new BitField (5)));
+            Assert.IsFalse (bf.Equals (new ReadOnlyBitField (5)));
 
             bf.Set (6, false);
             Assert.AreEqual (bf.TrueCount, other.TrueCount);
@@ -335,10 +332,10 @@ namespace MonoTorrent
         [Test]
         public void Or ()
         {
-            BitField bf2 = new BitField (secondValues);
+            ReadOnlyBitField bf2 = new ReadOnlyBitField (secondValues);
             bf.Or (bf2);
 
-            Assert.AreEqual (new BitField (secondValues), bf2, "#1: bf2 should be unmodified");
+            Assert.IsTrue (new ReadOnlyBitField (secondValues).SequenceEqual (bf2), "#1: bf2 should be unmodified");
             for (int i = 0; i < bf.Length; i++)
                 Assert.AreEqual (initalValues[i] || secondValues[i], bf[i], "#2");
 
@@ -353,20 +350,20 @@ namespace MonoTorrent
         [Test]
         public void Set_OutOfRange ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => new MutableBitField (10).Set (-1, true));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new MutableBitField (10).Set (10, true));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (10).Set (-1, true));
+            Assert.Throws<ArgumentOutOfRangeException> (() => new BitField (10).Set (10, true));
         }
 
         [Test]
         public void NAnd ()
         {
-            BitField allTrue = new MutableBitField (10).SetAll (true);
-            BitField allFalse = new MutableBitField (10).SetAll (false);
+            ReadOnlyBitField allTrue = new BitField (10).SetAll (true);
+            ReadOnlyBitField allFalse = new BitField (10).SetAll (false);
 
-            Assert.IsTrue (new MutableBitField (allTrue).NAnd (allTrue).AllFalse);
-            Assert.IsTrue (new MutableBitField (allTrue).NAnd (allFalse).AllTrue);
-            Assert.IsTrue (new MutableBitField (allFalse).NAnd (allTrue).AllFalse);
-            Assert.IsTrue (new MutableBitField (allFalse).NAnd (allFalse).AllFalse);
+            Assert.IsTrue (new BitField (allTrue).NAnd (allTrue).AllFalse);
+            Assert.IsTrue (new BitField (allTrue).NAnd (allFalse).AllTrue);
+            Assert.IsTrue (new BitField (allFalse).NAnd (allTrue).AllFalse);
+            Assert.IsTrue (new BitField (allFalse).NAnd (allFalse).AllFalse);
         }
 
         [Test]
@@ -382,7 +379,7 @@ namespace MonoTorrent
         [Test]
         public void Not_ExtraBits ()
         {
-            var bf = new MutableBitField (25);
+            var bf = new BitField (25);
             Assert.AreEqual (0, bf.TrueCount);
             Assert.IsTrue (new byte[] { 0, 0, 0, 0 }.SequenceEqual (bf.ToBytes ()));
 
@@ -398,10 +395,10 @@ namespace MonoTorrent
         [Test]
         public void Xor ()
         {
-            MutableBitField bf2 = new MutableBitField (secondValues);
+            BitField bf2 = new BitField (secondValues);
             bf.Xor (bf2);
 
-            Assert.AreEqual (new BitField (secondValues), bf2, "#1: bf2 should be unmodified");
+            Assert.IsTrue (new ReadOnlyBitField (secondValues).SequenceEqual (bf2), "#1: bf2 should be unmodified");
             for (int i = 0; i < bf.Length; i++)
                 Assert.AreEqual ((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]), bf[i], "#2");
 
@@ -416,17 +413,17 @@ namespace MonoTorrent
         [Test]
         public void From ()
         {
-            MutableBitField b = new MutableBitField (31);
+            BitField b = new BitField (31);
             b.SetAll (true);
             Assert.AreEqual (31, b.TrueCount, "#1");
             Assert.IsTrue (b.AllTrue, "#1b");
 
-            b = new MutableBitField (32);
+            b = new BitField (32);
             b.SetAll (true);
             Assert.AreEqual (32, b.TrueCount, "#2");
             Assert.IsTrue (b.AllTrue, "#2b");
 
-            b = new MutableBitField (33);
+            b = new BitField (33);
             b.SetAll (true);
             Assert.AreEqual (33, b.TrueCount, "#3");
             Assert.IsTrue (b.AllTrue, "#3b");

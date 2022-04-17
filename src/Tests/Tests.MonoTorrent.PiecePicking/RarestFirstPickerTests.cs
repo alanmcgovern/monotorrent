@@ -40,7 +40,7 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class RarestFirstPickerTests
     {
-        MutableBitField bitfield;
+        BitField bitfield;
         PiecePickerFilterChecker checker;
         PeerId peer;
         List<PeerId> peers;
@@ -54,7 +54,7 @@ namespace MonoTorrent.PiecePicking
             int pieces = 40;
             int size = pieces * pieceLength;
 
-            bitfield = new MutableBitField (pieces);
+            bitfield = new BitField (pieces);
             torrentData = TestTorrentManagerInfo.Create (
                 files: TorrentFileInfo.Create (pieceLength, ("Test", size, "Full/Path/Test")),
                 pieceLength: pieceLength,
@@ -110,7 +110,7 @@ namespace MonoTorrent.PiecePicking
             bitfield.SetAll (true);
 
             // Pretend the peer has 4 pieces we can choose.
-            var available = new MutableBitField (bitfield.Length)
+            var available = new BitField (bitfield.Length)
                 .Set (1, true)
                 .Set (2, true)
                 .Set (4, true)
@@ -123,11 +123,11 @@ namespace MonoTorrent.PiecePicking
             // Ensure that pieces which were not in the 'available' bitfield were not offered
             // as suggestions.
             foreach (var pick in checker.Picks)
-                Assert.IsTrue (new MutableBitField (available).Not ().And (pick.available).AllFalse, "#1");
+                Assert.IsTrue (new BitField (available).Not ().And (pick.available).AllFalse, "#1");
 
             // Ensure at least one of the pieces in our bitfield *was* offered.
             foreach (var pick in checker.Picks)
-                Assert.IsFalse (new MutableBitField (available).And (pick.available).AllFalse, "#2");
+                Assert.IsFalse (new BitField (available).And (pick.available).AllFalse, "#2");
         }
     }
 }

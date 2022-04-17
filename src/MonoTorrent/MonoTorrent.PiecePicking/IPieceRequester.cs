@@ -73,7 +73,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="peer"></param>
         /// <param name="bitField"></param>
         /// <returns></returns>
-        bool IsInteresting (IPeer peer, BitField bitField);
+        bool IsInteresting (IPeer peer, ReadOnlyBitField bitField);
 
         /// <summary>
         /// 
@@ -83,7 +83,7 @@ namespace MonoTorrent.PiecePicking
         /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
         /// pieces which have not yet been hash checked by the library and so it is not known whether they should be requested or not.
         /// </param>
-        void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<BitField> ignorableBitfields);
+        void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<ReadOnlyBitField> ignorableBitfields);
 
         IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex);
 

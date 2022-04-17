@@ -54,7 +54,7 @@ namespace MonoTorrent.PiecePicking
         public void PickFromBeforeHighPrioritySet ()
         {
             var data = CreateTorrentInfo ();
-            var ignoringBitfield = new MutableBitField (data.TorrentInfo.PieceCount ())
+            ReadOnlyBitField ignoringBitfield = new BitField (data.TorrentInfo.PieceCount ())
                 .SetAll (true)
                 .Set (0, false);
 
@@ -75,7 +75,7 @@ namespace MonoTorrent.PiecePicking
         public void PickHighestPriority ()
         {
             var data = CreateTorrentInfo ();
-            var ignoringBitfield = new MutableBitField (data.TorrentInfo.PieceCount ())
+            ReadOnlyBitField ignoringBitfield = new BitField (data.TorrentInfo.PieceCount ())
                 .SetAll (false);
 
             var requester = new StreamingPieceRequester ();

@@ -253,10 +253,10 @@ namespace MonoTorrent.Client
         [Test]
         public void ConnectDisconnect ()
         {
-            PeerId a = new PeerId (new Peer (new string ('a', 20), new Uri ("ipv4://127.0.0.5:5353")), NullConnection.Incoming, new MutableBitField (rig.Manager.Torrent.PieceCount ()));
-            PeerId b = new PeerId (new Peer (new string ('b', 20), new Uri ("ipv4://127.0.0.5:5354")), NullConnection.Incoming, new MutableBitField (rig.Manager.Torrent.PieceCount ()));
-            PeerId c = new PeerId (new Peer (new string ('c', 20), new Uri ("ipv4://127.0.0.5:5355")), NullConnection.Incoming, new MutableBitField (rig.Manager.Torrent.PieceCount ()));
-            PeerId d = new PeerId (new Peer (new string ('d', 20), new Uri ("ipv4://127.0.0.5:5356")), NullConnection.Incoming, new MutableBitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId a = new PeerId (new Peer (new string ('a', 20), new Uri ("ipv4://127.0.0.5:5353")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId b = new PeerId (new Peer (new string ('b', 20), new Uri ("ipv4://127.0.0.5:5354")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId c = new PeerId (new Peer (new string ('c', 20), new Uri ("ipv4://127.0.0.5:5355")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId d = new PeerId (new Peer (new string ('d', 20), new Uri ("ipv4://127.0.0.5:5356")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
 
             unchoker.PeerDisconnected (a);
             Assert.AreEqual (1, unchoker.PeerCount, "#1");

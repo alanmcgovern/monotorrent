@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Modes
             DiskManager = Manager.Engine.DiskManager;
             ConnectionManager = Manager.Engine.ConnectionManager;
 
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new MutableBitField (Manager.Bitfield.Length).SetAll (true)) {
+            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new BitField (Manager.Bitfield.Length).SetAll (true)) {
                 IsChoking = false,
                 AmInterested = true,
             };
@@ -199,12 +199,12 @@ namespace MonoTorrent.Client.Modes
             Manager.MutableBitField.SetAll (true).Set (0, false);
             Manager.UnhashedPieces.SetAll (false).Set (0, true);
 
-            var origUnhashed = new BitField (Manager.UnhashedPieces);
-            var origBitfield = new BitField (Manager.Bitfield);
+            var origUnhashed = new ReadOnlyBitField (Manager.UnhashedPieces);
+            var origBitfield = new ReadOnlyBitField (Manager.Bitfield);
             await Manager.LoadFastResumeAsync (await Manager.SaveFastResumeAsync ());
 
-            Assert.AreEqual (origUnhashed, Manager.UnhashedPieces, "#3");
-            Assert.AreEqual (origBitfield, Manager.Bitfield, "#4");
+            Assert.IsTrue (origUnhashed.SequenceEqual (Manager.UnhashedPieces), "#3");
+            Assert.IsTrue (origBitfield.SequenceEqual (Manager.Bitfield), "#4");
         }
 
         [Test]
@@ -215,7 +215,7 @@ namespace MonoTorrent.Client.Modes
             foreach (var f in Manager.Files) {
                 PieceWriter.FilesThatExist.Add (f);
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
-                ((MutableBitField) f.BitField).SetAll (true);
+                ((TorrentFileInfo) f).BitField.SetAll (true);
             }
 
             var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -369,7 +369,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Files[3],
             });
 
-            var bf = new MutableBitField (Manager.Torrent.PieceCount ()).SetAll (true);
+            var bf = new BitField (Manager.Torrent.PieceCount ()).SetAll (true);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");

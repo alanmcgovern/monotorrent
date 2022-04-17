@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             connection = new HttpPeerConnection (rig.Manager, rig.Engine.Factories, new Uri (ListenerURL));
             rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId (new Peer ("this is my id", connection.Uri), connection, new MutableBitField (rig.Manager.Torrent.PieceCount ()).SetAll (true));
+            id = new PeerId (new Peer ("this is my id", connection.Uri), connection, new BitField (rig.Manager.Torrent.PieceCount ()).SetAll (true));
             id.IsChoking = false;
             id.AmInterested = true;
             id.MaxPendingRequests = numberOfPieces;
@@ -382,7 +382,7 @@ namespace MonoTorrent.Client
             connection = new HttpPeerConnection (rig.Manager, rig.Engine.Factories, url);
             rig.Manager.UnhashedPieces.SetAll (false);
 
-            id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, new MutableBitField (rig.Manager.Torrent.PieceCount ()).SetAll (true));
+            id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, new BitField (rig.Manager.Torrent.PieceCount ()).SetAll (true));
             id.IsChoking = false;
             id.AmInterested = true;
             id.MaxPendingRequests = numberOfPieces;
