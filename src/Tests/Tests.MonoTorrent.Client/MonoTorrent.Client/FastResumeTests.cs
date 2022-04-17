@@ -46,32 +46,32 @@ namespace MonoTorrent.Client
         [Test]
         public void AllHashed_AllDownloaded ()
         {
-            var unhashedPieces = new MutableBitField (10).SetAll (false);
-            var downloaded = new MutableBitField (10).SetAll (true);
+            var unhashedPieces = new BitField (10).SetAll (false);
+            var downloaded = new BitField (10).SetAll (true);
             Assert.DoesNotThrow (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void AllHashed_NothingDownloaded ()
         {
-            var unhashedPieces = new MutableBitField (10).SetAll (false);
-            var downloaded = new MutableBitField (10).SetAll (false);
+            var unhashedPieces = new BitField (10).SetAll (false);
+            var downloaded = new BitField (10).SetAll (false);
             Assert.DoesNotThrow (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void NoneHashed_NothingDownloaded ()
         {
-            var unhashedPieces = new MutableBitField (10).SetAll (true);
-            var downloaded = new MutableBitField (10).SetAll (false);
+            var unhashedPieces = new BitField (10).SetAll (true);
+            var downloaded = new BitField (10).SetAll (false);
             Assert.DoesNotThrow (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
         [Test]
         public void NoneHashed_AllDownloaded ()
         {
-            var unhashedPieces = new MutableBitField (10).SetAll (true);
-            var downloaded = new MutableBitField (10).SetAll (true);
+            var unhashedPieces = new BitField (10).SetAll (true);
+            var downloaded = new BitField (10).SetAll (true);
             Assert.Throws<ArgumentException> (() => new FastResume (InfoHashes, downloaded, unhashedPieces), "#1");
         }
 
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
             var v1Data = new BEncodedDictionary {
                 { FastResume.VersionKey, (BEncodedNumber)1 },
                 { FastResume.InfoHashKey, new BEncodedString(InfoHash.Span.ToArray ()) },
-                { FastResume.BitfieldKey, new BEncodedString(new MutableBitField (10).SetAll (true).ToBytes ()) },
+                { FastResume.BitfieldKey, new BEncodedString(new BitField (10).SetAll (true).ToBytes ()) },
                 { FastResume.BitfieldLengthKey, (BEncodedNumber)10 },
             };
 
@@ -98,9 +98,9 @@ namespace MonoTorrent.Client
             var v1Data = new BEncodedDictionary {
                 { FastResume.VersionKey, (BEncodedNumber)1 },
                 { FastResume.InfoHashKey, new BEncodedString(InfoHash.Span.ToArray ()) },
-                { FastResume.BitfieldKey, new BEncodedString(new MutableBitField (10).SetAll (false).Set (0, true).ToBytes ()) },
+                { FastResume.BitfieldKey, new BEncodedString(new BitField (10).SetAll (false).Set (0, true).ToBytes ()) },
                 { FastResume.BitfieldLengthKey, (BEncodedNumber)10 },
-                { FastResume.UnhashedPiecesKey, new BEncodedString (new MutableBitField (10).SetAll (true).Set (0, false).ToBytes ()) },
+                { FastResume.UnhashedPiecesKey, new BEncodedString (new BitField (10).SetAll (true).Set (0, false).ToBytes ()) },
             };
 
             // If this is a v1 FastResume data then it comes from a version of MonoTorrent which always
@@ -113,8 +113,8 @@ namespace MonoTorrent.Client
         [Test]
         public void LoadEncoded ()
         {
-            var unhashedPieces = new MutableBitField (10).SetAll (false);
-            var downloaded = new MutableBitField (10).SetAll (true);
+            var unhashedPieces = new BitField (10).SetAll (false);
+            var downloaded = new BitField (10).SetAll (true);
             var fastResume = new FastResume (InfoHashes, downloaded, unhashedPieces);
             var stream = new MemoryStream ();
 
@@ -141,7 +141,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (new InfoHashes (InfoHash, null), new MutableBitField (torrent.PieceCount).SetAll (false), new MutableBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (new InfoHashes (InfoHash, null), new BitField (torrent.PieceCount).SetAll (false), new BitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsFalse (manager.HashChecked);
             await manager.StartAsync ();
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (false), new MutableBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (false), new BitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -183,7 +183,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new ReadOnlyBitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -210,7 +210,7 @@ namespace MonoTorrent.Client
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new MutableBitField (torrent.PieceCount).SetAll (true), new MutableBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
             testWriter.FilesThatExist = new System.Collections.Generic.List<ITorrentManagerFile> (manager.Files);
             Assert.IsTrue (manager.HashChecked);

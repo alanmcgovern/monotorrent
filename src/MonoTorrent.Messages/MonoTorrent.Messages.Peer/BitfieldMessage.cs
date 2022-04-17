@@ -38,12 +38,13 @@ namespace MonoTorrent.Messages.Peer
     {
         internal static readonly byte MessageId = 5;
 
-        public static readonly BitfieldMessage UnknownLength = new BitfieldMessage (new BitField (1));
+        public static readonly BitfieldMessage UnknownLength = new BitfieldMessage (new ReadOnlyBitField (1));
 
         /// <summary>
         /// The bitfield
         /// </summary>
-        public BitField BitField { get; }
+        public ReadOnlyBitField BitField { get; }
+        BitField? MutableBitField { get; }
 
         bool CanDecode { get; }
 
@@ -53,7 +54,7 @@ namespace MonoTorrent.Messages.Peer
         /// <param name="length">The length of the bitfield</param>
         public BitfieldMessage (int length)
         {
-            BitField = new MutableBitField (length);
+            BitField = MutableBitField = new BitField (length);
             CanDecode = true;
         }
 
@@ -61,7 +62,7 @@ namespace MonoTorrent.Messages.Peer
         /// Creates a new BitfieldMessage
         /// </summary>
         /// <param name="bitfield">The bitfield to use</param>
-        public BitfieldMessage (BitField bitfield)
+        public BitfieldMessage (ReadOnlyBitField bitfield)
         {
             BitField = bitfield;
             CanDecode = false;
@@ -69,8 +70,8 @@ namespace MonoTorrent.Messages.Peer
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            if (CanDecode && BitField is MutableBitField mutable)
-                mutable.From (buffer);
+            if (CanDecode && !(MutableBitField is null))
+                MutableBitField.From (buffer);
         }
 
         public override int Encode (Span<byte> buffer)
@@ -108,7 +109,7 @@ namespace MonoTorrent.Messages.Peer
             if (!(obj is BitfieldMessage bf))
                 return false;
 
-            return BitField == null ? bf.BitField == null : BitField.Equals (bf.BitField);
+            return BitField == null ? bf.BitField == null : BitField.SequenceEqual (bf.BitField);
         }
 
         public override int GetHashCode ()

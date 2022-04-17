@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.Modes
 {
     class InitialSeedingMode : Mode
     {
-        readonly BitField zero;
+        readonly ReadOnlyBitField zero;
 
         new InitialSeedUnchoker Unchoker => (InitialSeedUnchoker) base.Unchoker;
 
@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.Modes
         public InitialSeedingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings, new InitialSeedUnchoker (manager))
         {
-            zero = new MutableBitField (manager.Bitfield.Length);
+            zero = new BitField (manager.Bitfield.Length);
         }
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)

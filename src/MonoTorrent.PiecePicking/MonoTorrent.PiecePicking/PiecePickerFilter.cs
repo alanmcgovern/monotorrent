@@ -63,10 +63,10 @@ namespace MonoTorrent.PiecePicking
         public virtual void Initialise (ITorrentManagerInfo torrentData)
             => Next.Initialise (torrentData);
 
-        public virtual bool IsInteresting (IPeer peer, BitField bitfield)
+        public virtual bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
             => Next.IsInteresting (peer, bitfield);
 
-        public virtual int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public virtual int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
             => Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
         public void RequestRejected (IPeer peer, BlockInfo request)

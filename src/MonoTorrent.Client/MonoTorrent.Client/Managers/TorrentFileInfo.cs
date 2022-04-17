@@ -44,7 +44,8 @@ namespace MonoTorrent.Client
 
         ITorrentFile TorrentFile { get; }
 
-        public BitField BitField { get; }
+        internal BitField BitField { get; }
+        ReadOnlyBitField ITorrentManagerFile.BitField => BitField;
 
         public Priority Priority { get; set; } = Priority.Normal;
 
@@ -64,7 +65,7 @@ namespace MonoTorrent.Client
         {
             TorrentFile = torrentFile;
             FullPath = DownloadCompleteFullPath = DownloadIncompleteFullPath = fullPath;
-            BitField = new MutableBitField (torrentFile.EndPieceIndex - torrentFile.StartPieceIndex + 1);
+            BitField = new BitField (torrentFile.EndPieceIndex - torrentFile.StartPieceIndex + 1);
         }
 
         public (int startPiece, int endPiece) GetSelector ()

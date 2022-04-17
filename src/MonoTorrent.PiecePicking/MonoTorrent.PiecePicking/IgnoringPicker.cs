@@ -34,10 +34,10 @@ namespace MonoTorrent.PiecePicking
 {
     public class IgnoringPicker : PiecePickerFilter
     {
-        readonly BitField Bitfield;
-        readonly MutableBitField Temp;
+        readonly ReadOnlyBitField Bitfield;
+        readonly BitField Temp;
 
-        public static IPiecePicker Wrap (IPiecePicker picker, IEnumerable<BitField> ignoringBitfields)
+        public static IPiecePicker Wrap (IPiecePicker picker, IEnumerable<ReadOnlyBitField> ignoringBitfields)
         {
             var result = picker;
             foreach (var bf in ignoringBitfields)
@@ -45,18 +45,18 @@ namespace MonoTorrent.PiecePicking
             return result;
         }
 
-        public IgnoringPicker (BitField bitfield, IPiecePicker picker)
+        public IgnoringPicker (ReadOnlyBitField bitfield, IPiecePicker picker)
             : base (picker)
         {
             Bitfield = bitfield;
-            Temp = new MutableBitField (bitfield.Length);
+            Temp = new BitField (bitfield.Length);
         }
 
-        public override bool IsInteresting (IPeer peer, BitField bitfield)
+        public override bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
             => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
             && base.IsInteresting (peer, Temp);
 
-        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded

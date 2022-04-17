@@ -119,7 +119,7 @@ namespace MonoTorrent.Client.Modes
             Manager.ModeChanged += (oldMode, newMode) => modeChanged.Add (newMode);
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
-            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new MutableBitField (Manager.Torrent.PieceCount ()), new MutableBitField (Manager.Torrent.PieceCount ())));
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new BitField (Manager.Torrent.PieceCount ()), new BitField (Manager.Torrent.PieceCount ())));
             Manager.Mode = mode;
             await mode.WaitForStartingToComplete ();
 
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task FastResume_NoneExist ()
         {
-            var bf = new MutableBitField (Manager.Torrent.PieceCount ()).SetAll (true);
+            var bf = new BitField (Manager.Torrent.PieceCount ()).SetAll (true);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");
@@ -171,7 +171,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Files [0],
                 Manager.Files [2],
             });
-            var bf = new MutableBitField (Manager.Torrent.PieceCount ()).SetAll (true);
+            var bf = new BitField (Manager.Torrent.PieceCount ()).SetAll (true);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, Manager.UnhashedPieces.SetAll (false)));
 
             Assert.IsTrue (Manager.Bitfield.AllTrue, "#1");

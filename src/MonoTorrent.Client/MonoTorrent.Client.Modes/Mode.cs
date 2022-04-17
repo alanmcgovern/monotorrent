@@ -647,7 +647,7 @@ namespace MonoTorrent.Client.Modes
                     if (connection == null)
                         continue;
 
-                    var id = new PeerId (peer, connection, new MutableBitField (Manager.Bitfield.Length).SetAll (true));
+                    var id = new PeerId (peer, connection, new BitField (Manager.Bitfield.Length).SetAll (true));
                     id.Encryptor = PlainTextEncryption.Instance;
                     id.Decryptor = PlainTextEncryption.Instance;
                     id.IsChoking = false;

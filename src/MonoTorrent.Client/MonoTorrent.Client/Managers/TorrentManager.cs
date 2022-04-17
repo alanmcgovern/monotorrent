@@ -138,9 +138,9 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public BitField Bitfield => MutableBitField;
+        public ReadOnlyBitField Bitfield => MutableBitField;
 
-        internal MutableBitField MutableBitField { get; private set; }
+        internal BitField MutableBitField { get; private set; }
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
@@ -212,7 +212,7 @@ namespace MonoTorrent.Client
         /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
         /// to ensure pieces which have not been hash checked are never downloaded.
         /// </summary>
-        internal MutableBitField UnhashedPieces { get; set; }
+        internal BitField UnhashedPieces { get; set; }
 
         public bool HashChecked { get; private set; }
 
@@ -261,7 +261,7 @@ namespace MonoTorrent.Client
 
         public MagnetLink MagnetLink { get; }
 
-        internal MutableBitField PartialProgressSelector { get; private set; }
+        internal BitField PartialProgressSelector { get; private set; }
 
         /// <summary>
         /// 
@@ -389,7 +389,7 @@ namespace MonoTorrent.Client
 
         public bool IsInitialSeeding => Mode is InitialSeedingMode;
 
-        internal MutableBitField PendingV2PieceHashes { get; private set; }
+        internal BitField PendingV2PieceHashes { get; private set; }
         internal IPieceHashes PieceHashes { get; set; }
 
         #endregion
@@ -430,10 +430,10 @@ namespace MonoTorrent.Client
             TrackerManager = new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
             SetTrackerManager (TrackerManager);
 
-            PendingV2PieceHashes = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
-            MutableBitField = new MutableBitField (Torrent != null ? Torrent.PieceCount: 1);
-            PartialProgressSelector = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1);
-            UnhashedPieces = new MutableBitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
+            PendingV2PieceHashes = new BitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
+            MutableBitField = new BitField (Torrent != null ? Torrent.PieceCount: 1);
+            PartialProgressSelector = new BitField (Torrent != null ? Torrent.PieceCount : 1);
+            UnhashedPieces = new BitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
             SavePath = string.IsNullOrEmpty (savePath) ? Environment.CurrentDirectory : Path.GetFullPath (savePath);
             finishedPieces = new Queue<int> ();
             Monitor = new ConnectionMonitor ();
@@ -639,10 +639,10 @@ namespace MonoTorrent.Client
             Torrent = torrent;
             foreach (PeerId id in new List<PeerId> (Peers.ConnectedPeers))
                 Engine!.ConnectionManager.CleanupSocket (this, id);
-            MutableBitField = new MutableBitField (Torrent.PieceCount);
-            PartialProgressSelector = new MutableBitField (Torrent.PieceCount).SetAll (true);
-            PendingV2PieceHashes = new MutableBitField (Torrent.PieceCount);
-            UnhashedPieces = new MutableBitField (Torrent.PieceCount).SetAll (true);
+            MutableBitField = new BitField (Torrent.PieceCount);
+            PartialProgressSelector = new BitField (Torrent.PieceCount).SetAll (true);
+            PendingV2PieceHashes = new BitField (Torrent.PieceCount);
+            UnhashedPieces = new BitField (Torrent.PieceCount).SetAll (true);
 
             // Now we know the torrent name, use it as the base directory name when it's a multi-file torrent
             if (Torrent.Files.Count == 1 || !Settings.CreateContainingDirectory)
@@ -924,7 +924,7 @@ namespace MonoTorrent.Client
             var files = Files;
             var fileIndex = files.FindFileByPieceIndex (index);
             for (int i = fileIndex; i < files.Count && files[i].StartPieceIndex <= index; i++) {
-                ((MutableBitField) files[i].BitField)[index - files[i].StartPieceIndex] = hashPassed;
+                ((TorrentFileInfo) files[i]).BitField[index - files[i].StartPieceIndex] = hashPassed;
 
                 // If we're only hashing 1 piece then we can start moving files now. This occurs when a torrent
                 // is actively downloading.

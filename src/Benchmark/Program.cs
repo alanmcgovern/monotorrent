@@ -17,23 +17,23 @@ namespace MyBenchmarks
     [MemoryDiagnoser]
     public class BitfieldBenchmark
     {
-        readonly MutableBitField BitField_S = new MutableBitField (5);
-        readonly MutableBitField BitField_M = new MutableBitField (50);
-        readonly MutableBitField BitField_L = new MutableBitField (500);
-        readonly MutableBitField BitField_XL = new MutableBitField (5000);
-        readonly MutableBitField BitField_XXL = new MutableBitField (50000);
+        readonly BitField BitField_S = new BitField (5);
+        readonly BitField BitField_M = new BitField (50);
+        readonly BitField BitField_L = new BitField (500);
+        readonly BitField BitField_XL = new BitField (5000);
+        readonly BitField BitField_XXL = new BitField (50000);
 
-        readonly MutableBitField Temp_S = new MutableBitField (5);
-        readonly MutableBitField Temp_M = new MutableBitField (50);
-        readonly MutableBitField Temp_L = new MutableBitField (500);
-        readonly MutableBitField Temp_XL = new MutableBitField (5000);
-        readonly MutableBitField Temp_XXL = new MutableBitField (50000);
+        readonly BitField Temp_S = new BitField (5);
+        readonly BitField Temp_M = new BitField (50);
+        readonly BitField Temp_L = new BitField (500);
+        readonly BitField Temp_XL = new BitField (5000);
+        readonly BitField Temp_XXL = new BitField (50000);
 
-        MutableBitField Selector_S = new MutableBitField (5).SetAll (true);
-        MutableBitField Selector_M = new MutableBitField (50).SetAll (true);
-        MutableBitField Selector_L = new MutableBitField (500).SetAll (true);
-        MutableBitField Selector_XL = new MutableBitField (5000).SetAll (true);
-        MutableBitField Selector_XXL = new MutableBitField (50000).SetAll (true);
+        BitField Selector_S = new BitField (5).SetAll (true);
+        BitField Selector_M = new BitField (50).SetAll (true);
+        BitField Selector_L = new BitField (500).SetAll (true);
+        BitField Selector_XL = new BitField (5000).SetAll (true);
+        BitField Selector_XXL = new BitField (50000).SetAll (true);
 
         public BitfieldBenchmark ()
         {
@@ -221,7 +221,7 @@ namespace MyBenchmarks
         class Peer : IPeer
         {
             public int AmRequestingPiecesCount { get; set; }
-            public BitField BitField { get; }
+            public ReadOnlyBitField BitField { get; }
             public bool CanRequestMorePieces { get; } = true;
             public long DownloadSpeed { get; }
             public List<int> IsAllowedFastPieces { get; }
@@ -238,7 +238,7 @@ namespace MyBenchmarks
                 => 1;
 
             public Peer (int pieceCount)
-                => BitField = new MutableBitField (pieceCount).SetAll (true);
+                => BitField = new BitField (pieceCount).SetAll (true);
         }
 
         readonly TorrentData Data;
@@ -281,7 +281,7 @@ namespace MyBenchmarks
         {
             Picker.Initialise (new TorrentData ());
 
-            var bf = new MutableBitField (Requester.BitField);
+            var bf = new BitField (Requester.BitField);
             BlockInfo? requested;
             while ((requested = Picker.PickPiece (Requester, bf)).HasValue) {
                 Requested.Enqueue (requested.Value);
@@ -306,7 +306,7 @@ namespace MyBenchmarks
         {
             Picker.Initialise (new TorrentData ());
 
-            var bf = new MutableBitField (Requester.BitField);
+            var bf = new BitField (Requester.BitField);
             BlockInfo? requested;
             int requestIndex = Random.Next (0, Requesters.Count);
             while ((requested = Picker.PickPiece (Requesters[requestIndex], bf)).HasValue) {

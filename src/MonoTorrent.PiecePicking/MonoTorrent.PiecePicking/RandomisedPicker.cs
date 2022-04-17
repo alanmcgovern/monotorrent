@@ -42,7 +42,7 @@ namespace MonoTorrent.PiecePicking
             Random = new Random ();
         }
 
-        public override int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             if (available.AllFalse)
                 return 0;

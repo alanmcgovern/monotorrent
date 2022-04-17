@@ -35,7 +35,7 @@ namespace MonoTorrent.PiecePicking
     public interface IPeer
     {
         int AmRequestingPiecesCount { get; set; }
-        BitField BitField { get; }
+        ReadOnlyBitField BitField { get; }
         bool CanRequestMorePieces { get; }
         long DownloadSpeed { get; }
         List<int> IsAllowedFastPieces { get; }

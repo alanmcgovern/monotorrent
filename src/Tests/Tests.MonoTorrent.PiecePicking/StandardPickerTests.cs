@@ -40,7 +40,7 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class StandardPickerTests
     {
-        MutableBitField bitfield;
+        BitField bitfield;
         PeerId peer;
         List<PeerId> peers;
         IPiecePicker picker;
@@ -51,7 +51,7 @@ namespace MonoTorrent.PiecePicking
         {
             int pieceCount = 40;
             int pieceLength = 256 * 1024;
-            bitfield = new MutableBitField (pieceCount);
+            bitfield = new BitField (pieceCount);
             torrentData = TestTorrentManagerInfo.Create(
                 files: TorrentFileInfo.Create (pieceLength, ("File", pieceLength * pieceCount, "Full/Path/File")),
                 pieceLength: pieceLength,
@@ -144,13 +144,13 @@ namespace MonoTorrent.PiecePicking
             Span<BlockInfo> buffer = stackalloc BlockInfo[1];
 
             bitfield[1] = true;
-            Assert.AreEqual (1, picker.PickPiece (peers[0], new MutableBitField (bitfield).Not (), peers, 0, 10, buffer));
+            Assert.AreEqual (1, picker.PickPiece (peers[0], new BitField (bitfield).Not (), peers, 0, 10, buffer));
             Assert.AreEqual (0, buffer[0].PieceIndex);
 
             peers[1].IsChoking = false;
             peers[1].BitField.SetAll (true);
             peers[1].RepeatedHashFails = peers[1].TotalHashFails = 1;
-            Assert.AreEqual (1, picker.PickPiece (peers[1], new MutableBitField (bitfield).Not (), peers, 0, 10, buffer));
+            Assert.AreEqual (1, picker.PickPiece (peers[1], new BitField (bitfield).Not (), peers, 0, 10, buffer));
             Assert.AreEqual (2, buffer[0].PieceIndex);
         }
 
@@ -158,7 +158,7 @@ namespace MonoTorrent.PiecePicking
         public void NoInterestingPieces ()
         {
             peer.IsChoking = false;
-            Assert.IsNull (picker.PickPiece (peer, new BitField (torrentData.TorrentInfo.PieceCount ()), peers));
+            Assert.IsNull (picker.PickPiece (peer, new ReadOnlyBitField (torrentData.TorrentInfo.PieceCount ()), peers));
         }
 
         [Test]
@@ -436,7 +436,7 @@ namespace MonoTorrent.PiecePicking
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (torrentData);
-            var requested = picker.PickPiece (peer, new BitField (peer.BitField.Length), peers, 0, peer.BitField.Length - 1, buffer);
+            var requested = picker.PickPiece (peer, new ReadOnlyBitField (peer.BitField.Length), peers, 0, peer.BitField.Length - 1, buffer);
             Assert.AreEqual (0, requested);
         }
 
@@ -451,7 +451,7 @@ namespace MonoTorrent.PiecePicking
             peer.BitField.SetAll (true);
             picker = new StandardPicker ();
             picker.Initialise (torrentData);
-            var requested = picker.PickPiece (peer, new BitField (peer.BitField.Length), peers, 0, peer.BitField.Length - 1, buffer);
+            var requested = picker.PickPiece (peer, new ReadOnlyBitField (peer.BitField.Length), peers, 0, peer.BitField.Length - 1, buffer);
             Assert.AreEqual (0, requested);
         }
 
@@ -791,7 +791,7 @@ namespace MonoTorrent.PiecePicking
         public void DupeRequests_PeerCannotDuplicateOwnRequest ()
         {
             var seeder = PeerId.CreateNull (bitfield.Length, true, false, true);
-            var singlePiece = new MutableBitField (seeder.BitField).SetAll (false).Set (3, true);
+            var singlePiece = new BitField (seeder.BitField).SetAll (false).Set (3, true);
 
             Assert.IsNull (picker.ContinueAnyExistingRequest (seeder, 0, bitfield.Length - 1));
 
@@ -815,7 +815,7 @@ namespace MonoTorrent.PiecePicking
 
             var queue = new Queue<IPeer> (seeders);
             var requests = seeders.ToDictionary (t => t, t => new List<BlockInfo> ());
-            var singlePiece = new MutableBitField (seeders[0].BitField).SetAll (false).Set (3, true);
+            var singlePiece = new BitField (seeders[0].BitField).SetAll (false).Set (3, true);
 
             // Request an entire piece using 1 peer first to ensure we have collisions when
             // issuing duplicates. In the end all peers should have the same set though.

@@ -49,17 +49,17 @@ namespace MonoTorrent.Client
         internal static readonly BEncodedString UnhashedPiecesKey = "unhashed_pieces";
         internal static readonly BEncodedString VersionKey = "version";
 
-        public BitField Bitfield { get; }
+        public ReadOnlyBitField Bitfield { get; }
 
         public InfoHashes InfoHashes { get; }
 
-        public BitField UnhashedPieces { get; }
+        public ReadOnlyBitField UnhashedPieces { get; }
 
-        internal FastResume (InfoHashes infoHashes, BitField bitfield, BitField unhashedPieces)
+        internal FastResume (InfoHashes infoHashes, ReadOnlyBitField bitfield, ReadOnlyBitField unhashedPieces)
         {
             InfoHashes = infoHashes ?? throw new ArgumentNullException (nameof (infoHashes));
-            Bitfield = new BitField (bitfield);
-            UnhashedPieces = new BitField (unhashedPieces);
+            Bitfield = new ReadOnlyBitField (bitfield);
+            UnhashedPieces = new ReadOnlyBitField (unhashedPieces);
 
             for (int i = 0; i < Bitfield.Length; i++) {
                 if (bitfield[i] && unhashedPieces[i])
@@ -82,14 +82,14 @@ namespace MonoTorrent.Client
                 InfoHashes = InfoHashes.FromV2 (infoHash);
 
             var data = ((BEncodedString) dict[BitfieldKey]).Span;
-            Bitfield = new BitField (data, (int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
+            Bitfield = new ReadOnlyBitField (data, (int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
 
             // If we're loading up an older version of the FastResume data then we
             if (dict.ContainsKey (UnhashedPiecesKey)) {
                 data = ((BEncodedString) dict[UnhashedPiecesKey]).Span;
-                UnhashedPieces = new BitField (data, Bitfield.Length);
+                UnhashedPieces = new ReadOnlyBitField (data, Bitfield.Length);
             } else {
-                UnhashedPieces = new BitField (Bitfield.Length);
+                UnhashedPieces = new ReadOnlyBitField (Bitfield.Length);
             }
         }
 
