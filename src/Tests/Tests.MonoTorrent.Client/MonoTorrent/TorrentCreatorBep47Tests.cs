@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace MonoTorrent.Common
 {
     [TestFixture]
-    public class TorrentCreatorBep42Tests
+    public class TorrentCreatorBep47Tests
     {
         const string Comment = "My Comment";
         const string CreatedBy = "Created By MonoTorrent";
@@ -22,13 +22,13 @@ namespace MonoTorrent.Common
         const string Publisher = "My Publisher";
         const string PublisherUrl = "www.mypublisher.com";
 
-        private static async Task<Torrent> CreateTestTorrent(bool usePadding)
+        private static async Task<BEncodedDictionary> CreateTestBenc (bool usePadding)
         {
             var creator = new TorrentCreator (Factories.Default
-                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false }))
-                {
-                    UsePadding = usePadding
-                };
+                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false })) {
+                UsePadding = usePadding,
+                StoreMD5 = true,
+            };
 
             var announces = new List<List<string>> {
                 new List<string> (new[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }),
@@ -52,8 +52,12 @@ namespace MonoTorrent.Common
             foreach (var v in announces)
                 creator.Announces.Add (v);
 
-            BEncodedDictionary dict = await creator.CreateAsync (Guid.NewGuid().ToString(), files);
-            return Torrent.Load (dict);
+            return await creator.CreateAsync (Guid.NewGuid ().ToString (), files);
+        }
+
+        private static async Task<Torrent> CreateTestTorrent(bool usePadding)
+        {
+            return Torrent.Load (await CreateTestBenc (usePadding));
         }
 
         [Test]
@@ -81,13 +85,30 @@ namespace MonoTorrent.Common
         [Test]
         public async Task MD5HashNotAffectedByPadding ()
         {
-            var paddedTorrent = await CreateTestTorrent (true);
-            var unPaddedTorrent = await CreateTestTorrent (false);
+            var paddedBenc = await CreateTestBenc (true);
+            var unPaddedBenc = await CreateTestBenc (false);
 
-            // whoops.. MD5 hash isn't used / published via Torrent.Files
-            //foreach(var x in paddedTorrent.Files.Zip (unPaddedTorrent.Files, (paddedFile, unpaddedFile) => (paddedFile, unpaddedFile)))
-            //{
-            //    x.paddedFile.
+            var infoA = (BEncodedDictionary)paddedBenc[(BEncodedString) "info"];
+            var filesA = (BEncodedList) infoA[(BEncodedString) "files"];
+            var fileA = (BEncodedDictionary)filesA[0];
+            long lengthA = ((BEncodedNumber) fileA[(BEncodedString) "length"]).Number;
+            var md5sumA = ((BEncodedString) fileA[(BEncodedString) "md5sum"]);
+
+            var infoB = (BEncodedDictionary) unPaddedBenc[(BEncodedString) "info"];
+            var filesB = (BEncodedList) infoB[(BEncodedString) "files"];
+            var fileB = (BEncodedDictionary) filesB[0];
+            long lengthB = ((BEncodedNumber) fileB[(BEncodedString) "length"]).Number;
+            var md5sumB = ((BEncodedString) fileB[(BEncodedString) "md5sum"]);
+
+            Assert.AreEqual (lengthA, lengthB);
+            Assert.AreEqual (md5sumA.ToHex(), md5sumB.ToHex());
+
+            //uncomment to inspect torrent using https://chocobo1.github.io/bencode_online/
+            //using (var ms = new MemoryStream (paddedBenc.Encode ())) {
+            //    ms.Position = 0;
+            //    using (var fs = File.Create (@"b1.torrent")) {
+            //        ms.CopyTo (fs);
+            //    }
             //}
         }
     }
