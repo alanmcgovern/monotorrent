@@ -798,7 +798,7 @@ namespace MonoTorrent
 
             // padding of last torrent must be 0.
             var last = files.Last ();
-            files[files.Count - 1] = new TorrentFile (last.Path, last.Length, last.StartPieceIndex, last.EndPieceIndex, last.OffsetInTorrent, TorrentFileAttributes.None, 0);
+            files[files.Count - 1] = new TorrentFile (last.Path, last.Length, last.StartPieceIndex, last.EndPieceIndex, last.OffsetInTorrent, last.PiecesRoot, TorrentFileAttributes.None, 0);
             return Array.AsReadOnly (files.ToArray ());
         }
     }
