@@ -172,14 +172,17 @@ namespace MonoTorrent
                 var pieceStart = (int) (totalSize / pieceLength);
                 var pieceEnd = length > 0 ? (int) ((totalSize + length - 1) / pieceLength) : pieceStart;
                 var pieceEndWithPadding = (length+padding) > 0 ? (int) ((totalSize + (length+padding) - 1) / pieceLength) : pieceStart;
-
                 // catch pathological case of too much padding
                 if(pieceEnd != pieceEndWithPadding) {
                     throw new ArgumentException ("A file in the torrent has more padding than needed.");
                 }
 
-                var startOffsetInTorrent = totalSize;
+                // If a file is of length zero, it's should be treated as being part of the previous piece. Perhaps empty files
+                // should be specialcased so they're always treated as being part of piece 0? I can't see why that wouldn't be OK?
+                if (length == 0 && results.Count > 0)
+                    (pieceStart, pieceEnd) = (results[results.Count - 1].EndPieceIndex, results[results.Count - 1].EndPieceIndex);
 
+                var startOffsetInTorrent = totalSize;
                 results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes, padding));
                 totalSize += (length + padding);
             }
