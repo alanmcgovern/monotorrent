@@ -66,7 +66,7 @@ namespace MonoTorrent.Messages.Peer
                                        true, true, false, false, true, false, false, true, true, false };
 
             Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.TorrentInfo.Size / torrentData.TorrentInfo.PieceLength), "#0");
-            byte[] encoded = new BitfieldMessage (new BitField (data)).Encode ();
+            byte[] encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
 
             BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded, torrentData).message;
             Assert.AreEqual (data.Length, m.BitField.Length, "#1");
@@ -97,7 +97,7 @@ namespace MonoTorrent.Messages.Peer
         {
             Assert.Throws<MessageException> (() => {
                 bool[] data = { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
-                byte[] encoded = new BitfieldMessage (new BitField (data)).Encode ();
+                byte[] encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
 
                 PeerMessage.DecodeMessage (encoded, null);
             });

@@ -1,10 +1,10 @@
-﻿//
-// BitField.cs
+//
+// ReadOnlyBitField.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2021 Alan McGovern
+// Copyright (C) 2006 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,15 +26,24 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+
 using System;
 using System.Buffers.Binary;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace MonoTorrent
 {
-    public sealed class BitField
+    public class ReadOnlyBitField
     {
-        ReadOnlyBitField? readOnlyWrapper;
+        internal static ReadOnlyBitField From (BitFieldData data)
+            => new ReadOnlyBitField (data);
+
         BitFieldData Data { get; }
 
         public bool AllFalse => Data.AllFalse;
@@ -47,32 +56,28 @@ namespace MonoTorrent
 
         public double PercentComplete => Data.PercentComplete;
 
-        internal Span<uint> Span => Data.Data;
+        internal ReadOnlySpan<uint> Span => Data.Data;
 
         public int TrueCount => Data.TrueCount;
 
         public bool this[int index] {
             get => Data[index];
-            set => Data[index] = value;
         }
 
-        ReadOnlyBitField? ReadOnlyWrapper => (readOnlyWrapper ??= ReadOnlyBitField.From (Data));
+        public ReadOnlyBitField (ReadOnlyBitField other)
+            => Data = new BitFieldData (other?.Data ?? throw new ArgumentNullException (nameof (other)));
 
-        public BitField (ReadOnlyBitField other)
-        {
-            Data = new BitFieldData (other.Length);
-            Data.TrueCount = other.TrueCount;
-            other.Span.CopyTo (Span);
-        }
-
-        public BitField (ReadOnlySpan<byte> array, int length)
+        public ReadOnlyBitField (ReadOnlySpan<byte> array, int length)
             => Data = new BitFieldData (array, length);
 
-        public BitField (int length)
+        public ReadOnlyBitField (int length)
             => Data = new BitFieldData (length);
 
-        public BitField (bool[] array)
+        public ReadOnlyBitField (bool[] array)
             => Data = new BitFieldData (array);
+
+        ReadOnlyBitField (BitFieldData data)
+            => Data = data;
 
         public bool SequenceEqual (ReadOnlyBitField? other)
             => other != null && other.TrueCount == TrueCount && other.Span.SequenceEqual (Span);
@@ -121,81 +126,5 @@ namespace MonoTorrent
 
         public int ToBytes (Span<byte> buffer)
             => Data.ToBytes (buffer);
-
-        public BitField And (ReadOnlyBitField value)
-        {
-            Data.And (value);
-            return this;
-        }
-
-        public BitField From (ReadOnlySpan<byte> buffer)
-        {
-            Data.From (buffer);
-            return this;
-        }
-
-        public BitField From (ReadOnlyBitField value)
-        {
-            Data.From (value);
-            return this;
-        }
-
-        public BitField NAnd (ReadOnlyBitField value)
-        {
-            Data.NAnd (value);
-            return this;
-        }
-
-        public BitField Not ()
-        {
-            Data.Not ();
-            return this;
-        }
-
-        public BitField Or (ReadOnlyBitField value)
-        {
-            Data.Or (value);
-            return this;
-        }
-
-        public BitField Xor (ReadOnlyBitField value)
-        {
-            Data.Xor (value);
-            return this;
-        }
-
-        public BitField Set (int index, bool value)
-        {
-            Data[index] = value;
-            return this;
-        }
-
-        public BitField SetAll (bool value)
-        {
-            Data.SetAll (value);
-            return this;
-        }
-
-        public BitField SetFalse (params int[] indices)
-        {
-            Data.SetFalse (indices);
-            return this;
-        }
-
-        public BitField SetTrue ((int startPiece, int endPiece) range)
-        {
-            Data.SetTrue (range);
-            return this;
-        }
-
-        public BitField SetTrue (params int[] indices)
-        {
-            Data.SetTrue (indices);
-            return this;
-        }
-
-        [return: NotNullIfNotNull ("bitfield")]
-        public static implicit operator ReadOnlyBitField? (BitField? bitfield)
-            => bitfield?.ReadOnlyWrapper;
     }
 }

@@ -105,7 +105,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested)
         {
-            var peer = new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345")), new NullPeerConnection () , new MutableBitField (bitfieldLength).SetAll (seeder)) {
+            var peer = new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345")), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder)) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
@@ -141,8 +141,8 @@ namespace MonoTorrent.Client
         public bool AmChoking { get; internal set; }
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
-        public BitField BitField => MutableBitField;
-        internal MutableBitField MutableBitField { get; private set; }
+        public ReadOnlyBitField BitField => MutableBitField;
+        internal BitField MutableBitField { get; private set; }
         public Software ClientApp { get; internal set; }
 
         public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
@@ -205,7 +205,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerId (Peer peer, IPeerConnection connection, MutableBitField bitfield)
+        internal PeerId (Peer peer, IPeerConnection connection, BitField bitfield)
         {
             Peer = peer;
 

@@ -75,7 +75,7 @@ namespace MonoTorrent.PiecePicking
         public void Pick ()
         {
             // Pretend only the 1st piece is available.
-            var onePiece = new MutableBitField (seeder.BitField.Length).Set (0, true);
+            var onePiece = new BitField (seeder.BitField.Length).Set (0, true);
             var piece = picker.PickPiece (seeder, onePiece, new List<PeerId> ()).Value;
 
             // We should pick a random midpoint and select a piece starting from there.
@@ -87,14 +87,14 @@ namespace MonoTorrent.PiecePicking
             Assert.AreEqual (checker.Picks[1].endIndex, checker.Picks[0].startIndex, "#4");
 
             foreach (var pick in checker.Picks)
-                Assert.AreEqual (onePiece, pick.available, "#5");
+                Assert.IsTrue (onePiece.SequenceEqual (pick.available), "#5");
         }
 
         [Test]
         public void SinglePieceBitfield ()
         {
             picker.Initialise (CreateOnePieceTorrentData ());
-            picker.PickPiece (seeder, new MutableBitField (1).SetAll (true), new List<PeerId> ());
+            picker.PickPiece (seeder, new BitField (1).SetAll (true), new List<PeerId> ());
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");
             Assert.AreEqual (0, checker.Picks[0].startIndex, "#2");
@@ -116,7 +116,7 @@ namespace MonoTorrent.PiecePicking
         public void TwoPieceRange ()
         {
             Span<BlockInfo> buffer = stackalloc BlockInfo[1];
-            var onePiece = new MutableBitField (seeder.BitField.Length).Set (0, true);
+            var onePiece = new BitField (seeder.BitField.Length).Set (0, true);
             picker.PickPiece (seeder, onePiece, new List<PeerId> (), 12, 14, buffer);
 
             Assert.AreEqual (2, checker.Picks.Count, "#1");

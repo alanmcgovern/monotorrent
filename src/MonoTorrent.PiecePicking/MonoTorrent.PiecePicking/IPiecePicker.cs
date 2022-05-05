@@ -99,7 +99,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="peer"></param>
         /// <param name="bitfield"></param>
         /// <returns></returns>
-        bool IsInteresting (IPeer peer, BitField bitfield);
+        bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield);
 
         /// <summary>
         /// Called when a piece request has been rejected by a <paramref name="peer"/>, which indicates
@@ -119,7 +119,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="endIndex"></param>
         /// <param name="requests"></param>
         /// <returns></returns>
-        int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests);
+        int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests);
 
         /// <summary>
         /// Called when a piece is received from the <paramref name="peer"/>. Returns true if the

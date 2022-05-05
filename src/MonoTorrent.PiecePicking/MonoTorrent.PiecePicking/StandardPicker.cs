@@ -40,18 +40,18 @@ namespace MonoTorrent.PiecePicking
     {
         class PickedPieces
         {
-            readonly MutableBitField alreadyRequestedBitField;
+            readonly BitField alreadyRequestedBitField;
             readonly Dictionary<int, List<Piece>> duplicates;
             readonly Dictionary<IPeer, Piece> mostRecentRequest;
             readonly Dictionary<int, Piece> requests;
 
-            public BitField AlreadyRequestedBitfield => alreadyRequestedBitField;
+            public ReadOnlyBitField AlreadyRequestedBitfield => alreadyRequestedBitField;
 
             public Dictionary<int, Piece>.ValueCollection Values => requests.Values;
 
             public PickedPieces (int pieceCount)
             {
-                alreadyRequestedBitField = new MutableBitField (pieceCount);
+                alreadyRequestedBitField = new BitField (pieceCount);
                 duplicates = new Dictionary<int, List<Piece>> ();
                 mostRecentRequest = new Dictionary<IPeer, Piece> ();
                 requests = new Dictionary<int, Piece> ();
@@ -110,7 +110,7 @@ namespace MonoTorrent.PiecePicking
 
         // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
-        MutableBitField? CanRequestBitField;
+        BitField? CanRequestBitField;
         PickedPieces? Requests { get; set; }
         ITorrentInfo? TorrentData { get; set; }
 
@@ -220,16 +220,16 @@ namespace MonoTorrent.PiecePicking
         {
             TorrentData = torrentData.TorrentInfo!;
 
-            CanRequestBitField = new MutableBitField (TorrentData.PieceCount ());
+            CanRequestBitField = new BitField (TorrentData.PieceCount ());
             Requests = new PickedPieces (TorrentData.PieceCount ());
         }
 
-        public bool IsInteresting (IPeer peer, BitField bitfield)
+        public bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
         {
             return !bitfield.AllFalse;
         }
 
-        public int PickPiece (IPeer peer, BitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             BlockInfo? message;
 
@@ -437,7 +437,7 @@ namespace MonoTorrent.PiecePicking
             return ContinueExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests, true, true);
         }
 
-        BlockInfo? GetFromList (IPeer peer, BitField bitfield, IList<int> pieces)
+        BlockInfo? GetFromList (IPeer peer, ReadOnlyBitField bitfield, IList<int> pieces)
         {
             if (!peer.SupportsFastPeer || Requests is null || TorrentData is null)
                 return null;
@@ -457,7 +457,7 @@ namespace MonoTorrent.PiecePicking
             return null;
         }
 
-        int GetStandardRequest (IPeer peer, BitField current, int startIndex, int endIndex, Span<BlockInfo> requests)
+        int GetStandardRequest (IPeer peer, ReadOnlyBitField current, int startIndex, int endIndex, Span<BlockInfo> requests)
         {
             if (TorrentData == null || Requests == null)
                 return 0;
@@ -482,7 +482,7 @@ namespace MonoTorrent.PiecePicking
             return totalRequested;
         }
 
-        int CanRequest (BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
+        int CanRequest (ReadOnlyBitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
             if (CanRequestBitField == null || Requests == null)
                 return 0;

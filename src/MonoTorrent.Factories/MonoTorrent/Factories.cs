@@ -54,7 +54,7 @@ namespace MonoTorrent
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
         public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
-        public delegate IPieceRequester PieceRequesterCreator ();
+        public delegate IPieceRequester PieceRequesterCreator (PieceRequesterSettings settings);
         public delegate IPieceWriter PieceWriterCreator (int maxOpenFiles);
         public delegate IPortForwarder PortForwarderCreator ();
         public delegate ISocketConnector SocketConnectorCreator ();
@@ -100,7 +100,7 @@ namespace MonoTorrent
                 }
             );
             PeerConnectionListenerFunc = endPoint => new PeerConnectionListener (endPoint);
-            PieceRequesterFunc = () => new StandardPieceRequester ();
+            PieceRequesterFunc = settings => new StandardPieceRequester (settings);
             PieceWriterFunc = maxOpenFiles => new DiskWriter (maxOpenFiles);
             PortForwarderFunc = () => new MonoNatPortForwarder ();
             SocketConnectorFunc = () => new SocketConnector ();
@@ -194,7 +194,9 @@ namespace MonoTorrent
         }
 
         public IPieceRequester CreatePieceRequester ()
-            => PieceRequesterFunc ();
+            => CreatePieceRequester (PieceRequesterSettings.Default);
+        public IPieceRequester CreatePieceRequester (PieceRequesterSettings settings)
+            => PieceRequesterFunc (settings);
         public Factories WithPieceRequesterCreator (PieceRequesterCreator creator)
         {
             var dupe = MemberwiseClone ();

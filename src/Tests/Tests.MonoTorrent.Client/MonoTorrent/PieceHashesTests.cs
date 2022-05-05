@@ -1,5 +1,5 @@
-//
-// PieceHashes.cs
+﻿//
+// PieceHashesTests.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-//
+// 
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-//
+// 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -27,36 +27,34 @@
 //
 
 
-using System;
+using System.Linq;
 
-namespace MonoTorrent
+using NUnit.Framework;
+
+namespace MonoTorrent.Common
 {
-    class PieceHashes : IPieceHashes
+    [TestFixture]
+    public class PieceHashesTests
     {
-        PieceHashesV1? V1 { get; }
-        PieceHashesV2? V2 { get; }
-
-        public int Count => V1?.Count ?? V2?.Count ?? 0;
-
-        public bool HasV1Hashes => V1 != null;
-
-        public bool HasV2Hashes => V2 != null;
-
-        internal PieceHashes (PieceHashesV1? v1Hashes, PieceHashesV2? v2Hashes)
-            => (V1, V2) = (v1Hashes, v2Hashes);
-
-        public ReadOnlyPieceHash GetHash (int hashIndex)
+        [Test]
+        public void V2Only_NoHashes_IsValid ()
         {
-            var v1 = V1 is null ? default : V1.GetHash (hashIndex);
-            var v2 = V2 is null ? default : V2.GetHash (hashIndex);
-            return new ReadOnlyPieceHash (v1.V1Hash, v2.V2Hash);
+            var hashes = new PieceHashes (null, null);
+            Assert.IsFalse (hashes.IsValid (new ReadOnlyPieceHash (new byte[20], new byte[32]), 1));
         }
 
-        public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
+        [Test]
+        public void V2Only_NoHashes_GetHash ()
         {
-            return (V1 is null || V1.IsValid (hashes, hashIndex))
-                && (V2 is null || V2.IsValid (hashes, hashIndex))
-                && !(V1 is null && V2 is null);
+            var hashes = new PieceHashes (null, null).GetHash (5);
+            Assert.IsTrue (hashes.V1Hash.IsEmpty);
+            Assert.IsTrue (hashes.V2Hash.IsEmpty);
+        }
+
+        [Test]
+        public void V2Only_NoHashes_Count ()
+        {
+            Assert.AreEqual (0, new PieceHashes (null, null).Count);
         }
     }
 }

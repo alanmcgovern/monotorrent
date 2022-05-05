@@ -71,7 +71,7 @@ namespace MonoTorrent
                 Length = length;
             }
 
-            public BitField BitField => throw new NotImplementedException ();
+            public ReadOnlyBitField BitField => throw new NotImplementedException ();
 
             public Priority Priority {
                 get => throw new NotImplementedException ();

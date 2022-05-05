@@ -94,7 +94,7 @@ namespace MonoTorrent.Client
                 }
                 if (!e.Connection.IsIncoming) {
                     var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash!))!;
-                    var id = new PeerId (peer, e.Connection, new MutableBitField (manager.Bitfield.Length).SetAll (false));
+                    var id = new PeerId (peer, e.Connection, new BitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
 
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
                 return false;
 
             peer.PeerId = message.PeerId;
-            var id = new PeerId (peer, connection, new MutableBitField (man.Bitfield.Length).SetAll (false)) {
+            var id = new PeerId (peer, connection, new BitField (man.Bitfield.Length).SetAll (false)) {
                 Decryptor = decryptor,
                 Encryptor = encryptor
             };

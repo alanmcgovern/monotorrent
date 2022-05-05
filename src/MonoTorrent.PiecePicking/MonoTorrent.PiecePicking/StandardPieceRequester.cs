@@ -32,32 +32,55 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
 {
+    public class PieceRequesterSettings
+    {
+        public static PieceRequesterSettings Default { get; } = new PieceRequesterSettings ();
+
+        public bool AllowPrioritisation { get; }
+        public bool AllowRandomised { get; }
+        public bool AllowRarestFirst { get; }
+
+        public PieceRequesterSettings (
+            bool allowPrioritisation = true,
+            bool allowRandomised = true,
+            bool allowRarestFirst = true)
+            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst) = (allowPrioritisation, allowRandomised, allowRarestFirst);
+    }
+
     public class StandardPieceRequester : IPieceRequester
     {
-        IReadOnlyList<BitField>? IgnorableBitfields { get; set; }
+        IReadOnlyList<ReadOnlyBitField>? IgnorableBitfields { get; set; }
         Memory<BlockInfo> RequestBufferCache { get; set; }
-        MutableBitField? Temp { get; set; }
+        BitField? Temp { get; set; }
         ITorrentInfo? TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
         IPiecePicker? Picker { get; set; }
+        PieceRequesterSettings Settings { get; }
 
-        public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<BitField> ignoringBitfields)
+        public StandardPieceRequester (PieceRequesterSettings settings)
+            => Settings = settings ?? throw new ArgumentNullException (nameof (settings));
+
+        public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<ReadOnlyBitField> ignoringBitfields)
         {
             IgnorableBitfields = ignoringBitfields;
             TorrentData = torrentData.TorrentInfo!;
 
-            Temp = new MutableBitField (TorrentData.PieceCount ());
+            Temp = new BitField (TorrentData.PieceCount ());
 
             IPiecePicker picker = new StandardPicker ();
-            picker = new RandomisedPicker (picker);
-            picker = new RarestFirstPicker (picker);
-            Picker = new PriorityPicker (picker);
+            if (Settings.AllowRandomised)
+                picker = new RandomisedPicker (picker);
+            if (Settings.AllowRarestFirst)
+                picker = new RarestFirstPicker (picker);
+            if (Settings.AllowPrioritisation)
+                picker = new PriorityPicker (picker);
 
+            Picker = picker;
             Picker.Initialise (torrentData);
         }
 
-        BitField ApplyIgnorables (BitField primary)
+        ReadOnlyBitField ApplyIgnorables (ReadOnlyBitField primary)
         {
             Temp!.From (primary);
             for (int i = 0; i < IgnorableBitfields!.Count; i++)
@@ -102,7 +125,7 @@ namespace MonoTorrent.PiecePicking
             // a Span<T> of the expected size - so slice the reused buffer if it's too large.
             var requestBuffer = RequestBufferCache.Span.Slice (0, count);
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
-                BitField filtered = null!;
+                ReadOnlyBitField filtered = null!;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= ApplyIgnorables (peer.BitField);
                     int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount () - 1, requestBuffer);
@@ -138,7 +161,7 @@ namespace MonoTorrent.PiecePicking
             return Picker != null && Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
         }
 
-        public bool IsInteresting (IPeer peer, BitField bitfield)
+        public bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
             => Picker != null && Picker.IsInteresting (peer, bitfield);
 
         public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)

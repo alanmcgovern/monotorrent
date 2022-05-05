@@ -53,11 +53,11 @@ namespace MonoTorrent.PiecePicking
         List<PeerId> peers;
         PriorityPicker picker;
 
-        MutableBitField singleBitfield;
+        BitField singleBitfield;
         ITorrentManagerInfo singleFile;
         PeerId singlePeer;
 
-        MutableBitField multiBitfield;
+        BitField multiBitfield;
         ITorrentManagerInfo multiFile;
         PeerId multiPeer;
 
@@ -65,11 +65,11 @@ namespace MonoTorrent.PiecePicking
         public void Setup ()
         {
             singleFile = CreateSingleFile ();
-            singleBitfield = new MutableBitField (singleFile.TorrentInfo.PieceCount ()).SetAll (true);
+            singleBitfield = new BitField (singleFile.TorrentInfo.PieceCount ()).SetAll (true);
             singlePeer = PeerId.CreateNull (singleBitfield.Length);
 
             multiFile = CreateMultiFile ();
-            multiBitfield = new MutableBitField (multiFile.TorrentInfo.PieceCount ()).SetAll (true);
+            multiBitfield = new BitField (multiFile.TorrentInfo.PieceCount ()).SetAll (true);
             multiPeer = PeerId.CreateNull (multiBitfield.Length);
 
             checker = new PiecePickerFilterChecker ();
@@ -192,7 +192,7 @@ namespace MonoTorrent.PiecePicking
             Assert.AreEqual (5, checker.Picks.Count, "#1");
 
             // Make sure every downloadable file is available
-            var bf = new MutableBitField (multiBitfield.Length);
+            var bf = new BitField (multiBitfield.Length);
             foreach (var file in multiFile.Files.Where (t => t.Priority != Priority.DoNotDownload)) {
                 Assert.IsTrue (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (file.StartPieceIndex, true)), "#2");
                 Assert.IsTrue (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (file.EndPieceIndex, true)), "#3");
@@ -203,21 +203,21 @@ namespace MonoTorrent.PiecePicking
             Assert.IsFalse (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (multiFile.Files[1].StartPieceIndex + 1, true)), "#4");
             Assert.IsFalse (picker.IsInteresting (multiPeer, bf.SetAll (false).Set (multiFile.Files[1].EndPieceIndex - 1, true)), "#5");
 
-            bf = new MutableBitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[2]).GetSelector ());
-            Assert.AreEqual (bf, checker.Picks[0].available, "#6");
+            bf = new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[2]).GetSelector ());
+            Assert.IsTrue (bf.SequenceEqual (checker.Picks[0].available), "#6");
 
-            bf = new MutableBitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[3]).GetSelector ())
+            bf = new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[3]).GetSelector ())
                 .SetTrue (((TorrentFileInfo)multiFile.Files[7]).GetSelector ());
-            Assert.AreEqual (bf, checker.Picks[1].available, "#7");
+            Assert.IsTrue (bf.SequenceEqual (checker.Picks[1].available), "#7");
 
-            bf = new MutableBitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[0]).GetSelector ());
-            Assert.AreEqual (bf, checker.Picks[2].available, "#8");
+            bf = new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[0]).GetSelector ());
+            Assert.IsTrue (bf.SequenceEqual (checker.Picks[2].available), "#8");
 
-            bf = new MutableBitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[5]).GetSelector ());
-            Assert.AreEqual (bf, checker.Picks[3].available, "#9");
+            bf = new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[5]).GetSelector ());
+            Assert.IsTrue (bf.SequenceEqual (checker.Picks[3].available), "#9");
 
-            bf = new MutableBitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[4]).GetSelector ());
-            Assert.AreEqual (bf, checker.Picks[4].available, "#10");
+            bf = new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo)multiFile.Files[4]).GetSelector ());
+            Assert.IsTrue (bf.SequenceEqual (checker.Picks[4].available), "#10");
         }
 
 
@@ -249,13 +249,13 @@ namespace MonoTorrent.PiecePicking
             picker.PickPiece (multiPeer, multiBitfield, new List<PeerId> (), 0, multiBitfield.Length - 1, buffer);
             Assert.AreEqual (2, checker.Picks.Count, "#1");
             Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#2");
-            Assert.AreEqual (new MutableBitField (multiBitfield.Length).SetTrue (((TorrentFileInfo) multiFile.Files[1]).GetSelector ()), checker.Picks[0].available, "#3");
+            Assert.IsTrue (new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo) multiFile.Files[1]).GetSelector ()).SequenceEqual (checker.Picks[0].available), "#3");
 
-            var bf = new MutableBitField (multiBitfield.Length);
+            var bf = new BitField (multiBitfield.Length);
             foreach (var v in multiFile.Files.Except (new[] { multiFile.Files[1] }))
                 bf.SetTrue (((TorrentFileInfo) v).GetSelector ());
 
-            Assert.AreEqual (bf, checker.Picks[1].available, "#4");
+            Assert.IsTrue (bf.SequenceEqual (checker.Picks[1].available), "#4");
         }
 
         [Test]

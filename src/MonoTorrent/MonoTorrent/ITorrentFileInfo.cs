@@ -34,7 +34,7 @@ namespace MonoTorrent
         /// <summary>
         /// The <see cref="BitField"/> tracking which pieces of this file have been downloaded.
         /// </summary>
-        BitField BitField { get; }
+        ReadOnlyBitField BitField { get; }
 
         /// <summary>
         /// If the file is currently being downloaded, this will be the same as <see cref="DownloadIncompleteFullPath"/>. Otherwise it will be <see cref="DownloadCompleteFullPath"/>
