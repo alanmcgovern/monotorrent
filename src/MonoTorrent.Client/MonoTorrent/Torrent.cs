@@ -687,7 +687,7 @@ namespace MonoTorrent
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("attr"):
-                            tup.attributes = AttrStringToAttributesEnum(keypair.Value.ToString());
+                            tup.attributes = AttrStringToAttributesEnum(keypair.Value.ToString()!);
                             break;
 
                         case ("sha1"):
