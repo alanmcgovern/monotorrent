@@ -52,7 +52,7 @@ namespace MonoTorrent.Common
             foreach (var v in announces)
                 creator.Announces.Add (v);
 
-            return await creator.CreateAsync (Guid.NewGuid ().ToString (), files);
+            return await creator.CreateAsync (Guid.Empty.ToString (), files);
         }
 
         private static async Task<Torrent> CreateTestTorrent(bool usePadding)

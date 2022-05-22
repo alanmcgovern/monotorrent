@@ -166,36 +166,37 @@ namespace MonoTorrent
           
             var results = new List<ITorrentFile> (files.Length);
             for (int i = 0; i < files.Length; i++) {
+                // If a file is of length zero, it's should be treated as being part of the first piece.
+                if (files[i].length == 0) {
+                    results.Add (new TorrentFile (files[i].path!, 0, 0, 0, 0, files[i].attributes, 0));
+                    continue;
+                }
+
                 var length = files[i].length;
                 var padding = files[i].padding;
 
                 var pieceStart = (int) (totalSize / pieceLength);
                 var pieceEnd = length > 0 ? (int) ((totalSize + length - 1) / pieceLength) : pieceStart;
                 var pieceEndWithPadding = (length+padding) > 0 ? (int) ((totalSize + (length+padding) - 1) / pieceLength) : pieceStart;
+                var startOffsetInTorrent = totalSize;
                 // catch pathological case of too much padding
-                if(pieceEnd != pieceEndWithPadding) {
+                if (pieceEnd != pieceEndWithPadding) {
                     throw new ArgumentException ("A file in the torrent has more padding than needed.");
                 }
 
-                // If a file is of length zero, it's should be treated as being part of the previous piece. Perhaps empty files
-                // should be specialcased so they're always treated as being part of piece 0? I can't see why that wouldn't be OK?
-                if (length == 0 && results.Count > 0)
-                    (pieceStart, pieceEnd) = (results[results.Count - 1].EndPieceIndex, results[results.Count - 1].EndPieceIndex);
-
-                var startOffsetInTorrent = totalSize;
                 results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes, padding));
                 totalSize += (length + padding);
             }
 
-            // If a zero length file starts at offset 100, it also ends at offset 100 as it's length is zero.
-            // If a non-zero length file starts at offset 100, it will end at a much later offset (for example 1000).
-            // In this scenario we want the zero length file to be placed *before* the non-zero length file in this
-            // list so we can effectively binary search it later when looking for pieces which begin at a particular offset.
-            // The invariant that files later in the list always 'end' at a later point in the file will be maintained.
+            // Ensure files are always sorted so that 'OffsetInTorrent' is always increasing. If files have the same starting 'OffsetInTorrent'
+            // then they are of length 0, and so should be sorted based on their length, so empty files are first. If there are multiple
+            // empty files then sort them by path so we always have deterministic sorting.
             results.Sort ((left, right) => {
                 var comparison = left.OffsetInTorrent.CompareTo (right.OffsetInTorrent);
                 if (comparison == 0)
                     comparison = left.Length.CompareTo (right.Length);
+                if (comparison == 0)
+                    comparison = left.Path.CompareTo (right.Path);
                 return comparison;
             });
             return results.ToArray ();

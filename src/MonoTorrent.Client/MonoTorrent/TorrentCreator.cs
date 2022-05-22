@@ -294,6 +294,11 @@ namespace MonoTorrent
             while (pieceCount / parallelFactor < 8 && parallelFactor > 1)
                 parallelFactor = Math.Max (parallelFactor / 2, 1);
 
+            // FIXME: If we need to compute the MD5 then we cannot multi-thread reading/hashing the file as we need
+            // to compute the MD5 sequentially
+            if (StoreMD5)
+                parallelFactor = 1;
+
             var tasks = new List<Task<byte[]>> ();
             int piecesPerPartition = pieceCount / parallelFactor;
             Queue<Synchronizer> synchronizers = Synchronizer.CreateLinked (parallelFactor);
@@ -411,6 +416,8 @@ namespace MonoTorrent
                         await synchronizer.Self.Task;
                     }
                 }
+                // Notify that the file has been completely read at this point.
+                await filledBuffers.EnqueueAsync ((null, 0, 0, file), token);
             }
             ReusableTaskCompletionSource<bool>? next = synchronizer.Next;
             synchronizer.Disconnect ();
@@ -489,8 +496,8 @@ namespace MonoTorrent
                     timer.Restart ();
                     await emptyBuffers.EnqueueAsync (buffer, token);
                     Hashing_EnqueueEmptyTime += timer.Elapsed;
+                    Hashed?.InvokeAsync (this, new TorrentCreatorEventArgs (file!.Path, fileRead, file.Length, totalRead, totalBytesToRead));
                 }
-                Hashed?.InvokeAsync (this, new TorrentCreatorEventArgs (file!.Path, fileRead, file.Length, totalRead, totalBytesToRead));
             }
             return hashes;
         }

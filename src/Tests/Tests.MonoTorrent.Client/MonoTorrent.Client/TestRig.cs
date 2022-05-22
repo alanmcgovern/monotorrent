@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
 
             if (!DontWrite) {
                 for (int i = 0; i < buffer.Length; i++)
-                    buffer.Span[i] = (byte) i;
+                    buffer.Span[i] = (byte) (offset + i);
             }
 
             return ReusableTask.FromResult (buffer.Length);
