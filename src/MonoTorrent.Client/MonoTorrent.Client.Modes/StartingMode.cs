@@ -99,7 +99,9 @@ namespace MonoTorrent.Client.Modes
             else
                 await Manager.MaybeDeleteFastResumeAsync ();
 
-            if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
+            if (Manager.PendingV2PieceHashes.TrueCount > 0) {
+                Manager.Mode = new PieceHashesMode (Manager, DiskManager, ConnectionManager, Settings);
+            } else if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
                 Manager.Mode = new InitialSeedingMode (Manager, DiskManager, ConnectionManager, Settings);
             } else {
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
