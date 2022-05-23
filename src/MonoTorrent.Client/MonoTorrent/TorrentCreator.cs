@@ -555,9 +555,10 @@ namespace MonoTorrent
             fileDict["length"] = new BEncodedNumber (file.Padding);
             fileDict["path"] = filePath;
 
-            // TODO JMIK: do padding files have MD5 hashes? It's easy to add an all-zero MD5 hash calculation here
-            //if (file.MD5 != null)
-            //    fileDict["md5sum"] = (BEncodedString) file.MD5;
+            if (file.MD5 != null) {
+                using MD5 md5Hasher = MD5.Create ();
+                fileDict["md5sum"] = (BEncodedString) md5Hasher.ComputeHash (new byte[file.Padding]);
+            }
 
             fileDict["attr"] = (BEncodedString) "p";
             return fileDict;
