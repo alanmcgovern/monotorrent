@@ -24,8 +24,20 @@ namespace MonoTorrent.Common
 
         private static async Task<BEncodedDictionary> CreateTestBenc (bool usePadding)
         {
+            var files = new List<TorrentCreator.InputFile> {
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength * 2.30)),
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 36.5)),
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir2", "File3"), (long)(PieceLength * 3.17)),
+                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir1", "File4"), (long)(PieceLength * 1.22)),
+                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir2", "File5"), (long)(PieceLength * 6.94)),
+            };
+            return await CreateTestBenc (usePadding, files);
+        }
+
+        private static async Task<BEncodedDictionary> CreateTestBenc (bool usePadding, List<TorrentCreator.InputFile> files)
+        {
             var creator = new TorrentCreator (Factories.Default
-                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false })) {
+                            .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false })) {
                 UsePadding = usePadding,
                 StoreMD5 = true,
             };
@@ -41,14 +53,6 @@ namespace MonoTorrent.Common
             creator.Publisher = Publisher;
             creator.PublisherUrl = PublisherUrl;
 
-            var files = new List<TorrentCreator.InputFile> {
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength * 2.30)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 36.5)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir2", "File3"), (long)(PieceLength * 3.17)),
-                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir1", "File4"), (long)(PieceLength * 1.22)),
-                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir2", "File5"), (long)(PieceLength * 6.94)),
-            };
-
             foreach (var v in announces)
                 creator.Announces.Add (v);
 
@@ -58,6 +62,19 @@ namespace MonoTorrent.Common
         private static async Task<Torrent> CreateTestTorrent (bool usePadding)
         {
             return Torrent.Load (await CreateTestBenc (usePadding));
+        }
+
+        [Test]
+        public async Task FileLengthSameAsPieceLength ()
+        {
+            var files = new List<TorrentCreator.InputFile> {
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength)),
+                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 2)),
+            };
+
+            var torrent = Torrent.Load (await CreateTestBenc (true, files));
+            Assert.AreEqual (0, torrent.Files[0].Padding);
+            Assert.AreEqual (0, torrent.Files[1].Padding);
         }
 
         [Test]
@@ -101,14 +118,6 @@ namespace MonoTorrent.Common
 
             Assert.AreEqual (lengthA, lengthB);
             Assert.AreEqual (md5sumA.ToHex (), md5sumB.ToHex ());
-
-            //uncomment to inspect torrent using https://chocobo1.github.io/bencode_online/
-            //using (var ms = new MemoryStream (paddedBenc.Encode ())) {
-            //    ms.Position = 0;
-            //    using (var fs = File.Create (@"b1.torrent")) {
-            //        ms.CopyTo (fs);
-            //    }
-            //}
         }
     }
 }
