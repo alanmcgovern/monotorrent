@@ -786,11 +786,11 @@ namespace MonoTorrent
                     files.Add (new TorrentFile (path,
                         length,
                         totalPieces,
-                        totalPieces + (int) (length / pieceLength),
+                        totalPieces + (int) ((length - 1) / pieceLength),
                         offsetInTorrent,
                         piecesRoot,
                         TorrentFileAttributes.None,
-                        length > 0 && isHybrid ? pieceLength - length % pieceLength : 0));
+                        isHybrid ? pieceLength - length % pieceLength : 0));
                     totalPieces = files.Last ().EndPieceIndex;
                 }
             } else {
