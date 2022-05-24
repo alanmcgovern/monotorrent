@@ -71,7 +71,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void LoadSingleFile()
+        public void LoadSingleFile ()
         {
             var torrent = Torrent.Load (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:piece lengthi32768eee"));
             var file = torrent.Files.Single ();
@@ -163,7 +163,7 @@ namespace MonoTorrent.Common
         public void PieceCount ()
         {
             Assert.AreEqual (V2OnlyTorrent.PieceCount, V2OnlyTorrent.Files.Last ().EndPieceIndex + 1);
-            Assert.AreEqual (V2OnlyTorrent.PieceCount, ((ITorrentInfo)V2OnlyTorrent).PieceCount ());
+            Assert.AreEqual (V2OnlyTorrent.PieceCount, ((ITorrentInfo) V2OnlyTorrent).PieceCount ());
         }
 
         [Test]

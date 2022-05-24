@@ -163,7 +163,7 @@ namespace MonoTorrent
 
             // now we can forget the padding tuples
             files = files.Where (f => (f.attributes & TorrentFileAttributes.Padding) == 0).ToArray ();
-          
+
             var results = new List<ITorrentFile> (files.Length);
             for (int i = 0; i < files.Length; i++) {
                 // If a file is of length zero, it's should be treated as being part of the first piece.
@@ -177,7 +177,7 @@ namespace MonoTorrent
 
                 var pieceStart = (int) (totalSize / pieceLength);
                 var pieceEnd = length > 0 ? (int) ((totalSize + length - 1) / pieceLength) : pieceStart;
-                var pieceEndWithPadding = (length+padding) > 0 ? (int) ((totalSize + (length+padding) - 1) / pieceLength) : pieceStart;
+                var pieceEndWithPadding = (length + padding) > 0 ? (int) ((totalSize + (length + padding) - 1) / pieceLength) : pieceStart;
                 var startOffsetInTorrent = totalSize;
                 // catch pathological case of too much padding
                 if (pieceEnd != pieceEndWithPadding) {

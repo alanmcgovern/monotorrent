@@ -55,7 +55,7 @@ namespace MonoTorrent.Common
             return await creator.CreateAsync (Guid.Empty.ToString (), files);
         }
 
-        private static async Task<Torrent> CreateTestTorrent(bool usePadding)
+        private static async Task<Torrent> CreateTestTorrent (bool usePadding)
         {
             return Torrent.Load (await CreateTestBenc (usePadding));
         }
@@ -63,18 +63,17 @@ namespace MonoTorrent.Common
         [Test]
         public async Task Padding ()
         {
-            var torrent = await CreateTestTorrent(true);
+            var torrent = await CreateTestTorrent (true);
 
             Assert.AreEqual (5, torrent.Files.Count);
 
             // all files start exactly at piece boundaries
-            foreach (var f in torrent.Files)
-            {
+            foreach (var f in torrent.Files) {
                 Assert.IsTrue (f.OffsetInTorrent % torrent.PieceLength == 0);
             }
 
             // padded file lengths (except the last) are multiples of piecelength
-            foreach (var f in torrent.Files.Take(torrent.Files.Count-1)) {
+            foreach (var f in torrent.Files.Take (torrent.Files.Count - 1)) {
                 Assert.IsTrue ((f.Length + f.Padding) % torrent.PieceLength == 0);
             }
 
@@ -88,9 +87,9 @@ namespace MonoTorrent.Common
             var paddedBenc = await CreateTestBenc (true);
             var unPaddedBenc = await CreateTestBenc (false);
 
-            var infoA = (BEncodedDictionary)paddedBenc[(BEncodedString) "info"];
+            var infoA = (BEncodedDictionary) paddedBenc[(BEncodedString) "info"];
             var filesA = (BEncodedList) infoA[(BEncodedString) "files"];
-            var fileA = (BEncodedDictionary)filesA[0];
+            var fileA = (BEncodedDictionary) filesA[0];
             long lengthA = ((BEncodedNumber) fileA[(BEncodedString) "length"]).Number;
             var md5sumA = ((BEncodedString) fileA[(BEncodedString) "md5sum"]);
 
@@ -101,7 +100,7 @@ namespace MonoTorrent.Common
             var md5sumB = ((BEncodedString) fileB[(BEncodedString) "md5sum"]);
 
             Assert.AreEqual (lengthA, lengthB);
-            Assert.AreEqual (md5sumA.ToHex(), md5sumB.ToHex());
+            Assert.AreEqual (md5sumA.ToHex (), md5sumB.ToHex ());
 
             //uncomment to inspect torrent using https://chocobo1.github.io/bencode_online/
             //using (var ms = new MemoryStream (paddedBenc.Encode ())) {

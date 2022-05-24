@@ -400,8 +400,8 @@ namespace MonoTorrent
                 hashesV1 = new PieceHashesV1 (data, 20);
             }
 
-            IList<ITorrentFile> v1Files = Array.Empty<ITorrentFile>();
-            IList<ITorrentFile> v2Files = Array.Empty<ITorrentFile>();
+            IList<ITorrentFile> v1Files = Array.Empty<ITorrentFile> ();
+            IList<ITorrentFile> v2Files = Array.Empty<ITorrentFile> ();
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
@@ -484,27 +484,25 @@ namespace MonoTorrent
             if (hasV1Data && hasV2Data) {
                 // check consistency between v1 and v2 file lists on hybrid torrents
 
-                if(v1Files.Count != v2Files.Count)
+                if (v1Files.Count != v2Files.Count)
                     throw new TorrentException ("Inconsistent hybrid torrent, number of files differ.");
 
                 foreach (var (v1File, v2File) in v1Files.Zip (v2Files, (x, y) => (x, y))) {
 
-                    if(v1File.Path != v2File.Path)
+                    if (v1File.Path != v2File.Path)
                         throw new TorrentException ("Inconsistent hybrid torrent, mismatch in v1 and v2 files.");
 
-                    if(v1File.Length != v2File.Length)
+                    if (v1File.Length != v2File.Length)
                         throw new TorrentException ("Inconsistent hybrid torrent, file length mismatch.");
 
                     if (v1File.Padding != v2File.Padding)
                         throw new TorrentException ("Inconsistent hybrid torrent, file padding mismatch.");
-                }                
+                }
 
                 Files = v2Files;
-            }
-            else if(hasV1Data) {
+            } else if (hasV1Data) {
                 Files = v1Files;
-            }
-            else if (hasV2Data) {
+            } else if (hasV2Data) {
                 Files = v2Files;
             }
 
@@ -687,7 +685,7 @@ namespace MonoTorrent
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("attr"):
-                            tup.attributes = AttrStringToAttributesEnum(keypair.Value.ToString()!);
+                            tup.attributes = AttrStringToAttributesEnum (keypair.Value.ToString ()!);
                             break;
 
                         case ("sha1"):
@@ -739,7 +737,7 @@ namespace MonoTorrent
                     continue;
 
                 PathValidator.Validate (tup.path);
-                files.Add(tup);
+                files.Add (tup);
             }
 
             return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
@@ -747,7 +745,7 @@ namespace MonoTorrent
 
         static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> hashes, int pieceLength)
         {
-            using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
 
             for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
                 var file = files[fileIndex];

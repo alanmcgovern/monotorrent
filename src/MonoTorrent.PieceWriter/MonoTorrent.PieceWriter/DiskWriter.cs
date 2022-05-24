@@ -106,7 +106,7 @@ namespace MonoTorrent.PieceWriter
             }
         }
 
-        public async ReusableTask<int> ReadAsync(ITorrentManagerFile file, long offset, Memory<byte> buffer)
+        public async ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             if (file is null)
                 throw new ArgumentNullException (nameof (file));

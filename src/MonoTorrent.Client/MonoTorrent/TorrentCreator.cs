@@ -234,8 +234,8 @@ namespace MonoTorrent
             info["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
 
-            foreach(var file in files.Take(files.Count-1)) {
-                file.Padding = (UsePadding && file.Length>0) ? PieceLength - (file.Length % PieceLength) : 0;
+            foreach (var file in files.Take (files.Count - 1)) {
+                file.Padding = (UsePadding && file.Length > 0) ? PieceLength - (file.Length % PieceLength) : 0;
             }
             files.Last ().Padding = 0;
 
@@ -379,21 +379,21 @@ namespace MonoTorrent
                 long fileRead = 0;
 
                 // skip files that we already hashed
-                if (startOffset >= (file.Length+file.Padding)) {
-                    startOffset -= (file.Length+file.Padding);
+                if (startOffset >= (file.Length + file.Padding)) {
+                    startOffset -= (file.Length + file.Padding);
                     continue;
                 }
 
                 fileRead = startOffset;
                 startOffset = 0;
 
-                while (fileRead < (file.Length+file.Padding) && totalBytesToRead > 0) {
+                while (fileRead < (file.Length + file.Padding) && totalBytesToRead > 0) {
                     var timer = ValueStopwatch.StartNew ();
                     byte[] buffer = await emptyBuffers.DequeueAsync (token).ConfigureAwait (false);
                     ReadAllData_DequeueBufferTime += timer.Elapsed;
 
                     timer.Restart ();
-                    int toRead = (int) Math.Min (buffer.Length, (file.Length+file.Padding) - fileRead);
+                    int toRead = (int) Math.Min (buffer.Length, (file.Length + file.Padding) - fileRead);
                     toRead = (int) Math.Min (totalBytesToRead, toRead);
 
                     // 'read' is the total of file bytes + padding bytes that were read

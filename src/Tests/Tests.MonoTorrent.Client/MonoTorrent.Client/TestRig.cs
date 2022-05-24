@@ -215,7 +215,7 @@ namespace MonoTorrent.Client
             if (SlowConnection)
                 buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            var result = await ReadStream.ReadAsync(buffer);
+            var result = await ReadStream.ReadAsync (buffer);
             Receives.Add (result);
             return ManualBytesReceived ?? result;
         }
