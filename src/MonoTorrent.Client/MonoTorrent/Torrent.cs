@@ -400,6 +400,9 @@ namespace MonoTorrent
                 hashesV1 = new PieceHashesV1 (data, 20);
             }
 
+            IList<ITorrentFile> v1Files = Array.Empty<ITorrentFile> ();
+            IList<ITorrentFile> v2Files = Array.Empty<ITorrentFile> ();
+
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
                     case ("source"):
@@ -436,15 +439,14 @@ namespace MonoTorrent
 
                     case ("files"):
                         // This is the list of files using the v1 torrent format.
-                        // Only load if we have not processed filesv2
-                        if (Files.Count == 0)
-                            Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength);
+                        v1Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength);
                         break;
 
                     case "file tree":
                         // This is the list of files using the v2 torrent format.
-                        Files = LoadTorrentFilesV2 ((BEncodedDictionary) dictionary["file tree"], PieceLength);
+                        v2Files = LoadTorrentFilesV2 ((BEncodedDictionary) dictionary["file tree"], PieceLength, hasV1Data && hasV2Data);
                         break;
+
                     case ("name.utf-8"):
                         if (keypair.Value.ToString ()!.Length > 0)
                             Name = keypair.Value.ToString ()!;
@@ -470,17 +472,41 @@ namespace MonoTorrent
                 }
             }
 
-            if (Files.Count > 0)
-                Size = Files.Select (f => f.Length).Sum ();
-
-            if (Files.Count == 0 && hasV1Data)   // Not a multi-file torrent
+            // fixup single file v1 file list
+            if (hasV1Data && v1Files.Count == 0)   // Not a multi-file v1 torrent
             {
                 long length = long.Parse (dictionary["length"].ToString ()!);
-                Size = length;
                 string path = Name;
                 int endPiece = Math.Min (hashesV1!.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
-                Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0) });
+                v1Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0, TorrentFileAttributes.None, 0) });
             }
+
+            if (hasV1Data && hasV2Data) {
+                // check consistency between v1 and v2 file lists on hybrid torrents
+
+                if (v1Files.Count != v2Files.Count)
+                    throw new TorrentException ("Inconsistent hybrid torrent, number of files differ.");
+
+                foreach (var (v1File, v2File) in v1Files.Zip (v2Files, (x, y) => (x, y))) {
+
+                    if (v1File.Path != v2File.Path)
+                        throw new TorrentException ("Inconsistent hybrid torrent, mismatch in v1 and v2 files.");
+
+                    if (v1File.Length != v2File.Length)
+                        throw new TorrentException ("Inconsistent hybrid torrent, file length mismatch.");
+
+                    if (v1File.Padding != v2File.Padding)
+                        throw new TorrentException ("Inconsistent hybrid torrent, file padding mismatch.");
+                }
+
+                Files = v2Files;
+            } else if (hasV1Data) {
+                Files = v1Files;
+            } else if (hasV2Data) {
+                Files = v2Files;
+            }
+
+            Size = Files.Select (f => f.Length).Sum ();
         }
 
         void LoadInternal (BEncodedDictionary torrentInformation, RawInfoHashes infoHashes)
@@ -629,30 +655,49 @@ namespace MonoTorrent
             PieceHashesV2 = InfoHashes.V2 is null ? null : hashesV2;
         }
 
+        static TorrentFileAttributes AttrStringToAttributesEnum (string attr)
+        {
+            var result = TorrentFileAttributes.None;
+
+            if (attr.Contains ("l"))
+                result |= TorrentFileAttributes.Symlink;
+
+            if (attr.Contains ("x"))
+                result |= TorrentFileAttributes.Executable;
+
+            if (attr.Contains ("h"))
+                result |= TorrentFileAttributes.Hidden;
+
+            if (attr.Contains ("p"))
+                result |= TorrentFileAttributes.Padding;
+
+            return result;
+        }
+
         static IList<ITorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
         {
             var sb = new StringBuilder (32);
 
-            var files = new List<(string path, long length, ReadOnlyMemory<byte> md5sum, ReadOnlyMemory<byte> ed2k, ReadOnlyMemory<byte> sha1)> ();
+            var files = new List<TorrentFileTuple> ();
             foreach (BEncodedDictionary dict in list) {
-                long length = 0;
-                string? path = null;
-                ReadOnlyMemory<byte> md5sum = default;
-                ReadOnlyMemory<byte> ed2k = default;
-                ReadOnlyMemory<byte> sha1 = default;
+                var tup = new TorrentFileTuple ();
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
+                        case ("attr"):
+                            tup.attributes = AttrStringToAttributesEnum (keypair.Value.ToString ()!);
+                            break;
+
                         case ("sha1"):
-                            sha1 = ((BEncodedString) keypair.Value).AsMemory ();
+                            tup.sha1 = ((BEncodedString) keypair.Value).AsMemory ();
                             break;
 
                         case ("ed2k"):
-                            ed2k = ((BEncodedString) keypair.Value).AsMemory ();
+                            tup.ed2k = ((BEncodedString) keypair.Value).AsMemory ();
                             break;
 
                         case ("length"):
-                            length = long.Parse (keypair.Value.ToString ()!);
+                            tup.length = long.Parse (keypair.Value.ToString ()!);
                             break;
 
                         case ("path.utf-8"):
@@ -662,36 +707,37 @@ namespace MonoTorrent
                                     sb.Append (Path.DirectorySeparatorChar);
                                 }
                             }
-                            path = sb.ToString (0, sb.Length - 1);
+                            tup.path = sb.ToString (0, sb.Length - 1);
                             sb.Remove (0, sb.Length);
                             break;
 
                         case ("path"):
-                            if (string.IsNullOrEmpty (path)) {
+                            if (string.IsNullOrEmpty (tup.path)) {
                                 foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
                                     if (!BEncodedString.IsNullOrEmpty (str)) {
                                         sb.Append (str.Text);
                                         sb.Append (Path.DirectorySeparatorChar);
                                     }
                                 }
-                                path = sb.ToString (0, sb.Length - 1);
+                                tup.path = sb.ToString (0, sb.Length - 1);
                                 sb.Remove (0, sb.Length);
                             }
                             break;
+
                         case ("md5sum"):
-                            md5sum = ((BEncodedString) keypair.Value).AsMemory ();
+                            tup.md5sum = ((BEncodedString) keypair.Value).AsMemory ();
                             break;
 
                         default:
                             break; //FIXME: Log unknown values
                     }
                 }
-                if (path == null)
+                if (tup.path == null)
                     // FIXME: Log invalid paths somewhere?
                     continue;
 
-                PathValidator.Validate (path);
-                files.Add ((path, length, md5sum, ed2k, sha1));
+                PathValidator.Validate (tup.path);
+                files.Add (tup);
             }
 
             return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
@@ -699,7 +745,7 @@ namespace MonoTorrent
 
         static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> hashes, int pieceLength)
         {
-            using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
 
             for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
                 var file = files[fileIndex];
@@ -725,32 +771,45 @@ namespace MonoTorrent
             return new PieceHashesV2 (files, hashes);
         }
 
-        static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<ITorrentFile> files, int pieceLength, ref int totalPieces, string path)
+        static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<ITorrentFile> files, int pieceLength, ref int totalPieces, string path, bool isHybrid)
         {
             if (key == "") {
                 var length = ((BEncodedNumber) data["length"]).Number;
                 if (length == 0) {
-                    files.Add (new TorrentFile (path, length, 0, 0, 0));
+                    files.Add (new TorrentFile (path, length, 0, 0, 0, TorrentFileAttributes.None, 0));
                 } else {
                     totalPieces++;
-                    var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0);
+                    var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0) + (files.LastOrDefault ()?.Padding ?? 0);
                     var piecesRoot = data.TryGetValue ("pieces root", out var value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
-                    files.Add (new TorrentFile (path, length, totalPieces, totalPieces + (int) (length / pieceLength), offsetInTorrent, piecesRoot));
+
+                    // TODO JMIK: wrong calculation for endIndex, when length is exactly pieceLength?
+                    files.Add (new TorrentFile (path,
+                        length,
+                        totalPieces,
+                        totalPieces + (int) ((length - 1) / pieceLength),
+                        offsetInTorrent,
+                        piecesRoot,
+                        TorrentFileAttributes.None,
+                        isHybrid ? pieceLength - length % pieceLength : 0));
                     totalPieces = files.Last ().EndPieceIndex;
                 }
             } else {
                 foreach (var entry in data) {
-                    LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, Path.Combine (path, key));
+                    LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, Path.Combine (path, key), isHybrid);
                 }
             }
         }
 
-        static IList<ITorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree, int pieceLength)
+        static IList<ITorrentFile> LoadTorrentFilesV2 (BEncodedDictionary fileTree, int pieceLength, bool isHybrid)
         {
             var files = new List<ITorrentFile> ();
             int totalPieces = -1;
             foreach (var entry in fileTree)
-                LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "");
+                LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "", isHybrid);
+
+            // padding of last torrent must be 0.
+            var last = files.Last ();
+            files[files.Count - 1] = new TorrentFile (last.Path, last.Length, last.StartPieceIndex, last.EndPieceIndex, last.OffsetInTorrent, last.PiecesRoot, TorrentFileAttributes.None, 0);
             return Array.AsReadOnly (files.ToArray ());
         }
     }

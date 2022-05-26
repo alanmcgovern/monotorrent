@@ -71,9 +71,23 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        public void LoadSingleFile()
+        public void LoadSingleFile ()
         {
             var torrent = Torrent.Load (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:piece lengthi32768eee"));
+            var file = torrent.Files.Single ();
+            Assert.AreEqual (Path.Combine ("dir1", "dir2", "fileA.txt"), file.Path);
+            Assert.AreEqual (0, file.StartPieceIndex);
+            Assert.AreEqual (0, file.EndPieceIndex);
+            Assert.AreEqual (0, file.OffsetInTorrent);
+
+            var hash = Enumerable.Repeat ((byte) 'a', 32).ToArray ().AsMemory ();
+            Assert.IsTrue (hash.Span.SequenceEqual (file.PiecesRoot.Span));
+        }
+
+        [Test]
+        public void FileLengthExactlyPieceLength ()
+        {
+            var torrent = Torrent.Load (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi32768e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:piece lengthi32768eee"));
             var file = torrent.Files.Single ();
             Assert.AreEqual (Path.Combine ("dir1", "dir2", "fileA.txt"), file.Path);
             Assert.AreEqual (0, file.StartPieceIndex);
@@ -116,6 +130,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual (InfoHash.FromHex ("caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e"), V2OnlyTorrent.InfoHashes.V2);
         }
 
+        // TODO: fails with MonoTorrent.TorrentException : the 'piece layers' dictionary did not contain an entry for the file 'tbl-tint.mpg'
         [Test]
         public void LoadHybridTorrent ()
         {
@@ -162,7 +177,7 @@ namespace MonoTorrent.Common
         public void PieceCount ()
         {
             Assert.AreEqual (V2OnlyTorrent.PieceCount, V2OnlyTorrent.Files.Last ().EndPieceIndex + 1);
-            Assert.AreEqual (V2OnlyTorrent.PieceCount, ((ITorrentInfo)V2OnlyTorrent).PieceCount ());
+            Assert.AreEqual (V2OnlyTorrent.PieceCount, ((ITorrentInfo) V2OnlyTorrent).PieceCount ());
         }
 
         [Test]

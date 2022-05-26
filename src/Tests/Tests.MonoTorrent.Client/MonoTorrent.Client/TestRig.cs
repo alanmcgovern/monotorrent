@@ -71,9 +71,12 @@ namespace MonoTorrent.Client
 
             if ((offset + buffer.Length) > file.Length)
                 throw new ArgumentOutOfRangeException ("Tried to read past the end of the file");
-            if (!DontWrite)
+
+            if (!DontWrite) {
                 for (int i = 0; i < buffer.Length; i++)
-                    buffer.Span[i] = (byte) i;
+                    buffer.Span[i] = (byte) (offset + i);
+            }
+
             return ReusableTask.FromResult (buffer.Length);
         }
 
@@ -212,7 +215,7 @@ namespace MonoTorrent.Client
             if (SlowConnection)
                 buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
 
-            var result = await ReadStream.ReadAsync(buffer);
+            var result = await ReadStream.ReadAsync (buffer);
             Receives.Add (result);
             return ManualBytesReceived ?? result;
         }

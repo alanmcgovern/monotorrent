@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Constants.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Constants.BlockSize, 0);
-            Assert.AreEqual (files.Length - 2, files.FindFileByOffset (Constants.BlockSize));
+            Assert.AreEqual (files.Length - 1, files.FindFileByOffset (Constants.BlockSize));
             Assert.AreEqual (0, files.FindFileByOffset (0));
         }
 
@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Constants.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize, 0);
-            Assert.AreEqual (files.Length - 2, files.FindFileByPieceIndex (1));
+            Assert.AreEqual (files.Length - 1, files.FindFileByPieceIndex (1));
         }
 
         [Test]
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Constants.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, Constants.BlockSize, 0, 0);
-            Assert.AreEqual (files.Length - 3, files.FindFileByPieceIndex (1));
+            Assert.AreEqual (files.Length - 1, files.FindFileByPieceIndex (1));
         }
 
         [Test]
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
         {
             var pieceLength = Constants.BlockSize;
             var files = TorrentFileInfo.Create (pieceLength, 1024, 1024, 1024, pieceLength - 3 * 1024, 0, Constants.BlockSize, 0);
-            Assert.AreEqual (files.Length - 2, files.FindFileByPieceIndex (1));
+            Assert.AreEqual (files.Length - 1, files.FindFileByPieceIndex (1));
             Assert.AreEqual (0, files.FindFileByPieceIndex (0));
         }
 

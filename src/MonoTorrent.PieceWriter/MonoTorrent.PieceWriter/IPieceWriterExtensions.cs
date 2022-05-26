@@ -52,15 +52,15 @@ namespace MonoTorrent.PieceWriter
             offset -= files[i].OffsetInTorrent;
 
             while (totalRead < count) {
-                int fileToRead = (int) Math.Min (files[i].Length - offset, count - totalRead);
+                int fileToRead = (int) Math.Min (files[i].Length + files[i].Padding - offset, count - totalRead);
                 fileToRead = Math.Min (fileToRead, Constants.BlockSize);
 
-                if (fileToRead != await writer.ReadAsync (files[i], offset, buffer.Slice (totalRead, fileToRead)))
+                if (fileToRead != await writer.PaddingAwareReadAsync (files[i], offset, buffer.Slice (totalRead, fileToRead)))
                     return totalRead;
 
                 offset += fileToRead;
                 totalRead += fileToRead;
-                if (offset >= files[i].Length) {
+                if (offset >= (files[i].Length + files[i].Padding)) {
                     offset = 0;
                     i++;
                 }
@@ -82,13 +82,14 @@ namespace MonoTorrent.PieceWriter
             var offset = torrentOffset - files[i].OffsetInTorrent;
 
             while (totalWritten < count) {
-                int fileToWrite = (int) Math.Min (files[i].Length - offset, count - totalWritten);
+                int fileToWrite = (int) Math.Min (files[i].Length + files[i].Padding - offset, count - totalWritten);
                 fileToWrite = Math.Min (fileToWrite, Constants.BlockSize);
 
-                await writer.WriteAsync (files[i], offset, buffer.Slice (totalWritten, fileToWrite));
+                await writer.PaddingAwareWriteAsync (files[i], offset, buffer.Slice (totalWritten, fileToWrite));
+
                 offset += fileToWrite;
                 totalWritten += fileToWrite;
-                if (offset >= files[i].Length) {
+                if (offset >= (files[i].Length + files[i].Padding)) {
                     offset = 0;
                     i++;
                 }
