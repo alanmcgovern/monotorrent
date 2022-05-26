@@ -477,7 +477,7 @@ namespace MonoTorrent
             {
                 long length = long.Parse (dictionary["length"].ToString ()!);
                 string path = Name;
-                int endPiece = Math.Min (hashesV1!.Count - 1, (int) ((Size + (PieceLength - 1)) / PieceLength));
+                int endPiece = Math.Min (hashesV1!.Count - 1, (int) ((length + (PieceLength - 1)) / PieceLength));
                 v1Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0, TorrentFileAttributes.None, 0) });
             }
 

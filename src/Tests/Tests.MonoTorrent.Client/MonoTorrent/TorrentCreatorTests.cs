@@ -126,6 +126,8 @@ namespace MonoTorrent.Common
 
             VerifyCommonParts (torrent);
             Assert.AreEqual (1, torrent.Files.Count, "#1");
+            Assert.AreEqual (0, torrent.Files[0].StartPieceIndex, "#1a");
+            Assert.AreEqual (files[0].Length / creator.PieceLength, torrent.Files[0].EndPieceIndex, "#1b");
             Assert.AreEqual (f.Path, torrent.Files[0].Path, "#2");
         }
         [Test]
@@ -137,6 +139,8 @@ namespace MonoTorrent.Common
             Torrent t = Torrent.Load (dict);
 
             Assert.AreEqual (1, t.Files.Count, "#1");
+            Assert.AreEqual (0, t.Files[0].StartPieceIndex);
+            Assert.AreNotEqual (0, t.Files[0].EndPieceIndex);
             Assert.AreEqual (Path.GetFileName (assembly.Location), t.Name, "#2");
             Assert.AreEqual (Path.GetFileName (assembly.Location), t.Files[0].Path, "#3");
 
