@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="MonoTorrent.BEncoding\BEncodeDecoder.cs~RF7682e0e.TMP" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Condition="$(TargetFramework) == 'netstandard2.0'" Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
