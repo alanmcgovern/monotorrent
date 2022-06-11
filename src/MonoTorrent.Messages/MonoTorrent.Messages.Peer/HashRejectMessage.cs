@@ -37,7 +37,7 @@ namespace MonoTorrent.Messages.Peer
         internal static readonly byte MessageId = 23;
         public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4;
 
-        public ReadOnlyMemory<byte> PiecesRoot { get; private set; }
+        public MerkleRoot PiecesRoot { get; private set; }
 
         public int BaseLayer { get; private set; }
         public int Index { get; private set; }
@@ -49,7 +49,7 @@ namespace MonoTorrent.Messages.Peer
 
         }
 
-        public HashRejectMessage (ReadOnlyMemory<byte> piecesRoot, int baseLayer, int index, int length, int proofLayers)
+        public HashRejectMessage (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers)
         {
             PiecesRoot = piecesRoot;
             BaseLayer = baseLayer;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Messages.Peer
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            PiecesRoot = ReadBytes (ref buffer, 32);
+            PiecesRoot = new MerkleRoot (ReadBytes (ref buffer, 32));
             BaseLayer = ReadInt (ref buffer);
             Index = ReadInt (ref buffer);
             Length = ReadInt (ref buffer);
@@ -89,6 +89,6 @@ namespace MonoTorrent.Messages.Peer
                 && ProofLayers == other.ProofLayers;
 
         public override int GetHashCode ()
-            => MemoryMarshal.Read<int> (PiecesRoot.Span);
+            => PiecesRoot.GetHashCode ();
     }
 }

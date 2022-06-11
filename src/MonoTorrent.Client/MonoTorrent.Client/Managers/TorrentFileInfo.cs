@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
 
         public long Padding => TorrentFile.Padding;
 
-        public ReadOnlyMemory<byte> PiecesRoot => TorrentFile.PiecesRoot;
+        public MerkleRoot PiecesRoot => TorrentFile.PiecesRoot;
 
         public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
         {

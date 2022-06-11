@@ -56,7 +56,7 @@ namespace MonoTorrent
             public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
             public long Length { get; set; }
             public long Padding { get; set; } = 0;
-            public ReadOnlyMemory<byte> PiecesRoot { get; }
+            public MerkleRoot PiecesRoot { get; }
 
             internal InputFile (string path, long length)
                 : this (path, path, length)

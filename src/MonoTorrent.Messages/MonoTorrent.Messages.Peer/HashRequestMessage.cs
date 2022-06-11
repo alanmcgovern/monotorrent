@@ -37,7 +37,7 @@ namespace MonoTorrent.Messages.Peer
         internal static readonly byte MessageId = 21;
         public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4;
 
-        public ReadOnlyMemory<byte> PiecesRoot { get; private set; }
+        public MerkleRoot PiecesRoot { get; private set; }
 
         public int BaseLayer { get; private set; }
         public int Index { get; private set; }
@@ -49,7 +49,7 @@ namespace MonoTorrent.Messages.Peer
 
         }
 
-        public HashRequestMessage (ReadOnlyMemory<byte> piecesRoot, int baseLayer, int index, int length, int proofLayers)
+        public HashRequestMessage (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers)
         {
             PiecesRoot = piecesRoot;
             BaseLayer = baseLayer;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Messages.Peer
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            PiecesRoot = ReadBytes (ref buffer, 32);
+            PiecesRoot = new MerkleRoot (ReadBytes (ref buffer, 32));
             BaseLayer = ReadInt (ref buffer);
             Index = ReadInt (ref buffer);
             Length = ReadInt (ref buffer);
@@ -90,5 +90,21 @@ namespace MonoTorrent.Messages.Peer
 
         public override int GetHashCode ()
             => MemoryMarshal.Read<int> (PiecesRoot.Span);
+
+
+        public static HashRequestMessage Create (MerkleRoot piecesRoot, int hashCount, int pieceLength, int index, int preferredLength)
+        {
+            // The layer we're requesting is based on the piece length
+            var requestedLayer = (int) Math.Log (pieceLength / 16384, 2);
+
+            // Ensure we don't request padding hashes beyond the end of the layer.
+            var length = Math.Min (preferredLength, hashCount - index);
+
+            // The number of proofs needed to validate this layer is equal to the number of remaining layers.
+            var totalProofsRequired = (int) Math.Ceiling (Math.Log (hashCount, 2)) - 1;
+
+            // YOLO!
+            return new HashRequestMessage (piecesRoot, requestedLayer, index, length, totalProofsRequired);
+        }
     }
 }

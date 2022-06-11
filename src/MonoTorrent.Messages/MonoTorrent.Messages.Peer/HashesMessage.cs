@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
@@ -36,22 +37,22 @@ namespace MonoTorrent.Messages.Peer
     public class HashesMessage : PeerMessage
     {
         internal static readonly byte MessageId = 22;
-        public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4 + Hashes.Count * 32;
+        public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4 + Hashes.Length;
 
-        public ReadOnlyMemory<byte> PiecesRoot { get; private set; }
+        public MerkleRoot PiecesRoot { get; private set; }
         public int BaseLayer { get; private set; }
         public int Index { get; private set; }
         public int Length { get; private set; }
         public int ProofLayers { get; private set; }
 
-        public IList<ReadOnlyMemory<byte>> Hashes { get; private set; }
+        public ReadOnlyMemory<byte> Hashes { get; private set; }
 
         public HashesMessage ()
         {
-            Hashes = new List<ReadOnlyMemory<byte>> ().AsReadOnly ();
+            Hashes = ReadOnlyMemory<byte>.Empty;
         }
 
-        public HashesMessage (ReadOnlyMemory<byte> piecesRoot, int baseLayer, int index, int length, int proofLayers, IList<ReadOnlyMemory<byte>> hashes)
+        public HashesMessage (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers, ReadOnlyMemory<byte> hashes)
         {
             PiecesRoot = piecesRoot;
             BaseLayer = baseLayer;
@@ -63,16 +64,13 @@ namespace MonoTorrent.Messages.Peer
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            PiecesRoot = ReadBytes (ref buffer, 32);
+            PiecesRoot = new MerkleRoot (ReadBytes (ref buffer, 32));
             BaseLayer = ReadInt (ref buffer);
             Index = ReadInt (ref buffer);
             Length = ReadInt (ref buffer);
             ProofLayers = ReadInt (ref buffer);
 
-            var hashes = new List<ReadOnlyMemory<byte>> ();
-            while (buffer.Length > 0)
-                hashes.Add (ReadBytes (ref buffer, 32));
-            Hashes = hashes.AsReadOnly ();
+            Hashes = ReadBytes (ref buffer, buffer.Length);
         }
 
         public override int Encode (Span<byte> buffer)
@@ -85,8 +83,7 @@ namespace MonoTorrent.Messages.Peer
             Write (ref buffer, Index);
             Write (ref buffer, Length);
             Write (ref buffer, ProofLayers);
-            for (int i = 0; i < Hashes.Count; i++)
-                Write (ref buffer, Hashes[i].Span);
+            Write (ref buffer, Hashes.Span);
             return original - buffer.Length;
         }
 
@@ -95,12 +92,11 @@ namespace MonoTorrent.Messages.Peer
             if (!(obj is HashesMessage other))
                 return false;
 
-            if (Hashes.Count != other.Hashes.Count)
+            if (Hashes.Length != other.Hashes.Length)
                 return false;
 
-            for (int i = 0; i < Hashes.Count; i++)
-                if (!MemoryExtensions.SequenceEqual (Hashes[i].Span, other.Hashes[i].Span))
-                    return false;
+            if (!MemoryExtensions.SequenceEqual (Hashes.Span, other.Hashes.Span))
+                return false;
 
             return MemoryExtensions.SequenceEqual (PiecesRoot.Span, other.PiecesRoot.Span)
                 && BaseLayer == other.BaseLayer
@@ -114,9 +110,8 @@ namespace MonoTorrent.Messages.Peer
 
         public override string ToString ()
         {
-            var title = $"{BitConverter.ToString (PiecesRoot.ToArray ())} - {BaseLayer} - {Index} - {Length} - {ProofLayers}";
-            foreach (var hash in Hashes)
-                title += Environment.NewLine + BitConverter.ToString (hash.Span.ToArray ());
+            var title = $"{BitConverter.ToString (PiecesRoot.Span.ToArray ())} - {BaseLayer} - {Index} - {Length} - {ProofLayers}" + Environment.NewLine;
+            title += String.Join (Environment.NewLine, Enumerable.Range (0, Hashes.Length / 32).Select (t => BitConverter.ToString (Hashes.Slice (t, t + 32).ToArray ())).ToArray ());
             return title;
         }
     }

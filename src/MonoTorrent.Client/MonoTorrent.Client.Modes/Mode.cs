@@ -149,7 +149,25 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleHashRequestMessage (PeerId id, HashRequestMessage hashRequest)
         {
-            id.MessageQueue.Enqueue (new HashRejectMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers));
+            int actualProofLayers = 0;
+            // Validate we're only requesting between 1 and 512 piece hashes to avoid being DDOS'ed by someone
+            // requesting a few GB worth of hashes. The spec says that clients 'should not' request more than 512.
+            // I'm choosing to treat that as 'must not'.
+            bool successful = hashRequest.Length > 0 && hashRequest.Length <= 512;
+
+            Memory<byte> buffer = default;
+            ByteBufferPool.Releaser bufferReleaser = default;
+            if (successful) {
+                bufferReleaser = MemoryPool.Default.Rent ((hashRequest.Length + hashRequest.ProofLayers) * 32, out buffer);
+                successful = Manager.PieceHashes.TryGetV2Hashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, buffer.Span.Slice (0, hashRequest.Length * 32), buffer.Span.Slice (hashRequest.Length * 32), out actualProofLayers);
+            }
+
+            if (successful) {
+                id.MessageQueue.Enqueue (new HashesMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, actualProofLayers, buffer));
+            } else {
+                bufferReleaser.Dispose ();
+                id.MessageQueue.Enqueue (new HashRejectMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers));
+            }
         }
 
         protected virtual void HandleHashesMessage (PeerId id, HashesMessage hashesMessage)

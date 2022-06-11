@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.Modes
         ValueStopwatch LastAnnounced { get; set; }
         public override TorrentState State => TorrentState.FetchingHashes;
         Dictionary<ITorrentFile, PeerId?[]> pickers;
-        Dictionary<ITorrentFile, Memory<byte>> infoHashes;
+        Dictionary<ITorrentFile, MerkleLayers> infoHashes;
 
         public PieceHashesMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Modes
                 throw new InvalidOperationException ($"{nameof (PieceHashesMode)} can only be used after the torrent metadata is available");
 
             pickers = manager.Torrent!.Files.ToDictionary (t => t, value => new PeerId?[(value.EndPieceIndex - value.StartPieceIndex + MaxHashesPerRequest) / MaxHashesPerRequest]);
-            infoHashes = manager.Torrent.Files.ToDictionary (t => t, value => new Memory<byte> (new byte[(value.EndPieceIndex - value.StartPieceIndex + 1) * SHA256HashLength]));
+            infoHashes = manager.Torrent.Files.ToDictionary (t => t, value => new MerkleLayers (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1));
 
             // Files with 1 piece do not have additional hashes to fetch. The PiecesRoot *is* the SHA256 of the entire file.
             foreach (var value in pickers)
@@ -145,29 +145,26 @@ namespace MonoTorrent.Client.Modes
             var file = Manager.Torrent!.Files.FirstOrDefault (f => f.PiecesRoot.Span.SequenceEqual (hashesMessage.PiecesRoot.Span));
             if (file == null)
                 return;
-
+            var actual = Manager.Torrent.CreatePieceHashes ().TryGetV2Hashes (hashesMessage.PiecesRoot);
             // NOTE: Tweak this so we validate the hash in-place, and ensure the data we've been given, provided with the ancestor
             // hashes, combines to form the `PiecesRoot` value.
-            var memory = infoHashes[file];
-            for (int i = 0; i < hashesMessage.Length; i++)
-                hashesMessage.Hashes[i].CopyTo (memory.Slice ((hashesMessage.Index + i) * 32, 32));
+            var memory = infoHashes[file].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes.Span.Slice (0, hashesMessage.Length * 32), hashesMessage.Hashes.Span.Slice (hashesMessage.Length));
             MarkDone (hashesMessage.PiecesRoot, hashesMessage.Index / MaxHashesPerRequest);
 
             if (pickers[file].All (t => t == CompletedSentinal)) {
                 using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-                Span<byte> resultBuffer = stackalloc byte[32];
-                MerkleHash.TryHash (hasher, infoHashes[file].Span, Manager.Torrent.PieceLength, resultBuffer, out int written);
-                if (!resultBuffer.SequenceEqual (hashesMessage.PiecesRoot.Span))
+
+                if (!infoHashes[file].TryVerify (out ReadOnlyMerkleLayers? verifiedPieceHashes))
                     pickers[file].AsSpan ().Clear ();
             }
 
             if (pickers.All (picker => picker.Value.All (t => t == CompletedSentinal))) {
-                Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (infoHashes.ToDictionary (t => BEncodedString.FromMemory (t.Key.PiecesRoot), v => BEncodedString.FromMemory (v.Value)));
+                Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (infoHashes.ToDictionary (t => t.Key.PiecesRoot, v => (v.Value.TryVerify (out var root) ? root : null)!));
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
         }
 
-        void MarkDone (ReadOnlyMemory<byte> piecesRoot, int requestOffset)
+        void MarkDone (MerkleRoot piecesRoot, int requestOffset)
         {
             var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot.Span.SequenceEqual (piecesRoot.Span));
             if (file == null)
@@ -177,7 +174,7 @@ namespace MonoTorrent.Client.Modes
             picker[requestOffset] = CompletedSentinal;
         }
 
-        void RemoveRequest (PeerId id, ReadOnlyMemory<byte> piecesRoot, int requestOffset)
+        void RemoveRequest (PeerId id, MerkleRoot piecesRoot, int requestOffset)
         {
             var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot.Span.SequenceEqual (piecesRoot.Span));
             if (file == null)
