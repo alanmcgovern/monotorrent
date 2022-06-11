@@ -130,8 +130,7 @@ namespace MonoTorrent.Client
 
                 if (Manager != null && UseV2) {
                     var file = Manager.Files[Manager.Files.FindFileByPieceIndex (PieceIndex)];
-                    var finalLayer = file.Length < Manager.TorrentInfo!.PieceLength ? Math.Min (Manager.TorrentInfo!.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (Manager.TorrentInfo.BytesPerPiece (PieceIndex), 2)))) : Manager.TorrentInfo.PieceLength;
-                    if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes.Span, Constants.BlockSize, finalLayer, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
+                    if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes.Span, Constants.BlockSize, ReadOnlySpan<byte>.Empty, 0, BlockHashes.Span.Length / 32, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
                         return false;
                 }
 

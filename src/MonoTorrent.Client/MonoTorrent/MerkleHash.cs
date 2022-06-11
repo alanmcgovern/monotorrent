@@ -35,7 +35,7 @@ namespace MonoTorrent
 {
     static class MerkleHash
     {
-        static Dictionary<long, ReadOnlyMemory<byte>> FinalLayerHash { get; } = CreateFinalHashPerLayer ();
+        internal static Dictionary<long, ReadOnlyMemory<byte>> PaddingHashes { get; } = CreateFinalHashPerLayer ();
 
         static Dictionary<long, ReadOnlyMemory<byte>> CreateFinalHashPerLayer ()
         {
@@ -54,13 +54,10 @@ namespace MonoTorrent
             return results;
         }
 
-        public static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, Span<byte> computedHash, out int written)
-            => TryHash (hasher, src, startLayerLength, -1, computedHash, out written);
-
-        public static bool TryHash(IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, long endLayerLength, Span<byte> computedHash, out int written)
+        public static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, ReadOnlySpan<byte> proofLayers, int index, int length, Span<byte> computedHash, out int written)
         {
             using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
-            while ((endLayerLength == -1 && src.Length != 32) || (endLayerLength != -1 && startLayerLength < endLayerLength)) {
+            do {
                 for (int i = 0; i < src.Length / 64; i++) {
                     hasher.AppendData (src.Slice (i * 64, 64));
                     if (!hasher.TryGetHashAndReset (dest.Slice (i * 32, 32).Span, out written) || written != 32)
@@ -68,21 +65,39 @@ namespace MonoTorrent
                 }
                 if (src.Length % 64 == 32) {
                     hasher.AppendData (src.Slice (src.Length - 32, 32));
-                    hasher.AppendData (FinalLayerHash[startLayerLength].Span);
+                    hasher.AppendData (PaddingHashes[startLayerLength].Span);
                     if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out written) || written != 32)
                         return false;
                 }
                 src = dest.Span;
                 dest = dest.Slice (0, ((dest.Length + 63) / 64) * 32);
                 startLayerLength *= 2;
-            }
+            } while (src.Length != 32);
 
-            if (src.Length != 32)
-                throw new InvalidOperationException ("Derpo");
+            // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
+            // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
+            length = Math.Max (2, length);
+            int proofLayerOffset = index / (int) Math.Pow (2, Math.Ceiling (Math.Log (length, 2)));
+            for (int i = 0; i < proofLayers.Length; i += 32) {
+                if ((proofLayerOffset & 1) == 1)
+                    hasher.AppendData (proofLayers.Slice (i, 32));
+
+                hasher.AppendData (src);
+
+                if ((proofLayerOffset & 1) == 0)
+                    hasher.AppendData (proofLayers.Slice (i, 32));
+
+                if (!hasher.TryGetHashAndReset (dest.Span, out written) || written != 32)
+                    return false;
+                proofLayerOffset /= 2;
+            }
 
             written = 32;
             src.Slice (0, written).CopyTo (computedHash);
             return true;
         }
+
+        internal static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> span, int pieceLength, Span<byte> computedHash, out int written)
+            => TryHash (hasher, span, pieceLength, ReadOnlySpan<byte>.Empty, 0, span.Length / 32, computedHash, out written);
     }
 }

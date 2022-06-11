@@ -91,16 +91,16 @@ namespace MonoTorrent
         /// </summary>
         public long OffsetInTorrent { get; }
 
-        public ReadOnlyMemory<byte> PiecesRoot { get; }
+        public MerkleRoot PiecesRoot { get; }
 
         public TorrentFileAttributes Attributes { get; }
 
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, TorrentFileAttributes attributes, long padding)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, ReadOnlyMemory<byte>.Empty, attributes, padding)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, MerkleRoot.Empty, attributes, padding)
         {
         }
 
-        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, ReadOnlyMemory<byte> piecesRoot, TorrentFileAttributes attributes, long padding)
+        internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, MerkleRoot piecesRoot, TorrentFileAttributes attributes, long padding)
         {
             Path = path;
             Length = length;

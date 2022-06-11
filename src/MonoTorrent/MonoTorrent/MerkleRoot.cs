@@ -1,10 +1,9 @@
 ﻿//
-// ITorrentFile.cs
+// MerkleRoot.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2022 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,44 +27,38 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace MonoTorrent
 {
-    public interface ITorrentFile
+    public readonly struct MerkleRoot : IEquatable<MerkleRoot>
     {
-        /// <summary>
-        /// The relative path to the file within the torrent.
-        /// </summary>
-        string Path { get; }
+        public static MerkleRoot Empty => new MerkleRoot ();
 
-        /// <summary>
-        /// The first piece which contains data for this file
-        /// </summary>
-        int StartPieceIndex { get; }
+        readonly ReadOnlyMemory<byte> Hash;
 
-        /// <summary>
-        /// The last piece which contains data for this file.
-        /// </summary>
-        int EndPieceIndex { get; }
+        public bool IsEmpty => Hash.IsEmpty;
 
-        /// <summary>
-        /// The size of this file in bytes.
-        /// </summary>
-        long Length { get; }
+        public ReadOnlySpan<byte> Span => Hash.Span;
 
-        /// <summary>
-        /// bep-0047 padding.
-        /// </summary>
-        long Padding { get; }
+        public MerkleRoot (ReadOnlyMemory<byte> hash)
+        {
+            if (hash.Length != 32)
+                throw new ArgumentException ("The hash must be exactly 32 bytes long");
+            Hash = hash;
+        }
 
-        /// <summary>
-        /// The offset, relative to the first byte in the torrent, where this file begins.
-        /// </summary>
-        long OffsetInTorrent { get; }
+        public ReadOnlyMemory<byte> AsMemory ()
+            => Hash;
 
-        /// <summary>
-        /// The root of the merkle tree constructed for this file. Generated using a SHA256 hash by BEP52 compliant torrents.
-        /// </summary>
-        MerkleRoot PiecesRoot { get; }
+        public override bool Equals (object? obj)
+            => obj is MerkleRoot other && Equals (other);
+
+        public bool Equals (MerkleRoot other)
+            => Hash.Span.SequenceEqual (other.Hash.Span);
+
+        public override int GetHashCode ()
+            => Hash.Length == 0 ? 0 : Hash.Span[0];
     }
 }

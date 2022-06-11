@@ -344,7 +344,7 @@ namespace MonoTorrent
         /// <summary>
         /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
         /// </summary>
-        public IPieceHashes CreatePieceHashes (Dictionary<BEncodedString, BEncodedString> pieceHashes)
+        public IPieceHashes CreatePieceHashes (Dictionary<MerkleRoot, ReadOnlyMerkleLayers> pieceHashes)
             => new PieceHashes (PieceHashesV1, LoadHashesV2 (Files, pieceHashes, PieceLength));
 
         public override bool Equals (object? obj)
@@ -620,7 +620,13 @@ namespace MonoTorrent
 
                     case "piece layers":
                         var dict = (BEncodedDictionary) keypair.Value;
-                        hashesV2 = LoadHashesV2 (Files, dict.ToDictionary (t => t.Key, t => (BEncodedString) t.Value), PieceLength);
+
+                        var merkleTrees = dict.ToDictionary (
+                            key => new MerkleRoot (key.Key.AsMemory ()),
+                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, new MerkleRoot (kvp.Key.AsMemory ()), ((BEncodedString)kvp.Value).Span) ?? throw new TorrentException ($"Invalid merkle tree. A layer not produce the expected root hash.")
+                        );
+
+                        hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);
                         break;
 
                     case ("url-list"):
@@ -743,32 +749,19 @@ namespace MonoTorrent
             return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
         }
 
-        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> hashes, int pieceLength)
+        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> hashes, int pieceLength)
         {
-            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-
             for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
                 var file = files[fileIndex];
                 if (file.Length < pieceLength)
                     continue;
 
-                if (!hashes.TryGetValue (BEncodedString.FromMemory (file.PiecesRoot), out BEncodedString? hashValue))
-                    throw new TorrentException ($"the 'piece layers' dictionary did not contain an entry for the file '{file.Path}'");
-                if (!(hashValue is BEncodedString hash))
-                    throw new TorrentException ("The 'piece layers' dictionary should contain BEncodedStrings");
-
-                if ((hash.Span.Length % 32) != 0)
-                    throw new TorrentException ($"The piece layer for {file.Path} was not a valid array of SHA256 hashes");
-
-                Span<byte> computedHash = stackalloc byte[32];
-                if (!MerkleHash.TryHash (hasher, hash.Span, pieceLength, computedHash, out int written) || written != 32)
-                    throw new InvalidOperationException ($"Could not compute merkle hash for file '{file.Path}'");
-
-                if (!computedHash.SequenceEqual (file.PiecesRoot.Span))
-                    throw new TorrentException ($"The has root is corrupt for file {file.Path}");
+                if (!hashes.TryGetValue (file.PiecesRoot, out ReadOnlyMerkleLayers? fileHash))
+                    throw new TorrentException ($"The hash root is missing for file {file.Path}");
+                if (!fileHash.Root.Span.SequenceEqual (file.PiecesRoot.Span))
+                    throw new TorrentException ($"The hash root is corrupt for file {file.Path}");
             }
-
-            return new PieceHashesV2 (files, hashes);
+            return new PieceHashesV2 (pieceLength, files, hashes);
         }
 
         static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<ITorrentFile> files, int pieceLength, ref int totalPieces, string path, bool isHybrid)
@@ -780,7 +773,7 @@ namespace MonoTorrent
                 } else {
                     totalPieces++;
                     var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0) + (files.LastOrDefault ()?.Padding ?? 0);
-                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? ((BEncodedString) value).AsMemory () : ReadOnlyMemory<byte>.Empty;
+                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? new MerkleRoot  (((BEncodedString) value).AsMemory ()) : MerkleRoot.Empty;
 
                     // TODO JMIK: wrong calculation for endIndex, when length is exactly pieceLength?
                     files.Add (new TorrentFile (path,

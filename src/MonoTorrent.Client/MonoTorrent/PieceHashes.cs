@@ -58,5 +58,14 @@ namespace MonoTorrent
                 && (V2 is null || V2.IsValid (hashes, hashIndex))
                 && !(V1 is null && V2 is null);
         }
+        public ReadOnlyMerkleLayers TryGetV2Hashes (MerkleRoot piecesRoot)
+        {
+            return V2?.TryGetV2Hashes (piecesRoot)!;
+        }
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int length, Span<byte> hashesBuffer, Span<byte> proofsBuffer, out int actualProofLayers)
+        {
+            actualProofLayers = 0;
+            return V2 == null ? false : V2.TryGetV2Hashes (piecesRoot, baseLayer, index, length, hashesBuffer, proofsBuffer, out actualProofLayers);
+        }
     }
 }

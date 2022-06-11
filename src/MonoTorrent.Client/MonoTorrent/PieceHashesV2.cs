@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 using MonoTorrent.BEncoding;
 
@@ -39,7 +40,7 @@ namespace MonoTorrent
     {
         readonly int HashCodeLength;
         readonly IList<ITorrentFile> Files;
-        readonly Dictionary<BEncodedString, BEncodedString> Layers;
+        readonly Dictionary<MerkleRoot, ReadOnlyMerkleLayers> Layers;
 
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
@@ -50,8 +51,10 @@ namespace MonoTorrent
 
         public bool HasV2Hashes => true;
 
-        internal PieceHashesV2 (IList<ITorrentFile> files, Dictionary<BEncodedString, BEncodedString> layers)
-            => (Files, Layers, HashCodeLength, Count) = (files, layers, 32, files.Last ().EndPieceIndex + 1);
+        internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> layers)
+            => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, (int) Math.Log (pieceLength / 16384, 2));
+
+        int PieceLayer { get; }
 
         /// <summary>
         /// Returns the hash for a specific piece
@@ -68,11 +71,11 @@ namespace MonoTorrent
                     continue;
 
                 // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
-                if (Layers.TryGetValue (BEncodedString.FromMemory (Files[i].PiecesRoot), out BEncodedString? layer))
-                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layer.AsMemory ().Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
+                if (Layers.TryGetValue (Files[i].PiecesRoot, out ReadOnlyMerkleLayers? layers))
+                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layers.PieceLayer.Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
 
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
-                return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot);
+                return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot.AsMemory ());
             }
             throw new InvalidOperationException ("Requested a piece which does not exist");
         }
@@ -80,6 +83,51 @@ namespace MonoTorrent
         public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
         {
             return GetHash (hashIndex).V2Hash.Span.SequenceEqual (hashes.V2Hash.Span);
+        }
+
+        public ReadOnlyMerkleLayers TryGetV2Hashes (MerkleRoot piecesRoot)
+        {
+            return Layers[piecesRoot];
+        }
+
+
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int length, Span<byte> hashesBuffer, Span<byte> proofsBuffer, out int actualProofLayers)
+        {
+            actualProofLayers = 0;
+            if (baseLayer != PieceLayer || index < 0 || length > 512 || length < 1)
+                return false;
+
+            var hashOffset = index * HashCodeLength;
+            var hashLength = length * HashCodeLength;
+            if (!Layers.TryGetValue (piecesRoot, out ReadOnlyMerkleLayers? layers))
+                return false;
+
+            var fileHashes = layers.PieceLayer;
+            if (hashOffset > fileHashes.Length)
+                return false;
+
+            var actualHashes = Math.Min (hashLength, fileHashes.Length - hashOffset);
+            fileHashes.Span.Slice (hashOffset, actualHashes).CopyTo (hashesBuffer);
+            hashesBuffer = hashesBuffer.Slice (actualHashes);
+
+            if (proofsBuffer.Length > 0) {
+                // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
+                // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
+                length = Math.Max (2, length);
+                var firstProofLayer = baseLayer + (int) Math.Ceiling (Math.Log (length, 2));
+                var proofLayerOffset = index / (int) Math.Pow (2, Math.Ceiling (Math.Log (length, 2)));
+                var lastProofLayer = Math.Min (layers.Layers.Count - 1, firstProofLayer + (proofsBuffer.Length / HashCodeLength));
+                actualProofLayers = lastProofLayer - firstProofLayer;
+                for (int i = firstProofLayer; i < lastProofLayer; i++) {
+                    if ((proofLayerOffset & 1) == 1)
+                        layers.Layers[i].Span.Slice ((proofLayerOffset - 1) * HashCodeLength, HashCodeLength).CopyTo (proofsBuffer.Slice (0, HashCodeLength));
+                    else
+                        layers.GetHash (i, proofLayerOffset + 1).Span.CopyTo (proofsBuffer.Slice (0, HashCodeLength));
+                    proofLayerOffset /= 2;
+                    proofsBuffer = proofsBuffer.Slice (HashCodeLength);
+                }
+            }
+            return true;
         }
     }
 }
