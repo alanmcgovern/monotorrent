@@ -156,7 +156,7 @@ namespace MonoTorrent.Client.Modes
             if (pickers[file].All (t => t == CompletedSentinal)) {
                 using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
                 Span<byte> resultBuffer = stackalloc byte[32];
-                MerkleHash.TryHash (hasher, infoHashes[file], Manager.Torrent.PieceLength, resultBuffer, out int written);
+                MerkleHash.TryHash (hasher, infoHashes[file].Span, Manager.Torrent.PieceLength, resultBuffer, out int written);
                 if (!resultBuffer.SequenceEqual (hashesMessage.PiecesRoot.Span))
                     pickers[file].AsSpan ().Clear ();
             }

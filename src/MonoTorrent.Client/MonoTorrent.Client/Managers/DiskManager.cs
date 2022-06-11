@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            public void AppendData(ReadOnlyMemory<byte> buffer)
+            public void AppendData(ReadOnlySpan<byte> buffer)
             {
                 // SHA1 hashes need to be computed by hashing the blocks in the piece sequentially
                 if (UseV1)
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
                 if (Manager != null && UseV2) {
                     var file = Manager.Files[Manager.Files.FindFileByPieceIndex (PieceIndex)];
                     var finalLayer = file.Length < Manager.TorrentInfo!.PieceLength ? Math.Min (Manager.TorrentInfo!.PieceLength, (long) Math.Pow (2, Math.Ceiling (Math.Log (Manager.TorrentInfo.BytesPerPiece (PieceIndex), 2)))) : Manager.TorrentInfo.PieceLength;
-                    if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes, Constants.BlockSize, finalLayer, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
+                    if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes.Span, Constants.BlockSize, finalLayer, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
                         return false;
                 }
 
@@ -352,7 +352,7 @@ namespace MonoTorrent.Client
                         if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false))
                             return false;
                         startOffset += count;
-                        incrementalHash.AppendData (hashBuffer.Slice (0, count));
+                        incrementalHash.AppendData (hashBuffer.Span.Slice (0, count));
                     }
                     return incrementalHash.TryGetHashAndReset (dest);
                 } finally {
@@ -505,7 +505,7 @@ namespace MonoTorrent.Client
                         // to process. If it's for a different piece it will run concurrently with the remainder of
                         // this method.
                         await MainLoop.SwitchToThreadpool ();
-                        incrementalHash!.AppendData (buffer.Slice (0, request.RequestLength));
+                        incrementalHash!.AppendData (buffer.Span.Slice (0, request.RequestLength));
                     }
                 }
 
@@ -526,7 +526,7 @@ namespace MonoTorrent.Client
             while (incrementalHash.NextOffsetToHash < sizeOfPiece) {
                 var remaining = Math.Min (Constants.BlockSize, sizeOfPiece - incrementalHash.NextOffsetToHash);
                 if (await Cache.ReadFromCacheAsync (torrent, new BlockInfo (pieceIndex, incrementalHash.NextOffsetToHash, remaining), buffer)) {
-                    incrementalHash.AppendData (buffer.Slice (0, remaining));
+                    incrementalHash.AppendData (buffer.Span.Slice (0, remaining));
                 } else {
                     break;
                 }

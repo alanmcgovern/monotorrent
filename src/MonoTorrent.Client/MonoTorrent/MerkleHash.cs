@@ -54,10 +54,10 @@ namespace MonoTorrent
             return results;
         }
 
-        public static bool TryHash (IncrementalHash hasher, ReadOnlyMemory<byte> src, long startLayerLength, Span<byte> computedHash, out int written)
+        public static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, Span<byte> computedHash, out int written)
             => TryHash (hasher, src, startLayerLength, -1, computedHash, out written);
 
-        public static bool TryHash(IncrementalHash hasher, ReadOnlyMemory<byte> src, long startLayerLength, long endLayerLength, Span<byte> computedHash, out int written)
+        public static bool TryHash(IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, long endLayerLength, Span<byte> computedHash, out int written)
         {
             using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
             while ((endLayerLength == -1 && src.Length != 32) || (endLayerLength != -1 && startLayerLength < endLayerLength)) {
@@ -68,11 +68,11 @@ namespace MonoTorrent
                 }
                 if (src.Length % 64 == 32) {
                     hasher.AppendData (src.Slice (src.Length - 32, 32));
-                    hasher.AppendData (FinalLayerHash[startLayerLength]);
+                    hasher.AppendData (FinalLayerHash[startLayerLength].Span);
                     if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out written) || written != 32)
                         return false;
                 }
-                src = dest;
+                src = dest.Span;
                 dest = dest.Slice (0, ((dest.Length + 63) / 64) * 32);
                 startLayerLength *= 2;
             }
@@ -81,7 +81,7 @@ namespace MonoTorrent
                 throw new InvalidOperationException ("Derpo");
 
             written = 32;
-            src.Span.Slice (0, written).CopyTo (computedHash);
+            src.Slice (0, written).CopyTo (computedHash);
             return true;
         }
     }

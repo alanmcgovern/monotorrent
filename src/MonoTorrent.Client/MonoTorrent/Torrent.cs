@@ -761,7 +761,7 @@ namespace MonoTorrent
                     throw new TorrentException ($"The piece layer for {file.Path} was not a valid array of SHA256 hashes");
 
                 Span<byte> computedHash = stackalloc byte[32];
-                if (!MerkleHash.TryHash (hasher, hash.AsMemory (), pieceLength, computedHash, out int written) || written != 32)
+                if (!MerkleHash.TryHash (hasher, hash.Span, pieceLength, computedHash, out int written) || written != 32)
                     throw new InvalidOperationException ($"Could not compute merkle hash for file '{file.Path}'");
 
                 if (!computedHash.SequenceEqual (file.PiecesRoot.Span))

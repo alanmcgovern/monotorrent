@@ -100,16 +100,14 @@ namespace System
         }
 #endif
 
-        public static void AppendData (this IncrementalHash incrementalHash, ReadOnlyMemory<byte> buffer)
-        {
 #if NETSTANDARD2_0 || NET472
-            if (!MemoryMarshal.TryGetArray (buffer, out ArraySegment<byte> array))
-                throw new Exception ("Could not get the underyling byte[] for hashing");
-            incrementalHash.AppendData (array.Array, array.Offset, array.Count);
-#else
-            incrementalHash.AppendData (buffer.Span);
-#endif
+        public static void AppendData (this IncrementalHash incrementalHash, ReadOnlySpan<byte> buffer)
+        {
+            var tmp = new byte[buffer.Length];
+            buffer.CopyTo (tmp);
+            incrementalHash.AppendData (tmp);
         }
+#endif
 
         public static int Read (this Stream stream, Memory<byte> memory)
         {

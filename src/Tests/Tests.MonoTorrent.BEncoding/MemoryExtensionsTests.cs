@@ -38,7 +38,7 @@ namespace MonoTorrent.BEncoding
             hasher.AppendData (buffer, 0, 11345);
             var hash = hasher.GetHashAndReset ();
 
-            hasher.AppendData (new Memory<byte> (buffer).Slice (0, 11345));
+            hasher.AppendData (new Memory<byte> (buffer).Span.Slice (0, 11345));
             byte[] destination = hasher.GetHashAndReset ();
 
             Assert.IsTrue (hash.AsSpan ().SequenceEqual (destination.AsSpan ()));
