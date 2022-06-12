@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Modes
             var actual = Manager.Torrent.CreatePieceHashes ().TryGetV2Hashes (hashesMessage.PiecesRoot);
             // NOTE: Tweak this so we validate the hash in-place, and ensure the data we've been given, provided with the ancestor
             // hashes, combines to form the `PiecesRoot` value.
-            var memory = infoHashes[file].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes.Span.Slice (0, hashesMessage.Length * 32), hashesMessage.Hashes.Span.Slice (hashesMessage.Length));
+            var memory = infoHashes[file].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes.Span.Slice (0, hashesMessage.Length * 32), hashesMessage.Hashes.Span.Slice (hashesMessage.Length * 32));
             MarkDone (hashesMessage.PiecesRoot, hashesMessage.Index / MaxHashesPerRequest);
 
             if (pickers[file].All (t => t == CompletedSentinal)) {
