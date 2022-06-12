@@ -60,5 +60,11 @@ namespace MonoTorrent
 
         public override int GetHashCode ()
             => Hash.Length == 0 ? 0 : Hash.Span[0];
+
+        public static bool operator == (MerkleRoot left, MerkleRoot right)
+            => left.Hash.Span.SequenceEqual (right.Hash.Span);
+
+        public static bool operator != (MerkleRoot left, MerkleRoot right)
+            => !(left == right);
     }
 }

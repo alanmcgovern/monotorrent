@@ -166,7 +166,7 @@ namespace MonoTorrent.Client.Modes
 
         void MarkDone (MerkleRoot piecesRoot, int requestOffset)
         {
-            var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot.Span.SequenceEqual (piecesRoot.Span));
+            var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot == piecesRoot);
             if (file == null)
                 return;
 
@@ -176,7 +176,7 @@ namespace MonoTorrent.Client.Modes
 
         void RemoveRequest (PeerId id, MerkleRoot piecesRoot, int requestOffset)
         {
-            var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot.Span.SequenceEqual (piecesRoot.Span));
+            var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot ==piecesRoot);
             if (file == null)
                 return;
 
