@@ -99,6 +99,7 @@ namespace MonoTorrent.Client.Modes
             else
                 await Manager.MaybeDeleteFastResumeAsync ();
 
+            Manager.PieceManager.Initialise ();
             if (Manager.PendingV2PieceHashes.TrueCount > 0) {
                 Manager.Mode = new PieceHashesMode (Manager, DiskManager, ConnectionManager, Settings);
             } else if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
@@ -108,7 +109,6 @@ namespace MonoTorrent.Client.Modes
             }
 
             Manager.DhtAnnounce ();
-            Manager.PieceManager.Initialise ();
             await Manager.LocalPeerAnnounceAsync ();
         }
 
