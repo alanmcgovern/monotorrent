@@ -34,7 +34,7 @@ namespace MonoTorrent
 {
     public class ReadOnlyMerkleLayers
     {
-        public static ReadOnlyMerkleLayers? FromLayer(int pieceLength, MerkleRoot expectedRoot, ReadOnlySpan<byte> layer)
+        public static ReadOnlyMerkleLayers? FromLayer (int pieceLength, MerkleRoot expectedRoot, ReadOnlySpan<byte> layer)
         {
             MerkleLayers layers = new MerkleLayers (expectedRoot, pieceLength, layer.Length / 32);
             if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer, ReadOnlySpan<byte>.Empty))
@@ -42,12 +42,13 @@ namespace MonoTorrent
             if (!layers.TryVerify (out var verifiedHashes))
                 return null;
             return verifiedHashes;
-
         }
-        public ReadOnlyMemory<byte> Root => Layers[Layers.Count - 1];
-        public IReadOnlyList<ReadOnlyMemory<byte>> Layers { get; }
-        public ReadOnlyMemory<byte> PieceLayer => Layers[PieceLayerIndex];
+
+        IReadOnlyList<ReadOnlyMemory<byte>> Layers { get; }
+
         public int PieceLayerIndex { get; }
+
+        public ReadOnlyMemory<byte> Root => Layers[Layers.Count - 1];
 
         internal ReadOnlyMerkleLayers (IReadOnlyList<ReadOnlyMemory<byte>> layers, int pieceLayer)
         {
@@ -55,12 +56,15 @@ namespace MonoTorrent
             PieceLayerIndex = pieceLayer;
         }
 
-        public ReadOnlyMemory<byte> GetHash (int layerIndex, int offset)
+        public ReadOnlyMemory<byte> GetHash (int layer, int index)
         {
-            var layer = Layers[layerIndex];
-            if ((offset * 32) >= layer.Length)
-                return MerkleHash.PaddingHashes[(int) Math.Pow (2, layerIndex) * 16384];
-            return layer.Slice (offset * 32, 32);
+            var hashes = Layers[layer];
+            if ((index * 32) >= hashes.Length)
+                return MerkleHash.PaddingHashes[(int) Math.Pow (2, layer) * 16384];
+            return hashes.Slice (index * 32, 32);
         }
+
+        internal void CopyHashes (int layer, int index, Span<byte> dest)
+            => Layers[layer].Slice (index * 32, dest.Length).Span.CopyTo (dest);
     }
 }

@@ -72,7 +72,7 @@ namespace MonoTorrent
 
                 // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
                 if (Layers.TryGetValue (Files[i].PiecesRoot, out ReadOnlyMerkleLayers? layers))
-                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layers.PieceLayer.Slice ((hashIndex - Files[i].StartPieceIndex) * HashCodeLength, HashCodeLength));
+                    return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layers.GetHash (layers.PieceLayerIndex, hashIndex - Files[i].StartPieceIndex));
 
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
                 return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot.AsMemory ());
@@ -94,38 +94,34 @@ namespace MonoTorrent
         public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int length, Span<byte> hashesBuffer, Span<byte> proofsBuffer, out int actualProofLayers)
         {
             actualProofLayers = 0;
+            // Basic sanity checks on the values passed in
             if (baseLayer != PieceLayer || index < 0 || length > 512 || length < 1)
                 return false;
 
-            var hashOffset = index * HashCodeLength;
-            var hashLength = length * HashCodeLength;
+            // Check that the actual layer exists
             if (!Layers.TryGetValue (piecesRoot, out ReadOnlyMerkleLayers? layers))
                 return false;
 
-            var fileHashes = layers.PieceLayer;
-            if (hashOffset > fileHashes.Length)
-                return false;
+            // Copy over the required hashes, starting at 'index' until the dest buffer is full.
+            layers.CopyHashes (baseLayer, index, hashesBuffer);
 
-            var actualHashes = Math.Min (hashLength, fileHashes.Length - hashOffset);
-            fileHashes.Span.Slice (hashOffset, actualHashes).CopyTo (hashesBuffer);
-            hashesBuffer = hashesBuffer.Slice (actualHashes);
+            // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
+            // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
+            length = Math.Max (2, length);
 
-            if (proofsBuffer.Length > 0) {
-                // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
-                // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
-                length = Math.Max (2, length);
-                var firstProofLayer = baseLayer + (int) Math.Ceiling (Math.Log (length, 2));
-                var proofLayerOffset = index / (int) Math.Pow (2, Math.Ceiling (Math.Log (length, 2)));
-                var lastProofLayer = Math.Min (layers.Layers.Count - 1, firstProofLayer + (proofsBuffer.Length / HashCodeLength));
-                actualProofLayers = lastProofLayer - firstProofLayer;
-                for (int i = firstProofLayer; i < lastProofLayer; i++) {
-                    if ((proofLayerOffset & 1) == 1)
-                        layers.Layers[i].Span.Slice ((proofLayerOffset - 1) * HashCodeLength, HashCodeLength).CopyTo (proofsBuffer.Slice (0, HashCodeLength));
-                    else
-                        layers.GetHash (i, proofLayerOffset + 1).Span.CopyTo (proofsBuffer.Slice (0, HashCodeLength));
-                    proofLayerOffset /= 2;
-                    proofsBuffer = proofsBuffer.Slice (HashCodeLength);
-                }
+            // Reduce the size of the buffer by the number of omitted hashes.
+            var omittedHashes = (int) Math.Ceiling (Math.Log (length, 2)) - 1;
+            proofsBuffer = proofsBuffer.Slice (0, proofsBuffer.Length - (omittedHashes * 32));
+            actualProofLayers = proofsBuffer.Length / 32;
+
+            // The first proof layer is the one after the base layer, and we also skip ahead by the number of omitted hashes.
+            var proofLayer = baseLayer + omittedHashes + 1;
+            var proofLayerIndex = index / (int) Math.Pow (2, proofLayer - baseLayer);
+            while (proofsBuffer.Length > 0) {
+                layers.GetHash (proofLayer, proofLayerIndex ^ 1).Span.CopyTo (proofsBuffer.Slice (0, HashCodeLength));
+                proofLayerIndex /= 2;
+                proofLayer++;
+                proofsBuffer = proofsBuffer.Slice (HashCodeLength);
             }
             return true;
         }
