@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Modes
                 throw new InvalidOperationException ($"{nameof (PieceHashesMode)} can only be used after the torrent metadata is available");
 
             pickers = manager.Torrent!.Files.ToDictionary (t => t, value => new PeerId?[(value.EndPieceIndex - value.StartPieceIndex + MaxHashesPerRequest) / MaxHashesPerRequest]);
-            infoHashes = manager.Torrent.Files.ToDictionary (t => t, value => new MerkleLayers (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1));
+            infoHashes = manager.Torrent.Files.Where (t => t.EndPieceIndex != t.StartPieceIndex).ToDictionary (t => t, value => new MerkleLayers (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1));
 
             // Files with 1 piece do not have additional hashes to fetch. The PiecesRoot *is* the SHA256 of the entire file.
             foreach (var value in pickers)
