@@ -31,6 +31,17 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
 {
+    public interface IPieceRequesterData
+    {
+        IList<ITorrentManagerFile> Files { get; }
+        int BlocksPerPiece (int piece);
+        int ByteOffsetToPieceIndex (long byteOffset);
+        int BytesPerPiece (int piece);
+        int PieceCount { get; }
+        int PieceLength { get; }
+    }
+
+
     /// <summary>
     /// Allows an IPiecePicker implementation to create piece requests for
     /// specific peers and then add them to the peers message queue. If the
@@ -83,7 +94,7 @@ namespace MonoTorrent.PiecePicking
         /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
         /// pieces which have not yet been hash checked by the library and so it is not known whether they should be requested or not.
         /// </param>
-        void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<ReadOnlyBitField> ignorableBitfields);
+        void Initialise (IPieceRequesterData torrentData, IReadOnlyList<ReadOnlyBitField> ignorableBitfields);
 
         IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex);
 

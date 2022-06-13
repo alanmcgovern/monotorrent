@@ -71,12 +71,12 @@ namespace MonoTorrent.PiecePicking
             AllSamePriority = file => file.Priority == files[0].Priority;
         }
 
-        public override void Initialise (ITorrentManagerInfo torrentData)
+        public override void Initialise (IPieceRequesterData torrentData)
         {
             base.Initialise (torrentData);
 
-            allPrioritisedPieces = new BitField (torrentData.TorrentInfo!.PieceCount ());
-            temp = new BitField (torrentData.TorrentInfo!.PieceCount ());
+            allPrioritisedPieces = new BitField (torrentData.PieceCount);
+            temp = new BitField (torrentData.PieceCount);
 
             files.Clear ();
             for (int i = 0; i < torrentData.Files.Count; i++)
@@ -104,7 +104,7 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse || temp == null)

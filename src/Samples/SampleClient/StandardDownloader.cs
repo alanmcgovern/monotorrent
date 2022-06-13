@@ -51,7 +51,11 @@ namespace ClientSample
                         var settingsBuilder = new TorrentSettingsBuilder {
                             MaximumConnections = 60,
                         };
-                        var manager = await Engine.AddAsync (file, downloadsPath, settingsBuilder.ToSettings ());
+                        var torrent = await Torrent.LoadAsync (file);
+                        if (torrent.InfoHashes.V2 == null)
+                            continue;
+
+                        var manager = await Engine.AddAsync (new MagnetLink (torrent.InfoHashes.V2, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray ()), downloadsPath, settingsBuilder.ToSettings ());
                         manager.PeersFound += Manager_PeersFound;
                         Console.WriteLine (manager.InfoHashes.V1OrV2.ToHex ());
                     } catch (Exception e) {

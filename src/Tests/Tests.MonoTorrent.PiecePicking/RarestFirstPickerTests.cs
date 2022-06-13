@@ -45,7 +45,7 @@ namespace MonoTorrent.PiecePicking
         PeerId peer;
         List<PeerId> peers;
         RarestFirstPicker picker;
-        ITorrentManagerInfo torrentData;
+        IPieceRequesterData torrentData;
 
         [SetUp]
         public void Setup ()
@@ -76,7 +76,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void RarestPieceTest ()
         {
-            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < (i * 5) + 5; j++)
                     peers[i].BitField[j] = true;
@@ -87,19 +87,19 @@ namespace MonoTorrent.PiecePicking
 
             // Two peers have piece 25
             Assert.AreEqual (25, checker.Picks[0].available.FirstTrue (), "#1");
-            Assert.AreEqual (-1, checker.Picks[0].available.FirstFalse (25, torrentData.TorrentInfo.PieceCount () - 1), "#2");;
+            Assert.AreEqual (-1, checker.Picks[0].available.FirstFalse (25, torrentData.PieceCount - 1), "#2");;
 
             // Three peers have piece 20
             Assert.AreEqual (20, checker.Picks[1].available.FirstTrue (), "#3");
-            Assert.AreEqual (-1, checker.Picks[1].available.FirstFalse (20, torrentData.TorrentInfo.PieceCount () - 1), "#4");
+            Assert.AreEqual (-1, checker.Picks[1].available.FirstFalse (20, torrentData.PieceCount - 1), "#4");
 
             // Three peers have piece 20
             Assert.AreEqual (15, checker.Picks[2].available.FirstTrue (), "#4");
-            Assert.AreEqual (-1, checker.Picks[2].available.FirstFalse (15, torrentData.TorrentInfo.PieceCount () - 1), "#6");
+            Assert.AreEqual (-1, checker.Picks[2].available.FirstFalse (15, torrentData.PieceCount - 1), "#6");
 
             // Three peers have piece 20
             Assert.AreEqual (10, checker.Picks[3].available.FirstTrue (), "#5");
-            Assert.AreEqual (-1, checker.Picks[3].available.FirstFalse (10, torrentData.TorrentInfo.PieceCount () - 1), "#8");
+            Assert.AreEqual (-1, checker.Picks[3].available.FirstFalse (10, torrentData.PieceCount - 1), "#8");
         }
 
         [Test]

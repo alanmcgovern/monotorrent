@@ -48,7 +48,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <returns>The list of requests which were cancelled</returns>
-        IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex);
+        IList<PieceSegment> CancelRequests (IPeer peer, int startIndex, int endIndex);
 
         /// <summary>
         /// Request any unrequested block from a piece owned by this peer, or any other peer, within the specified bounds.
@@ -58,7 +58,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <param name="maxDuplicateRequests">The maximum number of concurrent duplicate requests</param>
         /// <returns></returns>
-        BlockInfo? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests);
+        PieceSegment? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests);
 
         /// <summary>
         /// Request the next unrequested block from a piece owned by this peer, within the specified bounds.
@@ -67,7 +67,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <returns></returns>
-        BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex);
+        PieceSegment? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex);
 
         /// <summary>
         /// Returns the number of blocks which have been received f pieces currently being requested.
@@ -91,7 +91,7 @@ namespace MonoTorrent.PiecePicking
         /// Reset all internal state.
         /// </summary>
         /// <param name="torrentData"></param>
-        void Initialise (ITorrentManagerInfo torrentData);
+        void Initialise (IPieceRequesterData torrentData);
 
         /// <summary>
         /// 
@@ -103,11 +103,11 @@ namespace MonoTorrent.PiecePicking
 
         /// <summary>
         /// Called when a piece request has been rejected by a <paramref name="peer"/>, which indicates
-        /// the <see cref="BlockInfo"/> will not be fulfilled.
+        /// the <see cref="PieceSegment"/> will not be fulfilled.
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="request"></param>
-        void RequestRejected (IPeer peer, BlockInfo request);
+        void RequestRejected (IPeer peer, PieceSegment request);
 
         /// <summary>
         /// 
@@ -119,7 +119,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="endIndex"></param>
         /// <param name="requests"></param>
         /// <returns></returns>
-        int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests);
+        int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests);
 
         /// <summary>
         /// Called when a piece is received from the <paramref name="peer"/>. Returns true if the
@@ -131,6 +131,6 @@ namespace MonoTorrent.PiecePicking
         /// <param name="pieceComplete">True if this was the final block for the piece</param>
         /// <param name="peersInvolved">When <paramref name="pieceComplete"/> is true this is a non-null list of peers used to download the piece. Otherwise this is null.</param>
         /// <returns></returns>
-        bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved);
+        bool ValidatePiece (IPeer peer, PieceSegment request, out bool pieceComplete, out IList<IPeer> peersInvolved);
     }
 }

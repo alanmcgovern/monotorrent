@@ -29,30 +29,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MonoTorrent.PiecePicking
 {
-    public class PieceRequesterSettings
-    {
-        public static PieceRequesterSettings Default { get; } = new PieceRequesterSettings ();
-
-        public bool AllowPrioritisation { get; }
-        public bool AllowRandomised { get; }
-        public bool AllowRarestFirst { get; }
-
-        public PieceRequesterSettings (
-            bool allowPrioritisation = true,
-            bool allowRandomised = true,
-            bool allowRarestFirst = true)
-            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst) = (allowPrioritisation, allowRandomised, allowRarestFirst);
-    }
-
     public class StandardPieceRequester : IPieceRequester
     {
         IReadOnlyList<ReadOnlyBitField>? IgnorableBitfields { get; set; }
-        Memory<BlockInfo> RequestBufferCache { get; set; }
+        Memory<BlockInfo> BlockInfoBufferCache { get; set; }
+        Memory<PieceSegment> RequestBufferCache { get; set; }
         BitField? Temp { get; set; }
-        ITorrentInfo? TorrentData { get; set; }
+        IPieceRequesterData? TorrentData { get; set; }
 
         public bool InEndgameMode { get; private set; }
         IPiecePicker? Picker { get; set; }
@@ -61,12 +48,12 @@ namespace MonoTorrent.PiecePicking
         public StandardPieceRequester (PieceRequesterSettings settings)
             => Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
-        public void Initialise (ITorrentManagerInfo torrentData, IReadOnlyList<ReadOnlyBitField> ignoringBitfields)
+        public void Initialise (IPieceRequesterData torrentData, IReadOnlyList<ReadOnlyBitField> ignoringBitfields)
         {
             IgnorableBitfields = ignoringBitfields;
-            TorrentData = torrentData.TorrentInfo!;
+            TorrentData = torrentData;
 
-            Temp = new BitField (TorrentData.PieceCount ());
+            Temp = new BitField (TorrentData.PieceCount);
 
             IPiecePicker picker = new StandardPicker ();
             if (Settings.AllowRandomised)
@@ -109,9 +96,9 @@ namespace MonoTorrent.PiecePicking
             // will be a fast piece (if one exists!)
             if (!peer.IsChoking || peer.SupportsFastPeer) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    BlockInfo? request = Picker.ContinueExistingRequest (peer, 0, peer.BitField.Length - 1);
+                    PieceSegment? request = Picker.ContinueExistingRequest (peer, 0, peer.BitField.Length - 1);
                     if (request != null)
-                        peer.EnqueueRequest (request.Value);
+                        peer.EnqueueRequest (request.Value.ToBlockInfo (TorrentData));
                     else
                         break;
                 }
@@ -119,8 +106,9 @@ namespace MonoTorrent.PiecePicking
 
             int count = peer.PreferredRequestAmount (TorrentData.PieceLength);
             if (RequestBufferCache.Length < count)
-                RequestBufferCache = new Memory<BlockInfo> (new BlockInfo[count]);
-
+                RequestBufferCache = new Memory<PieceSegment> (new PieceSegment[count]);
+            if (BlockInfoBufferCache.Length < count)
+                BlockInfoBufferCache = new Memory<BlockInfo> (new BlockInfo[count]);
             // Reuse the same buffer across multiple requests. However ensure the piecepicker is given
             // a Span<T> of the expected size - so slice the reused buffer if it's too large.
             var requestBuffer = RequestBufferCache.Span.Slice (0, count);
@@ -128,9 +116,9 @@ namespace MonoTorrent.PiecePicking
                 ReadOnlyBitField filtered = null!;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     filtered ??= ApplyIgnorables (peer.BitField);
-                    int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount () - 1, requestBuffer);
+                    int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount - 1, requestBuffer);
                     if (requests > 0)
-                        peer.EnqueueRequests (requestBuffer.Slice (0, requests));
+                        peer.EnqueueRequests (requestBuffer.Slice (0, requests).ToBlockInfo (BlockInfoBufferCache.Span, TorrentData));
                     else
                         break;
                 }
@@ -138,16 +126,16 @@ namespace MonoTorrent.PiecePicking
 
             if (!peer.IsChoking && peer.AmRequestingPiecesCount == 0) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    BlockInfo? request = Picker.ContinueAnyExistingRequest (peer, 0, TorrentData.PieceCount () - 1, 1);
+                    PieceSegment? request = Picker.ContinueAnyExistingRequest (peer, 0, TorrentData.PieceCount - 1, 1);
                     // If this peer is a seeder and we are unable to request any new blocks, then we should enter
                     // endgame mode. Every block has been requested at least once at this point.
                     if (request == null && (InEndgameMode || peer.IsSeeder)) {
-                        request = Picker.ContinueAnyExistingRequest (peer, 0, TorrentData.PieceCount () - 1, 2);
+                        request = Picker.ContinueAnyExistingRequest (peer, 0, TorrentData.PieceCount - 1, 2);
                         InEndgameMode |= request != null;
                     }
 
                     if (request != null)
-                        peer.EnqueueRequest (request.Value);
+                        peer.EnqueueRequest (request.Value.ToBlockInfo (TorrentData));
                     else
                         break;
                 }
@@ -158,19 +146,47 @@ namespace MonoTorrent.PiecePicking
         {
             pieceComplete = false;
             peersInvolved = Array.Empty<IPeer> ();
-            return Picker != null && Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+            return Picker != null && Picker.ValidatePiece (peer, blockInfo.ToPieceSegment (), out pieceComplete, out peersInvolved);
         }
 
         public bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
             => Picker != null && Picker.IsInteresting (peer, bitfield);
 
         public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
-            => Picker == null ? Array.Empty<BlockInfo> () : Picker.CancelRequests (peer, startIndex, endIndex);
+            => Picker == null ? Array.Empty<BlockInfo> () : Picker.CancelRequests (peer, startIndex, endIndex).Select (t => t.ToBlockInfo (TorrentData!)).ToArray ();
 
         public void RequestRejected (IPeer peer, BlockInfo pieceRequest)
-            => Picker?.RequestRejected (peer, pieceRequest);
+            => Picker?.RequestRejected (peer, pieceRequest.ToPieceSegment ());
 
         public int CurrentRequestCount ()
             => Picker == null ? 0 : Picker.CurrentRequestCount ();
+
+    }
+
+    static class PieceRequesterExtensions
+    {
+        public static PieceSegment ToPieceSegment (this BlockInfo blockInfo)
+            => new PieceSegment (blockInfo.PieceIndex, blockInfo.StartOffset / Constants.BlockSize);
+
+        public static BlockInfo ToBlockInfo (this PieceSegment pieceSegment, IPieceRequesterData info)
+        {
+            var totalBlocks = info.BlocksPerPiece (pieceSegment.PieceIndex);
+            var size = pieceSegment.BlockIndex == totalBlocks - 1 ? info.BytesPerPiece (pieceSegment.PieceIndex) - (pieceSegment.BlockIndex) * Constants.BlockSize : Constants.BlockSize;
+            return new BlockInfo (pieceSegment.PieceIndex, pieceSegment.BlockIndex * Constants.BlockSize, size);
+        }
+
+        public static Span<BlockInfo> ToBlockInfo (this Span<PieceSegment> segments, Span<BlockInfo> blocks, IPieceRequesterData info)
+        {
+            for (int i = 0; i < segments.Length; i++)
+                blocks[i] = segments[i].ToBlockInfo (info);
+            return blocks.Slice (0, segments.Length);
+        }
+
+        public static Span<PieceSegment> ToPieceSegment (this Span<BlockInfo> blocks, Span<PieceSegment> segments)
+        {
+            for (int i = 0; i < segments.Length; i++)
+                segments[i] = blocks[i].ToPieceSegment ();
+            return segments.Slice (0, segments.Length);
+        }
     }
 }

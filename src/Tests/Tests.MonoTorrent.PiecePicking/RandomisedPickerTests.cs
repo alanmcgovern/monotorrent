@@ -104,7 +104,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void SinglePieceRange ()
         {
-            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             picker.PickPiece (seeder, seeder.BitField, new List<PeerId> (), 12, 13, buffer);
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");
@@ -115,7 +115,7 @@ namespace MonoTorrent.PiecePicking
         [Test]
         public void TwoPieceRange ()
         {
-            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             var onePiece = new BitField (seeder.BitField.Length).Set (0, true);
             picker.PickPiece (seeder, onePiece, new List<PeerId> (), 12, 14, buffer);
 

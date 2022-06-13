@@ -146,15 +146,13 @@ namespace MonoTorrent.Client.Modes
                     Stream.Write (message.MetadataPiece, 0, message.MetadataPiece.Length);
                     bitField[message.Piece] = true;
                     if (bitField.AllTrue) {
-                        InfoHash? v1InfoHash = null;
-                        InfoHash? v2InfoHash = null;
+                        InfoHash? v1InfoHash;
+                        InfoHash? v2InfoHash;
                         Stream.Position = 0;
-                        if (Manager.PieceHashes.HasV1Hashes)
-                            using (SHA1 hasher = SHA1.Create ())
-                                v1InfoHash = InfoHash.FromMemory (hasher.ComputeHash (Stream));
-                        if (Manager.PieceHashes.HasV2Hashes)
-                            using (SHA256 hasher = SHA256.Create ())
-                                v2InfoHash = InfoHash.FromMemory (hasher.ComputeHash (Stream));
+                        using (SHA1 hasher = SHA1.Create ())
+                            v1InfoHash = InfoHash.FromMemory (hasher.ComputeHash (Stream));
+                        using (SHA256 hasher = SHA256.Create ())
+                            v2InfoHash = InfoHash.FromMemory (hasher.ComputeHash (Stream));
 
                         if (!Manager.InfoHashes.Contains (v1InfoHash) && !Manager.InfoHashes.Contains (v2InfoHash)) {
                             bitField.SetAll (false);

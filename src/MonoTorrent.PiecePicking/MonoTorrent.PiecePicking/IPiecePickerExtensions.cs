@@ -35,29 +35,29 @@ namespace MonoTorrent.PiecePicking
 {
     public static class IPiecePickerExtensions
     {
-        public static IList<BlockInfo> CancelRequests (this IPiecePicker picker, IPeer peer)
+        public static IList<PieceSegment> CancelRequests (this IPiecePicker picker, IPeer peer)
         {
             return picker.CancelRequests (peer, 0, peer.BitField.Length - 1);
         }
 
-        public static BlockInfo? ContinueAnyExistingRequest (this IPiecePicker picker, IPeer peer, int startIndex, int endIndex)
+        public static PieceSegment? ContinueAnyExistingRequest (this IPiecePicker picker, IPeer peer, int startIndex, int endIndex)
             => picker.ContinueAnyExistingRequest (peer, startIndex, endIndex, 1);
 
-        public static BlockInfo? PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available)
+        public static PieceSegment? PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available)
         {
-            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             var picked = picker.PickPiece (peer, available, Array.Empty<IPeer> (), 0, available.Length - 1, buffer);
-            return picked == 1 ? (BlockInfo?) buffer[0] : null;
+            return picked == 1 ? (PieceSegment?) buffer[0] : null;
         }
 
-        public static BlockInfo? PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers)
+        public static PieceSegment? PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers)
         {
-            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
+            Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             var result = picker.PickPiece (peer, available, otherPeers, 0, available.Length - 1, buffer);
-            return result == 1 ? (BlockInfo?) buffer[0] : null;
+            return result == 1 ? (PieceSegment?) buffer[0] : null;
         }
 
-        public static int PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, Span<BlockInfo> requests)
+        public static int PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, Span<PieceSegment> requests)
         {
             return picker.PickPiece (peer, available, otherPeers, 0, available.Length - 1, requests);
         }

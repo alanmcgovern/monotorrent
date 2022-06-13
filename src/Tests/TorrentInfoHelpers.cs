@@ -31,9 +31,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using MonoTorrent.PiecePicking;
+
 namespace MonoTorrent
 {
-    class TestTorrentManagerInfo : ITorrentManagerInfo
+    class TestTorrentManagerInfo : ITorrentManagerInfo, IPieceRequesterData
     {
         public IList<ITorrentManagerFile> Files => TorrentInfo.Files.Cast<ITorrentManagerFile> ().ToList ();
 
@@ -46,6 +48,10 @@ namespace MonoTorrent
         ITorrentInfo ITorrentManagerInfo.TorrentInfo => TorrentInfo;
 
         public int TotalBlocks => (int) Math.Ceiling ((float) TorrentInfo.Size / Constants.BlockSize);
+
+        int IPieceRequesterData.PieceCount => TorrentInfo.PieceCount ();
+
+        int IPieceRequesterData.PieceLength => TorrentInfo.PieceLength;
 
         public static TestTorrentManagerInfo Create (
             int? pieceLength = null,
@@ -75,6 +81,16 @@ namespace MonoTorrent
                 }
             };
         }
+
+        int IPieceRequesterData.BlocksPerPiece (int piece)
+            => TorrentInfo.BlocksPerPiece (piece);
+
+        int IPieceRequesterData.ByteOffsetToPieceIndex (long byteOffset)
+            => TorrentInfo.ByteOffsetToPieceIndex (byteOffset);
+
+
+        int IPieceRequesterData.BytesPerPiece (int piece)
+            => TorrentInfo.BytesPerPiece (piece);
     }
 
     class TestTorrentInfo : ITorrentInfo

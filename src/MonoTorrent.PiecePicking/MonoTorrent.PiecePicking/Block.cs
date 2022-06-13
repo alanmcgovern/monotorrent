@@ -26,7 +26,6 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
 namespace MonoTorrent.PiecePicking
 {
     partial class StandardPicker
@@ -34,7 +33,7 @@ namespace MonoTorrent.PiecePicking
         /// <summary>
         ///
         /// </summary>
-        internal struct Block
+        struct Block
         {
             readonly Piece piece;
             bool received;
@@ -54,32 +53,28 @@ namespace MonoTorrent.PiecePicking
                 }
             }
 
-            public bool Requested => RequestedOff != null;
+            public int BlockIndex { get; private set; }
 
-            public int RequestLength { get; }
+            public bool Requested => RequestedOff != null;
 
             internal IPeer? RequestedOff { get; private set; }
 
-            public int StartOffset { get; }
-
-
-            internal Block (Piece piece, int startOffset, int requestLength)
+            internal Block (Piece piece, int blockIndex)
             {
                 RequestedOff = null;
                 this.piece = piece;
                 received = false;
-                RequestLength = requestLength;
-                StartOffset = startOffset;
+                BlockIndex = blockIndex;
             }
 
-            internal BlockInfo CreateRequest (IPeer peer)
+            internal PieceSegment CreateRequest (IPeer peer)
             {
                 if (RequestedOff == null)
                     piece.TotalRequested++;
 
                 RequestedOff = peer;
                 RequestedOff.AmRequestingPiecesCount++;
-                return new BlockInfo (PieceIndex, StartOffset, RequestLength);
+                return new PieceSegment (PieceIndex, BlockIndex);
             }
 
             internal void CancelRequest ()
@@ -96,20 +91,12 @@ namespace MonoTorrent.PiecePicking
                 if (!(obj is Block other))
                     return false;
 
-                return PieceIndex == other.PieceIndex && StartOffset == other.StartOffset && RequestLength == other.RequestLength;
+                return PieceIndex == other.PieceIndex && BlockIndex == other.BlockIndex;
             }
 
             public override int GetHashCode ()
             {
-                return PieceIndex ^ RequestLength ^ StartOffset;
-            }
-
-            internal static int IndexOf (Block[] blocks, int startOffset, int blockLength)
-            {
-                int index = startOffset / Piece.BlockSize;
-                if (blocks[index].StartOffset != startOffset || blocks[index].RequestLength != blockLength)
-                    return -1;
-                return index;
+                return PieceIndex ^ (BlockIndex << 24);
             }
 
             internal void FromRequest (ActivePieceRequest block)

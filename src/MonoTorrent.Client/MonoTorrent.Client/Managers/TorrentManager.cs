@@ -46,7 +46,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo
+    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo, IPieceRequesterData
     {
         #region Events
 
@@ -1122,5 +1122,15 @@ namespace MonoTorrent.Client
             RaisePeerConnected (new PeerConnectedEventArgs (this, id));
             Mode.HandlePeerConnected (id);
         }
+
+        IList<ITorrentManagerFile> IPieceRequesterData.Files => Files;
+        int IPieceRequesterData.PieceCount => Torrent == null ? 0 : Torrent.PieceCount;
+        int IPieceRequesterData.PieceLength => Torrent == null ? 0 : Torrent.PieceLength;
+        int IPieceRequesterData.BlocksPerPiece (int pieceIndex)
+            => Torrent == null ? 0 : Torrent.BlocksPerPiece (pieceIndex);
+        int IPieceRequesterData.ByteOffsetToPieceIndex (long byteOffset)
+            => Torrent == null ? 0 : Torrent.ByteOffsetToPieceIndex (byteOffset);
+        int IPieceRequesterData.BytesPerPiece (int piece)
+            => Torrent == null ? 0 : Torrent.BytesPerPiece (piece);
     }
 }

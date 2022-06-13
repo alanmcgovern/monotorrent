@@ -36,7 +36,7 @@ namespace MonoTorrent.PiecePicking
     partial class StandardPicker
     {
         [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
-        internal class Piece : IComparable<Piece>, ICacheable
+        class Piece : IComparable<Piece>, ICacheable
         {
             internal const int BlockSize = (1 << 14); // 16kB
 
@@ -72,11 +72,10 @@ namespace MonoTorrent.PiecePicking
             public int TotalWritten { get; internal set; }
 
 
-            internal Piece (int pieceIndex, int length)
+            internal Piece ()
             {
                 Blocks = Array.Empty<Block> ();
                 PeersInvolved = new HashSet<IPeer> ();
-                Initialise (pieceIndex, length);
             }
 
             public int CompareTo (Piece? other)
@@ -98,7 +97,7 @@ namespace MonoTorrent.PiecePicking
             public void Initialise ()
                 => Initialise (-1, -1);
 
-            public Piece Initialise (int pieceIndex, int length)
+            public Piece Initialise (int pieceIndex, int blockCount)
             {
                 Index = pieceIndex;
 
@@ -107,16 +106,11 @@ namespace MonoTorrent.PiecePicking
                 TotalRequested = 0;
                 TotalWritten = 0;
 
-                if (length != -1) {
-                    var expectedLength = (length + BlockSize - 1) / BlockSize;
-                    if (Blocks.Length != expectedLength)
-                        Blocks = new Block[expectedLength];
+                if (blockCount != -1 && Blocks.Length != blockCount)
+                    Blocks = new Block[blockCount];
 
-                    for (int i = 0; i < Blocks.Length - 1; i++)
-                        Blocks[i] = new Block (this, i * BlockSize, BlockSize);
-
-                    Blocks[Blocks.Length - 1] = new Block (this, (Blocks.Length - 1) * BlockSize, length - (Blocks.Length - 1) * BlockSize);
-                }
+                for (int i = 0; i < Blocks.Length; i++)
+                    Blocks[i] = new Block (this, i);
 
                 return this;
             }

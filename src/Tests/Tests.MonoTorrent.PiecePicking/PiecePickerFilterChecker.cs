@@ -34,7 +34,7 @@ namespace MonoTorrent.PiecePicking
 {
     class PiecePickerFilterChecker : PiecePickerFilter
     {
-        public List<ITorrentManagerInfo> Initialised;
+        public List<IPieceRequesterData> Initialised;
         public List<(IPeer peer, ReadOnlyBitField bitfield)> Interesting;
         public List<(IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> Picks;
 
@@ -46,12 +46,12 @@ namespace MonoTorrent.PiecePicking
         public PiecePickerFilterChecker (IPiecePicker next)
             : base (next)
         {
-            Initialised = new List<ITorrentManagerInfo> ();
+            Initialised = new List<IPieceRequesterData> ();
             Interesting = new List<(IPeer peer, ReadOnlyBitField bitfield)> ();
             Picks = new List<(IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int count, int startIndex, int endIndex)> ();
         }
 
-        public override void Initialise (ITorrentManagerInfo torrentData)
+        public override void Initialise (IPieceRequesterData torrentData)
         {
             Initialised.Add (torrentData);
             Next?.Initialise (torrentData);
@@ -63,7 +63,7 @@ namespace MonoTorrent.PiecePicking
             return Next == null ? !bitfield.AllFalse : Next.IsInteresting (peer, bitfield);
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             Picks.Add ((peer, new ReadOnlyBitField (available), new List<IPeer> (otherPeers).AsReadOnly (), requests.Length, startIndex, endIndex));
             return Next == null ? 0 : Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);

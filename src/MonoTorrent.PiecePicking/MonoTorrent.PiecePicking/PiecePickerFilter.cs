@@ -42,13 +42,13 @@ namespace MonoTorrent.PiecePicking
         public int AbortRequests (IPeer peer)
             => Next.AbortRequests (peer);
 
-        public IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex)
+        public IList<PieceSegment> CancelRequests (IPeer peer, int startIndex, int endIndex)
             => Next.CancelRequests (peer, startIndex, endIndex);
 
-        public BlockInfo? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
+        public PieceSegment? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
             => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests);
 
-        public BlockInfo? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
+        public PieceSegment? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
             => Next.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -60,19 +60,19 @@ namespace MonoTorrent.PiecePicking
         public IList<ActivePieceRequest> ExportActiveRequests ()
             => Next.ExportActiveRequests ();
 
-        public virtual void Initialise (ITorrentManagerInfo torrentData)
+        public virtual void Initialise (IPieceRequesterData torrentData)
             => Next.Initialise (torrentData);
 
         public virtual bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
             => Next.IsInteresting (peer, bitfield);
 
-        public virtual int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public virtual int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
             => Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
-        public void RequestRejected (IPeer peer, BlockInfo request)
+        public void RequestRejected (IPeer peer, PieceSegment request)
             => Next.RequestRejected (peer, request);
 
-        public bool ValidatePiece (IPeer peer, BlockInfo request, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        public bool ValidatePiece (IPeer peer, PieceSegment request, out bool pieceComplete, out IList<IPeer> peersInvolved)
             => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
 }

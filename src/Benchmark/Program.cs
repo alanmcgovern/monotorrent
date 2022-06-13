@@ -205,7 +205,7 @@ namespace MyBenchmarks
             public string Name => "Name";
         }
 
-        class TorrentData : ITorrentManagerInfo
+        class TorrentData : ITorrentManagerInfo, IPieceRequesterData
         {
             const int PieceCount = 500;
 
@@ -214,8 +214,22 @@ namespace MyBenchmarks
             public string Name { get; } = "Name";
 
             public ITorrentInfo TorrentInfo => new TorrentInfo ();
+
+            int IPieceRequesterData.PieceCount => TorrentInfo.PieceCount ();
+            int IPieceRequesterData.PieceLength => TorrentInfo.PieceLength;
+
             public IPeer CreatePeer ()
                 => new Peer (PieceCount);
+
+            int IPieceRequesterData.BlocksPerPiece (int piece)
+                => TorrentInfo.BlocksPerPiece (piece);
+
+            int IPieceRequesterData.ByteOffsetToPieceIndex (long byteOffset)
+                => TorrentInfo.ByteOffsetToPieceIndex (byteOffset);
+
+            int IPieceRequesterData.BytesPerPiece (int piece)
+                => TorrentInfo.BytesPerPiece (piece);
+
         }
 
         class Peer : IPeer
@@ -244,21 +258,21 @@ namespace MyBenchmarks
         readonly TorrentData Data;
         readonly StandardPicker Picker;
         readonly IPeer Requester;
-        readonly Queue<BlockInfo> Requested;
+        readonly Queue<PieceSegment> Requested;
 
         public StandardPickerBenchmark ()
         {
             Data = new TorrentData ();
             Picker = new StandardPicker ();
             Requester = Data.CreatePeer ();
-            Requested = new Queue<BlockInfo> ((int)(Data.TorrentInfo.PieceCount () * Data.TorrentInfo.BlocksPerPiece (0)));
+            Requested = new Queue<PieceSegment> ((int)(Data.TorrentInfo.PieceCount () * Data.TorrentInfo.BlocksPerPiece (0)));
 
 
             Random = new Random (1234);
             Requesters = new List<IPeer> (Enumerable.Range (0, 60).Select (t => Data.CreatePeer ()));
-            RequestedBlocks = new List<Queue<BlockInfo>> ();
+            RequestedBlocks = new List<Queue<PieceSegment>> ();
             foreach (var requester in Requesters)
-                RequestedBlocks.Add (new Queue<BlockInfo> (1400));
+                RequestedBlocks.Add (new Queue<PieceSegment> (1400));
         }
 
         [Benchmark]
@@ -266,7 +280,7 @@ namespace MyBenchmarks
         {
             Picker.Initialise (Data);
 
-            BlockInfo? requested;
+            PieceSegment? requested;
             while ((requested = Picker.PickPiece (Requester, Requester.BitField)).HasValue) {
                 Requested.Enqueue (requested.Value);
             }
@@ -282,7 +296,7 @@ namespace MyBenchmarks
             Picker.Initialise (new TorrentData ());
 
             var bf = new BitField (Requester.BitField);
-            BlockInfo? requested;
+            PieceSegment? requested;
             while ((requested = Picker.PickPiece (Requester, bf)).HasValue) {
                 Requested.Enqueue (requested.Value);
                 if (Requested.Count > 600) {
@@ -299,7 +313,7 @@ namespace MyBenchmarks
 
         readonly Random Random;
         readonly List<IPeer> Requesters;
-        readonly List<Queue<BlockInfo>> RequestedBlocks;
+        readonly List<Queue<PieceSegment>> RequestedBlocks;
 
         [Benchmark]
         public void PickAndValidate_600Concurrent_60Requesters ()
@@ -307,7 +321,7 @@ namespace MyBenchmarks
             Picker.Initialise (new TorrentData ());
 
             var bf = new BitField (Requester.BitField);
-            BlockInfo? requested;
+            PieceSegment? requested;
             int requestIndex = Random.Next (0, Requesters.Count);
             while ((requested = Picker.PickPiece (Requesters[requestIndex], bf)).HasValue) {
                 RequestedBlocks[requestIndex].Enqueue (requested.Value);

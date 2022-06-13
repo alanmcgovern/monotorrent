@@ -40,7 +40,7 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class StreamingPieceRequesterTests
     {
-        ITorrentManagerInfo CreateTorrentInfo ()
+        IPieceRequesterData CreateTorrentInfo ()
         {
             var files = TorrentFileInfo.Create (Constants.BlockSize * 8, 1024 * 1024 * 8);
             return TestTorrentManagerInfo.Create (
@@ -54,13 +54,13 @@ namespace MonoTorrent.PiecePicking
         public void PickFromBeforeHighPrioritySet ()
         {
             var data = CreateTorrentInfo ();
-            ReadOnlyBitField ignoringBitfield = new BitField (data.TorrentInfo.PieceCount ())
+            ReadOnlyBitField ignoringBitfield = new BitField (data.PieceCount)
                 .SetAll (true)
                 .Set (0, false);
 
             var requester = new StreamingPieceRequester ();
             requester.Initialise (data, new[] { ignoringBitfield });
-            requester.SeekToPosition (data.Files[0], data.TorrentInfo.PieceLength * 3);
+            requester.SeekToPosition (data.Files[0], data.PieceLength * 3);
 
             var peer = PeerId.CreateNull (ignoringBitfield.Length, true, false, true);
             requester.AddRequests (peer, Array.Empty<IPeerWithMessaging> ());
@@ -75,12 +75,12 @@ namespace MonoTorrent.PiecePicking
         public void PickHighestPriority ()
         {
             var data = CreateTorrentInfo ();
-            ReadOnlyBitField ignoringBitfield = new BitField (data.TorrentInfo.PieceCount ())
+            ReadOnlyBitField ignoringBitfield = new BitField (data.PieceCount)
                 .SetAll (false);
 
             var requester = new StreamingPieceRequester ();
             requester.Initialise (data, new[] { ignoringBitfield });
-            requester.SeekToPosition (data.Files[0], data.TorrentInfo.PieceLength * 3);
+            requester.SeekToPosition (data.Files[0], data.PieceLength * 3);
 
             var peer = PeerId.CreateNull (ignoringBitfield.Length, true, false, true);
             requester.AddRequests (peer, Array.Empty<IPeerWithMessaging> ());

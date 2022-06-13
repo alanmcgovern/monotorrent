@@ -44,14 +44,14 @@ namespace MonoTorrent.PiecePicking
             spares = new Stack<BitField> ();
         }
 
-        public override void Initialise (ITorrentManagerInfo torrentData)
+        public override void Initialise (IPieceRequesterData torrentData)
         {
             base.Initialise (torrentData);
             rarest.Clear ();
             spares.Clear ();
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<BlockInfo> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             if (available.AllFalse)
                 return 0;
