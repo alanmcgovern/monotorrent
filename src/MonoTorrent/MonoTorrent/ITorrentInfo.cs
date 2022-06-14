@@ -77,6 +77,9 @@ namespace MonoTorrent
         public static int BlocksPerPiece (this ITorrentInfo self, int pieceIndex)
             => (BytesPerPiece (self, pieceIndex) + Constants.BlockSize - 1) / Constants.BlockSize;
 
+        public static int BytesPerBlock (this ITorrentInfo self, int pieceIndex, int blockIndex)
+            => Math.Min (Constants.BlockSize, self.BytesPerPiece (pieceIndex) - blockIndex * Constants.BlockSize);
+
         public static int BytesPerPiece (this ITorrentInfo self, int pieceIndex)
         {
             if (self.IsV1Only ()) {

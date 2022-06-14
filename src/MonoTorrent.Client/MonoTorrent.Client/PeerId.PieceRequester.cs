@@ -36,7 +36,7 @@ using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPeerWithMessaging
+    public partial class PeerId : IPeer
     {
         int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
         bool IPeer.CanRequestMorePieces {
@@ -57,36 +57,7 @@ namespace MonoTorrent.Client
         int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;
         List<int> IPeer.SuggestedPieces => SuggestedPieces;
         bool IPeer.CanCancelRequests => SupportsFastPeer;
-        int IPeer.TotalHashFails => Peer.TotalHashFails;
         int IPeer.MaxPendingRequests => MaxPendingRequests;
-
-        void IPeerWithMessaging.EnqueueRequest (BlockInfo request)
-        {
-            Span<BlockInfo> buffer = stackalloc BlockInfo[1];
-            buffer[0] = request;
-            ((IPeerWithMessaging) this).EnqueueRequests (buffer);
-        }
-
-        void IPeerWithMessaging.EnqueueRequests (Span<BlockInfo> requests)
-        {
-
-            (var bundle, var releaser) = PeerMessage.Rent<RequestBundle> ();
-            bundle.Initialize (requests);
-            MessageQueue.Enqueue (bundle, releaser);
-        }
-
-        void IPeerWithMessaging.EnqueueCancellation (BlockInfo request)
-        {
-            (var msg, var releaser) = PeerMessage.Rent<CancelMessage> ();
-            msg.Initialize (request.PieceIndex, request.StartOffset, request.RequestLength);
-            MessageQueue.Enqueue (msg, releaser);
-        }
-
-        void IPeerWithMessaging.EnqueueCancellations (IList<BlockInfo> requests)
-        {
-            for (int i = 0; i < requests.Count; i++)
-                MessageQueue.Enqueue (new CancelMessage (requests[i].PieceIndex, requests[i].StartOffset, requests[i].RequestLength), default);
-        }
 
         int IPeer.PreferredRequestAmount (int pieceLength)
         {

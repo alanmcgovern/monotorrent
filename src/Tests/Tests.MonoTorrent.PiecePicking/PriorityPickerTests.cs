@@ -50,7 +50,7 @@ namespace MonoTorrent.PiecePicking
             => ((TorrentFileInfo) file).Priority = priority;
 
         PiecePickerFilterChecker checker;
-        List<PeerId> peers;
+        ReadOnlyBitField[] peers;
         PriorityPicker picker;
 
         BitField singleBitfield;
@@ -74,7 +74,7 @@ namespace MonoTorrent.PiecePicking
 
             checker = new PiecePickerFilterChecker ();
             picker = new PriorityPicker (checker);
-            peers = new List<PeerId> ();
+            peers = new ReadOnlyBitField[0];
         }
 
         static IPieceRequesterData CreateSingleFile ()
@@ -246,7 +246,7 @@ namespace MonoTorrent.PiecePicking
             picker.Initialise (multiFile);
 
             Span<PieceSegment> buffer = stackalloc PieceSegment[1];
-            picker.PickPiece (multiPeer, multiBitfield, new List<PeerId> (), 0, multiBitfield.Length - 1, buffer);
+            picker.PickPiece (multiPeer, multiBitfield, Array.Empty<ReadOnlyBitField> (), 0, multiBitfield.Length - 1, buffer);
             Assert.AreEqual (2, checker.Picks.Count, "#1");
             Assert.IsTrue (picker.IsInteresting (multiPeer, multiBitfield), "#2");
             Assert.IsTrue (new BitField (multiBitfield.Length).SetTrue (((TorrentFileInfo) multiFile.Files[1]).GetSelector ()).SequenceEqual (checker.Picks[0].available), "#3");

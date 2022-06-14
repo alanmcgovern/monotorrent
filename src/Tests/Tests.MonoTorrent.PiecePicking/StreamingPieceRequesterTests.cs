@@ -40,7 +40,7 @@ namespace MonoTorrent.PiecePicking
     [TestFixture]
     public class StreamingPieceRequesterTests
     {
-        IPieceRequesterData CreateTorrentInfo ()
+        TestTorrentManagerInfo CreateTorrentInfo ()
         {
             var files = TorrentFileInfo.Create (Constants.BlockSize * 8, 1024 * 1024 * 8);
             return TestTorrentManagerInfo.Create (
@@ -59,14 +59,14 @@ namespace MonoTorrent.PiecePicking
                 .Set (0, false);
 
             var requester = new StreamingPieceRequester ();
-            requester.Initialise (data, new[] { ignoringBitfield });
+            requester.Initialise (data, data, new[] { ignoringBitfield });
             requester.SeekToPosition (data.Files[0], data.PieceLength * 3);
 
             var peer = PeerId.CreateNull (ignoringBitfield.Length, true, false, true);
-            requester.AddRequests (peer, Array.Empty<IPeerWithMessaging> ());
+            requester.AddRequests (peer, peer.BitField, Array.Empty<ReadOnlyBitField> ());
             Assert.AreEqual (2, peer.AmRequestingPiecesCount);
 
-            var requests = peer.Requests;
+            var requests = data.Requests[peer];
             Assert.AreEqual (2, requests.Count);
             Assert.IsTrue (requests.All (r => r.PieceIndex == 0));
         }
@@ -79,14 +79,14 @@ namespace MonoTorrent.PiecePicking
                 .SetAll (false);
 
             var requester = new StreamingPieceRequester ();
-            requester.Initialise (data, new[] { ignoringBitfield });
+            requester.Initialise (data, data, new[] { ignoringBitfield });
             requester.SeekToPosition (data.Files[0], data.PieceLength * 3);
 
             var peer = PeerId.CreateNull (ignoringBitfield.Length, true, false, true);
-            requester.AddRequests (peer, Array.Empty<IPeerWithMessaging> ());
+            requester.AddRequests (peer, peer.BitField, Array.Empty<ReadOnlyBitField> ());
             Assert.AreEqual (4, peer.AmRequestingPiecesCount);
 
-            var requests = peer.Requests;
+            var requests = data.Requests[peer]; 
             Assert.AreEqual (4, requests.Count);
             Assert.IsTrue (requests.All (r => r.PieceIndex == 3));
         }

@@ -35,7 +35,7 @@ using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent
 {
-    class TestTorrentManagerInfo : ITorrentManagerInfo, IPieceRequesterData
+    class TestTorrentManagerInfo : ITorrentManagerInfo, IPieceRequesterData, IMessageEnqueuer
     {
         public IList<ITorrentManagerFile> Files => TorrentInfo.Files.Cast<ITorrentManagerFile> ().ToList ();
 
@@ -49,9 +49,12 @@ namespace MonoTorrent
 
         public int TotalBlocks => (int) Math.Ceiling ((float) TorrentInfo.Size / Constants.BlockSize);
 
-        int IPieceRequesterData.PieceCount => TorrentInfo.PieceCount ();
+        public int PieceCount => TorrentInfo.PieceCount ();
 
-        int IPieceRequesterData.PieceLength => TorrentInfo.PieceLength;
+        public int PieceLength => TorrentInfo.PieceLength;
+
+        public Dictionary<IPeer, List<PieceSegment>> Cancellations = new Dictionary<IPeer, List<PieceSegment>> ();
+        public Dictionary<IPeer, List<PieceSegment>> Requests = new Dictionary<IPeer, List<PieceSegment>> ();
 
         public static TestTorrentManagerInfo Create (
             int? pieceLength = null,
@@ -82,15 +85,34 @@ namespace MonoTorrent
             };
         }
 
-        int IPieceRequesterData.BlocksPerPiece (int piece)
+        int IPieceRequesterData.SegmentsPerPiece (int piece)
             => TorrentInfo.BlocksPerPiece (piece);
 
         int IPieceRequesterData.ByteOffsetToPieceIndex (long byteOffset)
             => TorrentInfo.ByteOffsetToPieceIndex (byteOffset);
 
-
         int IPieceRequesterData.BytesPerPiece (int piece)
             => TorrentInfo.BytesPerPiece (piece);
+
+        void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+            => ((IMessageEnqueuer) this).EnqueueRequests (peer, stackalloc PieceSegment[] { block });
+
+        void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+        {
+            if (!Requests.TryGetValue (peer, out List<PieceSegment> requests))
+                Requests[peer] = requests = new List<PieceSegment> ();
+            requests.AddRange (blocks.ToArray ());
+        }
+
+        void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+            => ((IMessageEnqueuer) this).EnqueueCancellations (peer, stackalloc PieceSegment[] { segment });
+
+        void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+        {
+            if (!Cancellations.TryGetValue (peer, out List<PieceSegment> cancellations))
+                Cancellations[peer] = cancellations = new List<PieceSegment> ();
+            cancellations.AddRange (segments.ToArray ());
+        }
     }
 
     class TestTorrentInfo : ITorrentInfo

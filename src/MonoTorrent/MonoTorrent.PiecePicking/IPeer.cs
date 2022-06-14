@@ -35,17 +35,14 @@ namespace MonoTorrent.PiecePicking
     public interface IPeer
     {
         int AmRequestingPiecesCount { get; set; }
-        ReadOnlyBitField BitField { get; }
         bool CanRequestMorePieces { get; }
         long DownloadSpeed { get; }
         List<int> IsAllowedFastPieces { get; }
         bool IsChoking { get; }
-        bool IsSeeder { get; }
         int MaxPendingRequests { get; }
         int RepeatedHashFails { get; }
         List<int> SuggestedPieces { get; }
         bool SupportsFastPeer { get; }
-        int TotalHashFails { get; }
 
         // FIXME: We need to support 3rd party implementations of 'IPiecePicker' calling
         // CancelRequest if the FastPeer extensions are supported. This includes enqueuing
@@ -59,13 +56,5 @@ namespace MonoTorrent.PiecePicking
         /// <param name="pieceLength"></param>
         /// <returns></returns>
         int PreferredRequestAmount (int pieceLength);
-    }
-
-    public interface IPeerWithMessaging : IPeer
-    {
-        void EnqueueRequest (BlockInfo request);
-        void EnqueueRequests (Span<BlockInfo> requests);
-        void EnqueueCancellation (BlockInfo request);
-        void EnqueueCancellations (IList<BlockInfo> requests);
     }
 }

@@ -51,6 +51,13 @@ namespace MonoTorrent
 
         public bool HasV2Hashes => true;
 
+        internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, BEncodedDictionary layers)
+            : this (pieceLength,
+                  files,
+                  layers.ToDictionary (kvp => new MerkleRoot (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (pieceLength, new MerkleRoot (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).AsMemory ().Span)!))
+        {
+        }
+
         internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> layers)
             => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, (int) Math.Log (pieceLength / 16384, 2));
 

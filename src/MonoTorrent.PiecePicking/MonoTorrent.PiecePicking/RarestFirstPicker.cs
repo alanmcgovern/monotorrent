@@ -51,7 +51,7 @@ namespace MonoTorrent.PiecePicking
             spares.Clear ();
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             if (available.AllFalse)
                 return 0;
@@ -73,7 +73,7 @@ namespace MonoTorrent.PiecePicking
             return 0;
         }
 
-        void GenerateRarestFirst (ReadOnlyBitField peerBitfield, IReadOnlyList<IPeer> otherPeers)
+        void GenerateRarestFirst (ReadOnlyBitField peerBitfield, ReadOnlySpan<ReadOnlyBitField> otherPeers)
         {
             // Move anything in the rarest buffer into the spares
             while (rarest.Count > 0)
@@ -85,8 +85,8 @@ namespace MonoTorrent.PiecePicking
             rarest.Push (current);
 
             // Get a cloned copy of the bitfield and begin iterating to find the rarest pieces
-            for (int i = 0; i < otherPeers.Count; i++) {
-                if (otherPeers[i].BitField.AllTrue)
+            for (int i = 0; i < otherPeers.Length; i++) {
+                if (otherPeers[i].AllTrue)
                     continue;
 
                 current = (spares.Count > 0 ? spares.Pop () : new BitField (current.Length)).From (current);
@@ -94,7 +94,7 @@ namespace MonoTorrent.PiecePicking
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.
                 // i.e. the rarest piece.
-                current.NAnd (otherPeers[i].BitField);
+                current.NAnd (otherPeers[i]);
 
                 // If the bitfield now has no pieces we've completed our task
                 if (current.AllFalse) {

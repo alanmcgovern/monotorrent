@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
@@ -34,13 +35,20 @@ namespace MonoTorrent.PiecePicking
     public interface IPieceRequesterData
     {
         IList<ITorrentManagerFile> Files { get; }
-        int BlocksPerPiece (int piece);
+        int SegmentsPerPiece (int piece);
         int ByteOffsetToPieceIndex (long byteOffset);
         int BytesPerPiece (int piece);
         int PieceCount { get; }
         int PieceLength { get; }
     }
 
+    public interface IMessageEnqueuer
+    {
+        void EnqueueRequest (IPeer peer, PieceSegment block);
+        void EnqueueRequests (IPeer peer, Span<PieceSegment> blocks);
+        void EnqueueCancellation (IPeer peer, PieceSegment segment);
+        void EnqueueCancellations (IPeer peer, Span<PieceSegment> segments);
+    }
 
     /// <summary>
     /// Allows an IPiecePicker implementation to create piece requests for
@@ -59,24 +67,25 @@ namespace MonoTorrent.PiecePicking
         /// Should enqueue piece requests for any peer who is has capacity.
         /// </summary>
         /// <param name="peers"></param>
-        void AddRequests (IReadOnlyList<IPeerWithMessaging> peers);
+        void AddRequests (ReadOnlySpan<(IPeer Peer, ReadOnlyBitField Available)> peers);
 
         /// <summary>
         /// Attempts to enqueue more requests for the specified peer.
         /// </summary>
         /// <param name="peer"></param>
+        /// <param name="available"></param>
         /// <param name="peers"></param>
-        void AddRequests (IPeerWithMessaging peer, IReadOnlyList<IPeerWithMessaging> peers);
+        void AddRequests (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> peers);
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="peer"></param>
-        /// <param name="blockInfo"></param>
+        /// <param name="pieceSegment"></param>
         /// <param name="pieceComplete"></param>
         /// <param name="peersInvolved"></param>
         /// <returns></returns>
-        bool ValidatePiece (IPeer peer, BlockInfo blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved);
+        bool ValidatePiece (IPeer peer, PieceSegment pieceSegment, out bool pieceComplete, out IList<IPeer> peersInvolved);
 
         /// <summary>
         /// 
@@ -90,15 +99,16 @@ namespace MonoTorrent.PiecePicking
         /// 
         /// </summary>
         /// <param name="torrentData">The files, size and piecelength for the torrent.</param>
+        /// <param name="enqueuer">Enqueues request, or cancellation, messages with the peer</param>
         /// <param name="ignorableBitfields"> These bitfields represent pieces which have successfully
         /// downloaded and passed a hash check, pieces which have successfully downloaded but have not hash checked yet or
         /// pieces which have not yet been hash checked by the library and so it is not known whether they should be requested or not.
         /// </param>
-        void Initialise (IPieceRequesterData torrentData, IReadOnlyList<ReadOnlyBitField> ignorableBitfields);
+        void Initialise (IPieceRequesterData torrentData, IMessageEnqueuer enqueuer, ReadOnlySpan<ReadOnlyBitField> ignorableBitfields);
 
-        IList<BlockInfo> CancelRequests (IPeer peer, int startIndex, int endIndex);
+        void CancelRequests (IPeer peer, int startIndex, int endIndex);
 
-        void RequestRejected (IPeer peer, BlockInfo pieceRequest);
+        void RequestRejected (IPeer peer, PieceSegment pieceRequest);
 
         int CurrentRequestCount ();
     }

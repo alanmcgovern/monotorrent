@@ -57,7 +57,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         public int Piece { get; set; }
 
-        public byte[] MetadataPiece { get; set; }
+        public ReadOnlyMemory<byte> MetadataPiece { get; set; }
 
         public MessageType MetadataMessageType { get; internal set; }
 
@@ -75,13 +75,13 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         }
 
-        public LTMetadata (ExtensionSupports supportedExtensions, MessageType type, int piece, byte[] metadata)
+        public LTMetadata (ExtensionSupports supportedExtensions, MessageType type, int piece, ReadOnlyMemory<byte> metadata)
             : this (supportedExtensions.MessageId (Support), type, piece, metadata)
         {
 
         }
 
-        public LTMetadata (byte extensionId, MessageType type, int piece, byte[] metadata)
+        public LTMetadata (byte extensionId, MessageType type, int piece, ReadOnlyMemory<byte> metadata)
             : this ()
         {
             ExtensionId = extensionId;
@@ -95,7 +95,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             };
 
             if (MetadataMessageType == MessageType.Data) {
-                if (metadata is null)
+                if (metadata.IsEmpty)
                     throw new InvalidDataException ("The metadata data message did not contain any data.");
                 dict.Add (TotalSizeKey, (BEncodedNumber) metadata.Length);
             }
@@ -121,8 +121,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
                 Piece = (int) ((BEncodedNumber) val).Number;
             if (d.TryGetValue (TotalSizeKey, out val)) {
                 int totalSize = (int) ((BEncodedNumber) val).Number;
-                MetadataPiece = new byte[Math.Min (totalSize - Piece * BlockSize, BlockSize)];
-                buffer.CopyTo (MetadataPiece);
+                var metadataPiece = new byte[Math.Min (totalSize - Piece * BlockSize, BlockSize)];
+                buffer.CopyTo (metadataPiece);
+                MetadataPiece = metadataPiece;
             }
         }
 
@@ -137,7 +138,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
             if (MetadataMessageType == MessageType.Data) {
                 var total = Math.Min (MetadataPiece.Length - Piece * BlockSize, BlockSize);
-                MetadataPiece.AsSpan (Piece * BlockSize, total).CopyTo (buffer);
+                MetadataPiece.Span.Slice (Piece * BlockSize, total).CopyTo (buffer);
                 buffer = buffer.Slice (total);
             }
             return written - buffer.Length;

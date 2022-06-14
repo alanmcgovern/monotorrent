@@ -46,7 +46,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo, IPieceRequesterData
+    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo, IPieceRequesterData, IMessageEnqueuer
     {
         #region Events
 
@@ -1126,11 +1126,33 @@ namespace MonoTorrent.Client
         IList<ITorrentManagerFile> IPieceRequesterData.Files => Files;
         int IPieceRequesterData.PieceCount => Torrent == null ? 0 : Torrent.PieceCount;
         int IPieceRequesterData.PieceLength => Torrent == null ? 0 : Torrent.PieceLength;
-        int IPieceRequesterData.BlocksPerPiece (int pieceIndex)
+        int IPieceRequesterData.SegmentsPerPiece (int pieceIndex)
             => Torrent == null ? 0 : Torrent.BlocksPerPiece (pieceIndex);
         int IPieceRequesterData.ByteOffsetToPieceIndex (long byteOffset)
             => Torrent == null ? 0 : Torrent.ByteOffsetToPieceIndex (byteOffset);
         int IPieceRequesterData.BytesPerPiece (int piece)
             => Torrent == null ? 0 : Torrent.BytesPerPiece (piece);
+        void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+            => ((IMessageEnqueuer) this).EnqueueRequests (peer, stackalloc PieceSegment[] { block });
+        void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> segments)
+        {
+            (var bundle, var releaser) = RequestBundle.Rent<RequestBundle> ();
+            bundle.Initialize (segments.ToBlockInfo (stackalloc BlockInfo[segments.Length], this));
+            ((PeerId) peer).MessageQueue.Enqueue (bundle, releaser);
+        }
+
+        void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+        {
+            (var msg, var releaser) = PeerMessage.Rent<CancelMessage> ();
+            var blockInfo = segment.ToBlockInfo (this);
+            msg.Initialize (blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength);
+            ((PeerId) peer).MessageQueue.Enqueue (msg, releaser);
+        }
+
+        void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+        {
+            for (int i = 0; i < segments.Length; i++)
+                ((IMessageEnqueuer) this).EnqueueCancellation (peer, segments[i]);
+        }
     }
 }

@@ -76,7 +76,7 @@ namespace MonoTorrent.PiecePicking
         {
             // Pretend only the 1st piece is available.
             var onePiece = new BitField (seeder.BitField.Length).Set (0, true);
-            var piece = picker.PickPiece (seeder, onePiece, new List<PeerId> ()).Value;
+            var piece = picker.PickPiece (seeder, onePiece, Array.Empty<ReadOnlyBitField> ()).Value;
 
             // We should pick a random midpoint and select a piece starting from there.
             // If that fails we should wrap around to 0 and scan from the beginning.
@@ -94,7 +94,7 @@ namespace MonoTorrent.PiecePicking
         public void SinglePieceBitfield ()
         {
             picker.Initialise (CreateOnePieceTorrentData ());
-            picker.PickPiece (seeder, new BitField (1).SetAll (true), new List<PeerId> ());
+            picker.PickPiece (seeder, new BitField (1).SetAll (true), Array.Empty<ReadOnlyBitField> ());
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");
             Assert.AreEqual (0, checker.Picks[0].startIndex, "#2");
@@ -105,7 +105,7 @@ namespace MonoTorrent.PiecePicking
         public void SinglePieceRange ()
         {
             Span<PieceSegment> buffer = stackalloc PieceSegment[1];
-            picker.PickPiece (seeder, seeder.BitField, new List<PeerId> (), 12, 13, buffer);
+            picker.PickPiece (seeder, seeder.BitField, Array.Empty<ReadOnlyBitField> (), 12, 13, buffer);
 
             Assert.AreEqual (1, checker.Picks.Count, "#1");
             Assert.AreEqual (12, checker.Picks[0].startIndex, "#2");
@@ -117,7 +117,7 @@ namespace MonoTorrent.PiecePicking
         {
             Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             var onePiece = new BitField (seeder.BitField.Length).Set (0, true);
-            picker.PickPiece (seeder, onePiece, new List<PeerId> (), 12, 14, buffer);
+            picker.PickPiece (seeder, onePiece, Array.Empty<ReadOnlyBitField> (), 12, 14, buffer);
 
             Assert.AreEqual (2, checker.Picks.Count, "#1");
             Assert.AreEqual (13, checker.Picks[0].startIndex, "#2");
