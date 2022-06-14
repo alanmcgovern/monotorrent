@@ -46,15 +46,68 @@ namespace MonoTorrent.Client.Modes
 {
     class PieceHashesMode : Mode
     {
-        static readonly PeerId CompletedSentinal = PeerId.CreateNull (1);
         const int MaxHashesPerRequest = 512;
+
+        class HashesRequesterData : IPieceRequesterData, IMessageEnqueuer
+        {
+            public BitField ValidatedPieces { get; }
+            public IList<ITorrentManagerFile> Files => Array.Empty<ITorrentManagerFile> ();
+            public int PieceCount => (totalHashes + PieceLength - 1) / PieceLength;
+            public int PieceLength => MaxHashesPerRequest;
+
+            readonly int actualPieceLength;
+            readonly MerkleRoot root;
+            readonly int totalHashes;
+
+            public HashesRequesterData (MerkleRoot root, int actualPieceLength, int totalHashes)
+            {
+                this.actualPieceLength = actualPieceLength;
+                this.root = root;
+                this.totalHashes = totalHashes;
+                ValidatedPieces = new BitField (PieceCount);
+            }
+
+            public int SegmentsPerPiece (int piece)
+                => 1;
+
+            public int ByteOffsetToPieceIndex (long byteOffset)
+                => (int) (byteOffset / PieceLength);
+
+            public int BytesPerPiece (int pieceIndex)
+                => pieceIndex == PieceCount - 1 ? totalHashes - pieceIndex * PieceLength : PieceLength;
+
+            void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+            {
+                var message = HashRequestMessage.Create (root, totalHashes, actualPieceLength, block.PieceIndex * PieceLength, MaxHashesPerRequest);
+                ((PeerId) peer).MessageQueue.Enqueue (message);
+            }
+
+            void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+            {
+                foreach (var block in blocks)
+                    ((IMessageEnqueuer) this).EnqueueRequest (peer, block);
+            }
+
+            void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+            {
+                // You can't cancel a request for hashes
+            }
+
+            void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+            {
+                // you can't cancel a request for hashes
+            }
+        }
+
+        static readonly PeerId CompletedSentinal = PeerId.CreateNull (1);
         const int SHA256HashLength = 32;
 
         static readonly Logger logger = Logger.Create (nameof (PieceHashesMode));
         ValueStopwatch LastAnnounced { get; set; }
         public override TorrentState State => TorrentState.FetchingHashes;
-        Dictionary<ITorrentFile, PeerId?[]> pickers;
+        Dictionary<ITorrentFile, (IPieceRequester, HashesRequesterData)> pickers;
         Dictionary<ITorrentFile, MerkleLayers> infoHashes;
+        HashSet<PeerId> IgnoredPeers { get; }
 
         public PieceHashesMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
             : base (manager, diskManager, connectionManager, settings)
@@ -62,13 +115,14 @@ namespace MonoTorrent.Client.Modes
             if (manager.Torrent is null)
                 throw new InvalidOperationException ($"{nameof (PieceHashesMode)} can only be used after the torrent metadata is available");
 
-            pickers = manager.Torrent!.Files.ToDictionary (t => t, value => new PeerId?[(value.EndPieceIndex - value.StartPieceIndex + MaxHashesPerRequest) / MaxHashesPerRequest]);
+            pickers = manager.Torrent!.Files.Where (t => t.StartPieceIndex != t.EndPieceIndex).ToDictionary (t => t, value => {
+                var data = new HashesRequesterData (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1);
+                var request = Manager.Engine!.Factories.CreatePieceRequester (new PieceRequesterSettings (false, false, false, ignoreBitFieldAndChokeState: true));
+                request.Initialise (data, data, new ReadOnlyBitField[] { data.ValidatedPieces } );
+                return (request, data);
+            });
             infoHashes = manager.Torrent.Files.Where (t => t.EndPieceIndex != t.StartPieceIndex).ToDictionary (t => t, value => new MerkleLayers (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1));
-
-            // Files with 1 piece do not have additional hashes to fetch. The PiecesRoot *is* the SHA256 of the entire file.
-            foreach (var value in pickers)
-                if (value.Key.EndPieceIndex == value.Key.StartPieceIndex)
-                    value.Value[0] = CompletedSentinal;
+            IgnoredPeers = new HashSet<PeerId> ();
         }
 
         public override void Tick (int counter)
@@ -93,115 +147,81 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        List<PeerId> Peers = new List<PeerId> ();
+
+        void MaybeRequestNext ()
+        {
+            foreach (var peer in Manager.Peers.ConnectedPeers) {
+                if (IgnoredPeers.Contains (peer))
+                    continue;
+                foreach (var picker in pickers) {
+                    if (!picker.Value.Item2.ValidatedPieces.AllTrue)
+                        picker.Value.Item1.AddRequests (peer, peer.BitField, Array.Empty<ReadOnlyBitField> ());
+                }
+            }
+        }
 
         public override void HandlePeerConnected (PeerId id)
         {
             base.HandlePeerConnected (id);
-            Peers.Add (id);
+            MaybeRequestNext ();
         }
 
         public override void HandlePeerDisconnected (PeerId id)
         {
             base.HandlePeerDisconnected (id);
-            Peers.Remove (id);
-        }
-
-        void MaybeRequestNext ()
-        {
-            if (Peers.Count == 0)
-                return;
-
-            foreach (var picker in pickers) {
-                for (int i = 0; i < picker.Value.Length; i++) {
-                    // Successfully downloaded!
-                    if (picker.Value[i] == CompletedSentinal)
-                        continue;
-
-                    if (picker.Value[i] == null) {
-                        picker.Value[i] = RequestChunk (picker.Key, i * MaxHashesPerRequest);
-                        return;
-                    } else if (!picker.Value[i]!.IsConnected) {
-                        // We'll request this on the next tick.
-                        picker.Value[i] = null; 
-                    }
-                }
-            }
+            foreach (var picker in pickers)
+                picker.Value.Item1.CancelRequests (id, 0, picker.Key.EndPieceIndex - picker.Key.StartPieceIndex + 1);
         }
 
         protected override void HandleHashRejectMessage (PeerId id, HashRejectMessage hashRejectMessage)
         {
             // If someone rejects us, let's remove them from the list for now...
             base.HandleHashRejectMessage (id, hashRejectMessage);
-            Peers.Remove (id);
-            RemoveRequest (id, hashRejectMessage.PiecesRoot, hashRejectMessage.Index / MaxHashesPerRequest);
+            var file = Manager.Torrent!.Files.FirstOrDefault (f => f.PiecesRoot.Span.SequenceEqual (hashRejectMessage.PiecesRoot.Span));
+            if (file == null)
+                return;
+
+            var picker = pickers[file];
+            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashRejectMessage.Index / MaxHashesPerRequest, 0), out _, out _))
+                return;
+
+            IgnoredPeers.Add (id);
         }
 
         protected override void HandleHashesMessage (PeerId id, HashesMessage hashesMessage)
         {
             base.HandleHashesMessage (id, hashesMessage);
-            RemoveRequest (id, hashesMessage.PiecesRoot, hashesMessage.Index / MaxHashesPerRequest);
 
             var file = Manager.Torrent!.Files.FirstOrDefault (f => f.PiecesRoot.Span.SequenceEqual (hashesMessage.PiecesRoot.Span));
             if (file == null)
                 return;
-            var actual = Manager.Torrent.CreatePieceHashes ().TryGetV2Hashes (hashesMessage.PiecesRoot);
+
+            var picker = pickers[file];
+            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashesMessage.Index / MaxHashesPerRequest, 0), out _, out _)) {
+                ConnectionManager.CleanupSocket (Manager, id);
+                return;
+            }
+
             // NOTE: Tweak this so we validate the hash in-place, and ensure the data we've been given, provided with the ancestor
             // hashes, combines to form the `PiecesRoot` value.
-            var memory = infoHashes[file].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes.Span.Slice (0, hashesMessage.Length * 32), hashesMessage.Hashes.Span.Slice (hashesMessage.Length * 32));
-            MarkDone (hashesMessage.PiecesRoot, hashesMessage.Index / MaxHashesPerRequest);
+            var success = infoHashes[file].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes.Span.Slice (0, hashesMessage.Length * 32), hashesMessage.Hashes.Span.Slice (hashesMessage.Length * 32));
+            if (success)
+                picker.Item2.ValidatedPieces[hashesMessage.Index / MaxHashesPerRequest] = true;
 
-            if (pickers[file].All (t => t == CompletedSentinal)) {
+            if (picker.Item2.ValidatedPieces.AllTrue) {
                 using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
 
                 if (!infoHashes[file].TryVerify (out ReadOnlyMerkleLayers? verifiedPieceHashes))
-                    pickers[file].AsSpan ().Clear ();
+                    picker.Item2.ValidatedPieces.SetAll (false);
             }
 
-            if (pickers.All (picker => picker.Value.All (t => t == CompletedSentinal))) {
+            if (pickers.All (picker => picker.Value.Item2.ValidatedPieces.AllTrue)) {
                 Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (infoHashes.ToDictionary (t => t.Key.PiecesRoot, v => (v.Value.TryVerify (out var root) ? root : null)!));
+                Manager.PendingV2PieceHashes.SetAll (false);
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
-        }
 
-        void MarkDone (MerkleRoot piecesRoot, int requestOffset)
-        {
-            var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot == piecesRoot);
-            if (file == null)
-                return;
-
-            var picker = pickers[file];
-            picker[requestOffset] = CompletedSentinal;
-        }
-
-        void RemoveRequest (PeerId id, MerkleRoot piecesRoot, int requestOffset)
-        {
-            var file = Manager.Torrent!.Files.FirstOrDefault (t => t.PiecesRoot ==piecesRoot);
-            if (file == null)
-                return;
-
-            var picker = pickers[file];
-            if (picker[requestOffset] != id) {
-                id.Connection.Dispose ();
-                throw new InvalidOperationException ("Something bad happened and the peer rejected a request we did not send");
-            }
-            picker[requestOffset] = null;
-        }
-
-        PeerId RequestChunk (ITorrentFile file, int hashOffset)
-        {
-            int totalHashes = file.EndPieceIndex - file.StartPieceIndex + 1;
-            var hashesRequested = Math.Min (MaxHashesPerRequest, totalHashes - hashOffset);
-
-            var preferredPeer = Peers[0];
-            Peers.RemoveAt (0);
-            Peers.Add (preferredPeer);
-
-            var leafLayer = (int) Math.Log (Constants.BlockSize, 2);
-            var pieceLayer = (int) Math.Log (Manager.Torrent!.PieceLength, 2) - leafLayer;
-            var proofLayers = (int) Math.Ceiling (Math.Log (file.Length / (double)Manager.Torrent.PieceLength, 2)) - 1;
-            preferredPeer.MessageQueue.Enqueue (new HashRequestMessage (file.PiecesRoot, pieceLayer, hashOffset, hashesRequested, proofLayers));
-            return preferredPeer;
+            MaybeRequestNext ();
         }
     }
 }

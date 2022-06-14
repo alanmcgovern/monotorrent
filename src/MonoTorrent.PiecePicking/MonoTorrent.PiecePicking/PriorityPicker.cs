@@ -104,7 +104,7 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse || temp == null)

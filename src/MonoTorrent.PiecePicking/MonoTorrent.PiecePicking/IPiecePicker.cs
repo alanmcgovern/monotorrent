@@ -35,30 +35,25 @@ namespace MonoTorrent.PiecePicking
     public interface IPiecePicker
     {
         /// <summary>
-        /// Cancel all unreceived requests. No further blocks will be requested from this peer.
-        /// </summary>
-        /// <param name="peer">The peer whose requests will be cancelled.</param>
-        /// <returns>The number of requests which were cancelled</returns>
-        int AbortRequests (IPeer peer);
-
-        /// <summary>
         /// Cancel all unreceived requests between startIndex and endIndex.
         /// </summary>
         /// <param name="peer">The peer to request the block from</param>
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
-        /// <returns>The list of requests which were cancelled</returns>
-        IList<PieceSegment> CancelRequests (IPeer peer, int startIndex, int endIndex);
+        /// <param name="cancellations"></param>
+        /// <returns>The number of entries written to the span</returns>
+        int CancelRequests (IPeer peer, int startIndex, int endIndex, Span<PieceSegment> cancellations);
 
         /// <summary>
         /// Request any unrequested block from a piece owned by this peer, or any other peer, within the specified bounds.
         /// </summary>
         /// <param name="peer">The peer to request the block from</param>
+        /// <param name="available"></param>
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <param name="maxDuplicateRequests">The maximum number of concurrent duplicate requests</param>
         /// <returns></returns>
-        PieceSegment? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests);
+        PieceSegment? ContinueAnyExistingRequest (IPeer peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests);
 
         /// <summary>
         /// Request the next unrequested block from a piece owned by this peer, within the specified bounds.
@@ -114,12 +109,12 @@ namespace MonoTorrent.PiecePicking
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="available"></param>
-        /// <param name="otherPeers"></param>
+        /// <param name="otherAvailable"></param>
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
         /// <param name="requests"></param>
         /// <returns></returns>
-        int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests);
+        int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherAvailable, int startIndex, int endIndex, Span<PieceSegment> requests);
 
         /// <summary>
         /// Called when a piece is received from the <paramref name="peer"/>. Returns true if the

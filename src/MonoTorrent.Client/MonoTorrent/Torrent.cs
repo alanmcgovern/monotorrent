@@ -256,7 +256,7 @@ namespace MonoTorrent
         /// <summary>
         /// The 'info' dictionary encoded as a byte array.
         /// </summary>
-        internal byte[] InfoMetadata { get; private set; }
+        internal ReadOnlyMemory<byte> InfoMetadata { get; private set; }
 
         /// <summary>
         /// Shows whether DHT is allowed or not. If it is a private torrent, no peer
@@ -330,7 +330,7 @@ namespace MonoTorrent
 
             LoadInternal (torrentInformation, infoHashes);
 
-            if (InfoHashes is null || InfoMetadata is null)
+            if (InfoHashes is null || InfoMetadata.IsEmpty)
                 throw new InvalidOperationException ("One of the required properties was unset after deserializing torrent metadata");
         }
 

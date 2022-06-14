@@ -56,7 +56,7 @@ namespace MonoTorrent.PiecePicking
             => !Temp.From (bitfield).NAnd (Bitfield).AllFalse
             && base.IsInteresting (peer, Temp);
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public override int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded

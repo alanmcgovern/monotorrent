@@ -43,7 +43,7 @@ namespace MonoTorrent.PiecePicking
         BitField bitfield;
         PiecePickerFilterChecker checker;
         PeerId peer;
-        List<PeerId> peers;
+        ReadOnlyBitField[] peers;
         RarestFirstPicker picker;
         IPieceRequesterData torrentData;
 
@@ -68,18 +68,21 @@ namespace MonoTorrent.PiecePicking
             peer = PeerId.CreateNull (pieces);
             peer.BitField.SetAll (true);
 
-            peers = new List<PeerId> ();
+            peers = new ReadOnlyBitField[5];
             for (int i = 0; i < 5; i++)
-                peers.Add (PeerId.CreateNull (pieces));
+                peers[i] = new BitField (pieces);
         }
 
         [Test]
         public void RarestPieceTest ()
         {
             Span<PieceSegment> buffer = stackalloc PieceSegment[1];
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++) {
+                var bf = new BitField (peers[i]);
                 for (int j = 0; j < (i * 5) + 5; j++)
-                    peers[i].BitField[j] = true;
+                    bf[j] = true;
+                peers[i] = bf;
+            }
 
             // No pieces should be selected, but we can check what was requested.
             picker.PickPiece (peer, peer.BitField, peers, 0, peer.BitField.Length - 1, buffer);
@@ -118,7 +121,7 @@ namespace MonoTorrent.PiecePicking
 
             // Every other peer has all pieces except for piece '2'.
             for (int i = 0; i < 5; i++)
-                peers[i].BitField.SetAll (true).Set (i, false);
+                peers[i] = new BitField (peers[i]).SetAll (true).Set (i, false);
 
             // Ensure that pieces which were not in the 'available' bitfield were not offered
             // as suggestions.

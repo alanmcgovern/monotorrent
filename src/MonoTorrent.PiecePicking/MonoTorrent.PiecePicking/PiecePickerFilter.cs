@@ -39,14 +39,11 @@ namespace MonoTorrent.PiecePicking
         protected PiecePickerFilter (IPiecePicker picker)
             => Next = picker;
 
-        public int AbortRequests (IPeer peer)
-            => Next.AbortRequests (peer);
+        public int CancelRequests (IPeer peer, int startIndex, int endIndex, Span<PieceSegment> cancellations)
+            => Next.CancelRequests (peer, startIndex, endIndex, cancellations);
 
-        public IList<PieceSegment> CancelRequests (IPeer peer, int startIndex, int endIndex)
-            => Next.CancelRequests (peer, startIndex, endIndex);
-
-        public PieceSegment? ContinueAnyExistingRequest (IPeer peer, int startIndex, int endIndex, int maxDuplicateRequests)
-            => Next.ContinueAnyExistingRequest (peer, startIndex, endIndex, maxDuplicateRequests);
+        public PieceSegment? ContinueAnyExistingRequest (IPeer peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests)
+            => Next.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, maxDuplicateRequests);
 
         public PieceSegment? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
             => Next.ContinueExistingRequest (peer, startIndex, endIndex);
@@ -66,7 +63,7 @@ namespace MonoTorrent.PiecePicking
         public virtual bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
             => Next.IsInteresting (peer, bitfield);
 
-        public virtual int PickPiece (IPeer peer, ReadOnlyBitField available, IReadOnlyList<IPeer> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public virtual int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
             => Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
         public void RequestRejected (IPeer peer, PieceSegment request)

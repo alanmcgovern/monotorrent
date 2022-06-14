@@ -205,7 +205,7 @@ namespace MyBenchmarks
             public string Name => "Name";
         }
 
-        class TorrentData : ITorrentManagerInfo, IPieceRequesterData
+        class TorrentData : IPieceRequesterData
         {
             const int PieceCount = 500;
 
@@ -218,10 +218,10 @@ namespace MyBenchmarks
             int IPieceRequesterData.PieceCount => TorrentInfo.PieceCount ();
             int IPieceRequesterData.PieceLength => TorrentInfo.PieceLength;
 
-            public IPeer CreatePeer ()
+            public Peer CreatePeer ()
                 => new Peer (PieceCount);
 
-            int IPieceRequesterData.BlocksPerPiece (int piece)
+            int IPieceRequesterData.SegmentsPerPiece (int piece)
                 => TorrentInfo.BlocksPerPiece (piece);
 
             int IPieceRequesterData.ByteOffsetToPieceIndex (long byteOffset)
@@ -230,6 +230,25 @@ namespace MyBenchmarks
             int IPieceRequesterData.BytesPerPiece (int piece)
                 => TorrentInfo.BytesPerPiece (piece);
 
+            public void EnqueueRequest (IPeer peer, PieceSegment block)
+            {
+                
+            }
+
+            public void EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+            {
+                
+            }
+
+            public void EnqueueCancellation (IPeer peer, PieceSegment segment)
+            {
+
+            }
+
+            public void EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+            {
+
+            }
         }
 
         class Peer : IPeer
@@ -257,7 +276,7 @@ namespace MyBenchmarks
 
         readonly TorrentData Data;
         readonly StandardPicker Picker;
-        readonly IPeer Requester;
+        readonly Peer Requester;
         readonly Queue<PieceSegment> Requested;
 
         public StandardPickerBenchmark ()

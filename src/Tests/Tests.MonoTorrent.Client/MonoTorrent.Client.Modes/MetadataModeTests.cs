@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.Modes
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is LTMetadata metadata) {
                     if (metadata.MetadataMessageType == LTMetadata.MessageType.Data) {
-                        stream.Write (metadata.MetadataPiece, 0, metadata.MetadataPiece.Length);
+                        stream.Write (metadata.MetadataPiece);
                         length--;
                     }
                 }
@@ -295,7 +295,7 @@ namespace MonoTorrent.Client.Modes
 
             bool receivedHaveNone = false;
             // 2) Receive the metadata requests from the other peer and fulfill them
-            byte[] buffer = rig.Torrent.InfoMetadata;
+            ReadOnlyMemory<byte> buffer = rig.Torrent.InfoMetadata;
             var unrequestedPieces = new HashSet<int> (Enumerable.Range (0, (buffer.Length + 16383) / 16384));
             PeerMessage m;
             while (unrequestedPieces.Count > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {

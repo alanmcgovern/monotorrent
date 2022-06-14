@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
 {
-    class PeerId : IPeerWithMessaging
+    class PeerId : IPeer
     {
         internal static PeerId CreateNull (int bitfieldLength)
         {
@@ -31,7 +31,6 @@ namespace MonoTorrent.PiecePicking
 
         public bool AmInterested { get; set; }
         public int AmRequestingPiecesCount { get; set; }
-        ReadOnlyBitField IPeer.BitField => BitField;
         public BitField BitField { get; private set; }
         public bool CanRequestMorePieces { get; set; } = true;
         public long DownloadSpeed { get; }

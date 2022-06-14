@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchThread ();
 
             var editor = new TorrentEditor (new BEncodedDictionary {
-                { "info", BEncodedValue.Decode (torrent.InfoMetadata) }
+                { "info", BEncodedValue.Decode (torrent.InfoMetadata.Span) }
             });
             editor.SetCustom ("name", (BEncodedString) torrent.Name);
 

@@ -32,14 +32,37 @@ namespace MonoTorrent.PiecePicking
     {
         public static PieceRequesterSettings Default { get; } = new PieceRequesterSettings ();
 
+        /// <summary>
+        /// When set to false, <see cref="ITorrentManagerFile.Priority"/> is not taken into account when choosing pieces. Files marked as 'DoNotDownload' will be downloaded.
+        /// Defaults to <see langword="true"/>.
+        /// </summary>
         public bool AllowPrioritisation { get; }
+
+        /// <summary>
+        /// When set to false, pieces will be selected sequentially. If <see cref="AllowRarestFirst"/> is enabled, then set of pieces which will be available to choose from will be reduced to the 'rarest' set first,
+        /// and then the picker will choose sequentially from that subset. If you need true linear picking, you must disable <see cref="AllowRandomised"/> as well as <see cref="AllowRarestFirst"/>.
+        /// Defaults to <see langword="true"/>.
+        /// </summary>
         public bool AllowRandomised { get; }
+
+
+        /// <summary>
+        /// When set to false, the rarest subset of pieces will not be computed.
+        /// Defaults to <see langword="true"/>.
+        /// </summary>
         public bool AllowRarestFirst { get; }
+
+        /// <summary>
+        /// When set to true, the bitfield from the requesting peer, and their choke/unchoke state, will not be taken into account. This is useful when creating a <see cref="IPieceRequester"/> to retrieve things
+        /// like the torrent metadata, or the bittorrent v2 hashes, from peers.
+        /// </summary>
+        public bool IgnoreBitFieldAndChokeState { get; }
 
         public PieceRequesterSettings (
             bool allowPrioritisation = true,
             bool allowRandomised = true,
-            bool allowRarestFirst = true)
-            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst) = (allowPrioritisation, allowRandomised, allowRarestFirst);
+            bool allowRarestFirst = true,
+            bool ignoreBitFieldAndChokeState = false)
+            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst, IgnoreBitFieldAndChokeState) = (allowPrioritisation, allowRandomised, allowRarestFirst, ignoreBitFieldAndChokeState);
     }
 }
