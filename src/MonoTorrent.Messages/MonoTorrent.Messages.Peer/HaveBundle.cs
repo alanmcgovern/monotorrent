@@ -34,11 +34,11 @@ namespace MonoTorrent.Messages.Peer
 {
     public class HaveBundle : PeerMessage
     {
-        static int HaveMessageLength = new HaveMessage ().ByteLength;
+        readonly HaveMessage HaveMessage = new HaveMessage ();
 
         List<int> PieceIndexes { get; }
 
-        public override int ByteLength => HaveMessageLength * PieceIndexes.Count;
+        public override int ByteLength => HaveMessage.ByteLength * PieceIndexes.Count;
 
         public int Count => PieceIndexes.Count;
 
@@ -59,11 +59,9 @@ namespace MonoTorrent.Messages.Peer
         {
             int written = buffer.Length;
 
-            using (Rent (out HaveMessage message)) {
-                for (int i = 0; i < PieceIndexes.Count; i++) {
-                    message.PieceIndex = PieceIndexes[i];
-                    buffer = buffer.Slice (message.Encode (buffer));
-                }
+            for (int i = 0; i < PieceIndexes.Count; i++) {
+                HaveMessage.PieceIndex = PieceIndexes[i];
+                buffer = buffer.Slice (HaveMessage.Encode (buffer));
             }
             return written - buffer.Length;
         }

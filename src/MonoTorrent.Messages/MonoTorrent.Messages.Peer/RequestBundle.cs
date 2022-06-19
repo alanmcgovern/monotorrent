@@ -35,13 +35,13 @@ namespace MonoTorrent.Messages.Peer
     public class RequestBundle : PeerMessage
     {
         static readonly MemoryPool Pool = MemoryPool.Default;
-        static readonly int RequestMessageLength = new RequestMessage ().ByteLength;
+        readonly RequestMessage RequestMessage = new RequestMessage ();
 
         ByteBufferPool.Releaser RequestsMemoryReleaser;
         Memory<byte> RequestsMemory;
         Span<BlockInfo> Requests => MemoryMarshal.Cast<byte, BlockInfo> (RequestsMemory.Span);
 
-        public override int ByteLength => RequestMessageLength * Requests.Length;
+        public override int ByteLength => RequestMessage.ByteLength * Requests.Length;
 
         public RequestBundle ()
         {
@@ -56,11 +56,9 @@ namespace MonoTorrent.Messages.Peer
         {
             int written = buffer.Length;
 
-            using (Rent (out RequestMessage message)) {
-                for (int i = 0; i < Requests.Length; i++) {
-                    message.Initialize (Requests[i]);
-                    buffer = buffer.Slice (message.Encode (buffer));
-                }
+            for (int i = 0; i < Requests.Length; i++) {
+                RequestMessage.Initialize (Requests[i]);
+                buffer = buffer.Slice (RequestMessage.Encode (buffer));
             }
 
             return written - buffer.Length;
