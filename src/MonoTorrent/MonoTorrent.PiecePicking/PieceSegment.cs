@@ -36,8 +36,11 @@ namespace MonoTorrent.PiecePicking
         public int BlockIndex { get; }
 
         public PieceSegment (int pieceIndex, int blockIndex)
-            => (PieceIndex, BlockIndex) = (pieceIndex, blockIndex);
-
+        {
+            if (pieceIndex < 0)
+                throw new ArgumentOutOfRangeException (nameof (pieceIndex));
+            (PieceIndex, BlockIndex) = (pieceIndex, blockIndex);
+        }
         public override bool Equals (object? obj)
             => obj is PieceSegment req && Equals (req);
 
