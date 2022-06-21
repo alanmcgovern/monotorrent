@@ -218,6 +218,11 @@ namespace MonoTorrent.Client.Modes
             if (pickers.All (picker => picker.Value.Item2.ValidatedPieces.AllTrue)) {
                 Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (infoHashes.ToDictionary (t => t.Key.PiecesRoot, v => (v.Value.TryVerify (out var root) ? root : null)!));
                 Manager.PendingV2PieceHashes.SetAll (false);
+
+                // Cancel any duplicate requests
+                foreach (var peer in Manager.Peers.ConnectedPeers)
+                    foreach (var p in pickers)
+                        p.Value.Item1.CancelRequests (peer, 0, p.Key.EndPieceIndex - p.Key.StartPieceIndex + 1);
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
 

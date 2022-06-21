@@ -44,6 +44,9 @@ namespace MonoTorrent
         {
             var releaser = base.Rent (capacity, out memory);
             memory = memory.Slice (0, capacity);
+#if DEBUG
+            memory.Span.Fill (255);
+#endif
             return releaser;
         }
 
@@ -51,6 +54,9 @@ namespace MonoTorrent
         {
             var releaser = base.Rent (capacity, out segment);
             segment = new ArraySegment<byte> (segment.Array!, segment.Offset, capacity);
+#if DEBUG
+            segment.AsSpan ().Fill (255);
+#endif
             return releaser;
         }
     }

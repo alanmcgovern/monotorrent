@@ -753,7 +753,7 @@ namespace MonoTorrent
         {
             for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
                 var file = files[fileIndex];
-                if (file.Length < pieceLength)
+                if (file.Length <= pieceLength)
                     continue;
 
                 if (!hashes.TryGetValue (file.PiecesRoot, out ReadOnlyMerkleLayers? fileHash))

@@ -98,8 +98,19 @@ namespace MonoTorrent.Client
                 Manager = manager;
                 PieceIndex = pieceIndex;
                 if (UseV2) {
-                    BlockHashesReleaser = MemoryPool.Default.Rent (Manager.TorrentInfo!.BlocksPerPiece (pieceIndex) * 32, out Memory<byte> hashes);
+                    var file = manager.Files[manager.Files.FindFileByPieceIndex (pieceIndex)];
+                    Memory<byte> hashes;
+                    int actualBlocks = Manager.TorrentInfo!.BlocksPerPiece (pieceIndex);
+                    if (file.StartPieceIndex == file.EndPieceIndex) {
+                        var blocks = actualBlocks;
+                        if (blocks > 1)
+                            blocks = (int) Math.Pow (2, (int) Math.Ceiling (Math.Log (blocks, 2)));
+                        BlockHashesReleaser = MemoryPool.Default.Rent (blocks * 32, out hashes);
+                    } else { 
+                        BlockHashesReleaser = MemoryPool.Default.Rent (manager.TorrentInfo!.PieceLength / Constants.BlockSize  * 32, out hashes);
+                    }
                     BlockHashes = hashes;
+                    BlockHashes.Span.Slice (actualBlocks).Clear ();
                 }
             }
 
@@ -129,8 +140,9 @@ namespace MonoTorrent.Client
                     return false;
 
                 if (Manager != null && UseV2) {
-                    var file = Manager.Files[Manager.Files.FindFileByPieceIndex (PieceIndex)];
-                    if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes.Span, Constants.BlockSize, ReadOnlySpan<byte>.Empty, 0, BlockHashes.Span.Length / 32, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
+                    if (BlockHashes.Length == 32)
+                        BlockHashes.Span.CopyTo (dest.V2Hash.Span);
+                    else if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes.Span, Constants.BlockSize, ReadOnlySpan<byte>.Empty, 0, BlockHashes.Span.Length / 32, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
                         return false;
                 }
 

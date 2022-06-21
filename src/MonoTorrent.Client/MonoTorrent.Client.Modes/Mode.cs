@@ -373,8 +373,8 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandlePieceMessage (PeerId id, PieceMessage message, PeerMessage.Releaser releaser)
         {
             id.PiecesReceived++;
-            if (Manager.PieceManager.PieceDataReceived (id, message, out bool _, out IList<IPeer> peersInvolved))
-                WritePieceAsync (message, releaser, peersInvolved);
+            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IPeer> peersInvolved))
+                WritePieceAsync (message, releaser, pieceComplete, peersInvolved);
             else
                 releaser.Dispose ();
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
@@ -382,7 +382,7 @@ namespace MonoTorrent.Client.Modes
         }
 
         readonly Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> ();
-        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, IList<IPeer> peersInvolved)
+        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, bool pieceComplete, IList<IPeer> peersInvolved)
         {
             BlockInfo block = new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength);
             try {
