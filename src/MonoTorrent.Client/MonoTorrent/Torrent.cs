@@ -506,7 +506,7 @@ namespace MonoTorrent
                 Files = v2Files;
             }
 
-            Size = Files.Select (f => f.Length).Sum ();
+            Size = Files.Select (f => f.Length + f.Padding).Sum ();
         }
 
         void LoadInternal (BEncodedDictionary torrentInformation, RawInfoHashes infoHashes)
