@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
 
             rig = TestRig.CreateMultiFile ();
 
-            connection = new HttpPeerConnection (rig.Manager, rig.Engine.Factories, new Uri (ListenerURL));
+            connection = new HttpPeerConnection (rig.Manager, rig.Engine.Settings.WebSeedConnectionTimeout, rig.Engine.Factories, new Uri (ListenerURL));
             rig.Manager.UnhashedPieces.SetAll (false);
 
             id = new PeerId (new Peer ("this is my id", connection.Uri), connection, new BitField (rig.Manager.Torrent.PieceCount ()).SetAll (true));
@@ -380,7 +380,7 @@ namespace MonoTorrent.Client
             rig.Torrent.HttpSeeds.Add (new Uri ($"{ListenerURL}File1.exe"));
 
             Uri url = rig.Torrent.HttpSeeds[0];
-            connection = new HttpPeerConnection (rig.Manager, rig.Engine.Factories, url);
+            connection = new HttpPeerConnection (rig.Manager, rig.Engine.Settings.WebSeedConnectionTimeout, rig.Engine.Factories, url);
             rig.Manager.UnhashedPieces.SetAll (false);
 
             id = new PeerId (new Peer ("this is my id", connection.Uri), id.Connection, new BitField (rig.Manager.Torrent.PieceCount ()).SetAll (true));

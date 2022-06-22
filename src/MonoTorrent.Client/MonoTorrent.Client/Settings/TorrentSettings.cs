@@ -80,16 +80,6 @@ namespace MonoTorrent.Client
         public int UploadSlots { get; } = 8;
 
         /// <summary>
-        /// The delay before a torrent will start using web seeds.
-        /// </summary>
-        public TimeSpan WebSeedDelay { get; } = TimeSpan.FromMinutes (1);
-
-        /// <summary>
-        /// The download speed under which a torrent will start using web seeds.
-        /// </summary>
-        public int WebSeedSpeedTrigger { get; } = 15 * 1024;
-
-        /// <summary>
         /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
         /// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
         /// </summary>
@@ -112,7 +102,7 @@ namespace MonoTorrent.Client
 
         }
 
-        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadRate, int maximumUploadRate, int uploadSlots, TimeSpan webSeedDelay, int webSeedSpeedTrigger, bool createContainingDirectory)
+        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadRate, int maximumUploadRate, int uploadSlots, bool createContainingDirectory)
         {
             AllowDht = allowDht;
             AllowInitialSeeding = allowInitialSeeding;
@@ -122,8 +112,6 @@ namespace MonoTorrent.Client
             MaximumDownloadRate = maximumDownloadRate;
             MaximumUploadRate = maximumUploadRate;
             UploadSlots = uploadSlots;
-            WebSeedDelay = webSeedDelay;
-            WebSeedSpeedTrigger = webSeedSpeedTrigger;
         }
 
         public override bool Equals (object? obj)
@@ -139,9 +127,7 @@ namespace MonoTorrent.Client
                 && MaximumConnections == other.MaximumConnections
                 && MaximumDownloadRate == other.MaximumDownloadRate
                 && MaximumUploadRate == other.MaximumUploadRate
-                && UploadSlots == other.UploadSlots
-                && WebSeedDelay == other.WebSeedDelay
-                && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger;
+                && UploadSlots == other.UploadSlots;
         }
 
         public override int GetHashCode ()

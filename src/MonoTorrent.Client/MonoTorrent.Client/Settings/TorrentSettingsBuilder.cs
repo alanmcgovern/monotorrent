@@ -96,16 +96,6 @@ namespace MonoTorrent.Client
             set => uploadSlots = CheckZeroOrPositive (value);
         }
 
-        /// <summary>
-        /// The delay before a torrent will start using web seeds.
-        /// </summary>
-        public TimeSpan WebSeedDelay { get; set; }
-
-        /// <summary>
-        /// The download speed under which a torrent will start using web seeds.
-        /// </summary>
-        public int WebSeedSpeedTrigger { get; set; }
-
         public TorrentSettingsBuilder ()
             : this (new TorrentSettings ())
         {
@@ -122,23 +112,19 @@ namespace MonoTorrent.Client
             MaximumDownloadRate = settings.MaximumDownloadRate;
             MaximumUploadRate = settings.MaximumUploadRate;
             UploadSlots = settings.UploadSlots;
-            WebSeedDelay = settings.WebSeedDelay;
-            WebSeedSpeedTrigger = settings.WebSeedSpeedTrigger;
         }
 
         public TorrentSettings ToSettings ()
         {
             return new TorrentSettings (
-                AllowDht,
-                AllowInitialSeeding,
-                AllowPeerExchange,
-                MaximumConnections,
-                MaximumDownloadRate,
-                MaximumUploadRate,
-                UploadSlots,
-                WebSeedDelay,
-                WebSeedSpeedTrigger,
-                CreateContainingDirectory
+                allowDht: AllowDht,
+                allowInitialSeeding: AllowInitialSeeding,
+                allowPeerExchange: AllowPeerExchange,
+                createContainingDirectory: CreateContainingDirectory,
+                maximumConnections: MaximumConnections,
+                maximumDownloadRate: MaximumDownloadRate,
+                maximumUploadRate: MaximumUploadRate,
+                uploadSlots: UploadSlots
             );
         }
 

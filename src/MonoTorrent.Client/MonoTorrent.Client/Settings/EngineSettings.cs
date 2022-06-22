@@ -199,6 +199,15 @@ namespace MonoTorrent.Client
         public IPEndPoint? ReportedAddress { get; }
 
         /// <summary>
+        /// When blocks have been requested from a peer, the connection to that peer will be closed and the
+        /// requests will be cancelled if it takes longer than this time to receive a 16kB block. This
+        /// value must be higher than <see cref="WebSeedConnectionTimeout"/> or the web seeds will be
+        /// considered unhealthy before their connection timeout is exceeded.
+        /// Defaults to 40 seconds.
+        /// </summary>
+        public TimeSpan StaleRequestTimeout { get; } = TimeSpan.FromSeconds (40);
+
+        /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If a magnet link is used
         /// to download a torrent, the downloaded metata will be cached here.
         /// </summary>
@@ -210,6 +219,24 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool UsePartialFiles { get; } = false;
 
+        /// <summary>
+        /// The timeout used when connecting to a WebSeed's HTTP endpoint.
+        /// Defaults to 30 seconds.
+        /// </summary>
+        public TimeSpan WebSeedConnectionTimeout { get; } = TimeSpan.FromSeconds (30);
+
+        /// <summary>
+        /// The delay before a torrent will start using web seeds.
+        /// Defaults to 1 minute.
+        /// </summary>
+        public TimeSpan WebSeedDelay { get; } = TimeSpan.FromMinutes (1);
+
+        /// <summary>
+        /// The download speed under which a torrent will start using web seeds.
+        /// Defaults to 15kB/sec.
+        /// </summary>
+        public int WebSeedSpeedTrigger { get; } = 15 * 1024;
+
         public EngineSettings ()
         {
 
@@ -220,7 +247,8 @@ namespace MonoTorrent.Client
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
             TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
-            int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles)
+            int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles,
+            TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -244,7 +272,11 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = maximumOpenFiles;
             MaximumUploadRate = maximumUploadRate;
             ReportedAddress = reportedAddress;
+            StaleRequestTimeout = staleRequestTimeout;
             UsePartialFiles = usePartialFiles;
+            WebSeedConnectionTimeout = webSeedConnectionTimeout;
+            WebSeedDelay = webSeedDelay;
+            WebSeedSpeedTrigger = webSeedSpeedTrigger;
         }
 
         internal string GetDhtNodeCacheFilePath ()
@@ -288,7 +320,11 @@ namespace MonoTorrent.Client
                    && MaximumOpenFiles == other.MaximumOpenFiles
                    && MaximumUploadRate == other.MaximumUploadRate
                    && ReportedAddress == other.ReportedAddress
+                   && StaleRequestTimeout == other.StaleRequestTimeout
                    && UsePartialFiles == other.UsePartialFiles
+                   && WebSeedConnectionTimeout == other.WebSeedConnectionTimeout
+                   && WebSeedDelay == other.WebSeedDelay
+                   && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger
                    ;
         }
 

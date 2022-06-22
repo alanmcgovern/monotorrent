@@ -106,9 +106,9 @@ namespace MonoTorrent.Connections.Peer
 
         #region Constructors
 
-        public HttpPeerConnection (ITorrentManagerInfo torrentData, Factories requestCreator, Uri uri)
+        public HttpPeerConnection (ITorrentManagerInfo torrentData, TimeSpan connectionTimeout, Factories requestCreator, Uri uri)
         {
-            ConnectionTimeout = TimeSpan.FromSeconds (10);
+            ConnectionTimeout = connectionTimeout;
             RequestCreator = requestCreator;
             TorrentData = torrentData ?? throw new ArgumentNullException (nameof (torrentData));
             Uri = uri;
