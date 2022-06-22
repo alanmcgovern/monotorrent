@@ -74,6 +74,11 @@ namespace MonoTorrent.Client
         int maximumHalfOpenConnections;
         int maximumOpenFiles;
         int maximumUploadRate;
+        TimeSpan staleRequestTimeout;
+        TimeSpan webSeedConnectionTimeout;
+        TimeSpan webSeedDelay;
+        int webSeedSpeedTrigger;
+
 
         /// <summary>
         /// A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
@@ -254,10 +259,47 @@ namespace MonoTorrent.Client
         public IPEndPoint? ReportedAddress { get; set; }
 
         /// <summary>
+        /// When blocks have been requested from a peer, the connection to that peer will be closed and the
+        /// requests will be cancelled if it takes longer than this time to receive a 16kB block. This
+        /// value must be higher than <see cref="WebSeedConnectionTimeout"/> or the web seeds will be
+        /// considered unhealthy before their connection timeout is exceeded. Defaults to 40 seconds.
+        /// </summary>
+        public TimeSpan StaleRequestTimeout {
+            get => staleRequestTimeout;
+            set => staleRequestTimeout = CheckZeroOrPositive (value);
+        }
+
+        /// <summary>
         /// If set to <see langword="true"/> then partially downloaded files will have ".!mt" appended to their filename. When the file is fully downloaded, the ".!mt" suffix will be removed.
         /// Defaults to <see langword="false"/> as this is a pre-release feature.
         /// </summary>
         public bool UsePartialFiles { get; set; }
+
+        /// <summary>
+        /// The timeout used when connecting to a WebSeed's HTTP endpoint.
+        /// </summary>
+        public TimeSpan WebSeedConnectionTimeout {
+            get => webSeedConnectionTimeout;
+            set => webSeedConnectionTimeout = CheckZeroOrPositive (value);
+        }
+
+        /// <summary>
+        /// The delay before a torrent will start using web seeds. A value of zero
+        /// means 'immediately'. Using webseeds by default is not recommended
+        /// </summary>
+        public TimeSpan WebSeedDelay {
+            get => webSeedDelay;
+            set => webSeedDelay = CheckZeroOrPositive (value);
+        }
+
+        /// <summary>
+        /// The download speed under which a torrent will start using web seeds. A value of
+        /// 0 means webseeds will be added regardless of how fast the torrent is downloading.
+        /// </summary>
+        public int WebSeedSpeedTrigger {
+            get => webSeedSpeedTrigger;
+            set => CheckZeroOrPositive (value);
+        }
 
         public EngineSettingsBuilder ()
             : this (new EngineSettings ())
@@ -289,7 +331,11 @@ namespace MonoTorrent.Client
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadRate = settings.MaximumUploadRate;
             ReportedAddress = settings.ReportedAddress;
+            StaleRequestTimeout = staleRequestTimeout;
             UsePartialFiles = settings.UsePartialFiles;
+            WebSeedConnectionTimeout = settings.WebSeedConnectionTimeout;
+            WebSeedDelay = settings.WebSeedDelay;
+            WebSeedSpeedTrigger = settings.WebSeedSpeedTrigger;
         }
 
         public EngineSettings ToSettings ()
@@ -323,7 +369,11 @@ namespace MonoTorrent.Client
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadRate: MaximumUploadRate,
                 reportedAddress: ReportedAddress,
-                usePartialFiles: UsePartialFiles
+                staleRequestTimeout: StaleRequestTimeout,
+                usePartialFiles: UsePartialFiles,
+                webSeedConnectionTimeout: WebSeedConnectionTimeout,
+                webSeedDelay: WebSeedDelay,
+                webSeedSpeedTrigger: webSeedSpeedTrigger
             );
         }
 
@@ -338,6 +388,13 @@ namespace MonoTorrent.Client
         {
             if (value < 0)
                 throw new ArgumentOutOfRangeException (nameof (value), "Value should be zero or greater");
+            return value;
+        }
+
+        static TimeSpan CheckZeroOrPositive (TimeSpan value)
+        {
+            if (value < TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException ("value", "must be greater than or equal to TimeSpan.Zero");
             return value;
         }
     }

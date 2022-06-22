@@ -616,7 +616,6 @@ namespace MonoTorrent.Client.Modes
         {
             PeerId id;
 
-            var fifteenSeconds = TimeSpan.FromSeconds (15);
             var ninetySeconds = TimeSpan.FromSeconds (90);
             var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
@@ -638,7 +637,7 @@ namespace MonoTorrent.Client.Modes
                     continue;
                 }
 
-                if (id.LastBlockReceived.Elapsed > fifteenSeconds && id.AmRequestingPiecesCount > 0) {
+                if (id.LastBlockReceived.Elapsed > Settings.StaleRequestTimeout && id.AmRequestingPiecesCount > 0) {
                     ConnectionManager.CleanupSocket (Manager, id);
                     i--;
                     continue;
@@ -654,13 +653,13 @@ namespace MonoTorrent.Client.Modes
 
         void DownloadLogic (int counter)
         {
-            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Manager.Settings.WebSeedDelay && Manager.Monitor.DownloadRate < Manager.Settings.WebSeedSpeedTrigger) {
+            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger) {
                 foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
                     BEncodedString peerId = CreatePeerId ();
 
                     var peer = new Peer (peerId, uri);
 
-                    var connection = new HttpPeerConnection (Manager, Manager.Engine!.Factories, uri);
+                    var connection = new HttpPeerConnection (Manager, Settings.WebSeedConnectionTimeout, Manager.Engine!.Factories, uri);
                     // Unsupported connection type.
                     if (connection == null)
                         continue;
