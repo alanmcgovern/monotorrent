@@ -36,7 +36,7 @@ namespace MonoTorrent.Messages.Peer
     /// </summary>
     public class BitfieldMessage : PeerMessage
     {
-        internal static readonly byte MessageId = 5;
+        internal const byte MessageId = 5;
 
         public static readonly BitfieldMessage UnknownLength = new BitfieldMessage (new ReadOnlyBitField (1));
 

@@ -35,7 +35,7 @@ namespace MonoTorrent.Messages.Peer.FastPeer
     {
         public static HaveNoneMessage Instance { get; } = new HaveNoneMessage ();
 
-        internal static readonly byte MessageId = 0x0F;
+        internal const byte MessageId = 0x0F;
         readonly int messageLength = 1;
 
         public override int ByteLength => messageLength + 4;

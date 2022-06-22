@@ -34,7 +34,7 @@ namespace MonoTorrent.Messages.Peer
 {
     public class HashRequestMessage : PeerMessage
     {
-        internal static readonly byte MessageId = 21;
+        internal const byte MessageId = 21;
         public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4;
 
         public MerkleRoot PiecesRoot { get; private set; }

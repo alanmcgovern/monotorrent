@@ -37,7 +37,7 @@ namespace MonoTorrent.Messages.Peer
     public class CancelMessage : PeerMessage
     {
         const int messageLength = 13;
-        internal static readonly byte MessageId = 8;
+        internal const byte MessageId = 8;
 
         /// <summary>
         /// Returns the length of the message in bytes

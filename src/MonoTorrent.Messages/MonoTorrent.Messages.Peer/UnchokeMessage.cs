@@ -35,7 +35,7 @@ namespace MonoTorrent.Messages.Peer
     {
         public static UnchokeMessage Instance { get; } = new UnchokeMessage ();
 
-        internal static readonly byte MessageId = 1;
+        internal const byte MessageId = 1;
         const int messageLength = 1;
 
         public override int ByteLength => (messageLength + 4);

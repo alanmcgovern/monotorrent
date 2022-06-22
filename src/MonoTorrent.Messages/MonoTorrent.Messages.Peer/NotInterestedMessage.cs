@@ -39,7 +39,7 @@ namespace MonoTorrent.Messages.Peer
         public static NotInterestedMessage Instance { get; } = new NotInterestedMessage ();
 
         const int messageLength = 1;
-        internal static readonly byte MessageId = 3;
+        internal const byte MessageId = 3;
 
         /// <summary>
         /// Returns the length of the message in bytes

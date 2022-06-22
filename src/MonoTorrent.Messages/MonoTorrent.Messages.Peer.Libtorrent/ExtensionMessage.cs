@@ -34,15 +34,17 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 {
     public abstract class ExtensionMessage : PeerMessage
     {
-        internal static readonly byte MessageId = 20;
+        internal const byte MessageId = 20;
         static readonly Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> messageDict;
 
-        internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport> ();
+        internal static readonly List<ExtensionSupport> SupportedMessages;
 
         public byte ExtensionId { get; protected set; }
 
         static ExtensionMessage ()
         {
+            SupportedMessages = new List<ExtensionSupport> ();
+
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection.
             Register<ExtensionMessage> (MessageId, data => throw new MessageException ("Shouldn't decode extension message this way"), false);

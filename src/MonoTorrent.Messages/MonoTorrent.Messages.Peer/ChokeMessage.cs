@@ -39,7 +39,7 @@ namespace MonoTorrent.Messages.Peer
         public static ChokeMessage Instance { get; } = new ChokeMessage ();
 
         const int messageLength = 1;
-        internal static readonly byte MessageId = 0;
+        internal const byte MessageId = 0;
 
         /// <summary>
         /// Returns the length of the message in bytes

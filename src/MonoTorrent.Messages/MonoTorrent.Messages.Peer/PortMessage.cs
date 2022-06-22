@@ -37,7 +37,7 @@ namespace MonoTorrent.Messages.Peer
     public class PortMessage : PeerMessage
     {
         const int messageLength = 3;
-        internal static readonly byte MessageId = 9;
+        internal const byte MessageId = 9;
 
         #region Private Fields
         ushort port;

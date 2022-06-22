@@ -36,7 +36,7 @@ namespace MonoTorrent.Messages.Peer
     /// </summary>
     public class HaveMessage : PeerMessage
     {
-        internal static readonly byte MessageId = 4;
+        internal const byte MessageId = 4;
         const int messageLength = 5;
 
         /// <summary>
