@@ -557,7 +557,7 @@ namespace MonoTorrent.Client.Modes
         {
             PeerId id;
 
-            var fifteenSeconds = TimeSpan.FromSeconds (15);
+            var fortySeconds = TimeSpan.FromSeconds (40);
             var ninetySeconds = TimeSpan.FromSeconds (90);
             var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
@@ -579,7 +579,7 @@ namespace MonoTorrent.Client.Modes
                     continue;
                 }
 
-                if (id.LastBlockReceived.Elapsed > fifteenSeconds && id.AmRequestingPiecesCount > 0) {
+                if (id.LastBlockReceived.Elapsed > fortySeconds && id.AmRequestingPiecesCount > 0) {
                     ConnectionManager.CleanupSocket (Manager, id);
                     i--;
                     continue;

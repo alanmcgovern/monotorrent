@@ -79,7 +79,7 @@ namespace MonoTorrent.Client.Connections
 
         public bool Connected => true;
 
-        internal TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds (10);
+        internal TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds (30);
 
         HttpRequestData CurrentRequest { get; set; }
 
