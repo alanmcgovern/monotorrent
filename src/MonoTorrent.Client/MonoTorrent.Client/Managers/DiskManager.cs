@@ -270,7 +270,7 @@ namespace MonoTorrent.Client
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             writer ??= factories.CreatePieceWriter (settings.MaximumOpenFiles);
-            Cache = factories.CreateBlockCache (writer, settings.DiskCacheBytes, BufferPool);
+            Cache = factories.CreateBlockCache (writer, settings.DiskCacheBytes, settings.DiskCachePolicy, BufferPool);
             Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
             Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
             IncrementalHashCache = new Cache<IncrementalHashData> (() => new IncrementalHashData ());

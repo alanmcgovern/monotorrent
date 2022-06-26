@@ -47,7 +47,7 @@ namespace MonoTorrent
 {
     public partial class Factories
     {
-        public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, MemoryPool buffer);
+        public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer);
         public delegate IDhtEngine DhtCreator ();
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
         public delegate HttpClient HttpClientCreator ();
@@ -83,7 +83,7 @@ namespace MonoTorrent
 
         public Factories ()
         {
-            BlockCacheFunc = (writer, capacity, buffer) => new MemoryCache (buffer, capacity, writer);
+            BlockCacheFunc = (writer, capacity, policy, buffer) => new MemoryCache (buffer, capacity, policy, writer);
             DhtFunc = () => new DhtEngine ();
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
             HttpClientFunc = () => {
@@ -114,8 +114,8 @@ namespace MonoTorrent
             );
         }
 
-        public IBlockCache CreateBlockCache (IPieceWriter writer, long capacity, MemoryPool buffer)
-            => BlockCacheFunc (writer, capacity, buffer);
+        public IBlockCache CreateBlockCache (IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer)
+            => BlockCacheFunc (writer, capacity, policy, buffer);
         public Factories WithBlockCacheCreator (BlockCacheCreator creator)
         {
             var dupe = MemberwiseClone ();

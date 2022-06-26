@@ -35,6 +35,7 @@ using System.Net;
 
 using MonoTorrent.Connections;
 using MonoTorrent.Dht;
+using MonoTorrent.PieceWriter;
 
 namespace MonoTorrent.Client
 {
@@ -164,6 +165,12 @@ namespace MonoTorrent.Client
             get => diskCacheBytes;
             set => diskCacheBytes = CheckZeroOrPositive (value);
         }
+
+
+        /// <summary>
+        /// Determines if writes should be cached, or if reads and writes should be cached.
+        /// </summary>
+        public CachePolicy DiskCachePolicy { get; set; }
 
         /// <summary>
         /// The UDP port used for DHT communications. Use 0 to choose a random available port.
@@ -321,6 +328,7 @@ namespace MonoTorrent.Client
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtEndPoint = settings.DhtEndPoint;
             DiskCacheBytes = settings.DiskCacheBytes;
+            DiskCachePolicy = settings.DiskCachePolicy;
             FastResumeMode = settings.FastResumeMode;
             ListenEndPoint = settings.ListenEndPoint;
             MaximumConnections = settings.MaximumConnections;
@@ -359,6 +367,7 @@ namespace MonoTorrent.Client
                 connectionTimeout: ConnectionTimeout,
                 dhtEndPoint: DhtEndPoint,
                 diskCacheBytes: DiskCacheBytes,
+                diskCachePolicy: DiskCachePolicy,
                 fastResumeMode: FastResumeMode,
                 listenEndPoint: ListenEndPoint,
                 maximumConnections: MaximumConnections,
