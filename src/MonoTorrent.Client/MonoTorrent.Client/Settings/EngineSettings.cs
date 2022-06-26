@@ -35,6 +35,7 @@ using System.Net;
 
 using MonoTorrent.Connections;
 using MonoTorrent.Dht;
+using MonoTorrent.PieceWriter;
 
 namespace MonoTorrent.Client
 {
@@ -115,6 +116,13 @@ namespace MonoTorrent.Client
         /// Defaults to 5MB.
         /// </summary>
         public int DiskCacheBytes { get; } = 5 * 1024 * 1024;
+
+        /// <summary>
+        /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
+        /// Set to 0 to disable the cache.
+        /// Defaults to 5MB.
+        /// </summary>
+        public CachePolicy DiskCachePolicy { get; } = CachePolicy.WritesOnly;
 
         /// <summary>
         /// The UDP port used for DHT communications. Set the port to 0 to choose a random available port.
@@ -245,7 +253,7 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
+            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout)
@@ -260,6 +268,7 @@ namespace MonoTorrent.Client
             AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata;
             DhtEndPoint = dhtEndPoint;
             DiskCacheBytes = diskCacheBytes;
+            DiskCachePolicy = diskCachePolicy;
             CacheDirectory = cacheDirectory;
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
@@ -310,6 +319,7 @@ namespace MonoTorrent.Client
                    && CacheDirectory == other.CacheDirectory
                    && Equals (DhtEndPoint, other.DhtEndPoint)
                    && DiskCacheBytes == other.DiskCacheBytes
+                   && DiskCachePolicy == other.DiskCachePolicy
                    && FastResumeMode == other.FastResumeMode
                    && Equals (ListenEndPoint, other.ListenEndPoint)
                    && MaximumConnections == other.MaximumConnections

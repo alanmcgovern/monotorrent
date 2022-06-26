@@ -34,6 +34,7 @@ using System.Net;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
+using MonoTorrent.PieceWriter;
 
 namespace MonoTorrent.Client
 {
@@ -70,6 +71,8 @@ namespace MonoTorrent.Client
                     property.SetValue (builder, TimeSpan.FromTicks (((BEncodedNumber) value).Number));
                 } else if (property.PropertyType == typeof (int)) {
                     property.SetValue (builder, (int) ((BEncodedNumber) value).Number);
+                } else if (property.PropertyType == typeof (CachePolicy)) {
+                    property.SetValue (builder, Enum.Parse (typeof (CachePolicy), ((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPAddress)) {
                     property.SetValue (builder, IPAddress.Parse (((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPEndPoint)) {
@@ -106,6 +109,7 @@ namespace MonoTorrent.Client
                     IPEndPoint value => new BEncodedList { (BEncodedString) value.Address.ToString (), (BEncodedNumber) value.Port },
                     int value => new BEncodedNumber (value),
                     FastResumeMode value => new BEncodedString (value.ToString ()),
+                    CachePolicy value => new BEncodedString (value.ToString ()),
                     null => null,
                     _ => throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}"),
                 };

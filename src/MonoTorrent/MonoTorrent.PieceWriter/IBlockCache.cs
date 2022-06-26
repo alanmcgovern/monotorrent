@@ -70,6 +70,8 @@ namespace MonoTorrent.PieceWriter
         /// </summary>
         long Capacity { get; }
 
+        CachePolicy Policy { get; }
+
         /// <summary>
         /// Pieces will be written to this <see cref="IPieceWriter"/> when they are evicted from the cache.
         /// </summary>
@@ -100,6 +102,13 @@ namespace MonoTorrent.PieceWriter
         /// <param name="capacity"></param>
         /// <returns></returns>
         ReusableTask SetCapacityAsync (long capacity);
+
+        /// <summary>
+        /// Sets the cache policy.
+        /// </summary>
+        /// <param name="policy"></param>
+        /// <returns></returns>
+        ReusableTask SetPolicyAsync (CachePolicy policy);
 
         ReusableTask SetWriterAsync (IPieceWriter writer);
 
