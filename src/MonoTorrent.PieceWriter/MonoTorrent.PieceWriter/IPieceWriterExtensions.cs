@@ -55,7 +55,7 @@ namespace MonoTorrent.PieceWriter
                 int fileToRead = (int) Math.Min (files[i].Length + files[i].Padding - offset, count - totalRead);
                 fileToRead = Math.Min (fileToRead, Constants.BlockSize);
 
-                if (fileToRead != await writer.PaddingAwareReadAsync (files[i], offset, buffer.Slice (totalRead, fileToRead)))
+                if (fileToRead != await writer.PaddingAwareReadAsync (files[i], offset, buffer.Slice (totalRead, fileToRead)).ConfigureAwait (false))
                     return totalRead;
 
                 offset += fileToRead;

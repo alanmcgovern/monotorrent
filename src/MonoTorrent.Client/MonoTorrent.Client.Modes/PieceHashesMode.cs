@@ -108,8 +108,9 @@ namespace MonoTorrent.Client.Modes
         Dictionary<ITorrentFile, (IPieceRequester, HashesRequesterData)> pickers;
         Dictionary<ITorrentFile, MerkleLayers> infoHashes;
         HashSet<PeerId> IgnoredPeers { get; }
+        bool StopWhenDone { get; }
 
-        public PieceHashesMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
+        public PieceHashesMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, bool stopWhenDone)
             : base (manager, diskManager, connectionManager, settings)
         {
             if (manager.Torrent is null)
@@ -123,6 +124,7 @@ namespace MonoTorrent.Client.Modes
             });
             infoHashes = manager.Torrent.Files.Where (t => t.EndPieceIndex != t.StartPieceIndex).ToDictionary (t => t, value => new MerkleLayers (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1));
             IgnoredPeers = new HashSet<PeerId> ();
+            StopWhenDone = stopWhenDone;
         }
 
         public override void Tick (int counter)
@@ -223,7 +225,10 @@ namespace MonoTorrent.Client.Modes
                 foreach (var peer in Manager.Peers.ConnectedPeers)
                     foreach (var p in pickers)
                         p.Value.Item1.CancelRequests (peer, 0, p.Key.EndPieceIndex - p.Key.StartPieceIndex + 1);
-                Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+                if (StopWhenDone)
+                    Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+                else
+                    Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
 
             MaybeRequestNext ();

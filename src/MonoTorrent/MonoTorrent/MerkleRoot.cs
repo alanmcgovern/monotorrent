@@ -36,13 +36,22 @@ namespace MonoTorrent
     {
         public static MerkleRoot Empty => new MerkleRoot ();
 
+        public static MerkleRoot FromMemory (ReadOnlyMemory<byte> hash)
+            => new MerkleRoot (hash);
+
         readonly ReadOnlyMemory<byte> Hash;
 
         public bool IsEmpty => Hash.IsEmpty;
 
         public ReadOnlySpan<byte> Span => Hash.Span;
 
-        public MerkleRoot (ReadOnlyMemory<byte> hash)
+        public MerkleRoot (Span<byte> hash)
+            : this (new ReadOnlyMemory<byte> (hash.ToArray ()))
+        {
+
+        }
+
+        private MerkleRoot (ReadOnlyMemory<byte> hash)
         {
             if (hash.Length != 32)
                 throw new ArgumentException ("The hash must be exactly 32 bytes long");

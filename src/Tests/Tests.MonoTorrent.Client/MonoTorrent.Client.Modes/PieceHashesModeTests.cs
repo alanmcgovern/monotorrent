@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Modes
         {
             (var engine, var manager, var layers) = await CreateTorrent (V2OnlyTorrentPath);
 
-            var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings);
+            var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
 
             Assert.AreEqual (manager.PieceHashes.Count, 0);
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.Modes
         public async Task RequestHashes ()
         {
             (var engine, var manager, var layers) = await CreateTorrent (V2OnlyTorrentPath);
-            var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings);
+            var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
             pieceHashesMode.HandleMessage (peer, new ExtendedHandshakeMessage (false, manager.Torrent.InfoMetadata.Length, 12345), default);
             while (!manager.PendingV2PieceHashes.AllFalse && manager.PieceHashes.Count == 0 && !manager.PieceHashes.HasV2Hashes) {
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client.Modes
         {
             (var engine, var manager, var layers) = await CreateTorrent (V2OnlyTorrentPath);
 
-            var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings);
+            var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
             pieceHashesMode.Tick (0);
             Assert.AreNotEqual (0, peer.AmRequestingPiecesCount);

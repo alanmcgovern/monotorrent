@@ -139,7 +139,10 @@ namespace MonoTorrent
             => Create (pieceLength, lengths.Select ((length, index) => ("File_" + index, length)).ToArray ());
 
         internal static ITorrentFile[] Create (int pieceLength, params (string torrentPath, long length)[] files)
-            => Create (pieceLength, files.Select (t => new TorrentFileTuple { path = t.torrentPath, length = t.length }).ToArray ());
+            => Create (pieceLength, files.Select (t => new TorrentFileTuple { path = t.torrentPath, length = t.length, padding = 0 }).ToArray ());
+
+        internal static ITorrentFile[] Create (int pieceLength, params (string torrentPath, long length, int padding)[] files)
+            => Create (pieceLength, files.Select (t => new TorrentFileTuple { path = t.torrentPath, length = t.length, padding = t.padding }).ToArray ());
 
         internal static ITorrentFile[] Create (int pieceLength, TorrentFileTuple[] files)
         {

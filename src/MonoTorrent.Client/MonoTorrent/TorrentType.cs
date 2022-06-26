@@ -1,10 +1,11 @@
-//
-// FileMapping.cs
+﻿//
+// TorrentCreator.cs
 //
 // Authors:
+//   Gregor Burger burger.gregor@gmail.com
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2009 Alan McGovern
+// Copyright (C) 2006-2007 Gregor Burger and Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -13,10 +14,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -26,31 +27,25 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
 namespace MonoTorrent
 {
-    public struct FileMapping
+    public enum TorrentType
     {
         /// <summary>
-        /// This is the full path to the file on disk
+        /// Generates a V1 compatible torrent.
         /// </summary>
-        public string Source { get; }
-
+        V1Only,
         /// <summary>
-        /// This is the relative path to the file within the Torrent
+        /// A torrent file with BitTorrent V1 metadata. All files are padded so they align to piece boundaries.
         /// </summary>
-        public string Destination { get; }
-
+        V1OnlyWithPaddingFiles,
         /// <summary>
-        /// The length of the file
+        /// A torrent file with BitTorrent V1 and BitTorrent V2 metadata
         /// </summary>
-        public long Length { get; }
-
-        public FileMapping (string source, string destination, long length)
-        {
-            Source = source;
-            Destination = destination;
-            Length = length;
-        }
+        V1V2Hybrid,
+        /// <summary>
+        /// A torrent file with BitTorrent V2 metadata
+        /// </summary>
+        V2Only,
     }
 }

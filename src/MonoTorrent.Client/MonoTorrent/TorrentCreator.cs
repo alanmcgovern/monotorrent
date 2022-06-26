@@ -44,49 +44,51 @@ using ReusableTasks;
 
 namespace MonoTorrent
 {
+    static class TorrentTypeExtensions
+    {
+        public static bool HasV1 (this TorrentType type)
+            => type == TorrentType.V1Only || type == TorrentType.V1OnlyWithPaddingFiles || type == TorrentType.V1V2Hybrid;
+
+        public static bool HasV2 (this TorrentType type)
+            => type == TorrentType.V2Only || type == TorrentType.V1V2Hybrid;
+    }
+
     public class TorrentCreator : EditableTorrent
     {
-        internal class InputFile : ITorrentManagerFile
+        class TorrentInfo : ITorrentInfo
         {
-            public string DownloadCompleteFullPath { get; }
-            public string DownloadIncompleteFullPath { get; }
-            public string Path { get; set; }
-            public string FullPath { get; set; }
-            public byte[]? MD5 { get; set; }
-            public SemaphoreSlim Locker { get; } = new SemaphoreSlim (1, 1);
-            public long Length { get; set; }
-            public long Padding { get; set; } = 0;
-            public MerkleRoot PiecesRoot { get; }
+            public IList<ITorrentFile> Files { get; }
+            public InfoHashes InfoHashes { get; }
+            public string Name => "";
+            public int PieceLength { get;}
+            public long Size { get; }
 
-            internal InputFile (string path, long length)
-                : this (path, path, length)
+            public TorrentInfo (InfoHashes infoHashes, IList<ITorrentFile> files, int pieceLength, long size)
             {
+                InfoHashes = infoHashes;
+                Files = files;
+                PieceLength = pieceLength;
+                Size = size;
             }
-
-            internal InputFile (string sourcePath, string torrentPath, long length)
-            {
-                DownloadCompleteFullPath = DownloadIncompleteFullPath = "unused";
-                FullPath = sourcePath;
-                Path = torrentPath;
-                Length = length;
-            }
-
-            public ReadOnlyBitField BitField => throw new NotImplementedException ();
-
-            public Priority Priority {
-                get => throw new NotImplementedException ();
-            }
-
-            public long OffsetInTorrent => throw new NotImplementedException ();
-
-            public int StartPieceIndex => throw new NotImplementedException ();
-
-            public int EndPieceIndex => throw new NotImplementedException ();
         }
 
-        const int BlockSize = 16 * 1024;  // 16kB
-        const int SmallestPieceSize = 2 * BlockSize;  // 32kB
-        const int LargestPieceSize = 512 * BlockSize;  // 8MB
+        class TorrentManagerInfo : ITorrentManagerInfo
+        {
+            public IList<ITorrentManagerFile> Files { get; set; } = Array.Empty<ITorrentManagerFile> ();
+            public InfoHashes InfoHashes => TorrentInfo.InfoHashes;
+            public string Name => TorrentInfo.Name;
+            public TorrentInfo TorrentInfo { get; set; }
+            ITorrentInfo? ITorrentManagerInfo.TorrentInfo => TorrentInfo;
+
+            public TorrentManagerInfo (IList<ITorrentManagerFile> files, TorrentInfo torrentInfo)
+            {
+                Files = files;
+                TorrentInfo = torrentInfo;
+            }
+        }
+
+        const int SmallestPieceSize = 2 * Constants.BlockSize;  // 32kB
+        const int LargestPieceSize = 512 * Constants.BlockSize;  // 8MB
 
         public static int RecommendedPieceSize (long totalSize)
         {
@@ -116,14 +118,32 @@ namespace MonoTorrent
 
         public static int RecommendedPieceSize (IEnumerable<FileMapping> files)
         {
-            return RecommendedPieceSize (files.Sum (f => new FileInfo (f.Source).Length));
+            return RecommendedPieceSize (files.Sum (f => f.Length));
         }
 
         public event EventHandler<TorrentCreatorEventArgs>? Hashed;
 
         public List<string> GetrightHttpSeeds { get; }
+
+        /// <summary>
+        /// An MD5 checksum will be generated for each file when this is set to <see langword="true"/>.
+        /// Defaults to false.
+        /// </summary>
         public bool StoreMD5 { get; set; }
-        public bool UsePadding { get; set; } = false;
+
+        /// <summary>
+        /// A SHA1 checksum will be generated for each file when this is set to <see langword="true"/>. This
+        /// value is not used to verify file data, but can be used to aid de-duplicating files across torrents.
+        /// Defaults to false.
+        /// </summary>
+        public bool StoreSHA1 { get; set; }
+
+        /// <summary>
+        /// Determines whether 
+        /// </summary>
+        public TorrentType Type { get; }
+
+        bool UsePadding => Type != TorrentType.V1Only;
 
         internal TimeSpan ReadAllData_DequeueBufferTime;
         internal TimeSpan ReadAllData_EnqueueFilledBufferTime;
@@ -138,17 +158,27 @@ namespace MonoTorrent
         Factories Factories { get; }
 
         public TorrentCreator ()
-            : this (Factories.Default)
+            : this (TorrentType.V1V2Hybrid)
         {
 
         }
-
+        public TorrentCreator (TorrentType type)
+            : this (type, Factories.Default)
+        {
+            
+        }
         public TorrentCreator (Factories factories)
+            : this (TorrentType.V1V2Hybrid, factories)
+        {
+
+        }
+        public TorrentCreator (TorrentType type, Factories factories)
         {
             GetrightHttpSeeds = new List<string> ();
             CanEditSecureMetadata = true;
             CreatedBy = $"MonoTorrent {GitInfoHelper.Version}";
             Factories = factories;
+            Type = type;
         }
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
@@ -212,21 +242,34 @@ namespace MonoTorrent
             mappings.Sort ((left, right) => left.Destination.CompareTo (right.Destination));
             Validate (mappings);
 
-            var maps = new List<InputFile> ();
-            foreach (FileMapping m in fileSource.Files)
-                maps.Add (new InputFile (m.Source, m.Destination, new FileInfo (m.Source).Length));
-            return await CreateAsync (fileSource.TorrentName, maps, token);
+            return await CreateAsync (fileSource.TorrentName, fileSource, token);
         }
 
-        internal async Task<BEncodedDictionary> CreateAsync (string name, List<InputFile> files)
-        {
-            return await CreateAsync (name, files, CancellationToken.None);
-        }
+        internal Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource)
+            => CreateAsync (name, fileSource, CancellationToken.None);
 
-        internal async Task<BEncodedDictionary> CreateAsync (string name, List<InputFile> files, CancellationToken token)
+        internal async Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource, CancellationToken token)
         {
+            var rawFiles = fileSource.Files.Select (file => {
+                var length = file.Length;
+                var padding = (int) ((UsePadding  && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
+                var info = (file.Destination, length, padding, file.Source);
+                return info;
+            }).ToArray ();
+            rawFiles[rawFiles.Length - 1].padding = 0;
+
             if (!InfoDict.ContainsKey (PieceLengthKey))
-                PieceLength = RecommendedPieceSize (files);
+                PieceLength = RecommendedPieceSize (rawFiles.Sum (t => t.length + t.padding));
+
+            var files = TorrentFileInfo.Create (PieceLength, rawFiles);
+            var manager = new TorrentManagerInfo (files,
+                new TorrentInfo (
+                    new InfoHashes (Type.HasV1 () ? InfoHash.FromMemory (new byte[20]) : null, Type.HasV2 () ? InfoHash.FromMemory (new byte[32]) : null),
+                    files,
+                    PieceLength,
+                    files.Sum (t => t.Length + t.Padding)
+                )
+            );
 
             BEncodedDictionary torrent = BEncodedValue.Clone (Metadata);
             var info = (BEncodedDictionary) torrent["info"];
@@ -234,19 +277,49 @@ namespace MonoTorrent
             info["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
 
-            foreach (var file in files.Take (files.Count - 1)) {
-                file.Padding = (UsePadding && file.Length % PieceLength > 0) ? PieceLength - (file.Length % PieceLength) : 0;
+            (var sha1Hashes, var merkleLayers, var fileSHA1Hashes, var fileMD5Hashes) = await CalcPiecesHash (manager, token);
+            if (!sha1Hashes.IsEmpty)
+                info["pieces"] = BEncodedString.FromMemory (sha1Hashes);
+
+            if (merkleLayers.Count > 0) {
+                var dict = new BEncodedDictionary ();
+                foreach (var kvp in merkleLayers.Where (t => t.Key.StartPieceIndex != t.Key.EndPieceIndex)) {
+                    var merkle = ReadOnlyMerkleLayers.FromLayer (PieceLength, kvp.Value.Span);
+                    dict[BEncodedString.FromMemory (merkle.Root)] = BEncodedString.FromMemory (kvp.Value);
+                }
+                torrent["piece layers"] = dict;
+
+                var fileTree = new BEncodedDictionary ();
+                foreach (var kvp in merkleLayers)
+                    AppendFileTree (kvp.Key, kvp.Value, fileTree);
+                info["file tree"] = fileTree;
             }
-            files.Last ().Padding = 0;
 
-            info["pieces"] = (BEncodedString) await CalcPiecesHash (files, token);
-
-            if (files.Count == 1 && files[0].Path == name)
-                CreateSingleFileTorrent (torrent, files);
-            else
-                CreateMultiFileTorrent (torrent, files);
+            if (Type.HasV1 ()) {
+                if (manager.Files.Count == 1 && files[0].Path == name)
+                    CreateSingleFileTorrent (torrent, merkleLayers, fileSHA1Hashes, fileMD5Hashes, files);
+                else
+                    CreateMultiFileTorrent (torrent, merkleLayers, fileSHA1Hashes, fileMD5Hashes, files);
+            }
 
             return torrent;
+        }
+
+        void AppendFileTree (ITorrentManagerFile key, ReadOnlyMemory<byte> value, BEncodedDictionary fileTree)
+        {
+            var parts = key.Path.Split ('/');
+            foreach (var part in parts) {
+                if (!fileTree.TryGetValue (part, out BEncodedValue? inner)) {
+                    fileTree[part] = inner = new BEncodedDictionary ();
+                }
+                fileTree = (BEncodedDictionary) inner;
+            }
+            var fileData = new BEncodedDictionary {
+                {"length", (BEncodedNumber) key.Length },
+                { "pieces root", value.Length == 32 ? BEncodedString.FromMemory (value) : BEncodedString.FromMemory (ReadOnlyMerkleLayers.FromLayer (PieceLength, value.Span).Root) }
+            };
+
+            fileTree.Add ("", fileData);
         }
 
         void AddCommonStuff (BEncodedDictionary torrent)
@@ -281,253 +354,132 @@ namespace MonoTorrent
 
             TimeSpan span = DateTime.UtcNow - new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             torrent["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
+
+            // V1 only torrents should not set this to increase backwards compatibility.
+            // Torrents with V2 metadata (v2 only, or v1/v2 hybrid) should set it
+            if (Type.HasV2 ())
+                torrent["meta version"] = (BEncodedNumber) 2;
         }
 
-        async Task<byte[]> CalcPiecesHash (List<InputFile> files, CancellationToken token)
+        async Task<(
+            ReadOnlyMemory<byte> sha1Hashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> merkleHashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes)>
+        CalcPiecesHash (ITorrentManagerInfo manager, CancellationToken token)
         {
-            long totalLength = files.Sum (t => (t.Length + t.Padding));
-            int pieceCount = (int) ((totalLength + PieceLength - 1) / PieceLength);
+            var settings = new EngineSettingsBuilder {
+                DiskCacheBytes = PieceLength,
+                DiskCachePolicy = StoreMD5 || StoreSHA1 ? CachePolicy.ReadsAndWrites : CachePolicy.WritesOnly
+            }.ToSettings ();
 
-            // If the torrent will not give us at least 8 pieces per thread, try fewer threads. Then just run it
-            // with parallel processing disabled if it's really tiny.
-            int parallelFactor = Environment.ProcessorCount;
-            while (pieceCount / parallelFactor < 8 && parallelFactor > 1)
-                parallelFactor = Math.Max (parallelFactor / 2, 1);
+            var torrentInfo = manager.TorrentInfo ?? throw new InvalidOperationException ("manager.TorrentInfo should not be null");
+            var pieceCount = torrentInfo.PieceCount ();
 
-            // FIXME: If we need to compute the MD5 then we cannot multi-thread reading/hashing the file as we need
-            // to compute the MD5 sequentially
-            if (StoreMD5)
-                parallelFactor = 1;
+            using var diskManager = new DiskManager (settings, Factories);
+            using var releaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<Byte> reusableBlockBuffer);
 
-            var tasks = new List<Task<byte[]>> ();
-            int piecesPerPartition = pieceCount / parallelFactor;
-            Queue<Synchronizer> synchronizers = Synchronizer.CreateLinked (parallelFactor);
+            using var fileMD5 = StoreMD5 ? IncrementalHash.CreateHash (HashAlgorithmName.MD5) : null;
+            using var fileSHA1 = StoreSHA1 ? IncrementalHash.CreateHash (HashAlgorithmName.SHA1) : null;
 
-            for (int i = 0; i < parallelFactor - 1; i++)
-                tasks.Add (CalcPiecesHash (i * piecesPerPartition, piecesPerPartition * PieceLength, synchronizers.Dequeue (), files, token));
-            tasks.Add (CalcPiecesHash (piecesPerPartition * (parallelFactor - 1), totalLength - ((parallelFactor - 1) * piecesPerPartition * PieceLength), synchronizers.Dequeue (), files, token));
+            // Store the MD5/SHA1 hash per file if needed.
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
 
-            var hashes = new List<byte> ();
-            foreach (Task<byte[]> task in tasks)
-                hashes.AddRange (await task);
-            return hashes.ToArray ();
-        }
+            // All files will be SHA1 hashed into this array
+            Memory<byte> sha1Hashes = Type.HasV1 () ? new byte[pieceCount * 20] : Array.Empty<byte> ();
 
-        async Task<byte[]> CalcPiecesHash (int startPiece, long totalBytesToRead, Synchronizer synchronizer, List<InputFile> files, CancellationToken token)
-        {
-            // One buffer will be filled and will be passed to the hashing method.
-            // One buffer will be filled and will be waiting to be hashed.
-            // One buffer will be empty and will be filled from the disk.
-            // Aaaannd one extra buffer for good luck!
-            var emptyBuffers = new AsyncProducerConsumerQueue<byte[]> (4);
+            // All files will be merkle hashed into individual merkle trees
+            Memory<byte> merkleHashes = Type.HasV2 () ? new byte[pieceCount * 32] : Array.Empty<byte> ();
 
-            // Make this buffer one element larger so it can fit the placeholder which indicates a file has been completely read.
-            var filledBuffers = new AsyncProducerConsumerQueue<(byte[]?, int, int, InputFile?)> (emptyBuffers.Capacity + 1);
-
-            // This is the IPieceWriter which we'll use to get our filestream. Each thread gets it's own writer.
-            using IPieceWriter writer = Factories.CreatePieceWriter (3);
-
-            // Read from the disk in 256kB chunks, instead of 16kB, as a performance optimisation.
-            // As the capacity is set to 4, this means we'll have 1 megabyte of buffers to handle.
-            for (int i = 0; i < emptyBuffers.Capacity; i++)
-                await emptyBuffers.EnqueueAsync (new byte[256 * 1024], token);
-            token.ThrowIfCancellationRequested ();
-
-            using CancellationTokenRegistration cancellation = token.Register (() => {
-                emptyBuffers.CompleteAdding ();
-                filledBuffers.CompleteAdding ();
-            });
-
-            // We're going to do single-threaded reading from disk, which (unfortunately) means we're (more or less) restricted
-            // to single threaded hashing too as it's unlikely we'll have sufficient data in our buffers to do any better.
-            Task readAllTask = ReadAllDataAsync (startPiece * PieceLength, totalBytesToRead, synchronizer, files, writer, emptyBuffers, filledBuffers, token);
-
-            Task<byte[]> hashAllTask = HashAllDataAsync (totalBytesToRead, emptyBuffers, filledBuffers, token);
-
-            Task? firstCompleted = null;
-            try {
-                // We first call 'WhenAny' so that if an exception is thrown in one of the tasks, execution will continue
-                // and we can kill the producer/consumer queues.
-                firstCompleted = await Task.WhenAny (readAllTask, hashAllTask);
-
-                // If the first completed task has faulted, force the exception to be thrown.
-                await firstCompleted;
-            } catch {
-                // We got an exception from the first or second task, so bail out now!
-                emptyBuffers.CompleteAdding ();
-                filledBuffers.CompleteAdding ();
-            }
-
-            try {
-                // If there is no exception from the first completed task, just wait for the second one.
-                await Task.WhenAll (readAllTask, hashAllTask);
-            } catch {
+            for (int piece = 0; piece < pieceCount; piece++) {
                 token.ThrowIfCancellationRequested ();
-                if (firstCompleted != null)
-                    await firstCompleted;
-                throw;
+                var hashes = new PieceHash (sha1Hashes.IsEmpty ? sha1Hashes : sha1Hashes.Slice (piece * 20, 20), merkleHashes.IsEmpty ? merkleHashes : merkleHashes.Slice (piece * 32, 32));
+                await diskManager.GetHashAsync (manager, piece, hashes);
+                for (int i = 0; i < torrentInfo.BlocksPerPiece (piece); i++) {
+                    var buffer = reusableBlockBuffer.Slice (0, torrentInfo.BytesPerBlock (piece, i));
+                    await diskManager.ReadAsync (manager, new BlockInfo (piece, i * Constants.BlockSize, buffer.Length), reusableBlockBuffer);
+                    AppendPerFileHashes (manager, fileMD5, fileMD5Hashes, fileSHA1, fileSHA1Hashes, (long) torrentInfo.PieceLength * piece + i * Constants.BlockSize, buffer);
+                }
             }
-            return await hashAllTask;
+
+            var merkleLayers = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
+            if (merkleHashes.Length > 0) {
+                foreach (var file in manager.Files)
+                    merkleLayers.Add (file, merkleHashes.Slice (file.StartPieceIndex * 32, (file.EndPieceIndex - file.StartPieceIndex + 1) * 32));
+            }
+
+            return (sha1Hashes, merkleLayers, fileSHA1Hashes, fileMD5Hashes);
         }
 
-        async Task ReadAllDataAsync (long startOffset, long totalBytesToRead, Synchronizer synchronizer, IList<InputFile> files, IPieceWriter writer, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[]?, int, int, InputFile?)> filledBuffers, CancellationToken token)
+        void AppendPerFileHashes (ITorrentManagerInfo manager, IncrementalHash? fileMD5, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, IncrementalHash? fileSHA1, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes, long offset, Memory<byte> buffer)
         {
-            await MainLoop.SwitchToThreadpool ();
+            while (buffer.Length > 0) {
+                var fileIndex = manager.Files.FindFileByOffset (offset);
+                var file = manager.Files[fileIndex];
+                var remainingBytes = (file.OffsetInTorrent + file.Length) - offset;
 
-            await synchronizer.Self.Task;
-            foreach (var file in files) {
-                long fileRead = 0;
+                // If this is purely padding bytes, skip them.
+                if (remainingBytes <= 0)
+                    break;
 
-                // skip files that we already hashed
-                if (startOffset >= (file.Length + file.Padding)) {
-                    startOffset -= (file.Length + file.Padding);
-                    continue;
-                }
+                if (remainingBytes <= buffer.Length) {
+                    fileMD5?.AppendData (buffer.Span.Slice (0, (int) remainingBytes));
+                    fileSHA1?.AppendData (buffer.Span.Slice (0, (int) remainingBytes));
 
-                fileRead = startOffset;
-                startOffset = 0;
+                    buffer = buffer.Slice ((int) remainingBytes);
+                    offset += remainingBytes;
 
-                while (fileRead < (file.Length + file.Padding) && totalBytesToRead > 0) {
-                    var timer = ValueStopwatch.StartNew ();
-                    byte[] buffer = await emptyBuffers.DequeueAsync (token).ConfigureAwait (false);
-                    ReadAllData_DequeueBufferTime += timer.Elapsed;
-
-                    timer.Restart ();
-                    int toRead = (int) Math.Min (buffer.Length, (file.Length + file.Padding) - fileRead);
-                    toRead = (int) Math.Min (totalBytesToRead, toRead);
-
-                    // 'read' is the total of file bytes + padding bytes that were read
-                    // 'padding' is only the number of padding bytes that were read
-                    // we need those two so the MD5 hasher can hash files without padding
-                    // FIXME: thread safety
-                    (var read, var padding) = await writer.PaddingAwareReadAsyncForCreator (file, fileRead, new Memory<byte> (buffer, 0, toRead));
-                    if (read != toRead)
-                        throw new InvalidOperationException ("The required data could not be read from the file.");
-                    fileRead += read;
-                    totalBytesToRead -= read;
-                    ReadAllData_ReadTime += timer.Elapsed;
-
-                    timer.Restart ();
-                    await filledBuffers.EnqueueAsync ((buffer, read, padding, file), token);
-                    ReadAllData_EnqueueFilledBufferTime += timer.Elapsed;
-
-                    if (emptyBuffers.Count == 0 && synchronizer.Next != synchronizer.Self) {
-                        synchronizer.Next!.SetResult (true);
-                        await synchronizer.Self.Task;
-                    }
-                }
-                // Notify that the file has been completely read at this point.
-                await filledBuffers.EnqueueAsync ((null, 0, 0, file), token);
-            }
-            ReusableTaskCompletionSource<bool>? next = synchronizer.Next;
-            synchronizer.Disconnect ();
-            next!.SetResult (true);
-            await filledBuffers.EnqueueAsync ((null, 0, 0, null), token);
-        }
-
-        async Task<byte[]> HashAllDataAsync (long totalBytesToRead, AsyncProducerConsumerQueue<byte[]> emptyBuffers, AsyncProducerConsumerQueue<(byte[]?, int, int, InputFile?)> filledBuffers, CancellationToken token)
-        {
-            await MainLoop.SwitchToThreadpool ();
-
-            using MD5? md5Hasher = StoreMD5 ? MD5.Create () : null;
-            using SHA1 shaHasher = SHA1.Create ();
-
-            md5Hasher?.Initialize ();
-            shaHasher.Initialize ();
-
-            // The current piece we're working on
-            int piece = 0;
-            // The number of bytes which have already been hashed for the current piece;
-            int pieceHashedBytes = 0;
-            // The buffer which will hold each piece hash. Each hash is 20 bytes.
-            byte[] hashes = new byte[((totalBytesToRead + PieceLength - 1) / PieceLength) * 20];
-            // The piece length
-            int pieceLength = (int) PieceLength;
-
-            long fileRead = 0;
-            long totalRead = 0;
-            while (true) {
-                var timer = ValueStopwatch.StartNew ();
-                (byte[]? buffer, int count, int padding, InputFile? file) = await filledBuffers.DequeueAsync (token);
-                Hashing_DequeueFilledTime += timer.Elapsed;
-
-                // If the buffer and file are both null then all files have been fully read.
-                if (buffer == null && file == null) {
-                    shaHasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                    Array.Copy (shaHasher.Hash!, 0, hashes, piece * 20, shaHasher.Hash!.Length);
+                    if (!(fileSHA1 is null))
+                        fileSHA1Hashes.Add (file, fileSHA1.GetHashAndReset ());
+                    if (!(fileMD5 is null))
+                        fileMD5Hashes.Add (file, fileMD5.GetHashAndReset ());
+                } else {
+                    fileMD5?.AppendData (buffer.Span);
+                    fileSHA1?.AppendData (buffer.Span);
                     break;
                 }
-
-                // If only the buffer is null then the current file has been fully read, but there are still more files to read.
-                if (buffer == null) {
-                    fileRead = 0;
-
-                    if (md5Hasher != null) {
-                        md5Hasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                        file!.MD5 = md5Hasher.Hash;
-                        md5Hasher.Initialize ();
-                    }
-                } else {
-                    fileRead += (count - padding);
-                    totalRead += count;
-
-                    md5Hasher?.TransformBlock (buffer, 0, count - padding, buffer, 0);
-                    int bufferRead = 0;
-
-                    timer.Restart ();
-                    while (bufferRead < count) {
-                        int bytesNeededForPiece = pieceLength - pieceHashedBytes;
-                        int bytesToHash = Math.Min (bytesNeededForPiece, count - bufferRead);
-                        shaHasher.TransformBlock (buffer, bufferRead, bytesToHash, buffer, bufferRead);
-
-                        pieceHashedBytes += bytesToHash;
-                        bufferRead += bytesToHash;
-
-                        if (bytesNeededForPiece == 0) {
-                            shaHasher.TransformFinalBlock (Array.Empty<byte> (), 0, 0);
-                            Array.Copy (shaHasher.Hash!, 0, hashes, piece * 20, shaHasher.Hash!.Length);
-                            shaHasher.Initialize ();
-                            pieceHashedBytes = 0;
-                            piece++;
-                        }
-                    }
-                    Hashing_HashingTime += timer.Elapsed;
-
-                    timer.Restart ();
-                    await emptyBuffers.EnqueueAsync (buffer, token);
-                    Hashing_EnqueueEmptyTime += timer.Elapsed;
-                    Hashed?.InvokeAsync (this, new TorrentCreatorEventArgs (file!.Path, fileRead, file.Length, totalRead, totalBytesToRead));
-                }
             }
-            return hashes;
         }
 
-        void CreateMultiFileTorrent (BEncodedDictionary dictionary, List<InputFile> mappings)
+        void CreateMultiFileTorrent (
+            BEncodedDictionary dictionary,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> merkleHashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes,
+            IList<ITorrentManagerFile> mappings)
         {
             var info = (BEncodedDictionary) dictionary["info"];
             List<BEncodedValue> files = mappings
-                .Select (ToFileInfoDicts)
+                .Select (t => ToFileInfoDicts (t, fileMD5Hashes, fileSHA1Hashes))
                 .SelectMany (x => x)
                 .ToList ();
             info.Add ("files", new BEncodedList (files));
         }
 
-        void CreateSingleFileTorrent (BEncodedDictionary dictionary, IList<InputFile> mappings)
+        void CreateSingleFileTorrent (
+            BEncodedDictionary dictionary,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> merkleHashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes,
+            Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes,
+            IList<ITorrentManagerFile> mappings)
         {
             var infoDict = (BEncodedDictionary) dictionary["info"];
             infoDict.Add ("length", new BEncodedNumber (mappings[0].Length));
-            if (mappings[0].MD5 != null)
-                infoDict["md5sum"] = (BEncodedString) mappings[0].MD5!;
+            if (fileMD5Hashes?.ContainsKey (mappings[0]) ?? false)
+                infoDict["md5sum"] = BEncodedString.FromMemory (fileMD5Hashes[mappings[0]]);
+            if (fileSHA1Hashes?.ContainsKey (mappings[0]) ?? false)
+                infoDict["sha1"] = BEncodedString.FromMemory (fileSHA1Hashes[mappings[0]]);
         }
 
         // converts InputFile into one BEncodedDictionary when there's no padding, or two BEncodedDictionaries when there is.
-        static BEncodedValue[] ToFileInfoDicts (InputFile file)
+        static BEncodedValue[] ToFileInfoDicts (ITorrentManagerFile file, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes)
         {
             return (file.Padding > 0) ?
-                new[] { ToFileInfoDict (file), ToPaddingFileInfoDict (file) } : new[] { ToFileInfoDict (file) };
+                new[] { ToFileInfoDict (file, fileMD5Hashes, fileSHA1Hashes), ToPaddingFileInfoDict (file, fileMD5Hashes) } : new[] { ToFileInfoDict (file, fileMD5Hashes, fileSHA1Hashes) };
         }
 
-        static BEncodedValue ToFileInfoDict (InputFile file)
+        static BEncodedValue ToFileInfoDict (ITorrentManagerFile file, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes)
         {
             var fileDict = new BEncodedDictionary ();
 
@@ -538,13 +490,16 @@ namespace MonoTorrent
 
             fileDict["length"] = new BEncodedNumber (file.Length);
             fileDict["path"] = filePath;
-            if (file.MD5 != null)
-                fileDict["md5sum"] = (BEncodedString) file.MD5;
+            if (fileMD5Hashes.ContainsKey (file))
+                fileDict["md5sum"] = BEncodedString.FromMemory (fileMD5Hashes[file]);
+            if (fileSHA1Hashes.ContainsKey (file))
+                fileDict["sha1"] = BEncodedString.FromMemory (fileSHA1Hashes[file]);
+
 
             return fileDict;
         }
 
-        static BEncodedValue ToPaddingFileInfoDict (InputFile file)
+        static BEncodedValue ToPaddingFileInfoDict (ITorrentManagerFile file, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes)
         {
             var fileDict = new BEncodedDictionary ();
 
@@ -555,7 +510,7 @@ namespace MonoTorrent
             fileDict["length"] = new BEncodedNumber (file.Padding);
             fileDict["path"] = filePath;
 
-            if (file.MD5 != null) {
+            if (fileMD5Hashes.ContainsKey (file)) {
                 using MD5 md5Hasher = MD5.Create ();
                 fileDict["md5sum"] = (BEncodedString) md5Hasher.ComputeHash (new byte[file.Padding]);
             }

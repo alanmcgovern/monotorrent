@@ -622,8 +622,8 @@ namespace MonoTorrent
                         var dict = (BEncodedDictionary) keypair.Value;
 
                         var merkleTrees = dict.ToDictionary (
-                            key => new MerkleRoot (key.Key.AsMemory ()),
-                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, new MerkleRoot (kvp.Key.AsMemory ()), ((BEncodedString)kvp.Value).Span) ?? throw new TorrentException ($"Invalid merkle tree. A layer not produce the expected root hash.")
+                            key => MerkleRoot.FromMemory (key.Key.AsMemory ()),
+                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, MerkleRoot.FromMemory (kvp.Key.AsMemory ()), ((BEncodedString)kvp.Value).Span) ?? throw new TorrentException ($"Invalid merkle tree. A layer not produce the expected root hash.")
                         );
 
                         hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);
@@ -773,9 +773,17 @@ namespace MonoTorrent
                 } else {
                     totalPieces++;
                     var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0) + (files.LastOrDefault ()?.Padding ?? 0);
-                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? new MerkleRoot  (((BEncodedString) value).AsMemory ()) : MerkleRoot.Empty;
+                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? MerkleRoot.FromMemory (((BEncodedString) value).AsMemory ()) : MerkleRoot.Empty;
 
-                    // TODO JMIK: wrong calculation for endIndex, when length is exactly pieceLength?
+                    // A v2 only torrent *never* has padding. However, a hybrid v1/v2 torrent
+                    // will *always* have padding as the v1 metadata will have padding files.
+                    // We insert this padding in the v2 metadata so ITorrentFiles parsed using
+                    // v1 and v2 metadata result in identical objects. Peers unaware of padding
+                    // files may still request the bytes, so it's important to propagate this.
+                    int padding = 0;
+                    if (isHybrid && length % pieceLength != 0)
+                        padding = (int) (pieceLength - (length % pieceLength));
+
                     files.Add (new TorrentFile (path,
                         length,
                         totalPieces,
@@ -783,7 +791,7 @@ namespace MonoTorrent
                         offsetInTorrent,
                         piecesRoot,
                         TorrentFileAttributes.None,
-                        isHybrid ? pieceLength - length % pieceLength : 0));
+                        padding));
                     totalPieces = files.Last ().EndPieceIndex;
                 }
             } else {

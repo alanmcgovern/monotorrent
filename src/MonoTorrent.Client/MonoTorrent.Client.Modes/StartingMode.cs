@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Modes
 
             Manager.PieceManager.Initialise ();
             if (Manager.PendingV2PieceHashes.TrueCount > 0) {
-                Manager.Mode = new PieceHashesMode (Manager, DiskManager, ConnectionManager, Settings);
+                Manager.Mode = new PieceHashesMode (Manager, DiskManager, ConnectionManager, Settings, false);
             } else if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
                 Manager.Mode = new InitialSeedingMode (Manager, DiskManager, ConnectionManager, Settings);
             } else {

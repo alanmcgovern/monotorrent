@@ -53,6 +53,7 @@ namespace MonoTorrent.Client
         public List<ITorrentManagerFile> FilesThatExist = new List<ITorrentManagerFile> ();
         public List<ITorrentManagerFile> DoNotReadFrom = new List<ITorrentManagerFile> ();
         public bool DontWrite;
+        public byte? FillValue;
 
         /// <summary>
         /// this is the list of paths we have read from
@@ -76,6 +77,9 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < buffer.Length; i++)
                     buffer.Span[i] = (byte) (offset + i);
             }
+
+            if (FillValue.HasValue)
+                buffer.Span.Fill (FillValue.Value);
 
             return ReusableTask.FromResult (buffer.Length);
         }
