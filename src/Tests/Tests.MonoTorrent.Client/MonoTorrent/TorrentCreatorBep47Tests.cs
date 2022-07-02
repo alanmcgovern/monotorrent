@@ -10,6 +10,7 @@ using MonoTorrent.Client;
 using MonoTorrent.PieceWriter;
 
 using NUnit.Framework;
+using System.Security.Cryptography;
 
 namespace MonoTorrent.Common
 {
@@ -18,28 +19,37 @@ namespace MonoTorrent.Common
     {
         const string Comment = "My Comment";
         const string CreatedBy = "Created By MonoTorrent";
-        const long PieceLength = 64 * 1024;
+        const int PieceLength = 64 * 1024;
         const string Publisher = "My Publisher";
         const string PublisherUrl = "www.mypublisher.com";
 
-        private static async Task<BEncodedDictionary> CreateTestBenc (bool usePadding)
+        class Source : ITorrentFileSource
         {
-            var files = new List<TorrentCreator.InputFile> {
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength * 2.30)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 36.5)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir2", "File3"), (long)(PieceLength * 3.17)),
-                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir1", "File4"), (long)(PieceLength * 1.22)),
-                new TorrentCreator.InputFile(Path.Combine("Dir2", "SDir2", "File5"), (long)(PieceLength * 6.94)),
-            };
-            return await CreateTestBenc (usePadding, files);
+            public IEnumerable<FileMapping> Files { get; set; }
+            public string TorrentName { get; set; }
         }
 
-        private static async Task<BEncodedDictionary> CreateTestBenc (bool usePadding, List<TorrentCreator.InputFile> files)
+        private static async Task<BEncodedDictionary> CreateTestBenc (TorrentType type)
         {
-            var creator = new TorrentCreator (Factories.Default
-                            .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false })) {
-                UsePadding = usePadding,
+            var files = new Source {
+                TorrentName = "asd",
+                Files = new[] {
+                    new FileMapping(Path.Combine("Dir1", "SDir1", "File1"), Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength * 2.30)),
+                    new FileMapping(Path.Combine("Dir1", "SDir1", "File2"), Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 36.5)),
+                    new FileMapping(Path.Combine("Dir1", "SDir2", "File3"), Path.Combine("Dir1", "SDir2", "File3"), (long)(PieceLength * 3.17)),
+                    new FileMapping(Path.Combine("Dir2", "SDir1", "File4"), Path.Combine("Dir2", "SDir1", "File4"), (long)(PieceLength * 1.22)),
+                    new FileMapping(Path.Combine("Dir2", "SDir2", "File5"), Path.Combine("Dir2", "SDir2", "File5"), (long)(PieceLength * 6.94))
+                }
+            };
+            return await CreateTestBenc (type, files);
+        }
+
+        private static async Task<BEncodedDictionary> CreateTestBenc (TorrentType type, ITorrentFileSource files)
+        {
+            var creator = new TorrentCreator (type, Factories.Default
+                            .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false, FillValue = 0 })) {
                 StoreMD5 = true,
+                StoreSHA1 = true,
             };
 
             var announces = new List<List<string>> {
@@ -59,28 +69,31 @@ namespace MonoTorrent.Common
             return await creator.CreateAsync (Guid.Empty.ToString (), files);
         }
 
-        private static async Task<Torrent> CreateTestTorrent (bool usePadding)
+        private static async Task<Torrent> CreateTestTorrent (TorrentType type)
         {
-            return Torrent.Load (await CreateTestBenc (usePadding));
+            return Torrent.Load (await CreateTestBenc (type));
         }
 
         [Test]
-        public async Task FileLengthSameAsPieceLength ()
+        public async Task FileLengthSameAsPieceLength ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid)] TorrentType type)
         {
-            var files = new List<TorrentCreator.InputFile> {
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength)),
-                new TorrentCreator.InputFile(Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 2)),
+            var files = new Source {
+                TorrentName = "asfg",
+                Files = new[] {
+                    new FileMapping (Path.Combine("Dir1", "SDir1", "File1"), Path.Combine("Dir1", "SDir1", "File1"), (long)(PieceLength)),
+                    new FileMapping (Path.Combine("Dir1", "SDir1", "File2"), Path.Combine("Dir1", "SDir1", "File2"), (long)(PieceLength * 2)),
+                }
             };
 
-            var torrent = Torrent.Load (await CreateTestBenc (true, files));
+            var torrent = Torrent.Load (await CreateTestBenc (type, files));
             Assert.AreEqual (0, torrent.Files[0].Padding);
             Assert.AreEqual (0, torrent.Files[1].Padding);
         }
 
         [Test]
-        public async Task Padding ()
+        public async Task Padding ([Values(TorrentType.V1OnlyWithPaddingFiles, TorrentType.V1V2Hybrid)] TorrentType type)
         {
-            var torrent = await CreateTestTorrent (true);
+            var torrent = await CreateTestTorrent (type);
 
             Assert.AreEqual (5, torrent.Files.Count);
 
@@ -101,23 +114,60 @@ namespace MonoTorrent.Common
         [Test]
         public async Task MD5HashNotAffectedByPadding ()
         {
-            var paddedBenc = await CreateTestBenc (true);
-            var unPaddedBenc = await CreateTestBenc (false);
+            var paddedBenc = await CreateTestBenc (TorrentType.V1OnlyWithPaddingFiles);
+            var unPaddedBenc = await CreateTestBenc (TorrentType.V1Only);
 
             var infoA = (BEncodedDictionary) paddedBenc[(BEncodedString) "info"];
             var filesA = (BEncodedList) infoA[(BEncodedString) "files"];
-            var fileA = (BEncodedDictionary) filesA[0];
-            long lengthA = ((BEncodedNumber) fileA[(BEncodedString) "length"]).Number;
-            var md5sumA = ((BEncodedString) fileA[(BEncodedString) "md5sum"]);
 
             var infoB = (BEncodedDictionary) unPaddedBenc[(BEncodedString) "info"];
             var filesB = (BEncodedList) infoB[(BEncodedString) "files"];
-            var fileB = (BEncodedDictionary) filesB[0];
-            long lengthB = ((BEncodedNumber) fileB[(BEncodedString) "length"]).Number;
-            var md5sumB = ((BEncodedString) fileB[(BEncodedString) "md5sum"]);
 
-            Assert.AreEqual (lengthA, lengthB);
-            Assert.AreEqual (md5sumA.ToHex (), md5sumB.ToHex ());
+            for (int i = 0; i < filesA.Count; i++) {
+                var fileA = (BEncodedDictionary) filesA[0];
+                long lengthA = ((BEncodedNumber) fileA[(BEncodedString) "length"]).Number;
+                var md5sumA = ((BEncodedString) fileA[(BEncodedString) "md5sum"]);
+                var sha1sumA = ((BEncodedString) fileA[(BEncodedString) "sha1"]);
+
+                var fileB = (BEncodedDictionary) filesB[0];
+                long lengthB = ((BEncodedNumber) fileB[(BEncodedString) "length"]).Number;
+                var md5sumB = ((BEncodedString) fileB[(BEncodedString) "md5sum"]);
+                var sha1sumB = ((BEncodedString) fileB[(BEncodedString) "sha1"]);
+
+                Assert.AreEqual (lengthA, lengthB);
+                Assert.AreEqual (md5sumA, md5sumB);
+                Assert.AreEqual (sha1sumA, sha1sumB);
+
+                Assert.AreEqual (SHA1SumZeros (lengthA), sha1sumA);
+                Assert.AreEqual (MD5SumZeros (lengthA), md5sumA);
+
+            }
+        }
+
+        static BEncodedString SHA1SumZeros (long length)
+        {
+            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
+            Span<byte> zeros = stackalloc byte[256];
+            zeros.Clear ();
+            while(length > 0) {
+                var buffer = zeros.Slice (0, (int) Math.Min (length, zeros.Length));
+                hasher.AppendData (buffer);
+                length -= buffer.Length;
+            }
+            return hasher.GetHashAndReset ();
+        }
+
+        static BEncodedString MD5SumZeros (long length)
+        {
+            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.MD5);
+            Span<byte> zeros = stackalloc byte[256];
+            zeros.Clear ();
+            while (length > 0) {
+                var buffer = zeros.Slice (0, (int) Math.Min (length, zeros.Length));
+                hasher.AppendData (buffer);
+                length -= buffer.Length;
+            }
+            return hasher.GetHashAndReset ();
         }
     }
 }

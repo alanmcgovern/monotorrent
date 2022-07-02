@@ -91,8 +91,8 @@ namespace MonoTorrent
             set => SetString (InfoDict, NameKey, value);
         }
 
-        public long PieceLength {
-            get => GetLong (InfoDict, PieceLengthKey);
+        public int PieceLength {
+            get => (int) GetLong (InfoDict, PieceLengthKey);
             set => SetLong (InfoDict, PieceLengthKey, value);
         }
 

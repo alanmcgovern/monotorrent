@@ -82,11 +82,9 @@ namespace MonoTorrent
 
         public static int BytesPerPiece (this ITorrentInfo self, int pieceIndex)
         {
-            if (self.IsV1Only ()) {
-                if (pieceIndex < self.PieceCount () - 1)
-                    return self.PieceLength;
-                return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
-            } else if (self.IsV2Only ()) {
+            if (self.IsV2Only ()) {
+                // V2 only torrents aren't padded and so may have smaller
+                // pieces at the end of each file.
                 for (int i = 0; i < self.Files.Count; i++) {
                     var file = self.Files[i];
                     if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex)
@@ -96,15 +94,17 @@ namespace MonoTorrent
                 }
                 throw new ArgumentOutOfRangeException (nameof (pieceIndex));
             } else {
-                throw new NotSupportedException ("hybrid torrents aren't supported");
+                // Hybrid torrents always have padding files, and v1 torrents do not have
+                // piece aligned files, so it's fine.
+                if (pieceIndex < self.PieceCount () - 1)
+                    return self.PieceLength;
+                return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
             }
         }
 
         public static int ByteOffsetToPieceIndex (this ITorrentInfo self, long offset)
         {
-            if (self.IsV1Only ()) {
-                return (int) (offset / self.PieceLength);
-            } else if (self.IsV2Only ()) {
+            if (self.IsV2Only ()) {
                 for (int i = 0; i < self.Files.Count; i++) {
                     var file = self.Files[i];
                     if (offset < file.OffsetInTorrent || offset >= file.OffsetInTorrent + file.Length)
@@ -113,7 +113,8 @@ namespace MonoTorrent
                 }
                 throw new ArgumentOutOfRangeException (nameof (offset));
             } else {
-                throw new NotSupportedException ("Hybrid torrents aren't supported");
+                // Works for padded, and unpadded, V1 torrents. including hybrid v1/v2 torrents.
+                return (int) (offset / self.PieceLength);
             }
         }
 
@@ -124,19 +125,15 @@ namespace MonoTorrent
         /// <returns></returns>
         public static int PieceCount (this ITorrentInfo self)
         {
-            if (self.IsV1Only ())
-                return (int) ((self.Size + self.PieceLength - 1) / self.PieceLength);
-            else if (self.IsV2Only ())
+            if (self.IsV2Only ())
                 return self.Files[self.Files.Count - 1].EndPieceIndex + 1;
             else
-                throw new NotSupportedException ();
+                return (int) ((self.Size + self.PieceLength - 1) / self.PieceLength);
         }
 
         public static long PieceIndexToByteOffset (this ITorrentInfo self, int pieceIndex)
         {
-            if (self.IsV1Only ()) {
-                return (long) (long) self.PieceLength * pieceIndex;
-            } else if (self.IsV2Only ()) {
+            if (self.IsV2Only ()) {
                 for (int i = 0; i < self.Files.Count; i++) {
                     var file = self.Files[i];
                     if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex)
@@ -145,7 +142,7 @@ namespace MonoTorrent
                 }
                 throw new ArgumentOutOfRangeException (nameof (pieceIndex));
             } else {
-                throw new NotSupportedException ("Hybrid torrents aren't supported");
+                return (long) self.PieceLength * pieceIndex;
             }
         }
     }

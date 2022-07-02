@@ -68,7 +68,7 @@ namespace MonoTorrent.PieceWriter
             int done = 0;
 
             if (todoFile > 0) {
-                done = await writer.ReadAsync (file, offset, buffer.Slice (0, todoFile));
+                done = await writer.ReadAsync (file, offset, buffer.Slice (0, todoFile)).ConfigureAwait (false);
                 if (done < todoFile)
                     return done;
             }
@@ -96,7 +96,7 @@ namespace MonoTorrent.PieceWriter
             if (todoFile > 0) {
                 done = await writer.ReadAsync (file, offset, buffer.Slice (0, todoFile));
                 if (done < todoFile)
-                    return (done,0);
+                    return (done, 0);
             }
 
             if (todoPadding > 0) {
@@ -104,7 +104,7 @@ namespace MonoTorrent.PieceWriter
                 done += todoPadding;
             }
 
-            return (done,todoPadding);
+            return (done, todoPadding);
         }
 
         public static async ReusableTask PaddingAwareWriteAsync (this IPieceWriter writer, ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)

@@ -24,7 +24,7 @@ namespace MonoTorrent.Client
         [Test]
         public void CreateTree_OneRootHash ([Values (1)] int hashes)
         {
-            var expectedRoot = new MerkleRoot (MerkleHash.PaddingHashes[Constants.BlockSize * 2]);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 2]);
             var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
 
             Assert.Throws<ArgumentException> (() => CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span));
@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
         [Test]
         public void CreateTree_2Hashes ([Values(2)] int hashes)
         {
-            var expectedRoot = new MerkleRoot (MerkleHash.PaddingHashes[Constants.BlockSize * 2]);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 2]);
             var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
 
             var layers = CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span);
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         [Test]
         public void CreateTree_4Hashes ([Values (3, 4)] int hashes)
         {
-            var expectedRoot = new MerkleRoot (MerkleHash.PaddingHashes[Constants.BlockSize * 4]);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 4]);
             var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
 
             var layers = CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span);
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         [Test]
         public void CreateTree_8Hashes ([Values (5, 6, 7, 8)] int hashes)
         {
-            var expectedRoot = new MerkleRoot (MerkleHash.PaddingHashes[Constants.BlockSize * 8]);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 8]);
             var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
 
             var layers = CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span);

@@ -60,7 +60,7 @@ namespace MonoTorrent.Messages.Peer
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
-            PiecesRoot = new MerkleRoot (ReadBytes (ref buffer, 32));
+            PiecesRoot = MerkleRoot.FromMemory (ReadBytes (ref buffer, 32));
             BaseLayer = ReadInt (ref buffer);
             Index = ReadInt (ref buffer);
             Length = ReadInt (ref buffer);

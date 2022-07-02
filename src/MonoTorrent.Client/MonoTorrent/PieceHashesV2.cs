@@ -54,7 +54,7 @@ namespace MonoTorrent
         internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, BEncodedDictionary layers)
             : this (pieceLength,
                   files,
-                  layers.ToDictionary (kvp => new MerkleRoot (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (pieceLength, new MerkleRoot (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).AsMemory ().Span)!))
+                  layers.ToDictionary (kvp => MerkleRoot.FromMemory (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (pieceLength, MerkleRoot.FromMemory (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).AsMemory ().Span)!))
         {
         }
 

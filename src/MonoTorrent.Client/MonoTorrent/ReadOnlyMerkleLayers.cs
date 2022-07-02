@@ -34,8 +34,21 @@ namespace MonoTorrent
 {
     public class ReadOnlyMerkleLayers
     {
+        public static ReadOnlyMerkleLayers FromLayer (int pieceLength, ReadOnlySpan<byte> layer)
+        {
+            MerkleLayers layers = new MerkleLayers (MerkleRoot.Empty, pieceLength, layer.Length / 32);
+            if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer, ReadOnlySpan<byte>.Empty))
+                throw new InvalidOperationException ("Failed to append merkle layers to the three");
+            if (!layers.TryVerify (out var verifiedHashes))
+                throw new InvalidOperationException ("Failed to verify a layer when no expected hash was provided");
+            return verifiedHashes;
+        }
+
         public static ReadOnlyMerkleLayers? FromLayer (int pieceLength, MerkleRoot expectedRoot, ReadOnlySpan<byte> layer)
         {
+            if (expectedRoot.IsEmpty)
+                throw new ArgumentException ("The expected MerkleRoot cannot be empty", nameof (expectedRoot));
+
             MerkleLayers layers = new MerkleLayers (expectedRoot, pieceLength, layer.Length / 32);
             if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer, ReadOnlySpan<byte>.Empty))
                 return null;

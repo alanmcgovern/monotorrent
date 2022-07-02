@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
 
                     while (startOffset != endOffset) {
                         int count = Math.Min (Constants.BlockSize, endOffset - startOffset);
-                        if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer).ConfigureAwait (false))
+                        if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer.Slice (0, count)).ConfigureAwait (false))
                             return false;
                         startOffset += count;
                         incrementalHash.AppendData (hashBuffer.Span.Slice (0, count));

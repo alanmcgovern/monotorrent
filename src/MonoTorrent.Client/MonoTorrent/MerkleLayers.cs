@@ -41,7 +41,7 @@ namespace MonoTorrent
 
         List<Memory<byte>> Layers { get; }
 
-        MerkleRoot ExpectedRoot { get; }
+        MerkleRoot ExpectedRoot { get; set; }
 
         public int PieceLayerIndex { get; }
 
@@ -79,8 +79,10 @@ namespace MonoTorrent
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
             if (!MerkleHash.TryHash (hasher, hashes, (int) Math.Pow (2, baseLayer) * 16384, proofs, index, length, computedHash, out int written))
                 return false;
-            if (!computedHash.SequenceEqual (ExpectedRoot.Span))
+            if (!ExpectedRoot.IsEmpty && !computedHash.SequenceEqual (ExpectedRoot.Span))
                 return false;
+            if (ExpectedRoot.IsEmpty)
+                ExpectedRoot = new MerkleRoot (computedHash);
             
             hashes.Slice (0, hashLength).CopyTo (fileHashes.Span.Slice (hashOffset, hashLength));
             return true;

@@ -75,12 +75,15 @@ namespace MonoTorrent.Client
 
 
         internal static TorrentFileInfo[] Create (int pieceLength, params long[] sizes)
-            => Create (pieceLength, sizes.Select ((size, index) => ("File_" + index, size, "full/path/to/File_" + index)).ToArray ());
+            => Create (pieceLength, sizes.Select ((size, index) => ("File_" + index, size, 0, "full/path/to/File_" + index)).ToArray ());
 
         internal static TorrentFileInfo[] Create (int pieceLength, params (string torrentPath, long size, string fullPath)[] infos)
+            => Create (pieceLength, infos.Select (t => (t.torrentPath, t.size, 0, t.fullPath)).ToArray ());
+
+        internal static TorrentFileInfo[] Create (int pieceLength, params (string torrentPath, long size, int padding, string fullPath)[] infos)
         {
             // TorrentFile.Create can reorder the files if there are any of length zero.
-            var torrentFiles = MonoTorrent.TorrentFile.Create (pieceLength, infos.Select (t => (t.torrentPath, t.size)).ToArray ());
+            var torrentFiles = MonoTorrent.TorrentFile.Create (pieceLength, infos.Select (t => (t.torrentPath, t.size, t.padding)).ToArray ());
             return torrentFiles.Select (t => {
                 var info = infos.Single (info => info.torrentPath == t.Path);
                 return new TorrentFileInfo (t, info.fullPath);

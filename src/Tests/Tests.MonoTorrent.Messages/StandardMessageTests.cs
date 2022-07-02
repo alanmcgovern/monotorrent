@@ -167,7 +167,7 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void HashReject ()
         {
-            var array = new MerkleRoot (Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ());
+            var array = MerkleRoot.FromMemory (Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ());
             EncodeDecode (new HashRequestMessage (array, 1, 2, 3, 4));
         }
 
