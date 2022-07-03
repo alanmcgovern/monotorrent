@@ -355,15 +355,32 @@ namespace MonoTorrent.Client
             // Note that 'startOffset' may not be the very start of the piece if we have a partial hash.
             int startOffset = incrementalHash.NextOffsetToHash;
             int endOffset = manager.TorrentInfo!.BytesPerPiece (pieceIndex);
-            using (BufferPool.Rent (Constants.BlockSize, out Memory<byte> hashBuffer)) {
+            using (BufferPool.Rent (Constants.BlockSize, out Memory<byte> readingBuffer))
+            using (BufferPool.Rent (Constants.BlockSize, out Memory<byte> hashingBuffer)) {
                 try {
-
+                    int hashingCount = 0;
+                    int readingCount = Math.Min (Constants.BlockSize, endOffset - startOffset);
+                    var readingTask = ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, readingCount), readingBuffer.Slice (0, readingCount));
                     while (startOffset != endOffset) {
-                        int count = Math.Min (Constants.BlockSize, endOffset - startOffset);
-                        if (!await ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, count), hashBuffer.Slice (0, count)).ConfigureAwait (false))
+                        // Wait for the reading task to complete.
+                        if (!await readingTask.ConfigureAwait (false)) {
                             return false;
-                        startOffset += count;
-                        incrementalHash.AppendData (hashBuffer.Span.Slice (0, count));
+                        } else {
+                            // Great success. Increment 'startOffset' by the amount of data we just read
+                            startOffset += readingCount;
+
+                            // Now flip the buffers so we can asynchronously read the next block while we hash the current block.
+                            (readingBuffer, hashingBuffer) = (hashingBuffer, readingBuffer);
+                            (readingCount, hashingCount) = (hashingCount, readingCount);
+
+                            // begin the next read with into the readbuffer
+                            readingCount = Math.Min (Constants.BlockSize, endOffset - startOffset);
+                            if (readingCount > 0)
+                                readingTask = ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, readingCount), readingBuffer.Slice (0, readingCount));
+                        }
+
+                        // While the prior async read is completing, hash the data
+                        incrementalHash.AppendData (hashingBuffer.Span.Slice (0, hashingCount));
                     }
                     return incrementalHash.TryGetHashAndReset (dest);
                 } finally {

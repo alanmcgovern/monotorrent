@@ -49,7 +49,6 @@ namespace MonoTorrent.Common
             var creator = new TorrentCreator (type, Factories.Default
                             .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false, FillValue = 0 })) {
                 StoreMD5 = true,
-                StoreSHA1 = true,
             };
 
             var announces = new List<List<string>> {
@@ -127,20 +126,32 @@ namespace MonoTorrent.Common
                 var fileA = (BEncodedDictionary) filesA[0];
                 long lengthA = ((BEncodedNumber) fileA[(BEncodedString) "length"]).Number;
                 var md5sumA = ((BEncodedString) fileA[(BEncodedString) "md5sum"]);
-                var sha1sumA = ((BEncodedString) fileA[(BEncodedString) "sha1"]);
 
                 var fileB = (BEncodedDictionary) filesB[0];
                 long lengthB = ((BEncodedNumber) fileB[(BEncodedString) "length"]).Number;
                 var md5sumB = ((BEncodedString) fileB[(BEncodedString) "md5sum"]);
-                var sha1sumB = ((BEncodedString) fileB[(BEncodedString) "sha1"]);
 
                 Assert.AreEqual (lengthA, lengthB);
                 Assert.AreEqual (md5sumA, md5sumB);
-                Assert.AreEqual (sha1sumA, sha1sumB);
+
+                Assert.AreEqual (MD5SumZeros (lengthA), md5sumA);
+            }
+        }
+
+        [Test]
+        public async Task SHA1HashNotAffectedByPadding ()
+        {
+            var paddedBenc = await CreateTestBenc (TorrentType.V1OnlyWithPaddingFiles);
+
+            var infoA = (BEncodedDictionary) paddedBenc[(BEncodedString) "info"];
+            var filesA = (BEncodedList) infoA[(BEncodedString) "files"];
+
+            for (int i = 0; i < filesA.Count; i++) {
+                var fileA = (BEncodedDictionary) filesA[0];
+                long lengthA = ((BEncodedNumber) fileA[(BEncodedString) "length"]).Number;
+                var sha1sumA = ((BEncodedString) fileA[(BEncodedString) "sha1"]);
 
                 Assert.AreEqual (SHA1SumZeros (lengthA), sha1sumA);
-                Assert.AreEqual (MD5SumZeros (lengthA), md5sumA);
-
             }
         }
 
