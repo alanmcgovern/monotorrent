@@ -39,6 +39,17 @@ namespace MonoTorrent.PieceWriter
 {
     class FileStreamBuffer : IDisposable
     {
+        class Comparer : IEqualityComparer<ITorrentManagerFile>
+        {
+            public static Comparer Instance { get; } = new Comparer ();
+
+            public bool Equals (ITorrentManagerFile? x, ITorrentManagerFile? y)
+                => x == y;
+
+            public int GetHashCode (ITorrentManagerFile obj)
+                => obj.GetHashCode ();
+        }
+
         internal readonly struct RentedStream : IDisposable
         {
             internal readonly Stream? Stream;
@@ -77,7 +88,7 @@ namespace MonoTorrent.PieceWriter
         {
             StreamCreator = streamCreator;
             MaxStreams = maxStreams;
-            Streams = new Dictionary<ITorrentManagerFile, StreamData> (maxStreams);
+            Streams = new Dictionary<ITorrentManagerFile, StreamData> (maxStreams, Comparer.Instance);
         }
 
         internal async ReusableTask<bool> CloseStreamAsync (ITorrentManagerFile file)

@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -131,12 +132,7 @@ namespace MonoTorrent
         /// </summary>
         public bool StoreMD5 { get; set; }
 
-        /// <summary>
-        /// A SHA1 checksum will be generated for each file when this is set to <see langword="true"/>. This
-        /// value is not used to verify file data, but can be used to aid de-duplicating files across torrents.
-        /// Defaults to false.
-        /// </summary>
-        public bool StoreSHA1 { get; set; }
+        bool StoreSHA1 => Type == TorrentType.V1OnlyWithPaddingFiles || Type == TorrentType.V1V2Hybrid;
 
         /// <summary>
         /// Determines whether 
@@ -250,16 +246,17 @@ namespace MonoTorrent
 
         internal async Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource, CancellationToken token)
         {
-            var rawFiles = fileSource.Files.Select (file => {
+            var source = fileSource.Files.ToArray ();
+            if (!InfoDict.ContainsKey (PieceLengthKey))
+                PieceLength = RecommendedPieceSize (source.Sum (t => t.Length));
+
+            var rawFiles = source.Select (file => {
                 var length = file.Length;
                 var padding = (int) ((UsePadding  && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
                 var info = (file.Destination, length, padding, file.Source);
                 return info;
             }).ToArray ();
             rawFiles[rawFiles.Length - 1].padding = 0;
-
-            if (!InfoDict.ContainsKey (PieceLengthKey))
-                PieceLength = RecommendedPieceSize (rawFiles.Sum (t => t.length + t.padding));
 
             var files = TorrentFileInfo.Create (PieceLength, rawFiles);
             var manager = new TorrentManagerInfo (files,
@@ -284,8 +281,8 @@ namespace MonoTorrent
             if (merkleLayers.Count > 0) {
                 var dict = new BEncodedDictionary ();
                 foreach (var kvp in merkleLayers.Where (t => t.Key.StartPieceIndex != t.Key.EndPieceIndex)) {
-                    var merkle = ReadOnlyMerkleLayers.FromLayer (PieceLength, kvp.Value.Span);
-                    dict[BEncodedString.FromMemory (merkle.Root)] = BEncodedString.FromMemory (kvp.Value);
+                    var rootHash = MerkleHash.Hash (kvp.Value.Span, PieceLength);
+                    dict[BEncodedString.FromMemory (rootHash)] = BEncodedString.FromMemory (kvp.Value);
                 }
                 torrent["piece layers"] = dict;
 
@@ -314,9 +311,12 @@ namespace MonoTorrent
                 }
                 fileTree = (BEncodedDictionary) inner;
             }
+            if (value.Length > 32)
+                value = MerkleHash.Hash (value.Span, PieceLength);
+
             var fileData = new BEncodedDictionary {
                 {"length", (BEncodedNumber) key.Length },
-                { "pieces root", value.Length == 32 ? BEncodedString.FromMemory (value) : BEncodedString.FromMemory (ReadOnlyMerkleLayers.FromLayer (PieceLength, value.Span).Root) }
+                { "pieces root", BEncodedString.FromMemory (value) }
             };
 
             fileTree.Add ("", fileData);
@@ -369,7 +369,7 @@ namespace MonoTorrent
         CalcPiecesHash (ITorrentManagerInfo manager, CancellationToken token)
         {
             var settings = new EngineSettingsBuilder {
-                DiskCacheBytes = PieceLength,
+                DiskCacheBytes = PieceLength * 2, // Store the currently processing piece and allow preping the next piece
                 DiskCachePolicy = StoreMD5 || StoreSHA1 ? CachePolicy.ReadsAndWrites : CachePolicy.WritesOnly
             }.ToSettings ();
 
@@ -392,16 +392,34 @@ namespace MonoTorrent
             // All files will be merkle hashed into individual merkle trees
             Memory<byte> merkleHashes = Type.HasV2 () ? new byte[pieceCount * 32] : Array.Empty<byte> ();
 
+            var hashes = new PieceHash (sha1Hashes.IsEmpty ? sha1Hashes : sha1Hashes.Slice (0, 20), merkleHashes.IsEmpty ? merkleHashes : merkleHashes.Slice (0, 32));
+            var currentPiece = diskManager.GetHashAsync (manager, 0, hashes).ConfigureAwait (false);
+            var previousAppend = ReusableTask.CompletedTask;
             for (int piece = 0; piece < pieceCount; piece++) {
                 token.ThrowIfCancellationRequested ();
-                var hashes = new PieceHash (sha1Hashes.IsEmpty ? sha1Hashes : sha1Hashes.Slice (piece * 20, 20), merkleHashes.IsEmpty ? merkleHashes : merkleHashes.Slice (piece * 32, 32));
-                await diskManager.GetHashAsync (manager, piece, hashes);
-                for (int i = 0; i < torrentInfo.BlocksPerPiece (piece); i++) {
-                    var buffer = reusableBlockBuffer.Slice (0, torrentInfo.BytesPerBlock (piece, i));
-                    await diskManager.ReadAsync (manager, new BlockInfo (piece, i * Constants.BlockSize, buffer.Length), reusableBlockBuffer);
-                    AppendPerFileHashes (manager, fileMD5, fileMD5Hashes, fileSHA1, fileSHA1Hashes, (long) torrentInfo.PieceLength * piece + i * Constants.BlockSize, buffer);
+                // Wait for the current piece's async read to complete. When this task completes, the V1 and/or V2 hash will
+                // be stored in the 'hashes' object
+                await currentPiece;
+
+                // Asynchronously begin reading the *next* piece and computing the hash for that piece.
+                var nextPiece = piece + 1;
+                if (nextPiece < pieceCount) {
+                    hashes = new PieceHash (sha1Hashes.IsEmpty ? sha1Hashes : sha1Hashes.Slice (nextPiece * 20, 20), merkleHashes.IsEmpty ? merkleHashes : merkleHashes.Slice (nextPiece * 32, 32));
+                    currentPiece = diskManager.GetHashAsync (manager, nextPiece, hashes).ConfigureAwait (false);
+                }
+
+                // While we're computing the hash for 'piece + 1', we can compute the MD5 and/or SHA1 for the specific file
+                // being hashed.
+                if (StoreMD5 || StoreSHA1) {
+                    for (int i = 0; i < torrentInfo.BlocksPerPiece (piece); i++) {
+                        var buffer = reusableBlockBuffer.Slice (0, torrentInfo.BytesPerBlock (piece, i));
+                        await diskManager.ReadAsync (manager, new BlockInfo (piece, i * Constants.BlockSize, buffer.Length), reusableBlockBuffer).ConfigureAwait (false);
+                        await AppendPerFileHashes (manager, fileMD5, fileMD5Hashes, fileSHA1, fileSHA1Hashes, (long) torrentInfo.PieceLength * piece + i * Constants.BlockSize, buffer).ConfigureAwait (false);
+                    }
                 }
             }
+            // Ensure the final block from the final piece is hashed.
+            await previousAppend;
 
             var merkleLayers = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
             if (merkleHashes.Length > 0) {
@@ -412,7 +430,7 @@ namespace MonoTorrent
             return (sha1Hashes, merkleLayers, fileSHA1Hashes, fileMD5Hashes);
         }
 
-        void AppendPerFileHashes (ITorrentManagerInfo manager, IncrementalHash? fileMD5, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, IncrementalHash? fileSHA1, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes, long offset, Memory<byte> buffer)
+        async ReusableTask AppendPerFileHashes (ITorrentManagerInfo manager, IncrementalHash? fileMD5, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, IncrementalHash? fileSHA1, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes, long offset, Memory<byte> buffer)
         {
             while (buffer.Length > 0) {
                 var fileIndex = manager.Files.FindFileByOffset (offset);
@@ -435,8 +453,21 @@ namespace MonoTorrent
                     if (!(fileMD5 is null))
                         fileMD5Hashes.Add (file, fileMD5.GetHashAndReset ());
                 } else {
-                    fileMD5?.AppendData (buffer.Span);
-                    fileSHA1?.AppendData (buffer.Span);
+                    static async ReusableTask AsyncHash (IncrementalHash hash, Memory<byte> buffer)
+                    {
+                        await MainLoop.SwitchThread ();
+                        hash.AppendData (buffer.Span);
+                    }
+                    if (!(fileMD5 is null) && !(fileSHA1 is null)) {
+                        // Both of these are non-null, so hash both in parallel
+                        var t1 = fileMD5 is null ? ReusableTask.CompletedTask : AsyncHash (fileMD5, buffer);
+                        var t2 = fileSHA1 is null ? ReusableTask.CompletedTask : AsyncHash (fileSHA1, buffer);
+                        await t1.ConfigureAwait (false);
+                        await t2.ConfigureAwait (false);
+                    } else {
+                        // Only one of them is non-null, so no fancy threading needed.
+                        (fileMD5 ?? fileSHA1)!.AppendData (buffer.Span);
+                    }
                     break;
                 }
             }
