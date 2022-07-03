@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -60,43 +61,44 @@ namespace MonoTorrent
 
     class ReusableExclusiveSemaphore
     {
+        static readonly Queue<ReusableTaskCompletionSource<object?>> Cache = new Queue<ReusableTaskCompletionSource<object?>> ();
+
         public readonly struct Releaser : IDisposable
         {
-            static readonly object completed = new object ();
+            readonly ReusableExclusiveSemaphore Owner { get; }
 
-            readonly ReusableTaskCompletionSource<object>? Task { get; }
-
-            internal Releaser (ReusableTaskCompletionSource<object> task)
-                => Task = task;
+            internal Releaser (ReusableExclusiveSemaphore owner)
+                => Owner = owner;
 
             public void Dispose ()
-                => Task?.SetResult (completed);
+                => Owner?.ReleaseOne ();
         }
 
-        static readonly Queue<ReusableTaskCompletionSource<object>> Cache = new Queue<ReusableTaskCompletionSource<object>> ();
-
-        ReusableTaskCompletionSource<object>? current;
+        int activeCount;
+        Queue<ReusableTaskCompletionSource<object?>> nextWaiter = new Queue<ReusableTaskCompletionSource<object?>> ();
 
         public async ReusableTask<Releaser> EnterAsync ()
         {
-            ReusableTaskCompletionSource<object> task;
-            ReusableTaskCompletionSource<object>? existing;
-
+            ReusableTaskCompletionSource<object?> task;
             lock (Cache) {
-                existing = current;
-                if (Cache.Count == 0)
-                    current = task = new ReusableTaskCompletionSource<object> ();
-                else
-                    current = task = Cache.Dequeue ();
-            }
+                ++activeCount;
+                if (activeCount == 1)
+                    return new Releaser (this);
 
-            if (existing != null) {
-                await existing.Task;
-                lock (Cache)
-                    Cache.Enqueue (existing);
+                task = Cache.Count > 0 ? Cache.Dequeue () : new ReusableTaskCompletionSource<object?> ();
+                nextWaiter.Enqueue (task);
             }
+            await task.Task.ConfigureAwait (false);
+            return new Releaser (this);
+        }
 
-            return new Releaser (task);
+        void ReleaseOne ()
+        {
+            lock (Cache) {
+                --activeCount;
+                if (activeCount > 0)
+                    nextWaiter.Dequeue ().SetResult (null);
+            }
         }
     }
 }
