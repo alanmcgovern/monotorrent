@@ -139,7 +139,7 @@ namespace MonoTorrent.PieceWriter
                 return true;
 
             Interlocked.Add (ref cacheMisses, block.RequestLength);
-            var result = await ReadFromFilesAsync (torrent, block, buffer).ConfigureAwait (false) == block.RequestLength;
+            var result = await ReadFromFilesAsync (torrent, block, buffer) == block.RequestLength;
             if (result && Policy == CachePolicy.ReadsAndWrites) {
                 var releaser = BufferPool.Rent (block.RequestLength, out Memory<byte> memory);
                 var cache = new CachedBlock (block, false, releaser, memory);
