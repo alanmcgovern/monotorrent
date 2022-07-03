@@ -54,6 +54,15 @@ namespace MonoTorrent
             return results;
         }
 
+        public static ReadOnlyMemory<byte> Hash (ReadOnlySpan<byte> src, int startLayerLength)
+        {
+            using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
+            Memory<byte> hash = new byte[32];
+            if (!TryHash (hasher, src, startLayerLength, ReadOnlySpan<byte>.Empty, 0, src.Length, hash.Span, out int written) || written != 32)
+                throw new InvalidOperationException ("Unexpected error hashing the buffer");
+            return hash;
+        }
+
         public static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, ReadOnlySpan<byte> proofLayers, int index, int length, Span<byte> computedHash, out int written)
         {
             using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
