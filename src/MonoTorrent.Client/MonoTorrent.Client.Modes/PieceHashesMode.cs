@@ -76,30 +76,29 @@ namespace MonoTorrent.Client.Modes
             public int BytesPerPiece (int pieceIndex)
                 => pieceIndex == PieceCount - 1 ? totalHashes - pieceIndex * PieceLength : PieceLength;
 
-            void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+            void IMessageEnqueuer.EnqueueRequest (IRequester peer, PieceSegment block)
             {
                 var message = HashRequestMessage.Create (root, totalHashes, actualPieceLength, block.PieceIndex * PieceLength, MaxHashesPerRequest);
                 ((PeerId) peer).MessageQueue.Enqueue (message);
             }
 
-            void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+            void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
             {
                 foreach (var block in blocks)
                     ((IMessageEnqueuer) this).EnqueueRequest (peer, block);
             }
 
-            void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+            void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
             {
                 // You can't cancel a request for hashes
             }
 
-            void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+            void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)
             {
                 // you can't cancel a request for hashes
             }
         }
 
-        static readonly PeerId CompletedSentinal = PeerId.CreateNull (1);
         const int SHA256HashLength = 32;
 
         static readonly Logger logger = Logger.Create (nameof (PieceHashesMode));

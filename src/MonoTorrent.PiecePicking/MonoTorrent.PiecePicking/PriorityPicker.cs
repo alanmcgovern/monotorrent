@@ -84,7 +84,7 @@ namespace MonoTorrent.PiecePicking
             BuildSelectors ();
         }
 
-        public override bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
+        public override bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)
         {
             if (temp is null || allPrioritisedPieces is null)
                 return false;
@@ -104,7 +104,7 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public override int PickPiece (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             // Fast Path - the peer has nothing to offer
             if (available.AllFalse || temp == null)

@@ -35,8 +35,8 @@ namespace MonoTorrent.PiecePicking
     class PiecePickerFilterChecker : PiecePickerFilter
     {
         public List<IPieceRequesterData> Initialised;
-        public List<(IPeer peer, ReadOnlyBitField bitfield)> Interesting;
-        public List<(IPeer peer, ReadOnlyBitField available, IReadOnlyList<ReadOnlyBitField> otherPeers, int count, int startIndex, int endIndex)> Picks;
+        public List<(IRequester peer, ReadOnlyBitField bitfield)> Interesting;
+        public List<(IRequester peer, ReadOnlyBitField available, IReadOnlyList<ReadOnlyBitField> otherPeers, int count, int startIndex, int endIndex)> Picks;
 
         public PiecePickerFilterChecker ()
             : this (null)
@@ -47,8 +47,8 @@ namespace MonoTorrent.PiecePicking
             : base (next)
         {
             Initialised = new List<IPieceRequesterData> ();
-            Interesting = new List<(IPeer peer, ReadOnlyBitField bitfield)> ();
-            Picks = new List<(IPeer peer, ReadOnlyBitField available, IReadOnlyList<ReadOnlyBitField> otherPeers, int count, int startIndex, int endIndex)> ();
+            Interesting = new List<(IRequester peer, ReadOnlyBitField bitfield)> ();
+            Picks = new List<(IRequester peer, ReadOnlyBitField available, IReadOnlyList<ReadOnlyBitField> otherPeers, int count, int startIndex, int endIndex)> ();
         }
 
         public override void Initialise (IPieceRequesterData torrentData)
@@ -57,13 +57,13 @@ namespace MonoTorrent.PiecePicking
             Next?.Initialise (torrentData);
         }
 
-        public override bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
+        public override bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)
         {
             Interesting.Add ((peer, bitfield));
             return Next == null ? !bitfield.AllFalse : Next.IsInteresting (peer, bitfield);
         }
 
-        public override int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public override int PickPiece (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             Picks.Add ((peer, new ReadOnlyBitField (available), new List<ReadOnlyBitField> (otherPeers.ToArray ()).AsReadOnly (), requests.Length, startIndex, endIndex));
             return Next == null ? 0 : Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);

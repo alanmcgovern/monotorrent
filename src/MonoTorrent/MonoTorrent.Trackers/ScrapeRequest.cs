@@ -31,11 +31,11 @@ namespace MonoTorrent.Trackers
 {
     public sealed class ScrapeRequest
     {
-        public InfoHash InfoHash { get; }
+        public InfoHashes InfoHashes { get; }
 
-        public ScrapeRequest (InfoHash infoHash)
+        public ScrapeRequest (InfoHashes infoHashes)
         {
-            InfoHash = infoHash;
+            InfoHashes = infoHashes;
         }
     }
 }

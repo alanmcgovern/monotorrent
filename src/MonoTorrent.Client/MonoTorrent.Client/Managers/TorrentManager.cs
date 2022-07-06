@@ -834,26 +834,54 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        public async Task<bool> AddPeerAsync (Peer peer)
+        public async Task<bool> AddPeerAsync (PeerInfo peer)
+            => await AddPeersAsync (new[] { peer }) > 0;
+
+        public async Task<int> AddPeersAsync (IEnumerable<PeerInfo> peers)
         {
-            await ClientEngine.MainLoop;
-            return AddPeer (peer, false, false);
+            int count = 0;
+            if (!(InfoHashes.V1 is null))
+                count += await AddPeersAsync (peers, InfoHashes.V1);
+            if (!(InfoHashes.V2 is null))
+                count += await AddPeersAsync (peers, InfoHashes.V2);
+            return count;
         }
 
-        internal bool AddPeer (Peer peer, bool fromTrackers, bool prioritise)
+        public async Task<int> AddPeersAsync (IEnumerable<PeerInfo> peers, InfoHash infoHash)
         {
-            Check.Peer (peer);
-            if (HasMetadata && Torrent!.IsPrivate && !fromTrackers)
+            await ClientEngine.MainLoop;
+            return AddPeers (peers, infoHash, prioritise: false, fromTracker: false);
+        }
+
+        internal int AddPeers (IEnumerable<PeerInfo> peers, InfoHash infoHash, bool prioritise, bool fromTracker)
+        {
+            Check.Peers (peers);
+            if (HasMetadata && Torrent!.IsPrivate && !fromTracker)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
+
+            int count = 0;
+            foreach (PeerInfo p in peers)
+                count += AddPeer (p, infoHash, prioritise) ? 1 : 0;
+            return count;
+        }
+
+        bool AddPeer (PeerInfo peerInfo, InfoHash infoHash, bool prioritise)
+        {
+            if (peerInfo is null)
+                throw new ArgumentNullException (nameof (peerInfo));
+
+            var peer = new Peer (peerInfo, infoHash) {
+                IsSeeder = peerInfo.MaybeSeeder,
+            };
 
             if (Peers.Contains (peer))
                 return false;
 
             // Ignore peers in the inactive list
-            if (InactivePeerManager.InactivePeerList.Contains (peer.ConnectionUri))
+            if (InactivePeerManager.InactivePeerList.Contains (peer.Info.ConnectionUri))
                 return false;
 
-            if (Engine!.PeerId.Equals (peer.PeerId))
+            if (Engine!.PeerId.Equals (peer.Info.PeerId))
                 return false;
 
             if (Peers.TotalPeers < Settings.MaximumPeerDetails) {
@@ -873,28 +901,11 @@ namespace MonoTorrent.Client
                 if (!successful)
                     return false;
             }
-            OnPeerFound?.Invoke (this, new PeerAddedEventArgs (this, peer));
+            OnPeerFound?.Invoke (this, new PeerAddedEventArgs (this, peerInfo));
             // When we successfully add a peer we try to connect to the next available peer
             return true;
         }
 
-        public async Task<int> AddPeersAsync (IEnumerable<Peer> peers)
-        {
-            await ClientEngine.MainLoop;
-            return AddPeers (peers, false);
-        }
-
-        int AddPeers (IEnumerable<Peer> peers, bool fromTrackers)
-        {
-            Check.Peers (peers);
-            if (HasMetadata && Torrent!.IsPrivate && !fromTrackers)
-                throw new InvalidOperationException ("You cannot add external peers to a private torrent");
-
-            int count = 0;
-            foreach (Peer p in peers)
-                count += AddPeer (p, fromTrackers, prioritise: false) ? 1 : 0;
-            return count;
-        }
 
         internal void RaisePeerConnected (PeerConnectedEventArgs args)
         {
@@ -1098,7 +1109,9 @@ namespace MonoTorrent.Client
             if (e.Successful) {
                 await ClientEngine.MainLoop;
 
-                int count = AddPeers (e.Peers.Select (t => new Peer (BEncodedString.FromMemory (t.PeerId), t.Uri)).ToArray (), true);
+                int count = 0;
+                foreach (var kvp in e.Peers)
+                    count += AddPeers (kvp.Value, kvp.Key, prioritise: true, fromTracker: true);
                 RaisePeersFound (new TrackerPeersAdded (this, count, e.Peers.Count, e.Tracker));
             }
         }
@@ -1132,16 +1145,16 @@ namespace MonoTorrent.Client
             => Torrent == null ? 0 : Torrent.ByteOffsetToPieceIndex (byteOffset);
         int IPieceRequesterData.BytesPerPiece (int piece)
             => Torrent == null ? 0 : Torrent.BytesPerPiece (piece);
-        void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+        void IMessageEnqueuer.EnqueueRequest (IRequester peer, PieceSegment block)
             => ((IMessageEnqueuer) this).EnqueueRequests (peer, stackalloc PieceSegment[] { block });
-        void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> segments)
+        void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> segments)
         {
             (var bundle, var releaser) = RequestBundle.Rent<RequestBundle> ();
             bundle.Initialize (segments.ToBlockInfo (stackalloc BlockInfo[segments.Length], this));
             ((PeerId) peer).MessageQueue.Enqueue (bundle, releaser);
         }
 
-        void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+        void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
         {
             (var msg, var releaser) = PeerMessage.Rent<CancelMessage> ();
             var blockInfo = segment.ToBlockInfo (this);
@@ -1149,7 +1162,7 @@ namespace MonoTorrent.Client
             ((PeerId) peer).MessageQueue.Enqueue (msg, releaser);
         }
 
-        void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+        void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)
         {
             for (int i = 0; i < segments.Length; i++)
                 ((IMessageEnqueuer) this).EnqueueCancellation (peer, segments[i]);

@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Modes
             DiskManager = Manager.Engine.DiskManager;
             ConnectionManager = Manager.Engine.ConnectionManager;
 
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new BitField (Manager.Bitfield.Length).SetAll (true)) {
+            Peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://123.123.123.123:12345")), Manager.InfoHashes.V1OrV2), conn.Outgoing, new BitField (Manager.Bitfield.Length).SetAll (true)) {
                 IsChoking = false,
                 AmInterested = true,
             };

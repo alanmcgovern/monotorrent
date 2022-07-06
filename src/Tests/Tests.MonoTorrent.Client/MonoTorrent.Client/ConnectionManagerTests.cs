@@ -20,9 +20,9 @@ namespace MonoTorrent.Client
                 await engine.AddAsync (new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 2, 20).ToArray ())), "tmp")
             };
 
-            torrents[0].Peers.ConnectedPeers.Add (PeerId.CreateNull (1));
-            torrents[0].Peers.ConnectedPeers.Add (PeerId.CreateNull (1));
-            torrents[2].Peers.ConnectedPeers.Add (PeerId.CreateNull (1));
+            torrents[0].Peers.ConnectedPeers.Add (PeerId.CreateNull (1, torrents[0].InfoHashes.V1OrV2));
+            torrents[0].Peers.ConnectedPeers.Add (PeerId.CreateNull (1, torrents[0].InfoHashes.V1OrV2));
+            torrents[2].Peers.ConnectedPeers.Add (PeerId.CreateNull (1, torrents[2].InfoHashes.V1OrV2));
 
             foreach (var torrent in torrents)
                 manager.Add (torrent);

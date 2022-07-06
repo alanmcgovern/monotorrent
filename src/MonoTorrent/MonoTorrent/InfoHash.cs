@@ -40,6 +40,8 @@ namespace MonoTorrent
     public class InfoHash : IEquatable<InfoHash>
     {
         static readonly Dictionary<char, byte> Base32DecodeTable;
+        internal static InfoHash EmptyV1 { get; }
+        internal static InfoHash EmptyV2 { get; }
 
         static InfoHash ()
         {
@@ -47,6 +49,9 @@ namespace MonoTorrent
             const string table = "abcdefghijklmnopqrstuvwxyz234567";
             for (int i = 0; i < table.Length; i++)
                 Base32DecodeTable[table[i]] = (byte) i;
+
+            EmptyV1 = new InfoHash (new byte[20]);
+            EmptyV2 = new InfoHash (new byte[32]);
         }
 
         ReadOnlyMemory<byte> Hash { get; }

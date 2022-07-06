@@ -26,29 +26,25 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System.Collections.Generic;
+
 namespace MonoTorrent.Trackers
 {
     public abstract class TrackerResponse
     {
-        /// <summary>
-        /// The number of active peers which have completed downloading.
-        /// </summary>
-        public int Complete { get; }
-
-        /// <summary>
-        /// The number of peers that have ever completed downloading.
-        /// </summary>
-        public int Downloaded { get; }
-
-        /// <summary>
-        /// The number of active peers which have not completed downloading.
-        /// </summary>
-        public int Incomplete { get; }
 
         /// <summary>
         /// The failure message returned by the tracker.
         /// </summary>
         public string FailureMessage { get; }
+
+        /// <summary>
+        /// The 'downloaded', 'complete' and 'incomplete' stats for each infohash.
+        /// 'downloaded' is the total number of peers which downloaded the torrent.
+        /// 'complete' is the current number of active seeders.
+        /// 'incomplete' is the current number of active downloaders.
+        /// </summary>
+        public Dictionary<InfoHash, ScrapeInfo> ScrapeInfo { get; }
 
         /// <summary>
         /// The status of the tracker after this request.
@@ -62,17 +58,13 @@ namespace MonoTorrent.Trackers
 
         protected TrackerResponse (
             TrackerState state,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
+            Dictionary<InfoHash, ScrapeInfo> scrapeInfo,
             string warningMessage = "",
             string failureMessage = ""
             )
         {
             State = state;
-            Complete = complete ?? 0;
-            Incomplete = incomplete ?? 0;
-            Downloaded = downloaded ?? 0;
+            ScrapeInfo = scrapeInfo;
             WarningMessage = warningMessage ?? "";
             FailureMessage = failureMessage ?? "";
         }

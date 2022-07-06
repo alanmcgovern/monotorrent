@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
         async void ConnectToPeer (TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            var connection = Factories.CreatePeerConnection (peer.ConnectionUri);
+            var connection = Factories.CreatePeerConnection (peer.Info.ConnectionUri);
             if (connection == null || peer.AllowedEncryption.Count == 0)
                 return;
 
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
                 if (!succeeded) {
                     peer.FailedConnectionAttempts++;
                     connection.Dispose ();
-                    manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer, ConnectionFailureReason.Unreachable, manager));
+                    manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer.Info, ConnectionFailureReason.Unreachable, manager));
                 } else {
                     var id = new PeerId (peer, connection, new BitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageReceived.Restart ();
@@ -200,7 +200,7 @@ namespace MonoTorrent.Client
                 else
                     id.Peer.AllowedEncryption = EncryptionTypes.None;
 
-                manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer, ConnectionFailureReason.EncryptionNegiotiationFailed, manager));
+                manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer.Info, ConnectionFailureReason.EncryptionNegiotiationFailed, manager));
                 CleanupSocket (manager, id);
 
                 // CleanupSocket will contain the peer only if AllowedEncryption is not set to None. If
@@ -219,7 +219,7 @@ namespace MonoTorrent.Client
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
                 id.Peer.AllowedEncryption = EncryptionTypes.Remove (id.Peer.AllowedEncryption, id.EncryptionType);
 
-                manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer, ConnectionFailureReason.HandshakeFailed, manager));
+                manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer.Info, ConnectionFailureReason.HandshakeFailed, manager));
                 CleanupSocket (manager, id);
 
                 // CleanupSocket will contain the peer only if AllowedEncryption is not set to None. If
@@ -244,7 +244,7 @@ namespace MonoTorrent.Client
                 id.WhenConnected.Restart ();
                 id.LastBlockReceived.Restart ();
             } catch {
-                manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer, ConnectionFailureReason.Unknown, manager));
+                manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer.Info, ConnectionFailureReason.Unknown, manager));
                 CleanupSocket (manager, id);
                 return;
             }
@@ -334,7 +334,7 @@ namespace MonoTorrent.Client
                 manager.Peers.ActivePeers.Remove (id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
-                if (canReuse && !LocalPeerId.Equals (id.Peer.PeerId)) {
+                if (canReuse && !LocalPeerId.Equals (id.Peer.Info.PeerId)) {
                     if (!manager.Peers.AvailablePeers.Contains (id.Peer) && id.Peer.CleanedUpCount < 5)
                         manager.Peers.AvailablePeers.Insert (0, id.Peer);
                     else if (manager.Peers.BannedPeers.Contains (id.Peer) && id.Peer.CleanedUpCount >= 5)
@@ -378,7 +378,7 @@ namespace MonoTorrent.Client
                 bool maxAlreadyOpen = OpenConnections >= Settings.MaximumConnections
                     || manager.OpenConnections >= manager.Settings.MaximumConnections;
 
-                if (LocalPeerId.Equals (id.Peer.PeerId)) {
+                if (LocalPeerId.Equals (id.Peer.Info.PeerId)) {
                     logger.Info ("Connected to self - disconnecting");
                     CleanupSocket (manager, id);
                     return false;
@@ -477,7 +477,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal bool ShouldBanPeer (Peer peer)
+        internal bool ShouldBanPeer (PeerInfo peer)
         {
             if (BanPeer == null)
                 return false;
@@ -540,11 +540,11 @@ namespace MonoTorrent.Client
             Peer peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt (i);
 
-            if (ShouldBanPeer (peer))
+            if (ShouldBanPeer (peer.Info))
                 return false;
 
             // Connect to the peer
-            logger.InfoFormatted ("Trying to connect to {0}", peer.ConnectionUri);
+            logger.InfoFormatted ("Trying to connect to {0}", peer.Info.ConnectionUri);
             ConnectToPeer (manager, peer);
             return true;
         }

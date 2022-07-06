@@ -202,8 +202,8 @@ namespace MonoTorrent.Client.Modes
 
             // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
             // we just copy the one that is in the handshake.
-            if (BEncodedString.IsNullOrEmpty (id.Peer.PeerId))
-                id.Peer.PeerId = message.PeerId;
+            if (BEncodedString.IsNullOrEmpty (id.Peer.Info.PeerId))
+                id.Peer.UpdatePeerId (message.PeerId);
 
             // If the infohash doesn't match, dump the connection
             if (!Manager.InfoHashes.Contains (message.InfoHash)) {
@@ -212,7 +212,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
-            if (!id.Peer.PeerId.Equals (message.PeerId)) {
+            if (!id.Peer.Info.PeerId.Equals (message.PeerId)) {
                 if (Manager.HasMetadata && Manager.Torrent!.IsPrivate) {
                     // If this is a private torrent we should be careful about peerids. If they don't
                     // match we should close the connection. I *think* uTorrent doesn't randomise peerids
@@ -222,7 +222,7 @@ namespace MonoTorrent.Client.Modes
                     throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
                 } else {
                     // We don't care about the mismatch for public torrents. uTorrent randomizes its PeerId, as do other clients.
-                    id.Peer.PeerId = message.PeerId;
+                    id.Peer.UpdatePeerId (message.PeerId);
                 }
             }
 
@@ -248,10 +248,10 @@ namespace MonoTorrent.Client.Modes
                 if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaximumConnections)
                     return;
 
-                IList<Peer> newPeers = Peer.Decode (BEncodedString.FromMemory (message.Added));
-                for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++) {
-                    newPeers[i].IsSeeder = (message.AddedDotF.Span[i] & 0x2) == 0x2;
-                }
+                var newPeers = PeerDecoder.Decode (BEncodedString.FromMemory (message.Added));
+                for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++)
+                    newPeers[i] = new PeerInfo (newPeers[i].ConnectionUri, newPeers[i].PeerId, (message.AddedDotF.Span[i] & 0x2) == 0x2);
+
                 int count = await Manager.AddPeersAsync (newPeers);
                 Manager.RaisePeersFound (new PeerExchangePeersAdded (Manager, count, newPeers.Count, id));
             }
@@ -373,7 +373,7 @@ namespace MonoTorrent.Client.Modes
         protected virtual void HandlePieceMessage (PeerId id, PieceMessage message, PeerMessage.Releaser releaser)
         {
             id.PiecesReceived++;
-            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IPeer> peersInvolved))
+            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IRequester> peersInvolved))
                 WritePieceAsync (message, releaser, pieceComplete, peersInvolved);
             else
                 releaser.Dispose ();
@@ -381,8 +381,8 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceManager.AddPieceRequests (id);
         }
 
-        readonly Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, IList<IPeer> peersInvolved)> ();
-        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, bool pieceComplete, IList<IPeer> peersInvolved)
+        readonly Dictionary<int, (int blocksWritten, IList<IRequester> peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, IList<IRequester> peersInvolved)> ();
+        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, bool pieceComplete, IList<IRequester> peersInvolved)
         {
             BlockInfo block = new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength);
             try {
@@ -395,7 +395,7 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            if (!BlocksWrittenPerPiece.TryGetValue (block.PieceIndex, out (int blocksWritten, IList<IPeer> peersInvolved) data))
+            if (!BlocksWrittenPerPiece.TryGetValue (block.PieceIndex, out (int blocksWritten, IList<IRequester> peersInvolved) data))
                 data = (0, peersInvolved);
 
             // Increment the number of blocks, and keep storing 'peersInvolved' until it's non-null. It will be non-null when the
@@ -655,9 +655,7 @@ namespace MonoTorrent.Client.Modes
         {
             if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger) {
                 foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
-                    BEncodedString peerId = CreatePeerId ();
-
-                    var peer = new Peer (peerId, uri);
+                    var peer = new Peer (new PeerInfo (uri, CreatePeerId ()), Manager.InfoHashes.V1OrV2);
 
                     var connection = new HttpPeerConnection (Manager, Settings.WebSeedConnectionTimeout, Manager.Engine!.Factories, uri);
                     // Unsupported connection type.

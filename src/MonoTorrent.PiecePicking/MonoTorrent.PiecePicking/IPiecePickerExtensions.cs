@@ -35,24 +35,24 @@ namespace MonoTorrent.PiecePicking
 {
     public static class IPiecePickerExtensions
     {
-        public static PieceSegment? ContinueAnyExistingRequest (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, int startIndex, int endIndex)
+        public static PieceSegment? ContinueAnyExistingRequest (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex)
             => picker.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, 1);
 
-        public static PieceSegment? PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available)
+        public static PieceSegment? PickPiece (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available)
         {
             Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             var picked = picker.PickPiece (peer, available, Array.Empty<ReadOnlyBitField> (), 0, available.Length - 1, buffer);
             return picked == 1 ? (PieceSegment?) buffer[0] : null;
         }
 
-        public static PieceSegment? PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers)
+        public static PieceSegment? PickPiece (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers)
         {
             Span<PieceSegment> buffer = stackalloc PieceSegment[1];
             var result = picker.PickPiece (peer, available, otherPeers, 0, available.Length - 1, buffer);
             return result == 1 ? (PieceSegment?) buffer[0] : null;
         }
 
-        public static int PickPiece (this IPiecePicker picker, IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, Span<PieceSegment> requests)
+        public static int PickPiece (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, Span<PieceSegment> requests)
         {
             return picker.PickPiece (peer, available, otherPeers, 0, available.Length - 1, requests);
         }

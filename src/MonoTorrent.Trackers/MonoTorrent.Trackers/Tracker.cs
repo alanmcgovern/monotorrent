@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 using MonoTorrent.Connections.Tracker;
@@ -47,9 +48,7 @@ namespace MonoTorrent.Trackers
         public bool CanAnnounce => true;
         public bool CanScrape => Connection.CanScrape;
 
-        public int Complete => LastResponse.Complete;
-        public int Incomplete => LastResponse.Incomplete;
-        public int Downloaded => LastResponse.Downloaded;
+        public Dictionary<InfoHash, ScrapeInfo> ScrapeInfo => LastResponse.ScrapeInfo ?? new Dictionary<InfoHash, ScrapeInfo> ();
 
         public string FailureMessage => LastResponse.FailureMessage;
         public string WarningMessage => LastResponse.WarningMessage;

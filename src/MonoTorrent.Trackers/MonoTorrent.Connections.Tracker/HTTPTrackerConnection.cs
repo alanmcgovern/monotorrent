@@ -31,6 +31,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,33 +93,39 @@ namespace MonoTorrent.Connections.Tracker
             // proxies, and any DNS requests, are definitely not run on the main thread.
             await new ThreadSwitcher ();
 
-            var peers = new List<PeerInfo> ();
+            AnnounceResponse? announceResponse = null;
+            foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
+                Uri announceString = CreateAnnounceString (parameters, infoHash);
+                HttpResponseMessage response;
 
-            Uri announceString = CreateAnnounceString (parameters);
-            HttpResponseMessage response;
-
-            try {
-                response = await Client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead, token);
-            } catch {
-                return new AnnounceResponse (
-                    state: TrackerState.Offline,
-                    failureMessage: "The tracker could not be contacted"
-                );
-            }
-
-            try {
-                using var responseRegistration = token.Register (() => response.Dispose ());
-                using (response) {
-                    var announceResponse = await AnnounceReceivedAsync (response).ConfigureAwait (false);
-                    logger.InfoFormatted ("Tracker {0} sent {1} peers", Uri, peers.Count);
-                    return announceResponse;
+                try {
+                    response = await Client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead, token);
+                } catch {
+                    return new AnnounceResponse (
+                        state: TrackerState.Offline,
+                        failureMessage: "The tracker could not be contacted"
+                    );
                 }
-            } catch {
-                return new AnnounceResponse (
-                    state: TrackerState.InvalidResponse,
-                    failureMessage: "The tracker returned an invalid or incomplete response"
-                );
+
+                try {
+                    using var responseRegistration = token.Register (() => response.Dispose ());
+                    using (response) {
+                        var resp = await AnnounceReceivedAsync (infoHash, response).ConfigureAwait (false);
+                        if (announceResponse == null) {
+                            announceResponse = resp;
+                        } else {
+                            announceResponse.Peers[infoHash] = resp.Peers[infoHash];
+                        }
+                        logger.InfoFormatted ("Tracker {0} sent {1} peers for InfoHash {2}", Uri, resp.Peers[infoHash].Count, infoHash);
+                    }
+                } catch {
+                    return new AnnounceResponse (
+                        state: TrackerState.InvalidResponse,
+                        failureMessage: "The tracker returned an invalid or incomplete response"
+                    );
+                }
             }
+            return announceResponse!;
         }
 
         public async ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest parameters, CancellationToken token)
@@ -129,11 +136,13 @@ namespace MonoTorrent.Connections.Tracker
             await new ThreadSwitcher ();
 
             string url = ScrapeUri!.OriginalString;
-            // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
-            if (url.IndexOf ('?') == -1)
-                url += $"?info_hash={parameters.InfoHash.UrlEncode ()}";
-            else
-                url += $"&info_hash={parameters.InfoHash.UrlEncode ()}";
+            foreach (InfoHash infohash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
+                // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
+                if (url.IndexOf ('?') == -1)
+                    url += $"?info_hash={infohash.Truncate ().UrlEncode ()}";
+                else
+                    url += $"&info_hash={infohash.Truncate ().UrlEncode ()}";
+            }
 
             HttpResponseMessage response;
 
@@ -149,7 +158,7 @@ namespace MonoTorrent.Connections.Tracker
             try {
                 using var responseRegistration = token.Register (() => response.Dispose ());
                 using (response)
-                    return await ScrapeReceivedAsync (parameters.InfoHash, response).ConfigureAwait (false);
+                    return await ScrapeReceivedAsync (parameters.InfoHashes, response).ConfigureAwait (false);
             } catch {
                 return new ScrapeResponse (
                     state: TrackerState.InvalidResponse,
@@ -158,10 +167,10 @@ namespace MonoTorrent.Connections.Tracker
             }
         }
 
-        Uri CreateAnnounceString (AnnounceRequest parameters)
+        Uri CreateAnnounceString (AnnounceRequest parameters, InfoHash infoHash)
         {
             var b = new UriQueryBuilder (Uri);
-            b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
+            b.Add ("info_hash", infoHash.Truncate ().UrlEncode ())
              .Add ("peer_id", BEncodedString.FromMemory (parameters.PeerId).UrlEncode ())
              .Add ("port", parameters.Port)
              .Add ("uploaded", parameters.BytesUploaded)
@@ -231,17 +240,17 @@ namespace MonoTorrent.Connections.Tracker
             return Uri.GetHashCode ();
         }
 
-        async Task<AnnounceResponse> AnnounceReceivedAsync (HttpResponseMessage response)
+        async Task<AnnounceResponse> AnnounceReceivedAsync (InfoHash infoHash, HttpResponseMessage response)
         {
             await new ThreadSwitcher ();
 
             BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
-            return HandleAnnounce (dict);
+            return HandleAnnounce (infoHash, dict);
         }
 
-        AnnounceResponse HandleAnnounce (BEncodedDictionary dict)
+        AnnounceResponse HandleAnnounce (InfoHash infoHash, BEncodedDictionary dict)
         {
-            int? complete = null, incomplete = null, downloaded = null;
+            int complete = 0, incomplete = 0, downloaded = 0;
             TimeSpan? minUpdateInterval = null, updateInterval = null;
             string failureMessage = "", warningMessage = "";
             var peers = new List<PeerInfo> ();
@@ -294,22 +303,19 @@ namespace MonoTorrent.Connections.Tracker
 
             return new AnnounceResponse (
                 state: TrackerState.Ok,
-                peers: peers,
+                peers: new Dictionary<InfoHash, IList<PeerInfo>> { { infoHash, peers } },
                 minUpdateInterval: minUpdateInterval,
                 updateInterval: updateInterval,
-                complete: complete,
-                incomplete: incomplete,
-                downloaded: downloaded,
+                scrapeInfo: new Dictionary<InfoHash, ScrapeInfo> { { infoHash, new ScrapeInfo (complete, downloaded, incomplete) } },
                 warningMessage: warningMessage,
                 failureMessage: failureMessage
             );
         }
 
-        async ReusableTask<ScrapeResponse> ScrapeReceivedAsync (InfoHash infoHash, HttpResponseMessage response)
+        async ReusableTask<ScrapeResponse> ScrapeReceivedAsync (InfoHashes infoHashes, HttpResponseMessage response)
         {
             await new ThreadSwitcher ();
 
-            int? complete = null, downloaded = null, incomplete = null;
             BEncodedDictionary dict = await DecodeResponseAsync (response).ConfigureAwait (false);
 
             // FIXME: Log the failure?
@@ -321,28 +327,33 @@ namespace MonoTorrent.Connections.Tracker
             if (files.Count != 1)
                 throw new TrackerException ("The scrape response contained unexpected data");
 
-            var d = (BEncodedDictionary) files[new BEncodedString (infoHash.Span.ToArray ())];
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d) {
-                switch (kp.Key.ToString ()) {
-                    case "complete":
-                        complete = (int) ((BEncodedNumber) kp.Value).Number;
-                        break;
+            var results = new Dictionary<InfoHash, ScrapeInfo> ();
+            foreach (var infoHash in new[] { infoHashes.V1!, infoHashes.V2! }.Where (t => t != null)) {
+                var d = (BEncodedDictionary) files[BEncodedString.FromMemory (infoHash.Truncate ()!.AsMemory ())];
+                int complete = 0, downloaded = 0, incomplete = 0;
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d) {
+                    switch (kp.Key.ToString ()) {
+                        case "complete":
+                            complete = (int) ((BEncodedNumber) kp.Value).Number;
+                            break;
 
-                    case "downloaded":
-                        downloaded = (int) ((BEncodedNumber) kp.Value).Number;
-                        break;
+                        case "downloaded":
+                            downloaded = (int) ((BEncodedNumber) kp.Value).Number;
+                            break;
 
-                    case "incomplete":
-                        incomplete = (int) ((BEncodedNumber) kp.Value).Number;
-                        break;
+                        case "incomplete":
+                            incomplete = (int) ((BEncodedNumber) kp.Value).Number;
+                            break;
 
-                    default:
-                        logger.InfoFormatted ("Unknown scrape tag received: Key {0}  Value {1}", kp.Key, kp.Value);
-                        break;
+                        default:
+                            logger.InfoFormatted ("Unknown scrape tag received: Key {0}  Value {1}", kp.Key, kp.Value);
+                            break;
+                    }
                 }
+                results[infoHash] = new ScrapeInfo (complete: complete, downloaded: downloaded, incomplete: incomplete);
             }
 
-            return new ScrapeResponse (TrackerState.Ok, complete: complete, incomplete: incomplete, downloaded: downloaded);
+            return new ScrapeResponse (TrackerState.Ok, results);
         }
 
         public override string ToString ()

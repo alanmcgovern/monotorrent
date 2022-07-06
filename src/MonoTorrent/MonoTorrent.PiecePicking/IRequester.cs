@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
 {
-    public interface IPeer
+    public interface IRequester
     {
         int AmRequestingPiecesCount { get; set; }
         bool CanRequestMorePieces { get; }

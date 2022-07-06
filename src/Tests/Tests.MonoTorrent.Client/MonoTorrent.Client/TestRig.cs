@@ -146,7 +146,10 @@ namespace MonoTorrent.Client
                 throw new TrackerException ("Deliberately failing announce request", null);
 
             AnnounceParameters.Add (parameters);
-            return ReusableTask.FromResult (new AnnounceResponse (TrackerState.Ok, peers: peers.Select (t => new PeerInfo (t.ConnectionUri, t.PeerId?.AsMemory () ?? Memory<byte>.Empty)).ToArray ()));
+            var dict = new Dictionary<InfoHash, IList<PeerInfo>> {
+                {parameters.InfoHashes.V1OrV2.Truncate (), peers.Select (t => t.Info).ToArray () },
+            };
+            return ReusableTask.FromResult (new AnnounceResponse (TrackerState.Ok, peers: dict));
         }
 
         public ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest parameters, CancellationToken token)
@@ -155,7 +158,7 @@ namespace MonoTorrent.Client
             if (FailScrape)
                 throw new TrackerException ("Deliberately failing scrape request", null);
 
-            return ReusableTask.FromResult (new ScrapeResponse (0, 0, 0));
+            return ReusableTask.FromResult (new ScrapeResponse (TrackerState.Ok, new Dictionary<InfoHash, ScrapeInfo> { { parameters.InfoHashes.V1OrV2, new ScrapeInfo (0, 0, 0) } }));
         }
 
         public void AddPeer (Peer peer)
@@ -363,7 +366,7 @@ namespace MonoTorrent.Client
             StringBuilder sb = new StringBuilder ();
             for (int i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ('a', 'z'));
-            Peer peer = new Peer (sb.ToString (), new Uri ($"ipv4://127.0.0.1:{(port++)}"));
+            Peer peer = new Peer (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{(port++)}"), sb.ToString ()), new InfoHash (new byte[20]));
             PeerId id = new PeerId (peer, NullConnection.Incoming, new BitField (Manager.Torrent.PieceCount ()).SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.MessageQueue.SetReady ();

@@ -71,7 +71,7 @@ namespace MonoTorrent
                 peerId = BEncodedString.Empty;
 
             var connectionUri = new Uri ($"ipv4://{dict[IPKey]}:{dict[PortKey]}");
-            return new PeerInfo (connectionUri, peerId.AsMemory ());
+            return new PeerInfo (connectionUri, peerId);
         }
 
         public static IList<PeerInfo> Decode (BEncodedString peers)

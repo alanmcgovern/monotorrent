@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.PiecePicking
 {
-    class PeerId : IPeer
+    class PeerId : IRequester
     {
         internal static PeerId CreateNull (int bitfieldLength)
         {

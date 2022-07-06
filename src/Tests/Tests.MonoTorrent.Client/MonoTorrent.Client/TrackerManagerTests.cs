@@ -80,17 +80,17 @@ namespace MonoTorrent.Client
     {
         class RequestFactory : ITrackerRequestFactory
         {
-            public readonly InfoHash InfoHash = new InfoHash (new byte[20]);
+            public readonly InfoHashes InfoHashes = InfoHashes.FromV1 (new InfoHash (new byte[20]));
 
             public AnnounceRequest CreateAnnounce (TorrentEvent clientEvent)
             {
-                return new AnnounceRequest (InfoHash)
+                return new AnnounceRequest (InfoHashes)
                     .WithClientEvent (clientEvent);
             }
 
             public ScrapeRequest CreateScrape ()
             {
-                return new ScrapeRequest (InfoHash);
+                return new ScrapeRequest (InfoHashes);
             }
         }
 
@@ -128,7 +128,7 @@ namespace MonoTorrent.Client
         {
             foreach (var tier in trackers)
                 foreach (var tracker in tier)
-                    tracker.Connection.AddPeer (new Peer ("peerid", new Uri ("ipv4://127.123.123.123:12312")));
+                    tracker.Connection.AddPeer (new Peer (new PeerInfo (new Uri ("ipv4://127.123.123.123:12312"), "peerid"), InfoHash.FromMemory (new byte[20])));
 
             var tcs = new TaskCompletionSource<AnnounceResponseEventArgs> ();
             trackerManager.AnnounceComplete += (o, e) => tcs.TrySetResult (e);

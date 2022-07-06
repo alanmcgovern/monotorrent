@@ -56,19 +56,9 @@ namespace MonoTorrent.Trackers
         public IList<ITracker> Trackers { get; private set; }
 
         /// <summary>
-        /// The number of active peers which have completed downloading. Updated after a successful Scrape. Defaults to 0.
+        /// The <see cref="ScrapeInfo"/> dictionary containing information about each infohash associated with this torrent.
         /// </summary>
-        public int Complete => LastScrapeResponse.Complete;
-
-        /// <summary>
-        /// The number of peers that have ever completed downloading. Updated after a successful Scrape. Defaults to 0.
-        /// </summary>
-        public int Downloaded => LastScrapeResponse.Downloaded;
-
-        /// <summary>
-        /// The number of active peers which have not completed downloading. Updated after a successul Scrape. Defaults to 0.
-        /// </summary>
-        public int Incomplete => LastScrapeResponse.Incomplete;
+        public Dictionary<InfoHash, ScrapeInfo> ScrapeInfo => LastScrapeResponse.ScrapeInfo ?? new Dictionary<InfoHash, ScrapeInfo> ();
 
         /// <summary>
         /// Returns true if the the most recent Announce was successful and <see cref="ITracker.UpdateInterval"/> seconds
@@ -162,7 +152,8 @@ namespace MonoTorrent.Trackers
                 var tracker = Trackers[(ActiveTrackerIndex + i) % Trackers.Count];
                 try {
                     var response = await DoAnnounceAsync (args, tracker, token);
-                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true, response.Peers));
+                    var dict = response.Peers;
+                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true, dict));
                     LastAnnounce = ValueStopwatch.StartNew ();
                     LastAnnounceSucceeded = true;
                     logger.InfoFormatted ("Announced to {0}", tracker.Uri);

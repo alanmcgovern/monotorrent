@@ -71,13 +71,13 @@ namespace MonoTorrent.Trackers
             return new AnnounceRequest (Manager.Monitor.DataBytesReceived,
                                           Manager.Monitor.DataBytesSent,
                                           bytesLeft,
-                                          clientEvent, Manager.InfoHashes.V1OrV2.Truncate (), requireEncryption, Manager.Engine!.PeerId.AsMemory (),
+                                          clientEvent, Manager.InfoHashes, requireEncryption, Manager.Engine!.PeerId.AsMemory (),
                                           ip, port, supportsEncryption);
         }
 
         public ScrapeRequest CreateScrape ()
         {
-            return new ScrapeRequest (Manager.InfoHashes.V1OrV2.Truncate ());
+            return new ScrapeRequest (Manager.InfoHashes);
         }
     }
 }

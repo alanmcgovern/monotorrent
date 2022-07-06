@@ -33,15 +33,15 @@ namespace MonoTorrent.Trackers
 {
     public class AnnounceResponseEventArgs : TrackerResponseEventArgs
     {
-        public IList<PeerInfo> Peers { get; }
+        public IDictionary<InfoHash, IList<PeerInfo>> Peers { get; }
 
         public AnnounceResponseEventArgs (ITracker tracker, bool successful)
-            : this (tracker, successful, Array.Empty<PeerInfo> ())
+            : this (tracker, successful, new Dictionary<InfoHash, IList<PeerInfo>> ())
         {
 
         }
 
-        public AnnounceResponseEventArgs (ITracker tracker, bool successful, IList<PeerInfo> peers)
+        public AnnounceResponseEventArgs (ITracker tracker, bool successful, Dictionary<InfoHash, IList<PeerInfo>> peers)
             : base (tracker, successful)
         {
             Peers = peers;

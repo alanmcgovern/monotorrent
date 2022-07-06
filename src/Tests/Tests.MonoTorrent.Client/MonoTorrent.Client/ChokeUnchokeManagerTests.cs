@@ -42,6 +42,7 @@ namespace MonoTorrent.Client.Unchoking
     [TestFixture]
     public class ChokeUnchokeManagerTests
     {
+        InfoHash ExpectedInfoHash = new InfoHash (new byte[20]);
         class Unchokeable : IUnchokeable
         {
             public event EventHandler<TorrentStateChangedEventArgs> StateChanged;
@@ -77,9 +78,9 @@ namespace MonoTorrent.Client.Unchoking
         public void ChokeTwoPeers ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10)) {
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
             unchokeable.Peers.ForEach (p => { p.AmChoking = false; unchokeable.UploadingTo++; });
@@ -95,9 +96,9 @@ namespace MonoTorrent.Client.Unchoking
         public void ChokePeer_FastExtensions_RequestingFastPiece ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10)) {
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
 
@@ -122,9 +123,9 @@ namespace MonoTorrent.Client.Unchoking
         public void ChokePeer_FastExtensions_RequestingPiece ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10)) {
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
 
@@ -151,9 +152,9 @@ namespace MonoTorrent.Client.Unchoking
         public void ChokePeer_NotInterested ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.Create (10),
-                PeerId.Create (10),
-                PeerId.Create (10)) {
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
 
@@ -177,9 +178,9 @@ namespace MonoTorrent.Client.Unchoking
         public void ChokePeer_NotInterested_ThenInterested ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.Create (10),
-                PeerId.Create (10),
-                PeerId.Create (10)) {
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
             unchokeable.Peers.ForEach (p => {
@@ -203,9 +204,9 @@ namespace MonoTorrent.Client.Unchoking
         public void ChokePeer_RequestingPiece ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10)) {
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
 
@@ -233,7 +234,7 @@ namespace MonoTorrent.Client.Unchoking
         [Test]
         public void UnchokeOneWithOneSlot ()
         {
-            var unchokeable = new Unchokeable (PeerId.CreateInterested (10)) {
+            var unchokeable = new Unchokeable (PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
             Assert.IsTrue (unchokeable.Peers[0].AmChoking);
@@ -246,9 +247,9 @@ namespace MonoTorrent.Client.Unchoking
         public void UnchokeThreeWithOneSlot ()
         {
             var unchokeable = new Unchokeable (
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10),
-                PeerId.CreateInterested (10)) {
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash),
+                PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 1
             };
             new ChokeUnchokeManager (unchokeable).UnchokeReview ();
@@ -258,7 +259,7 @@ namespace MonoTorrent.Client.Unchoking
         [Test]
         public void UnchokeOneWithUnlimitedSlots ()
         {
-            var unchokeable = new Unchokeable (PeerId.CreateInterested (10)) {
+            var unchokeable = new Unchokeable (PeerId.CreateInterested (10, ExpectedInfoHash)) {
                 UploadSlots = 0
             };
             Assert.IsTrue (unchokeable.Peers[0].AmChoking);

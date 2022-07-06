@@ -79,7 +79,7 @@ namespace MonoTorrent.PiecePicking
         }
 
         ReadOnlyBitField[] otherAvailableCache = Array.Empty<ReadOnlyBitField> ();
-        public void AddRequests (ReadOnlySpan<(IPeer Peer, ReadOnlyBitField Available)> peers)
+        public void AddRequests (ReadOnlySpan<(IRequester Peer, ReadOnlyBitField Available)> peers)
         {
             if (otherAvailableCache.Length < peers.Length)
                 otherAvailableCache = new ReadOnlyBitField[peers.Length];
@@ -94,7 +94,7 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public void AddRequests (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> allPeers)
+        public void AddRequests (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> allPeers)
         {
             int maxRequests = peer.MaxPendingRequests;
 
@@ -161,18 +161,18 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public bool ValidatePiece (IPeer peer, PieceSegment blockInfo, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        public bool ValidatePiece (IRequester peer, PieceSegment blockInfo, out bool pieceComplete, out IList<IRequester> peersInvolved)
         {
             pieceComplete = false;
-            peersInvolved = Array.Empty<IPeer> ();
+            peersInvolved = Array.Empty<IRequester> ();
             return Picker != null && Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
         }
 
-        public bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
+        public bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)
             => Picker != null && Picker.IsInteresting (peer, bitfield);
 
         PieceSegment[] CancellationsCache = Array.Empty<PieceSegment> ();
-        public void CancelRequests (IPeer peer, int startIndex, int endIndex)
+        public void CancelRequests (IRequester peer, int startIndex, int endIndex)
         {
             if (Picker == null || Enqueuer == null)
                 return;
@@ -185,7 +185,7 @@ namespace MonoTorrent.PiecePicking
             Enqueuer.EnqueueCancellations (peer, cancellations.Slice (0, cancelled));
         }
 
-        public void RequestRejected (IPeer peer, PieceSegment pieceRequest)
+        public void RequestRejected (IRequester peer, PieceSegment pieceRequest)
             => Picker?.RequestRejected (peer, pieceRequest);
 
         public int CurrentRequestCount ()

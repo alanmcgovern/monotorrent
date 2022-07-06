@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer ("", new Uri ("ipv4://123.123.123.123:12345"), EncryptionTypes.All), conn.Outgoing, new BitField (Manager.Torrent.PieceCount ()));
+            Peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://123.123.123.123:12345")), Manager.InfoHashes.V1OrV2), conn.Outgoing, new BitField (Manager.Torrent.PieceCount ()));
         }
 
         [TearDown]
@@ -87,9 +87,9 @@ namespace MonoTorrent.Client.Modes
         {
             await Manager.UpdateSettingsAsync (new TorrentSettingsBuilder (Manager.Settings) { MaximumConnections = 100 }.ToSettings ());
 
-            var peers = new List<Peer> ();
+            var peers = new List<PeerInfo> ();
             for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i++)
-                peers.Add (new Peer ("", new Uri ($"ipv4://192.168.0.1:{i + 1000}")));
+                peers.Add (new PeerInfo (new Uri ($"ipv4://192.168.0.1:{i + 1000}"), Array.Empty<byte> ()));
             var added = await Manager.AddPeersAsync (peers);
             Assert.AreEqual (added, Manager.Settings.MaximumPeerDetails, "#1");
             Assert.AreEqual (added, Manager.Peers.AvailablePeers.Count, "#2");
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client.Modes
         {
             var peer = new byte[] { 192, 168, 0, 1, 100, 0, 192, 168, 0, 2, 101, 0 };
             var dotF = new byte[] { 0, 1 << 1 }; // 0x2 means is a seeder
-            var id = PeerId.CreateNull (40);
+            var id = PeerId.CreateNull (40, Manager.InfoHashes.V1OrV2);
             id.SupportsFastPeer = true;
             id.SupportsLTMessages = true;
 
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client.Modes
         {
             var peer = new byte[] { 192, 168, 0, 1, 100, 0 };
             var dotF = new byte[] { 1 << 0 | 1 << 2 }; // 0x1 means supports encryption, 0x2 means is a seeder
-            var id = PeerId.CreateNull (40);
+            var id = PeerId.CreateNull (40, Manager.InfoHashes.V1OrV2);
             id.SupportsFastPeer = true;
             id.SupportsLTMessages = true;
 
@@ -171,7 +171,8 @@ namespace MonoTorrent.Client.Modes
             };
 
             await TrackerManager.AddTrackerAsync (new Uri ("http://test.tracker"));
-            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new[] { new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), new BEncodedString ("One").AsMemory ()), new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), new BEncodedString ("Two").AsMemory ()) });
+            var peers = new[] { new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), new BEncodedString ("One")), new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), new BEncodedString ("Two")) };
+            TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new Dictionary<InfoHash, IList<PeerInfo>> { {manager.InfoHashes.V1OrV2, peers } } );
 
             var addedArgs = await peersTask.Task.WithTimeout ();
             Assert.AreEqual (2, addedArgs.NewPeers, "#1");
@@ -188,31 +189,6 @@ namespace MonoTorrent.Client.Modes
             // ConnectionManager should add the PeerId to the Connected list whenever
             // an outgoing connection is made, or an incoming one is received.
             Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
-        }
-
-
-        [Test]
-        public async Task AnnounceWithTruncatedInfoHash ()
-        {
-            var link = new MagnetLink (new InfoHashes (null, new InfoHash (new byte[32])));
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            var manager = await engine.AddAsync (link, "");
-            var args = new TrackerRequestFactory (manager).CreateAnnounce (TorrentEvent.None);
-            Assert.AreEqual (20, args.InfoHash.Span.Length);
-            Assert.IsTrue (manager.InfoHashes.Contains (args.InfoHash));
-            Assert.IsNull (manager.InfoHashes.V1);
-        }
-
-        [Test]
-        public async Task ScrapeWithTruncatedInfoHash ()
-        {
-            var link = new MagnetLink (new InfoHashes (null, new InfoHash (new byte[32])));
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            var manager = await engine.AddAsync (link, "");
-            var args = new TrackerRequestFactory (manager).CreateScrape ();
-            Assert.AreEqual (20, args.InfoHash.Span.Length);
-            Assert.IsTrue (manager.InfoHashes.Contains (args.InfoHash));
-            Assert.IsNull (manager.InfoHashes.V1);
         }
 
         [Test]
@@ -245,7 +221,7 @@ namespace MonoTorrent.Client.Modes
         public void MismatchedInfoHash ()
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
-            var peer = PeerId.CreateNull (Manager.Bitfield.Length);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
             var handshake = new HandshakeMessage (new InfoHash (Enumerable.Repeat ((byte) 15, 20).ToArray ()), "peerid", Constants.ProtocolStringV100);
 
             Assert.Throws<TorrentException> (() => Manager.Mode.HandleMessage (peer, handshake, default));
@@ -255,7 +231,7 @@ namespace MonoTorrent.Client.Modes
         public void MismatchedProtocolString ()
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
-            var peerId = PeerId.CreateNull (Manager.Bitfield.Length);
+            var peerId = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
             var handshake = new HandshakeMessage (Manager.InfoHashes.V1OrV2, "peerid", "bleurgh");
 
             Assert.Throws<ProtocolException> (() => Manager.Mode.HandleMessage (peerId, handshake, default));
@@ -269,8 +245,8 @@ namespace MonoTorrent.Client.Modes
             var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
-            var peer = PeerId.CreateNull (manager.Bitfield.Length);
-            peer.Peer.PeerId = null;
+            var peer = PeerId.CreateNull (manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
+            peer.Peer.UpdatePeerId (BEncodedString.Empty);
             var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             manager.Mode.HandleMessage (peer, handshake, default);
@@ -281,8 +257,8 @@ namespace MonoTorrent.Client.Modes
         public void EmptyPeerId_PublicTorrent ()
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
-            var peer = PeerId.CreateNull (Manager.Bitfield.Length);
-            peer.Peer.PeerId = null;
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
+            peer.Peer.UpdatePeerId (BEncodedString.Empty);
             var handshake = new HandshakeMessage (Manager.InfoHashes.V1OrV2, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Manager.Mode.HandleMessage (peer, handshake, default);
@@ -297,7 +273,7 @@ namespace MonoTorrent.Client.Modes
             var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
-            var peer = PeerId.CreateNull (manager.Bitfield.Length);
+            var peer = PeerId.CreateNull (manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
             var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Assert.Throws<TorrentException> (() => manager.Mode.HandleMessage (peer, handshake, default));
@@ -307,7 +283,7 @@ namespace MonoTorrent.Client.Modes
         public void MismatchedPeerId_PublicTorrent ()
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
-            var peer = PeerId.CreateNull (Manager.Bitfield.Length);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
             var handshake = new HandshakeMessage (Manager.InfoHashes.V1OrV2, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Assert.DoesNotThrow (() => Manager.Mode.HandleMessage (peer, handshake, default));

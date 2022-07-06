@@ -105,7 +105,7 @@ namespace MonoTorrent.Trackers
             return ReusableTask.CompletedTask;
         }
 
-        public void RaiseAnnounceComplete (ITracker tracker, bool successful, IList<PeerInfo> peers)
+        public void RaiseAnnounceComplete (ITracker tracker, bool successful, Dictionary<InfoHash, IList<PeerInfo>> peers)
             => AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, successful, peers));
 
         public void RaiseScrapeComplete (ITracker tracker, bool successful)

@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Modes
             rig.AddConnection (pair.Outgoing);
 
             var connection = pair.Incoming;
-            PeerId id = new PeerId (new Peer ("", connection.Uri), connection, new BitField (rig.Torrent.PieceCount));
+            PeerId id = new PeerId (new Peer (new PeerInfo (connection.Uri), rig.Manager.InfoHashes.V1OrV2), connection, new BitField (rig.Torrent.PieceCount));
 
             var result = await EncryptorFactory.CheckIncomingConnectionAsync (id.Connection, id.Peer.AllowedEncryption, new[] { rig.Manager.InfoHashes.V1OrV2 }, Factories.Default);
             decryptor = id.Decryptor = result.Decryptor;
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client.Modes
 
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, null, 5555);
             exHand.Supports.Add (LTMetadata.Support);
-            Assert.DoesNotThrow (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1), exHand, default));
+            Assert.DoesNotThrow (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1, rig.Manager.InfoHashes.V1OrV2), exHand, default));
         }
 
         [Test]
@@ -321,7 +321,7 @@ namespace MonoTorrent.Client.Modes
                         // And let's receive many handshake messages from other peers. Ensure we process this on the correct
                         // thread. It needs to be on the main loop as it's run in the context of the ClientEngine loop.
                         if (rig.Manager.Mode is MetadataMode mode)
-                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389), exHand, default), null);
+                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389, rig.Manager.InfoHashes.V1OrV2), exHand, default), null);
                     }
                 }
             }
@@ -343,7 +343,7 @@ namespace MonoTorrent.Client.Modes
             Assert.IsTrue (receivedHaveNone, "#6");
 
             if (!metadataOnly) {
-                var peer = PeerId.CreateNull (rig.Manager.Bitfield.Length, true, false, true);
+                var peer = PeerId.CreateNull (rig.Manager.Bitfield.Length, true, false, true, rig.Manager.InfoHashes.V1OrV2);
                 Assert.DoesNotThrow (() => rig.Manager.PieceManager.AddPieceRequests (peer));
             }
         }

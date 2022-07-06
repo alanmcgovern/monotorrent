@@ -77,9 +77,10 @@ namespace MonoTorrent.Client
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
         /// <param name="bitfieldLength"></param>
+        /// <param name="expectedInfoHash"></param>
         /// <returns></returns>
-        internal static PeerId Create (int bitfieldLength)
-            => CreateNull (bitfieldLength);
+        internal static PeerId Create (int bitfieldLength, InfoHash expectedInfoHash)
+            => CreateNull (bitfieldLength, expectedInfoHash);
 
         /// <summary>
         /// Creates a PeerID with a null TorrentManager and IConnection. This is used for unit testing purposes.
@@ -88,9 +89,9 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="bitfieldLength"></param>
         /// <returns></returns>
-        internal static PeerId CreateNull (int bitfieldLength)
+        internal static PeerId CreateNull (int bitfieldLength, InfoHash expectedInfoHash)
         {
-            return CreateNull (bitfieldLength, false, true, false);
+            return CreateNull (bitfieldLength, false, true, false, expectedInfoHash);
         }
 
         /// <summary>
@@ -102,10 +103,11 @@ namespace MonoTorrent.Client
         /// <param name="seeder">True if the returned peer should be treated as a seeder (the bitfield will have all pieces set to 'true')</param>
         /// <param name="isChoking"></param>
         /// <param name="amInterested"></param>
+        /// <param name="expectedInfoHash"></param>
         /// <returns></returns>
-        internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested)
+        internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested, InfoHash expectedInfoHash)
         {
-            var peer = new PeerId (new Peer ("null", new Uri ("ipv4://hardcodedvalue:12345")), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder)) {
+            var peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://hardcodedvalue:12345"), "null peer's id"), expectedInfoHash), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder)) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
@@ -115,9 +117,9 @@ namespace MonoTorrent.Client
             return peer;
         }
 
-        internal static PeerId CreateInterested (int bitfieldLength)
+        internal static PeerId CreateInterested (int bitfieldLength, InfoHash expectedInfoHash)
         {
-            var peer = CreateNull (bitfieldLength);
+            var peer = CreateNull (bitfieldLength, expectedInfoHash);
             peer.IsInterested = true;
             return peer;
         }
@@ -168,13 +170,13 @@ namespace MonoTorrent.Client
         public int IsRequestingPiecesCount => isRequestingPiecesCount;
         public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
         public ConnectionMonitor Monitor { get; }
-        public BEncodedString PeerID => Peer.PeerId;
+        public BEncodedString PeerID => Peer.Info.PeerId;
         internal int piecesSent;
         public int PiecesSent => piecesSent;
         public int PiecesReceived { get; internal set; }
         public bool SupportsFastPeer { get; internal set; }
         public bool SupportsLTMessages { get; internal set; }
-        public Uri Uri => Peer.ConnectionUri;
+        public Uri Uri => Peer.Info.ConnectionUri;
 
         internal byte[]? AddressBytes => Connection.AddressBytes;
 
@@ -250,7 +252,7 @@ namespace MonoTorrent.Client
 
         public override string ToString ()
         {
-            return Peer.ConnectionUri.ToString ();
+            return Peer.Info.ConnectionUri.ToString ();
         }
 
         #endregion
@@ -317,6 +319,8 @@ namespace MonoTorrent.Client
         internal short RoundsChoked { get; private set; }
 
         internal short RoundsUnchoked { get; private set; }
+
+        public InfoHash ExpectedInfoHash => Peer.ExpectedInfoHash;
 
         /// <summary>
         /// Get our download rate from this peer -- this is Dp.

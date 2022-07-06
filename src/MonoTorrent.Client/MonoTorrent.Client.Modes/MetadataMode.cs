@@ -74,24 +74,24 @@ namespace MonoTorrent.Client.Modes
             public int BytesPerPiece (int piece)
                 => length;
 
-            void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+            void IMessageEnqueuer.EnqueueRequest (IRequester peer, PieceSegment block)
             {
                 var message = new LTMetadata (((PeerId) peer).ExtensionSupports, LTMetadata.MessageType.Request, block.BlockIndex);
                 ((PeerId) peer).MessageQueue.Enqueue (message);
             }
 
-            void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+            void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
             {
                 foreach (var block in blocks)
                     ((IMessageEnqueuer)this).EnqueueRequest (peer, block);
             }
 
-            void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+            void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
             {
                // you can't cancel a request for metadata 
             }
 
-            void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+            void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)
             {
                 // you can't cancel a request for metadata
             }
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client.Modes
 
             switch (message.MetadataMessageType) {
                 case LTMetadata.MessageType.Data:
-                    if (!Requester.ValidatePiece (id, new PieceSegment (0, message.Piece), out bool pieceComplete, out IList<IPeer> peersInvolved))
+                    if (!Requester.ValidatePiece (id, new PieceSegment (0, message.Piece), out bool pieceComplete, out IList<IRequester> peersInvolved))
                         return;
 
                     message.MetadataPiece.CopyTo (Stream.AsMemory (message.Piece * LTMetadata.BlockSize));

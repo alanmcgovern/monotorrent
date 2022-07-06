@@ -64,9 +64,9 @@ namespace MonoTorrent.PiecePicking
             manager = new PieceManager (torrentManager);
             manager.Initialise ();
 
-            peer = PeerId.CreateNull (pieceCount);
+            peer = PeerId.CreateNull (pieceCount, torrentManager.InfoHashes.V1OrV2);
             for (int i = 0; i < 20; i++) {
-                PeerId p = PeerId.CreateNull (pieceCount);
+                PeerId p = PeerId.CreateNull (pieceCount, torrentManager.InfoHashes.V1OrV2);
                 p.SupportsFastPeer = true;
                 peers.Add (p);
             }

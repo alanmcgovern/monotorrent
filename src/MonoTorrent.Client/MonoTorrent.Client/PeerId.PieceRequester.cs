@@ -36,10 +36,10 @@ using MonoTorrent.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    public partial class PeerId : IPeer
+    public partial class PeerId : IRequester
     {
-        int IPeer.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
-        bool IPeer.CanRequestMorePieces {
+        int IRequester.AmRequestingPiecesCount { get => AmRequestingPiecesCount; set => AmRequestingPiecesCount = value; }
+        bool IRequester.CanRequestMorePieces {
             get {
                 if (Connection is HttpPeerConnection) {
                     return AmRequestingPiecesCount == 0;
@@ -51,15 +51,15 @@ namespace MonoTorrent.Client
             }
         }
 
-        long IPeer.DownloadSpeed => Monitor.DownloadRate;
-        List<int> IPeer.IsAllowedFastPieces => IsAllowedFastPieces;
-        bool IPeer.IsChoking => IsChoking;
-        int IPeer.RepeatedHashFails => Peer.RepeatedHashFails;
-        List<int> IPeer.SuggestedPieces => SuggestedPieces;
-        bool IPeer.CanCancelRequests => SupportsFastPeer;
-        int IPeer.MaxPendingRequests => MaxPendingRequests;
+        long IRequester.DownloadSpeed => Monitor.DownloadRate;
+        List<int> IRequester.IsAllowedFastPieces => IsAllowedFastPieces;
+        bool IRequester.IsChoking => IsChoking;
+        int IRequester.RepeatedHashFails => Peer.RepeatedHashFails;
+        List<int> IRequester.SuggestedPieces => SuggestedPieces;
+        bool IRequester.CanCancelRequests => SupportsFastPeer;
+        int IRequester.MaxPendingRequests => MaxPendingRequests;
 
-        int IPeer.PreferredRequestAmount (int pieceLength)
+        int IRequester.PreferredRequestAmount (int pieceLength)
         {
             if (Connection is HttpPeerConnection) {
                 // How many whole pieces fit into 2MB

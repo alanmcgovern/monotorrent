@@ -39,13 +39,13 @@ namespace MonoTorrent.PiecePicking
         protected PiecePickerFilter (IPiecePicker picker)
             => Next = picker;
 
-        public int CancelRequests (IPeer peer, int startIndex, int endIndex, Span<PieceSegment> cancellations)
+        public int CancelRequests (IRequester peer, int startIndex, int endIndex, Span<PieceSegment> cancellations)
             => Next.CancelRequests (peer, startIndex, endIndex, cancellations);
 
-        public PieceSegment? ContinueAnyExistingRequest (IPeer peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests)
+        public PieceSegment? ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests)
             => Next.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, maxDuplicateRequests);
 
-        public PieceSegment? ContinueExistingRequest (IPeer peer, int startIndex, int endIndex)
+        public PieceSegment? ContinueExistingRequest (IRequester peer, int startIndex, int endIndex)
             => Next.ContinueExistingRequest (peer, startIndex, endIndex);
 
         public int CurrentReceivedCount ()
@@ -60,16 +60,16 @@ namespace MonoTorrent.PiecePicking
         public virtual void Initialise (IPieceRequesterData torrentData)
             => Next.Initialise (torrentData);
 
-        public virtual bool IsInteresting (IPeer peer, ReadOnlyBitField bitfield)
+        public virtual bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)
             => Next.IsInteresting (peer, bitfield);
 
-        public virtual int PickPiece (IPeer peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
+        public virtual int PickPiece (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
             => Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
 
-        public void RequestRejected (IPeer peer, PieceSegment request)
+        public void RequestRejected (IRequester peer, PieceSegment request)
             => Next.RequestRejected (peer, request);
 
-        public bool ValidatePiece (IPeer peer, PieceSegment request, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, out IList<IRequester> peersInvolved)
             => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
     }
 }

@@ -69,7 +69,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Write (ref buffer, Action);
             Write (ref buffer, TransactionId);
             for (int i = 0; i < InfoHashes.Count; i++)
-                Write (ref buffer, InfoHashes[i].Span);
+                Write (ref buffer, InfoHashes[i].Truncate ().Span);
 
             return written - buffer.Length;
         }

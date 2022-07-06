@@ -44,7 +44,7 @@ namespace MonoTorrent
     public sealed class Torrent : ITorrentInfo, IEquatable<Torrent>
     {
         internal static bool SupportsV2Torrents = true;
-        internal static bool SupportsV1V2Torrents = false;
+        internal static bool SupportsV1V2Torrents = true;
 
         /// <summary>
         /// This method loads a .torrent file from the specified path.

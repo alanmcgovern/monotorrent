@@ -230,28 +230,28 @@ namespace MyBenchmarks
             int IPieceRequesterData.BytesPerPiece (int piece)
                 => TorrentInfo.BytesPerPiece (piece);
 
-            public void EnqueueRequest (IPeer peer, PieceSegment block)
+            public void EnqueueRequest (IRequester peer, PieceSegment block)
             {
                 
             }
 
-            public void EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+            public void EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
             {
                 
             }
 
-            public void EnqueueCancellation (IPeer peer, PieceSegment segment)
+            public void EnqueueCancellation (IRequester peer, PieceSegment segment)
             {
 
             }
 
-            public void EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+            public void EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)
             {
 
             }
         }
 
-        class Peer : IPeer
+        class Peer : IRequester
         {
             public int AmRequestingPiecesCount { get; set; }
             public ReadOnlyBitField BitField { get; }
@@ -288,7 +288,7 @@ namespace MyBenchmarks
 
 
             Random = new Random (1234);
-            Requesters = new List<IPeer> (Enumerable.Range (0, 60).Select (t => Data.CreatePeer ()));
+            Requesters = new List<IRequester> (Enumerable.Range (0, 60).Select (t => Data.CreatePeer ()));
             RequestedBlocks = new List<Queue<PieceSegment>> ();
             foreach (var requester in Requesters)
                 RequestedBlocks.Add (new Queue<PieceSegment> (1400));
@@ -331,7 +331,7 @@ namespace MyBenchmarks
         }
 
         readonly Random Random;
-        readonly List<IPeer> Requesters;
+        readonly List<IRequester> Requesters;
         readonly List<Queue<PieceSegment>> RequestedBlocks;
 
         [Benchmark]

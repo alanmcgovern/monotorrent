@@ -33,33 +33,44 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 
+using MonoTorrent.BEncoding;
+
 namespace MonoTorrent
 {
-    public class PeerInfo : IEquatable<PeerInfo>
+    public sealed class PeerInfo : IEquatable<PeerInfo>
     {
-        public ReadOnlyMemory<byte> PeerId { get; }
+        public bool MaybeSeeder { get; }
+        public BEncodedString PeerId { get; }
 
-        public Uri Uri { get; }
+        public Uri ConnectionUri { get; }
 
-        public PeerInfo (Uri uri, ReadOnlyMemory<byte> peerId)
-            => (Uri, PeerId) = (uri ?? throw new ArgumentNullException (nameof (peerId)), peerId);
+        public PeerInfo (Uri connectionUri)
+            : this (connectionUri, BEncodedString.Empty)
+        {
+        }
+
+        public PeerInfo (Uri connectionUri, BEncodedString peerId)
+            : this (connectionUri, peerId, false)
+        {
+        }
+
+        public PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder)
+            => (ConnectionUri, PeerId, MaybeSeeder) = (connectionUri ?? throw new ArgumentNullException (nameof (connectionUri)), peerId ?? throw new ArgumentNullException (nameof (BEncodedString)), maybeSeeder);
 
         public override bool Equals (object? obj)
             => Equals (obj as PeerInfo);
 
         public bool Equals (PeerInfo? other)
-            => !(other is null)
-            && Uri.Equals (other.Uri)
-            && PeerId.Span.SequenceEqual (other.PeerId.Span);
+            => ConnectionUri.Equals (other?.ConnectionUri);
 
         public override int GetHashCode ()
-            => Uri.GetHashCode ();
+            => ConnectionUri.GetHashCode ();
 
         public byte[] CompactPeer ()
-            => CompactPeer (Uri);
+            => CompactPeer (ConnectionUri);
 
         public void CompactPeer (Span<byte> buffer)
-            => CompactPeer (Uri, buffer);
+            => CompactPeer (ConnectionUri, buffer);
 
         public static byte[] CompactPeer (Uri uri)
         {
@@ -118,7 +129,7 @@ namespace MonoTorrent
                 sb.Append (port);
 
                 var uri = new Uri (sb.ToString ());
-                list.Add (new PeerInfo (uri, Memory<byte>.Empty));
+                list.Add (new PeerInfo (uri));
             }
         }
     }

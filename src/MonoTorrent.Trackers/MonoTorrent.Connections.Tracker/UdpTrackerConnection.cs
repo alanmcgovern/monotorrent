@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,19 +66,28 @@ namespace MonoTorrent.Connections.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
-                var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters);
-                (var response, var errorString) = await SendAndReceiveAsync (message);
+                AnnounceResponse? announceResponse = null;
+                foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
+                    var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters, infoHash);
+                    (var response, var errorString) = await SendAndReceiveAsync (message);
 
-                // Did we receive an 'ErrorMessage' from the tracker? If so, propagate the failure
-                if (errorString != null) {
-                    ConnectionIdTask = null;
-                    return new AnnounceResponse (TrackerState.InvalidResponse, failureMessage: errorString);
-                } else if (response != null) {
-                    var announce = (AnnounceResponseMessage) response;
-                    return new AnnounceResponse (TrackerState.Ok, announce.Peers, minUpdateInterval: announce.Interval);
-                } else {
-                    throw new NotSupportedException ($"There was no error and no {nameof (AnnounceResponseMessage)} was received");
+                    // Did we receive an 'ErrorMessage' from the tracker? If so, propagate the failure
+                    if (errorString != null) {
+                        ConnectionIdTask = null;
+                        return new AnnounceResponse (TrackerState.InvalidResponse, failureMessage: errorString);
+                    } else if (response != null) {
+                        var announce = (AnnounceResponseMessage) response;
+                        if (announceResponse == null) {
+                            var peerDict = new Dictionary<InfoHash, IList<PeerInfo>> { { infoHash, announce.Peers } };
+                            announceResponse = new AnnounceResponse (TrackerState.Ok, peerDict, minUpdateInterval: announce.Interval);
+                        } else {
+                            announceResponse.Peers[infoHash] = announce.Peers; 
+                        }
+                    } else {
+                        throw new NotSupportedException ($"There was no error and no {nameof (AnnounceResponseMessage)} was received");
+                    }
                 }
+                return announceResponse!;
             } catch (OperationCanceledException) {
                 ConnectionIdTask = null;
                 return new AnnounceResponse (TrackerState.Offline, failureMessage: "Announce could not be completed");
@@ -94,7 +104,12 @@ namespace MonoTorrent.Connections.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
-                var infohashes = new List<InfoHash> { parameters.InfoHash };
+                var infohashes = new List<InfoHash> (2);
+                if (parameters.InfoHashes.V1 != null)
+                    infohashes.Add (parameters.InfoHashes.V1);
+                if (parameters.InfoHashes.V2 != null)
+                    infohashes.Add (parameters.InfoHashes.V2);
+
                 var message = new ScrapeMessage (DateTime.Now.GetHashCode (), connectionId, infohashes);
                 (var rawResponse, var errorString) = await SendAndReceiveAsync (message);
 
@@ -103,13 +118,16 @@ namespace MonoTorrent.Connections.Tracker
                     ConnectionIdTask = null;
                     return new ScrapeResponse (TrackerState.InvalidResponse, failureMessage: errorString);
                 } else if (rawResponse is ScrapeResponseMessage response) {
-                    int? complete = null, incomplete = null, downloaded = null;
-                    if (response.Scrapes.Count == 1) {
-                        complete = response.Scrapes[0].Seeds;
-                        downloaded = response.Scrapes[0].Complete;
-                        incomplete = response.Scrapes[0].Leeches;
+                    var scrapeInfo = new Dictionary<InfoHash, ScrapeInfo> ();
+                    for (int i = 0; i < response.Scrapes.Count; i++) {
+                        var info = new ScrapeInfo (
+                            complete: response.Scrapes[i].Seeds,
+                            downloaded: response.Scrapes[i].Complete,
+                            incomplete: response.Scrapes[i].Leeches
+                        );
+                        scrapeInfo.Add (infohashes[i], info);
                     }
-                    return new ScrapeResponse (TrackerState.Ok, complete: complete, downloaded: downloaded, incomplete: incomplete);
+                    return new ScrapeResponse (TrackerState.Ok, scrapeInfo);
                 } else {
                     throw new InvalidOperationException ($"There was no error and no {nameof (ScrapeResponseMessage)} was received");
                 }

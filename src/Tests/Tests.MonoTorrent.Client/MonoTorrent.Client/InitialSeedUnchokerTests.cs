@@ -253,10 +253,16 @@ namespace MonoTorrent.Client
         [Test]
         public void ConnectDisconnect ()
         {
-            PeerId a = new PeerId (new Peer (new string ('a', 20), new Uri ("ipv4://127.0.0.5:5353")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
-            PeerId b = new PeerId (new Peer (new string ('b', 20), new Uri ("ipv4://127.0.0.5:5354")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
-            PeerId c = new PeerId (new Peer (new string ('c', 20), new Uri ("ipv4://127.0.0.5:5355")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
-            PeerId d = new PeerId (new Peer (new string ('d', 20), new Uri ("ipv4://127.0.0.5:5356")), NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            var peers = new[] {
+                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5353"), new string ('a', 20)), rig.Manager.InfoHashes.V1OrV2),
+                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5354"), new string ('b', 20)), rig.Manager.InfoHashes.V1OrV2),
+                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5355"), new string ('c', 20)), rig.Manager.InfoHashes.V1OrV2),
+                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5356"), new string ('d', 20)), rig.Manager.InfoHashes.V1OrV2)
+            };
+            PeerId a = new PeerId (peers[0], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId b = new PeerId (peers[1], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId c = new PeerId (peers[2], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
+            PeerId d = new PeerId (peers[3], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
 
             unchoker.PeerDisconnected (a);
             Assert.AreEqual (1, unchoker.PeerCount, "#1");
@@ -281,10 +287,10 @@ namespace MonoTorrent.Client
         [Test]
         public void SeedConnects ()
         {
-            unchoker.PeerConnected (PeerId.CreateNull (rig.Manager.Bitfield.Length, seeder: false, false, false));
+            unchoker.PeerConnected (PeerId.CreateNull (rig.Manager.Bitfield.Length, seeder: false, false, false, rig.Manager.InfoHashes.V1OrV2));
             Assert.IsFalse (unchoker.Complete);
 
-            unchoker.PeerConnected (PeerId.CreateNull (rig.Manager.Bitfield.Length, seeder: true, false, false));
+            unchoker.PeerConnected (PeerId.CreateNull (rig.Manager.Bitfield.Length, seeder: true, false, false, rig.Manager.InfoHashes.V1OrV2));
             Assert.IsTrue (unchoker.Complete);
         }
 

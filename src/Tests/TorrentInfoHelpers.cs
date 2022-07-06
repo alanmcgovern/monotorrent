@@ -53,8 +53,8 @@ namespace MonoTorrent
 
         public int PieceLength => TorrentInfo.PieceLength;
 
-        public Dictionary<IPeer, List<PieceSegment>> Cancellations = new Dictionary<IPeer, List<PieceSegment>> ();
-        public Dictionary<IPeer, List<PieceSegment>> Requests = new Dictionary<IPeer, List<PieceSegment>> ();
+        public Dictionary<IRequester, List<PieceSegment>> Cancellations = new Dictionary<IRequester, List<PieceSegment>> ();
+        public Dictionary<IRequester, List<PieceSegment>> Requests = new Dictionary<IRequester, List<PieceSegment>> ();
 
         public static TestTorrentManagerInfo Create (
             int? pieceLength = null,
@@ -94,20 +94,20 @@ namespace MonoTorrent
         int IPieceRequesterData.BytesPerPiece (int piece)
             => TorrentInfo.BytesPerPiece (piece);
 
-        void IMessageEnqueuer.EnqueueRequest (IPeer peer, PieceSegment block)
+        void IMessageEnqueuer.EnqueueRequest (IRequester peer, PieceSegment block)
             => ((IMessageEnqueuer) this).EnqueueRequests (peer, stackalloc PieceSegment[] { block });
 
-        void IMessageEnqueuer.EnqueueRequests (IPeer peer, Span<PieceSegment> blocks)
+        void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
         {
             if (!Requests.TryGetValue (peer, out List<PieceSegment> requests))
                 Requests[peer] = requests = new List<PieceSegment> ();
             requests.AddRange (blocks.ToArray ());
         }
 
-        void IMessageEnqueuer.EnqueueCancellation (IPeer peer, PieceSegment segment)
+        void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
             => ((IMessageEnqueuer) this).EnqueueCancellations (peer, stackalloc PieceSegment[] { segment });
 
-        void IMessageEnqueuer.EnqueueCancellations (IPeer peer, Span<PieceSegment> segments)
+        void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)
         {
             if (!Cancellations.TryGetValue (peer, out List<PieceSegment> cancellations))
                 Cancellations[peer] = cancellations = new List<PieceSegment> ();

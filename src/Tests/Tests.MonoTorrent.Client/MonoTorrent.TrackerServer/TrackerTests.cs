@@ -77,7 +77,7 @@ namespace MonoTorrent.TrackerServer
             for (int i = 0; i < 20; i++) {
                 var buffer = new byte[20];
                 r.NextBytes (buffer);
-                var infoHash = new InfoHash (buffer);
+                var infoHash = InfoHashes.FromV1 (new InfoHash (buffer));
                 TrackerTier tier = new TrackerTier (Factories.Default, new[] { uri.ToString () });
                 var parameters = new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new BEncodedString (new string ('1', 20)).Span.ToArray (), "", 1411, false);
@@ -94,7 +94,7 @@ namespace MonoTorrent.TrackerServer
             for (int i = 0; i < 20; i++) {
                 var buffer = new byte[20];
                 r.NextBytes (buffer);
-                var infoHash = new InfoHash (buffer);
+                var infoHash = InfoHashes.FromV1 (new InfoHash (buffer));
                 TrackerTier tier = new TrackerTier (Factories.Default, new[] { uri.ToString () });
                 var parameters = new MonoTorrent.Trackers.ScrapeRequest (infoHash);
                 await tier.Trackers[0].ScrapeAsync (parameters, CancellationToken.None);

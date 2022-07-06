@@ -44,8 +44,8 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         readonly PeerId id;
-        readonly List<Peer> addedPeers;
-        readonly List<Peer> droppedPeers;
+        readonly List<PeerId> addedPeers;
+        readonly List<PeerId> droppedPeers;
         bool disposed;
         const int MAX_PEERS = 50;
 
@@ -60,14 +60,14 @@ namespace MonoTorrent.Client
             Manager = manager;
             this.id = id;
 
-            addedPeers = new List<Peer> ();
-            droppedPeers = new List<Peer> ();
-            manager.OnPeerFound += OnAdd;
+            addedPeers = new List<PeerId> ();
+            droppedPeers = new List<PeerId> ();
+            manager.PeerConnected += OnAdd;
         }
 
-        internal void OnAdd (object? source, PeerAddedEventArgs e)
+        internal void OnAdd (object? source, PeerConnectedEventArgs args)
         {
-            addedPeers.Add (e.Peer);
+            addedPeers.Add (args.Peer);
         }
         // TODO onDropped!
         #endregion
@@ -84,8 +84,8 @@ namespace MonoTorrent.Client
             byte[] added = new byte[len * 6];
             byte[] addedDotF = new byte[len];
             for (int i = 0; i < len; i++) {
-                addedPeers[i].CompactPeer (added.AsSpan (i * 6, 6));
-                if (EncryptionTypes.SupportsRC4 (addedPeers[i].AllowedEncryption)) {
+                addedPeers[i].Peer.CompactPeer (added.AsSpan (i * 6, 6));
+                if (EncryptionTypes.SupportsRC4 (addedPeers[i].Peer.AllowedEncryption)) {
                     addedDotF[i] = 0x01;
                 } else {
                     addedDotF[i] = 0x00;
@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
 
             byte[] dropped = new byte[len * 6];
             for (int i = 0; i < len; i++)
-                droppedPeers[i].CompactPeer (dropped.AsSpan (i * 6, 6));
+                droppedPeers[i].Peer.CompactPeer (dropped.AsSpan (i * 6, 6));
 
             droppedPeers.RemoveRange (0, len);
 
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
                 return;
 
             disposed = true;
-            Manager.OnPeerFound -= OnAdd;
+            Manager.PeerConnected -= OnAdd;
         }
 
         #endregion

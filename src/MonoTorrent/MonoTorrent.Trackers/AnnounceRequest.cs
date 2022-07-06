@@ -36,27 +36,27 @@ namespace MonoTorrent.Trackers
         public long BytesLeft { get; private set; }
         public long BytesUploaded { get; private set; }
         public TorrentEvent ClientEvent { get; private set; }
-        public InfoHash InfoHash { get; private set; }
+        public InfoHashes InfoHashes { get; private set; }
         public string? IPAddress { get; private set; }
         public ReadOnlyMemory<byte> PeerId { get; private set; }
         public int Port { get; private set; }
         public bool RequireEncryption { get; private set; }
         public bool SupportsEncryption { get; private set; }
 
-        public AnnounceRequest (InfoHash infoHash)
+        public AnnounceRequest (InfoHashes infoHashes)
         {
-            InfoHash = infoHash;
+            InfoHashes = infoHashes;
         }
 
         public AnnounceRequest (long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                           TorrentEvent clientEvent, InfoHash infoHash, bool requireEncryption,
+                           TorrentEvent clientEvent, InfoHashes infoHashes, bool requireEncryption,
                            ReadOnlyMemory<byte> peerId, string? ipAddress, int port, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;
             BytesLeft = bytesLeft;
             ClientEvent = clientEvent;
-            InfoHash = infoHash;
+            InfoHashes = infoHashes;
             RequireEncryption = requireEncryption;
             PeerId = peerId;
             IPAddress = ipAddress;
@@ -104,12 +104,12 @@ namespace MonoTorrent.Trackers
             return clone;
         }
 
-        public AnnounceRequest WithInfoHash (InfoHash infoHash)
+        public AnnounceRequest WithInfoHashes (InfoHashes infoHashes)
         {
             var clone = this;
-            if (infoHash != InfoHash) {
+            if (infoHashes != InfoHashes) {
                 clone = (AnnounceRequest) MemberwiseClone ();
-                clone.InfoHash = infoHash;
+                clone.InfoHashes = infoHashes;
             }
             return clone;
         }

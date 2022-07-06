@@ -37,7 +37,7 @@ namespace MonoTorrent.Trackers
         /// <summary>
         /// The list of peers returned by the tracker.
         /// </summary>
-        public IList<PeerInfo> Peers { get; }
+        public Dictionary<InfoHash, IList<PeerInfo>> Peers { get; }
 
         public TimeSpan MinUpdateInterval { get; }
 
@@ -45,18 +45,16 @@ namespace MonoTorrent.Trackers
 
         public AnnounceResponse (
             TrackerState state,
-            IList<PeerInfo>? peers = null,
+            Dictionary<InfoHash, IList<PeerInfo>>? peers = null,
             TimeSpan? minUpdateInterval = null,
             TimeSpan? updateInterval = null,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
+            Dictionary<InfoHash, ScrapeInfo>? scrapeInfo = null,
             string warningMessage = "",
             string failureMessage = ""
             )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+            : base (state, scrapeInfo ?? new Dictionary<InfoHash, ScrapeInfo> (), warningMessage, failureMessage)
         {
-            Peers = peers ?? Array.Empty<PeerInfo> ();
+            Peers = peers ?? new Dictionary<InfoHash, IList<PeerInfo>> ();
             MinUpdateInterval = minUpdateInterval ?? TimeSpan.FromMinutes (3);
             UpdateInterval = updateInterval ?? TimeSpan.FromMinutes (30);
         }

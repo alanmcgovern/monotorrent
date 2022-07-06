@@ -85,14 +85,14 @@ namespace MonoTorrent.Client
         async void ConnectionReceived (object? sender, PeerConnectionEventArgs e)
         {
             await ClientEngine.MainLoop;
-            var peer = new Peer ("", e.Connection.Uri, EncryptionTypes.All);
-
+            var peerInfo = new PeerInfo (e.Connection.Uri);
             try {
-                if (Engine.ConnectionManager.ShouldBanPeer (peer)) {
+                if (Engine.ConnectionManager.ShouldBanPeer (peerInfo)) {
                     e.Connection.Dispose ();
                     return;
                 }
                 if (!e.Connection.IsIncoming) {
+                    var peer = new Peer (peerInfo, e.InfoHash!);
                     var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash!))!;
                     var id = new PeerId (peer, e.Connection, new BitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
@@ -104,16 +104,16 @@ namespace MonoTorrent.Client
 
                 logger.Info (e.Connection, "ConnectionReceived");
 
-                var supportedEncryptions = EncryptionTypes.GetSupportedEncryption (peer.AllowedEncryption, Engine.Settings.AllowedEncryption);
+                var supportedEncryptions = Engine.Settings.AllowedEncryption;
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories);
-                if (!await HandleHandshake (peer, e.Connection, result.Handshake!, result.Decryptor, result.Encryptor))
+                if (!await HandleHandshake (peerInfo, e.Connection, result.Handshake!, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch {
                 e.Connection.Dispose ();
             }
         }
 
-        async ReusableTask<bool> HandleHandshake (Peer peer, IPeerConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
+        async ReusableTask<bool> HandleHandshake (PeerInfo peerInfo, IPeerConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager? man = null;
             if (message.ProtocolString != Constants.ProtocolStringV100)
@@ -137,7 +137,8 @@ namespace MonoTorrent.Client
             if (!man.Mode.CanAcceptConnections)
                 return false;
 
-            peer.PeerId = message.PeerId;
+            var peer = new Peer (peerInfo, man.InfoHashes.Expand (message.InfoHash));
+            peer.UpdatePeerId (message.PeerId);
             var id = new PeerId (peer, connection, new BitField (man.Bitfield.Length).SetAll (false)) {
                 Decryptor = decryptor,
                 Encryptor = encryptor

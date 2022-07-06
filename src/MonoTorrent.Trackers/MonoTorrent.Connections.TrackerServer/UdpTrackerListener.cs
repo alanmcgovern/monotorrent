@@ -261,11 +261,8 @@ namespace MonoTorrent.Connections.TrackerServer
         NameValueCollection getCollection (ScrapeMessage scrapeMessage)
         {
             var res = new NameValueCollection ();
-            if (scrapeMessage.InfoHashes.Count == 0)
-                return res;//no infohash????
-            //TODO more than one infohash : paid attention to order in response!!!
-            var hash = scrapeMessage.InfoHashes[0];
-            res.Add ("info_hash", hash.UrlEncode ());
+            foreach (var v in scrapeMessage.InfoHashes)
+                res.Add ("info_hash", v.UrlEncode ());
             return res;
         }
 

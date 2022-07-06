@@ -35,9 +35,9 @@ namespace MonoTorrent.Client
     {
         public bool BanPeer { get; set; }
 
-        public Peer Peer { get; }
+        public PeerInfo Peer { get; }
 
-        public AttemptConnectionEventArgs (Peer peer)
+        public AttemptConnectionEventArgs (PeerInfo peer)
         {
             Peer = peer;
         }

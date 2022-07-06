@@ -49,12 +49,12 @@ namespace MonoTorrent.Trackers
     public class UdpTrackerTests
     {
         static readonly byte[] PeerId = Enumerable.Repeat ((byte) 255, 20).ToArray ();
-        static readonly InfoHash InfoHash = new InfoHash (Enumerable.Repeat ((byte) 254, 20).ToArray ());
+        static readonly InfoHashes InfoHashes = InfoHashes.FromV1 (new InfoHash (Enumerable.Repeat ((byte) 254, 20).ToArray ()));
 
         AnnounceRequest announceparams = new AnnounceRequest (100, 50, int.MaxValue,
-            TorrentEvent.Completed, InfoHash, false, PeerId, null, 1515, false);
+            TorrentEvent.Completed, InfoHashes, false, PeerId, null, 1515, false);
 
-        readonly ScrapeRequest scrapeParams = new ScrapeRequest (new InfoHash (new byte[20]));
+        readonly ScrapeRequest scrapeParams = new ScrapeRequest (InfoHashes);
         TrackerServer.TrackerServer server;
         UdpTrackerConnection trackerConnection;
         Tracker tracker;
@@ -62,12 +62,19 @@ namespace MonoTorrent.Trackers
         List<BEncodedString> keys;
         List<IPEndPoint> peerEndpoints;
 
+        List<InfoHash> announcedInfoHashes = new List<InfoHash> ();
+        List<InfoHash> scrapedInfoHashes = new List<InfoHash> ();
+
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
             listener = new IgnoringListener (0);
             listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
                 keys.Add (e.Key);
+                announcedInfoHashes.Add (e.InfoHash);
+            };
+            listener.ScrapeReceived += (o, e) => {
+                scrapedInfoHashes.AddRange (e.InfoHashes);
             };
             listener.Start ();
         }
@@ -75,6 +82,9 @@ namespace MonoTorrent.Trackers
         [SetUp]
         public void Setup ()
         {
+            announcedInfoHashes.Clear ();
+            scrapedInfoHashes.Clear ();
+
             keys = new List<BEncodedString> ();
             server = new MonoTorrent.TrackerServer.TrackerServer ();
             server.AllowUnregisteredTorrents = true;
@@ -114,7 +124,7 @@ namespace MonoTorrent.Trackers
         [Test]
         public void AnnounceMessageTest ()
         {
-            AnnounceMessage m = new AnnounceMessage (0, 12345, announceparams);
+            AnnounceMessage m = new AnnounceMessage (0, 12345, announceparams, announceparams.InfoHashes.V1OrV2);
             AnnounceMessage d = (AnnounceMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Request);
             Check (m, MessageType.Request);
 
@@ -127,7 +137,7 @@ namespace MonoTorrent.Trackers
         [Test]
         public void AnnounceResponseTest ()
         {
-            var peers = peerEndpoints.Select (t => new PeerInfo (new Uri ($"ipv4://{t.Address}:{t.Port}"), ReadOnlyMemory<byte>.Empty)).ToList ();
+            var peers = peerEndpoints.Select (t => new PeerInfo (new Uri ($"ipv4://{t.Address}:{t.Port}"))).ToList ();
             AnnounceResponseMessage m = new AnnounceResponseMessage (12345, TimeSpan.FromSeconds (10), 43, 65, peers);
             AnnounceResponseMessage d = (AnnounceResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Response);
             Check (m, MessageType.Response);
@@ -241,16 +251,44 @@ namespace MonoTorrent.Trackers
         }
 
         [Test]
+        public async Task AnnounceHybrid ()
+        {
+            var hybrid = new InfoHashes (new InfoHash (Enumerable.Repeat<byte> (1, 20).ToArray ()), new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
+            await tracker.AnnounceAsync (announceparams.WithInfoHashes (hybrid), CancellationToken.None);
+            Assert.AreEqual (2, announcedInfoHashes.Count);
+            Assert.IsTrue (announcedInfoHashes.Contains (hybrid.V1));
+            Assert.IsTrue (announcedInfoHashes.Contains (hybrid.V2.Truncate ()));
+        }
+
+        [Test]
+        public async Task AnnounceV1 ()
+        {
+            var v1 = new InfoHashes(new InfoHash (Enumerable.Repeat<byte>(1, 20).ToArray ()), null);
+            await tracker.AnnounceAsync (announceparams.WithInfoHashes (v1), CancellationToken.None);
+            Assert.AreEqual (1, announcedInfoHashes.Count);
+            Assert.AreEqual (v1.V1, announcedInfoHashes[0]);
+        }
+
+        [Test]
+        public async Task AnnounceV2 ()
+        {
+            var v2 = new InfoHashes (null, new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
+            await tracker.AnnounceAsync (announceparams.WithInfoHashes (v2), CancellationToken.None);
+            Assert.AreEqual (1, announcedInfoHashes.Count);
+            Assert.AreEqual (v2.V2.Truncate (), announcedInfoHashes[0]);
+        }
+
+        [Test]
         public async Task AnnounceTest_GetPeers ()
         {
-            var trackable = new InfoHashTrackable ("Test", InfoHash);
+            var trackable = new InfoHashTrackable ("Test", InfoHashes.V1OrV2);
             server.Add (trackable);
             var manager = (SimpleTorrentManager) server.GetTrackerItem (trackable);
             foreach (var p in peerEndpoints)
                 manager.Add (new Peer (p, p));
 
             var response = await tracker.AnnounceAsync (announceparams, CancellationToken.None);
-            var endpoints = response.Peers.Select (t => new IPEndPoint (IPAddress.Parse (t.Uri.Host), t.Uri.Port)).ToArray ();
+            var endpoints = response.Peers.Values.SelectMany (t => t).Select (t => new IPEndPoint (IPAddress.Parse (t.ConnectionUri.Host), t.ConnectionUri.Port)).ToArray ();
             foreach (var p in peerEndpoints) {
                 Assert.IsTrue (endpoints.Contains (p), "#1." + p);
             }
@@ -340,9 +378,35 @@ namespace MonoTorrent.Trackers
         public async Task ScrapeTest ()
         {
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
-            Assert.AreEqual (0, tracker.Complete, "#1");
-            Assert.AreEqual (0, tracker.Incomplete, "#2");
-            Assert.AreEqual (0, tracker.Downloaded, "#3");
+            Assert.AreEqual (0, tracker.ScrapeInfo.Count, "#1");
+        }
+
+        [Test]
+        public async Task ScrapeHybrid ()
+        {
+            var hybrid = new InfoHashes (new InfoHash (Enumerable.Repeat<byte> (1, 20).ToArray ()), new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
+            await tracker.ScrapeAsync (new ScrapeRequest (hybrid), CancellationToken.None);
+            Assert.AreEqual (2, scrapedInfoHashes.Count);
+            Assert.IsTrue (scrapedInfoHashes.Contains (hybrid.V1));
+            Assert.IsTrue (scrapedInfoHashes.Contains (hybrid.V2.Truncate ()));
+        }
+
+        [Test]
+        public async Task ScrapeV1 ()
+        {
+            var v1 = new InfoHashes (new InfoHash (Enumerable.Repeat<byte> (1, 20).ToArray ()), null);
+            await tracker.ScrapeAsync (new ScrapeRequest (v1), CancellationToken.None);
+            Assert.AreEqual (1, scrapedInfoHashes.Count);
+            Assert.AreEqual (v1.V1, scrapedInfoHashes[0]);
+        }
+
+        [Test]
+        public async Task ScrapeV2 ()
+        {
+            var v2 = new InfoHashes (null, new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
+            await tracker.ScrapeAsync (new ScrapeRequest (v2), CancellationToken.None);
+            Assert.AreEqual (1, scrapedInfoHashes.Count);
+            Assert.AreEqual (v2.V2.Truncate (), scrapedInfoHashes[0]);
         }
 
         [Test]

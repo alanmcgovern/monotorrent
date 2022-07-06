@@ -61,12 +61,12 @@ namespace MonoTorrent.Messages.UdpTracker
         public long Uploaded { get; set; }
 
         public AnnounceMessage ()
-            : this (0, 0, null)
+            : this (0, 0, null, null)
         {
 
         }
 
-        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest? parameters)
+        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest? parameters, InfoHash infoHash)
             : base (1, transactionId)
         {
             ConnectionId = connectionId;
@@ -74,7 +74,7 @@ namespace MonoTorrent.Messages.UdpTracker
                 return;
 
             Downloaded = parameters.BytesDownloaded;
-            InfoHash = parameters.InfoHash;
+            InfoHash = infoHash.Truncate ();
             IP = 0;
             Key = (uint) DateTime.Now.GetHashCode (); // FIXME: Don't do this! It should be constant
             Left = parameters.BytesLeft;

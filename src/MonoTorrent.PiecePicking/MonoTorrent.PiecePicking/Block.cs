@@ -57,7 +57,7 @@ namespace MonoTorrent.PiecePicking
 
             public bool Requested => RequestedOff != null;
 
-            internal IPeer? RequestedOff { get; private set; }
+            internal IRequester? RequestedOff { get; private set; }
 
             internal Block (Piece piece, int blockIndex)
             {
@@ -67,7 +67,7 @@ namespace MonoTorrent.PiecePicking
                 BlockIndex = blockIndex;
             }
 
-            internal PieceSegment CreateRequest (IPeer peer)
+            internal PieceSegment CreateRequest (IRequester peer)
             {
                 if (RequestedOff == null)
                     piece.TotalRequested++;
@@ -107,7 +107,7 @@ namespace MonoTorrent.PiecePicking
                 piece.TotalRequested += 1;
             }
 
-            internal void TrySetReceived (IPeer peer)
+            internal void TrySetReceived (IRequester peer)
             {
                 if (!received) {
                     CancelRequest ();

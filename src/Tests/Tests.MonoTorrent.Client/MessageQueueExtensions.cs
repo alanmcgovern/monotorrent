@@ -13,7 +13,7 @@ namespace MonoTorrent.Client
     {
         public static PeerId AddConnectedPeer (this TorrentManager manager, bool supportsLTMetdata = false)
         {
-            var peer = PeerId.CreateNull (manager.Bitfield.Length);
+            var peer = PeerId.CreateNull (manager.Bitfield.Length, manager.InfoHashes.V1OrV2);
             manager.Peers.ConnectedPeers.Add (peer);
             if (supportsLTMetdata) {
                 peer.SupportsFastPeer = true;

@@ -417,7 +417,7 @@ namespace MonoTorrent.PiecePicking
             peer.IsChoking = false;
             peer.BitField.SetAll (true);
             var message = picker.PickPiece (peer, peer.BitField, peers);
-            Assert.IsTrue (picker.ValidatePiece (peer, message.Value, out bool pieceComplete, out IList<IPeer> peersInvolved), "#1");
+            Assert.IsTrue (picker.ValidatePiece (peer, message.Value, out bool pieceComplete, out IList<IRequester> peersInvolved), "#1");
             picker.CancelRequests (peer, 0, peer.BitField.Length - 1, stackalloc PieceSegment[peer.AmRequestingPiecesCount]);
             for (int i = 1; i < torrentData.TorrentInfo.BlocksPerPiece (0); i++) {
                 message = picker.PickPiece (peer, peer.BitField, peers);

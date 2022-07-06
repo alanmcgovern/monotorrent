@@ -26,19 +26,19 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System.Collections.Generic;
+
 namespace MonoTorrent.Trackers
 {
     public class ScrapeResponse : TrackerResponse
     {
         public ScrapeResponse (
             TrackerState state,
-            int? complete = null,
-            int? incomplete = null,
-            int? downloaded = null,
+            Dictionary<InfoHash, ScrapeInfo>? scrapeInfo = null,
             string warningMessage = "",
             string failureMessage = ""
             )
-            : base (state, complete, incomplete, downloaded, warningMessage, failureMessage)
+            : base (state, scrapeInfo ?? new Dictionary<InfoHash, ScrapeInfo> (), warningMessage, failureMessage)
         {
         }
     }

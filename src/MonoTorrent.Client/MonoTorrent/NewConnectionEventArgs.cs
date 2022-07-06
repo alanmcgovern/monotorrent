@@ -36,9 +36,9 @@ namespace MonoTorrent.Client
     public class NewConnectionEventArgs : TorrentEventArgs
     {
         public IPeerConnection Connection { get; }
-        public Peer Peer { get; }
+        public PeerInfo Peer { get; }
 
-        public NewConnectionEventArgs (Peer peer, IPeerConnection connection, TorrentManager manager)
+        public NewConnectionEventArgs (PeerInfo peer, IPeerConnection connection, TorrentManager manager)
             : base (manager)
         {
             if (!connection.IsIncoming && manager == null)

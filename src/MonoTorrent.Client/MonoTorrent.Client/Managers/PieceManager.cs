@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
             Requester = manager.Engine!.Factories.CreatePieceRequester ();
         }
 
-        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IPeer> peersInvolved)
+        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IRequester> peersInvolved)
         {
             //FIXME: Ensure piece length is correct?
             var isValidLength = Manager.Torrent!.BytesPerBlock (message.PieceIndex, message.StartOffset / Constants.BlockSize) == message.RequestLength;
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
                 return true;
             } else {
                 pieceComplete = false;
-                peersInvolved = Array.Empty<IPeer> ();
+                peersInvolved = Array.Empty<IRequester> ();
                 return false;
             }
         }
@@ -107,13 +107,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        (IPeer, ReadOnlyBitField)[] peersCache = Array.Empty<(IPeer, ReadOnlyBitField )> ();
+        (IRequester, ReadOnlyBitField)[] peersCache = Array.Empty<(IRequester, ReadOnlyBitField )> ();
 
         internal void AddPieceRequests (List<PeerId> peers)
         {
             if (Initialised) {
                 if (peersCache.Length < peers.Count)
-                    peersCache = new (IPeer, ReadOnlyBitField)[peers.Count];
+                    peersCache = new (IRequester, ReadOnlyBitField)[peers.Count];
                 var span = peersCache.AsSpan (0, peers.Count);
                 for (int i = 0; i < peers.Count; i++)
                     span[i] = (peers[i], peers[i].BitField);
