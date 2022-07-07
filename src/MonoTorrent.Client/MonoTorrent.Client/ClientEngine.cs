@@ -707,8 +707,14 @@ namespace MonoTorrent.Client
                 if (!manager.CanUseDht)
                     continue;
 
-                DhtEngine.Announce (manager.InfoHashes.V1OrV2.Truncate (), Settings.ListenEndPoint?.Port ?? -1);
-                DhtEngine.GetPeers (manager.InfoHashes.V1OrV2.Truncate ());
+                if (manager.InfoHashes.V1 != null) {
+                    DhtEngine.Announce (manager.InfoHashes.V1, Settings.ListenEndPoint?.Port ?? -1);
+                    DhtEngine.GetPeers (manager.InfoHashes.V1);
+                }
+                if (manager.InfoHashes.V2 != null) {
+                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), Settings.ListenEndPoint?.Port ?? -1);
+                    DhtEngine.GetPeers (manager.InfoHashes.V2.Truncate ());
+                }
             }
         }
 
