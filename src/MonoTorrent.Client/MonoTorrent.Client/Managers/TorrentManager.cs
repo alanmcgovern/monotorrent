@@ -734,7 +734,10 @@ namespace MonoTorrent.Client
                     LastLocalPeerAnnounce = DateTime.Now;
                     LastLocalPeerAnnounceTimer.Restart ();
 
-                    await Engine.LocalPeerDiscovery.Announce (InfoHashes.V1OrV2, Engine.PeerListener.LocalEndPoint!);
+                    if (InfoHashes.V1 != null)
+                        await Engine.LocalPeerDiscovery.Announce (InfoHashes.V1, Engine.PeerListener.LocalEndPoint!);
+                    if (InfoHashes.V2 != null)
+                        await Engine.LocalPeerDiscovery.Announce (InfoHashes.V2.Truncate (), Engine.PeerListener.LocalEndPoint!);
                 }
             }
         }
@@ -755,7 +758,10 @@ namespace MonoTorrent.Client
             if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
-                Engine.DhtEngine.GetPeers (InfoHashes.V1OrV2.Truncate ());
+                if (InfoHashes.V2 != null)
+                    Engine.DhtEngine.GetPeers (InfoHashes.V2.Truncate ());
+                if (InfoHashes.V1 != null)
+                    Engine.DhtEngine.GetPeers (InfoHashes.V1);
             }
         }
 
