@@ -83,6 +83,28 @@ namespace MonoTorrent
         public static int BytesPerPiece (this ITorrentInfo self, int pieceIndex)
         {
             if (self.IsV2Only ()) {
+                return BytesPerPieceV2 (self, pieceIndex);
+            } else {
+                return BytesPerPieceV1 (self, pieceIndex);
+            }
+        }
+
+        public static int BytesPerPieceV1 (this ITorrentInfo self, int pieceIndex)
+        {
+            if (self.InfoHashes.V1 != null) {
+                // Hybrid torrents always have padding files, and v1 torrents do not have
+                // piece aligned files, so it's fine.
+                if (pieceIndex < self.PieceCount () - 1)
+                    return self.PieceLength;
+                return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
+            } else {
+                throw new NotSupportedException ();
+            }
+        }
+
+        public static int BytesPerPieceV2 (this ITorrentInfo self, int pieceIndex)
+        {
+            if (self.InfoHashes.V2 != null) {
                 // V2 only torrents aren't padded and so may have smaller
                 // pieces at the end of each file.
                 for (int i = 0; i < self.Files.Count; i++) {
@@ -94,11 +116,7 @@ namespace MonoTorrent
                 }
                 throw new ArgumentOutOfRangeException (nameof (pieceIndex));
             } else {
-                // Hybrid torrents always have padding files, and v1 torrents do not have
-                // piece aligned files, so it's fine.
-                if (pieceIndex < self.PieceCount () - 1)
-                    return self.PieceLength;
-                return (int) (self.Size - self.PieceIndexToByteOffset (pieceIndex));
+                throw new NotSupportedException ();
             }
         }
 
