@@ -55,6 +55,8 @@ namespace MonoTorrent.Dht.Tasks
 
         public async Task ExecuteAsync ()
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             var getpeers = new GetPeersTask (engine, infoHash);
             IEnumerable<Node> nodes = await getpeers.ExecuteAsync ();
 

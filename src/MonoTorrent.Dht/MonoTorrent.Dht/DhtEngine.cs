@@ -197,6 +197,8 @@ namespace MonoTorrent.Dht
 
         async void InitializeAsync (IEnumerable<Node> nodes)
         {
+            await MainLoop;
+
             var initTask = new InitialiseTask (this, nodes);
             await initTask.ExecuteAsync ();
             if (RoutingTable.NeedsBootstrap)
@@ -220,6 +222,8 @@ namespace MonoTorrent.Dht
 
         internal async Task RefreshBuckets ()
         {
+            await MainLoop;
+
             var refreshTasks = new List<Task> ();
             foreach (Bucket b in RoutingTable.Buckets) {
                 if (b.LastChanged > BucketRefreshTimeout) {
@@ -254,6 +258,8 @@ namespace MonoTorrent.Dht
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
+            await MainLoop;
+
             var e = default (SendQueryEventArgs);
             for (int i = 0; i < 4; i++) {
                 e = await MessageLoop.SendAsync (query, node);
@@ -328,6 +334,9 @@ namespace MonoTorrent.Dht
         }
 
         public async Task SetListenerAsync (IDhtListener listener)
-            => await MessageLoop.SetListener (listener);
+        {
+            await MainLoop;
+            await MessageLoop.SetListener (listener);
+        }
     }
 }

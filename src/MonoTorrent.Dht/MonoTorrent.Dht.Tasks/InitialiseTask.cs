@@ -62,6 +62,7 @@ namespace MonoTorrent.Dht.Tasks
 
         public Task ExecuteAsync ()
         {
+            DhtEngine.MainLoop.CheckThread ();
             BeginAsyncInit ();
             return initializationComplete.Task;
         }

@@ -60,6 +60,8 @@ namespace MonoTorrent.Dht.Tasks
 
         public async Task<IEnumerable<Node>> ExecuteAsync ()
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             var activeQueries = new List<Task<SendQueryEventArgs>> ();
             var closestNodes = new ClosestNodesCollection (InfoHash);
             var closestActiveNodes = new ClosestNodesCollection (InfoHash);

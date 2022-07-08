@@ -204,6 +204,8 @@ namespace MonoTorrent.Dht
 
         internal void Start ()
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             DhtMessageFactory = new DhtMessageFactory ();
             if (Listener.Status != ListenerStatus.Listening)
                 Listener.Start ();
@@ -211,6 +213,8 @@ namespace MonoTorrent.Dht
 
         internal void Stop ()
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             DhtMessageFactory = new DhtMessageFactory ();
             SendQueue.Clear ();
             ReceiveQueue.Clear ();
@@ -223,6 +227,8 @@ namespace MonoTorrent.Dht
 
         void TimeoutMessages ()
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             foreach (KeyValuePair<BEncodedValue, SendDetails> v in WaitingResponse) {
                 if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
                     WaitingResponseTimedOut.Add (v.Value);
@@ -236,6 +242,8 @@ namespace MonoTorrent.Dht
 
         void TimeoutMessage (SendDetails v)
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
             WaitingResponse.Remove (v.Message.TransactionId!);
 
@@ -245,6 +253,8 @@ namespace MonoTorrent.Dht
 
         void ReceiveMessage ()
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             KeyValuePair<IPEndPoint, DhtMessage> receive = ReceiveQueue.Dequeue ();
             DhtMessage message = receive.Value;
             IPEndPoint source = receive.Key;
@@ -286,16 +296,20 @@ namespace MonoTorrent.Dht
             }
         }
 
-        internal async ReusableTask SetListener (IDhtListener listener)
+        internal ReusableTask SetListener (IDhtListener listener)
         {
-            await DhtEngine.MainLoop;
+            DhtEngine.MainLoop.CheckThread ();
+
             Listener.MessageReceived -= MessageReceived;
             Listener = listener ?? new NullDhtListener ();
             Listener.MessageReceived += MessageReceived;
+            return ReusableTask.CompletedTask;
         }
 
         internal void EnqueueSend (DhtMessage message, Node? node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs>? tcs = null)
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             if (message.TransactionId == null) {
                 if (message is ResponseMessage)
                     throw new ArgumentException ("Message must have a transaction id");
@@ -313,11 +327,15 @@ namespace MonoTorrent.Dht
 
         internal void EnqueueSend (DhtMessage message, Node node, TaskCompletionSource<SendQueryEventArgs>? tcs = null)
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             EnqueueSend (message, node, node.EndPoint, tcs);
         }
 
         public Task<SendQueryEventArgs> SendAsync (DhtMessage message, Node node)
         {
+            DhtEngine.MainLoop.CheckThread ();
+
             var tcs = new TaskCompletionSource<SendQueryEventArgs> ();
             EnqueueSend (message, node, tcs);
             return tcs.Task;
