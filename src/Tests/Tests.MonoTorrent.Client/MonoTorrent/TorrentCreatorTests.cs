@@ -186,7 +186,12 @@ namespace MonoTorrent.Common
                 Assert.AreEqual (expected.Files[i].EndPieceIndex, actual.Files[i].EndPieceIndex);
             }
         }
-
+/*
+ * test disabled because it takes 10+ seconds to run. It used to validate
+ * that TorrentCreatore correctly handled files larger than 2GB, however
+ * all of that core reading/writing logic is handled by IPieceWriter/DiskManager
+ * now and so there's nothing really to test in this class.
+ * Disable the test but don't delete it... because maybe it's good?
         [Test]
         public async Task LargeMultiTorrent ()
         {
@@ -214,7 +219,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual (name4, torrent.Files[3].Path, "#5");
             Assert.AreEqual (name5, torrent.Files[4].Path, "#6");
         }
-
+*/
         [Test]
         public void IllegalDestinationPath ()
         {
