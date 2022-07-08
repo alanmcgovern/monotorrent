@@ -121,6 +121,15 @@ namespace MonoTorrent
         public int GetMaxByteCount ()
             => (V1 is null ? 0 : 20) + (V2 is null ? 0 : 32);
 
+        public InfoHash Expand (InfoHash infoHash)
+        {
+            if (infoHash == V1)
+                return V1;
+            if (V2 != null && infoHash.Span.SequenceEqual (V2.Span.Slice (0, infoHash.Span.Length)))
+                return V2;
+            throw new ArgumentException("The supplied infohash does not match the V1 or V2 infohash in this object");
+        }
+
         public static bool operator == (InfoHashes? left, InfoHashes? right)
         {
             if (left is null)

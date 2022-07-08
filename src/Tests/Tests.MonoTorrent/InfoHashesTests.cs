@@ -68,5 +68,12 @@ namespace MonoTorrent
             Assert.IsTrue (new InfoHashes (CreateV1 (), CreateV2 ()).Contains (CreateV2 ().Truncate ()));
             Assert.IsTrue (new InfoHashes (CreateV1 (), CreateV2 ()).Contains (CreateV2 ().Truncate ()));
         }
+
+        [Test]
+        public void Expand ()
+        {
+            var hashes = InfoHashes.FromV2 (new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
+            Assert.AreEqual (hashes.V2.Span.Length, hashes.Expand (hashes.V2.Truncate ()).Span.Length);
+        }
     }
 }

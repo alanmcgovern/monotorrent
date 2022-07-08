@@ -135,11 +135,9 @@ namespace MonoTorrent.Common
         [Test]
         public void LoadHybridTorrent ()
         {
-            Assert.IsFalse (Torrent.SupportsV1V2Torrents);
-
-            Assert.IsNull (HybridTorrent.InfoHashes.V1);
+            Assert.IsNotNull (HybridTorrent.InfoHashes.V1);
             Assert.IsNotNull (HybridTorrent.InfoHashes.V2);
-            Assert.IsTrue (HybridTorrent.CreatePieceHashes ().GetHash (0).V1Hash.IsEmpty);
+            Assert.IsFalse (HybridTorrent.CreatePieceHashes ().GetHash (0).V1Hash.IsEmpty);
             Assert.IsFalse (HybridTorrent.CreatePieceHashes ().GetHash (0).V2Hash.IsEmpty);
             Assert.AreEqual (HybridTorrent.Size, HybridTorrent.Files.Select (t => t.Length + t.Padding).Sum ());
         }
