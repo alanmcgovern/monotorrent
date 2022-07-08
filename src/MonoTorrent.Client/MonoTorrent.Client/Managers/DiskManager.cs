@@ -61,6 +61,7 @@ namespace MonoTorrent.Client
 
             public ReusableExclusiveSemaphore Locker;
 
+            int v2BytesRemaining = 0;
             readonly IncrementalHash SHA256Hasher;
             MemoryPool.Releaser BlockHashesReleaser { get; set; }
             Memory<byte> BlockHashes { get; set; }
@@ -100,7 +101,8 @@ namespace MonoTorrent.Client
                 if (UseV2) {
                     var file = manager.Files[manager.Files.FindFileByPieceIndex (pieceIndex)];
                     Memory<byte> hashes;
-                    int actualBlocks = Manager.TorrentInfo!.BlocksPerPiece (pieceIndex);
+                    v2BytesRemaining = manager.TorrentInfo!.BytesPerPieceV2 (pieceIndex);
+                    int actualBlocks = (v2BytesRemaining + Constants.BlockSize - 1) / Constants.BlockSize;
                     if (file.StartPieceIndex == file.EndPieceIndex) {
                         var blocks = actualBlocks;
                         if (blocks > 1)
@@ -122,8 +124,12 @@ namespace MonoTorrent.Client
 
                 // SHA256 hashes are hashed blockwise first, and then those block hashes are combined like a merkle tree until
                 // we have a piece hash.
-                if (UseV2) {
-                    SHA256Hasher.AppendData (buffer);
+                if (UseV2 && v2BytesRemaining > 0) {
+                    var tmp = buffer;
+                    if (v2BytesRemaining < tmp.Length)
+                        tmp = tmp.Slice (0, v2BytesRemaining);
+                    SHA256Hasher.AppendData (tmp);
+                    v2BytesRemaining -= tmp.Length;
                     if (!SHA256Hasher.TryGetHashAndReset (BlockHashes.Span.Slice ((NextOffsetToHash / Constants.BlockSize) * 32, 32), out _))
                         throw new InvalidOperationException ("Failed to generate SHA256 hash for the provided piece");
                 }

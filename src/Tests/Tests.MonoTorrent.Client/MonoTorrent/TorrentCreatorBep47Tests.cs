@@ -155,6 +155,43 @@ namespace MonoTorrent.Common
             }
         }
 
+        [Test]
+        public async Task HybridTorrentWithPadding ()
+        {
+            var unpaddedFile = new byte[] { 1 };
+            var paddedFile = new byte[Constants.BlockSize * 2];
+            paddedFile[0] = 1;
+
+            var files = new Source {
+                TorrentName = "asfg",
+                Files = new[] {
+                    new FileMapping ("1.src", "1.tmp", unpaddedFile.Length),
+                    new FileMapping ("2.tmp", "2.tmp", unpaddedFile.Length),
+                }
+            };
+
+
+            var creator = new TorrentCreator (TorrentType.V1V2Hybrid, Factories.Default
+                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false, FillValue = 1 })) {
+                PieceLength = paddedFile.Length
+            };
+
+            // First one's padded
+            var firstSHA1 = SHA1.Create ().ComputeHash (paddedFile);
+            // Second piece is *not* padded
+            var secondSHA1 = SHA1.Create ().ComputeHash (unpaddedFile);
+
+            // but bittorrent v2 hashes don't use padding
+            var sha256 = SHA256.Create ().ComputeHash (unpaddedFile);
+
+            var torrent = Torrent.Load (await creator.CreateAsync (files));
+            Assert.IsTrue (firstSHA1.AsSpan ().SequenceEqual (torrent.CreatePieceHashes ().GetHash (0).V1Hash.Span));
+            Assert.IsTrue (secondSHA1.AsSpan ().SequenceEqual (torrent.CreatePieceHashes ().GetHash (1).V1Hash.Span));
+
+            Assert.IsTrue (sha256.AsSpan ().SequenceEqual (torrent.CreatePieceHashes ().GetHash (0).V2Hash.Span));
+            Assert.IsTrue (sha256.AsSpan ().SequenceEqual (torrent.CreatePieceHashes ().GetHash (1).V2Hash.Span));
+        }
+
         static BEncodedString SHA1SumZeros (long length)
         {
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
