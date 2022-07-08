@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using MonoTorrent.Client.Listeners;
@@ -60,19 +61,22 @@ namespace MonoTorrent.Client
 
         public void Add (InfoHashes skey)
         {
-            var clone = new InfoHash[SKeys.Length + 1];
-            Array.Copy (SKeys, clone, SKeys.Length);
-            clone[clone.Length - 1] = skey.V1OrV2.Truncate ();
-            SKeys = clone;
+            var clone = new List<InfoHash> (SKeys);
+            if (skey.V1 != null)
+                clone.Add (skey.V1);
+            if (skey.V2 != null)
+                clone.Add (skey.V2.Truncate ());
+            SKeys = clone.ToArray ();
         }
 
         public void Remove (InfoHashes skey)
         {
-            var clone = new InfoHash[SKeys.Length - 1];
-            var index = Array.IndexOf (SKeys, skey.V1OrV2.Truncate ());
-            Array.Copy (SKeys, clone, index);
-            Array.Copy (SKeys, index + 1, clone, index, clone.Length - index);
-            SKeys = clone;
+            var clone = new List<InfoHash> (SKeys);
+            if (skey.V1 != null)
+                clone.Remove (skey.V1);
+            if (skey.V2 != null)
+                clone.Remove (skey.V2.Truncate ());
+            SKeys = clone.ToArray ();
         }
 
         public void SetListener (IPeerConnectionListener listener)
