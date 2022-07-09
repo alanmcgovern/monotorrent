@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
 
                     // If the peer doesn't support fast peer, then we will never requeue the message
                     if (!supportsFastPeer) {
-                        // FIXME: Dispose it here!
+                        SendQueue[i].releaser.Dispose ();
                         SendQueue.RemoveAt (i);
                         i--;
                         rejectedCount++;
@@ -130,6 +130,7 @@ namespace MonoTorrent.Client
                         continue;
                     else {
                         rejectedCount++;
+                        SendQueue[i].releaser.Dispose ();
                         SendQueue[i] = (new RejectRequestMessage (msg), default);
                     }
                 }
