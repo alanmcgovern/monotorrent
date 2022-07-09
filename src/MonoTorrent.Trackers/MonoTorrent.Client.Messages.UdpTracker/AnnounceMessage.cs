@@ -61,7 +61,7 @@ namespace MonoTorrent.Messages.UdpTracker
         public long Uploaded { get; set; }
 
         public AnnounceMessage ()
-            : this (0, 0, null, null)
+            : this (0, 0, null, null!)
         {
 
         }

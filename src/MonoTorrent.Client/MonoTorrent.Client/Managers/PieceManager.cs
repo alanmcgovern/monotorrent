@@ -100,6 +100,8 @@ namespace MonoTorrent.Client
                 if (otherAvailableCache.Length < Manager.Peers.ConnectedPeers.Count)
                     otherAvailableCache = new ReadOnlyBitField[Manager.Peers.ConnectedPeers.Count];
                 var otherAvailable = otherAvailableCache.AsSpan (0, Manager.Peers.ConnectedPeers.Count);
+                otherAvailableCache.AsSpan (Manager.Peers.ConnectedPeers.Count).Clear ();
+
                 for (int i = 0; i < otherAvailable.Length; i++)
                     otherAvailable[i] = Manager.Peers.ConnectedPeers[i].BitField;
 
@@ -115,6 +117,8 @@ namespace MonoTorrent.Client
                 if (peersCache.Length < peers.Count)
                     peersCache = new (IRequester, ReadOnlyBitField)[peers.Count];
                 var span = peersCache.AsSpan (0, peers.Count);
+                peersCache.AsSpan (peers.Count).Clear ();
+
                 for (int i = 0; i < peers.Count; i++)
                     span[i] = (peers[i], peers[i].BitField);
                 Requester.AddRequests (span);

@@ -88,6 +88,7 @@ namespace MonoTorrent.Client
         /// set to true. A bitfield with all pieces set to <see langword="false"/> will be created too.
         /// </summary>
         /// <param name="bitfieldLength"></param>
+        /// <param name="expectedInfoHash"></param>
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, InfoHash expectedInfoHash)
         {
