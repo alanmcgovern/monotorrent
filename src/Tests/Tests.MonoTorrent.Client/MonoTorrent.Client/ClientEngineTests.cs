@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -43,18 +44,21 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_Dht ()
         {
-            using var rig = TestRig.CreateMultiFile (new TestWriter ());
-            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
+            var dht = new ManualDhtEngine ();
+            var factories = Factories.Default.WithDhtCreator (() => dht);
+            var settings = EngineSettingsBuilder.CreateForTests (dhtEndPoint: new IPEndPoint (IPAddress.Any, 1234));
+
+            using var engine = new ClientEngine (settings, factories);
+            var manager = await engine.AddAsync (new MagnetLink (InfoHash.FromMemory (new byte[20])), "asd");
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
-            var manager = rig.Engine.Torrents[0];
             manager.PeersFound += (o, e) => {
                 if (e is DhtPeersAdded args)
                     tcs.TrySetResult (args);
             };
 
-            var peer = rig.CreatePeer (false).Peer;
-            dht.RaisePeersFound (manager.InfoHashes.V1OrV2, new[] { peer.Info });
+            var peer = new PeerInfo (new Uri ("ipv4://123.123.123.123:1515"));
+            dht.RaisePeersFound (manager.InfoHashes.V1OrV2, new[] { peer });
             var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
