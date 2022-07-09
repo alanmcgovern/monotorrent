@@ -315,6 +315,8 @@ namespace MonoTorrent.Client
                 return;
 
             try {
+                id.MessageQueue.Dispose ();
+
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 bool canReuse = (id.Connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)

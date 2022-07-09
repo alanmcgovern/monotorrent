@@ -64,14 +64,13 @@ namespace MonoTorrent.Client.Modes
             while (manager.Torrent is null) {
                 metadataMode.Tick (0);
                 PeerMessage message;
-                while ((message = peer.MessageQueue.TryDequeue ()) != null) {
+                while (peer.IsConnected && (message = peer.MessageQueue.TryDequeue ()) != null) {
                     if (message is LTMetadata metadata) {
                         if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
                             var data = torrent.InfoMetadata.Slice (metadata.Piece * Constants.BlockSize);
                             data = data.Slice (0, Math.Min (Constants.BlockSize, data.Length));
                             metadataMode.HandleMessage (peer, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, data), default);
-;                        }
-                        
+                        }
                     }
                 }
             }
@@ -101,7 +100,7 @@ namespace MonoTorrent.Client.Modes
             while (manager.Torrent is null) {
                 metadataMode.Tick (0);
                 PeerMessage message;
-                while ((message = peer.MessageQueue.TryDequeue ()) != null) {
+                while (peer.IsConnected && (message = peer.MessageQueue.TryDequeue ()) != null) {
                     if (message is LTMetadata metadata) {
                         if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
                             var data = torrent.InfoMetadata.Slice (metadata.Piece * Constants.BlockSize);

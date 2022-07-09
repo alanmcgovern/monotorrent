@@ -36,8 +36,10 @@ using MonoTorrent.Messages.Peer.FastPeer;
 
 namespace MonoTorrent.Client
 {
-    class MessageQueue
+    class MessageQueue : IDisposable
     {
+        bool Disposed { get; set; }
+
         bool Ready { get; set; }
 
         public bool ProcessingQueue { get; private set; } = true;
@@ -46,6 +48,9 @@ namespace MonoTorrent.Client
 
         internal bool BeginProcessing (bool force = false)
         {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+
             lock (SendQueue) {
                 if (!Ready || ProcessingQueue || (SendQueue.Count == 0 && !force))
                     return false;
@@ -57,6 +62,9 @@ namespace MonoTorrent.Client
 
         internal bool TryDequeue ([NotNullWhen (true)] out PeerMessage? message, out PeerMessage.Releaser releaser)
         {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+
             lock (SendQueue) {
                 if (!Ready)
                     throw new InvalidOperationException ("Cannot dequeue messages before the queue has been marked 'ready'.");
@@ -85,6 +93,9 @@ namespace MonoTorrent.Client
 
         internal void EnqueueAt (int index, PeerMessage message, PeerMessage.Releaser releaser)
         {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+
             lock (SendQueue) {
                 if (SendQueue.Count == 0 || index >= SendQueue.Count)
                     SendQueue.Add ((message, releaser));
@@ -95,6 +106,9 @@ namespace MonoTorrent.Client
 
         internal int RejectRequests (bool supportsFastPeer, List<int> amAllowedFastPieces)
         {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+
             lock (SendQueue) {
                 int rejectedCount = 0;
                 for (int i = 0; i < SendQueue.Count; i++) {
@@ -125,13 +139,16 @@ namespace MonoTorrent.Client
 
         internal bool TryCancelRequest (int pieceIndex, int startOffset, int requestLength)
         {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+
             lock (SendQueue) {
                 for (int i = 0; i < SendQueue.Count; i++) {
                     if (!(SendQueue[i].message is PieceMessage msg))
                         continue;
 
-                    // FIXME: Dispose the message here
                     if (msg.PieceIndex == pieceIndex && msg.StartOffset == startOffset && msg.RequestLength == requestLength) {
+                        SendQueue[i].releaser.Dispose ();
                         SendQueue.RemoveAt (i);
                         return true;
                     }
@@ -142,11 +159,27 @@ namespace MonoTorrent.Client
 
         internal void SetReady ()
         {
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+
             if (Ready)
                 throw new InvalidOperationException ("Can only call ready once.");
 
             Ready = true;
             ProcessingQueue = false;
+        }
+
+        public void Dispose ()
+        {
+            if (Disposed)
+                return;
+
+            Disposed = true;
+            lock (SendQueue) {
+                for (int i = 0; i < SendQueue.Count; i++)
+                    SendQueue[i].releaser.Dispose ();
+                SendQueue.Clear ();
+            }
         }
     }
 }
