@@ -747,10 +747,14 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
+        ValueStopwatch lastSendHaveMessage;
+
         void SendHaveMessagesToAll ()
         {
-            if (Manager.finishedPieces.Count == 0)
+            if (Manager.finishedPieces.Count == 0 || (lastSendHaveMessage.IsRunning && lastSendHaveMessage.ElapsedMilliseconds < 5000))
                 return;
+
+            lastSendHaveMessage = ValueStopwatch.StartNew ();
 
             foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
                 (var bundle, var releaser) = PeerMessage.Rent<HaveBundle> ();
