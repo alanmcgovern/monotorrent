@@ -89,6 +89,8 @@ namespace MonoTorrent
                 nextWaiter.Enqueue (task);
             }
             await task.Task.ConfigureAwait (false);
+            lock (Cache)
+                Cache.Enqueue (task);
             return new Releaser (this);
         }
 
