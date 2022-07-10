@@ -25,7 +25,6 @@ namespace MonoTorrent.Dht
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
             engine = new DhtEngine ();
             await engine.SetListenerAsync (listener);
-            //engine.Add(node);
         }
 
         [TearDown]
@@ -76,14 +75,14 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
-        public void SendPing_Synchronous ()
-            => SendPing (false);
+        public async Task SendPing_Synchronous ()
+            => await SendPing (false);
 
         [Test]
-        public void SendPing_Asynchronous ()
-            => SendPing (true);
+        public async Task SendPing_Asynchronous ()
+            => await SendPing (true);
 
-        async void SendPing (bool asynchronous)
+        async Task SendPing (bool asynchronous)
         {
             listener.SendAsynchronously = asynchronous;
 
@@ -91,24 +90,22 @@ namespace MonoTorrent.Dht
             listener.MessageSent += (data, endpoint) => {
                 engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
 
-                if (message is Ping && endpoint == node.EndPoint) {
+                if (message is Ping && endpoint.Equals (node.EndPoint)) {
                     var response = new PingResponse (node.Id, message.TransactionId);
                     listener.RaiseMessageReceived (response, endpoint);
                 }
             };
             engine.MessageLoop.QuerySent += (o, e) => {
-                if (e.Query is Ping && e.EndPoint == node.EndPoint)
+                if (e.Query is Ping && e.EndPoint.Equals (node.EndPoint))
                     tcs.TrySetResult (null);
             };
 
             Assert.AreEqual (NodeState.Unknown, node.State, "#1");
 
-            await engine.StartAsync ();
-
             // Should cause an implicit Ping to be sent to the node to verify it's alive.
-            engine.Add (new[] { node.CompactNode ().AsMemory () });
+            await engine.Add (node);
 
-            Assert.IsTrue (tcs.Task.Wait (1000), "#1a");
+            Assert.IsTrue (tcs.Task.Wait (10_000), "#1a");
             Assert.IsTrue (node.LastSeen < TimeSpan.FromSeconds (1), "#2");
             Assert.AreEqual (NodeState.Good, node.State, "#3");
         }

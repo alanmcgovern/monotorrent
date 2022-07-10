@@ -112,7 +112,7 @@ namespace MonoTorrent.Dht
             });
         }
 
-        public void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
+        public async void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
             if (State == DhtState.NotReady) {
                 PendingNodes = Node.FromCompactNode (nodes);
@@ -121,9 +121,18 @@ namespace MonoTorrent.Dht
                 // I don't think it's *bad* that we can run several initialise tasks simultaenously
                 // but it might be better to run them sequentially instead. We should also
                 // run GetPeers and Announce tasks sequentially.
-                InitializeAsync (Node.FromCompactNode (nodes));
+                foreach (var node in Node.FromCompactNode (nodes)) {
+                    try {
+                        await Add (node);
+                    } catch {
+                        // FIXME log this.
+                    }
+                }
             }
         }
+
+        internal async Task Add (Node node)
+            => await SendQueryAsync (new Ping (RoutingTable.LocalNode.Id), node);
 
         public async void Announce (InfoHash infoHash, int port)
         {
