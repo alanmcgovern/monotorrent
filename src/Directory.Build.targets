@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(ReferenceReusableTasks)' != 'false'">
-    <PackageReference Include="ReusableTasks" Version="[2.0.1,3.0)" />
+    <PackageReference Include="ReusableTasks" Version="[2.0.2,3.0)" />
   </ItemGroup>
 
   <ItemGroup Condition="$(UseGitInfo)">
