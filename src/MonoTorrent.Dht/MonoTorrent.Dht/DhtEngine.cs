@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -73,8 +74,6 @@ namespace MonoTorrent.Dht
 
         internal static MainLoop MainLoop { get; } = new MainLoop ("DhtLoop");
 
-        #region Properties
-
         public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
 
         public bool Disposed { get; private set; }
@@ -89,13 +88,10 @@ namespace MonoTorrent.Dht
         internal NodeId LocalId => RoutingTable.LocalNode.Id;
         internal MessageLoop MessageLoop { get; }
         public int NodeCount => RoutingTable.CountNodes ();
+        IEnumerable<Node> PendingNodes { get; set; }
         internal RoutingTable RoutingTable { get; }
         internal TokenManager TokenManager { get; }
         internal Dictionary<NodeId, List<Node>> Torrents { get; }
-
-        #endregion Properties
-
-        #region Constructors
 
         public DhtEngine ()
         {
@@ -103,6 +99,7 @@ namespace MonoTorrent.Dht
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
             MessageLoop = new MessageLoop (this, monitor);
             Monitor = monitor;
+            PendingNodes = Array.Empty<Node> ();
             RoutingTable = new RoutingTable ();
             State = DhtState.NotReady;
             TokenManager = new TokenManager ();
@@ -115,36 +112,16 @@ namespace MonoTorrent.Dht
             });
         }
 
-        #endregion Constructors
-
         public void Add (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
-            // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
-            // I don't think it's *bad* that we can run several initialise tasks simultaenously
-            // but it might be better to run them sequentially instead. We should also
-            // run GetPeers and Announce tasks sequentially.
-            InitializeAsync (Node.FromCompactNode (nodes));
-        }
-
-        internal void Add (IEnumerable<Node> nodes)
-        {
-            if (nodes == null)
-                throw new ArgumentNullException (nameof (nodes));
-
-            foreach (Node n in nodes)
-                Add (n);
-        }
-
-        internal async void Add (Node node)
-        {
-            if (node == null)
-                throw new ArgumentNullException (nameof (node));
-
-            try {
-                await MainLoop;
-                await SendQueryAsync (new Ping (RoutingTable.LocalNode.Id), node);
-            } catch {
-                // Ignore?
+            if (State == DhtState.NotReady) {
+                PendingNodes = Node.FromCompactNode (nodes);
+            } else {
+                // Maybe we should pipeline all our tasks to ensure we don't flood the DHT engine.
+                // I don't think it's *bad* that we can run several initialise tasks simultaenously
+                // but it might be better to run them sequentially instead. We should also
+                // run GetPeers and Announce tasks sequentially.
+                InitializeAsync (Node.FromCompactNode (nodes));
             }
         }
 
@@ -278,12 +255,13 @@ namespace MonoTorrent.Dht
             return e;
         }
 
-        public async Task StartAsync ()
-        {
-            await StartAsync (Array.Empty<byte> ());
-        }
+        public Task StartAsync ()
+            => StartAsync (PendingNodes);
 
-        public async Task StartAsync (ReadOnlyMemory<byte> initialNodes)
+        public Task StartAsync (ReadOnlyMemory<byte> initialNodes)
+            => StartAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes));
+
+        async Task StartAsync (IEnumerable<Node> nodes)
         {
             CheckDisposed ();
 
@@ -292,7 +270,7 @@ namespace MonoTorrent.Dht
             if (RoutingTable.NeedsBootstrap) {
                 RaiseStateChanged (DhtState.Initialising);
                 // HACK: We want to disambiguate between 'decode one' and 'decode many' when using a Span<byte>
-                InitializeAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)));
+                InitializeAsync (nodes);
             } else {
                 RaiseStateChanged (DhtState.Ready);
             }

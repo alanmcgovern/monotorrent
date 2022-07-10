@@ -83,7 +83,7 @@ namespace MonoTorrent.Dht
         public void SendPing_Asynchronous ()
             => SendPing (true);
 
-        void SendPing (bool asynchronous)
+        async void SendPing (bool asynchronous)
         {
             listener.SendAsynchronously = asynchronous;
 
@@ -103,8 +103,10 @@ namespace MonoTorrent.Dht
 
             Assert.AreEqual (NodeState.Unknown, node.State, "#1");
 
+            await engine.StartAsync ();
+
             // Should cause an implicit Ping to be sent to the node to verify it's alive.
-            engine.Add (node);
+            engine.Add (new[] { node.CompactNode ().AsMemory () });
 
             Assert.IsTrue (tcs.Task.Wait (1000), "#1a");
             Assert.IsTrue (node.LastSeen < TimeSpan.FromSeconds (1), "#2");
