@@ -83,7 +83,7 @@ namespace MonoTorrent
 
             lock (MassiveBuffers) {
                 for (int i = 0; i < MassiveBuffers.Count; i++)
-                    if ((buffer = MassiveBuffers.Dequeue ()).Span.Length >= capacity)
+                    if ((buffer = MassiveBuffers.Dequeue ()).Memory.Length >= capacity)
                         return new Releaser (MassiveBuffers, buffer);
                     else
                         MassiveBuffers.Enqueue (buffer);

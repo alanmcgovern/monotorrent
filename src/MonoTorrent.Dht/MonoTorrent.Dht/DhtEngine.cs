@@ -256,7 +256,7 @@ namespace MonoTorrent.Dht
         }
 
         public Task StartAsync ()
-            => StartAsync (PendingNodes);
+            => StartAsync (ReadOnlyMemory<byte>.Empty);
 
         public Task StartAsync (ReadOnlyMemory<byte> initialNodes)
             => StartAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes));
@@ -269,7 +269,6 @@ namespace MonoTorrent.Dht
             MessageLoop.Start ();
             if (RoutingTable.NeedsBootstrap) {
                 RaiseStateChanged (DhtState.Initialising);
-                // HACK: We want to disambiguate between 'decode one' and 'decode many' when using a Span<byte>
                 InitializeAsync (nodes);
             } else {
                 RaiseStateChanged (DhtState.Ready);

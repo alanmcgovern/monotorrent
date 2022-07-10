@@ -40,7 +40,6 @@ namespace MonoTorrent
             internal int Counter { get; set; }
 
             public Memory<byte> Memory => Segment.AsMemory ();
-            public Span<byte> Span => Segment.AsSpan ();
 
             public ArraySegment<byte> Segment { get; private set; }
 
