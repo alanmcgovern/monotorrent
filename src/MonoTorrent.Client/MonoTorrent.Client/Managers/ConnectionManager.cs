@@ -303,7 +303,12 @@ namespace MonoTorrent.Client
 
             if (!id.Disposed) {
                 id.LastMessageReceived.Restart ();
-                torrentManager.Mode.HandleMessage (id, message, releaser);
+                try {
+                    torrentManager.Mode.HandleMessage (id, message, releaser);
+                } catch (Exception ex) {
+                    logger.Exception (ex, "Unexpected error handling a message from a peer");
+                    torrentManager.Engine.ConnectionManager.CleanupSocket (torrentManager, id);
+                }
             } else {
                 releaser.Dispose ();
             }

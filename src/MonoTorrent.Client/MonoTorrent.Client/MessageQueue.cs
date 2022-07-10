@@ -48,11 +48,8 @@ namespace MonoTorrent.Client
 
         internal bool BeginProcessing (bool force = false)
         {
-            if (Disposed)
-                throw new ObjectDisposedException (nameof (MessageQueue));
-
             lock (SendQueue) {
-                if (!Ready || ProcessingQueue || (SendQueue.Count == 0 && !force))
+                if (Disposed|| !Ready || ProcessingQueue || (SendQueue.Count == 0 && !force))
                     return false;
 
                 ProcessingQueue = true;
@@ -175,8 +172,8 @@ namespace MonoTorrent.Client
             if (Disposed)
                 return;
 
-            Disposed = true;
             lock (SendQueue) {
+                Disposed = true;
                 for (int i = 0; i < SendQueue.Count; i++)
                     SendQueue[i].releaser.Dispose ();
                 SendQueue.Clear ();
