@@ -226,7 +226,7 @@ namespace MonoTorrent.Client.Modes
                 var data = new BEncodedDictionary ();
                 foreach (var kvp in actualMerkleLayers)
                     data[BEncodedString.FromMemory (kvp.Key.AsMemory ())] = BEncodedString.FromMemory (kvp.Value.GetHashes (kvp.Value.PieceLayerIndex));
-                Directory.CreateDirectory (Path.GetDirectoryName (path));
+                Directory.CreateDirectory (Path.GetDirectoryName (path)!);
                 File.WriteAllBytes (path, data.Encode ());
 
                 // Cancel any duplicate requests

@@ -304,7 +304,7 @@ namespace MonoTorrent.Client
             => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V1OrV2.ToHex ()}.torrent");
 
         internal string GetV2HashesPath (InfoHashes infoHashes)
-            => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V2.ToHex ()}.v2hashes");
+            => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V2!.ToHex ()}.v2hashes");
 
         public override bool Equals (object? obj)
             => Equals (obj as EngineSettings);
