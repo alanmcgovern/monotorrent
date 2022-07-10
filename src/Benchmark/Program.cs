@@ -210,7 +210,7 @@ namespace MyBenchmarks
             const int PieceCount = 500;
 
             public InfoHashes InfoHashes { get; } = new InfoHashes (new InfoHash (new byte[20]), new InfoHash (new byte[32]));
-            public IList<ITorrentManagerFile> Files { get; }
+            public IList<ITorrentManagerFile> Files { get; } = Array.Empty<ITorrentManagerFile> ();
             public string Name { get; } = "Name";
 
             public ITorrentInfo TorrentInfo => new TorrentInfo ();
@@ -257,7 +257,7 @@ namespace MyBenchmarks
             public ReadOnlyBitField BitField { get; }
             public bool CanRequestMorePieces { get; } = true;
             public long DownloadSpeed { get; }
-            public List<int> IsAllowedFastPieces { get; }
+            public List<int> IsAllowedFastPieces { get; } = new List<int> ();
             public bool IsChoking { get; } = false;
             public bool IsSeeder { get; } = true;
             public int MaxPendingRequests { get; } = int.MaxValue;
