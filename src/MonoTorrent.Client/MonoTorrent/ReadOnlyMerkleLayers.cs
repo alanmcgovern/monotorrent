@@ -30,6 +30,8 @@
 using System;
 using System.Collections.Generic;
 
+using MonoTorrent.BEncoding;
+
 namespace MonoTorrent
 {
     public class ReadOnlyMerkleLayers
@@ -79,5 +81,8 @@ namespace MonoTorrent
 
         internal void CopyHashes (int layer, int index, Span<byte> dest)
             => Layers[layer].Slice (index * 32, dest.Length).Span.CopyTo (dest);
+
+        internal ReadOnlyMemory<byte> GetHashes (int layer)
+            => Layers[layer];
     }
 }

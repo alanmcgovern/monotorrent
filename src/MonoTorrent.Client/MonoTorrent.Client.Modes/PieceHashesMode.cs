@@ -217,8 +217,17 @@ namespace MonoTorrent.Client.Modes
             }
 
             if (pickers.All (picker => picker.Value.Item2.ValidatedPieces.AllTrue)) {
-                Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (infoHashes.ToDictionary (t => t.Key.PiecesRoot, v => (v.Value.TryVerify (out var root) ? root : null)!));
+                var actualMerkleLayers = infoHashes.ToDictionary (t => t.Key.PiecesRoot, v => (v.Value.TryVerify (out var root) ? root : null)!);
+                Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (actualMerkleLayers);
                 Manager.PendingV2PieceHashes.SetAll (false);
+
+                // Cache the data for future re-use
+                var path = Settings.GetV2HashesPath (Manager.InfoHashes);
+                var data = new BEncodedDictionary ();
+                foreach (var kvp in actualMerkleLayers)
+                    data[BEncodedString.FromMemory (kvp.Key.AsMemory ())] = BEncodedString.FromMemory (kvp.Value.GetHashes (kvp.Value.PieceLayerIndex));
+                Directory.CreateDirectory (Path.GetDirectoryName (path));
+                File.WriteAllBytes (path, data.Encode ());
 
                 // Cancel any duplicate requests
                 foreach (var peer in Manager.Peers.ConnectedPeers)

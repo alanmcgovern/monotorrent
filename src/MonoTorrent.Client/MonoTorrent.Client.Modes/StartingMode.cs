@@ -28,13 +28,20 @@
 
 
 using System;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Client.Modes
 {
     class StartingMode : Mode
     {
+        static readonly Logger Log = Logger.Create (nameof (StartingMode));
+
         public override bool CanAcceptConnections => false;
         public override bool CanHandleMessages => false;
         public override bool CanHashCheck => true;
@@ -100,6 +107,10 @@ namespace MonoTorrent.Client.Modes
                 await Manager.MaybeDeleteFastResumeAsync ();
 
             Manager.PieceManager.Initialise ();
+
+            if (Manager.PendingV2PieceHashes.TrueCount > 0)
+                await TryLoadV2HashesFromCache ();
+
             if (Manager.PendingV2PieceHashes.TrueCount > 0) {
                 Manager.Mode = new PieceHashesMode (Manager, DiskManager, ConnectionManager, Settings, false);
             } else if (Manager.Complete && Manager.Settings.AllowInitialSeeding && ClientEngine.SupportsInitialSeed) {
@@ -123,6 +134,22 @@ namespace MonoTorrent.Client.Modes
                 );
             } catch {
                 // Ignore
+            }
+        }
+
+        async Task TryLoadV2HashesFromCache()
+        {
+            try {
+                await MainLoop.SwitchThread ();
+
+                var path = Settings.GetV2HashesPath (Manager.InfoHashes);
+                if (File.Exists (path)) {
+                    var data = BEncodedValue.Decode<BEncodedDictionary> (File.ReadAllBytes (path));
+                    Manager.PieceHashes = Manager.Torrent.CreatePieceHashes (data.ToDictionary (t => MerkleRoot.FromMemory (t.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (Manager.Torrent.PieceLength, ((BEncodedString) kvp.Value).Span)));
+                    Manager.PendingV2PieceHashes.SetAll (false);
+                }
+            } catch (Exception ex) {
+                Log.ExceptionFormated (ex, "Could not load hashes for {0}", Manager.Name);
             }
         }
 
