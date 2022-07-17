@@ -68,6 +68,7 @@ namespace MonoTorrent.Client
 
         TimeSpan connectionTimeout;
         int diskCacheBytes;
+        Uri httpStreamingEndpoint;
         int maximumConnections;
         int maximumDiskReadRate;
         int maximumDiskWriteRate;
@@ -188,6 +189,16 @@ namespace MonoTorrent.Client
         /// Defaults to <see cref="FastResumeMode.BestEffort"/>.
         /// </summary>
         public FastResumeMode FastResumeMode { get; set; }
+
+        /// <summary>
+        /// The HTTP(s) prefix which the engine should bind to when a <see cref="TorrentManager"/> is set up
+        /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
+        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
+        /// </summary>
+        public Uri HttpStreamingPrefix {
+            get => httpStreamingEndpoint;
+            set => httpStreamingEndpoint = value ?? throw new ArgumentNullException (nameof (HttpStreamingPrefix));
+        }
 
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
@@ -330,6 +341,7 @@ namespace MonoTorrent.Client
             DiskCacheBytes = settings.DiskCacheBytes;
             DiskCachePolicy = settings.DiskCachePolicy;
             FastResumeMode = settings.FastResumeMode;
+            httpStreamingEndpoint = settings.HttpStreamingPrefix;
             ListenEndPoint = settings.ListenEndPoint;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
@@ -369,6 +381,7 @@ namespace MonoTorrent.Client
                 diskCacheBytes: DiskCacheBytes,
                 diskCachePolicy: DiskCachePolicy,
                 fastResumeMode: FastResumeMode,
+                httpStreamingEndpoint: HttpStreamingPrefix,
                 listenEndPoint: ListenEndPoint,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,

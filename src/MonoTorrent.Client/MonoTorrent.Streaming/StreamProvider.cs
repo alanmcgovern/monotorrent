@@ -173,7 +173,7 @@ namespace MonoTorrent.Streaming
         public async Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);
-            var httpStreamer = new HttpStream (stream);
+            var httpStreamer = new HttpStream (Manager.Engine!.Settings.HttpStreamingPrefix, stream);
             return httpStreamer;
         }
     }

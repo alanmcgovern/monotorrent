@@ -73,6 +73,8 @@ namespace MonoTorrent.Client
                     property.SetValue (builder, (int) ((BEncodedNumber) value).Number);
                 } else if (property.PropertyType == typeof (CachePolicy)) {
                     property.SetValue (builder, Enum.Parse (typeof (CachePolicy), ((BEncodedString) value).Text));
+                } else if (property.PropertyType == typeof (Uri)) {
+                    property.SetValue (builder, new Uri (((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPAddress)) {
                     property.SetValue (builder, IPAddress.Parse (((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPEndPoint)) {
@@ -110,6 +112,7 @@ namespace MonoTorrent.Client
                     int value => new BEncodedNumber (value),
                     FastResumeMode value => new BEncodedString (value.ToString ()),
                     CachePolicy value => new BEncodedString (value.ToString ()),
+                    Uri value => new BEncodedString (value.OriginalString),
                     null => null,
                     _ => throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}"),
                 };
