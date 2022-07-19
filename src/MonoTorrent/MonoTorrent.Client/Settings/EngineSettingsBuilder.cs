@@ -63,6 +63,7 @@ namespace MonoTorrent.Client
         TimeSpan connectionTimeout;
         int dhtPort;
         int diskCacheBytes;
+        Uri httpStreamingEndpoint;
         int listenPort;
         int maximumConnections;
         int maximumDiskReadRate;
@@ -178,6 +179,16 @@ namespace MonoTorrent.Client
         public FastResumeMode FastResumeMode { get; set; }
 
         /// <summary>
+        /// The HTTP(s) prefix which the engine should bind to when a <see cref="TorrentManager"/> is set up
+        /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
+        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
+        /// </summary>
+        public Uri HttpStreamingPrefix {
+            get => httpStreamingEndpoint;
+            set => httpStreamingEndpoint = value ?? throw new ArgumentNullException (nameof (HttpStreamingPrefix));
+        }
+
+        /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
@@ -277,6 +288,7 @@ namespace MonoTorrent.Client
             DhtPort = settings.DhtPort;
             DiskCacheBytes = settings.DiskCacheBytes;
             FastResumeMode = settings.FastResumeMode;
+            httpStreamingEndpoint = settings.HttpStreamingPrefix;
             ListenPort = settings.ListenPort;
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
@@ -311,6 +323,7 @@ namespace MonoTorrent.Client
                 diskCacheBytes: DiskCacheBytes,
                 fastResumeMode: FastResumeMode,
                 listenPort: ListenPort,
+                httpStreamingPrefix: HttpStreamingPrefix,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,
                 maximumDiskWriteRate: MaximumDiskWriteRate,

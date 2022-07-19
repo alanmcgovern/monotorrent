@@ -42,5 +42,16 @@ namespace MonoTorrent.Client
             var value = Serializer.DeserializeEngineSettings (Serializer.Serialize (new EngineSettings ()));
             Assert.AreEqual (value, new EngineSettings ());
         }
+
+        [Test]
+        public void UriPrefix ()
+        {
+            var modified = new EngineSettingsBuilder { HttpStreamingPrefix = new System.Uri ("http://test.com") };
+            Assert.AreEqual (new EngineSettingsBuilder ().HttpStreamingPrefix, new EngineSettings ().HttpStreamingPrefix);
+            Assert.AreEqual (modified.ToSettings ().HttpStreamingPrefix, modified.HttpStreamingPrefix);
+
+            Assert.AreNotEqual (modified.HttpStreamingPrefix, new EngineSettings ().HttpStreamingPrefix);
+            Assert.AreNotEqual (modified.ToSettings ().HttpStreamingPrefix, new EngineSettings ().HttpStreamingPrefix);
+        }
     }
 }
