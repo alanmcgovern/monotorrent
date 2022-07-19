@@ -152,6 +152,13 @@ namespace MonoTorrent.Client
         public FastResumeMode FastResumeMode { get; } = FastResumeMode.BestEffort;
 
         /// <summary>
+        /// The list of HTTP(s) endpoints which the engine should bind to when a <see cref="TorrentManager"/> is set up
+        /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
+        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
+        /// </summary>
+        public Uri HttpStreamingPrefix { get; } = new Uri ("http://127.0.0.1:5555/");
+
+        /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
         /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any with port 0.
         /// </summary>
@@ -256,7 +263,8 @@ namespace MonoTorrent.Client
             TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles,
-            TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout)
+            TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
+            Uri httpStreamingEndpoint)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -272,6 +280,7 @@ namespace MonoTorrent.Client
             CacheDirectory = cacheDirectory;
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
+            HttpStreamingPrefix = httpStreamingEndpoint;
             ListenEndPoint = listenEndPoint;
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
@@ -324,6 +333,7 @@ namespace MonoTorrent.Client
                    && DiskCacheBytes == other.DiskCacheBytes
                    && DiskCachePolicy == other.DiskCachePolicy
                    && FastResumeMode == other.FastResumeMode
+                   && HttpStreamingPrefix.Equals (other.HttpStreamingPrefix)
                    && Equals (ListenEndPoint, other.ListenEndPoint)
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate

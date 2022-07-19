@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -50,10 +51,13 @@ namespace MonoTorrent.Streaming
 
         public Uri Uri { get; }
 
-        public HttpStream (Stream stream)
+        internal HttpStream (Uri basePrefix, Stream stream)
         {
             // Set up a HTTP listener for VLC/UWP to connect to.
-            Uri = new Uri ($"http://127.0.0.1:5555/{Guid.NewGuid ()}/");
+            var baseUriString = basePrefix.OriginalString;
+            if (!baseUriString.EndsWith ("/"))
+                baseUriString += "/";
+            Uri = new Uri ($"{baseUriString}{Guid.NewGuid ()}/");
 
             Listener = new HttpListener ();
             Listener.Prefixes.Add (Uri.ToString ());
