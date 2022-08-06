@@ -134,7 +134,7 @@ namespace MonoTorrent.Streaming
         /// </summary>
         /// <param name="file">The file to open</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file)
+        public Task<IHttpStream> CreateHttpStreamAsync (ITorrentManagerFile file)
             => CreateHttpStreamAsync (file, prebuffer: true, CancellationToken.None);
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, CancellationToken token)
+        public Task<IHttpStream> CreateHttpStreamAsync (ITorrentManagerFile file, CancellationToken token)
             => CreateHttpStreamAsync (file, prebuffer: true, token);
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace MonoTorrent.Streaming
         /// <param name="file">The file to open</param>
         /// <param name="prebuffer">True if the first and last piece should be downloaded before the Stream is created.</param>
         /// <returns></returns>
-        public Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer)
+        public Task<IHttpStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer)
             => CreateHttpStreamAsync (file, prebuffer, CancellationToken.None);
 
 
@@ -170,7 +170,7 @@ namespace MonoTorrent.Streaming
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
 
-        public async Task<IUriStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer, CancellationToken token)
+        public async Task<IHttpStream> CreateHttpStreamAsync (ITorrentManagerFile file, bool prebuffer, CancellationToken token)
         {
             var stream = await CreateStreamAsync (file, prebuffer, token);
             var httpStreamer = new HttpStream (Manager.Engine!.Settings.HttpStreamingPrefix, stream);

@@ -156,7 +156,7 @@ namespace MonoTorrent.Client
         /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
         /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
         /// </summary>
-        public Uri HttpStreamingPrefix { get; } = new Uri ("http://127.0.0.1:5555/");
+        public string HttpStreamingPrefix { get; } = "http://127.0.0.1:5555/";
 
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
@@ -264,7 +264,7 @@ namespace MonoTorrent.Client
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
-            Uri httpStreamingEndpoint)
+            string httpStreamingPrefix)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
@@ -280,7 +280,7 @@ namespace MonoTorrent.Client
             CacheDirectory = cacheDirectory;
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
-            HttpStreamingPrefix = httpStreamingEndpoint;
+            HttpStreamingPrefix = httpStreamingPrefix;
             ListenEndPoint = listenEndPoint;
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
@@ -333,7 +333,7 @@ namespace MonoTorrent.Client
                    && DiskCacheBytes == other.DiskCacheBytes
                    && DiskCachePolicy == other.DiskCachePolicy
                    && FastResumeMode == other.FastResumeMode
-                   && HttpStreamingPrefix.Equals (other.HttpStreamingPrefix)
+                   && HttpStreamingPrefix == other.HttpStreamingPrefix
                    && Equals (ListenEndPoint, other.ListenEndPoint)
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate

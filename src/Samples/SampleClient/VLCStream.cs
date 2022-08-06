@@ -69,7 +69,7 @@ namespace ClientSample
 
             var largestFile = manager.Files.OrderBy (t => t.Length).Last ();
             var stream = await manager.StreamProvider.CreateHttpStreamAsync (largestFile, token);
-            var process = Process.Start (@"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe", stream.Uri.ToString ());
+            var process = Process.Start (@"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe", stream.FullUri);
             using var disposer = token.Register (process.Kill);
             process.WaitForExit ();
         }

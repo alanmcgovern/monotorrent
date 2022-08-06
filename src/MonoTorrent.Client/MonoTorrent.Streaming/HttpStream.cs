@@ -37,7 +37,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Streaming
 {
-    class HttpStream : IUriStream
+    class HttpStream : IHttpStream
     {
         CancellationTokenSource Cancellation { get; }
 
@@ -49,18 +49,21 @@ namespace MonoTorrent.Streaming
 
         Stream Stream { get; }
 
-        public Uri Uri { get; }
+        public string HttpPrefix { get; }
 
-        internal HttpStream (Uri basePrefix, Stream stream)
+        public string FullUri { get; }
+
+        public string RelativeUri { get; }
+
+        internal HttpStream (string httpPrefix, Stream stream)
         {
             // Set up a HTTP listener for VLC/UWP to connect to.
-            var baseUriString = basePrefix.OriginalString;
-            if (!baseUriString.EndsWith ("/"))
-                baseUriString += "/";
-            Uri = new Uri ($"{baseUriString}{Guid.NewGuid ()}/");
+            HttpPrefix = httpPrefix;
+            RelativeUri = $"{Guid.NewGuid ()}/";
+            FullUri = $"{HttpPrefix}{RelativeUri}";
 
             Listener = new HttpListener ();
-            Listener.Prefixes.Add (Uri.ToString ());
+            Listener.Prefixes.Add (FullUri);
 
             Listener.Start ();
 

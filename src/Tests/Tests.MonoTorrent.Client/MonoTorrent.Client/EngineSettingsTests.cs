@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         [Test]
         public void UriPrefix ()
         {
-            var modified = new EngineSettingsBuilder { HttpStreamingPrefix = new System.Uri ("http://test.com") };
+            var modified = new EngineSettingsBuilder { HttpStreamingPrefix = "http://test.com/" };
             Assert.AreEqual (new EngineSettingsBuilder ().HttpStreamingPrefix, new EngineSettings ().HttpStreamingPrefix);
             Assert.AreEqual (modified.ToSettings ().HttpStreamingPrefix, modified.HttpStreamingPrefix);
 

@@ -29,10 +29,28 @@
 
 using System;
 
+using MonoTorrent.Client;
+
 namespace MonoTorrent.Streaming
 {
-    public interface IUriStream : IDisposable
+    public interface IHttpStream : IDisposable
     {
-        Uri Uri { get; }
+        /// <summary>
+        /// The HTTP prefix registered with the underlying HttpListener. This is the same value as configured in the
+        /// <see cref="EngineSettings.HttpStreamingPrefix"/> property.
+        /// </summary>
+        string HttpPrefix { get; }
+
+        /// <summary>
+        /// The full Uri to the underlying file. This is created by concatenating <see cref="HttpPrefix"/> and <see cref="RelativeUri"/>.
+        /// If the HttpPrefix is of the form 'http://*:12345/' or 'http://+:12345' then the full Uri will need to be constructed using
+        /// an addressable IP address, or hostname.
+        /// </summary>
+        string FullUri { get; }
+
+        /// <summary>
+        /// The unique identifier used to access the underlying file.
+        /// </summary>
+        string RelativeUri { get; }
     }
 }
