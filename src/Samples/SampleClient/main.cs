@@ -29,6 +29,7 @@ namespace ClientSample
 
         static async Task MainAsync (string[] args, CancellationToken token)
         {
+            const int httpListeningPort = 55125;
             // Give an example of how settings can be modified for the engine.
             var settingBuilder = new EngineSettingsBuilder {
                 // Allow the engine to automatically forward ports using upnp/nat-pmp (if a compatible router is available)
@@ -53,12 +54,20 @@ namespace ClientSample
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
                 DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
+
+
+                // Wildcards such as these are supported as long as the underlying .NET framework version, and the operating system, supports them:
+                //HttpStreamingPrefix = $"http://+:{httpListeningPort}/"
+                //HttpStreamingPrefix = $"http://*.mydomain.com:{httpListeningPort}/"
+
+                // For now just bind to localhost.
+                HttpStreamingPrefix = $"http://127.0.0.1:{httpListeningPort}/"
             };
             using var engine = new ClientEngine (settingBuilder.ToSettings ());
 
             Task task;
             if (args.Length == 1 && args[0] == "--vlc") {
-                task = new VLCStream (engine).StreamAsync (InfoHash.FromHex ("AEE0F0082CC2F449412C1DD8AF4C58D9AAEE4B5C"), token);
+                task = new VLCStream (engine, $"http://127.0.0.1:{httpListeningPort}/").StreamAsync (InfoHash.FromHex ("AEE0F0082CC2F449412C1DD8AF4C58D9AAEE4B5C"), token);
             } else if (args.Length == 1 && MagnetLink.TryParse (args[0], out MagnetLink link)) {
                 task = new MagnetLinkStreaming (engine).DownloadAsync (link, token);
             } else {

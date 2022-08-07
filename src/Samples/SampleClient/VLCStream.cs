@@ -16,12 +16,14 @@ namespace ClientSample
         ClientEngine Engine { get; }
         string DownloadDirectory { get; }
         Top10Listener Listener { get; }			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
+        string RoutableAddress { get; }
 
-        public VLCStream (ClientEngine engine)
+        public VLCStream (ClientEngine engine, string routableAddress)
         {
             DownloadDirectory = "streaming_cache";
             Listener = new Top10Listener (10);
             Engine = engine;
+            RoutableAddress = routableAddress;
         }
 
         internal async Task StreamAsync (InfoHash infoHash, CancellationToken token)
@@ -77,7 +79,11 @@ namespace ClientSample
                 vlc = @"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe";
             else
                 vlc = "vlc";
-            var process = Process.Start (vlc, stream.FullUri);
+
+            // The engine was configured to bind to the HTTP prefix 'http://*:12345' so we need to
+            // construct the full address manually, using an IP/hostname we know will route to the
+            // prefix. Either localhost, or the public IP of the machine, will work!
+            var process = Process.Start (vlc, RoutableAddress + stream.RelativeUri);
             using var disposer = token.Register (process.Kill);
             process.WaitForExit ();
         }
