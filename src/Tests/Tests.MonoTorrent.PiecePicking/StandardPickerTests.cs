@@ -715,6 +715,34 @@ namespace MonoTorrent.PiecePicking
         }
 
         [Test]
+        public void DupeRequests_SecondaryFulfillsAllRequests_ThenRequestFromPrimary ()
+        {
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peer.BitField.SetAll (false).Set (3, true);
+
+
+            PieceSegment? req;
+            var requests1 = new List<PieceSegment> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests1.Add (req.Value);
+
+            var requests2 = new List<PieceSegment> ();
+            while ((req = picker.ContinueAnyExistingRequest (seeder2, singlePiece, 0, seeder2.BitField.Length - 1, 2)) != null)
+                requests2.Add (req.Value);
+
+            Assert.AreEqual (requests1.Count, requests2.Count);
+            Assert.IsTrue (requests1.All (t => t.PieceIndex == 3));
+            Assert.IsTrue (requests2.All (t => t.PieceIndex == 3));
+
+            // Validate the secondary requests first
+            foreach (var v in requests2)
+                picker.ValidatePiece (seeder2, v, out _, out _);
+
+            Assert.AreEqual (3, picker.PickPiece (seeder1, singlePiece).Value.PieceIndex);
+        }
+
+        [Test]
         public void DupeRequests_FinalBlock_ValidatePrimaryThenDupe ()
         {
             var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
@@ -749,7 +777,7 @@ namespace MonoTorrent.PiecePicking
         }
 
         [Test]
-        public void DupeRequests_FinalBlock_ValidateDupleThenPrimary ()
+        public void DupeRequests_FinalBlock_ValidateDupeThenPrimary ()
         {
             var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
             var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);

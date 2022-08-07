@@ -44,6 +44,7 @@ namespace MonoTorrent.PiecePicking
             readonly Dictionary<int, List<Piece>> duplicates;
             readonly Dictionary<IRequester, Piece> mostRecentRequest;
             readonly Dictionary<int, Piece> requests;
+            List<IRequester> tmpList;
 
             public ReadOnlyBitField AlreadyRequestedBitfield => alreadyRequestedBitField;
 
@@ -55,32 +56,22 @@ namespace MonoTorrent.PiecePicking
                 duplicates = new Dictionary<int, List<Piece>> ();
                 mostRecentRequest = new Dictionary<IRequester, Piece> ();
                 requests = new Dictionary<int, Piece> ();
+                tmpList = new List<IRequester> ();
             }
 
             internal void Remove (int index)
-            {
-                requests.Remove (index);
-                alreadyRequestedBitField[index] = false;
-                foreach (var entry in mostRecentRequest) {
-                    if (entry.Value.Index == index) {
-                        mostRecentRequest.Remove (entry.Key);
-                        break;
-                    }
-                }
-            }
-
-            internal void Remove (int index, IList<IRequester> peersInvolved)
             {
                 alreadyRequestedBitField[index] = false;
                 requests.Remove (index);
                 duplicates.Remove (index);
 
-                for (int i = 0; i < peersInvolved.Count; i++) {
-                    var involvedPeer = peersInvolved[i];
-                    if (mostRecentRequest.TryGetValue (involvedPeer, out Piece? piece))
-                        if (piece.Index == index)
-                            mostRecentRequest.Remove (involvedPeer);
-                }
+                foreach (var v in mostRecentRequest)
+                    if (v.Value.Index == index)
+                        tmpList.Add (v.Key);
+
+                foreach (var toRemove in tmpList)
+                    mostRecentRequest.Remove (toRemove);
+                tmpList.Clear ();
             }
 
             internal bool TryGetValue (int pieceIndex, [MaybeNullWhen (false)] out Piece piece)
@@ -138,69 +129,55 @@ namespace MonoTorrent.PiecePicking
                 if (piece.Index < startIndex || piece.Index > endIndex)
                     continue;
 
-                Block[] blocks = piece.Blocks;
-                for (int i = 0; i < blocks.Length; i++) {
-                    if (!blocks[i].Received && blocks[i].RequestedOff == peer) {
-                        blocks[i].CancelRequest ();
-                        piece.Abandoned = true;
-                        cancellations[0] = new PieceSegment (piece.Index, i);
-                        cancellations = cancellations.Slice (1);
-                    }
-                }
-
+                CancelRequests (peer, piece, ref cancellations);
                 if (Requests.TryGetDuplicates(piece.Index, out List<Piece>? duplicates)) {
-                    foreach (var dupe in duplicates) {
-                        blocks = dupe.Blocks;
-                        for (int i = 0; i < blocks.Length; i++) {
-                            if (!blocks[i].Received && blocks[i].RequestedOff == peer) {
-                                blocks[i].CancelRequest ();
-                                dupe.Abandoned = true;
-                                cancellations[0] = new PieceSegment (piece.Index, i);
-                                cancellations = cancellations.Slice (1);
-                            }
-                        }
-                    }
+                    foreach (var dupe in duplicates)
+                        CancelRequests (peer, dupe, ref cancellations);
                 }
             }
 
             Requests.ClearMostRecentRequest (peer);
-
             return length - cancellations.Length;
+        }
+
+        void CancelRequests (IRequester peer, Piece piece, ref Span<PieceSegment> cancellations)
+        {
+            foreach (ref Block block in piece.Blocks.AsSpan ()) {
+                if (!block.Received && block.RequestedOff == peer) {
+                    block.CancelRequest ();
+                    piece.Abandoned = true;
+                    cancellations[0] = new PieceSegment (piece.Index, block.BlockIndex);
+                    cancellations = cancellations.Slice (1);
+                }
+            }
         }
 
         public void RequestRejected (IRequester peer, PieceSegment rejectedRequest)
         {
-            CancelWhere (b => (b.BlockIndex / Constants.BlockSize) == rejectedRequest.BlockIndex &&
-                              b.PieceIndex == rejectedRequest.PieceIndex &&
-                              b.RequestedOff == peer);
+            if (Requests == null)
+                return;
+
+            foreach (var piece in Requests.Values) {
+                if (piece.Index != rejectedRequest.PieceIndex)
+                    continue;
+
+                RequestRejected (peer, piece, rejectedRequest);
+
+                if (Requests.TryGetDuplicates (piece.Index, out List<Piece>? duplicates)) {
+                    foreach (var dupe in duplicates)
+                        RequestRejected (peer, piece, rejectedRequest);
+                }
+            }
+
+            Requests.ClearMostRecentRequest (peer);
         }
 
-
-        readonly Stack<Piece> toRemove = new Stack<Piece> ();
-        int CancelWhere (Predicate<Block> predicate)
+        void RequestRejected (IRequester peer, Piece piece, PieceSegment rejectedRequest)
         {
-            if (Requests == null)
-                return 0;
-
-            int count = 0;
-            foreach (var piece in Requests.Values) {
-                Block[] blocks = piece.Blocks;
-                for (int i = 0; i < blocks.Length; i++) {
-                    if (predicate (blocks[i]) && !blocks[i].Received) {
-                        piece.Abandoned = true;
-                        blocks[i].CancelRequest ();
-                        count++;
-                    }
-                }
-                if (piece.NoBlocksRequested)
-                    toRemove.Push (piece);
+            if (piece.Blocks[rejectedRequest.BlockIndex].RequestedOff == peer) {
+                piece.Abandoned = true;
+                piece.Blocks[rejectedRequest.BlockIndex].CancelRequest ();
             }
-
-            while (toRemove.Count > 0) {
-                var piece = toRemove.Pop ();
-                Requests.Remove (piece.Index);
-            }
-            return count;
         }
 
         public int CurrentReceivedCount ()
@@ -311,7 +288,7 @@ namespace MonoTorrent.PiecePicking
             // ensure our received piece is not re-requested again.
             if (!Requests.TryGetDuplicates (request.PieceIndex, out List<Piece>? extraPieces)) {
                 if (pieceComplete) {
-                    Requests.Remove (request.PieceIndex, peersInvolved);
+                    Requests.Remove (request.PieceIndex);
                     PieceCache.Enqueue (primaryPiece);
                 }
                 return result;
@@ -335,7 +312,7 @@ namespace MonoTorrent.PiecePicking
 
             // If the piece is complete then remove it, and any dupes, from the picker.
             if (pieceComplete) {
-                Requests.Remove (request.PieceIndex, peersInvolved);
+                Requests.Remove (request.PieceIndex);
                 PieceCache.Enqueue (primaryPiece);
                 return result;
             }
