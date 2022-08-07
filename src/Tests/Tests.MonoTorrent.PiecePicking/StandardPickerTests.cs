@@ -662,6 +662,36 @@ namespace MonoTorrent.PiecePicking
         }
 
         [Test]
+        public void RequestFromPrimaryAfterCancellingDuplicates ()
+        {
+            // Request a piece using two peers. Cancel requests from the first peer.
+            // Validate the piece using the second peer. Request a piece from the first peer.
+            var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var seeder2 = PeerId.CreateNull (bitfield.Length, true, false, true);
+            var singlePiece = peer.BitField.SetAll (false).Set (3, true);
+
+            Assert.IsNull (picker.ContinueAnyExistingRequest (seeder1, seeder1.BitField, 0, bitfield.Length));
+
+            PieceSegment? req;
+            var requests1 = new List<PieceSegment> ();
+            while ((req = picker.PickPiece (seeder1, singlePiece)) != null)
+                requests1.Add (req.Value);
+
+            var requests2 = new List<PieceSegment> ();
+            while ((req = picker.ContinueAnyExistingRequest (seeder2, seeder2.BitField, 0, 7, 2)) != null)
+                requests2.Add (req.Value);
+
+            Assert.AreEqual (requests1.Count, requests2.Count);
+
+            Assert.AreEqual (requests1.Count, picker.CancelRequests (seeder1, 0, 7, new PieceSegment[requests1.Count]));
+
+            foreach (var r in requests2)
+                Assert.IsTrue (picker.ValidatePiece (seeder2, r, out _, out _));
+
+            picker.PickPiece (seeder1, seeder1.BitField);
+        }
+
+        [Test]
         public void DupeRequests_ValidatePrimaryThenDupe ()
         {
             var seeder1 = PeerId.CreateNull (bitfield.Length, true, false, true);

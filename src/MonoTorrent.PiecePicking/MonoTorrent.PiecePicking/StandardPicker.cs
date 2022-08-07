@@ -101,6 +101,9 @@ namespace MonoTorrent.PiecePicking
                 alreadyRequestedBitField[piece.Index] = true;
                 mostRecentRequest[peer] = piece;
             }
+
+            internal void ClearMostRecentRequest (IRequester peer)
+                => mostRecentRequest.Remove (peer);
         }
     }
 
@@ -141,10 +144,26 @@ namespace MonoTorrent.PiecePicking
                         blocks[i].CancelRequest ();
                         piece.Abandoned = true;
                         cancellations[0] = new PieceSegment (piece.Index, i);
-                        cancellations.Slice (1);
+                        cancellations = cancellations.Slice (1);
+                    }
+                }
+
+                if (Requests.TryGetDuplicates(piece.Index, out List<Piece>? duplicates)) {
+                    foreach (var dupe in duplicates) {
+                        blocks = dupe.Blocks;
+                        for (int i = 0; i < blocks.Length; i++) {
+                            if (!blocks[i].Received && blocks[i].RequestedOff == peer) {
+                                blocks[i].CancelRequest ();
+                                dupe.Abandoned = true;
+                                cancellations[0] = new PieceSegment (piece.Index, i);
+                                cancellations = cancellations.Slice (1);
+                            }
+                        }
                     }
                 }
             }
+
+            Requests.ClearMostRecentRequest (peer);
 
             return length - cancellations.Length;
         }

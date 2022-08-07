@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
     {
         public byte[] AddressBytes { get; } = Array.Empty<byte> ();
         public bool CanReconnect { get; }
-        public bool Disposed { get; }
+        public bool Disposed { get; private set; }
         public bool IsIncoming { get; }
         public Uri Uri { get; } = new Uri ("test://1234.com:3434");
 
@@ -56,6 +56,7 @@ namespace MonoTorrent.Client
 
         public void Dispose ()
         {
+            Disposed = true;
             throw new NotImplementedException ();
         }
 

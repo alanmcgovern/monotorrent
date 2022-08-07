@@ -43,7 +43,6 @@ namespace MonoTorrent.PiecePicking
     {
         PeerId peer;
         List<PeerId> peers;
-        PieceManager manager;
         TorrentManager torrentManager;
 
         [SetUp]
@@ -61,9 +60,6 @@ namespace MonoTorrent.PiecePicking
             torrentManager = TestRig.CreateSingleFileManager (torrentData.TorrentInfo.Size, torrentData.TorrentInfo.PieceLength);
             await torrentManager.LoadFastResumeAsync (new FastResume (torrentManager.InfoHashes, new BitField (pieceCount).SetAll (true), new BitField (pieceCount).SetAll (false)));
 
-            manager = new PieceManager (torrentManager);
-            manager.Initialise ();
-
             peer = PeerId.CreateNull (pieceCount, torrentManager.InfoHashes.V1OrV2);
             for (int i = 0; i < 20; i++) {
                 PeerId p = PeerId.CreateNull (pieceCount, torrentManager.InfoHashes.V1OrV2);
@@ -72,6 +68,19 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
+        [Test]
+        public void CloseConnectionWithCancellableRequests ()
+        {
+            torrentManager.MutableBitField.SetAll (true).Set (0, false);
+            peers[0].MutableBitField.SetAll (true);
+            peers[0].IsChoking = false;
+            peers[0].SupportsFastPeer = true;
+
+            torrentManager.PieceManager.AddPieceRequests (peers[0]);
+            Assert.AreNotEqual (0, peers[0].AmRequestingPiecesCount, "#1");
+            torrentManager.Engine.ConnectionManager.CleanupSocket (torrentManager, peers[0]);
+            Assert.AreEqual (1, peers[0].Peer.CleanedUpCount);
+        }
 
         [Test]
         public async Task RequestInEndgame_AllDoNotDownload ()
@@ -83,7 +92,7 @@ namespace MonoTorrent.PiecePicking
             peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
-            manager.AddPieceRequests (peers[0]);
+            torrentManager.PieceManager.AddPieceRequests (peers[0]);
             Assert.AreEqual (0, peers[0].AmRequestingPiecesCount, "#1");
             Assert.AreEqual (0, peers[0].MessageQueue.QueueLength, "#2");
         }
@@ -95,7 +104,7 @@ namespace MonoTorrent.PiecePicking
             peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
-            manager.AddPieceRequests (peers[0]);
+            torrentManager.PieceManager.AddPieceRequests (peers[0]);
             Assert.AreEqual (0, peers[0].AmRequestingPiecesCount, "#1");
             Assert.AreEqual (0, peers[0].MessageQueue.QueueLength, "#2");
         }

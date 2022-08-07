@@ -320,8 +320,6 @@ namespace MonoTorrent.Client
                 return;
 
             try {
-                id.MessageQueue.Dispose ();
-
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 bool canReuse = (id.Connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (id.Uri)
@@ -329,8 +327,7 @@ namespace MonoTorrent.Client
                     && !manager.Engine!.PeerId.Equals (id.PeerID);
 
                 manager.PieceManager.CancelRequests (id);
-                id.Peer.CleanedUpCount++;
-
+                id.MessageQueue.Dispose ();
                 id.PeerExchangeManager?.Dispose ();
 
                 if (!id.AmChoking)
@@ -339,6 +336,8 @@ namespace MonoTorrent.Client
                 if (manager.Peers.ConnectedPeers.Remove (id))
                     Interlocked.Decrement (ref openConnections);
                 manager.Peers.ActivePeers.Remove (id.Peer);
+
+                id.Peer.CleanedUpCount++;
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
                 if (canReuse && !LocalPeerId.Equals (id.Peer.Info.PeerId)) {

@@ -211,6 +211,8 @@ namespace MonoTorrent.Client
         public void ChunkedRequest ()
         {
             rig.Manager.PieceManager.CancelRequests (id);
+            while (id.MessageQueue.QueueLength > 0)
+                id.MessageQueue.TryDequeue ();
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             requests = (RequestBundle) id.MessageQueue.TryDequeue ();
