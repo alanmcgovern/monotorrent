@@ -9,6 +9,7 @@ on:
 jobs:
   build:
 
+    continue-on-error: true
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
