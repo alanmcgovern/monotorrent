@@ -1,7 +1,7 @@
 MonoTorrent
 ========
 
-[![NuGet version](https://badge.fury.io/nu/monotorrent.svg)](https://www.nuget.org/packages/MonoTorrent/)
+![Nuget](https://img.shields.io/nuget/v/MonoTorrent?label=stable) ![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/MonoTorrent?label=Pre-release)
 
 ![Build status (master)](https://img.shields.io/azure-devops/build/alanmcgovern0144/monotorrent/7/master?label=build%20status%20%28master%29) ![Test Status (master)](https://img.shields.io/azure-devops/tests/alanmcgovern0144/monotorrent/7/master?compact_message&label=test%20status%20%28master%29) ![code coverage (master)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/7/master?label=code%20coverage%20%28master%29)
 
