@@ -16,6 +16,23 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentCreatorTests
     {
+        public class CapturingTorrentCreator : TorrentCreator
+        {
+            public Dictionary<string, List<TorrentCreatorEventArgs>> HashedEventArgs = new Dictionary<string, List<TorrentCreatorEventArgs>> ();
+            public CapturingTorrentCreator (TorrentType type, Factories factories)
+                : base(type, factories)
+            {
+
+            }
+
+            protected override void OnHashed (TorrentCreatorEventArgs e)
+            {
+                if (!HashedEventArgs.TryGetValue (e.CurrentFile, out List<TorrentCreatorEventArgs> value))
+                    HashedEventArgs[e.CurrentFile] = value = new List<TorrentCreatorEventArgs> ();
+                value.Add (e);
+            }
+        }
+
         class Source : ITorrentFileSource
         {
             public IEnumerable<FileMapping> Files { get; set; }
@@ -31,8 +48,8 @@ namespace MonoTorrent.Common
         readonly BEncodedString CustomValue = "My custom value";
 
         List<List<string>> announces;
-        TorrentCreator creator;
-        Source files;
+        CapturingTorrentCreator creator;
+        Source filesSource;
 
         Factories TestFactories => Factories.Default
             .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true });
@@ -40,7 +57,7 @@ namespace MonoTorrent.Common
         [SetUp]
         public void Setup ()
         {
-            creator = new TorrentCreator (TorrentType.V1Only, TestFactories);
+            creator = new CapturingTorrentCreator (TorrentType.V1Only, TestFactories);
             announces = new List<List<string>> {
                 new List<string> (new[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }),
                 new List<string> (new[] { "http://tier2.com/announce1", "http://tier2.com/announce2" })
@@ -52,7 +69,7 @@ namespace MonoTorrent.Common
             creator.Publisher = Publisher;
             creator.PublisherUrl = PublisherUrl;
             creator.SetCustom (CustomKey, CustomValue);
-            files = new Source {
+            filesSource = new Source {
                 TorrentName = "Name",
                 Files = new[] {
                     new FileMapping (Path.Combine ("Dir1", "SDir1", "File1"), Path.Combine ("Dir1", "SDir1", "File1"), (long) (PieceLength * 2.30)),
@@ -78,7 +95,7 @@ namespace MonoTorrent.Common
         public void AutoSelectPieceLength ()
         {
             var torrentCreator = new TorrentCreator (TorrentType.V1Only, TestFactories);
-            Assert.DoesNotThrowAsync (() => torrentCreator.CreateAsync ("name", files, CancellationToken.None));
+            Assert.DoesNotThrowAsync (() => torrentCreator.CreateAsync ("name", filesSource, CancellationToken.None));
         }
 
         [Test]
@@ -87,18 +104,35 @@ namespace MonoTorrent.Common
             foreach (var v in announces)
                 creator.Announces.Add (v);
 
-            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
+            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", filesSource);
             Torrent torrent = Torrent.Load (dict);
 
             VerifyCommonParts (torrent);
             for (int i = 0; i < torrent.Files.Count; i++)
-                Assert.IsTrue (files.Files.Any (f => f.Destination.Equals (torrent.Files[i].Path)));
+                Assert.IsTrue (filesSource.Files.Any (f => f.Destination.Equals (torrent.Files[i].Path)));
+        }
+
+        [Test]
+        public async Task CreateMultiTest_EmitsHashEvents ()
+        {
+            await creator.CreateAsync ("TorrentName", filesSource);
+
+            var files = filesSource.Files.ToList ();
+            var hashes = creator.HashedEventArgs;
+            Assert.AreEqual (hashes.Count, files.Count);
+
+
+            foreach (var file in files) {
+                Assert.IsTrue (hashes[file.Source].Any (t => t.FileBytesHashed == t.FileSize));
+                Assert.IsTrue (hashes[file.Source].All (t => t.FileBytesHashed <= t.FileSize));
+                Assert.IsTrue (hashes[file.Source].All (t => t.FileBytesHashed > 0));
+            }
         }
 
         [Test]
         public async Task AnnounceUrl_None ()
         {
-            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
+            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", filesSource);
             Torrent t = Torrent.Load (dict);
             Assert.IsFalse (dict.ContainsKey ("announce-list"));
             Assert.IsFalse (dict.ContainsKey ("announce"));
@@ -108,7 +142,7 @@ namespace MonoTorrent.Common
         public async Task AnnounceUrl_Primary ()
         {
             creator.Announce = "http://127.0.0.1:12345/announce";
-            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
+            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", filesSource);
             Assert.IsFalse (dict.ContainsKey ("announce-list"));
             Assert.IsTrue (dict.ContainsKey ("announce"));
         }
@@ -118,7 +152,7 @@ namespace MonoTorrent.Common
         {
             foreach (var v in announces)
                 creator.Announces.Add (v);
-            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", files);
+            BEncodedDictionary dict = await creator.CreateAsync ("TorrentName", filesSource);
             Assert.IsTrue (dict.ContainsKey ("announce-list"));
             Assert.IsFalse (dict.ContainsKey ("announce"));
         }
@@ -129,8 +163,8 @@ namespace MonoTorrent.Common
             foreach (var v in announces)
                 creator.Announces.Add (v);
 
-            var file = files.Files.First ();
-            var source = new Source { TorrentName = files.TorrentName, Files = files.Files.Take (1) };
+            var file = filesSource.Files.First ();
+            var source = new Source { TorrentName = filesSource.TorrentName, Files = filesSource.Files.Take (1) };
 
             BEncodedDictionary dict = await creator.CreateAsync (source);
             Torrent torrent = Torrent.Load (dict);

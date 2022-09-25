@@ -36,13 +36,6 @@ namespace MonoTorrent
         public ReadOnlyMemory<byte> V1Hash { get; }
         public ReadOnlyMemory<byte> V2Hash { get; }
 
-        internal ReadOnlyPieceHash (ReadOnlyMemory<byte> memory)
-            : this (memory.Length == 20 || memory.Length == 52 ? memory.Slice (0, 20) : ReadOnlyMemory<byte>.Empty,
-                  memory.Length == 32 ? memory : memory.Length == 52 ? memory.Slice (20, 32) : ReadOnlyMemory<byte>.Empty)
-        {
-
-        }
-
         internal ReadOnlyPieceHash (ReadOnlyMemory<byte> v1Hash, ReadOnlyMemory<byte> v2Hash)
         {
             if (!v1Hash.IsEmpty && v1Hash.Length != 20)

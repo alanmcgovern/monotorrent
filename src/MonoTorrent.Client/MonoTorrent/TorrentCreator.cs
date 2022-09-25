@@ -382,6 +382,8 @@ namespace MonoTorrent
             using var fileMD5 = StoreMD5 ? IncrementalHash.CreateHash (HashAlgorithmName.MD5) : null;
             using var fileSHA1 = StoreSHA1 ? IncrementalHash.CreateHash (HashAlgorithmName.SHA1) : null;
 
+            var files = manager.Files.ToArray ().AsMemory ();
+
             // Store the MD5/SHA1 hash per file if needed.
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
@@ -400,6 +402,20 @@ namespace MonoTorrent
                 // Wait for the current piece's async read to complete. When this task completes, the V1 and/or V2 hash will
                 // be stored in the 'hashes' object
                 await currentPiece;
+
+                var currentFile = files.Span[0];
+                var sizeOfCurrentPiece = torrentInfo.BytesPerPiece (piece);
+
+                if (currentFile.EndPieceIndex == piece) {
+                    while (currentFile != null && currentFile.EndPieceIndex == piece) {
+                        OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset(piece) + sizeOfCurrentPiece, torrentInfo.Size));
+
+                        files = files.Slice (1);
+                        currentFile = files.Length == 0 ? null : files.Span[0];
+                    }
+                } else {
+                    OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, torrentInfo.PieceIndexToByteOffset (piece) - currentFile.OffsetInTorrent + sizeOfCurrentPiece, currentFile.Length, torrentInfo.PieceIndexToByteOffset (piece) + sizeOfCurrentPiece, torrentInfo.Size));
+                }
 
                 // Asynchronously begin reading the *next* piece and computing the hash for that piece.
                 var nextPiece = piece + 1;
@@ -426,9 +442,11 @@ namespace MonoTorrent
                 foreach (var file in manager.Files)
                     merkleLayers.Add (file, merkleHashes.Slice (file.StartPieceIndex * 32, (file.EndPieceIndex - file.StartPieceIndex + 1) * 32));
             }
-
             return (sha1Hashes, merkleLayers, fileSHA1Hashes, fileMD5Hashes);
         }
+
+        protected virtual void OnHashed (TorrentCreatorEventArgs args)
+            => Hashed?.InvokeAsync (this, args);
 
         async ReusableTask AppendPerFileHashes (ITorrentManagerInfo manager, IncrementalHash? fileMD5, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, IncrementalHash? fileSHA1, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes, long offset, Memory<byte> buffer)
         {
