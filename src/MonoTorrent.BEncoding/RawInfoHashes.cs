@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.BEncoding
 {
-    public class RawInfoHashes
+    public readonly struct RawInfoHashes
     {
         public ReadOnlyMemory<byte> SHA1 { get; }
         public ReadOnlyMemory<byte> SHA256 { get; }
