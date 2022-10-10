@@ -57,6 +57,6 @@ namespace MonoTorrent
             => !left.Equals (right);
 
         public override string ToString ()
-            => $"Piece: {PieceIndex} - Offset {StartOffset / Constants.BlockSize}";
+            => $"Piece: {PieceIndex} - Offset {StartOffset / Constants.BlockSize} - Length {RequestLength}";
     }
 }
