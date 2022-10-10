@@ -299,14 +299,13 @@ namespace MyBenchmarks
         {
             Picker.Initialise (Data);
 
-            PieceSegment? requested;
-            while ((requested = Picker.PickPiece (Requester, Requester.BitField)).HasValue) {
-                Requested.Enqueue (requested.Value);
+            Span<PieceSegment> requested = stackalloc PieceSegment[1];
+            while ((Picker.PickPiece (Requester, Requester.BitField, ReadOnlySpan<ReadOnlyBitField>.Empty, 0, Requester.BitField.Length - 1, requested)) == 1) {
+                Requested.Enqueue (requested[0]);
             }
 
             while (Requested.Count > 0)
                 Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, out _);
-
         }
 
         [Benchmark]
@@ -315,9 +314,9 @@ namespace MyBenchmarks
             Picker.Initialise (new TorrentData ());
 
             var bf = new BitField (Requester.BitField);
-            PieceSegment? requested;
-            while ((requested = Picker.PickPiece (Requester, bf)).HasValue) {
-                Requested.Enqueue (requested.Value);
+            Span<PieceSegment> requested = stackalloc PieceSegment[1];
+            while ((Picker.PickPiece (Requester, bf, ReadOnlySpan<ReadOnlyBitField>.Empty, 0, bf.Length - 1, requested)) == 1) {
+                Requested.Enqueue (requested[0]);
                 if (Requested.Count > 600) {
                     var popped = Requested.Dequeue ();
                     if (Picker.ValidatePiece (Requester, popped, out bool done, out _))
@@ -340,10 +339,10 @@ namespace MyBenchmarks
             Picker.Initialise (new TorrentData ());
 
             var bf = new BitField (Requester.BitField);
-            PieceSegment? requested;
+            Span<PieceSegment> requested = stackalloc PieceSegment[1];
             int requestIndex = Random.Next (0, Requesters.Count);
-            while ((requested = Picker.PickPiece (Requesters[requestIndex], bf)).HasValue) {
-                RequestedBlocks[requestIndex].Enqueue (requested.Value);
+            while ((Picker.PickPiece (Requesters[requestIndex], bf, ReadOnlySpan<ReadOnlyBitField>.Empty, 0, bf.Length - 1, requested)) == 1) {
+                RequestedBlocks[requestIndex].Enqueue (requested[0]);
                 if (RequestedBlocks[requestIndex].Count > 600) {
                     var popped = RequestedBlocks[requestIndex].Dequeue ();
                     if (Picker.ValidatePiece (Requesters[requestIndex], popped, out bool done, out _))
