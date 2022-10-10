@@ -60,6 +60,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public List<string> Paths = new List<string> ();
 
+        public int OpenFiles => 0;
         public int MaximumOpenFiles { get; }
 
         public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)

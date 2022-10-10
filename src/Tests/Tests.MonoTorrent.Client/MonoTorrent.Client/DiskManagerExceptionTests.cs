@@ -48,6 +48,7 @@ namespace MonoTorrent.Client
 
             public List<ITorrentManagerFile> FlushedFiles = new List<ITorrentManagerFile> ();
 
+            public int OpenFiles => 0;
             public int MaximumOpenFiles { get; }
 
             public ReusableTask CloseAsync (ITorrentManagerFile file)

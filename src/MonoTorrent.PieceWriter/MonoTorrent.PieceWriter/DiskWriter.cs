@@ -28,7 +28,10 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -38,71 +41,118 @@ namespace MonoTorrent.PieceWriter
 {
     public class DiskWriter : IPieceWriter
     {
-        static readonly int DefaultMaxOpenFiles = 196;
+        class Comparer : IEqualityComparer<ITorrentManagerFile>
+        {
+            public static Comparer Instance { get; } = new Comparer ();
 
-        // Don't pass FileOptions.RandomAccess
-        // https://docs.microsoft.com/en-GB/troubleshoot/windows-server/application-management/operating-system-performance-degrades
-        //
-        static readonly Func<ITorrentManagerFile, FileAccess, Stream> DefaultStreamCreator =
-            (file, access) => new FileStream (file.FullPath, FileMode.OpenOrCreate, access, FileShare.ReadWrite, 1, FileOptions.None);
+            public bool Equals (ITorrentManagerFile? x, ITorrentManagerFile? y)
+                => x == y;
+
+            public int GetHashCode (ITorrentManagerFile obj)
+                => obj.GetHashCode ();
+        }
+
+        class AllStreams
+        {
+            public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
+            public List<StreamData> Streams = new List<StreamData> ();
+        }
+
+        class StreamData
+        {
+            public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
+            public long LastUsedStamp = Stopwatch.GetTimestamp ();
+            public IFileReaderWriter Stream;
+
+            public StreamData (IFileReaderWriter stream)
+                => Stream = stream;
+        }
+
+
+        static readonly int DefaultMaxOpenFiles = 196;
 
         SemaphoreSlim Limiter { get; set; }
 
-        public int MaximumOpenFiles => StreamCache.Count;
+        public int OpenFiles { get; private set; }
 
-        readonly FileStreamBuffer StreamCache;
+        public int MaximumOpenFiles { get; private set; }
+
+        Dictionary<ITorrentManagerFile, AllStreams> Streams { get; }
 
         public DiskWriter ()
-            : this (DefaultStreamCreator, DefaultMaxOpenFiles)
-        {
-
-        }
-
-        internal DiskWriter (Func<ITorrentManagerFile, FileAccess, Stream> streamCreator)
-            : this (streamCreator, DefaultMaxOpenFiles)
+            : this (DefaultMaxOpenFiles)
         {
 
         }
 
         public DiskWriter (int maxOpenFiles)
-            : this (DefaultStreamCreator, maxOpenFiles)
         {
-
-        }
-
-        internal DiskWriter (Func<ITorrentManagerFile, FileAccess, Stream> streamCreator, int maxOpenFiles)
-        {
-            StreamCache = new FileStreamBuffer (streamCreator, maxOpenFiles);
+            MaximumOpenFiles = maxOpenFiles;
             Limiter = new SemaphoreSlim (maxOpenFiles);
-        }
-
-        public void Dispose ()
-        {
-            StreamCache.Dispose ();
+            Streams = new Dictionary<ITorrentManagerFile, AllStreams> ();
         }
 
         public async ReusableTask CloseAsync (ITorrentManagerFile file)
         {
-            await StreamCache.CloseStreamAsync (file);
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
+
+            if (Streams.TryGetValue (file, out AllStreams? allStreams)) {
+                using (await allStreams.Locker.EnterAsync ())
+                    await CloseAllAsync (allStreams);
+            }
+        }
+
+        async ReusableTask CloseAllAsync (AllStreams allStreams)
+        {
+            foreach (var data in allStreams.Streams) {
+                using (await data.Locker.EnterAsync ()) {
+                    data.Stream.Dispose ();
+                    OpenFiles--;
+                }
+            }
+            allStreams.Streams.Clear ();
         }
 
         public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
+
             return ReusableTask.FromResult (File.Exists (file.FullPath));
         }
 
         public async ReusableTask FlushAsync (ITorrentManagerFile file)
-            => await StreamCache.FlushAsync (file);
+        {
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
+
+            if (Streams.TryGetValue (file, out AllStreams? allStreams)) {
+                using var releaser = await allStreams.Locker.EnterAsync ();
+                foreach (var data in allStreams.Streams) {
+                    using (await data.Locker.EnterAsync ()) {
+                        await data.Stream.FlushAsync ();
+                    }
+                }
+            }
+        }
 
         public async ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
         {
-            await StreamCache.CloseStreamAsync (file);
+            if (file is null)
+                throw new ArgumentNullException (nameof (file));
 
-            if (overwrite)
-                File.Delete (newPath);
-            if (File.Exists (file.FullPath)) {
-                Directory.CreateDirectory (Path.GetDirectoryName (newPath)!);
-                File.Move (file.FullPath, newPath);
+            if (Streams.TryGetValue (file, out AllStreams? data)) {
+                using var releaser = await data.Locker.EnterAsync ().ConfigureAwait (false);
+                await CloseAllAsync (data);
+
+                if (File.Exists (file.FullPath)) {
+                    if (overwrite)
+                        File.Delete (newPath);
+
+                    Directory.CreateDirectory (Path.GetDirectoryName (newPath)!);
+                    File.Move (file.FullPath, newPath);
+                }
             }
         }
 
@@ -115,15 +165,11 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
-
-                await SwitchToThreadpool ();
-                if (rented.Stream!.Length < offset + buffer.Length)
-                    return 0;
-
-                if (rented.Stream.Position != offset)
-                    rented.Stream.Seek (offset, SeekOrigin.Begin);
-                return rented.Stream.Read (buffer);
+                (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+                using (releaser)
+                    if (writer != null)
+                        return await writer.ReadAsync (buffer, offset).ConfigureAwait (false);
+                return 0;
             }
         }
 
@@ -136,16 +182,10 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                using var rented = await StreamCache.GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
-
-                // FileStream.WriteAsync does some work synchronously, according to the profiler.
-                // It looks like if the file is too small it is expanded (SetLength is called)
-                // synchronously before the asynchronous Write is performed.
-                //
-                // We also want the Seek operation to execute on the threadpool.
-                await SwitchToThreadpool ();
-                rented.Stream!.Seek (offset, SeekOrigin.Begin);
-                rented.Stream.Write (buffer);
+                (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
+                using (releaser)
+                    if (writer != null)
+                        await writer.WriteAsync (buffer, offset).ConfigureAwait (false);
             }
         }
 
@@ -155,7 +195,69 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
-        static ThreadSwitcher SwitchToThreadpool ()
-            => new ThreadSwitcher ();
+        internal async ReusableTask<(IFileReaderWriter, ReusableExclusiveSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
+        {
+            if (!Streams.TryGetValue (file, out AllStreams? allStreams))
+                allStreams = Streams[file] = new AllStreams ();
+
+            using var releaser = await allStreams.Locker.EnterAsync ();
+            foreach (var existing in allStreams.Streams) {
+                if (existing.Locker.TryEnter (out ReusableExclusiveSemaphore.Releaser r)) {
+                    if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream.CanWrite) {
+                        existing.LastUsedStamp = Stopwatch.GetTimestamp ();
+                        return (existing.Stream, r);
+                    } else {
+                        r.Dispose ();
+                    }
+                }
+            }
+
+            if (!File.Exists (file.FullPath)) {
+                if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
+                    Directory.CreateDirectory (parentDirectory);
+                NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+            }
+            var data = new StreamData (new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite));
+            allStreams.Streams.Add (data);
+            OpenFiles++;
+
+            MaybeRemoveOldestStream ();
+            return (data.Stream, await data.Locker.EnterAsync ());
+        }
+
+        public void Dispose ()
+        {
+            foreach (var stream in Streams.Values) {
+                foreach (var v in stream.Streams)
+                    v.Stream.Dispose ();
+            }
+
+            Streams.Clear ();
+            OpenFiles = 0;
+        }
+
+        async void MaybeRemoveOldestStream ()
+        {
+            while (MaximumOpenFiles != 0 && OpenFiles > MaximumOpenFiles) {
+                AllStreams? oldestAllStreams = null;
+                StreamData? oldestStream = null;
+
+                foreach (var allStream in Streams.Values) {
+                    foreach (var stream in allStream.Streams) {
+                        if (oldestStream == null || oldestStream.LastUsedStamp > stream.LastUsedStamp) {
+                            oldestStream = stream;
+                            oldestAllStreams = allStream;
+                        }
+                    }
+                }
+
+                if (oldestAllStreams != null && oldestStream != null) {
+                    using var releaser = await oldestStream.Locker.EnterAsync ();
+                    oldestStream.Stream.Dispose ();
+                    OpenFiles--;
+                    oldestAllStreams.Streams.Remove (oldestStream);
+                }
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@ namespace ClientSample
 {
     class NullWriter : IPieceWriter
     {
+        public int OpenFiles => 0;
         public int MaximumOpenFiles => 0;
 
         public ReusableTask CloseAsync (ITorrentManagerFile file)
