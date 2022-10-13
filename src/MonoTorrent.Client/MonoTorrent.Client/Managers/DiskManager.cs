@@ -195,6 +195,9 @@ namespace MonoTorrent.Client
 
         Factories Factories { get; }
 
+        public int OpenFiles => Cache.Writer.OpenFiles;
+        public int MaximumOpenFiles => Cache.Writer.MaximumOpenFiles;
+
         /// <summary>
         /// The number of bytes pending being read as the <see cref="EngineSettings.MaximumDiskReadRate"/> rate limit is being exceeded.
         /// </summary>

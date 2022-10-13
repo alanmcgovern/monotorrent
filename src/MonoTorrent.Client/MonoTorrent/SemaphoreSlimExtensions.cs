@@ -94,6 +94,20 @@ namespace MonoTorrent
             return new Releaser (this);
         }
 
+        public bool TryEnter (out Releaser value)
+        {
+            lock (Cache) {
+                if (activeCount == 0) {
+                    ++activeCount;
+                    value = new Releaser (this);
+                    return true;
+                } else {
+                    value = default;
+                    return false;
+                }
+            }
+        }
+
         void ReleaseOne ()
         {
             lock (Cache) {

@@ -35,6 +35,7 @@ namespace MonoTorrent.PieceWriter
 {
     public class NullWriter : IPieceWriter
     {
+        public int OpenFiles { get; }
         public int MaximumOpenFiles { get; }
 
         public ReusableTask CloseAsync (ITorrentManagerFile file)

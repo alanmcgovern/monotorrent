@@ -44,6 +44,7 @@ namespace MonoTorrent.Client
 {
     class TestPieceWriter : IPieceWriter
     {
+        public int OpenFiles => 0;
         public int MaximumOpenFiles { get; }
 
         public ReusableTask CloseAsync (ITorrentManagerFile file)
@@ -104,6 +105,7 @@ namespace MonoTorrent.Client
             public List<ITorrentManagerFile> ClosedFiles = new List<ITorrentManagerFile> ();
             public List<ITorrentManagerFile> ExistsFiles = new List<ITorrentManagerFile> ();
 
+            public int OpenFiles => 0;
             public int MaximumOpenFiles { get; }
 
             public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)

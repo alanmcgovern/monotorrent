@@ -16,6 +16,7 @@ namespace MonoTorrent.Client
         public BlockingCollection<(ITorrentManagerFile file, long offset, Memory<byte> buffer, ReusableTaskCompletionSource<int> tcs)> Reads = new BlockingCollection<(ITorrentManagerFile file, long offset, Memory<byte> buffer, ReusableTaskCompletionSource<int> tcs)> ();
         public BlockingCollection<(ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer, ReusableTaskCompletionSource<object> tcs)> Writes = new BlockingCollection<(ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer, ReusableTaskCompletionSource<object> tcs)> ();
 
+        public int OpenFiles => 0;
         public int MaximumOpenFiles => 0;
 
         public async ReusableTask CloseAsync (ITorrentManagerFile file)

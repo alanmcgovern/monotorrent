@@ -49,6 +49,7 @@ namespace MonoTorrent.PieceWriter
         public List<(ITorrentManagerFile file, long offset, byte[] buffer)> Reads = new List<(ITorrentManagerFile file, long offset, byte[] buffer)> ();
         public List<(ITorrentManagerFile file, long offset, byte[] buffer)> Writes = new List<(ITorrentManagerFile file, long offset, byte[] buffer)> ();
 
+        public int OpenFiles { get; }
         public int MaximumOpenFiles { get; }
 
         public ReusableTask CloseAsync (ITorrentManagerFile file)

@@ -73,7 +73,7 @@ namespace MonoTorrent.PieceWriter
         {
             using var writer = new DiskWriter ();
 
-            await writer.WriteAsync (TorrentFile, 0, new byte[10].AsMemory ());
+            await writer.WriteAsync (TorrentFile, 0, new byte[10]);
             Assert.IsTrue (File.Exists (TorrentFile.FullPath));
 
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
@@ -87,36 +87,30 @@ namespace MonoTorrent.PieceWriter
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
         }
 
-        /* [Test]
-         public async Task ExceedMaxOpenFiles ()
-         {
-             var streams = new List<ManualStream> ();
-             var streamCreated = new ReusableTaskCompletionSource<bool> ();
-             Func<ITorrentFileInfo, FileAccess, Stream> creator = (file, access) => {
-                 var s = new ManualStream (file, access);
-                 s.WriteTcs = new TaskCompletionSource<int> ();
-                 streams.Add (s);
-                 streamCreated.SetResult (true);
-                 return s;
-             };
-             using var writer = new DiskWriter (creator, 1);
+        [Test]
+        public async Task TruncateLargeFile_ThenRead ()
+        {
+            Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
+            using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
+                file.Write (new byte[TorrentFile.Length + 1]);
 
-             var writeTask = writer.WriteAsync (TorrentFile, 0, new byte[100], 0, 100);
-             await streamCreated.Task.WithTimeout ();
+            // This should implicitly truncate.
+            using var writer = new DiskWriter ();
+            await writer.ReadAsync (TorrentFile, 0, new byte[12]);
+            Assert.AreEqual (TorrentFile.Length, new FileInfo (TorrentFile.FullPath).Length);
+        }
 
-             // There's a limit of 1 concurrent read/write.
-             var secondStreamWaiter = streamCreated.Task.AsTask ();
+        [Test]
+        public async Task TruncateLargeFile_ThenWrite ()
+        {
+            Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
+            using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
+                file.Write (new byte[TorrentFile.Length + 1]);
 
-             var secondStream = writer.WriteAsync (Others.First (), 0, new byte[100], 0, 100);
-             Assert.ThrowsAsync<TimeoutException> (() => secondStreamWaiter.WithTimeout (100));
-
-             streams[0].WriteTcs.SetResult (1);
-             await secondStreamWaiter.WithTimeout ();
-             streams[1].WriteTcs.SetResult (1);
-
-             await secondStream.WithTimeout ();
-             Assert.IsTrue (streams[0].Disposed);
-             Assert.IsFalse (streams[1].Disposed);
-         }*/
+            // This should implicitly truncate.
+            using var writer = new DiskWriter ();
+            await writer.WriteAsync (TorrentFile, 0, new byte[12]);
+            Assert.AreEqual (TorrentFile.Length, new FileInfo (TorrentFile.FullPath).Length);
+        }
     }
 }

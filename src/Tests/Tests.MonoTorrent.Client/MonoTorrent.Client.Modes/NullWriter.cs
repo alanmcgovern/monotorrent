@@ -9,6 +9,7 @@ namespace MonoTorrent.Client
 {
     public class NullWriter : IPieceWriter
     {
+        public int OpenFiles => 0;
         public int MaximumOpenFiles { get; }
 
         public ReusableTask CloseAsync (ITorrentManagerFile file)
