@@ -53,7 +53,8 @@ namespace MonoTorrent.PiecePicking
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <param name="maxDuplicateRequests">The maximum number of concurrent duplicate requests</param>
         /// <returns></returns>
-        PieceSegment? ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests);
+        /// <param name="segment"></param>
+        bool ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests, out PieceSegment segment);
 
         /// <summary>
         /// Request the next unrequested block from a piece owned by this peer, within the specified bounds.
@@ -62,7 +63,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <returns></returns>
-        PieceSegment? ContinueExistingRequest (IRequester peer, int startIndex, int endIndex);
+        bool ContinueExistingRequest (IRequester peer, int startIndex, int endIndex, out PieceSegment segment);
 
         /// <summary>
         /// Returns the number of blocks which have been received f pieces currently being requested.

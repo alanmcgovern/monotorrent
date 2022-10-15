@@ -106,9 +106,8 @@ namespace MonoTorrent.PiecePicking
             // will be a fast piece (if one exists!)
             if (Settings.IgnoreBitFieldAndChokeState || !peer.IsChoking || peer.SupportsFastPeer) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceSegment? request = Picker.ContinueExistingRequest (peer, 0, available.Length - 1);
-                    if (request != null)
-                        Enqueuer.EnqueueRequest (peer, request.Value);
+                    if (Picker.ContinueExistingRequest (peer, 0, available.Length - 1, out PieceSegment segment))
+                        Enqueuer.EnqueueRequest (peer, segment);
                     else
                         break;
                 }
@@ -140,23 +139,21 @@ namespace MonoTorrent.PiecePicking
 
             if ((Settings.IgnoreBitFieldAndChokeState || !peer.IsChoking) && peer.AmRequestingPiecesCount == 0) {
                 ReadOnlyBitField filtered = null!;
+                PieceSegment segment;
                 while (peer.AmRequestingPiecesCount < maxRequests) {
                     if (Settings.IgnoreBitFieldAndChokeState)
                         filtered ??= ApplyIgnorables (Temp!.SetAll (true));
                     else
                         filtered ??= ApplyIgnorables (available);
-                    PieceSegment? request = Picker.ContinueAnyExistingRequest (peer, filtered, 0, TorrentData.PieceCount - 1, 1);
-                    // If this peer is a seeder and we are unable to request any new blocks, then we should enter
-                    // endgame mode. Every block has been requested at least once at this point.
-                    if (request == null && (InEndgameMode || available.AllTrue)) {
-                        request = Picker.ContinueAnyExistingRequest (peer, filtered, 0, TorrentData.PieceCount - 1, 2);
-                        InEndgameMode |= request != null;
-                    }
 
-                    if (request != null)
-                        Enqueuer.EnqueueRequest (peer, request.Value);
-                    else
+                    if (Picker.ContinueAnyExistingRequest (peer, filtered, 0, TorrentData.PieceCount - 1, 1, out segment)) {
+                        Enqueuer.EnqueueRequest (peer, segment);
+                    } else if ((InEndgameMode || available.AllTrue) && Picker.ContinueAnyExistingRequest (peer, filtered, 0, TorrentData.PieceCount - 1, 2, out segment)) {
+                        InEndgameMode = true;
+                        Enqueuer.EnqueueRequest (peer, segment);
+                    } else {
                         break;
+                    }
                 }
             }
         }

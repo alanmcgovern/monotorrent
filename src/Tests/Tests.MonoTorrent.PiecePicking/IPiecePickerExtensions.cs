@@ -35,8 +35,8 @@ namespace MonoTorrent.PiecePicking
 {
     public static class IPiecePickerExtensions
     {
-        public static PieceSegment? ContinueAnyExistingRequest (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex)
-            => picker.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, 1);
+        public static bool ContinueAnyExistingRequest (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, out PieceSegment segment)
+            => picker.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, 1, out segment);
 
         public static PieceSegment? PickPiece (this IPiecePicker picker, IRequester peer, ReadOnlyBitField available)
         {

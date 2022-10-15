@@ -32,13 +32,24 @@ namespace MonoTorrent.PiecePicking
 {
     public readonly struct PieceSegment : IEquatable<PieceSegment>
     {
+        public static PieceSegment Invalid = new PieceSegment (invalid: -1);
+
         public int PieceIndex { get; }
         public int BlockIndex { get; }
+
+        PieceSegment (int invalid)
+        {
+            PieceIndex = -1;
+            BlockIndex = -1;
+        }
 
         public PieceSegment (int pieceIndex, int blockIndex)
         {
             if (pieceIndex < 0)
                 throw new ArgumentOutOfRangeException (nameof (pieceIndex));
+            if (blockIndex < 0)
+                throw new ArgumentOutOfRangeException (nameof (blockIndex));
+
             (PieceIndex, BlockIndex) = (pieceIndex, blockIndex);
         }
 

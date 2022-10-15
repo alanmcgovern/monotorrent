@@ -171,9 +171,8 @@ namespace MonoTorrent.PiecePicking
             // into account that a peer which is choking us can *only* resume a 'fast piece' in the 'AmAllowedfastPiece' list.
             if (!peer.IsChoking) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceSegment? request = LowPriorityPicker!.ContinueAnyExistingRequest (peer, available, startPieceIndex, endPieceIndex, maxDuplicates);
-                    if (request != null)
-                        Enqueuer.EnqueueRequest(peer, request.Value);
+                    if (LowPriorityPicker!.ContinueAnyExistingRequest (peer, available, startPieceIndex, endPieceIndex, maxDuplicates, out PieceSegment request))
+                        Enqueuer.EnqueueRequest(peer, request);
                     else
                         break;
                 }
@@ -182,9 +181,8 @@ namespace MonoTorrent.PiecePicking
             // If the peer supports fast peer and they are choking us, they'll still send pieces in the allowed fast set.
             if (peer.SupportsFastPeer && peer.IsChoking) {
                 while (peer.AmRequestingPiecesCount < maxRequests) {
-                    PieceSegment? request = LowPriorityPicker!.ContinueExistingRequest (peer, startPieceIndex, endPieceIndex);
-                    if (request != null)
-                        Enqueuer.EnqueueRequest (peer, request.Value);
+                    if (LowPriorityPicker!.ContinueExistingRequest (peer, startPieceIndex, endPieceIndex, out PieceSegment segment))
+                        Enqueuer.EnqueueRequest (peer, segment);
                     else
                         break;
                 }
@@ -217,7 +215,6 @@ namespace MonoTorrent.PiecePicking
 
         int PriorityPick (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
-            PieceSegment? request;
             int requestCount;
 
             if (HighPriorityPieceIndex >= startIndex && HighPriorityPieceIndex <= endIndex) {
@@ -228,10 +225,8 @@ namespace MonoTorrent.PiecePicking
                     if (available[prioritised]) {
                         if ((requestCount = HighPriorityPicker!.PickPiece (peer, available, otherPeers, prioritised, prioritised, requests)) > 0)
                             return requestCount;
-                        if ((request = HighPriorityPicker.ContinueAnyExistingRequest (peer, available, prioritised, prioritised, 3)) != null) {
-                            requests[0] = request.Value;
+                        if (HighPriorityPicker.ContinueAnyExistingRequest (peer, available, prioritised, prioritised, 3, out requests[0]))
                             return 1;
-                        }
                     }
                 }
 
