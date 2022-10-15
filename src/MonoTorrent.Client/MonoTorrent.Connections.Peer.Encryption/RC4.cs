@@ -39,7 +39,6 @@ namespace MonoTorrent.Connections.Peer.Encryption
     class RC4 : IEncryption
     {
         static readonly Memory<byte> Discarder = new byte[1024];
-        static readonly RandomNumberGenerator random = new RNGCryptoServiceProvider ();
 
         readonly byte[] S;
         int x;
