@@ -263,16 +263,15 @@ namespace MonoTorrent.PiecePicking
         static readonly Func<Piece, int, int> IndexComparer = (Piece piece, int comparand)
             => piece.Index.CompareTo (comparand);
 
-        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, out IList<IRequester> peersInvolved)
+        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, HashSet<IRequester> peersInvolved)
         {
             if (Requests == null || !Requests.TryGetValue (request.PieceIndex, out Piece? primaryPiece)) {
                 //logger.InfoFormatted ("Piece validation failed: {0}-{1}. {2} No piece.", request.PieceIndex, request.StartOffset, peer);
                 pieceComplete = false;
-                peersInvolved = Array.Empty<IRequester> ();
                 return false;
             }
 
-            var result = ValidateRequestWithPiece (peer, request, primaryPiece, out pieceComplete, out peersInvolved);
+            var result = ValidateRequestWithPiece (peer, request, primaryPiece, out pieceComplete, peersInvolved);
 
             // If there are no duplicate requests, exit early! Otherwise we'll need to do book keeping to
             // ensure our received piece is not re-requested again.
@@ -287,7 +286,7 @@ namespace MonoTorrent.PiecePicking
             // We have duplicate requests and have, so far, failed to validate the block. Try to validate it now.
             if (!result) {
                 for (int i = 0; i < extraPieces.Count && !result; i++)
-                    if ((result = ValidateRequestWithPiece (peer, request, extraPieces[i], out pieceComplete, out peersInvolved)))
+                    if ((result = ValidateRequestWithPiece (peer, request, extraPieces[i], out pieceComplete, peersInvolved)))
                         break;
             }
 
@@ -309,10 +308,9 @@ namespace MonoTorrent.PiecePicking
             return result;
         }
 
-        bool ValidateRequestWithPiece (IRequester peer, PieceSegment request, Piece piece, out bool pieceComplete, out IList<IRequester> peersInvolved)
+        bool ValidateRequestWithPiece (IRequester peer, PieceSegment request, Piece piece, out bool pieceComplete, HashSet<IRequester> peersInvolved)
         {
             pieceComplete = false;
-            peersInvolved = Array.Empty<IRequester> ();
 
             // Pick out the block that this piece message belongs to
             int blockIndex = request.BlockIndex;
@@ -334,7 +332,7 @@ namespace MonoTorrent.PiecePicking
 
             if (piece.AllBlocksReceived) {
                 pieceComplete = true;
-                peersInvolved = piece.CalculatePeersInvolved ();
+                piece.CalculatePeersInvolved (peersInvolved);
             }
             return true;
         }

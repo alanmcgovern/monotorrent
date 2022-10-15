@@ -158,11 +158,10 @@ namespace MonoTorrent.PiecePicking
             }
         }
 
-        public bool ValidatePiece (IRequester peer, PieceSegment blockInfo, out bool pieceComplete, out IList<IRequester> peersInvolved)
+        public bool ValidatePiece (IRequester peer, PieceSegment blockInfo, out bool pieceComplete, HashSet<IRequester> peersInvolved)
         {
             pieceComplete = false;
-            peersInvolved = Array.Empty<IRequester> ();
-            return Picker != null && Picker.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+            return Picker != null && Picker.ValidatePiece (peer, blockInfo, out pieceComplete, peersInvolved);
         }
 
         public bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)

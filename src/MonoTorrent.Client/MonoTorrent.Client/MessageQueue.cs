@@ -94,10 +94,17 @@ namespace MonoTorrent.Client
                 throw new ObjectDisposedException (nameof (MessageQueue));
 
             lock (SendQueue) {
-                if (SendQueue.Count == 0 || index >= SendQueue.Count)
+                if (SendQueue.Count == 0 || index >= SendQueue.Count) {
+                    if (SendQueue.Count > 0 && (SendQueue[SendQueue.Count - 1].message is RequestBundle previous) && message is RequestBundle newBundle) {
+                        if (previous.TryAppend (newBundle)) {
+                            releaser.Dispose ();
+                            return;
+                        }
+                    }
                     SendQueue.Add ((message, releaser));
-                else
+                } else {
                     SendQueue.Insert (index, (message, releaser));
+                }
             }
         }
 

@@ -271,8 +271,8 @@ namespace MonoTorrent.PiecePicking
                 HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
         }
 
-        public bool ValidatePiece (IRequester peer, PieceSegment blockInfo, out bool pieceComplete, out IList<IRequester> peersInvolved)
-            => HighPriorityPicker!.ValidatePiece (peer, blockInfo, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IRequester peer, PieceSegment blockInfo, out bool pieceComplete, HashSet<IRequester> peersInvolved)
+            => HighPriorityPicker!.ValidatePiece (peer, blockInfo, out pieceComplete, peersInvolved);
 
         public bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)
             => HighPriorityPicker!.IsInteresting (peer, bitfield);

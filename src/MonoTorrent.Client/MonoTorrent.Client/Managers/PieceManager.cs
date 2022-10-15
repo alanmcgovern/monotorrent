@@ -64,18 +64,17 @@ namespace MonoTorrent.Client
             Requester = manager.Engine!.Factories.CreatePieceRequester ();
         }
 
-        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, out IList<IRequester> peersInvolved)
+        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, HashSet<IRequester> peersInvolved)
         {
             //FIXME: Ensure piece length is correct?
             var isValidLength = Manager.Torrent!.BytesPerBlock (message.PieceIndex, message.StartOffset / Constants.BlockSize) == message.RequestLength;
-            if (Initialised && isValidLength && Requester.ValidatePiece (id, new PieceSegment (message.PieceIndex, message.StartOffset / Constants.BlockSize), out pieceComplete, out peersInvolved)) {
+            if (Initialised && isValidLength && Requester.ValidatePiece (id, new PieceSegment (message.PieceIndex, message.StartOffset / Constants.BlockSize), out pieceComplete, peersInvolved)) {
                 id.LastBlockReceived.Restart ();
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
                 return true;
             } else {
                 pieceComplete = false;
-                peersInvolved = Array.Empty<IRequester> ();
                 return false;
             }
         }

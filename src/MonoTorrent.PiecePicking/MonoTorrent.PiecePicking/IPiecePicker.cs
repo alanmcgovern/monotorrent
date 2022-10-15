@@ -62,6 +62,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="peer">The peer to request the block from</param>
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
+        /// <param name="segment">If an existing block is successfully continued, the details for that block will be set here</param>
         /// <returns></returns>
         bool ContinueExistingRequest (IRequester peer, int startIndex, int endIndex, out PieceSegment segment);
 
@@ -127,6 +128,6 @@ namespace MonoTorrent.PiecePicking
         /// <param name="pieceComplete">True if this was the final block for the piece</param>
         /// <param name="peersInvolved">When <paramref name="pieceComplete"/> is true this is a non-null list of peers used to download the piece. Otherwise this is null.</param>
         /// <returns></returns>
-        bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, out IList<IRequester> peersInvolved);
+        bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, HashSet<IRequester> peersInvolved);
     }
 }

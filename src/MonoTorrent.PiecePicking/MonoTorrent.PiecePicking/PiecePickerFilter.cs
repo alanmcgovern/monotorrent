@@ -69,7 +69,7 @@ namespace MonoTorrent.PiecePicking
         public void RequestRejected (IRequester peer, PieceSegment request)
             => Next.RequestRejected (peer, request);
 
-        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, out IList<IRequester> peersInvolved)
-            => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, HashSet<IRequester> peersInvolved)
+            => Next.ValidatePiece (peer, request, out pieceComplete, peersInvolved);
     }
 }

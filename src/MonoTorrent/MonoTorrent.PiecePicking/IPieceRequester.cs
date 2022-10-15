@@ -85,7 +85,7 @@ namespace MonoTorrent.PiecePicking
         /// <param name="pieceComplete"></param>
         /// <param name="peersInvolved"></param>
         /// <returns></returns>
-        bool ValidatePiece (IRequester peer, PieceSegment pieceSegment, out bool pieceComplete, out IList<IRequester> peersInvolved);
+        bool ValidatePiece (IRequester peer, PieceSegment pieceSegment, out bool pieceComplete, HashSet<IRequester> peersInvolved);
 
         /// <summary>
         /// 

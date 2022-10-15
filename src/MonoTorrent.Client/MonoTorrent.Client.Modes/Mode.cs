@@ -370,19 +370,31 @@ namespace MonoTorrent.Client.Modes
             id.IsInterested = false;
         }
 
+        static ICache<CacheableHashSet<IRequester>> PeersInvolvedCache = new Cache<CacheableHashSet<IRequester>> (() => new CacheableHashSet<IRequester> ()).Synchronize ();
+        class CacheableHashSet<T> : HashSet<T>, ICacheable
+        {
+            public void Initialise ()
+                => Clear ();
+        }
+
         protected virtual void HandlePieceMessage (PeerId id, PieceMessage message, PeerMessage.Releaser releaser)
         {
             id.PiecesReceived++;
-            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, out IList<IRequester> peersInvolved))
+            var peersInvolved = PeersInvolvedCache.Dequeue ();
+            if (Manager.PieceManager.PieceDataReceived (id, message, out bool pieceComplete, peersInvolved)) {
+                if (peersInvolved.Count == 0) {
+                    PeersInvolvedCache.Enqueue (peersInvolved);
+                    peersInvolved = null;
+                }
                 WritePieceAsync (message, releaser, pieceComplete, peersInvolved);
-            else
+            } else
                 releaser.Dispose ();
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             Manager.PieceManager.AddPieceRequests (id);
         }
 
-        readonly Dictionary<int, (int blocksWritten, IList<IRequester> peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, IList<IRequester> peersInvolved)> ();
-        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, bool pieceComplete, IList<IRequester> peersInvolved)
+        readonly Dictionary<int, (int blocksWritten, CacheableHashSet<IRequester>? peersInvolved)> BlocksWrittenPerPiece = new Dictionary<int, (int blocksWritten, CacheableHashSet<IRequester>? peersInvolved)> ();
+        async void WritePieceAsync (PieceMessage message, PeerMessage.Releaser releaser, bool pieceComplete, CacheableHashSet<IRequester>? peersInvolved)
         {
             BlockInfo block = new BlockInfo (message.PieceIndex, message.StartOffset, message.RequestLength);
             try {
@@ -395,7 +407,7 @@ namespace MonoTorrent.Client.Modes
                 return;
             }
 
-            if (!BlocksWrittenPerPiece.TryGetValue (block.PieceIndex, out (int blocksWritten, IList<IRequester> peersInvolved) data))
+            if (!BlocksWrittenPerPiece.TryGetValue (block.PieceIndex, out (int blocksWritten, CacheableHashSet<IRequester>? peersInvolved) data))
                 data = (0, peersInvolved);
 
             // Increment the number of blocks, and keep storing 'peersInvolved' until it's non-null. It will be non-null when the
@@ -408,7 +420,7 @@ namespace MonoTorrent.Client.Modes
 
             // All blocks have been written for this piece have been written!
             BlocksWrittenPerPiece.Remove (block.PieceIndex);
-            peersInvolved = data.peersInvolved;
+            peersInvolved = data.peersInvolved!;
 
             // Hashcheck the piece as we now have all the blocks.
             // BEP52: Support validating both SHA1 *and* SHA256.
@@ -430,12 +442,12 @@ namespace MonoTorrent.Client.Modes
             if (!result)
                 Manager.HashFails++;
 
-            for (int i = 0; i < peersInvolved.Count; i ++) {
-                var peer = (PeerId) peersInvolved[i];
+            foreach (PeerId peer in peersInvolved) {
                 peer.Peer.HashedPiece (result);
                 if (peer.Peer.TotalHashFails == 5)
                     ConnectionManager.CleanupSocket (Manager, peer);
             }
+            PeersInvolvedCache.Enqueue (peersInvolved);
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)

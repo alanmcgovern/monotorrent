@@ -38,10 +38,12 @@ namespace MonoTorrent.Messages.Peer
         readonly RequestMessage RequestMessage = new RequestMessage ();
 
         ByteBufferPool.Releaser RequestsMemoryReleaser;
-        Memory<byte> RequestsMemory;
-        Span<BlockInfo> Requests => MemoryMarshal.Cast<byte, BlockInfo> (RequestsMemory.Span);
+        Memory<byte> UsedRequestsMemory;
+        Memory<byte> TotalRequestsMemory;
+        Span<BlockInfo> UsedRequests => MemoryMarshal.Cast<byte, BlockInfo> (UsedRequestsMemory.Span);
+        Span<BlockInfo> TotalRequests => MemoryMarshal.Cast<byte, BlockInfo> (TotalRequestsMemory.Span);
 
-        public override int ByteLength => RequestMessage.ByteLength * Requests.Length;
+        public override int ByteLength => RequestMessage.ByteLength * UsedRequests.Length;
 
         public RequestBundle ()
         {
@@ -56,8 +58,8 @@ namespace MonoTorrent.Messages.Peer
         {
             int written = buffer.Length;
 
-            for (int i = 0; i < Requests.Length; i++) {
-                RequestMessage.Initialize (Requests[i]);
+            for (int i = 0; i < UsedRequests.Length; i++) {
+                RequestMessage.Initialize (UsedRequests[i]);
                 buffer = buffer.Slice (RequestMessage.Encode (buffer));
             }
 
@@ -66,16 +68,28 @@ namespace MonoTorrent.Messages.Peer
 
         public void Initialize (Span<BlockInfo> requests)
         {
-            RequestsMemoryReleaser = Pool.Rent (MemoryMarshal.AsBytes (requests).Length, out Memory<byte> memory);
-            RequestsMemory = memory;
-            requests.CopyTo (Requests);
+            var usedSize = MemoryMarshal.AsBytes (requests).Length;
+            RequestsMemoryReleaser = Pool.Rent (Math.Max (256, usedSize), out Memory<byte> memory);
+            TotalRequestsMemory = memory;
+            UsedRequestsMemory = TotalRequestsMemory.Slice (0, usedSize);
+            requests.CopyTo (UsedRequests);
         }
 
         protected override void Reset ()
         {
             base.Reset ();
             RequestsMemoryReleaser.Dispose ();
-            (RequestsMemoryReleaser, RequestsMemory) = (default, default);
+            (RequestsMemoryReleaser, TotalRequestsMemory, UsedRequestsMemory) = (default, default, default);
+        }
+
+        public bool TryAppend (RequestBundle message)
+        {
+            if (message.UsedRequestsMemory.Length > TotalRequestsMemory.Length - UsedRequestsMemory.Length)
+                return false;
+
+            message.UsedRequestsMemory.CopyTo (TotalRequestsMemory.Slice (UsedRequestsMemory.Length));
+            UsedRequestsMemory = TotalRequestsMemory.Slice (0, UsedRequestsMemory.Length + message.UsedRequestsMemory.Length);
+            return true;
         }
     }
 }
