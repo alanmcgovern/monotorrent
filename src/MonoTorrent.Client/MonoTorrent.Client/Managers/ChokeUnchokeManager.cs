@@ -310,7 +310,7 @@ namespace MonoTorrent.Client
         /// <param name="Peer"></param>
         void RejectPendingRequests (PeerId Peer)
         {
-            var rejectedCount = Peer.MessageQueue.RejectRequests (Peer.SupportsFastPeer, Peer.AmAllowedFastPieces);
+            var rejectedCount = Peer.MessageQueue.RejectRequests (Peer.SupportsFastPeer, Peer.AmAllowedFastPieces.Span);
             Interlocked.Add (ref Peer.isRequestingPiecesCount, rejectedCount);
         }
 

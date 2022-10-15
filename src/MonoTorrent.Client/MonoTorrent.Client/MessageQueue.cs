@@ -108,7 +108,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal int RejectRequests (bool supportsFastPeer, List<int> amAllowedFastPieces)
+        internal int RejectRequests (bool supportsFastPeer, ReadOnlySpan<int> amAllowedFastPieces)
         {
             if (Disposed)
                 throw new ObjectDisposedException (nameof (MessageQueue));

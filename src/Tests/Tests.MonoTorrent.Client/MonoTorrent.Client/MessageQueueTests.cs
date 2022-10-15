@@ -28,7 +28,7 @@ namespace MonoTorrent.Client
             queue.Enqueue (msg, msgReleaser);
 
             Assert.IsFalse (msg.Data.IsEmpty);
-            queue.RejectRequests (false, new List<int> ());
+            queue.RejectRequests (false, new int[0]);
             Assert.IsTrue (msg.Data.IsEmpty);
 
             Assert.IsNull (queue.TryDequeue ());
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
             queue.Enqueue (msg, msgReleaser);
 
             Assert.IsFalse (msg.Data.IsEmpty);
-            queue.RejectRequests (true, new List<int> { 0 });
+            queue.RejectRequests (true, new int[] { 0 });
             Assert.IsFalse (msg.Data.IsEmpty);
 
             Assert.AreSame (msg, queue.TryDequeue ());
@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
             queue.Enqueue (msg, msgReleaser);
 
             Assert.IsFalse (msg.Data.IsEmpty);
-            queue.RejectRequests (true, new List<int> { 1 });
+            queue.RejectRequests (true, new int[] { 1 });
             Assert.IsTrue (msg.Data.IsEmpty);
 
             Assert.IsInstanceOf<RejectRequestMessage>(queue.TryDequeue ());

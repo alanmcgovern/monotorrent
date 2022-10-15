@@ -481,7 +481,7 @@ namespace MonoTorrent.Client.Modes
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
             // otherwise send back a reject request message
             else if (id.SupportsFastPeer) {
-                if (id.AmAllowedFastPieces.Contains (message.PieceIndex)) {
+                if (id.AmAllowedFastPieces.Span.Contains (message.PieceIndex)) {
                     Interlocked.Increment (ref id.isRequestingPiecesCount);
                     (var m, var releaser) = PeerMessage.Rent<PieceMessage> ();
                     m.Initialize (message.PieceIndex, message.StartOffset, message.RequestLength);
@@ -541,11 +541,9 @@ namespace MonoTorrent.Client.Modes
             // Now we will enqueue a FastPiece message for each piece we will allow the peer to download
             // even if they are choked
             if (id.SupportsFastPeer) {
-                for (int i = 0; i < id.AmAllowedFastPieces.Count; i++) {
-                    (var msg, var releaser) = PeerMessage.Rent<AllowedFastMessage> ();
-                    msg.Initialize (id.AmAllowedFastPieces[i]);
-                    bundle.Add (msg, releaser);
-                }
+                (var msg, var releaser) = PeerMessage.Rent<AllowedFastBundle> ();
+                msg.Initialize (id.AmAllowedFastPieces.Span);
+                bundle.Add (msg, releaser);
             }
         }
 

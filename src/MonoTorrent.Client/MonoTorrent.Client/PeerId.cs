@@ -185,7 +185,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The remote peer can request these and we'll fulfill the request if we're choking them
         /// </summary>
-        internal List<int> AmAllowedFastPieces { get; set; }
+        internal ReadOnlyMemory<int> AmAllowedFastPieces { get; set; }
         internal IEncryption Decryptor { get; set; }
         internal bool Disposed { get; private set; }
         internal IEncryption Encryptor { get; set; }
@@ -220,7 +220,6 @@ namespace MonoTorrent.Client
             LastMessageSent = new ValueStopwatch ();
             WhenConnected = new ValueStopwatch ();
 
-            AmAllowedFastPieces = new List<int> ();
             IsAllowedFastPieces = new List<int> ();
             SuggestedPieces = new List<int> ();
 

@@ -38,20 +38,20 @@ namespace MonoTorrent.Client
     {
         static readonly int AllowedFastPieceCount = 10;
 
-        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHashes infohashes, uint numberOfPieces)
+        internal static ReadOnlyMemory<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHashes infohashes, uint numberOfPieces)
         {
             return Calculate (hasher, addressBytes, infohashes, AllowedFastPieceCount, numberOfPieces);
         }
 
-        internal static List<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHashes infohashes, int count, uint numberOfPieces)
+        internal static ReadOnlyMemory<int> Calculate (SHA1 hasher, byte[] addressBytes, InfoHashes infohashes, int count, uint numberOfPieces)
         {
             // BEP52: Support V2 torrents
             var infohash = infohashes.V1;
             if (infohash == null)
-                return new List<int> ();
+                return Array.Empty<int> ();
 
-            byte[] hashBuffer = new byte[24];                // The hash buffer to be used in hashing
-            var results = new List<int> (count);  // The results array which will be returned
+            byte[] hashBuffer = new byte[24];
+            var results = new int[count];
 
             // 1) Convert the bytes into an int32 and make them Network order
             int ip = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (addressBytes, 0));
@@ -70,6 +70,7 @@ namespace MonoTorrent.Client
 
             // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
             // Then return that result
+            int resultsCount = 0;
             while (true) {
                 hashBuffer = hasher.ComputeHash (hashBuffer);
 
@@ -80,9 +81,8 @@ namespace MonoTorrent.Client
                     if (result > int.MaxValue)
                         return results;
 
-                    results.Add ((int) result);
-
-                    if (count == results.Count)
+                    results[resultsCount++] = (int) result;
+                    if (count == resultsCount)
                         return results;
                 }
             }
