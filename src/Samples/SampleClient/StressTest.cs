@@ -64,32 +64,69 @@ namespace ClientSample
     class StressTest
     {
         const int DataSize = 100 * 1024 * 1024 - 1024;
+        const int MaxDownloaders = 1;
         static string DataDir = Path.GetFullPath ("data_dir");
+
+        class InMemoryCache : IBlockCache
+        {
+            public long CacheHits { get; }
+            public long CacheUsed { get; }
+            public long Capacity { get; }
+            public CachePolicy Policy { get; }
+            public IPieceWriter Writer { get; set; }
+
+            public event EventHandler<BlockInfo> ReadFromCache;
+            public event EventHandler<BlockInfo> ReadThroughCache;
+            public event EventHandler<BlockInfo> WrittenToCache;
+            public event EventHandler<BlockInfo> WrittenThroughCache;
+
+            Dictionary<BlockInfo, ReadOnlyMemory<byte>> Cache = new Dictionary<BlockInfo, ReadOnlyMemory<byte>> ();
+
+            public InMemoryCache (Dictionary<BlockInfo, ReadOnlyMemory<byte>> cache)
+                => (Cache) = (cache);
+
+            public void Dispose ()
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask<bool> ReadAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer)
+            {
+                Cache[block].CopyTo (buffer);
+                return ReusableTask.FromResult (true);
+            }
+
+            public ReusableTask<bool> ReadFromCacheAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask SetCapacityAsync (long capacity)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask SetPolicyAsync (CachePolicy policy)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask SetWriterAsync (IPieceWriter writer)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache)
+            {
+                throw new NotImplementedException ();
+            }
+        }
+
+        InMemoryCache SeederDataCache { get; set; }
 
         public async Task RunAsync ()
         {
             //LoggerFactory.Creator = className => new TextLogger (Console.Out, className);
-
-            int port = 37827;
-            var seeder = new ClientEngine (
-                new EngineSettingsBuilder {
-                    AllowedEncryption = new[] { EncryptionType.PlainText },
-                    DiskCacheBytes = DataSize,
-                    ListenEndPoint = new IPEndPoint (IPAddress.Any, port++)
-                }.ToSettings (),
-                Factories.Default.WithPieceWriterCreator (maxOpenFiles => new NullWriter ())
-            );
-
-            var downloaders = Enumerable.Range (port, 16).Select (p => {
-                return new ClientEngine (
-                    new EngineSettingsBuilder {
-                        AllowedEncryption = new[] { EncryptionType.PlainText },
-                        DiskCacheBytes = DataSize,
-                        ListenEndPoint = new IPEndPoint (IPAddress.Any, p),
-                    }.ToSettings (),
-                    Factories.Default.WithPieceWriterCreator (maxOpenFiles => new NullWriter ())
-                );
-            }).ToArray ();
 
             Directory.CreateDirectory (DataDir);
             // Generate some fake data on-disk
@@ -100,6 +137,24 @@ namespace ClientSample
                 fileStream.SetLength (DataSize);
             }
 
+
+            // Create the torrent file for the fake data
+            var creator = new TorrentCreator (TorrentType.V1Only);
+            creator.Announces.Add (new List<string> ());
+            creator.Announces[0].Add ("http://127.0.0.1:25611/announce");
+
+            var metadata = await creator.CreateAsync (new TorrentFileSource (Path.Combine (DataDir, "file.data")));
+
+            // Set up the seeder's memory cache
+            var allBytes = File.ReadAllBytes (Path.Combine (DataDir, "file.data")).AsMemory ();
+            var data = new Dictionary<BlockInfo, ReadOnlyMemory<byte>> ();
+            for (int offset = 0; offset < allBytes.Length; offset += Constants.BlockSize) {
+                int read = Math.Min (allBytes.Length - offset, Constants.BlockSize);
+                data.Add (new BlockInfo (offset / creator.PieceLength, (offset % creator.PieceLength), read), allBytes.Slice (offset, read));
+            }
+            SeederDataCache = new InMemoryCache (data);
+
+            // Start the tracker.
             var trackerListener = TrackerListenerFactory.CreateHttp (IPAddress.Parse ("127.0.0.1"), 25611);
             var tracker = new TrackerServer {
                 AllowUnregisteredTorrents = true
@@ -107,27 +162,42 @@ namespace ClientSample
             tracker.RegisterListener (trackerListener);
             trackerListener.Start ();
 
-            // Create the torrent file for the fake data
-            var creator = new TorrentCreator (TorrentType.V1Only);
-            creator.Announces.Add (new List<string> ());
-            creator.Announces[0].Add ("http://127.0.0.1:25611/announce");
 
-            var metadata = await creator.CreateAsync (new TorrentFileSource (DataDir));
-
-            // Set up the seeder
-            await seeder.AddAsync (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = 20 }.ToSettings ());
-            using (var fileStream = File.OpenRead (Path.Combine (DataDir, "file.data"))) {
-                while (fileStream.Position < fileStream.Length) {
-                    var dataRead = new byte[16 * 1024];
-                    int offset = (int) fileStream.Position;
-                    int read = fileStream.Read (dataRead, 0, dataRead.Length);
-                    // FIXME: Implement a custom IPieceWriter to handle this.
-                    // The internal MemoryWriter is limited and isn't a general purpose read/write API
-                    // await seederWriter.WriteAsync (seeder.Torrents[0].Files[0], offset, dataRead, 0, read, false);
-                }
-            }
-
+            // Now create/start the seeder.
+            int port = 37000;
+            var seeder = new ClientEngine (
+                new EngineSettingsBuilder {
+                    AllowedEncryption = new[] { EncryptionType.PlainText },
+                    ListenEndPoint = new IPEndPoint (IPAddress.Any, port++),
+                    DhtEndPoint = null,
+                    AllowLocalPeerDiscovery = false,
+                }.ToSettings (),
+                Factories.Default.WithBlockCacheCreator ((IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer) => {
+                    SeederDataCache.Writer = writer;
+                    return SeederDataCache;
+                })
+            );
+            ;
+            await seeder.AddAsync (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = MaxDownloaders }.ToSettings ());
+            await seeder.Torrents[0].HashCheckAsync (false);
             await seeder.StartAllAsync ();
+            await Task.Delay (500);
+
+            // Now create/start the leechers
+            var downloaders = Enumerable.Range (port, MaxDownloaders).Select (p => {
+                return new ClientEngine (
+                    new EngineSettingsBuilder {
+                        AllowedEncryption = new[] { EncryptionType.PlainText },
+                        DiskCacheBytes = DataSize,
+                        ListenEndPoint = new IPEndPoint (IPAddress.Any, p),
+                        DhtEndPoint = null,
+                        AllowLocalPeerDiscovery = false,
+                        CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")
+                    }.ToSettings (),
+                    Factories.Default.WithPieceWriterCreator (maxOpenFiles => new NullWriter ())
+                );
+                ;
+            }).ToArray ();
 
             List<Task> tasks = new List<Task> ();
             for (int i = 0; i < downloaders.Length; i++) {

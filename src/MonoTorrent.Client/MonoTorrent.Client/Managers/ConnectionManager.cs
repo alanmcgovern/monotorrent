@@ -200,6 +200,8 @@ namespace MonoTorrent.Client
                 // Create a handshake message to send to the peer
                 var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
+                if (preferredEncryption.Count == 0)
+                    throw new NotSupportedException ("The peer and the engine do not agree on any encryption methods");
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, preferredEncryption, id.ExpectedInfoHash.Truncate (), handshake, manager.Engine!.Factories);
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
