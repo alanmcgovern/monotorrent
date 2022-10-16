@@ -65,7 +65,7 @@ namespace MonoTorrent.Connections.Peer
 
         #region Member Variables
 
-        public byte[] AddressBytes => new byte[4];
+        public ReadOnlyMemory<byte> AddressBytes { get; } = new byte[4];
 
         public bool CanReconnect => false;
 

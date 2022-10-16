@@ -36,7 +36,7 @@ namespace MonoTorrent.Connections.Peer
 {
     public interface IPeerConnection : IDisposable
     {
-        byte[]? AddressBytes { get; }
+        ReadOnlyMemory<byte> AddressBytes { get; }
 
         bool CanReconnect { get; }
 

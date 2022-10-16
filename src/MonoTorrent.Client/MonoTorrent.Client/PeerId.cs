@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
 {
     class NullPeerConnection : IPeerConnection
     {
-        public byte[] AddressBytes { get; } = Array.Empty<byte> ();
+        public ReadOnlyMemory<byte> AddressBytes { get; } = Array.Empty<byte> ();
         public bool CanReconnect { get; }
         public bool Disposed { get; private set; }
         public bool IsIncoming { get; }
@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
         public bool SupportsLTMessages { get; internal set; }
         public Uri Uri => Peer.Info.ConnectionUri;
 
-        internal byte[]? AddressBytes => Connection.AddressBytes;
+        internal ReadOnlyMemory<byte> AddressBytes => Connection.AddressBytes;
 
         /// <summary>
         /// The remote peer can request these and we'll fulfill the request if we're choking them

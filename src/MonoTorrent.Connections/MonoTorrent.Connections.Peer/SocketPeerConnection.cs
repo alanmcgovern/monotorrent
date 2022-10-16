@@ -41,7 +41,7 @@ namespace MonoTorrent.Connections.Peer
     {
         static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
 
-        public byte[] AddressBytes => EndPoint.Address.GetAddressBytes ();
+        public ReadOnlyMemory<byte> AddressBytes { get; }
 
         public bool CanReconnect => !IsIncoming;
 
@@ -90,6 +90,7 @@ namespace MonoTorrent.Connections.Peer
             ConnectCancellation = new CancellationTokenSource ();
             Connector = connector;
             EndPoint = new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port);
+            AddressBytes = EndPoint.Address.GetAddressBytes ();
             IsIncoming = isIncoming;
             Socket = socket;
             Uri = uri;

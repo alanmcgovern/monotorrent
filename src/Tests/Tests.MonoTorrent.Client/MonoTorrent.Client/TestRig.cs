@@ -175,7 +175,7 @@ namespace MonoTorrent.Client
 
     public class CustomConnection : IPeerConnection
     {
-        public byte[] AddressBytes => IPAddress.Loopback.GetAddressBytes ();
+        public ReadOnlyMemory<byte> AddressBytes => IPAddress.Loopback.GetAddressBytes ();
         public bool CanReconnect => false;
         public bool Disposed { get; private set; } = false;
         public bool IsIncoming { get; }

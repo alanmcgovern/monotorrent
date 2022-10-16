@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
         public static NullConnection Incoming = new NullConnection (true);
         public static NullConnection Outgoing = new NullConnection (false);
 
-        public byte[] AddressBytes => new byte[] { 1, 2, 3, 4 };
+        public ReadOnlyMemory<byte> AddressBytes { get; } = new byte[] { 1, 2, 3, 4 };
 
         public bool CanReconnect => false;
 
