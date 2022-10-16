@@ -40,6 +40,7 @@ using MonoTorrent.Client.Modes;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.PiecePicking;
 
 using NUnit.Framework;
 
@@ -236,13 +237,13 @@ namespace MonoTorrent.Client
             }
 
             for (int i = 0; i < messages.Count - 1; i++) {
-                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, out _);
+                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, new HashSet<IRequester> ());
                 int orig = id.AmRequestingPiecesCount;
                 rig.Manager.PieceManager.AddPieceRequests (id);
                 Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
             }
 
-            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength), out _, out _);
+            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength), out _, new HashSet<IRequester> ());
             Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
 
             rig.Manager.PieceManager.AddPieceRequests (id);

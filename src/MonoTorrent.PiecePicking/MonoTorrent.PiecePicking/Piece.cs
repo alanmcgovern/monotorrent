@@ -40,8 +40,6 @@ namespace MonoTorrent.PiecePicking
         {
             internal const int BlockSize = (1 << 14); // 16kB
 
-            HashSet<IRequester> PeersInvolved { get; }
-
             public Block this[int index] => Blocks[index];
 
             /// <summary>
@@ -75,7 +73,6 @@ namespace MonoTorrent.PiecePicking
             internal Piece ()
             {
                 Blocks = Array.Empty<Block> ();
-                PeersInvolved = new HashSet<IRequester> ();
             }
 
             public int CompareTo (Piece? other)
@@ -120,16 +117,11 @@ namespace MonoTorrent.PiecePicking
                 return $"Piece {Index}";
             }
 
-            internal IList<IRequester> CalculatePeersInvolved ()
+            internal void CalculatePeersInvolved (HashSet<IRequester> peersInvolved)
             {
-                PeersInvolved.Clear ();
                 foreach (var block in Blocks)
                     if (block.RequestedOff != null)
-                        PeersInvolved.Add (block.RequestedOff);
-
-                var result = new IRequester[PeersInvolved.Count];
-                PeersInvolved.CopyTo (result);
-                return result;
+                        peersInvolved.Add (block.RequestedOff);
             }
         }
     }

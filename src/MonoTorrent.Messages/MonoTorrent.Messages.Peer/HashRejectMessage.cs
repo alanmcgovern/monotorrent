@@ -50,13 +50,7 @@ namespace MonoTorrent.Messages.Peer
         }
 
         public HashRejectMessage (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers)
-        {
-            PiecesRoot = piecesRoot;
-            BaseLayer = baseLayer;
-            Index = index;
-            Length = length;
-            ProofLayers = proofLayers;
-        }
+            => Initialize (piecesRoot, baseLayer, index, length, proofLayers);
 
         public override void Decode (ReadOnlySpan<byte> buffer)
         {
@@ -78,6 +72,15 @@ namespace MonoTorrent.Messages.Peer
             Write (ref buffer, Length);
             Write (ref buffer, ProofLayers);
             return written - buffer.Length;
+        }
+
+        public void Initialize(MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers)
+        {
+            PiecesRoot = piecesRoot;
+            BaseLayer = baseLayer;
+            Index = index;
+            Length = length;
+            ProofLayers = proofLayers;
         }
 
         public override bool Equals (object? obj)

@@ -94,14 +94,21 @@ namespace MonoTorrent.Client
                 throw new ObjectDisposedException (nameof (MessageQueue));
 
             lock (SendQueue) {
-                if (SendQueue.Count == 0 || index >= SendQueue.Count)
+                if (SendQueue.Count == 0 || index >= SendQueue.Count) {
+                    if (SendQueue.Count > 0 && (SendQueue[SendQueue.Count - 1].message is RequestBundle previous) && message is RequestBundle newBundle) {
+                        if (previous.TryAppend (newBundle)) {
+                            releaser.Dispose ();
+                            return;
+                        }
+                    }
                     SendQueue.Add ((message, releaser));
-                else
+                } else {
                     SendQueue.Insert (index, (message, releaser));
+                }
             }
         }
 
-        internal int RejectRequests (bool supportsFastPeer, List<int> amAllowedFastPieces)
+        internal int RejectRequests (bool supportsFastPeer, ReadOnlySpan<int> amAllowedFastPieces)
         {
             if (Disposed)
                 throw new ObjectDisposedException (nameof (MessageQueue));
@@ -128,7 +135,10 @@ namespace MonoTorrent.Client
                     else {
                         rejectedCount++;
                         SendQueue[i].releaser.Dispose ();
-                        SendQueue[i] = (new RejectRequestMessage (msg), default);
+
+                        (var rejectMessage, var releaser) = PeerMessage.Rent<RejectRequestMessage> ();
+                        rejectMessage.Initialize (msg);
+                        SendQueue[i] = (rejectMessage, releaser);
                     }
                 }
                 return rejectedCount;

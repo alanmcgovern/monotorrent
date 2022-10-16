@@ -107,6 +107,12 @@ namespace MonoTorrent.Messages.Peer.FastPeer
             ^ RequestLength.GetHashCode ()
             ^ StartOffset.GetHashCode ();
 
+        public RejectRequestMessage Initialize (PieceMessage message)
+        {
+            Initialize (message.PieceIndex, message.StartOffset, message.RequestLength);
+            return this;
+        }
+
         public void Initialize (int pieceIndex, int startOffset, int requestLength)
             => (PieceIndex, StartOffset, RequestLength) = (pieceIndex, startOffset, requestLength);
 

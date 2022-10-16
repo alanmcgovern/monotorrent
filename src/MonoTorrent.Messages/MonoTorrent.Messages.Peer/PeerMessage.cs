@@ -40,10 +40,11 @@ namespace MonoTorrent.Messages.Peer
         public readonly struct Releaser : IDisposable
         {
             readonly PeerMessage Message;
+            readonly Action<PeerMessage> MessageReleaser;
             readonly int ReuseId;
 
-            internal Releaser (PeerMessage message)
-                => (Message, ReuseId) = (message, message.ReuseId);
+            internal Releaser (PeerMessage message, Action<PeerMessage> messageReleaser)
+                => (Message, ReuseId, MessageReleaser) = (message, message.ReuseId, messageReleaser);
 
             public void Dispose ()
             {
@@ -53,30 +54,74 @@ namespace MonoTorrent.Messages.Peer
 
                     Message.ReuseId++;
                     Message.Reset ();
-                    lock (InstanceCache) {
-                        if (InstanceCache.TryGetValue (Message.GetType (), out var queue))
-                            queue.Enqueue (Message);
-                    }
+                    MessageReleaser (Message);
                 }
             }
         }
+    }
+
+    static class PeerMessageCache<T>
+        where T : PeerMessage
+    {
+        static Queue<T>? InstanceCache;
+        static Func<T>? Creator;
+
+        public static void Init (Func<T> creator)
+        {
+            InstanceCache = InstanceCache ?? new Queue<T> ();
+            Creator = Creator ?? creator;
+        }
+
+        static readonly Action<PeerMessage> ReturnMessage = (message) => {
+            lock (InstanceCache!)
+                InstanceCache.Enqueue ((T) message);
+        };
+
+        public static (T, PeerMessage.Releaser) GetOrCreate ()
+        {
+            if (InstanceCache == null)
+                return (Creator! (), default);
+
+            T message = null!;
+            lock (InstanceCache) {
+                if (InstanceCache.Count > 0)
+                    message = InstanceCache.Dequeue ();
+                else
+                    message = Creator! ();
+            }
+            
+            return (message, new PeerMessage.Releaser (message, ReturnMessage));
+        }
+
     }
 
     public abstract partial class PeerMessage : Message
     {
         int ReuseId;
 
-        private protected static readonly Dictionary<Type, Queue<PeerMessage>> InstanceCache;
         static readonly Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> messageDict;
 
         static PeerMessage ()
         {
-            // These two are always cacheable.
-            InstanceCache = new Dictionary<Type, Queue<PeerMessage>> {
-                { typeof (HaveBundle), new Queue<PeerMessage> () },
-                { typeof (MessageBundle), new Queue<PeerMessage> () },
-                { typeof (RequestBundle), new Queue<PeerMessage> () }
-            };
+            // bundle messages are always cacheable.
+            PeerMessageCache<HaveBundle>.Init (() => new HaveBundle ());
+            PeerMessageCache<MessageBundle>.Init (() => new MessageBundle ());
+            PeerMessageCache<RequestBundle>.Init (() => new RequestBundle ());
+            PeerMessageCache<AllowedFastBundle>.Init (() => new AllowedFastBundle ());
+
+            // These built-in messages are always cacheable
+            PeerMessageCache<PieceMessage>.Init (() => new PieceMessage ());
+            PeerMessageCache<RequestMessage>.Init (() => new RequestMessage ());
+            PeerMessageCache<CancelMessage>.Init (() => new CancelMessage ());
+            PeerMessageCache<AllowedFastMessage>.Init (() => new AllowedFastMessage ());
+            PeerMessageCache<HaveMessage>.Init (() => new HaveMessage ());
+            PeerMessageCache<SuggestPieceMessage>.Init (() => new SuggestPieceMessage ());
+            PeerMessageCache<PortMessage>.Init (() => new PortMessage ());
+            PeerMessageCache<RejectRequestMessage>.Init (() => new RejectRequestMessage ());
+            PeerMessageCache<HashRejectMessage>.Init (() => new HashRejectMessage ());
+            PeerMessageCache<HashesMessage>.Init (() => new HashesMessage ());
+
+
             messageDict = new Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> ();
 
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
@@ -84,46 +129,33 @@ namespace MonoTorrent.Messages.Peer
 
 
             // These aren't marked as cachable. They're singletons.
-            Register (ChokeMessage.MessageId, data => ChokeMessage.Instance, false);
-            Register (HaveAllMessage.MessageId, data => HaveAllMessage.Instance, false);
-            Register (HaveNoneMessage.MessageId, data => HaveNoneMessage.Instance, false);
-            Register (InterestedMessage.MessageId, data => InterestedMessage.Instance, false);
-            Register (NotInterestedMessage.MessageId, data => NotInterestedMessage.Instance, false);
-            Register (UnchokeMessage.MessageId, data => UnchokeMessage.Instance, false);
+            Register (ChokeMessage.MessageId, data => (ChokeMessage.Instance, default));
+            Register (HaveAllMessage.MessageId, data => (HaveAllMessage.Instance, default));
+            Register (HaveNoneMessage.MessageId, data => (HaveNoneMessage.Instance, default));
+            Register (InterestedMessage.MessageId, data => (InterestedMessage.Instance, default));
+            Register (NotInterestedMessage.MessageId, data => (NotInterestedMessage.Instance, default));
+            Register (UnchokeMessage.MessageId, data => (UnchokeMessage.Instance, default));
 
             // Cache most/all messages
-            Register (PieceMessage.MessageId, data => GetInstance<PieceMessage> (), true);
-            Register (RequestMessage.MessageId, data => GetInstance<RequestMessage> (), true);
-            Register (CancelMessage.MessageId, data => GetInstance<CancelMessage> (), true);
-            Register (AllowedFastMessage.MessageId, data => GetInstance<AllowedFastMessage> (), true);
-            Register (HaveMessage.MessageId, data => GetInstance<HaveMessage> (), true);
-            Register (SuggestPieceMessage.MessageId, data => GetInstance<SuggestPieceMessage> (), true);
-            Register (PortMessage.MessageId, data => GetInstance<PortMessage> (), true);
+            Register (PieceMessage.MessageId, data => PeerMessageCache<PieceMessage>.GetOrCreate ());
+            Register (RequestMessage.MessageId, data => PeerMessageCache<RequestMessage>.GetOrCreate ());
+            Register (CancelMessage.MessageId, data => PeerMessageCache<CancelMessage>.GetOrCreate ());
+            Register (AllowedFastMessage.MessageId, data => PeerMessageCache<AllowedFastMessage>.GetOrCreate ());
+            Register (HaveMessage.MessageId, data => PeerMessageCache<HaveMessage>.GetOrCreate ());
+            Register (SuggestPieceMessage.MessageId, data => PeerMessageCache<SuggestPieceMessage>.GetOrCreate ());
+            Register (PortMessage.MessageId, data => PeerMessageCache<PortMessage>.GetOrCreate ());
+            Register (RejectRequestMessage.MessageId, data => PeerMessageCache<RejectRequestMessage>.GetOrCreate ());
+            Register (HashRejectMessage.MessageId, data => PeerMessageCache<HashRejectMessage>.GetOrCreate ());
+            Register (HashesMessage.MessageId, data => PeerMessageCache<HashesMessage>.GetOrCreate ());
 
             // Currently uncached
-            Register (BitfieldMessage.MessageId, data => data?.TorrentInfo == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.TorrentInfo.PieceCount ()));
-            Register (RejectRequestMessage.MessageId, data => GetInstance<RejectRequestMessage> ());
-            Register (HashRequestMessage.MessageId, data => GetInstance<HashRequestMessage> ());
-            Register (HashesMessage.MessageId, data => GetInstance<HashesMessage> ());
-            Register (HashRejectMessage.MessageId, data => GetInstance<HashRejectMessage> ());
-        }
-
-
-        protected static T GetInstance<T> ()
-            where T : PeerMessage, new()
-        {
-            lock (InstanceCache)
-                if (InstanceCache.TryGetValue (typeof (T), out var cache))
-                    return cache.Count > 0 ? (T) cache.Dequeue () : new T ();
-            return new T ();
+            Register (BitfieldMessage.MessageId, data => (data?.TorrentInfo == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.TorrentInfo.PieceCount ()), default));
+            Register (HashRequestMessage.MessageId, data => (new HashRequestMessage (), default));
         }
 
         public static (T peerMessage, Releaser releaser) Rent<T> ()
             where T : PeerMessage, new()
-        {
-            var instance = GetInstance<T> ();
-            return (instance, new Releaser (instance));
-        }
+            => PeerMessageCache<T>.GetOrCreate ();
 
         public static Releaser Rent<T> (out T message)
             where T : PeerMessage, new()
@@ -133,27 +165,13 @@ namespace MonoTorrent.Messages.Peer
             return releaser;
         }
 
-        static void Register<T> (byte identifier, Func<ITorrentManagerInfo?, T> creator)
-            where T: PeerMessage
-            => Register (identifier, creator, false);
-
-        private protected static void Register<T> (byte identifier, Func<ITorrentManagerInfo?, T> creator, bool reusable)
-            where T : PeerMessage
+        private protected static void Register (byte identifier, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> creator)
         {
             if (creator == null)
                 throw new ArgumentNullException (nameof (creator));
 
-            Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> wrapper;
-            if (reusable) {
-                lock (InstanceCache)
-                    InstanceCache[typeof (T)] = new Queue<PeerMessage> ();
-                wrapper = (data) => { var msg = creator (data); return (msg, new Releaser (msg)); };
-            } else {
-                wrapper = (data) => (creator (data), default);
-            }
-
             lock (messageDict)
-                messageDict.Add (identifier, wrapper);
+                messageDict.Add (identifier, creator);
         }
 
         public static (PeerMessage message, Releaser releaser) DecodeMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo? manager)

@@ -53,7 +53,8 @@ namespace MonoTorrent.PiecePicking
         /// <param name="endIndex">The highest piece index to consider</param>
         /// <param name="maxDuplicateRequests">The maximum number of concurrent duplicate requests</param>
         /// <returns></returns>
-        PieceSegment? ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests);
+        /// <param name="segment"></param>
+        bool ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests, out PieceSegment segment);
 
         /// <summary>
         /// Request the next unrequested block from a piece owned by this peer, within the specified bounds.
@@ -61,8 +62,9 @@ namespace MonoTorrent.PiecePicking
         /// <param name="peer">The peer to request the block from</param>
         /// <param name="startIndex">The lowest piece index to consider</param>
         /// <param name="endIndex">The highest piece index to consider</param>
+        /// <param name="segment">If an existing block is successfully continued, the details for that block will be set here</param>
         /// <returns></returns>
-        PieceSegment? ContinueExistingRequest (IRequester peer, int startIndex, int endIndex);
+        bool ContinueExistingRequest (IRequester peer, int startIndex, int endIndex, out PieceSegment segment);
 
         /// <summary>
         /// Returns the number of blocks which have been received f pieces currently being requested.
@@ -126,6 +128,6 @@ namespace MonoTorrent.PiecePicking
         /// <param name="pieceComplete">True if this was the final block for the piece</param>
         /// <param name="peersInvolved">When <paramref name="pieceComplete"/> is true this is a non-null list of peers used to download the piece. Otherwise this is null.</param>
         /// <returns></returns>
-        bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, out IList<IRequester> peersInvolved);
+        bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, HashSet<IRequester> peersInvolved);
     }
 }

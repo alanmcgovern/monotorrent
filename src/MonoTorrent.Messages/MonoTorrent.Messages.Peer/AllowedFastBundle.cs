@@ -30,22 +30,23 @@
 using System;
 using System.Runtime.InteropServices;
 
+using MonoTorrent.Messages.Peer.FastPeer;
+
 namespace MonoTorrent.Messages.Peer
 {
-    public class RequestBundle : PeerMessage
+    public class AllowedFastBundle : PeerMessage
     {
         static readonly MemoryPool Pool = MemoryPool.Default;
-        readonly RequestMessage RequestMessage = new RequestMessage ();
+        readonly AllowedFastMessage RequestMessage = new AllowedFastMessage ();
 
         ByteBufferPool.Releaser RequestsMemoryReleaser;
-        Memory<byte> UsedRequestsMemory;
-        Memory<byte> TotalRequestsMemory;
-        Span<BlockInfo> UsedRequests => MemoryMarshal.Cast<byte, BlockInfo> (UsedRequestsMemory.Span);
-        Span<BlockInfo> TotalRequests => MemoryMarshal.Cast<byte, BlockInfo> (TotalRequestsMemory.Span);
 
-        public override int ByteLength => RequestMessage.ByteLength * UsedRequests.Length;
+        Memory<byte> AllowedFastIndicesMemory;
+        Span<int> AllowedFastIndices => MemoryMarshal.Cast<byte, int> (AllowedFastIndicesMemory.Span);
 
-        public RequestBundle ()
+        public override int ByteLength => RequestMessage.ByteLength * AllowedFastIndices.Length;
+
+        public AllowedFastBundle ()
         {
         }
 
@@ -58,38 +59,26 @@ namespace MonoTorrent.Messages.Peer
         {
             int written = buffer.Length;
 
-            for (int i = 0; i < UsedRequests.Length; i++) {
-                RequestMessage.Initialize (UsedRequests[i]);
+            for (int i = 0; i < AllowedFastIndices.Length; i++) {
+                RequestMessage.Initialize (AllowedFastIndices[i]);
                 buffer = buffer.Slice (RequestMessage.Encode (buffer));
             }
 
             return written - buffer.Length;
         }
 
-        public void Initialize (Span<BlockInfo> requests)
+        public void Initialize (ReadOnlySpan<int> allowedFastIndexes)
         {
-            var usedSize = MemoryMarshal.AsBytes (requests).Length;
-            RequestsMemoryReleaser = Pool.Rent (Math.Max (256, usedSize), out Memory<byte> memory);
-            TotalRequestsMemory = memory;
-            UsedRequestsMemory = TotalRequestsMemory.Slice (0, usedSize);
-            requests.CopyTo (UsedRequests);
+            var usedSize = MemoryMarshal.AsBytes (allowedFastIndexes).Length;
+            RequestsMemoryReleaser = Pool.Rent (usedSize, out AllowedFastIndicesMemory);
+            allowedFastIndexes.CopyTo (AllowedFastIndices);
         }
 
         protected override void Reset ()
         {
             base.Reset ();
             RequestsMemoryReleaser.Dispose ();
-            (RequestsMemoryReleaser, TotalRequestsMemory, UsedRequestsMemory) = (default, default, default);
-        }
-
-        public bool TryAppend (RequestBundle message)
-        {
-            if (message.UsedRequestsMemory.Length > TotalRequestsMemory.Length - UsedRequestsMemory.Length)
-                return false;
-
-            message.UsedRequestsMemory.CopyTo (TotalRequestsMemory.Slice (UsedRequestsMemory.Length));
-            UsedRequestsMemory = TotalRequestsMemory.Slice (0, UsedRequestsMemory.Length + message.UsedRequestsMemory.Length);
-            return true;
+            (RequestsMemoryReleaser, AllowedFastIndicesMemory) = (default, default);
         }
     }
 }

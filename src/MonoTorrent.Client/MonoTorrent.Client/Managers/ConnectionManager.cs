@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
@@ -50,7 +51,7 @@ namespace MonoTorrent.Client
     {
         static readonly Logger logger = Logger.Create (nameof (ConnectionManager));
 
-        struct AsyncConnectState
+        struct AsyncConnectState : IEquatable<AsyncConnectState>
         {
             public AsyncConnectState (TorrentManager manager, IPeerConnection connection, ValueStopwatch timer)
             {
@@ -62,6 +63,15 @@ namespace MonoTorrent.Client
             public readonly IPeerConnection Connection;
             public readonly TorrentManager Manager;
             public readonly ValueStopwatch Timer;
+
+            public bool Equals (AsyncConnectState other)
+                => Connection == other.Connection;
+
+            public override bool Equals ([NotNullWhen (true)] object? obj)
+                => obj is AsyncConnectState other && Equals (other);
+
+            public override int GetHashCode ()
+                => Connection.GetHashCode ();
         }
 
         public event EventHandler<AttemptConnectionEventArgs>? BanPeer;
@@ -190,6 +200,8 @@ namespace MonoTorrent.Client
                 // Create a handshake message to send to the peer
                 var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
+                if (preferredEncryption.Count == 0)
+                    throw new NotSupportedException ("The peer and the engine do not agree on any encryption methods");
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (id.Connection, preferredEncryption, id.ExpectedInfoHash.Truncate (), handshake, manager.Engine!.Factories);
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;

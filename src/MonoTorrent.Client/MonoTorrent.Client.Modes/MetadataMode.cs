@@ -163,7 +163,7 @@ namespace MonoTorrent.Client.Modes
 
             switch (message.MetadataMessageType) {
                 case LTMetadata.MessageType.Data:
-                    if (!Requester.ValidatePiece (id, new PieceSegment (0, message.Piece), out bool pieceComplete, out IList<IRequester> peersInvolved))
+                    if (!Requester.ValidatePiece (id, new PieceSegment (0, message.Piece), out bool pieceComplete, new HashSet<IRequester> ()))
                         return;
 
                     message.MetadataPiece.CopyTo (Stream.AsMemory (message.Piece * LTMetadata.BlockSize));

@@ -183,7 +183,7 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             var picker = pickers[file];
-            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashRejectMessage.Index / MaxHashesPerRequest, 0), out _, out _))
+            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashRejectMessage.Index / MaxHashesPerRequest, 0), out _, new HashSet<IRequester> ()))
                 return;
 
             IgnoredPeers.Add (id);
@@ -198,7 +198,7 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             var picker = pickers[file];
-            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashesMessage.Index / MaxHashesPerRequest, 0), out _, out _)) {
+            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashesMessage.Index / MaxHashesPerRequest, 0), out _, new HashSet<IRequester> ())) {
                 ConnectionManager.CleanupSocket (Manager, id);
                 return;
             }

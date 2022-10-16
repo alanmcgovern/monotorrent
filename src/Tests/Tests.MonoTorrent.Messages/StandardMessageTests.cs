@@ -176,7 +176,7 @@ namespace MonoTorrent.Messages.Peer
         {
             var piecesRoot = new MerkleRoot (Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ());
             ReadOnlyMemory<byte> hash = Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ();
-            EncodeDecode (new HashesMessage (piecesRoot, 1, 2, 3, 4, hash));
+            EncodeDecode (new HashesMessage (piecesRoot, 1, 2, 3, 4, hash, default));
         }
 
         [Test]

@@ -297,6 +297,7 @@ namespace MyBenchmarks
         [Benchmark]
         public void PickAndValidate ()
         {
+            var requesters = new HashSet<IRequester> ();
             Picker.Initialise (Data);
 
             Span<PieceSegment> requested = stackalloc PieceSegment[1];
@@ -304,8 +305,10 @@ namespace MyBenchmarks
                 Requested.Enqueue (requested[0]);
             }
 
-            while (Requested.Count > 0)
-                Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, out _);
+            while (Requested.Count > 0) {
+                Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, requesters);
+                requesters.Clear ();
+            }
         }
 
         [Benchmark]
@@ -313,20 +316,23 @@ namespace MyBenchmarks
         {
             Picker.Initialise (new TorrentData ());
 
+            var requesters = new HashSet<IRequester> ();
             var bf = new BitField (Requester.BitField);
             Span<PieceSegment> requested = stackalloc PieceSegment[1];
             while ((Picker.PickPiece (Requester, bf, ReadOnlySpan<ReadOnlyBitField>.Empty, 0, bf.Length - 1, requested)) == 1) {
                 Requested.Enqueue (requested[0]);
                 if (Requested.Count > 600) {
                     var popped = Requested.Dequeue ();
-                    if (Picker.ValidatePiece (Requester, popped, out bool done, out _))
-                        if (done)
-                            bf[popped.PieceIndex] = false;
+                    if (Picker.ValidatePiece (Requester, popped, out bool pieceComplete, requesters) && pieceComplete) {
+                        bf[popped.PieceIndex] = false;
+                        requesters.Clear ();
+                    }
                 }
             }
 
             while (Requested.Count > 0)
-                Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, out _);
+                if (Picker.ValidatePiece (Requester, Requested.Dequeue (), out bool _, requesters))
+                    requesters.Clear ();
         }
 
         readonly Random Random;
@@ -338,6 +344,7 @@ namespace MyBenchmarks
         {
             Picker.Initialise (new TorrentData ());
 
+            var requesters = new HashSet<IRequester> ();
             var bf = new BitField (Requester.BitField);
             Span<PieceSegment> requested = stackalloc PieceSegment[1];
             int requestIndex = Random.Next (0, Requesters.Count);
@@ -345,18 +352,20 @@ namespace MyBenchmarks
                 RequestedBlocks[requestIndex].Enqueue (requested[0]);
                 if (RequestedBlocks[requestIndex].Count > 600) {
                     var popped = RequestedBlocks[requestIndex].Dequeue ();
-                    if (Picker.ValidatePiece (Requesters[requestIndex], popped, out bool done, out _))
-                        if (done)
-                            bf[popped.PieceIndex] = false;
+                    if (Picker.ValidatePiece (Requesters[requestIndex], popped, out bool pieceComplete, requesters) && pieceComplete) {
+                        bf[popped.PieceIndex] = false;
+                        requesters.Clear ();
+                    }
                 }
             }
 
             for (int i = 0; i < Requesters.Count; i++) {
                 while (RequestedBlocks[i].Count > 0) {
                     var popped = RequestedBlocks[i].Dequeue ();
-                    if (Picker.ValidatePiece (Requesters[i], popped, out bool success, out _))
-                        if (success)
-                            bf[popped.PieceIndex] = false;
+                    if (Picker.ValidatePiece (Requesters[i], popped, out bool pieceComplete, requesters) && pieceComplete) {
+                        bf[popped.PieceIndex] = false;
+                        requesters.Clear ();
+                    }
                 }
             }
             if (!bf.AllFalse)

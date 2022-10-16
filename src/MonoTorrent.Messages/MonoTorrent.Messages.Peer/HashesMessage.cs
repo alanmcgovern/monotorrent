@@ -46,13 +46,17 @@ namespace MonoTorrent.Messages.Peer
         public int ProofLayers { get; private set; }
 
         public ReadOnlyMemory<byte> Hashes { get; private set; }
+        public ByteBufferPool.Releaser HashesReleaser { get; private set; }
 
         public HashesMessage ()
         {
             Hashes = ReadOnlyMemory<byte>.Empty;
         }
 
-        public HashesMessage (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers, ReadOnlyMemory<byte> hashes)
+        public HashesMessage (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers, ReadOnlyMemory<byte> hashes, ByteBufferPool.Releaser hashesReleaser)
+            => Initialize (piecesRoot, baseLayer, index, length, proofLayers, hashes, hashesReleaser);
+
+        public void Initialize (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofLayers, ReadOnlyMemory<byte> hashes, ByteBufferPool.Releaser hashesReleaser)
         {
             PiecesRoot = piecesRoot;
             BaseLayer = baseLayer;
@@ -60,6 +64,7 @@ namespace MonoTorrent.Messages.Peer
             Length = length;
             ProofLayers = proofLayers;
             Hashes = hashes;
+            HashesReleaser = hashesReleaser;
         }
 
         public override void Decode (ReadOnlySpan<byte> buffer)
@@ -105,6 +110,12 @@ namespace MonoTorrent.Messages.Peer
                 && ProofLayers == other.ProofLayers;
         }
 
+        protected override void Reset ()
+        {
+            base.Reset ();
+            HashesReleaser.Dispose ();
+            (Hashes, HashesReleaser) = (default, default);
+        }
         public override int GetHashCode ()
             => MemoryMarshal.Read<int> (PiecesRoot.Span);
 

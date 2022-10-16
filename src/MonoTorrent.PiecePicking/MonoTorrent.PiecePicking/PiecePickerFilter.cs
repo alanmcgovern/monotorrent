@@ -42,11 +42,11 @@ namespace MonoTorrent.PiecePicking
         public int CancelRequests (IRequester peer, int startIndex, int endIndex, Span<PieceSegment> cancellations)
             => Next.CancelRequests (peer, startIndex, endIndex, cancellations);
 
-        public PieceSegment? ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests)
-            => Next.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, maxDuplicateRequests);
+        public bool ContinueAnyExistingRequest (IRequester peer, ReadOnlyBitField available, int startIndex, int endIndex, int maxDuplicateRequests, out PieceSegment segment)
+            => Next.ContinueAnyExistingRequest (peer, available, startIndex, endIndex, maxDuplicateRequests, out segment);
 
-        public PieceSegment? ContinueExistingRequest (IRequester peer, int startIndex, int endIndex)
-            => Next.ContinueExistingRequest (peer, startIndex, endIndex);
+        public bool ContinueExistingRequest (IRequester peer, int startIndex, int endIndex, out PieceSegment segment)
+            => Next.ContinueExistingRequest (peer, startIndex, endIndex, out segment);
 
         public int CurrentReceivedCount ()
             => Next.CurrentReceivedCount ();
@@ -69,7 +69,7 @@ namespace MonoTorrent.PiecePicking
         public void RequestRejected (IRequester peer, PieceSegment request)
             => Next.RequestRejected (peer, request);
 
-        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, out IList<IRequester> peersInvolved)
-            => Next.ValidatePiece (peer, request, out pieceComplete, out peersInvolved);
+        public bool ValidatePiece (IRequester peer, PieceSegment request, out bool pieceComplete, HashSet<IRequester> peersInvolved)
+            => Next.ValidatePiece (peer, request, out pieceComplete, peersInvolved);
     }
 }

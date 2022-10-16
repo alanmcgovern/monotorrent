@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Unchoking
             unchokeable.Peers.ForEach (p => {
                 p.AmChoking = false;
                 unchokeable.UploadingTo++;
-                p.AmAllowedFastPieces.Add (1);
+                p.AmAllowedFastPieces = new[] { 1 };
                 p.SupportsFastPeer = true;
                 p.MessageQueue.Enqueue (new PieceMessage (1, 0, Constants.BlockSize));
             });
@@ -215,7 +215,7 @@ namespace MonoTorrent.Client.Unchoking
                 unchokeable.UploadingTo++;
                 // SupportsFastPeer is set to false so this should be ignored.
                 // This will always be empty during normal downloading.
-                p.AmAllowedFastPieces.Add (1);
+                p.AmAllowedFastPieces = new[] { 1 };
                 p.SupportsFastPeer = false;
                 p.MessageQueue.Enqueue (new PieceMessage (1, 0, Constants.BlockSize));
             });
