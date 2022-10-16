@@ -135,7 +135,10 @@ namespace MonoTorrent.Client
                     else {
                         rejectedCount++;
                         SendQueue[i].releaser.Dispose ();
-                        SendQueue[i] = (new RejectRequestMessage (msg), default);
+
+                        (var rejectMessage, var releaser) = PeerMessage.Rent<RejectRequestMessage> ();
+                        rejectMessage.Initialize (msg);
+                        SendQueue[i] = (rejectMessage, releaser);
                     }
                 }
                 return rejectedCount;

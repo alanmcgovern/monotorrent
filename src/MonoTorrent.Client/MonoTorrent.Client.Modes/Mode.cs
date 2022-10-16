@@ -163,10 +163,15 @@ namespace MonoTorrent.Client.Modes
             }
 
             if (successful) {
-                id.MessageQueue.Enqueue (new HashesMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, actualProofLayers, buffer));
+                (var message, var releaser) = PeerMessage.Rent<HashesMessage> ();
+                message.Initialize (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, actualProofLayers, buffer, bufferReleaser);
+                id.MessageQueue.Enqueue (message, releaser);
             } else {
                 bufferReleaser.Dispose ();
-                id.MessageQueue.Enqueue (new HashRejectMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers));
+
+                (var message, var releaser) = PeerMessage.Rent<HashRejectMessage> ();
+                message.Initialize(hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
+                id.MessageQueue.Enqueue (message, releaser);
             }
         }
 
