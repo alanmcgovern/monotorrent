@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested, InfoHash expectedInfoHash)
         {
-            var peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://hardcodedvalue:12345"), "null peer's id"), expectedInfoHash), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder)) {
+            var peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://128.127.126.125:12345"), "null peer's id"), expectedInfoHash), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder)) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,

@@ -46,7 +46,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo, IPieceRequesterData, IMessageEnqueuer
+    public class TorrentManager : IEquatable<TorrentManager>, ITorrentManagerInfo, IPieceRequesterData, IMessageEnqueuer, IPeerExchangeSource
     {
         #region Events
 

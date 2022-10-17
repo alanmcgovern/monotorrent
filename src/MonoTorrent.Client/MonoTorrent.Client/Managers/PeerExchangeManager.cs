@@ -53,13 +53,13 @@ namespace MonoTorrent.Client
         static readonly int BufferSize = ByteBufferPool.SmallMessageBufferSize;
         static readonly int MAX_PEERS = ByteBufferPool.SmallMessageBufferSize / 7;
 
-        TorrentManager Manager { get; }
+        IPeerExchangeSource Manager { get; }
 
         #endregion Member Variables
 
         #region Constructors
 
-        internal PeerExchangeManager (TorrentManager manager, PeerId id)
+        internal PeerExchangeManager (IPeerExchangeSource manager, PeerId id)
         {
             Manager = manager;
             this.id = id;
@@ -73,7 +73,11 @@ namespace MonoTorrent.Client
         {
             addedPeers.Enqueue (args.Peer);
         }
-        // TODO onDropped!
+
+        internal void OnDrop (object? source, PeerDisconnectedEventArgs args)
+        {
+            droppedPeers.Enqueue (args.Peer);
+        }
         #endregion
 
 
@@ -115,7 +119,7 @@ namespace MonoTorrent.Client
                 droppedPeers.Dequeue ().Peer.CompactPeer (dropped.Span.Slice (i * 6, 6));
 
             (var message, var releaser) = PeerMessage.Rent<PeerExchangeMessage> ();
-            message.Initialize (id.ExtensionSupports, added, addedDotF, dropped, memoryReleaser);
+            message.Initialize (new ExtensionSupports (new[] { PeerExchangeMessage.Support }), added, addedDotF, dropped, memoryReleaser);
             id.MessageQueue.Enqueue (message, releaser);
         }
 
