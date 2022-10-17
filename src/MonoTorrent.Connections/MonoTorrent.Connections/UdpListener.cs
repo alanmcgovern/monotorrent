@@ -73,7 +73,11 @@ namespace MonoTorrent.Connections
         {
             while (!token.IsCancellationRequested) {
                 try {
+#if NET6_0
+                    UdpReceiveResult result = await client.ReceiveAsync (token).ConfigureAwait (false);
+#else
                     UdpReceiveResult result = await client.ReceiveAsync ().ConfigureAwait (false);
+#endif
                     if (!token.IsCancellationRequested)
                         MessageReceived?.Invoke (result.Buffer, result.RemoteEndPoint);
                 } catch (SocketException ex) {

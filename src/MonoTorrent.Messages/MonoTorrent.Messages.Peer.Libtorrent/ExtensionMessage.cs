@@ -35,7 +35,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
     public abstract class ExtensionMessage : PeerMessage
     {
         internal const byte MessageId = 20;
-        static readonly Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> messageDict;
+
+        static readonly object locker = new object ();
+        static Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>?[] messages;
 
         internal static readonly List<ExtensionSupport> SupportedMessages;
 
@@ -48,9 +50,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection.
             Register (MessageId, data => throw new MessageException ("Shouldn't decode extension message this way"));
-            PeerMessageCache<PeerExchangeMessage>.Init (() => new PeerExchangeMessage ());
-
-            messageDict = new Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> ();
+            messages = new Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>?[0];
 
             byte id = Register (data => (new ExtendedHandshakeMessage (), default));
             if (id != 0)
@@ -76,9 +76,10 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             if (creator == null)
                 throw new ArgumentNullException (nameof (creator));
 
-            lock (messageDict) {
-                byte id = (byte) messageDict.Count;
-                messageDict.Add (id, creator);
+            lock (locker) {
+                byte id = (byte) messages.Length;
+                Array.Resize (ref messages, id + 1);
+                messages[id] = creator;
                 return id;
             }
         }
@@ -90,7 +91,12 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
         public static (PeerMessage message, Releaser releaser) DecodeExtensionMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo? manager)
         {
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>? creator))
+            var registeredMessages = messages;
+            if (buffer[0] >= registeredMessages.Length)
+                throw new MessageException ("Unknown extension message received");
+
+            var creator = registeredMessages[buffer[0]];
+            if (creator is null)
                 throw new MessageException ("Unknown extension message received");
 
             (PeerMessage message, Releaser releaser) = creator (manager);

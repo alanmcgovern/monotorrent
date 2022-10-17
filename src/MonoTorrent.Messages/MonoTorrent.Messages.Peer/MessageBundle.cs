@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class MessageBundle : PeerMessage
+    public class MessageBundle : PeerMessage, IRentable
     {
         List<PeerMessage> Messages { get; }
         public List<Releaser> Releasers { get; }

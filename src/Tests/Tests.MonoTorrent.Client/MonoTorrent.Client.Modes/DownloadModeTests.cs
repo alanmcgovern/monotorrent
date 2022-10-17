@@ -117,7 +117,8 @@ namespace MonoTorrent.Client.Modes
                 };
 
                 Manager.Peers.ClearAll ();
-                var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
+                var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
+                var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, peer, dotF, default, default);
                 Manager.Mode = mode;
                 Manager.Mode.HandleMessage (id, exchangeMessage, default);
 
@@ -148,7 +149,8 @@ namespace MonoTorrent.Client.Modes
                     peersTask.TrySetResult (args);
             };
 
-            var exchangeMessage = new PeerExchangeMessage (13, peer, dotF, null);
+            var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
+            var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, peer, dotF, default, default);
             manager.Mode.HandleMessage (id, exchangeMessage, default);
 
             var addedArgs = await peersTask.Task.WithTimeout ();

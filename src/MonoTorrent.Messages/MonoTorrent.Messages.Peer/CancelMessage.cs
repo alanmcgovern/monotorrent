@@ -34,7 +34,7 @@ namespace MonoTorrent.Messages.Peer
     /// <summary>
     /// 
     /// </summary>
-    public class CancelMessage : PeerMessage
+    public class CancelMessage : PeerMessage, IRentable
     {
         const int messageLength = 13;
         internal const byte MessageId = 8;

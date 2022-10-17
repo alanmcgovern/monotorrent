@@ -81,9 +81,15 @@ namespace MonoTorrent
 
         public static void CompactPeer (Uri uri, Span<byte> buffer)
         {
+#if NETSTANDARD2_0
             var bytes = IPAddress.Parse (uri.Host).GetAddressBytes ();
             bytes.AsSpan ().CopyTo (buffer);
-            BinaryPrimitives.WriteUInt16BigEndian (buffer.Slice (bytes.Length), (ushort) uri.Port);
+            int written = bytes.Length;
+#else
+            if (!IPAddress.Parse (uri.Host).TryWriteBytes (buffer, out int written))
+                throw new InvalidOperationException ("Could not generate compact peer data");
+#endif
+            BinaryPrimitives.WriteUInt16BigEndian (buffer.Slice (written), (ushort) uri.Port);
         }
 
         public static IList<PeerInfo> FromCompact (ReadOnlySpan<byte> buffer)

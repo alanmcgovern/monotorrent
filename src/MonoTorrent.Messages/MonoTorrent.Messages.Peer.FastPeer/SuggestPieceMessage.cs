@@ -33,7 +33,7 @@ using System.Text;
 namespace MonoTorrent.Messages.Peer.FastPeer
 {
     // FIXME: The only use for a SuggestPiece message is for when i load a piece into a Disk Cache and want to make use for it
-    public class SuggestPieceMessage : PeerMessage, IFastPeerMessage
+    public class SuggestPieceMessage : PeerMessage, IRentable, IFastPeerMessage
     {
         internal const byte MessageId = 0x0D;
         readonly int messageLength = 5;

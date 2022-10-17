@@ -31,11 +31,11 @@ using System;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class PieceMessage : PeerMessage
+    public class PieceMessage : PeerMessage, IRentable
     {
         internal static MemoryPool BufferPool = MemoryPool.Default;
 
-        public static readonly byte MessageId = 7;
+        public const byte MessageId = 7;
         const int messageLength = 9;
 
         /// <summary>

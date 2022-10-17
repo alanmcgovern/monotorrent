@@ -34,7 +34,7 @@ using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class HashesMessage : PeerMessage
+    public class HashesMessage : PeerMessage, IRentable
     {
         internal const byte MessageId = 22;
         public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4 + Hashes.Length;

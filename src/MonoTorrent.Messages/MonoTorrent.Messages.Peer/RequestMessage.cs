@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class RequestMessage : PeerMessage
+    public class RequestMessage : PeerMessage, IRentable
     {
         internal const byte MessageId = 6;
         const int messageLength = 13;

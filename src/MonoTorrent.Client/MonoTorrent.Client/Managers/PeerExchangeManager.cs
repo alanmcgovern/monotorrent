@@ -44,10 +44,14 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         readonly PeerId id;
-        readonly List<PeerId> addedPeers;
-        readonly List<PeerId> droppedPeers;
+        readonly Queue<PeerId> addedPeers;
+        readonly Queue<PeerId> droppedPeers;
         bool disposed;
-        const int MAX_PEERS = 50;
+
+        // Peers are about 7 bytes each (if you include the 'dotf' data)
+        // Calculate the max peers we can fit in the buffer.
+        static readonly int BufferSize = ByteBufferPool.SmallMessageBufferSize;
+        static readonly int MAX_PEERS = ByteBufferPool.SmallMessageBufferSize / 7;
 
         TorrentManager Manager { get; }
 
@@ -60,14 +64,14 @@ namespace MonoTorrent.Client
             Manager = manager;
             this.id = id;
 
-            addedPeers = new List<PeerId> ();
-            droppedPeers = new List<PeerId> ();
+            addedPeers = new Queue<PeerId> ();
+            droppedPeers = new Queue<PeerId> ();
             manager.PeerConnected += OnAdd;
         }
 
         internal void OnAdd (object? source, PeerConnectedEventArgs args)
         {
-            addedPeers.Add (args.Peer);
+            addedPeers.Enqueue (args.Peer);
         }
         // TODO onDropped!
         #endregion
@@ -81,30 +85,37 @@ namespace MonoTorrent.Client
                 return;
 
             int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
-            byte[] added = new byte[len * 6];
-            byte[] addedDotF = new byte[len];
+            var memoryReleaser = MemoryPool.Default.Rent (BufferSize, out Memory<byte> memory);
+            var added = memory.Slice (0, len * 6);
+            var addedDotF = memory.Slice (added.Length, len);
+
             for (int i = 0; i < len; i++) {
-                addedPeers[i].Peer.CompactPeer (added.AsSpan (i * 6, 6));
-                if (EncryptionTypes.SupportsRC4 (addedPeers[i].Peer.AllowedEncryption)) {
-                    addedDotF[i] = 0x01;
+                var peer = addedPeers.Dequeue ();
+                peer.Peer.CompactPeer (added.Span.Slice (i * 6, 6));
+                if (EncryptionTypes.SupportsRC4 (peer.Peer.AllowedEncryption)) {
+                    addedDotF.Span[i] = 0x01;
                 } else {
-                    addedDotF[i] = 0x00;
+                    addedDotF.Span[i] = 0x00;
                 }
 
-                addedDotF[i] |= (byte) (addedPeers[i].IsSeeder ? 0x02 : 0x00);
+                addedDotF.Span[i] |= (byte) (peer.IsSeeder ? 0x02 : 0x00);
             }
-            addedPeers.RemoveRange (0, len);
 
-            len = Math.Min (MAX_PEERS - len, droppedPeers.Count);
+            // The remainder of our buffer can be filled with dropped peers.
+            // We do some math to slice the remainder of the original memory
+            // buffer to an even multiple of 6. Then we calculate how many
+            // peers we actually want to put in it, and then we slice it one
+            // more time if we don't have enough dropped peers.
+            var dropped = memory.Slice (added.Length + addedDotF.Length);
+            dropped = dropped.Slice (0, (dropped.Length / 6) * 6);
+            len = Math.Min (dropped.Length / 6, droppedPeers.Count);
+            dropped = dropped.Slice (0, len * 6);
 
-            byte[] dropped = new byte[len * 6];
             for (int i = 0; i < len; i++)
-                droppedPeers[i].Peer.CompactPeer (dropped.AsSpan (i * 6, 6));
-
-            droppedPeers.RemoveRange (0, len);
+                droppedPeers.Dequeue ().Peer.CompactPeer (dropped.Span.Slice (i * 6, 6));
 
             (var message, var releaser) = PeerMessage.Rent<PeerExchangeMessage> ();
-            message.Initialize (id.ExtensionSupports, new ReadOnlyMemory<byte> (added), new ReadOnlyMemory<byte> (addedDotF), new ReadOnlyMemory<byte> (dropped));
+            message.Initialize (id.ExtensionSupports, added, addedDotF, dropped, memoryReleaser);
             id.MessageQueue.Enqueue (message, releaser);
         }
 

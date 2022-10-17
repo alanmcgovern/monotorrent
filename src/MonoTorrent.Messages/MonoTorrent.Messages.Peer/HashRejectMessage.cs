@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class HashRejectMessage : PeerMessage
+    public class HashRejectMessage : PeerMessage, IRentable
     {
         internal const byte MessageId = 23;
         public override int ByteLength => 4 + 1 + 32 + 4 + 4 + 4 + 4;

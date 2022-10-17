@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class RequestBundle : PeerMessage
+    public class RequestBundle : PeerMessage, IRentable
     {
         static readonly MemoryPool Pool = MemoryPool.Default;
         readonly RequestMessage RequestMessage = new RequestMessage ();

@@ -88,32 +88,5 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
 
             Assert.AreEqual (m.Message, decoded.Message, "#1");
         }
-
-        [Test]
-        public void PeerExchangeMessageDecode ()
-        {
-            // Decodes as: 192.168.0.1:100
-            byte[] peer = { 192, 168, 0, 1, 100, 0 };
-            byte[] supports = { 1 | 2 }; // 1 == encryption, 2 == seeder
-
-            byte id = PeerExchangeMessage.Support.MessageId;
-            PeerExchangeMessage message = new PeerExchangeMessage (id, peer, supports, null);
-
-            byte[] buffer = message.Encode ();
-            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null).message;
-            Assert.IsTrue (peer.AsSpan ().SequenceEqual (m.Added.Span), "#1");
-            Assert.IsTrue (supports.AsSpan ().SequenceEqual (m.AddedDotF.Span), "#2");
-        }
-
-        [Test]
-        public void PeerExchangeMessageDecode_Empty ()
-        {
-            var data = new BEncodedDictionary ().Encode ();
-            var message = new PeerExchangeMessage ();
-            message.Decode (data.AsSpan ());
-            Assert.IsTrue (message.Added.IsEmpty, "#1");
-            Assert.IsTrue (message.AddedDotF.IsEmpty, "#2");
-            Assert.IsTrue (message.Dropped.IsEmpty, "#3");
-        }
     }
 }

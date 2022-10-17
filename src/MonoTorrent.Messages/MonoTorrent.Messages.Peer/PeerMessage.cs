@@ -61,35 +61,25 @@ namespace MonoTorrent.Messages.Peer
     }
 
     static class PeerMessageCache<T>
-        where T : PeerMessage
+        where T : PeerMessage, IRentable, new()
     {
-        static Queue<T>? InstanceCache;
-        static Func<T>? Creator;
-
-        public static void Init (Func<T> creator)
-        {
-            InstanceCache = InstanceCache ?? new Queue<T> ();
-            Creator = Creator ?? creator;
-        }
+        static Queue<T> InstanceCache = new Queue<T> ();
 
         static readonly Action<PeerMessage> ReturnMessage = (message) => {
-            lock (InstanceCache!)
+            lock (InstanceCache)
                 InstanceCache.Enqueue ((T) message);
         };
 
         public static (T, PeerMessage.Releaser) GetOrCreate ()
         {
-            if (InstanceCache == null)
-                return (Creator! (), default);
-
-            T message = null!;
+            T message;
             lock (InstanceCache) {
                 if (InstanceCache.Count > 0)
                     message = InstanceCache.Dequeue ();
                 else
-                    message = Creator! ();
+                    message = new T ();
             }
-            
+
             return (message, new PeerMessage.Releaser (message, ReturnMessage));
         }
 
@@ -99,54 +89,41 @@ namespace MonoTorrent.Messages.Peer
     {
         int ReuseId;
 
-        static readonly Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> messageDict;
+        static readonly object locker = new object ();
+        static Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>?[] messages;
 
         static PeerMessage ()
         {
-            // bundle messages are always cacheable.
-            PeerMessageCache<HaveBundle>.Init (() => new HaveBundle ());
-            PeerMessageCache<MessageBundle>.Init (() => new MessageBundle ());
-            PeerMessageCache<RequestBundle>.Init (() => new RequestBundle ());
-            PeerMessageCache<AllowedFastBundle>.Init (() => new AllowedFastBundle ());
-
-            // These built-in messages are always cacheable
-            PeerMessageCache<PieceMessage>.Init (() => new PieceMessage ());
-            PeerMessageCache<RequestMessage>.Init (() => new RequestMessage ());
-            PeerMessageCache<CancelMessage>.Init (() => new CancelMessage ());
-            PeerMessageCache<AllowedFastMessage>.Init (() => new AllowedFastMessage ());
-            PeerMessageCache<HaveMessage>.Init (() => new HaveMessage ());
-            PeerMessageCache<SuggestPieceMessage>.Init (() => new SuggestPieceMessage ());
-            PeerMessageCache<PortMessage>.Init (() => new PortMessage ());
-            PeerMessageCache<RejectRequestMessage>.Init (() => new RejectRequestMessage ());
-            PeerMessageCache<HashRejectMessage>.Init (() => new HashRejectMessage ());
-            PeerMessageCache<HashesMessage>.Init (() => new HashesMessage ());
-
-
-            messageDict = new Dictionary<byte, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>> ();
+            messages = new Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>[0];
 
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
             //      - Handshake messages aren't registered as they are always the first message sent/received
 
+            // These standard messages are singletons as they are stateless.
+            Register (ChokeMessage.MessageId, _ => (ChokeMessage.Instance, default));
+            Register (UnchokeMessage.MessageId, _ => (UnchokeMessage.Instance, default));
+            Register (InterestedMessage.MessageId, _ => (InterestedMessage.Instance, default));
+            Register (NotInterestedMessage.MessageId, _ => (NotInterestedMessage.Instance, default));
 
-            // These aren't marked as cachable. They're singletons.
-            Register (ChokeMessage.MessageId, data => (ChokeMessage.Instance, default));
-            Register (HaveAllMessage.MessageId, data => (HaveAllMessage.Instance, default));
-            Register (HaveNoneMessage.MessageId, data => (HaveNoneMessage.Instance, default));
-            Register (InterestedMessage.MessageId, data => (InterestedMessage.Instance, default));
-            Register (NotInterestedMessage.MessageId, data => (NotInterestedMessage.Instance, default));
-            Register (UnchokeMessage.MessageId, data => (UnchokeMessage.Instance, default));
+            // These FastMessages are singletons as they are stateless.
+            Register (HaveAllMessage.MessageId, _ => (HaveAllMessage.Instance, default));
+            Register (HaveNoneMessage.MessageId, _ => (HaveNoneMessage.Instance, default));
 
-            // Cache most/all messages
-            Register (PieceMessage.MessageId, data => PeerMessageCache<PieceMessage>.GetOrCreate ());
-            Register (RequestMessage.MessageId, data => PeerMessageCache<RequestMessage>.GetOrCreate ());
-            Register (CancelMessage.MessageId, data => PeerMessageCache<CancelMessage>.GetOrCreate ());
-            Register (AllowedFastMessage.MessageId, data => PeerMessageCache<AllowedFastMessage>.GetOrCreate ());
-            Register (HaveMessage.MessageId, data => PeerMessageCache<HaveMessage>.GetOrCreate ());
-            Register (SuggestPieceMessage.MessageId, data => PeerMessageCache<SuggestPieceMessage>.GetOrCreate ());
-            Register (PortMessage.MessageId, data => PeerMessageCache<PortMessage>.GetOrCreate ());
-            Register (RejectRequestMessage.MessageId, data => PeerMessageCache<RejectRequestMessage>.GetOrCreate ());
-            Register (HashRejectMessage.MessageId, data => PeerMessageCache<HashRejectMessage>.GetOrCreate ());
-            Register (HashesMessage.MessageId, data => PeerMessageCache<HashesMessage>.GetOrCreate ());
+            // Cacheable standard messages
+            Register (HaveMessage.MessageId, _ => PeerMessageCache<HaveMessage>.GetOrCreate ());
+            Register (RequestMessage.MessageId, _ => PeerMessageCache<RequestMessage>.GetOrCreate ());
+            Register (PieceMessage.MessageId, _ => PeerMessageCache<PieceMessage>.GetOrCreate ());
+            Register (CancelMessage.MessageId, _ => PeerMessageCache<CancelMessage>.GetOrCreate ());
+            Register (PortMessage.MessageId, _ => PeerMessageCache<PortMessage>.GetOrCreate ());
+
+            // Cacheable FastMessages
+            Register (AllowedFastMessage.MessageId, _ => PeerMessageCache<AllowedFastMessage>.GetOrCreate ());
+            Register (SuggestPieceMessage.MessageId, _ => PeerMessageCache<SuggestPieceMessage>.GetOrCreate ());
+            Register (RejectRequestMessage.MessageId, _ => PeerMessageCache<RejectRequestMessage>.GetOrCreate ());
+
+            // Cacheable bittorrent v2 messages
+            Register (HashRejectMessage.MessageId, _ => PeerMessageCache<HashRejectMessage>.GetOrCreate ());
+            Register (HashesMessage.MessageId, _ => PeerMessageCache<HashesMessage>.GetOrCreate ());
 
             // Currently uncached
             Register (BitfieldMessage.MessageId, data => (data?.TorrentInfo == null ? BitfieldMessage.UnknownLength : new BitfieldMessage (data.TorrentInfo.PieceCount ()), default));
@@ -154,24 +131,18 @@ namespace MonoTorrent.Messages.Peer
         }
 
         public static (T peerMessage, Releaser releaser) Rent<T> ()
-            where T : PeerMessage, new()
+            where T : PeerMessage, IRentable, new()
             => PeerMessageCache<T>.GetOrCreate ();
-
-        public static Releaser Rent<T> (out T message)
-            where T : PeerMessage, new()
-        {
-            (var msg, var releaser) = Rent<T> ();
-            message = msg;
-            return releaser;
-        }
 
         private protected static void Register (byte identifier, Func<ITorrentManagerInfo?, (PeerMessage, Releaser)> creator)
         {
-            if (creator == null)
-                throw new ArgumentNullException (nameof (creator));
-
-            lock (messageDict)
-                messageDict.Add (identifier, creator);
+            lock (locker) {
+                if (messages.Length <= identifier)
+                    Array.Resize (ref messages, identifier + 1);
+                if (!(messages[identifier] is null))
+                    throw new InvalidOperationException ($"Double registration of message id {identifier}");
+                messages[identifier] = creator;
+            }
         }
 
         public static (PeerMessage message, Releaser releaser) DecodeMessage (ReadOnlySpan<byte> buffer, ITorrentManagerInfo? manager)
@@ -186,7 +157,12 @@ namespace MonoTorrent.Messages.Peer
             if (buffer[0] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer.Slice (1), manager);
 
-            if (!messageDict.TryGetValue (buffer[0], out Func<ITorrentManagerInfo?, (PeerMessage, Releaser)>? creator))
+            var registeredMessages = messages;
+            if (buffer[0] >= registeredMessages.Length)
+                throw new MessageException ("Unknown message received");
+
+            var creator = registeredMessages[buffer[0]];
+            if (creator is null)
                 throw new MessageException ("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that

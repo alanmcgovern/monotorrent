@@ -64,7 +64,7 @@ namespace ClientSample
     class StressTest
     {
         const int DataSize = 100 * 1024 * 1024 - 1024;
-        const int MaxDownloaders = 1;
+        const int MaxDownloaders = 16;
         static string DataDir = Path.GetFullPath ("data_dir");
 
         class InMemoryCache : IBlockCache

@@ -34,7 +34,7 @@ using MonoTorrent.Messages.Peer.FastPeer;
 
 namespace MonoTorrent.Messages.Peer
 {
-    public class AllowedFastBundle : PeerMessage
+    public class AllowedFastBundle : PeerMessage, IRentable
     {
         static readonly MemoryPool Pool = MemoryPool.Default;
         readonly AllowedFastMessage RequestMessage = new AllowedFastMessage ();

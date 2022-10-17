@@ -34,7 +34,7 @@ namespace MonoTorrent.Messages.Peer
     /// <summary>
     /// Represents a "Port" message
     /// </summary>
-    public class PortMessage : PeerMessage
+    public class PortMessage : PeerMessage, IRentable
     {
         const int messageLength = 3;
         internal const byte MessageId = 9;

@@ -32,7 +32,7 @@ using System.Text;
 
 namespace MonoTorrent.Messages.Peer.FastPeer
 {
-    public class RejectRequestMessage : PeerMessage, IFastPeerMessage
+    public class RejectRequestMessage : PeerMessage, IRentable, IFastPeerMessage
     {
         internal const byte MessageId = 0x10;
         public readonly int messageLength = 13;
