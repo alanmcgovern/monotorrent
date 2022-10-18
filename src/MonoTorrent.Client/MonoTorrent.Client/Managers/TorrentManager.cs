@@ -959,8 +959,36 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < connected.Count; i++)
                     connected[i].IsAllowedFastPieces.Remove (index);
             }
-            PieceHashed?.InvokeAsync (this, new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
+
+            lock (argsCache) {
+                if (PieceHashed != null)
+                    argsCache.Enqueue (new PieceHashedEventArgs (this, index, hashPassed, piecesHashed, totalToHash));
+
+                if (argsCache.Count == 1)
+                    InvokePieceHashedAsync ();
+            }
         }
+
+        Queue<PieceHashedEventArgs> argsCache = new Queue<PieceHashedEventArgs> ();
+        async void InvokePieceHashedAsync ()
+        {
+            await new ThreadSwitcher ();
+
+            while (true) {
+                PieceHashedEventArgs args;
+                lock (argsCache) {
+                    if (argsCache.Count == 0)
+                        return;
+                    args = argsCache.Dequeue ();
+                }
+                try {
+                    PieceHashed?.Invoke (this, args);
+                }catch {
+                    // FIXME: Report this somewhere
+                }
+            }
+        }
+
 
         internal async ReusableTask UpdateUsePartialFiles (bool usePartialFiles)
         {

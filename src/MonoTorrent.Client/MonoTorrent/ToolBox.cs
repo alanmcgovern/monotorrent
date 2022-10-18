@@ -36,37 +36,12 @@ namespace MonoTorrent
     static class AsyncInvoker<T>
         where T : EventArgs
     {
-        static readonly ICache<AsyncInvokerState> Cache = new Cache<AsyncInvokerState> (() => new AsyncInvokerState ()).Synchronize ();
-
-        class AsyncInvokerState : ICacheable
-        {
-            public EventHandler<T>? Handler { get; private set; }
-            public T? Args { get; private set; }
-            public object? Sender { get; set; }
-
-            public void Initialise ()
-                => Initialise (null, null, null);
-
-            public AsyncInvokerState Initialise (EventHandler<T>? handler, object? sender, T? args)
-            {
-                Handler = handler;
-                Sender = sender;
-                Args = args;
-                return this;
-            }
-        }
-
+#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
         public static void InvokeAsync (EventHandler<T> handler, object sender, T args)
         {
-#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
             ThreadPool.UnsafeQueueUserWorkItem (EventInvokerWorkItem.GetOrCreate (handler, sender, args), false);
-#else
-            var state = Cache.Dequeue ().Initialise (handler, sender, args);
-            ThreadPool.QueueUserWorkItem (Invoker, state);
-#endif
         }
 
-#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
         internal class EventInvokerWorkItem : IThreadPoolWorkItem
         {
             static readonly Stack<EventInvokerWorkItem> Cache = new Stack<EventInvokerWorkItem> ();
@@ -100,13 +75,39 @@ namespace MonoTorrent
                 handler! (sender, args!);
             }
         }
-#endif
+#else
+        static readonly ICache<AsyncInvokerState> Cache = new Cache<AsyncInvokerState> (() => new AsyncInvokerState ()).Synchronize ();
+
+        public static void InvokeAsync (EventHandler<T> handler, object sender, T args)
+        {
+            var state = Cache.Dequeue ().Initialise (handler, sender, args);
+            ThreadPool.QueueUserWorkItem (Invoker, state);
+        }
+
+        class AsyncInvokerState : ICacheable
+        {
+            public EventHandler<T>? Handler { get; private set; }
+            public T? Args { get; private set; }
+            public object? Sender { get; set; }
+
+            public void Initialise ()
+                => Initialise (null, null, null);
+
+            public AsyncInvokerState Initialise (EventHandler<T>? handler, object? sender, T? args)
+            {
+                Handler = handler;
+                Sender = sender;
+                Args = args;
+                return this;
+            }
+        }
 
         static readonly WaitCallback Invoker = (object? o) => {
             var state = (AsyncInvokerState) o!;
             state.Handler! (state.Sender, state.Args!);
             Cache.Enqueue (state);
         };
+#endif
     }
 
     static partial class Toolbox
