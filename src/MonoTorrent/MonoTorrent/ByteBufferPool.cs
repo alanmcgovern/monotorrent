@@ -105,9 +105,24 @@ namespace MonoTorrent
 
         void AllocateBuffers (int count, Queue<ByteBuffer> bufferQueue, int bufferSize)
         {
-            var buffer = new byte[count * bufferSize];
+            // This code used to allocate a single buffer of size `bufferSize * count` which would
+            // then be split into discrete segments to be consumed by the library. The intention
+            // was to reduce pinning by forcibly allocating in the large object heap.
+            //
+            // .NET 5 has a new mechanism for allocating objects into the pinned heap. Let's use
+            // that to reduce pinning related fragmentation and for older frameworks people can
+            // just live with the pinning/fragmentation.
+            //
+            // This is safer than allocating one massive buffer which is placed in the large object heap
+            // as there's no guarantee that a buffer won't be 'lost', and at the moment that could lead to
+            // pretty poor memory utilisation if we keep losing segments of really large buffers.
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0
             for (int i = 0; i < count; i++)
-                bufferQueue.Enqueue (new ByteBuffer (new ArraySegment<byte> (buffer, i * bufferSize, bufferSize)));
+                bufferQueue.Enqueue (new ByteBuffer (new ArraySegment<byte> (new byte[bufferSize])));
+#else
+            for (int i = 0; i < count; i++)
+                bufferQueue.Enqueue (new ByteBuffer (new ArraySegment<byte> (GC.AllocateUninitializedArray<byte> (bufferSize, pinned: true))));
+#endif
         }
     }
 }
