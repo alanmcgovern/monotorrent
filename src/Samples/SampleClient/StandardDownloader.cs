@@ -51,9 +51,7 @@ namespace ClientSample
                         var settingsBuilder = new TorrentSettingsBuilder {
                             MaximumConnections = 60,
                         };
-                        var torrent = await Torrent.LoadAsync (file);
-                        var manager = await Engine.AddAsync (torrent, downloadsPath, settingsBuilder.ToSettings ());
-                        manager.PeersFound += Manager_PeersFound;
+                        var manager = await Engine.AddAsync (file, downloadsPath, settingsBuilder.ToSettings ());
                         Console.WriteLine (manager.InfoHashes.V1OrV2.ToHex ());
                     } catch (Exception e) {
                         Console.Write ("Couldn't decode {0}: ", file);
