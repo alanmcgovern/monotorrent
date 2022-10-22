@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 
 namespace MonoTorrent.Client
@@ -244,6 +245,18 @@ namespace MonoTorrent.Client
                 return 1;
             else
                 return 0;
+        }
+
+        internal void RemoveDisconnected ()
+        {
+            for (int i = 0; i < peers.Count; i ++) {
+                if (peers[i].Disposed) {
+                    peers.RemoveAt (i);
+                    if (scanIndex >= i && scanIndex > 0)
+                        scanIndex--;
+                    i--;
+                }
+            }
         }
 
         #endregion

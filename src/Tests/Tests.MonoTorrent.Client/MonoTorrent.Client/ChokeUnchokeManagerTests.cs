@@ -201,6 +201,38 @@ namespace MonoTorrent.Client.Unchoking
         }
 
         [Test]
+        public void ChokePeer_NotInterested_ThenInterestedAndDisposed ()
+        {
+            var unchokeable = new Unchokeable (
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash),
+                PeerId.Create (10, ExpectedInfoHash)) {
+                UploadSlots = 1
+            };
+            unchokeable.Peers.ForEach (p => {
+                p.IsInterested = true;
+                p.AmChoking = true;
+            });
+            var unchoker = new ChokeUnchokeManager (unchokeable);
+            unchoker.UnchokeReview ();
+            Assert.AreEqual (1, unchokeable.UploadingTo);
+
+            unchokeable.Peers[1].Dispose ();
+            unchokeable.Peers.RemoveAt (1);
+            unchokeable.UploadSlots = 4;
+
+            for (int i = 0; i < 10; i++) {
+                unchoker.UnchokeReview ();
+                unchoker.UnchokeReview ();
+                unchoker.UnchokeReview ();
+            }
+        }
+
+        [Test]
         public void ChokePeer_RequestingPiece ()
         {
             var unchokeable = new Unchokeable (

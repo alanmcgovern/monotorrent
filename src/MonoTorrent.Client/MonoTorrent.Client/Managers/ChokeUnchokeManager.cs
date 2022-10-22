@@ -41,6 +41,9 @@ namespace MonoTorrent.Client
             int interestedCount = 0;
             int unchokedCount = 0;
             chokedInterestedPeers.Clear ();
+            nascentPeers.RemoveDisconnected ();
+            candidatePeers.RemoveDisconnected ();
+            optimisticUnchokeCandidates.RemoveDisconnected ();
 
             // Run a review even if we can unchoke all the peers who are currently choked. If more
             // peers become interested in the future we will need the results of a review to

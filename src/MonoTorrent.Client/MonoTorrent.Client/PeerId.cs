@@ -249,6 +249,8 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             Connection.SafeDispose ();
+            MessageQueue.Dispose ();
+            PeerExchangeManager?.Dispose ();
         }
 
         public override string ToString ()

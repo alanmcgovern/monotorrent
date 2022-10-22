@@ -339,9 +339,6 @@ namespace MonoTorrent.Client
                     && !manager.Engine!.PeerId.Equals (id.PeerID);
 
                 manager.PieceManager.CancelRequests (id);
-                id.MessageQueue.Dispose ();
-                id.PeerExchangeManager?.Dispose ();
-
                 if (!id.AmChoking)
                     manager.UploadingTo--;
 
