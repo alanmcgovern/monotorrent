@@ -223,40 +223,43 @@ namespace MonoTorrent.Common
                 Assert.AreEqual (expected.Files[i].EndPieceIndex, actual.Files[i].EndPieceIndex);
             }
         }
-/*
- * test disabled because it takes 10+ seconds to run. It used to validate
- * that TorrentCreatore correctly handled files larger than 2GB, however
- * all of that core reading/writing logic is handled by IPieceWriter/DiskManager
- * now and so there's nothing really to test in this class.
- * Disable the test but don't delete it... because maybe it's good?
+
         [Test]
-        public async Task LargeMultiTorrent ()
+        public async Task CreateV2Torrent_WithExtraEmptyFile ()
         {
-            string name1 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File1");
-            string name2 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File2");
-            string name3 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File3");
-            string name4 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File4");
-            string name5 = Path.Combine (Path.Combine ("Dir1", "SDir1"), "File5");
-            files = new Source {
-                TorrentName = "name",
-                Files = new[] {
-                    new FileMapping (name1, name1, (long)(PieceLength * 200.30)),
-                    new FileMapping (name2, name2, (long)(PieceLength * 42000.5)),
-                    new FileMapping (name3, name3, (long)(PieceLength * 300.17)),
-                    new FileMapping (name4, name4, (long)(PieceLength * 100.22)),
-                    new FileMapping (name5, name5, (long)(PieceLength * 600.94))
-                }
+            // Create a torrent from files with all zeros
+            // and see if it matches the one checked into the repo.
+            var factories = Factories.Default
+                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true, FillValue = 0 });
+
+            var creator = new TorrentCreator (TorrentType.V2Only, factories) {
+                PieceLength = Constants.BlockSize * 4,
             };
 
-            Torrent torrent = Torrent.Load (await creator.CreateAsync ("BaseDir", files));
-            Assert.AreEqual (5, torrent.Files.Count, "#1");
-            Assert.AreEqual (name1, torrent.Files[0].Path, "#2");
-            Assert.AreEqual (name2, torrent.Files[1].Path, "#3");
-            Assert.AreEqual (name3, torrent.Files[2].Path, "#4");
-            Assert.AreEqual (name4, torrent.Files[3].Path, "#5");
-            Assert.AreEqual (name5, torrent.Files[4].Path, "#6");
+            var files = Enumerable.Range (0, 24)
+                .Select (t => new FileMapping ($"source_{t.ToString ().PadLeft (2, '0')}", $"dest_{t.ToString ().PadLeft (2, '0')}", (t + 1) * Constants.BlockSize))
+                .ToList ();
+            files.Add (new FileMapping ("empty_source", "empty_dest", 0));
+
+            var torrentDict = await creator.CreateAsync (new CustomFileSource (files));
+            var actual = Torrent.Load (torrentDict);
+            var expected = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof (TorrentCreatorTests).Assembly.Location), $"test_torrent_64.torrent"));
+
+            // The first file is empty.
+            Assert.IsTrue (actual.Files.First ().PiecesRoot.IsEmpty);
+            Assert.AreEqual (0, actual.Files.First ().Length);
+            Assert.AreEqual (0, actual.Files.First ().Padding);
+            Assert.AreEqual (0, actual.Files.First ().OffsetInTorrent);
+
+            for (int i = 0; i < expected.Files.Count; i++) {
+                Assert.AreEqual (expected.Files[i].PiecesRoot, actual.Files[i + 1].PiecesRoot);
+                Assert.AreEqual (expected.Files[i].Length, actual.Files[i + 1].Length);
+                Assert.AreEqual (expected.Files[i].Padding, actual.Files[i + 1].Padding);
+                Assert.AreEqual (expected.Files[i].StartPieceIndex, actual.Files[i + 1].StartPieceIndex);
+                Assert.AreEqual (expected.Files[i].EndPieceIndex, actual.Files[i + 1].EndPieceIndex);
+            }
         }
-*/
+
         [Test]
         public void CannotCreateTorrentWithAllEmptyFiles ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid, TorrentType.V2Only)] TorrentType torrentType)
         {

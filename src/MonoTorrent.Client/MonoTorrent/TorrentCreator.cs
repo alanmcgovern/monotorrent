@@ -389,6 +389,9 @@ namespace MonoTorrent
             using var fileSHA1 = StoreSHA1 ? IncrementalHash.CreateHash (HashAlgorithmName.SHA1) : null;
 
             var files = manager.Files.ToArray ().AsMemory ();
+            while (files.Length > 0 && files.Span[0].Length == 0)
+                files = files.Slice (1);
+
             // Store the MD5/SHA1 hash per file if needed.
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
