@@ -365,23 +365,22 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
         /// <param name="hashesV1"></param>
-        void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1? hashesV1)
+        /// <param name="hasV1Data"></param>
+        /// <param name="hasV2Data"></param>
+        void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1? hashesV1, ref bool hasV1Data, ref bool hasV2Data)
         {
             InfoMetadata = dictionary.Encode ();
             PieceLength = int.Parse (dictionary["piece length"].ToString ()!);
-            bool hasV1Data = false;
-            bool hasV2Data = false;
+            hasV1Data = false;
+            hasV2Data = false;
 
             if (dictionary.TryGetValue ("meta version", out BEncodedValue? metaVersion)) {
                 if (metaVersion is BEncodedNumber metadataVersion) {
                     hasV2Data = metadataVersion.Number == 2;
                 }
-            } else {
-                hasV1Data = true;
             }
 
             hasV1Data = dictionary.ContainsKey ("pieces");
-            hasV2Data |= dictionary.ContainsKey ("file tree");
 
             if (!hasV1Data) {
                 if (hasV2Data) {
@@ -516,6 +515,8 @@ namespace MonoTorrent
             Check.TorrentInformation (torrentInformation);
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
 
+            bool hasV1Data = false;
+            bool hasV2Data = false;
             PieceHashesV1? hashesV1 = null;
             PieceHashesV2? hashesV2 = null;
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
@@ -582,7 +583,7 @@ namespace MonoTorrent
                         break;
 
                     case ("info"):
-                        ProcessInfo (((BEncodedDictionary) keypair.Value), ref hashesV1);
+                        ProcessInfo (((BEncodedDictionary) keypair.Value), ref hashesV1, ref hasV1Data, ref hasV2Data);
                         break;
 
                     case ("name"):                                               // Handled elsewhere
@@ -649,11 +650,14 @@ namespace MonoTorrent
                 }
             }
 
+            if (!hasV1Data && !hasV2Data)
+                throw new NotSupportedException ("The supplied torrent did not contain BitTorrent V1 or BitTorrent V2 metadata.");
+
             if (SupportsV2Torrents && SupportsV1V2Torrents) {
-                InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), Files[0].PiecesRoot.IsEmpty ? default : InfoHash.FromMemory (infoHashes.SHA256));
+                InfoHashes = new InfoHashes (hasV1Data ? InfoHash.FromMemory (infoHashes.SHA1) : default, hasV2Data ? InfoHash.FromMemory (infoHashes.SHA256) : default);
             } else if (SupportsV2Torrents) {
-                if (Files[0].PiecesRoot.IsEmpty)
-                    InfoHashes = new InfoHashes (hashesV1 == null ? default : InfoHash.FromMemory (infoHashes.SHA1), default);
+                if (!hasV2Data)
+                    InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
                 else
                     InfoHashes = new InfoHashes (default, InfoHash.FromMemory (infoHashes.SHA256));
             } else {
