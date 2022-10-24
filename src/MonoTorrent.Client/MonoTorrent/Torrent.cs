@@ -814,6 +814,8 @@ namespace MonoTorrent
             foreach (var entry in fileTree)
                 LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "", isHybrid);
 
+            TorrentFile.Sort (files);
+
             // padding of last torrent must be 0.
             var last = files.Last ();
             files[files.Count - 1] = new TorrentFile (last.Path, last.Length, last.StartPieceIndex, last.EndPieceIndex, last.OffsetInTorrent, last.PiecesRoot, TorrentFileAttributes.None, 0);

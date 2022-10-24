@@ -190,11 +190,16 @@ namespace MonoTorrent
                 results.Add (new TorrentFile (files[i].path!, length, pieceStart, pieceEnd, startOffsetInTorrent, files[i].attributes, padding));
                 totalSize += (length + padding);
             }
+            Sort (results);
+            return results.ToArray ();
+        }
 
+        internal static void Sort (List<ITorrentFile> files)
+        {
             // Ensure files are always sorted so that 'OffsetInTorrent' is always increasing. If files have the same starting 'OffsetInTorrent'
             // then they are of length 0, and so should be sorted based on their length, so empty files are first. If there are multiple
             // empty files then sort them by path so we always have deterministic sorting.
-            results.Sort ((left, right) => {
+            files.Sort ((left, right) => {
                 var comparison = left.OffsetInTorrent.CompareTo (right.OffsetInTorrent);
                 if (comparison == 0)
                     comparison = left.Length.CompareTo (right.Length);
@@ -202,7 +207,6 @@ namespace MonoTorrent
                     comparison = left.Path.CompareTo (right.Path);
                 return comparison;
             });
-            return results.ToArray ();
         }
     }
 }

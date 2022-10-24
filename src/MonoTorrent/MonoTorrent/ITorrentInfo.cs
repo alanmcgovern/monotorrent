@@ -109,7 +109,7 @@ namespace MonoTorrent
                 // pieces at the end of each file.
                 for (int i = 0; i < self.Files.Count; i++) {
                     var file = self.Files[i];
-                    if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex)
+                    if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex || file.Length == 0)
                         continue;
                     var remainder = file.Length - (pieceIndex - file.StartPieceIndex) * self.PieceLength;
                     return (int) (remainder > self.PieceLength ? self.PieceLength : remainder);
