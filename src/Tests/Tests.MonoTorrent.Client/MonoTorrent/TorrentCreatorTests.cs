@@ -255,6 +255,49 @@ namespace MonoTorrent.Common
         }
 */
         [Test]
+        public void CannotCreateTorrentWithAllEmptyFiles ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid, TorrentType.V2Only)] TorrentType torrentType)
+        {
+            // Create a torrent from files with all zeros
+            // and see if it matches the one checked into the repo.
+            var factories = Factories.Default
+                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true, FillValue = 0 });
+
+            var creator = new TorrentCreator (torrentType, factories) {
+                PieceLength = Constants.BlockSize * 4,
+            };
+
+            var files = new List<FileMapping> { new FileMapping ("empty_source", "empty_dest", 0) };
+            Assert.ThrowsAsync<InvalidOperationException> (() => creator.CreateAsync (new CustomFileSource (files)));
+        }
+
+        [Test]
+        public async Task CannotLoadTorrentWithAllEmptyFiles ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid, TorrentType.V2Only)] TorrentType torrentType)
+        {
+            // Create a torrent from files with all zeros
+            // and see if it matches the one checked into the repo.
+            var factories = Factories.Default
+                .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true, FillValue = 0 });
+
+            var creator = new TorrentCreator (torrentType, factories) {
+                PieceLength = Constants.BlockSize * 4,
+            };
+
+            var files = new List<FileMapping> { new FileMapping ("empty_source", "empty_dest", 1) };
+            var torrentDict = await creator.CreateAsync (new CustomFileSource (files));
+            var infoDict = (BEncodedDictionary) torrentDict["info"];
+            if (torrentType.HasV1 ()) {
+                var fileDict = (infoDict["files"] as BEncodedList)[0] as BEncodedDictionary;
+                fileDict["length"] = (BEncodedNumber) 0;
+            }
+            if (torrentType.HasV2 ()) {
+                var fileDict = ((infoDict["file tree"] as BEncodedDictionary)["empty_dest"] as BEncodedDictionary)[""] as BEncodedDictionary;
+                fileDict["length"] = (BEncodedNumber) 0;
+            }
+
+            Assert.Throws<InvalidOperationException> (() => Torrent.Load (torrentDict));
+        }
+
+        [Test]
         public void IllegalDestinationPath ()
         {
             Assert.Throws<ArgumentException> (() => {

@@ -247,6 +247,9 @@ namespace MonoTorrent
         internal async Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource, CancellationToken token)
         {
             var source = fileSource.Files.ToArray ();
+            if (source.All (t => t.Length == 0))
+                throw new InvalidOperationException ("All files which were selected to be included this torrent have a length of zero. At least one file must have a non-zero length.");
+
             if (!InfoDict.ContainsKey (PieceLengthKey))
                 PieceLength = RecommendedPieceSize (source.Sum (t => t.Length));
 
@@ -368,12 +371,15 @@ namespace MonoTorrent
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes)>
         CalcPiecesHash (ITorrentManagerInfo manager, CancellationToken token)
         {
+            var torrentInfo = manager.TorrentInfo ?? throw new InvalidOperationException ("manager.TorrentInfo should not be null");
+            if (torrentInfo.Size == 0)
+                return (default, new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> (), new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> (), new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ());
+
             var settings = new EngineSettingsBuilder {
                 DiskCacheBytes = PieceLength * 2, // Store the currently processing piece and allow preping the next piece
                 DiskCachePolicy = StoreMD5 || StoreSHA1 ? CachePolicy.ReadsAndWrites : CachePolicy.WritesOnly
             }.ToSettings ();
 
-            var torrentInfo = manager.TorrentInfo ?? throw new InvalidOperationException ("manager.TorrentInfo should not be null");
             var pieceCount = torrentInfo.PieceCount ();
 
             using var diskManager = new DiskManager (settings, Factories);
@@ -383,7 +389,6 @@ namespace MonoTorrent
             using var fileSHA1 = StoreSHA1 ? IncrementalHash.CreateHash (HashAlgorithmName.SHA1) : null;
 
             var files = manager.Files.ToArray ().AsMemory ();
-
             // Store the MD5/SHA1 hash per file if needed.
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
             Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();

@@ -507,6 +507,8 @@ namespace MonoTorrent
             }
 
             Size = Files.Select (f => f.Length + f.Padding).Sum ();
+            if (Size == 0)
+                throw new InvalidOperationException ("This torrent does not contain any files with non-zero length. There's nothing to download.");
         }
 
         void LoadInternal (BEncodedDictionary torrentInformation, RawInfoHashes infoHashes)
