@@ -210,6 +210,9 @@ namespace MonoTorrent.Common
                 .ToList ();
 
             var torrentDict = await creator.CreateAsync (new CustomFileSource (files));
+            var infoDict = torrentDict["info"] as BEncodedDictionary;
+            Assert.AreEqual ((BEncodedNumber)2, infoDict["meta version"]);
+
             var actual = Torrent.Load (torrentDict);
             var expected = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof(TorrentCreatorTests).Assembly.Location), $"test_torrent_64.torrent"));
             for (int i = 0; i < actual.Files.Count; i++) {

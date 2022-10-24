@@ -277,6 +277,11 @@ namespace MonoTorrent
             info["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
 
+            // V1 only torrents should not set this to increase backwards compatibility.
+            // Torrents with V2 metadata (v2 only, or v1/v2 hybrid) should set it
+            if (Type.HasV2 ())
+                info["meta version"] = (BEncodedNumber) 2;
+
             (var sha1Hashes, var merkleLayers, var fileSHA1Hashes, var fileMD5Hashes) = await CalcPiecesHash (manager, token);
             if (!sha1Hashes.IsEmpty)
                 info["pieces"] = BEncodedString.FromMemory (sha1Hashes);
@@ -357,11 +362,6 @@ namespace MonoTorrent
 
             TimeSpan span = DateTime.UtcNow - new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             torrent["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
-
-            // V1 only torrents should not set this to increase backwards compatibility.
-            // Torrents with V2 metadata (v2 only, or v1/v2 hybrid) should set it
-            if (Type.HasV2 ())
-                torrent["meta version"] = (BEncodedNumber) 2;
         }
 
         async Task<(
