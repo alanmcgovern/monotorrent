@@ -259,6 +259,13 @@ namespace MonoTorrent
                 var info = (file.Destination, length, padding, file.Source);
                 return info;
             }).ToArray ();
+
+            // Hybrid and V2 torrents *must* hash files in the same order as they end up being stored in the bencoded dictionary,
+            // which means they must be alphabetical.
+            if (Type.HasV2 ())
+                rawFiles = rawFiles.OrderBy (t => t.Destination).ToArray ();
+
+            // The last file never has padding bytes
             rawFiles[rawFiles.Length - 1].padding = 0;
 
             var files = TorrentFileInfo.Create (PieceLength, rawFiles);
