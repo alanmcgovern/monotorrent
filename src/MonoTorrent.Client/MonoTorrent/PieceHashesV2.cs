@@ -74,7 +74,8 @@ namespace MonoTorrent
                 throw new ArgumentOutOfRangeException (nameof (hashIndex), $"Value must be grater than or equal to '0' and less than '{Count}'");
 
             for (int i = 0; i < Files.Count; i++) {
-                if (hashIndex < Files[i].StartPieceIndex || hashIndex > Files[i].EndPieceIndex)
+                // Empty files have no root hash, as they have no data. Skip them.
+                if (hashIndex < Files[i].StartPieceIndex || hashIndex > Files[i].EndPieceIndex || Files[i].Length == 0)
                     continue;
 
                 // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer

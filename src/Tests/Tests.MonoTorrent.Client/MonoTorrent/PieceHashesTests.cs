@@ -27,11 +27,14 @@
 //
 
 
+using System;
 using System.Linq;
+
+using MonoTorrent.BEncoding;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent
 {
     [TestFixture]
     public class PieceHashesTests
@@ -55,6 +58,21 @@ namespace MonoTorrent.Common
         public void V2Only_NoHashes_Count ()
         {
             Assert.AreEqual (0, new PieceHashes (null, null).Count);
+        }
+
+        [Test]
+        public void V2Only_WithEmptyFiles ()
+        {
+            var files = new[] {
+                new TorrentFile("a", length: 0, startIndex: 0, endIndex: 0, 0, TorrentFileAttributes.None, 0),
+                new TorrentFile("b", length: 1, startIndex: 0, endIndex: 0, 0, new MerkleRoot(Enumerable.Repeat<byte>(1, 32).ToArray ()), TorrentFileAttributes.None, 0),
+                new TorrentFile("c", length: 2, startIndex: 1, endIndex: 1, 1, new MerkleRoot(Enumerable.Repeat<byte>(2, 32).ToArray ()), TorrentFileAttributes.None, 0),
+            };
+
+            var pieceHashesV2 = new PieceHashesV2 (Constants.BlockSize * 4, files, new BEncodedDictionary ());
+            var hash = pieceHashesV2.GetHash (0);
+            Assert.IsTrue (files[1].PiecesRoot.AsMemory ().Span.SequenceEqual (hash.V2Hash.Span));
+            Assert.IsTrue (hash.V1Hash.IsEmpty);
         }
     }
 }
