@@ -159,10 +159,16 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.HasMetadata || !Manager.HashChecked)
                 return;
 
-            // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
-            // a zero length file and someone deletes it after the first piece has been written to disk, it will
-            // never be recreated. If the downloaded data requires this file to exist, we have an issue.
+
             foreach (ITorrentManagerFile file in Manager.Files) {
+                if (file.Length == 0 && !File.Exists (file.FullPath)) {
+                    Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
+                    // Ensure file on disk is always 0 bytes, as it's supposed to be.
+                    using (var stream = File.OpenWrite (file.FullPath))
+                        stream.SetLength (0);
+                    continue;
+                }
+
                 if (!file.BitField.AllFalse && file.Length > 0) {
                     if (!await DiskManager.CheckFileExistsAsync (file)) {
                         Manager.SetNeedsHashCheck ();
