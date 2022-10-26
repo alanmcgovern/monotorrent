@@ -299,6 +299,9 @@ namespace MonoTorrent
                     var rootHash = MerkleHash.Hash (kvp.Value.Span, PieceLength);
                     dict[BEncodedString.FromMemory (rootHash)] = BEncodedString.FromMemory (kvp.Value);
                 }
+
+                // If all files are smaller than PieceLength, then the piece layers dictionary will be empty.
+                // That's ok, we must include the empty dictionary as it is a required key.
                 torrent["piece layers"] = dict;
 
                 var fileTree = new BEncodedDictionary ();
