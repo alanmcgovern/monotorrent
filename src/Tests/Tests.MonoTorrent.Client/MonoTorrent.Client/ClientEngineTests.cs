@@ -371,6 +371,28 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task StartAsyncAlwaysCreatesEmptyFiles ()
+        {
+            var files = TorrentFile.Create (Constants.BlockSize * 4, 0, 1, 2, 3);
+            using var writer = new TestWriter ();
+            using var rig = TestRig.CreateMultiFile (files, Constants.BlockSize * 4, writer);
+
+            for (int i = 0; i < 2; i++) {
+                var downloadingState = rig.Manager.WaitForState (TorrentState.Downloading);
+                var stoppedState = rig.Manager.WaitForState (TorrentState.Stopped);
+
+                await rig.Manager.StartAsync ();
+                Assert.IsTrue (downloadingState.Wait (5000), "Started");
+                Assert.IsTrue (File.Exists (rig.Manager.Files[0].FullPath));
+                Assert.IsTrue (rig.Manager.Files[0].BitField.AllTrue);
+
+                await rig.Manager.StopAsync ();
+                Assert.IsTrue (stoppedState.Wait (5000), "Stopped");
+                File.Delete (rig.Manager.Files[0].FullPath);
+            }
+        }
+
+        [Test]
         public async Task StopTest ()
         {
             using var rig = TestRig.CreateMultiFile (new TestWriter ());
