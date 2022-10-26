@@ -299,7 +299,11 @@ namespace MonoTorrent
                     var rootHash = MerkleHash.Hash (kvp.Value.Span, PieceLength);
                     dict[BEncodedString.FromMemory (rootHash)] = BEncodedString.FromMemory (kvp.Value);
                 }
-                torrent["piece layers"] = dict;
+
+                // If all files individually are less than 1 piece length in size, there will be no
+                // piece layers. Only the root hash of the file is needed to hash check it.
+                if (dict.Count > 0)
+                    torrent["piece layers"] = dict;
 
                 var fileTree = new BEncodedDictionary ();
                 foreach (var kvp in merkleLayers)
