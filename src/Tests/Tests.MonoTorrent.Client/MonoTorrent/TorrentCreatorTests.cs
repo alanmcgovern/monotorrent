@@ -261,6 +261,32 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public async Task CreateV2Torrent_SortFilesCorrectly ()
+        {
+            using var releaser = TempDir.Create ();
+
+            var dir = new DirectoryInfo (releaser.Path);
+            var eFile = new FileInfo (Path.Combine (dir.FullName, "E.file"));
+            File.WriteAllText (eFile.FullName, "aoeu");
+
+            var bFile = new FileInfo (Path.Combine (dir.FullName, "B.file"));
+            File.WriteAllText (bFile.FullName, "aoeu");
+
+            var aFileInDir = new FileInfo (Path.Combine (dir.FullName, "Dir/A.file"));
+            if (!aFileInDir.Directory.Exists)
+                aFileInDir.Directory.Create ();
+            File.WriteAllText (aFileInDir.FullName, "aoeu");
+
+            ITorrentFileSource fileSource = new TorrentFileSource (dir.FullName);
+            TorrentCreator torrentCreator = new TorrentCreator (TorrentType.V1V2Hybrid);
+            var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
+            var torrent = Torrent.Load (encodedTorrent);
+
+            Assert.IsNotNull (torrent);
+        }
+
+
+        [Test]
         public void CannotCreateTorrentWithAllEmptyFiles ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid, TorrentType.V2Only)] TorrentType torrentType)
         {
             // Create a torrent from files with all zeros
