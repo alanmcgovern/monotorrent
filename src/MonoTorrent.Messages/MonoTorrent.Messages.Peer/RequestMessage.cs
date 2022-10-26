@@ -36,8 +36,12 @@ namespace MonoTorrent.Messages.Peer
         internal const byte MessageId = 6;
         const int messageLength = 13;
 
-        public const int MaxSize = 65536 + 64;
-        public const int MinSize = 4096;
+        // According to BEP52 this any peer which requests blocks larger than 16KiB should have it's connection closed.
+        //
+        // 'request' messages contain an index, begin, and length .... All current implementations use 2^14 (16 kiB), and close connections which request an amount greater than that.
+        //
+        public static readonly int MaxSize = 16 * 1024;
+        public static readonly int MinSize = 1;
 
         public override int ByteLength => messageLength + 4;
         public int PieceIndex { get; protected set; }

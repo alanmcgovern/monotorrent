@@ -466,14 +466,17 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleRequestMessage (PeerId id, RequestMessage message)
         {
-            // If we are not on the last piece and the user requested a stupidly big/small amount of data
-            // we will close the connection
-            if (Manager.Torrent!.PieceCount != (message.PieceIndex + 1))
-                if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
-                    throw new MessageException (
-                        $"Illegal piece request received. Peer requested {message.RequestLength} byte");
+            // You should only be able to request pieces within range.
+            if (message.PieceIndex < 0 || message.PieceIndex >= Manager.Torrent!.PieceCount)
+                throw new MessageException ($"Illegal piece request received. Peer requested piece index {message.PieceIndex} but the supported range is between 0 and #{Manager.Torrent!.PieceCount - 1}.");
 
+            // You should only be able to request data within the bounds of the requested piece.
+            if (message.StartOffset < 0 || message.StartOffset >= Manager.Torrent!.PieceLength)
+                throw new MessageException ($"Illegal piece request received. Peer requested start offset {message.StartOffset} but the supported range is between 0 and #{Manager.Torrent!.PieceLength}.");
 
+            // You can only request between 1 and 16KiB of data.
+            if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
+                throw new MessageException ($"Illegal piece request received. Peer requested {message.RequestLength} bytes.");
 
             // If we're not choking the peer, enqueue the message right away
             if (!id.AmChoking) {

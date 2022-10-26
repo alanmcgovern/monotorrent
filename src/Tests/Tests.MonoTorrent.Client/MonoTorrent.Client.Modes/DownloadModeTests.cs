@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
+using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages.Peer.Libtorrent;
 using MonoTorrent.Trackers;
@@ -480,6 +481,51 @@ namespace MonoTorrent.Client.Modes
 
             Assert.AreNotEqual (0, Manager.Progress, "#3");
             Assert.AreEqual (0, Manager.PartialProgress, "#4");
+        }
+
+        [Test]
+        public void SmallRequestLength ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
+            peer.AmChoking = false;
+
+            // If the first file in a V2 torrent is only 15 bytes long, we'll only request 15 bytes.
+            // For BitTorrent V1 'small' requests like this were invalid except for the final block.
+            var message = new RequestMessage (0, 0, 1);
+            Manager.Mode.HandleMessage (peer, message, default);
+
+            Assert.AreEqual (1, peer.MessageQueue.QueueLength);
+            var pieceMessage = (PieceMessage) peer.MessageQueue.TryDequeue ();
+            Assert.AreEqual (1, pieceMessage.RequestLength);
+        }
+
+        [Test]
+        public void TooSmallRequestLength ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
+            peer.AmChoking = false;
+
+            // If the first file in a V2 torrent is only 15 bytes long, we'll only request 15 bytes.
+            // For BitTorrent V1 'small' requests like this were invalid except for the final block.
+            Assert.Throws<MessageException> (() => Manager.Mode.HandleMessage (peer, new RequestMessage (0, 0, -1), default));
+            Assert.Throws<MessageException> (() => Manager.Mode.HandleMessage (peer, new RequestMessage (0, -1, 5), default));
+            Assert.Throws<MessageException> (() => Manager.Mode.HandleMessage (peer, new RequestMessage (-1, 0, 5), default));
+        }
+
+        [Test]
+        public void TooLargeRequestLength ()
+        {
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
+            peer.AmChoking = false;
+
+            // Any request of > 16KiB of data should result in the connection being closed.
+            Assert.Throws<MessageException> (() => Manager.Mode.HandleMessage (peer, new RequestMessage (0, 0, (16 * 1024) + 1), default));
+            Assert.Throws<MessageException> (() => Manager.Mode.HandleMessage (peer, new RequestMessage (Manager.Torrent.PieceCount, 0, 0), default));
+            Assert.Throws<MessageException> (() => Manager.Mode.HandleMessage (peer, new RequestMessage (0, Manager.Torrent.PieceLength, 0), default));
+
         }
     }
 }
