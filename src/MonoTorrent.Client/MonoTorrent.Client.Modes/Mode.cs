@@ -466,14 +466,10 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleRequestMessage (PeerId id, RequestMessage message)
         {
-            // If we are not on the last piece and the user requested a stupidly big/small amount of data
-            // we will close the connection
-            if (Manager.Torrent!.PieceCount != (message.PieceIndex + 1))
-                if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
-                    throw new MessageException (
-                        $"Illegal piece request received. Peer requested {message.RequestLength} byte");
-
-
+            // Don't check how large/small each request message is. With BEP47 support (padding files)
+            // and BEP52 support (BitTorrent v2) it's 'normal' for some piece requests to be smaller
+            // tham the piece size if the request covers a byte range which is a padding file, or one
+            // that extends beyond the end of the file when using bittorrent v2.
 
             // If we're not choking the peer, enqueue the message right away
             if (!id.AmChoking) {
