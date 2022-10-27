@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
+  </ItemGroup>
+
+</Project>
