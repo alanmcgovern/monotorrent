@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -15,54 +16,89 @@ using NUnit.Framework;
 namespace Tests.MonoTorrent.IntegrationTests
 {
     [TestFixture]
-    public class IntegrationTests : IDisposable
+    public class IntegrationTests
     {
-        public IntegrationTests ()
+        [OneTimeSetUp]
+        public void FixtureSetup ()
         {
             _tracker = GetTracker (_trackerPort);
         }
 
-        public void Dispose () => _tracker.Dispose ();
+        [SetUp]
+        public void Setup ()
+        {
+            string tempDirectory = Path.Combine (Path.GetTempPath (), $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
+            _directory = Directory.CreateDirectory (tempDirectory);
+        }
+
+        [TearDown]
+        public void TearDown ()
+        {
+            _directory?.Refresh ();
+            if (_directory?.Exists == true) {
+                _directory.Delete (true);
+            }
+        }
+
+        [OneTimeTearDown]
+        public void Cleanup ()
+        {
+            _tracker.Dispose ();
+        }
 
         const int _trackerPort = 40000;
         const int _seederPort = 40001;
         const int _leecherPort = 40002;
-        private readonly TrackerServer _tracker;
+
+        private TrackerServer _tracker;
+        private DirectoryInfo _directory;
 
         [Test]
-        public async Task DownloadFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, false);
+        public async Task DownloadFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: false, explitlyHashCheck: false);
 
         [Test]
-        public async Task DownloadFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, false);
+        public async Task DownloadFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false);
 
         [Test]
-        public async Task DownloadFileInTorrent_V2_OnlyOneNonEmptyFile () => await CreateAndDownloadTorrent (TorrentType.V2Only, false, nonEmptyFileCount: 1);
+        public async Task DownloadFileInTorrent_V2_OnlyOneNonEmptyFile () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 1);
 
         [Test]
-        public async Task DownloadFileInTorrent_V2_ThreeNonEmptyFiles () => await CreateAndDownloadTorrent (TorrentType.V2Only, false, nonEmptyFileCount: 3);
+        public async Task DownloadFileInTorrent_V2_ThreeNonEmptyFiles () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 3);
 
         [Test]
-        public async Task DownloadFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, false);
+        public async Task DownloadFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: false);
 
         [Test]
-        public async Task DownloadEmptyFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, true);
+        public async Task DownloadEmptyFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: false);
 
         [Test]
-        public async Task DownloadEmptyFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, true);
+        public async Task DownloadEmptyFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false);
 
         [Test]
-        public async Task DownloadEmptyFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, true);
+        public async Task DownloadEmptyFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false);
 
-        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, int nonEmptyFileCount = 2)
+        [Test]
+        public async Task DownloadFileInTorrent_V1_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: false, explitlyHashCheck: true);
+
+        [Test]
+        public async Task DownloadFileInTorrent_V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: true);
+
+        [Test]
+        public async Task DownloadFileInTorrent_V1V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: true);
+
+        [Test]
+        public async Task DownloadEmptyFileInTorrent_V1_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: true);
+
+        [Test]
+        public async Task DownloadEmptyFileInTorrent_V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: true);
+
+        [Test]
+        public async Task DownloadEmptyFileInTorrent_V1V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: true);
+
+        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2)
         {
-
-            var dir = new DirectoryInfo (nameof (CreateAndDownloadTorrent));
-            if (dir.Exists)
-                dir.Delete (true);
-
-            dir.Create ();
-            var seederDir = dir.CreateSubdirectory ("Seeder");
-            var leecherDir = dir.CreateSubdirectory ("Leecher");
+            var seederDir = _directory.CreateSubdirectory ("Seeder");
+            var leecherDir = _directory.CreateSubdirectory ("Leecher");
 
             var emptyFile = new FileInfo (Path.Combine (seederDir.FullName, "Empty.file"));
             if (createEmptyFile)
@@ -85,8 +121,8 @@ namespace Tests.MonoTorrent.IntegrationTests
             using ClientEngine seederEngine = GetEngine (_seederPort);
             using ClientEngine leecherEngine = GetEngine (_leecherPort);
 
-            var seederManager = await StartTorrent (seederEngine, torrent, seederDir.FullName);
-            var leecherManager = await StartTorrent (leecherEngine, torrent, leecherDir.FullName);
+            var seederManager = await StartTorrent (seederEngine, torrent, seederDir.FullName, explitlyHashCheck);
+            var leecherManager = await StartTorrent (leecherEngine, torrent, leecherDir.FullName, explitlyHashCheck);
 
             Assert.AreEqual (TorrentState.Seeding, seederManager.State);
 
@@ -131,13 +167,16 @@ namespace Tests.MonoTorrent.IntegrationTests
             return engine;
         }
 
-        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory)
+        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck)
         {
             TorrentSettingsBuilder torrentSettingsBuilder = new TorrentSettingsBuilder () {
                 CreateContainingDirectory = false,
             };
             TorrentManager manager = await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ());
-            await manager.HashCheckAsync (true);
+            if (explicitlyHashCheck)
+                await manager.HashCheckAsync (true);
+            else
+                await manager.StartAsync ();
             return manager;
         }
     }
