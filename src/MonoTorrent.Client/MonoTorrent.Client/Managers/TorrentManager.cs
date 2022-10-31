@@ -670,10 +670,13 @@ namespace MonoTorrent.Client
                 }
 
                 var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
-                return new TorrentFileInfo (file, currentPath) {
+                var torrentFileInfo = new TorrentFileInfo (file, currentPath) {
                     DownloadCompleteFullPath = downloadCompleteFullPath,
                     DownloadIncompleteFullPath = downloadIncompleteFullPath
                 };
+                if (file.Length == 0)
+                    torrentFileInfo.BitField[0] = true;
+                return torrentFileInfo;
             }).Cast<ITorrentManagerFile> ().ToList ().AsReadOnly ();
 
             PieceHashes = Torrent.CreatePieceHashes ();
@@ -941,6 +944,9 @@ namespace MonoTorrent.Client
             var files = Files;
             var fileIndex = files.FindFileByPieceIndex (index);
             for (int i = fileIndex; i < files.Count && files[i].StartPieceIndex <= index; i++) {
+                // Empty files always have all bits set to 'true' as they're treated as being downloaded as soon as they exist on disk.
+                if (files[i].Length == 0)
+                    continue;
                 ((TorrentFileInfo) files[i]).BitField[index - files[i].StartPieceIndex] = hashPassed;
 
                 // If we're only hashing 1 piece then we can start moving files now. This occurs when a torrent

@@ -36,6 +36,8 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Logging;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client.Modes
 {
     class StartingMode : Mode
@@ -62,6 +64,8 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("Torrents with no metadata must use 'MetadataMode', not 'StartingMode'.");
 
             try {
+                // If the torrent contains any files of length 0, ensure we create them now.
+                await CreateEmptyFiles ();
                 await VerifyHashState ();
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 Manager.PieceManager.Initialise ();
@@ -123,6 +127,23 @@ namespace MonoTorrent.Client.Modes
             await Manager.LocalPeerAnnounceAsync ();
         }
 
+        async ReusableTask CreateEmptyFiles ()
+        {
+            foreach (var file in Manager.Files) {
+                if (file.Length == 0) {
+                    var fileInfo = new FileInfo (file.FullPath);
+                    if (fileInfo.Exists && fileInfo.Length == 0)
+                        continue;
+
+                    await MainLoop.SwitchToThreadpool ();
+                    Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath)!);
+                    // Ensure file on disk is always 0 bytes, as it's supposed to be.
+                    using (var stream = File.OpenWrite (file.FullPath))
+                        stream.SetLength (0);
+                }
+            }
+        }
+
         async void SendAnnounces ()
         {
             try {
@@ -156,12 +177,9 @@ namespace MonoTorrent.Client.Modes
         async Task VerifyHashState ()
         {
             // If we do not have metadata or the torrent needs a hash check, fast exit.
-            if (!Manager.HasMetadata || !Manager.HashChecked)
+            if (!Manager.HashChecked)
                 return;
 
-            // FIXME: I should really just ensure that zero length files always exist on disk. If the first file is
-            // a zero length file and someone deletes it after the first piece has been written to disk, it will
-            // never be recreated. If the downloaded data requires this file to exist, we have an issue.
             foreach (ITorrentManagerFile file in Manager.Files) {
                 if (!file.BitField.AllFalse && file.Length > 0) {
                     if (!await DiskManager.CheckFileExistsAsync (file)) {
