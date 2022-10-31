@@ -124,9 +124,15 @@ namespace Tests.MonoTorrent.IntegrationTests
             var seederManager = await StartTorrent (seederEngine, torrent, seederDir.FullName, explitlyHashCheck);
             var leecherManager = await StartTorrent (leecherEngine, torrent, leecherDir.FullName, explitlyHashCheck);
 
-            Assert.AreEqual (TorrentState.Seeding, seederManager.State);
 
             Stopwatch sw = Stopwatch.StartNew ();
+            while (!seederManager.Complete && sw.Elapsed.TotalSeconds < 5) {
+                await Task.Delay (100);
+            }
+
+            Assert.AreEqual (TorrentState.Seeding, seederManager.State);
+
+            sw.Restart ();
             while (!leecherManager.Complete && sw.Elapsed.TotalSeconds < 5) {
                 await Task.Delay (100);
             }
