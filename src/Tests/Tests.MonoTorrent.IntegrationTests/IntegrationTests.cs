@@ -162,6 +162,7 @@ namespace Tests.MonoTorrent.IntegrationTests
                 ListenEndPoint = new IPEndPoint (IPAddress.Any, port),
                 ReportedAddress = new IPEndPoint (IPAddress.Parse ("127.0.0.1"), port),
                 AutoSaveLoadFastResume = false,
+                CacheDirectory = _directory.FullName,
             };
             var engine = new ClientEngine (settingBuilder.ToSettings ());
             return engine;
