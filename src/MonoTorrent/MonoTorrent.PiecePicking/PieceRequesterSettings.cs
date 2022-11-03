@@ -53,16 +53,18 @@ namespace MonoTorrent.PiecePicking
         public bool AllowRarestFirst { get; }
 
         /// <summary>
-        /// When set to true, the bitfield from the requesting peer, and their choke/unchoke state, will not be taken into account. This is useful when creating a <see cref="IPieceRequester"/> to retrieve things
-        /// like the torrent metadata, or the bittorrent v2 hashes, from peers.
+        /// The maximum number of concurrent requests which will be issued for the same block of data during 'end game' mode.
+        /// A higher value can decrease the time it takes for the final few pieces to be received at the cost of downloading
+        /// excess data. Blocks which are not received within a reasonable amount of time will be re-requested from another peer.
+        /// Defaults to 2.
         /// </summary>
-        public bool IgnoreBitFieldAndChokeState { get; }
+        public int MaximumDuplicateRequests { get; }
 
         public PieceRequesterSettings (
             bool allowPrioritisation = true,
             bool allowRandomised = true,
             bool allowRarestFirst = true,
-            bool ignoreBitFieldAndChokeState = false)
-            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst, IgnoreBitFieldAndChokeState) = (allowPrioritisation, allowRandomised, allowRarestFirst, ignoreBitFieldAndChokeState);
+            int maximumDuplicateRequests = 2)
+            => (AllowPrioritisation, AllowRandomised, AllowRarestFirst, MaximumDuplicateRequests) = (allowPrioritisation, allowRandomised, allowRarestFirst, maximumDuplicateRequests);
     }
 }

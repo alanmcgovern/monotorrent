@@ -50,16 +50,32 @@ namespace MonoTorrent.Client.Modes
 
         class MetadataData : IPieceRequesterData, IMessageEnqueuer
         {
+            Dictionary<PeerId, IgnoringChokeStateRequester> WrappedPeers { get; }
+            Dictionary<IgnoringChokeStateRequester, PeerId> UnwrappedPeers { get; }
             public IList<ITorrentManagerFile> Files => Array.Empty<ITorrentManagerFile> ();
             public int PieceCount => 1;
             public int PieceLength { get; }
+
+            public ReadOnlyBitField AvailablePieces { get; }
 
             int length;
 
             public MetadataData (int size)
             {
                 length = size;
+                AvailablePieces = new BitField (PieceCount).SetAll (true);
                 PieceLength = (int) Math.Pow (2, Math.Ceiling (Math.Log (size, 2)) + 1);
+                WrappedPeers = new Dictionary<PeerId, IgnoringChokeStateRequester> ();
+                UnwrappedPeers = new Dictionary<IgnoringChokeStateRequester, PeerId> ();
+            }
+
+            public IRequester Wrap (PeerId peer)
+            {
+                if (!WrappedPeers.TryGetValue (peer, out IgnoringChokeStateRequester wrapper)) {
+                    WrappedPeers[peer] = wrapper = new IgnoringChokeStateRequester (peer);
+                    UnwrappedPeers[wrapper] = peer;
+                }
+                return wrapper;
             }
 
             public int BytesPerBlock(int pieceIndex, int blockIndex)
@@ -74,10 +90,11 @@ namespace MonoTorrent.Client.Modes
             public int BytesPerPiece (int piece)
                 => length;
 
-            void IMessageEnqueuer.EnqueueRequest (IRequester peer, PieceSegment block)
+            void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
-                var message = new LTMetadata (((PeerId) peer).ExtensionSupports, LTMetadata.MessageType.Request, block.BlockIndex);
-                ((PeerId) peer).MessageQueue.Enqueue (message);
+                var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
+                var message = new LTMetadata (peer.ExtensionSupports, LTMetadata.MessageType.Request, block.BlockIndex);
+                peer.MessageQueue.Enqueue (message);
             }
 
             void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
@@ -126,7 +143,7 @@ namespace MonoTorrent.Client.Modes
         {
             base.HandlePeerDisconnected (id);
             if (Requester != null && RequesterData != null)
-                Requester.CancelRequests (id, 0, RequesterData.PieceCount);
+                Requester.CancelRequests (RequesterData.Wrap (id), 0, RequesterData.PieceCount);
         }
 
         public override void Tick (int counter)
@@ -163,7 +180,7 @@ namespace MonoTorrent.Client.Modes
 
             switch (message.MetadataMessageType) {
                 case LTMetadata.MessageType.Data:
-                    if (!Requester.ValidatePiece (id, new PieceSegment (0, message.Piece), out bool pieceComplete, new HashSet<IRequester> ()))
+                    if (!Requester.ValidatePiece (RequesterData.Wrap(id), new PieceSegment (0, message.Piece), out bool pieceComplete, new HashSet<IRequester> ()))
                         return;
 
                     message.MetadataPiece.CopyTo (Stream.AsMemory (message.Piece * LTMetadata.BlockSize));
@@ -273,10 +290,10 @@ namespace MonoTorrent.Client.Modes
 
         void RequestNextNeededPiece (PeerId id)
         {
-            if (Requester is null )
+            if (Requester is null || RequesterData is null)
                 return;
 
-            Requester.AddRequests (id, id.BitField, Array.Empty<ReadOnlyBitField> ());
+            Requester.AddRequests (RequesterData.Wrap (id), RequesterData.AvailablePieces, Array.Empty<ReadOnlyBitField> ());
         }
 
         protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
@@ -305,7 +322,7 @@ namespace MonoTorrent.Client.Modes
                 var metadataSize = message.MetadataSize.GetValueOrDefault (0);
                 if (Stream == null && metadataSize > 0) {
                     Stream = new byte[metadataSize];
-                    Requester = Manager.Engine!.Factories.CreatePieceRequester (new PieceRequesterSettings (false, false, false, ignoreBitFieldAndChokeState: true));
+                    Requester = Manager.Engine!.Factories.CreatePieceRequester (new PieceRequesterSettings (false, false, false, 3));
                     RequesterData = new MetadataData (metadataSize);
                     Requester.Initialise (RequesterData, RequesterData, Array.Empty<ReadOnlyBitField> ());
                 }

@@ -50,6 +50,9 @@ namespace MonoTorrent.Client.Modes
 
         class HashesRequesterData : IPieceRequesterData, IMessageEnqueuer
         {
+            public ReadOnlyBitField AvailablePieces { get; }
+            Dictionary<PeerId, IgnoringChokeStateRequester> WrappedPeers { get; }
+            Dictionary<IgnoringChokeStateRequester, PeerId> UnwrappedPeers { get; }
             public BitField ValidatedPieces { get; }
             public IList<ITorrentManagerFile> Files => Array.Empty<ITorrentManagerFile> ();
             public int PieceCount => (totalHashes + PieceLength - 1) / PieceLength;
@@ -64,7 +67,20 @@ namespace MonoTorrent.Client.Modes
                 this.actualPieceLength = actualPieceLength;
                 this.root = root;
                 this.totalHashes = totalHashes;
+
+                AvailablePieces = new BitField (PieceCount).SetAll (true);
                 ValidatedPieces = new BitField (PieceCount);
+                WrappedPeers = new Dictionary<PeerId, IgnoringChokeStateRequester> ();
+                UnwrappedPeers = new Dictionary<IgnoringChokeStateRequester, PeerId> ();
+            }
+
+            public IRequester Wrap (PeerId peer)
+            {
+                if (!WrappedPeers.TryGetValue (peer, out IgnoringChokeStateRequester wrapper)) {
+                    WrappedPeers[peer] = wrapper = new IgnoringChokeStateRequester (peer);
+                    UnwrappedPeers[wrapper] = peer;
+                }
+                return wrapper;
             }
 
             public int SegmentsPerPiece (int piece)
@@ -76,10 +92,11 @@ namespace MonoTorrent.Client.Modes
             public int BytesPerPiece (int pieceIndex)
                 => pieceIndex == PieceCount - 1 ? totalHashes - pieceIndex * PieceLength : PieceLength;
 
-            void IMessageEnqueuer.EnqueueRequest (IRequester peer, PieceSegment block)
+            void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
+                var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
                 var message = HashRequestMessage.Create (root, totalHashes, actualPieceLength, block.PieceIndex * PieceLength, MaxHashesPerRequest);
-                ((PeerId) peer).MessageQueue.Enqueue (message);
+                peer.MessageQueue.Enqueue (message);
             }
 
             void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
@@ -117,7 +134,7 @@ namespace MonoTorrent.Client.Modes
 
             pickers = manager.Torrent!.Files.Where (t => t.StartPieceIndex != t.EndPieceIndex).ToDictionary (t => t, value => {
                 var data = new HashesRequesterData (value.PiecesRoot, manager.Torrent.PieceLength, value.EndPieceIndex - value.StartPieceIndex + 1);
-                var request = Manager.Engine!.Factories.CreatePieceRequester (new PieceRequesterSettings (false, false, false, ignoreBitFieldAndChokeState: true));
+                var request = Manager.Engine!.Factories.CreatePieceRequester (new PieceRequesterSettings (false, false, false, 3));
                 request.Initialise (data, data, new ReadOnlyBitField[] { data.ValidatedPieces } );
                 return (request, data);
             });
@@ -156,7 +173,7 @@ namespace MonoTorrent.Client.Modes
                     continue;
                 foreach (var picker in pickers) {
                     if (!picker.Value.Item2.ValidatedPieces.AllTrue)
-                        picker.Value.Item1.AddRequests (peer, peer.BitField, Array.Empty<ReadOnlyBitField> ());
+                        picker.Value.Item1.AddRequests (picker.Value.Item2.Wrap (peer), picker.Value.Item2.AvailablePieces, Array.Empty<ReadOnlyBitField> ());
                 }
             }
         }
@@ -171,7 +188,7 @@ namespace MonoTorrent.Client.Modes
         {
             base.HandlePeerDisconnected (id);
             foreach (var picker in pickers)
-                picker.Value.Item1.CancelRequests (id, 0, picker.Key.EndPieceIndex - picker.Key.StartPieceIndex + 1);
+                picker.Value.Item1.CancelRequests (picker.Value.Item2.Wrap (id), 0, picker.Key.EndPieceIndex - picker.Key.StartPieceIndex + 1);
         }
 
         protected override void HandleHashRejectMessage (PeerId id, HashRejectMessage hashRejectMessage)
@@ -183,7 +200,7 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             var picker = pickers[file];
-            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashRejectMessage.Index / MaxHashesPerRequest, 0), out _, new HashSet<IRequester> ()))
+            if (!picker.Item1.ValidatePiece (picker.Item2.Wrap (id), new PieceSegment (hashRejectMessage.Index / MaxHashesPerRequest, 0), out _, new HashSet<IRequester> ()))
                 return;
 
             IgnoredPeers.Add (id);
@@ -198,7 +215,7 @@ namespace MonoTorrent.Client.Modes
                 return;
 
             var picker = pickers[file];
-            if (!picker.Item1.ValidatePiece (id, new PieceSegment (hashesMessage.Index / MaxHashesPerRequest, 0), out _, new HashSet<IRequester> ())) {
+            if (!picker.Item1.ValidatePiece (picker.Item2.Wrap (id), new PieceSegment (hashesMessage.Index / MaxHashesPerRequest, 0), out _, new HashSet<IRequester> ())) {
                 ConnectionManager.CleanupSocket (Manager, id);
                 return;
             }
@@ -232,7 +249,7 @@ namespace MonoTorrent.Client.Modes
                 // Cancel any duplicate requests
                 foreach (var peer in Manager.Peers.ConnectedPeers)
                     foreach (var p in pickers)
-                        p.Value.Item1.CancelRequests (peer, 0, p.Key.EndPieceIndex - p.Key.StartPieceIndex + 1);
+                        p.Value.Item1.CancelRequests (p.Value.Item2.Wrap (peer), 0, p.Key.EndPieceIndex - p.Key.StartPieceIndex + 1);
                 if (StopWhenDone)
                     Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
                 else

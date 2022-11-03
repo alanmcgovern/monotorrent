@@ -105,18 +105,11 @@ namespace MonoTorrent.PiecePicking
         // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 
         BitField? CanRequestBitField;
-        bool IgnoreChokeState { get; }
         PickedPieces? Requests { get; set; }
         IPieceRequesterData? TorrentData { get; set; }
 
         public StandardPicker ()
-            : this (false)
         {
-        }
-
-        public StandardPicker (bool ignoreChokeState)
-        {
-            IgnoreChokeState = ignoreChokeState;
         }
 
         public int CancelRequests (IRequester peer, int startIndex, int endIndex, Span<PieceSegment> cancellations)
@@ -238,7 +231,7 @@ namespace MonoTorrent.PiecePicking
                 return 1;
 
             // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
-            if (peer.IsChoking && !IgnoreChokeState)
+            if (peer.IsChoking)
                 return 0;
 
             // Only try to continue an abandoned piece if this peer has not recently been involved in downloading data which
