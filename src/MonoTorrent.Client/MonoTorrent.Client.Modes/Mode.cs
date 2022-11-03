@@ -654,18 +654,27 @@ namespace MonoTorrent.Client.Modes
                     i--;
                     continue;
                 }
+            }
+
+            CloseConnectionsForStalePeers ();
+
+            Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
+
+            if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
+                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);
+            }
+        }
+
+        protected internal void CloseConnectionsForStalePeers ()
+        {
+            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
+                var id = Manager.Peers.ConnectedPeers[i];
 
                 if (id.LastBlockReceived.Elapsed > Settings.StaleRequestTimeout && id.AmRequestingPiecesCount > 0) {
                     ConnectionManager.CleanupSocket (Manager, id);
                     i--;
                     continue;
                 }
-            }
-
-            Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
-
-            if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
-                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);
             }
         }
 
