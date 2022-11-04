@@ -96,7 +96,6 @@ namespace MonoTorrent.Client.Modes
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
                 var message = HashRequestMessage.Create (root, totalHashes, actualPieceLength, block.PieceIndex * PieceLength, MaxHashesPerRequest);
-                peer.LastBlockReceived.Restart ();
                 peer.MessageQueue.Enqueue (message);
             }
 
@@ -224,7 +223,11 @@ namespace MonoTorrent.Client.Modes
 
             // If the piece validated correctly we should indicate that this peer is healthy and is providing the data
             // we requested
-            id.LastBlockReceived.Restart ();
+            if (id.AmRequestingPiecesCount == 0) {
+                id.LastBlockReceived.Reset ();
+            } else {
+                id.LastBlockReceived.Restart ();
+            }
 
             // NOTE: Tweak this so we validate the hash in-place, and ensure the data we've been given, provided with the ancestor
             // hashes, combines to form the `PiecesRoot` value.

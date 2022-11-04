@@ -1191,7 +1191,6 @@ namespace MonoTorrent.Client
         {
             (var bundle, var releaser) = RequestBundle.Rent<RequestBundle> ();
             bundle.Initialize (segments.ToBlockInfo (stackalloc BlockInfo[segments.Length], this));
-            ((PeerId) peer).LastBlockReceived.Restart ();
             ((PeerId) peer).MessageQueue.Enqueue (bundle, releaser);
         }
 

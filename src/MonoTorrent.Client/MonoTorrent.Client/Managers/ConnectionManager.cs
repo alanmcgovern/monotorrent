@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
 
                 id.WhenConnected.Restart ();
-                id.LastBlockReceived.Restart ();
+                id.LastBlockReceived.Reset ();
             } catch {
                 manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (id.Peer.Info, ConnectionFailureReason.Unknown, manager));
                 CleanupSocket (manager, id);
@@ -419,7 +419,7 @@ namespace MonoTorrent.Client
 
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
-                id.LastBlockReceived.Restart ();
+                id.LastBlockReceived.Reset ();
 
                 // Send our handshake now that we've decided to keep the connection
                 var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), manager.Engine!.PeerId, Constants.ProtocolStringV100);
