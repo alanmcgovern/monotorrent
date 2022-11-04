@@ -94,7 +94,6 @@ namespace MonoTorrent.Client.Modes
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
                 var message = new LTMetadata (peer.ExtensionSupports, LTMetadata.MessageType.Request, block.BlockIndex);
-                peer.LastBlockReceived.Restart ();
                 peer.MessageQueue.Enqueue (message);
             }
 
@@ -188,7 +187,11 @@ namespace MonoTorrent.Client.Modes
 
                     // If the piece validated correctly we should indicate that this peer is healthy and is providing the data
                     // we requested
-                    id.LastBlockReceived.Restart ();
+                    if (id.AmRequestingPiecesCount == 0) {
+                        id.LastBlockReceived.Reset ();
+                    } else {
+                        id.LastBlockReceived.Restart ();
+                    }
 
                     message.MetadataPiece.CopyTo (Stream.AsMemory (message.Piece * LTMetadata.BlockSize));
                     if (pieceComplete) {

@@ -670,10 +670,17 @@ namespace MonoTorrent.Client.Modes
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 var id = Manager.Peers.ConnectedPeers[i];
 
-                if (id.LastBlockReceived.Elapsed > Settings.StaleRequestTimeout && id.AmRequestingPiecesCount > 0) {
-                    ConnectionManager.CleanupSocket (Manager, id);
-                    i--;
-                    continue;
+                if (id.AmRequestingPiecesCount > 0) {
+                    if (!id.LastBlockReceived.IsRunning)
+                        id.LastBlockReceived.Restart ();
+
+                    if (id.LastBlockReceived.Elapsed > Settings.StaleRequestTimeout) {
+                        ConnectionManager.CleanupSocket (Manager, id);
+                        i--;
+                        continue;
+                    }
+                } else {
+                    id.LastBlockReceived.Reset ();
                 }
             }
         }

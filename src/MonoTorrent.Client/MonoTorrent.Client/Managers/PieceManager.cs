@@ -69,7 +69,13 @@ namespace MonoTorrent.Client
             //FIXME: Ensure piece length is correct?
             var isValidLength = Manager.Torrent!.BytesPerBlock (message.PieceIndex, message.StartOffset / Constants.BlockSize) == message.RequestLength;
             if (Initialised && isValidLength && Requester.ValidatePiece (id, new PieceSegment (message.PieceIndex, message.StartOffset / Constants.BlockSize), out pieceComplete, peersInvolved)) {
-                id.LastBlockReceived.Restart ();
+                // If the piece validated correctly we should indicate that this peer is healthy and is providing the data
+                // we requested
+                if (id.AmRequestingPiecesCount == 0) {
+                    id.LastBlockReceived.Reset ();
+                } else {
+                    id.LastBlockReceived.Restart ();
+                }
                 if (pieceComplete)
                     PendingHashCheckPieces[message.PieceIndex] = true;
                 return true;
