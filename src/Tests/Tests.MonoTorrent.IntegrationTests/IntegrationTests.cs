@@ -152,7 +152,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         {
             var tracker = new TrackerServer ();
             tracker.AllowUnregisteredTorrents = true;
-            var listenAddress = $"http://*:{port}/";
+            var listenAddress = $"http://127.0.0.1:{port}/";
 
             var listener = TrackerListenerFactory.CreateHttp (listenAddress);
             tracker.RegisterListener (listener);
