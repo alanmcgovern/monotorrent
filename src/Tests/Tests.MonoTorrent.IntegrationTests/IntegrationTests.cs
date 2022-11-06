@@ -174,6 +174,8 @@ namespace Tests.MonoTorrent.IntegrationTests
                 ReportedAddress = new IPEndPoint (IPAddress.Parse ("127.0.0.1"), port),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
+                DhtEndPoint = null,
+                AllowPortForwarding = false,
             };
             var engine = new ClientEngine (settingBuilder.ToSettings ());
             return engine;
