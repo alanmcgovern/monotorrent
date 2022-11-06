@@ -4,6 +4,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent;
@@ -121,23 +122,27 @@ namespace Tests.MonoTorrent.IntegrationTests
             using ClientEngine seederEngine = GetEngine (_seederPort);
             using ClientEngine leecherEngine = GetEngine (_leecherPort);
 
-            var seederManager = await StartTorrent (seederEngine, torrent, seederDir.FullName, explitlyHashCheck);
-            var leecherManager = await StartTorrent (leecherEngine, torrent, leecherDir.FullName, explitlyHashCheck);
+            var seederIsSeeding = new TaskCompletionSource<bool> ();
+            var leecherIsSeeding = new TaskCompletionSource<object> ();
+            EventHandler<TorrentStateChangedEventArgs> seederIsSeedingHandler = (o, e) => {
+                if (e.NewState == TorrentState.Seeding)
+                    seederIsSeeding.TrySetResult (true);
+            };
 
+            EventHandler<TorrentStateChangedEventArgs> leecherIsSeedingHandler = (o, e) => {
+                if (e.NewState == TorrentState.Seeding)
+                    leecherIsSeeding.TrySetResult (true);
+            };
 
-            Stopwatch sw = Stopwatch.StartNew ();
-            while (!seederManager.Complete && sw.Elapsed.TotalSeconds < 5) {
-                await Task.Delay (100);
-            }
+            var seederManager = await StartTorrent (seederEngine, torrent, seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler);
+            var leecherManager = await StartTorrent (leecherEngine, torrent, leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
 
-            Assert.AreEqual (TorrentState.Seeding, seederManager.State);
+            var timeout = new CancellationTokenSource (TimeSpan.FromSeconds (10));
+            timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
+            timeout.Token.Register (() => { leecherIsSeeding.TrySetCanceled (); });
 
-            sw.Restart ();
-            while (!leecherManager.Complete && sw.Elapsed.TotalSeconds < 5) {
-                await Task.Delay (100);
-            }
-
-            Assert.IsTrue (leecherManager.Complete, "Torrent should complete");
+            Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
+            Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task, "Leecher should have downloaded all data");
 
             foreach (var file in nonEmptyFiles) {
                 var leecherNonEmptyFile = new FileInfo (Path.Combine (leecherDir.FullName, file.Name));
@@ -174,12 +179,13 @@ namespace Tests.MonoTorrent.IntegrationTests
             return engine;
         }
 
-        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck)
+        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
         {
             TorrentSettingsBuilder torrentSettingsBuilder = new TorrentSettingsBuilder () {
                 CreateContainingDirectory = false,
             };
             TorrentManager manager = await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ());
+            manager.TorrentStateChanged += handler;
             if (explicitlyHashCheck)
                 await manager.HashCheckAsync (true);
             else
