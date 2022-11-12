@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    class CustomTracker : ITrackerConnection
+    class CustomTrackerConnection : ITrackerConnection
     {
         public List<DateTime> AnnouncedAt = new List<DateTime> ();
         public List<AnnounceRequest> AnnounceParameters = new List<AnnounceRequest> ();
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
 
         readonly List<Peer> peers = new List<Peer> ();
 
-        public CustomTracker (Uri uri)
+        public CustomTrackerConnection (Uri uri)
         {
             Uri = uri;
         }
@@ -419,7 +419,7 @@ namespace MonoTorrent.Client
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
-                .WithTrackerCreator ("custom", uri => new Tracker (new CustomTracker (uri)))
+                .WithTrackerCreator ("custom", uri => new Tracker (new CustomTrackerConnection (uri)))
                 ;
 
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (

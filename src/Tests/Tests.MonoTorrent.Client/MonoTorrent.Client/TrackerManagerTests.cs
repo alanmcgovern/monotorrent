@@ -43,35 +43,54 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    class TrackerWithConnection : Tracker
+    class CustomTracker : Tracker
     {
-        public CustomTracker Connection { get; }
+        public CustomTrackerConnection Connection { get; }
 
-        public TrackerWithConnection (ITrackerConnection connection)
+        public CustomTracker (CustomTrackerConnection connection)
             : base (connection)
         {
-            Connection = (CustomTracker) connection;
+            Connection = connection;
         }
     }
-    class DefaultTracker : ITrackerConnection
+
+    class RateLimitingTracker : Tracker
+    {
+        public RateLimitingTrackerConnection Connection { get; }
+
+        public RateLimitingTracker (RateLimitingTrackerConnection connection)
+            : base (connection)
+        {
+            Connection = (RateLimitingTrackerConnection) connection;
+        }
+    }
+
+    class RateLimitingTrackerConnection : ITrackerConnection
     {
         public bool CanScrape => true;
 
         public Uri Uri => new Uri ("http://tracker:5353/announce");
 
-        public DefaultTracker ()
+        public List<TaskCompletionSource<TrackerState>> PendingAnnounces { get; } = new List<TaskCompletionSource<TrackerState>> ();
+        public List<TaskCompletionSource<TrackerState>> PendingScrapes { get; } = new List<TaskCompletionSource<TrackerState>> ();
+
+        public RateLimitingTrackerConnection ()
         {
 
         }
 
-        public ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
+        public async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
         {
-            return ReusableTask.FromResult (new AnnounceResponse (TrackerState.Ok));
+            var tcs = new TaskCompletionSource<TrackerState> ();
+            PendingAnnounces.Add (tcs);
+            return new AnnounceResponse (await tcs.Task);
         }
 
-        public ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest parameters, CancellationToken token)
+        public async ReusableTask<ScrapeResponse> ScrapeAsync (ScrapeRequest parameters, CancellationToken token)
         {
-            return ReusableTask.FromResult (new ScrapeResponse (TrackerState.Ok));
+            var tcs = new TaskCompletionSource<TrackerState> ();
+            PendingScrapes.Add (tcs);
+            return new ScrapeResponse (await tcs.Task);
         }
     }
 
@@ -110,7 +129,7 @@ namespace MonoTorrent.Client
         };
 
         TrackerManager trackerManager;
-        IList<List<TrackerWithConnection>> trackers;
+        IList<List<CustomTracker>> trackers;
 
         Factories Factories { get; set; }
 
@@ -118,9 +137,9 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             Factories = Factories.Default
-                .WithTrackerCreator ("custom", uri => new TrackerWithConnection (new CustomTracker (uri)));
+                .WithTrackerCreator ("custom", uri => new CustomTracker (new CustomTrackerConnection (uri)));
             trackerManager = new TrackerManager (Factories, new RequestFactory (), trackerUrls, true);
-            trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<TrackerWithConnection> ().ToList ()).ToList ();
+            trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
         [Test]
@@ -232,6 +251,47 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task Announce_RateLimitedAnnounceAttempts ()
+        {
+            var factories = Factories.Default
+                .WithTrackerCreator ("custom", uri => new RateLimitingTracker (new RateLimitingTrackerConnection ()));
+
+            var tier = new[] { new[] { $"custom://tracker/announce" } };
+            var trackerManager = new TrackerManager (factories, new RequestFactory (), tier, true);
+            var trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<RateLimitingTracker> ().ToList ()).ToList ();
+
+            // only 1 concurrent regular announce can run at a time. 
+            var announce = trackerManager.AnnounceAsync (CancellationToken.None);
+
+            // These should all early-exit
+            for (int i = 0; i < 3; i++)
+                await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout (TimeSpan.FromSeconds (10));
+            for (int i = 0; i < 3; i++)
+                await trackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None).WithTimeout (TimeSpan.FromSeconds (10));
+
+            Assert.IsFalse (announce.IsCompleted);
+        }
+
+        [Test]
+        public void Announce_RateLimitedTierAnnounces ()
+        {
+            var factories = Factories.Default
+                .WithTrackerCreator ("custom", uri => new RateLimitingTracker (new RateLimitingTrackerConnection ()));
+
+            // Create 100 tracker tiers.
+            var urls = Enumerable.Range (0, 100).Select (t => new[] { $"custom://tracker{t}/announce" }).ToArray ();
+            var trackerManager = new TrackerManager (factories, new RequestFactory (), urls, true);
+            var trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<RateLimitingTracker> ().ToList ()).ToList ();
+
+            var cts = new CancellationTokenSource (TimeSpan.FromSeconds (10));
+            var announce = trackerManager.AnnounceAsync (CancellationToken.None);
+            while (trackers.SelectMany (t => t).Where (t => t.Connection.PendingAnnounces.Count == 1).Count () != 15) {
+                Thread.Sleep (1);
+                cts.Token.ThrowIfCancellationRequested ();
+            }
+        }
+
+        [Test]
         public async Task CurrentTracker ()
         {
             trackers[0][0].Connection.FailAnnounce = true;
@@ -273,7 +333,7 @@ namespace MonoTorrent.Client
         [Test]
         public void Defaults ()
         {
-            var tracker = new Tracker (new DefaultTracker ());
+            var tracker = new CustomTracker (new CustomTrackerConnection (new Uri("http://tester/announce")));
             Assert.AreEqual (TimeSpan.FromMinutes (3), tracker.MinUpdateInterval, "#1");
             Assert.AreEqual (TimeSpan.FromMinutes (30), tracker.UpdateInterval, "#2");
             Assert.IsNotNull (tracker.WarningMessage, "#3");
