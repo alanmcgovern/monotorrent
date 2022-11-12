@@ -22,7 +22,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            _tracker = GetTracker (_trackerPort);
+            (_tracker, _trackerListener) = GetTracker (_trackerPort);
         }
 
         [SetUp]
@@ -45,6 +45,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         public void Cleanup ()
         {
             _tracker.Dispose ();
+            _trackerListener.Stop ();
         }
 
         const int _trackerPort = 40000;
@@ -52,6 +53,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         const int _leecherPort = 40002;
 
         private TrackerServer _tracker;
+        private ITrackerListener _trackerListener;
         private DirectoryInfo _directory;
 
         [Test]
@@ -153,7 +155,7 @@ namespace Tests.MonoTorrent.IntegrationTests
             Assert.AreEqual (createEmptyFile, leecherEmptyFile.Exists, "Empty file should exist when created");
         }
 
-        private TrackerServer GetTracker (int port)
+        private (TrackerServer, ITrackerListener) GetTracker (int port)
         {
             var tracker = new TrackerServer ();
             tracker.AllowUnregisteredTorrents = true;
@@ -162,7 +164,7 @@ namespace Tests.MonoTorrent.IntegrationTests
             var listener = TrackerListenerFactory.CreateHttp (listenAddress);
             tracker.RegisterListener (listener);
             listener.Start ();
-            return tracker;
+            return (tracker, listener);
         }
 
         private ClientEngine GetEngine (int port)
