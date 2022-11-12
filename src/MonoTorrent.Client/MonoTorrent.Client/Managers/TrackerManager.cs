@@ -44,6 +44,8 @@ namespace MonoTorrent.Trackers
     /// </summary>
     class TrackerManager : ITrackerManager
     {
+        static readonly int MaxConcurrentAnnounces = 15;
+
         public event EventHandler<AnnounceResponseEventArgs>? AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs>? ScrapeComplete;
 
@@ -190,7 +192,7 @@ namespace MonoTorrent.Trackers
                 var activeAnnounces = new List<Task> ();
 
                 while (pendingTiers.Count > 0) {
-                    if (activeAnnounces.Count == 10) {
+                    if (activeAnnounces.Count == MaxConcurrentAnnounces) {
                         var completed = await Task.WhenAny (activeAnnounces);
                         activeAnnounces.Remove (completed);
                         await completed;
@@ -206,13 +208,10 @@ namespace MonoTorrent.Trackers
                 }
                 await Task.WhenAll (activeAnnounces);
             } else {
-                // This only occurs whent the user has manually announced to a specific tracker.
-                try {
-                    var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
-                    AnnounceRequest args = RequestFactory.CreateAnnounce (TorrentEvent.None);
-                    await trackerTier.AnnounceAsync (args, tracker, token);
-                } catch {
-                }
+                // This only occurs when the user has manually announced to a specific tracker.
+                var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
+                AnnounceRequest args = RequestFactory.CreateAnnounce (TorrentEvent.None);
+                await trackerTier.AnnounceAsync (args, tracker, token);
             }
         }
 
