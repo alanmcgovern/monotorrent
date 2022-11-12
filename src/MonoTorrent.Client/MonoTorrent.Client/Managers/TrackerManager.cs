@@ -47,7 +47,7 @@ namespace MonoTorrent.Trackers
         public event EventHandler<AnnounceResponseEventArgs>? AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs>? ScrapeComplete;
 
-        public SemaphoreSlim AnnounceLimiter { get; }
+        ReusableExclusiveSemaphore AnnounceLimiter { get; }
 
         Factories Factories { get; }
 
@@ -77,7 +77,7 @@ namespace MonoTorrent.Trackers
         /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
         internal TrackerManager (Factories factories, ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
         {
-            AnnounceLimiter = new SemaphoreSlim (10);
+            AnnounceLimiter = new ReusableExclusiveSemaphore ();
             Factories = factories;
             RequestFactory = requestFactory;
             Private = isPrivate;
@@ -154,48 +154,66 @@ namespace MonoTorrent.Trackers
         public ReusableTask AnnounceAsync (CancellationToken token)
             => AnnounceAsync (TorrentEvent.None, token);
 
-        public async ReusableTask AnnounceAsync (TorrentEvent clientEvent, CancellationToken token)
+        public ReusableTask AnnounceAsync (TorrentEvent clientEvent, CancellationToken token)
+            => AnnounceAsync (clientEvent, null, token);
+
+        public ReusableTask AnnounceAsync (ITracker tracker, CancellationToken token)
+            => AnnounceAsync (TorrentEvent.None, tracker ?? throw new ArgumentNullException (nameof (tracker)), token);
+
+        async ReusableTask AnnounceAsync (TorrentEvent clientEvent, ITracker? tracker, CancellationToken token)
         {
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
-            var args = RequestFactory.CreateAnnounce (clientEvent);
-            var announces = new List<Task> ();
-            for (int i = 0; i < Tiers.Count; i++) {
-                var task = AnnounceTierAsync (Tiers[i], args, token);
-                if (task.IsCompleted)
-                    await task;
-                else
-                    announces.Add (task.AsTask ());
+            // Check if there are any in-progress announce requests being handled.
+            if (!AnnounceLimiter.TryEnter (out ReusableExclusiveSemaphore.Releaser releaser)) {
+                // There is an in-progress announce, and this is a regular recurring announce attempt, so just bail out.
+                if (tracker is null && clientEvent == TorrentEvent.None)
+                    return;
+
+                // If we get here it means there's an in-progress announce *and* this is a special event. Either the user
+                // has announced to a specific tracker, or we have a special 'TorrentEvent' to announce to the tracker.
+                // Wait for the in-progress announce to complete, then run this one!
+                releaser = await AnnounceLimiter.EnterAsync ();
             }
 
-            if (announces.Count > 0)
-                await Task.WhenAll (announces);
-        }
-        async ReusableTask AnnounceTierAsync (TrackerTier tier, AnnounceRequest args, CancellationToken token)
-        {
-            using (await AnnounceLimiter.EnterAsync ())
-                await tier.AnnounceAsync (args, token);
-        }
+            using var autorelease = releaser;
+            token.ThrowIfCancellationRequested ();
 
-        public async ReusableTask AnnounceAsync (ITracker tracker, CancellationToken token)
-        {
-            Check.Tracker (tracker);
+            // This is either a regularly scheduled announce, or a specific TorrentEvent is being sent to the tracker.
+            if (tracker is null) {
+                // Create and re-use the announce args for all trackers and tiers
+                var args = RequestFactory.CreateAnnounce (clientEvent);
 
-            // If the user initiates an Announce we need to go to the correct thread to process it.
-            await ClientEngine.MainLoop;
+                // Capture a list of Tiers in case the user adds/removes any mid-announce.
+                var pendingTiers = new Queue<TrackerTier> (Tiers);
+                var activeAnnounces = new List<Task> ();
 
-            try {
-                var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
-                AnnounceRequest args = RequestFactory.CreateAnnounce (TorrentEvent.None);
-                await AnnounceTrackerAsync (trackerTier, args, tracker, token);
-            } catch {
+                while (pendingTiers.Count > 0) {
+                    if (activeAnnounces.Count == 10) {
+                        var completed = await Task.WhenAny (activeAnnounces);
+                        activeAnnounces.Remove (completed);
+                        await completed;
+                    }
+
+                    // The announce *might* fast-path and exit immediately if that
+                    // tracker has been announced to recently.
+                    var task = pendingTiers.Dequeue ().AnnounceAsync (args, token);
+                    if (task.IsCompleted)
+                        await task;
+                    else
+                        activeAnnounces.Add (task.AsTask ());
+                }
+                await Task.WhenAll (activeAnnounces);
+            } else {
+                // This only occurs whent the user has manually announced to a specific tracker.
+                try {
+                    var trackerTier = Tiers.First (t => t.Trackers.Contains (tracker));
+                    AnnounceRequest args = RequestFactory.CreateAnnounce (TorrentEvent.None);
+                    await trackerTier.AnnounceAsync (args, tracker, token);
+                } catch {
+                }
             }
-        }
-        async ReusableTask AnnounceTrackerAsync (TrackerTier tier, AnnounceRequest args, ITracker tracker, CancellationToken token)
-        {
-            using (await AnnounceLimiter.EnterAsync ())
-                await tier.AnnounceAsync (args, tracker, token);
         }
 
         public async ReusableTask ScrapeAsync (CancellationToken token)
