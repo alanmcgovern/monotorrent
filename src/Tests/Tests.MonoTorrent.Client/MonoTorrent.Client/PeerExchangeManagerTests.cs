@@ -16,8 +16,10 @@ namespace MonoTorrent.Client
         {
             public TorrentSettings Settings { get; } = new TorrentSettings ();
 
+#pragma warning disable CS0067
             public event EventHandler<PeerConnectedEventArgs> PeerConnected;
             public event EventHandler<PeerDisconnectedEventArgs> PeerDisconnected;
+#pragma warning restore CS0067
         }
 
         byte counter = 0;

@@ -75,10 +75,12 @@ namespace ClientSample
             public CachePolicy Policy { get; }
             public IPieceWriter Writer { get; set; }
 
+#pragma warning disable CS0067
             public event EventHandler<BlockInfo> ReadFromCache;
             public event EventHandler<BlockInfo> ReadThroughCache;
             public event EventHandler<BlockInfo> WrittenToCache;
             public event EventHandler<BlockInfo> WrittenThroughCache;
+#pragma warning restore CS0067
 
             Dictionary<BlockInfo, ReadOnlyMemory<byte>> Cache = new Dictionary<BlockInfo, ReadOnlyMemory<byte>> ();
 

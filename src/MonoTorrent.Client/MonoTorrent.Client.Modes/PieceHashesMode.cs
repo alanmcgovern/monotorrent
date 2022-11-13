@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.Modes
 
             public IRequester Wrap (PeerId peer)
             {
-                if (!WrappedPeers.TryGetValue (peer, out IgnoringChokeStateRequester wrapper)) {
+                if (!WrappedPeers.TryGetValue (peer, out IgnoringChokeStateRequester? wrapper)) {
                     WrappedPeers[peer] = wrapper = new IgnoringChokeStateRequester (peer);
                     UnwrappedPeers[wrapper] = peer;
                 }
