@@ -36,13 +36,13 @@ namespace MonoTorrent.Client.Modes
 {
     class StoppedMode : IMode
     {
-        CancellationTokenSource Cancellation { get; }
         public bool CanAcceptConnections => false;
         public bool CanHandleMessages => false;
         public bool CanHashCheck => true;
         public TorrentState State => TorrentState.Stopped;
-
         public CancellationToken Token => Cancellation.Token;
+
+        CancellationTokenSource Cancellation { get; }
 
         public StoppedMode ()
             => (Cancellation) = (new CancellationTokenSource ());

@@ -45,13 +45,13 @@ namespace MonoTorrent.Client.Modes
     {
         static readonly Logger Log = Logger.Create (nameof (StartingMode));
 
-        CancellationTokenSource Cancellation { get; }
         public bool CanAcceptConnections => false;
         public bool CanHandleMessages => false;
         public bool CanHashCheck => true;
         public TorrentState State => TorrentState.Starting;
         public CancellationToken Token => Cancellation.Token;
 
+        CancellationTokenSource Cancellation { get; }
         ConnectionManager ConnectionManager { get; }
         DiskManager DiskManager { get; }
         TorrentManager Manager { get; }

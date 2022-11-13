@@ -792,7 +792,7 @@ namespace MonoTorrent.Client
                 Mode = new StoppedMode ();
                 await Engine!.StopAsync ();
             } else if (State != TorrentState.Stopped) {
-                var stoppingMode = new StoppingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                var stoppingMode = new StoppingMode (this, Engine!.DiskManager, Engine.ConnectionManager);
                 Mode = stoppingMode;
                 await stoppingMode.WaitForStoppingToComplete (timeout);
 
