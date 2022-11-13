@@ -916,16 +916,11 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void RaisePeerConnected (PeerConnectedEventArgs args)
-        {
-            PeerConnected?.InvokeAsync (this, args);
-        }
+        internal void RaisePeerConnected (PeerId id)
+            => PeerConnected?.InvokeAsync (this, new PeerConnectedEventArgs (this, id));
 
-        internal void RaisePeerDisconnected (PeerDisconnectedEventArgs args)
-        {
-            Mode.HandlePeerDisconnected (args.Peer);
-            PeerDisconnected?.InvokeAsync (this, args);
-        }
+        internal void RaisePeerDisconnected (PeerId id)
+            => PeerDisconnected?.InvokeAsync (this, new PeerDisconnectedEventArgs (this, id));
 
         internal void RaisePeersFound (PeersAddedEventArgs args)
         {
@@ -1166,14 +1161,6 @@ namespace MonoTorrent.Client
             Error = new Error (reason, ex);
             Mode = new ErrorMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
             return true;
-        }
-
-        internal void HandlePeerConnected (PeerId id)
-        {
-            // The only message sent/received so far is the Handshake message.
-            // The current mode decides what additional messages need to be sent.
-            RaisePeerConnected (new PeerConnectedEventArgs (this, id));
-            Mode.HandlePeerConnected (id);
         }
 
         IList<ITorrentManagerFile> IPieceRequesterData.Files => Files;

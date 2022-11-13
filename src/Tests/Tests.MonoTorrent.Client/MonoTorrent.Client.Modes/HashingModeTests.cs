@@ -90,7 +90,7 @@ namespace MonoTorrent.Client.Modes
             Manager.Mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
 
             Assert.IsFalse (Peer.Connection.Disposed, "#1");
-            Manager.HandlePeerConnected (Peer);
+            Manager.Mode.HandlePeerConnected (Peer);
             Assert.IsTrue (Peer.Connection.Disposed, "#2");
             Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
         }

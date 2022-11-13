@@ -59,13 +59,6 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        public override void HandlePeerConnected (PeerId id)
-        {
-            if (!ShouldConnect (id))
-                ConnectionManager.CleanupSocket (Manager, id);
-            base.HandlePeerConnected (id);
-        }
-
         public override bool ShouldConnect (Peer peer)
         {
             return !(peer.IsSeeder && Manager.HasMetadata && Manager.Complete);
@@ -78,7 +71,7 @@ namespace MonoTorrent.Client.Modes
             _ = UpdateSeedingDownloadingState ();
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                if (!ShouldConnect (Manager.Peers.ConnectedPeers[i])) {
+                if (!ShouldConnect (Manager.Peers.ConnectedPeers[i].Peer)) {
                     ConnectionManager.CleanupSocket (Manager, Manager.Peers.ConnectedPeers[i]);
                     i--;
                 }

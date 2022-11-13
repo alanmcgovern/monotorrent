@@ -247,7 +247,7 @@ namespace MonoTorrent.Client
                 if (id.BitField.Length != manager.Bitfield.Length)
                     throw new TorrentException ($"The peer's bitfield was of length {id.BitField.Length} but the TorrentManager's bitfield was of length {manager.Bitfield.Length}.");
 
-                manager.HandlePeerConnected (id);
+                manager.Mode.HandlePeerConnected (id);
                 id.MessageQueue.SetReady ();
                 TryProcessQueue (manager, id);
 
@@ -358,7 +358,11 @@ namespace MonoTorrent.Client
             } catch (Exception ex) {
                 logger.Exception (ex, "An unexpected error occured cleaning up a connection");
             } finally {
-                manager.RaisePeerDisconnected (new PeerDisconnectedEventArgs (manager, id));
+                try {
+                    manager.Mode.HandlePeerDisconnected (id);
+                } catch (Exception ex) {
+                    logger.Exception (ex, "An unexpected error occured calling HandlePeerDisconnected");
+                }
             }
 
             id.Dispose ();
@@ -425,7 +429,7 @@ namespace MonoTorrent.Client
                 var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), manager.Engine!.PeerId, Constants.ProtocolStringV100);
                 await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
 
-                manager.HandlePeerConnected (id);
+                manager.Mode.HandlePeerConnected (id);
                 id.MessageQueue.SetReady ();
                 TryProcessQueue (manager, id);
 

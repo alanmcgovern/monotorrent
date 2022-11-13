@@ -183,11 +183,6 @@ namespace MonoTorrent.Client.Modes
         {
         }
 
-        public bool ShouldConnect (PeerId peer)
-        {
-            return ShouldConnect (peer.Peer);
-        }
-
         public virtual bool ShouldConnect (Peer peer)
         {
             return true;
@@ -520,7 +515,9 @@ namespace MonoTorrent.Client.Modes
 
         public virtual void HandlePeerConnected (PeerId id)
         {
-            if (CanAcceptConnections) {
+            Manager.RaisePeerConnected (id);
+
+            if (CanAcceptConnections && ShouldConnect (id.Peer)) {
                 (var bundle, var releaser) = PeerMessage.Rent<MessageBundle> ();
 
                 AppendBitfieldMessage (id, bundle);
@@ -535,7 +532,7 @@ namespace MonoTorrent.Client.Modes
 
         public virtual void HandlePeerDisconnected (PeerId id)
         {
-
+            Manager.RaisePeerDisconnected (id);
         }
 
         protected virtual void AppendExtendedHandshake (PeerId id, MessageBundle bundle)
@@ -703,7 +700,7 @@ namespace MonoTorrent.Client.Modes
                     id.ClientApp = new Software (id.PeerID);
                     Manager.Peers.ConnectedPeers.Add (id);
                     Interlocked.Increment (ref ConnectionManager.openConnections);
-                    Manager.RaisePeerConnected (new PeerConnectedEventArgs (Manager, id));
+                    Manager.RaisePeerConnected (id);
                     ConnectionManager.ReceiveMessagesAsync (id.Connection, id.Decryptor, Manager.DownloadLimiters, id.Monitor, Manager, id);
                     if (!Manager.Complete) {
                         SetAmInterestedStatus (id, true);
