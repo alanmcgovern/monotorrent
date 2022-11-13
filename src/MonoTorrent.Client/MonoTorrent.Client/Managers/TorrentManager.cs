@@ -441,7 +441,7 @@ namespace MonoTorrent.Client
             Peers = new PeerManager ();
             PieceManager = new PieceManager (this);
 
-            mode = new StoppedMode (this, engine.DiskManager, engine.ConnectionManager, engine.Settings);
+            mode = new StoppedMode ();
             DownloadLimiter = new RateLimiter ();
             DownloadLimiters = new RateLimiterGroup {
                 new PauseLimiter(this),
@@ -581,7 +581,7 @@ namespace MonoTorrent.Client
             } else if (setStoppedModeWhenDone) {
                 await MaybeWriteFastResumeAsync ();
 
-                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new StoppedMode ();
             }
         }
 
@@ -789,15 +789,15 @@ namespace MonoTorrent.Client
 
             if (State == TorrentState.Error) {
                 Error = null;
-                Mode = new StoppedMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
-                await Engine.StopAsync ();
+                Mode = new StoppedMode ();
+                await Engine!.StopAsync ();
             } else if (State != TorrentState.Stopped) {
                 var stoppingMode = new StoppingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
                 Mode = stoppingMode;
                 await stoppingMode.WaitForStoppingToComplete (timeout);
 
                 stoppingMode.Token.ThrowIfCancellationRequested ();
-                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new StoppedMode ();
                 await MaybeWriteFastResumeAsync ();
                 await Engine.StopAsync ();
             }

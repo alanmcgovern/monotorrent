@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Modes
             mode.Pause ();
 
             var hashingTask = mode.WaitForHashingToComplete ();
-            var stoppedMode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+            var stoppedMode = new StoppedMode ();
             Manager.Mode = stoppedMode;
 
             // Ensure the hashing mode ends and does not throw exceptions.

@@ -260,7 +260,7 @@ namespace MonoTorrent.Client.Modes
                     foreach (var p in pickers)
                         p.Value.Item1.CancelRequests (p.Value.Item2.Wrap (peer), 0, p.Key.EndPieceIndex - p.Key.StartPieceIndex + 1);
                 if (StopWhenDone)
-                    Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+                    Manager.Mode = new StoppedMode ();
                 else
                     Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }

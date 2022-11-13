@@ -94,7 +94,7 @@ namespace MonoTorrent.Client.Modes
 
             if (!Manager.HashChecked) {
                 if (Manager.Mode == this)
-                    Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+                    Manager.Mode = new StoppedMode ();
                 return;
             }
 

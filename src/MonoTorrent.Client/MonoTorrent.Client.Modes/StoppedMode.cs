@@ -1,5 +1,5 @@
 //
-// StoppingMode.cs
+// StoppedMode.cs
 //
 // Authors:
 //   Alan McGovern <alan.mcgovern@gmail.com>
@@ -27,21 +27,42 @@
 //
 
 
+using System;
+using System.Threading;
+
+using MonoTorrent.Messages.Peer;
+
 namespace MonoTorrent.Client.Modes
 {
-    class StoppedMode : Mode
+    class StoppedMode : IMode
     {
-        public override bool CanAcceptConnections => false;
-        public override bool CanHandleMessages => false;
-        public override bool CanHashCheck => true;
-        public override TorrentState State => TorrentState.Stopped;
+        CancellationTokenSource Cancellation { get; }
+        public bool CanAcceptConnections => false;
+        public bool CanHandleMessages => false;
+        public bool CanHashCheck => true;
+        public TorrentState State => TorrentState.Stopped;
 
-        public StoppedMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
-        {
-        }
+        public CancellationToken Token => Cancellation.Token;
 
-        public override void Tick (int counter)
+        public StoppedMode ()
+            => (Cancellation) = (new CancellationTokenSource ());
+
+        public void Dispose ()
+            => Cancellation.Cancel ();
+
+        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerConnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerDisconnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public bool ShouldConnect (Peer peer)
+            => false;
+
+        public void Tick (int counter)
         {
             // Do not run any of the default 'Tick' logic as nothing happens during 'Stopped' mode.
         }
