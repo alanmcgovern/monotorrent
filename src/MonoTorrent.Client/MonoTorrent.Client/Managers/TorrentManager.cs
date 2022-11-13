@@ -1159,7 +1159,7 @@ namespace MonoTorrent.Client
                 return false;
 
             Error = new Error (reason, ex);
-            Mode = new ErrorMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            Mode = new ErrorMode (this, Engine!.ConnectionManager);
             return true;
         }
 

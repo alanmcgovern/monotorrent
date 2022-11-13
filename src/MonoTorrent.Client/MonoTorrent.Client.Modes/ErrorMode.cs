@@ -27,28 +27,57 @@
 //
 
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
+
+using MonoTorrent.Messages.Peer;
 
 namespace MonoTorrent.Client.Modes
 {
-    class ErrorMode : Mode
+    class ErrorMode : IMode
     {
-        public override TorrentState State => TorrentState.Error;
+        bool ranOnce = false;
+        public bool CanAcceptConnections => false;
+        public bool CanHandleMessages => false;
+        public bool CanHashCheck => true;
+        public TorrentState State => TorrentState.Error;
+        public CancellationToken Token => Cancellation.Token;
 
-        public override bool CanAcceptConnections => false;
-        public override bool CanHandleMessages => false;
+        CancellationTokenSource Cancellation { get; }
+        ConnectionManager ConnectionManager { get; }
+        TorrentManager Manager { get; }
 
-        public ErrorMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
+        public ErrorMode (TorrentManager manager, ConnectionManager connectionManager)
+            => (Cancellation, Manager, ConnectionManager) = (new CancellationTokenSource (), manager, connectionManager);
+
+        public void Dispose ()
+            => Cancellation.Cancel ();
+
+        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerConnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerDisconnected (PeerId id)
         {
+            // Nothing special needs to happen when a peer disconnects now.
         }
 
-        public override void Tick (int counter)
+        public bool ShouldConnect (Peer peer)
+            => false;
+
+        public void Tick (int counter)
         {
+            if (ranOnce)
+                return;
+
+            ranOnce = true;
             Manager.SetNeedsHashCheck ();
             Manager.Monitor.Reset ();
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
-                Manager.Engine!.ConnectionManager.CleanupSocket (Manager, id);
+                ConnectionManager.CleanupSocket (Manager, id);
         }
     }
 }
