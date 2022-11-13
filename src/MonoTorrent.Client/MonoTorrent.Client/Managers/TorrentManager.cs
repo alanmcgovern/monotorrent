@@ -562,7 +562,7 @@ namespace MonoTorrent.Client
             // will not be hashed, or downloaded.
             UnhashedPieces.SetAll (true);
 
-            var hashingMode = new HashingMode (this, Engine!.DiskManager, Engine.Settings);
+            var hashingMode = new HashingMode (this, Engine!.DiskManager);
             Mode = hashingMode;
 
             try {

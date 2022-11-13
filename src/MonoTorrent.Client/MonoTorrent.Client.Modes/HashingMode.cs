@@ -44,18 +44,16 @@ namespace MonoTorrent.Client.Modes
         public bool CanHandleMessages => false;
         public bool CanHashCheck => false;
         public TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
+        public CancellationToken Token => Cancellation.Token;
 
         CancellationTokenSource Cancellation { get; }
         DiskManager DiskManager { get; }
         TorrentManager Manager { get; }
-        EngineSettings Settings { get; }
-        public CancellationToken Token => Cancellation.Token;
 
-        public HashingMode (TorrentManager manager, DiskManager diskManager, EngineSettings settings)
+        public HashingMode (TorrentManager manager, DiskManager diskManager)
         {
-            (Manager, DiskManager, Settings) = (manager, diskManager, settings);
+            (Cancellation, Manager, DiskManager) = (new CancellationTokenSource (), manager, diskManager);
 
-            Cancellation = new CancellationTokenSource ();
             // Mark it as completed so we are *not* paused by default;
             PausedCompletionSource = new TaskCompletionSource<object?> ();
             PausedCompletionSource.SetResult (null);
@@ -127,7 +125,6 @@ namespace MonoTorrent.Client.Modes
                     Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.PieceCount);
             }
         }
-
 
         public void Dispose ()
             => Cancellation.Cancel ();
