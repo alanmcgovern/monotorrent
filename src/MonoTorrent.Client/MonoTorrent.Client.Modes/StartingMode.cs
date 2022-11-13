@@ -35,26 +35,47 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Logging;
+using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
 
 namespace MonoTorrent.Client.Modes
 {
-    class StartingMode : Mode
+    class StartingMode : IMode
     {
         static readonly Logger Log = Logger.Create (nameof (StartingMode));
 
-        public override bool CanAcceptConnections => false;
-        public override bool CanHandleMessages => false;
-        public override bool CanHashCheck => true;
-        public override TorrentState State => TorrentState.Starting;
+        CancellationTokenSource Cancellation { get; }
+        public bool CanAcceptConnections => false;
+        public bool CanHandleMessages => false;
+        public bool CanHashCheck => true;
+        public TorrentState State => TorrentState.Starting;
+        public CancellationToken Token => Cancellation.Token;
+
+        ConnectionManager ConnectionManager { get; }
+        DiskManager DiskManager { get; }
+        TorrentManager Manager { get; }
+        EngineSettings Settings { get; }
 
         public StartingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
-        {
-        }
+           => (Cancellation, Manager, DiskManager, ConnectionManager, Settings) = (new CancellationTokenSource (), manager, diskManager, connectionManager, settings);
 
-        public override void Tick (int counter)
+        public void Dispose ()
+            => Cancellation.Cancel ();
+
+        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerConnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerDisconnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public bool ShouldConnect (Peer peer)
+            => false;
+
+        public void Tick (int counter)
         {
         }
 
@@ -153,12 +174,12 @@ namespace MonoTorrent.Client.Modes
                     Manager.TrackerManager.ScrapeAsync (CancellationToken.None).AsTask (),
                     Manager.TrackerManager.AnnounceAsync (TorrentEvent.Started, CancellationToken.None).AsTask ()
                 );
-            } catch {
-                // Ignore
+            } catch (Exception ex) {
+                Log.Exception (ex, "Error announcing/scraping while starting the torrent");
             }
         }
 
-        async Task TryLoadV2HashesFromCache()
+        async Task TryLoadV2HashesFromCache ()
         {
             try {
                 await MainLoop.SwitchThread ();
