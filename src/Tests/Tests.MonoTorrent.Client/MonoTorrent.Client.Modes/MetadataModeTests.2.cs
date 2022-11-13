@@ -84,28 +84,27 @@ namespace MonoTorrent.Client.Modes
             var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (autoSaveLoadMagnetLinkMetadata: false));
             var torrent = await Torrent.LoadAsync (HybridTorrentPath);
             var manager = await engine.AddAsync (new MagnetLink (torrent.InfoHashes), "bbb");
-            var metadataMode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);
+            manager.Mode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
 
-            metadataMode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
+            manager.Mode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
             Assert.AreNotEqual (0, peer.AmRequestingPiecesCount);
 
             engine.ConnectionManager.CleanupSocket (manager, peer);
-            metadataMode.HandlePeerDisconnected (peer);
             Assert.AreEqual (0, peer.AmRequestingPiecesCount);
 
             peer = manager.AddConnectedPeer (supportsLTMetdata: true);
-            metadataMode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
+            manager.Mode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
 
             while (manager.Torrent is null) {
-                metadataMode.Tick (0);
+                manager.Mode.Tick (0);
                 PeerMessage message;
                 while (peer.IsConnected && (message = peer.MessageQueue.TryDequeue ()) != null) {
                     if (message is LTMetadata metadata) {
                         if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
                             var data = torrent.InfoMetadata.Slice (metadata.Piece * Constants.BlockSize);
                             data = data.Slice (0, Math.Min (Constants.BlockSize, data.Length));
-                            metadataMode.HandleMessage (peer, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, data), default);
+                            manager.Mode.HandleMessage (peer, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, data), default);
                         }
                     }
                 }

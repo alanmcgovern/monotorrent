@@ -112,7 +112,6 @@ namespace MonoTorrent.Client.Modes
             pieceHashesMode.Tick (0);
             Assert.AreNotEqual (0, peer.AmRequestingPiecesCount);
             engine.ConnectionManager.CleanupSocket (manager, peer);
-            pieceHashesMode.HandlePeerDisconnected (peer);
             Assert.AreEqual (0, manager.Peers.ConnectedPeers.Count);
 
             peer = manager.AddConnectedPeer (supportsLTMetdata: true);
