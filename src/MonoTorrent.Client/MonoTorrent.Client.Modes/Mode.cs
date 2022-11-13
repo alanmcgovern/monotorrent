@@ -46,7 +46,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Modes
 {
-    abstract class Mode
+    abstract class Mode : IMode
     {
         static readonly Logger logger = Logger.Create (nameof (Mode));
         static readonly SHA1 AllowedFastHasher = SHA1.Create ();
@@ -170,7 +170,7 @@ namespace MonoTorrent.Client.Modes
                 bufferReleaser.Dispose ();
 
                 (var message, var releaser) = PeerMessage.Rent<HashRejectMessage> ();
-                message.Initialize(hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
+                message.Initialize (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
                 id.MessageQueue.Enqueue (message, releaser);
             }
         }

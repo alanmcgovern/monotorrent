@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This event is raised synchronously and is only used supposed to be used by tests.
         /// </summary>
-        internal event Action<Mode, Mode>? ModeChanged;
+        internal event Action<IMode, IMode>? ModeChanged;
 
         /// <summary>
         /// Raised whenever new peers are discovered and added. The object will be of type
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
-        Mode mode;
+        IMode mode;
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         TaskCompletionSource<Torrent> MetadataTask { get; }
         #endregion Member Variables
@@ -164,10 +164,10 @@ namespace MonoTorrent.Client
 
         public IList<ITorrentManagerFile> Files { get; private set; }
 
-        internal Mode Mode {
+        internal IMode Mode {
             get => mode;
             set {
-                Mode oldMode = mode;
+                IMode oldMode = mode;
                 mode = value;
                 ModeChanged?.Invoke (oldMode, mode);
                 if (oldMode != null)
@@ -562,7 +562,7 @@ namespace MonoTorrent.Client
             // will not be hashed, or downloaded.
             UnhashedPieces.SetAll (true);
 
-            var hashingMode = new HashingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            var hashingMode = new HashingMode (this, Engine!.DiskManager, Engine.Settings);
             Mode = hashingMode;
 
             try {

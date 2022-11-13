@@ -29,25 +29,36 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.Messages.Peer;
 
 namespace MonoTorrent.Client.Modes
 {
-    class HashingMode : Mode
+    class HashingMode : IMode
     {
         TaskCompletionSource<object?> PausedCompletionSource { get; set; }
 
-        public override bool CanAcceptConnections => false;
-        public override bool CanHandleMessages => false;
-        public override bool CanHashCheck => false;
-        public override TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
+        public bool CanAcceptConnections => false;
+        public bool CanHandleMessages => false;
+        public bool CanHashCheck => false;
+        public TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
 
-        public HashingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
+        CancellationTokenSource Cancellation { get; }
+        DiskManager DiskManager { get; }
+        TorrentManager Manager { get; }
+        EngineSettings Settings { get; }
+        public CancellationToken Token => Cancellation.Token;
+
+        public HashingMode (TorrentManager manager, DiskManager diskManager, EngineSettings settings)
         {
+            (Manager, DiskManager, Settings) = (manager, diskManager, settings);
+
+            Cancellation = new CancellationTokenSource ();
             // Mark it as completed so we are *not* paused by default;
             PausedCompletionSource = new TaskCompletionSource<object?> ();
-            PausedCompletionSource.TrySetResult (null);
+            PausedCompletionSource.SetResult (null);
         }
 
         public void Pause ()
@@ -117,7 +128,23 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        public override void Tick (int counter)
+
+        public void Dispose ()
+            => Cancellation.Cancel ();
+
+        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
+            => new NotSupportedException ();
+
+        public void HandlePeerConnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerDisconnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public bool ShouldConnect (Peer peer)
+            => false;
+
+        public void Tick (int counter)
         {
             // Do not run any of the default 'Tick' logic as nothing happens during 'Hashing' mode, except for hashing.
         }

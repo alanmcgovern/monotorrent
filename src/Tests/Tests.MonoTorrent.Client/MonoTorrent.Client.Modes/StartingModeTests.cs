@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task StateChanges_AlreadyHashed ()
         {
-            var modeChanged = new List<Mode> ();
+            var modeChanged = new List<IMode> ();
             Manager.ModeChanged += (oldMode, newMode) => modeChanged.Add (newMode);
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task StateChanges_NeedsHashing ()
         {
-            var modeChanged = new List<Mode> ();
+            var modeChanged = new List<IMode> ();
             Manager.ModeChanged += (oldMode, newMode) => modeChanged.Add (newMode);
 
             var mode = new StartingMode (Manager, DiskManager, ConnectionManager, Settings);

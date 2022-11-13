@@ -87,18 +87,16 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void AddConnection ()
         {
-            Manager.Mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = new HashingMode (Manager, DiskManager, Settings);
 
             Assert.IsFalse (Peer.Connection.Disposed, "#1");
-            Manager.Mode.HandlePeerConnected (Peer);
-            Assert.IsTrue (Peer.Connection.Disposed, "#2");
-            Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
+            Assert.Throws<NotSupportedException> (() => Manager.Mode.HandlePeerConnected (Peer));
         }
 
         [Test]
         public void CancelHashing ()
         {
-            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new HashingMode (Manager, DiskManager, Settings);
             Manager.Mode = mode;
             mode.Pause ();
 
@@ -218,7 +216,7 @@ namespace MonoTorrent.Client.Modes
                 ((TorrentFileInfo) f).BitField.SetAll (true);
             }
 
-            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var hashingMode = new HashingMode (Manager, DiskManager, Settings);
             Manager.Mode = hashingMode;
             await hashingMode.WaitForHashingToComplete ().WithTimeout ();
 
@@ -251,7 +249,7 @@ namespace MonoTorrent.Client.Modes
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
             }
 
-            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var hashingMode = new HashingMode (Manager, DiskManager, Settings);
             Manager.Mode = hashingMode;
             await hashingMode.WaitForHashingToComplete ();
             Assert.IsTrue (Manager.UnhashedPieces.AllTrue, "#1");
@@ -260,10 +258,11 @@ namespace MonoTorrent.Client.Modes
             Manager.PieceManager.AddPieceRequests (Peer);
             Assert.AreEqual (0, Peer.AmRequestingPiecesCount, "#1b");
 
-            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var downloadMode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = downloadMode;
             foreach (var file in Manager.Files) {
                 await Manager.SetFilePriorityAsync (file, Priority.Normal);
-                await Manager.Mode.TryHashPendingFilesAsync ();
+                await downloadMode.TryHashPendingFilesAsync ();
                 for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
                     Assert.IsFalse (Manager.UnhashedPieces[i], "#2." + i);
             }
@@ -296,11 +295,12 @@ namespace MonoTorrent.Client.Modes
             foreach (var f in Manager.Files)
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
 
-            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var downloadMode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = downloadMode;
             foreach (var file in Manager.Files)
                 await Manager.SetFilePriorityAsync (file, Priority.Normal);
 
-            Assert.ThrowsAsync<OperationCanceledException> (async () => await Manager.Mode.TryHashPendingFilesAsync (), "#1");
+            Assert.ThrowsAsync<OperationCanceledException> (async () => await downloadMode.TryHashPendingFilesAsync (), "#1");
             Assert.AreEqual (3, pieceHashCount, "#2");
         }
 
@@ -341,7 +341,7 @@ namespace MonoTorrent.Client.Modes
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
             }
 
-            var hashingMode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var hashingMode = new HashingMode (Manager, DiskManager, Settings);
             Manager.Mode = hashingMode;
             await hashingMode.WaitForHashingToComplete ();
 
@@ -376,7 +376,7 @@ namespace MonoTorrent.Client.Modes
             foreach (var file in Manager.Files)
                 Assert.IsTrue (file.BitField.AllTrue, "#2." + file.Path);
 
-            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new HashingMode (Manager, DiskManager, Settings);
             Manager.Mode = mode;
             await mode.WaitForHashingToComplete ();
 
@@ -388,7 +388,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task StopWhileHashing ()
         {
-            var mode = new HashingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new HashingMode (Manager, DiskManager, Settings);
             Manager.Mode = mode;
             mode.Pause ();
 
