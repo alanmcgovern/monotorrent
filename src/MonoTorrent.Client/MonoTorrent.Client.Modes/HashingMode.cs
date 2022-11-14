@@ -38,8 +38,6 @@ namespace MonoTorrent.Client.Modes
 {
     class HashingMode : IMode
     {
-        TaskCompletionSource<object?> PausedCompletionSource { get; set; }
-
         public bool CanAcceptConnections => false;
         public bool CanHandleMessages => false;
         public bool CanHashCheck => false;
@@ -49,6 +47,7 @@ namespace MonoTorrent.Client.Modes
         CancellationTokenSource Cancellation { get; }
         DiskManager DiskManager { get; }
         TorrentManager Manager { get; }
+        TaskCompletionSource<object?> PausedCompletionSource { get; set; }
 
         public HashingMode (TorrentManager manager, DiskManager diskManager)
         {

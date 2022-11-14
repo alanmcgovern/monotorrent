@@ -37,7 +37,6 @@ namespace MonoTorrent.Client.Modes
 {
     class ErrorMode : IMode
     {
-        bool ranOnce = false;
         public bool CanAcceptConnections => false;
         public bool CanHandleMessages => false;
         public bool CanHashCheck => true;
@@ -47,6 +46,7 @@ namespace MonoTorrent.Client.Modes
         CancellationTokenSource Cancellation { get; }
         ConnectionManager ConnectionManager { get; }
         TorrentManager Manager { get; }
+        bool RanOnce { get; set; }
 
         public ErrorMode (TorrentManager manager, ConnectionManager connectionManager)
             => (Cancellation, Manager, ConnectionManager) = (new CancellationTokenSource (), manager, connectionManager);
@@ -70,10 +70,10 @@ namespace MonoTorrent.Client.Modes
 
         public void Tick (int counter)
         {
-            if (ranOnce)
+            if (RanOnce)
                 return;
 
-            ranOnce = true;
+            RanOnce = true;
             Manager.SetNeedsHashCheck ();
             Manager.Monitor.Reset ();
             foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
