@@ -65,7 +65,9 @@ namespace MonoTorrent.Client.Modes
             => throw new NotSupportedException ();
 
         public void HandlePeerDisconnected (PeerId id)
-            => throw new NotSupportedException ();
+        {
+            // Peers which are disconnected at this point don't need any extra cleanup
+        }
 
         public bool ShouldConnect (Peer peer)
             => false;

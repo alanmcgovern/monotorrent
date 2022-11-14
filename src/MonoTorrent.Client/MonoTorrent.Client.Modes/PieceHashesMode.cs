@@ -119,7 +119,6 @@ namespace MonoTorrent.Client.Modes
         const int SHA256HashLength = 32;
 
         static readonly Logger logger = Logger.Create (nameof (PieceHashesMode));
-        ValueStopwatch LastAnnounced { get; set; }
         public override TorrentState State => TorrentState.FetchingHashes;
         Dictionary<ITorrentFile, (IPieceRequester, HashesRequesterData)> pickers;
         Dictionary<ITorrentFile, MerkleLayers> infoHashes;
@@ -145,27 +144,10 @@ namespace MonoTorrent.Client.Modes
 
         public override void Tick (int counter)
         {
-            MaybeAnnounce ();
+            SendAnnounces ();
             MaybeRequestNext ();
             CloseConnectionsForStalePeers ();
         }
-
-        async void MaybeAnnounce ()
-        {
-            if (!LastAnnounced.IsRunning || LastAnnounced.Elapsed > TimeSpan.FromMinutes (3)) {
-                LastAnnounced = ValueStopwatch.StartNew ();
-                try {
-                    Manager.DhtAnnounce ();
-                    await Task.WhenAll (
-                        Manager.TrackerManager.AnnounceAsync (CancellationToken.None).AsTask (),
-                        Manager.LocalPeerAnnounceAsync ()
-                    );
-                } catch {
-                    // Nothing.
-                }
-            }
-        }
-
 
         void MaybeRequestNext ()
         {

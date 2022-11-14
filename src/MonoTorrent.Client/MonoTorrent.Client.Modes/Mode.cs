@@ -589,13 +589,7 @@ namespace MonoTorrent.Client.Modes
             // had been skipped in the original hashcheck.
             _ = TryHashPendingFilesAsync ();
 
-            if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > Manager.Engine.LocalPeerDiscovery.AnnounceInternal)) {
-                _ = Manager.LocalPeerAnnounceAsync ();
-            }
-
-            if (Manager.CanUseDht && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Manager.Engine.DhtEngine.AnnounceInterval)) {
-                Manager.DhtAnnounce ();
-            }
+            SendAnnounces ();
 
             //Execute iniitial logic for individual peers
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
@@ -656,9 +650,21 @@ namespace MonoTorrent.Client.Modes
             CloseConnectionsForStalePeers ();
 
             Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
+        }
 
-            if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
-                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);
+        protected async void SendAnnounces ()
+        {
+            try {
+                var dhtAnnounce = Manager.DhtAnnounceAsync ();
+                var localPeerAnnounce = Manager.LocalPeerAnnounceAsync ();
+                var trackerAnnounce = Manager.TrackerManager.AnnounceAsync (CancellationToken.None);
+
+                // FIXME: is this ok?
+                await dhtAnnounce;
+                await localPeerAnnounce;
+                await trackerAnnounce;
+            } catch {
+                // Nothing.
             }
         }
 

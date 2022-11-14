@@ -144,7 +144,7 @@ namespace MonoTorrent.Client.Modes
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }
 
-            Manager.DhtAnnounce ();
+            await Manager.DhtAnnounceAsync ();
             await Manager.LocalPeerAnnounceAsync ();
         }
 

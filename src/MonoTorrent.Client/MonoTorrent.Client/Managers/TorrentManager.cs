@@ -728,7 +728,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task LocalPeerAnnounceAsync ()
+        public async ReusableTask LocalPeerAnnounceAsync ()
         {
             await ClientEngine.MainLoop;
 
@@ -750,14 +750,10 @@ namespace MonoTorrent.Client
         /// returned task completes as soon as the Dht announce begins.
         /// </summary>
         /// <returns></returns>
-        public async Task DhtAnnounceAsync ()
+        public async ReusableTask DhtAnnounceAsync ()
         {
             await ClientEngine.MainLoop;
-            DhtAnnounce ();
-        }
 
-        internal void DhtAnnounce ()
-        {
             if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
