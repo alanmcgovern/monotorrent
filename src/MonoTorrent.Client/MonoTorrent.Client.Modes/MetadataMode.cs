@@ -147,13 +147,11 @@ namespace MonoTorrent.Client.Modes
 
         public override void Tick (int counter)
         {
-            SendAnnounces ();
+            PreLogicTick (counter);
 
             foreach (PeerId id in Manager.Peers.ConnectedPeers)
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name))
                     RequestNextNeededPiece (id);
-
-            CloseConnectionsForStalePeers ();
         }
 
         protected override void HandleLtMetadataMessage (PeerId id, LTMetadata message)

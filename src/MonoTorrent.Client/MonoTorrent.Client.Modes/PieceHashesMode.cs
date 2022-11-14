@@ -144,9 +144,9 @@ namespace MonoTorrent.Client.Modes
 
         public override void Tick (int counter)
         {
-            SendAnnounces ();
+            PreLogicTick (counter);
+
             MaybeRequestNext ();
-            CloseConnectionsForStalePeers ();
         }
 
         void MaybeRequestNext ()

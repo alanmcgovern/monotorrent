@@ -568,6 +568,19 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
+        protected void PreLogicTick (int counter)
+        {
+            SendAnnounces ();
+            CloseConnectionsForStalePeers ();
+            Manager.Peers.UpdatePeerCounts ();
+
+            //Execute initial logic for individual peers
+            if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
+                Manager.Monitor.Tick ();
+                Manager.UpdateLimiters ();
+            }
+        }
+
         public virtual void Tick (int counter)
         {
             PreLogicTick (counter);
@@ -576,34 +589,22 @@ namespace MonoTorrent.Client.Modes
             else if (Manager.State == TorrentState.Seeding)
                 SeedingLogic (counter);
             PostLogicTick (counter);
-
         }
 
-        void PreLogicTick (int counter)
+        void PostLogicTick (int counter)
         {
-            PeerId id;
-            if (Manager.Engine == null)
-                return;
+            var ninetySeconds = TimeSpan.FromSeconds (90);
+            var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
             // If any files were changed from DoNotDownload -> Any other priority, then we should hash them if they
             // had been skipped in the original hashcheck.
             _ = TryHashPendingFilesAsync ();
 
-            SendAnnounces ();
-
-            //Execute iniitial logic for individual peers
-            if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
-                Manager.Monitor.Tick ();
-                Manager.UpdateLimiters ();
-            }
-
-            Manager.Peers.UpdatePeerCounts ();
-
             if (Manager.finishedPieces.Count > 0)
                 SendHaveMessagesToAll ();
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                id = Manager.Peers.ConnectedPeers[i];
+                var id = Manager.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
                     continue;
 
@@ -619,17 +620,9 @@ namespace MonoTorrent.Client.Modes
 
                 id.Monitor.Tick ();
             }
-        }
-
-        void PostLogicTick (int counter)
-        {
-            PeerId id;
-
-            var ninetySeconds = TimeSpan.FromSeconds (90);
-            var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                id = Manager.Peers.ConnectedPeers[i];
+                var id = Manager.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
                     continue;
 
@@ -647,28 +640,25 @@ namespace MonoTorrent.Client.Modes
                 }
             }
 
-            CloseConnectionsForStalePeers ();
-
             Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
         }
 
-        protected async void SendAnnounces ()
+        async void SendAnnounces ()
         {
             try {
                 var dhtAnnounce = Manager.DhtAnnounceAsync ();
                 var localPeerAnnounce = Manager.LocalPeerAnnounceAsync ();
                 var trackerAnnounce = Manager.TrackerManager.AnnounceAsync (CancellationToken.None);
 
-                // FIXME: is this ok?
-                await dhtAnnounce;
-                await localPeerAnnounce;
-                await trackerAnnounce;
-            } catch {
-                // Nothing.
+                try { await dhtAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing dht announce"); }
+                try { await localPeerAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing local peer announce"); }
+                try { await trackerAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing tracker announce"); }
+            } catch(Exception ex) {
+                logger.Exception (ex, "Error sending timed announces");
             }
         }
 
-        protected internal void CloseConnectionsForStalePeers ()
+        void CloseConnectionsForStalePeers ()
         {
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 var id = Manager.Peers.ConnectedPeers[i];
