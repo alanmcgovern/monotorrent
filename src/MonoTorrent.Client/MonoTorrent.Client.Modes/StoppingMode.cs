@@ -33,34 +33,55 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Logging;
+using MonoTorrent.Messages.Peer;
 
 namespace MonoTorrent.Client.Modes
 {
-    class StoppingMode : Mode
+    class StoppingMode : IMode
     {
         static readonly Logger logger = Logger.Create (nameof (StoppingMode));
 
-        public override bool CanAcceptConnections => false;
-        public override bool CanHandleMessages => false;
-        public override bool CanHashCheck => false;
-        public override TorrentState State => TorrentState.Stopping;
+        public bool CanAcceptConnections => false;
+        public bool CanHandleMessages => false;
+        public bool CanHashCheck => false;
+        public TorrentState State => TorrentState.Stopping;
+        public CancellationToken Token => Cancellation.Token;
 
-        public StoppingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings)
-            : base (manager, diskManager, connectionManager, settings)
+        CancellationTokenSource Cancellation { get; }
+        ConnectionManager ConnectionManager { get; }
+        DiskManager DiskManager { get; }
+        TorrentManager Manager { get; }
+
+        public StoppingMode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager)
+            => (Cancellation, Manager, DiskManager, ConnectionManager) = (new CancellationTokenSource (), manager, diskManager, connectionManager);
+
+        public void Dispose ()
+            => Cancellation.Dispose ();
+
+        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerConnected (PeerId id)
+            => throw new NotSupportedException ();
+
+        public void HandlePeerDisconnected (PeerId id)
         {
+            // Peers which are disconnected at this point don't need any extra cleanup
         }
 
-        public Task WaitForStoppingToComplete ()
+        public bool ShouldConnect (Peer peer)
+            => false;
+
+        public void Tick (int counter)
         {
-            return WaitForStoppingToComplete (Timeout.InfiniteTimeSpan);
         }
 
         public async Task WaitForStoppingToComplete (TimeSpan timeout)
         {
             try {
-                Manager.Engine!.ConnectionManager.CancelPendingConnects (Manager);
+                ConnectionManager.CancelPendingConnects (Manager);
                 foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
-                    Manager.Engine.ConnectionManager.CleanupSocket (Manager, id);
+                    ConnectionManager.CleanupSocket (Manager, id);
 
                 Manager.Monitor.Reset ();
                 Manager.PieceManager.Initialise ();
@@ -69,7 +90,7 @@ namespace MonoTorrent.Client.Modes
                 var stoppingTasks = new List<Task> ();
                 // We could be in metadata download mode
                 if (Manager.Torrent != null)
-                    stoppingTasks.Add (Manager.Engine.DiskManager.CloseFilesAsync (Manager));
+                    stoppingTasks.Add (DiskManager.CloseFilesAsync (Manager));
 
                 Task announceTask = Manager.TrackerManager.AnnounceAsync (TorrentEvent.Stopped, CancellationToken.None).AsTask ();
                 if (timeout != Timeout.InfiniteTimeSpan)

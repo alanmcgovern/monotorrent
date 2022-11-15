@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This event is raised synchronously and is only used supposed to be used by tests.
         /// </summary>
-        internal event Action<Mode, Mode>? ModeChanged;
+        internal event Action<IMode, IMode>? ModeChanged;
 
         /// <summary>
         /// Raised whenever new peers are discovered and added. The object will be of type
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
-        Mode mode;
+        IMode mode;
         internal DateTime lastCalledInactivePeerManager = DateTime.Now;
         TaskCompletionSource<Torrent> MetadataTask { get; }
         #endregion Member Variables
@@ -164,10 +164,10 @@ namespace MonoTorrent.Client
 
         public IList<ITorrentManagerFile> Files { get; private set; }
 
-        internal Mode Mode {
+        internal IMode Mode {
             get => mode;
             set {
-                Mode oldMode = mode;
+                IMode oldMode = mode;
                 mode = value;
                 ModeChanged?.Invoke (oldMode, mode);
                 if (oldMode != null)
@@ -441,7 +441,7 @@ namespace MonoTorrent.Client
             Peers = new PeerManager ();
             PieceManager = new PieceManager (this);
 
-            mode = new StoppedMode (this, engine.DiskManager, engine.ConnectionManager, engine.Settings);
+            mode = new StoppedMode ();
             DownloadLimiter = new RateLimiter ();
             DownloadLimiters = new RateLimiterGroup {
                 new PauseLimiter(this),
@@ -562,7 +562,7 @@ namespace MonoTorrent.Client
             // will not be hashed, or downloaded.
             UnhashedPieces.SetAll (true);
 
-            var hashingMode = new HashingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            var hashingMode = new HashingMode (this, Engine!.DiskManager);
             Mode = hashingMode;
 
             try {
@@ -581,7 +581,7 @@ namespace MonoTorrent.Client
             } else if (setStoppedModeWhenDone) {
                 await MaybeWriteFastResumeAsync ();
 
-                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new StoppedMode ();
             }
         }
 
@@ -728,7 +728,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task LocalPeerAnnounceAsync ()
+        public async ReusableTask LocalPeerAnnounceAsync ()
         {
             await ClientEngine.MainLoop;
 
@@ -750,14 +750,10 @@ namespace MonoTorrent.Client
         /// returned task completes as soon as the Dht announce begins.
         /// </summary>
         /// <returns></returns>
-        public async Task DhtAnnounceAsync ()
+        public async ReusableTask DhtAnnounceAsync ()
         {
             await ClientEngine.MainLoop;
-            DhtAnnounce ();
-        }
 
-        internal void DhtAnnounce ()
-        {
             if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
                 LastDhtAnnounce = DateTime.UtcNow;
                 LastDhtAnnounceTimer.Restart ();
@@ -789,15 +785,15 @@ namespace MonoTorrent.Client
 
             if (State == TorrentState.Error) {
                 Error = null;
-                Mode = new StoppedMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
-                await Engine.StopAsync ();
+                Mode = new StoppedMode ();
+                await Engine!.StopAsync ();
             } else if (State != TorrentState.Stopped) {
-                var stoppingMode = new StoppingMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                var stoppingMode = new StoppingMode (this, Engine!.DiskManager, Engine.ConnectionManager);
                 Mode = stoppingMode;
                 await stoppingMode.WaitForStoppingToComplete (timeout);
 
                 stoppingMode.Token.ThrowIfCancellationRequested ();
-                Mode = new StoppedMode (this, Engine.DiskManager, Engine.ConnectionManager, Engine.Settings);
+                Mode = new StoppedMode ();
                 await MaybeWriteFastResumeAsync ();
                 await Engine.StopAsync ();
             }
@@ -1159,7 +1155,7 @@ namespace MonoTorrent.Client
                 return false;
 
             Error = new Error (reason, ex);
-            Mode = new ErrorMode (this, Engine!.DiskManager, Engine.ConnectionManager, Engine.Settings);
+            Mode = new ErrorMode (this, Engine!.ConnectionManager);
             return true;
         }
 

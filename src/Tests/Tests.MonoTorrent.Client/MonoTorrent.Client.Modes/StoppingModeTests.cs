@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections;
@@ -78,12 +79,10 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void AddConnection ()
         {
-            Manager.Mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = new StoppingMode (Manager, DiskManager, ConnectionManager);
 
             Assert.IsFalse (Peer.Connection.Disposed, "#1");
-            Manager.Mode.HandlePeerConnected (Peer);
-            Assert.IsTrue (Peer.Connection.Disposed, "#2");
-            Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
+            Assert.Throws<NotSupportedException>(() => Manager.Mode.HandlePeerConnected (Peer));
         }
 
         [Test]
@@ -91,9 +90,9 @@ namespace MonoTorrent.Client.Modes
         {
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
 
-            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager);
             Manager.Mode = mode;
-            await mode.WaitForStoppingToComplete ();
+            await mode.WaitForStoppingToComplete (Timeout.InfiniteTimeSpan);
 
             Assert.AreEqual (1, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (null, TrackerManager.Announces[0].Item1, "#2");
@@ -106,7 +105,7 @@ namespace MonoTorrent.Client.Modes
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
             TrackerManager.ResponseDelay = TimeSpan.FromMinutes (1);
 
-            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager);
             Manager.Mode = mode;
             await mode.WaitForStoppingToComplete (TimeSpan.FromMilliseconds (1)).WithTimeout ("Should've bailed");
 
@@ -119,9 +118,9 @@ namespace MonoTorrent.Client.Modes
             Manager.Peers.ConnectedPeers.Add (Peer);
             Assert.IsFalse (Peer.Disposed, "#1");
 
-            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager, Settings);
+            var mode = new StoppingMode (Manager, DiskManager, ConnectionManager);
             Manager.Mode = mode;
-            await mode.WaitForStoppingToComplete ();
+            await mode.WaitForStoppingToComplete (Timeout.InfiniteTimeSpan);
 
             Assert.IsTrue (Peer.Disposed, "#2");
             Assert.AreEqual (0, Manager.Peers.AvailablePeers.Count, "#3");

@@ -118,7 +118,6 @@ namespace MonoTorrent.Client.Modes
         string savePath;
         bool stopWhenDone;
 
-        bool HasAnnounced { get; set; }
         MetadataData? RequesterData { get; set; }
         IPieceRequester? Requester { get; set; }
         byte[]? Stream { get; set; }
@@ -148,29 +147,11 @@ namespace MonoTorrent.Client.Modes
 
         public override void Tick (int counter)
         {
-            if (!HasAnnounced) {
-                HasAnnounced = true;
-                SendAnnounces ();
-            }
+            PreLogicTick (counter);
 
             foreach (PeerId id in Manager.Peers.ConnectedPeers)
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name))
                     RequestNextNeededPiece (id);
-
-            CloseConnectionsForStalePeers ();
-        }
-
-        async void SendAnnounces ()
-        {
-            try {
-                Manager.DhtAnnounce ();
-                await Task.WhenAll (
-                    Manager.TrackerManager.AnnounceAsync (CancellationToken.None).AsTask (),
-                    Manager.LocalPeerAnnounceAsync ()
-                );
-            } catch {
-                // Nothing.
-            }
         }
 
         protected override void HandleLtMetadataMessage (PeerId id, LTMetadata message)

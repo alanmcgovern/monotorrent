@@ -1,10 +1,10 @@
-//
-// StoppedMode.cs
+﻿//
+// IMode.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2022 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -34,37 +34,18 @@ using MonoTorrent.Messages.Peer;
 
 namespace MonoTorrent.Client.Modes
 {
-    class StoppedMode : IMode
+    interface IMode : IDisposable
     {
-        public bool CanAcceptConnections => false;
-        public bool CanHandleMessages => false;
-        public bool CanHashCheck => true;
-        public TorrentState State => TorrentState.Stopped;
-        public CancellationToken Token => Cancellation.Token;
+        bool CanAcceptConnections { get; }
+        bool CanHandleMessages { get; }
+        bool CanHashCheck { get; }
+        TorrentState State { get; }
+        CancellationToken Token { get; }
 
-        CancellationTokenSource Cancellation { get; }
-
-        public StoppedMode ()
-            => (Cancellation) = (new CancellationTokenSource ());
-
-        public void Dispose ()
-            => Cancellation.Cancel ();
-
-        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
-            => throw new NotSupportedException ();
-
-        public void HandlePeerConnected (PeerId id)
-            => throw new NotSupportedException ();
-
-        public void HandlePeerDisconnected (PeerId id)
-            => throw new NotSupportedException ();
-
-        public bool ShouldConnect (Peer peer)
-            => false;
-
-        public void Tick (int counter)
-        {
-            // Do not run any of the default 'Tick' logic as nothing happens during 'Stopped' mode.
-        }
+        void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser);
+        void HandlePeerConnected (PeerId id);
+        void HandlePeerDisconnected (PeerId id);
+        bool ShouldConnect (Peer peer);
+        void Tick (int counter);
     }
 }

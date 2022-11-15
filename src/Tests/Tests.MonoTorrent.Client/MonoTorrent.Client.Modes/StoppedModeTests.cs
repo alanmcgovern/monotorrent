@@ -78,12 +78,10 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public void AddConnection ()
         {
-            Manager.Mode = new StoppedMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = new StoppedMode ();
 
             Assert.IsFalse (Peer.Connection.Disposed, "#1");
-            Manager.Mode.HandlePeerConnected (Peer);
-            Assert.IsTrue (Peer.Connection.Disposed, "#2");
-            Assert.IsFalse (Manager.Peers.ConnectedPeers.Contains (Peer), "#3");
+            Assert.Throws<NotSupportedException> (() => Manager.Mode.HandlePeerConnected (Peer));
         }
     }
 }

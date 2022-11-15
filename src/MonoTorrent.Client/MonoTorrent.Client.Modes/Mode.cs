@@ -46,7 +46,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client.Modes
 {
-    abstract class Mode
+    abstract class Mode : IMode
     {
         static readonly Logger logger = Logger.Create (nameof (Mode));
         static readonly SHA1 AllowedFastHasher = SHA1.Create ();
@@ -170,7 +170,7 @@ namespace MonoTorrent.Client.Modes
                 bufferReleaser.Dispose ();
 
                 (var message, var releaser) = PeerMessage.Rent<HashRejectMessage> ();
-                message.Initialize(hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
+                message.Initialize (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
                 id.MessageQueue.Enqueue (message, releaser);
             }
         }
@@ -568,6 +568,19 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
+        protected void PreLogicTick (int counter)
+        {
+            SendAnnounces ();
+            CloseConnectionsForStalePeers ();
+            Manager.Peers.UpdatePeerCounts ();
+
+            //Execute initial logic for individual peers
+            if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
+                Manager.Monitor.Tick ();
+                Manager.UpdateLimiters ();
+            }
+        }
+
         public virtual void Tick (int counter)
         {
             PreLogicTick (counter);
@@ -576,40 +589,22 @@ namespace MonoTorrent.Client.Modes
             else if (Manager.State == TorrentState.Seeding)
                 SeedingLogic (counter);
             PostLogicTick (counter);
-
         }
 
-        void PreLogicTick (int counter)
+        void PostLogicTick (int counter)
         {
-            PeerId id;
-            if (Manager.Engine == null)
-                return;
+            var ninetySeconds = TimeSpan.FromSeconds (90);
+            var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
             // If any files were changed from DoNotDownload -> Any other priority, then we should hash them if they
             // had been skipped in the original hashcheck.
             _ = TryHashPendingFilesAsync ();
 
-            if (Manager.CanUseLocalPeerDiscovery && (!Manager.LastLocalPeerAnnounceTimer.IsRunning || Manager.LastLocalPeerAnnounceTimer.Elapsed > Manager.Engine.LocalPeerDiscovery.AnnounceInternal)) {
-                _ = Manager.LocalPeerAnnounceAsync ();
-            }
-
-            if (Manager.CanUseDht && (!Manager.LastDhtAnnounceTimer.IsRunning || Manager.LastDhtAnnounceTimer.Elapsed > Manager.Engine.DhtEngine.AnnounceInterval)) {
-                Manager.DhtAnnounce ();
-            }
-
-            //Execute iniitial logic for individual peers
-            if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
-                Manager.Monitor.Tick ();
-                Manager.UpdateLimiters ();
-            }
-
-            Manager.Peers.UpdatePeerCounts ();
-
             if (Manager.finishedPieces.Count > 0)
                 SendHaveMessagesToAll ();
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                id = Manager.Peers.ConnectedPeers[i];
+                var id = Manager.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
                     continue;
 
@@ -625,17 +620,9 @@ namespace MonoTorrent.Client.Modes
 
                 id.Monitor.Tick ();
             }
-        }
-
-        void PostLogicTick (int counter)
-        {
-            PeerId id;
-
-            var ninetySeconds = TimeSpan.FromSeconds (90);
-            var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                id = Manager.Peers.ConnectedPeers[i];
+                var id = Manager.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
                     continue;
 
@@ -653,16 +640,25 @@ namespace MonoTorrent.Client.Modes
                 }
             }
 
-            CloseConnectionsForStalePeers ();
-
             Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
+        }
 
-            if (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading) {
-                _ = Manager.TrackerManager.AnnounceAsync (TorrentEvent.None, CancellationToken.None);
+        async void SendAnnounces ()
+        {
+            try {
+                var dhtAnnounce = Manager.DhtAnnounceAsync ();
+                var localPeerAnnounce = Manager.LocalPeerAnnounceAsync ();
+                var trackerAnnounce = Manager.TrackerManager.AnnounceAsync (CancellationToken.None);
+
+                try { await dhtAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing dht announce"); }
+                try { await localPeerAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing local peer announce"); }
+                try { await trackerAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing tracker announce"); }
+            } catch(Exception ex) {
+                logger.Exception (ex, "Error sending timed announces");
             }
         }
 
-        protected internal void CloseConnectionsForStalePeers ()
+        void CloseConnectionsForStalePeers ()
         {
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 var id = Manager.Peers.ConnectedPeers[i];
