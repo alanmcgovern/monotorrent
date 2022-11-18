@@ -680,7 +680,7 @@ namespace MonoTorrent.Client.Modes
 
         void DownloadLogic (int counter)
         {
-            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger) {
+            if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && (Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger || Settings.WebSeedSpeedTrigger == 0)) {
                 foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
                     var peer = new Peer (new PeerInfo (uri, CreatePeerId ()), Manager.InfoHashes.V1OrV2);
 
