@@ -20,10 +20,13 @@ namespace Tests.MonoTorrent.IntegrationTests
     [TestFixture]
     public class IntegrationTests
     {
+        static TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (10);
+
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
             (_tracker, _trackerListener) = GetTracker (_trackerPort);
+            _httpSeeder = CreateWebSeeder ();
         }
 
         [SetUp]
@@ -47,6 +50,9 @@ namespace Tests.MonoTorrent.IntegrationTests
         [OneTimeTearDown]
         public void Cleanup ()
         {
+            _httpSeeder.Stop ();
+            _httpSeeder.Close ();
+
             _tracker.Dispose ();
             _trackerListener.Stop ();
         }
@@ -58,6 +64,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         const string _webSeedPrefix = "SeedUrlPrefix";
         const string _torrentName = "IntegrationTests";
 
+        private HttpListener _httpSeeder;
         private TrackerServer _tracker;
         private ITrackerListener _trackerListener;
         private DirectoryInfo _directory;
@@ -157,14 +164,11 @@ namespace Tests.MonoTorrent.IntegrationTests
                     leecherIsSeeding.TrySetResult (true);
             };
 
-            if (!useWebSeedDownload) {
-                var seederManager = await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler);
-            } else {
-                var listener = CreateWebSeeder ();
-            }
+            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+
             var leecherManager = await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
 
-            var timeout = new CancellationTokenSource (TimeSpan.FromSeconds (10));
+            var timeout = new CancellationTokenSource (CancellationTimeout);
             timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
             timeout.Token.Register (() => { leecherIsSeeding.TrySetCanceled (); });
 

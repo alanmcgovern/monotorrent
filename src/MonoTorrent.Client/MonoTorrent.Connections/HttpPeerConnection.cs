@@ -44,6 +44,8 @@ namespace MonoTorrent.Connections.Peer
 {
     sealed class HttpPeerConnection : IPeerConnection
     {
+        static readonly Uri PaddingFileUri = new Uri ("http://__paddingfile__");
+
         class HttpRequestData
         {
             public bool SentLength;
@@ -60,6 +62,58 @@ namespace MonoTorrent.Connections.Peer
                 BlockInfo = blockInfo;
                 var m = new PieceMessage (BlockInfo.PieceIndex, BlockInfo.StartOffset, BlockInfo.RequestLength);
                 TotalToReceive = m.ByteLength;
+            }
+        }
+        class ZeroStream : Stream
+        {
+            public override bool CanRead { get; } = true;
+            public override bool CanSeek { get; } = false;
+            public override bool CanWrite { get; } = false;
+            public override long Length { get; } = -1;
+            public override long Position { get; set; }
+
+            public override void Flush ()
+            {
+                throw new NotImplementedException ();
+            }
+
+            public override int Read (byte[] buffer, int offset, int count)
+            {
+                buffer.AsSpan (offset, count).Fill (0);
+                return count;
+            }
+#if !NETSTANDARD2_0
+            public override int Read (Span<byte> buffer)
+            {
+                buffer.Fill (0);
+                return buffer.Length;
+            }
+#endif
+            public override Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                buffer.AsSpan (offset, count).Fill (0);
+                return Task.FromResult (buffer.Length);
+            }
+#if !NETSTANDARD2_0
+            public override ValueTask<int> ReadAsync (Memory<byte> buffer, CancellationToken cancellationToken = default)
+            {
+                buffer.Span.Fill (0);
+                return new ValueTask<int> (buffer.Length);
+            }
+#endif
+            public override long Seek (long offset, SeekOrigin origin)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public override void SetLength (long value)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public override void Write (byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException ();
             }
         }
 
@@ -223,12 +277,17 @@ namespace MonoTorrent.Connections.Peer
                 var rr = WebRequests.Dequeue ();
 
                 Requester?.Dispose ();
-                Requester = RequestCreator.CreateHttpClient ();
-                var msg = new HttpRequestMessage (HttpMethod.Get, rr.fileUri);
-                msg.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue (rr.startOffset, rr.startOffset + rr.count - 1);
-                Requester.Timeout = ConnectionTimeout;
-                DataStream = await (await Requester.SendAsync (msg)).Content.ReadAsStreamAsync ();
-                DataStreamCount = rr.count;
+                if (rr.fileUri == PaddingFileUri) {
+                    DataStream = new ZeroStream ();
+                    DataStreamCount = rr.count;
+                } else {
+                    Requester = RequestCreator.CreateHttpClient ();
+                    var msg = new HttpRequestMessage (HttpMethod.Get, rr.fileUri);
+                    msg.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue (rr.startOffset, rr.startOffset + rr.count - 1);
+                    Requester.Timeout = ConnectionTimeout;
+                    DataStream = await (await Requester.SendAsync (msg)).Content.ReadAsStreamAsync ();
+                    DataStreamCount = rr.count;
+                }
                 return await ReceiveAsync (socketBuffer) + written;
             }
 
@@ -302,6 +361,10 @@ namespace MonoTorrent.Connections.Peer
                     WebRequests.Enqueue ((u, startOffset, file.Length - startOffset));
                     startOffset = 0;
                     endOffset -= file.Length;
+                    if (file.Padding > 0) {
+                        WebRequests.Enqueue ((PaddingFileUri, 0, file.Padding));
+                        endOffset -= file.Padding;
+                    }
                 }
                 // All the data we want is from within this file
                 else {
