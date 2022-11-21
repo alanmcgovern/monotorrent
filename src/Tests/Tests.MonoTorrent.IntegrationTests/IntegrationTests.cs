@@ -128,6 +128,9 @@ namespace Tests.MonoTorrent.IntegrationTests
         [Test]
         public async Task WebSeedDownload_V1V2_RetryWebSeeder ()
         {
+            if (CancellationTimeout != Timeout.InfiniteTimeSpan)
+                CancellationTimeout = TimeSpan.FromMinutes (1);
+
             _failHttpRequest = true;
             await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
         }
