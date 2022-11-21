@@ -236,9 +236,11 @@ namespace Tests.MonoTorrent.IntegrationTests
 
         private void OnHttpContext (IAsyncResult ar)
         {
-            var listener = ar.AsyncState as HttpListener;
-            var ctx = listener.EndGetContext (ar);
-            listener.BeginGetContext (OnHttpContext, ar.AsyncState);
+            if (!_httpSeeder.IsListening)
+                return;
+
+            HttpListenerContext ctx = _httpSeeder.EndGetContext (ar);
+            _httpSeeder.BeginGetContext (OnHttpContext, ar.AsyncState);
 
             var localPath = ctx.Request.Url.LocalPath;
             string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
