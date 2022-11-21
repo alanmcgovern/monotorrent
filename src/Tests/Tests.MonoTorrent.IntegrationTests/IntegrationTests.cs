@@ -120,7 +120,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         public async Task WebSeedDownload_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
 
         [Test]
-        public async Task WebSeedDownload_V1V2_BiggerFile () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true, fileSize: 30000);
+        public async Task WebSeedDownload_V1V2_BiggerFile () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true, fileSize: 131_073);
 
         [Test]
         public async Task WebSeedDownload_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
