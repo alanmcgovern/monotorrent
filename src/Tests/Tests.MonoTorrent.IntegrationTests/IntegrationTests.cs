@@ -32,6 +32,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         [SetUp]
         public void Setup ()
         {
+            _failHttpRequest = false;
             string tempDirectory = Path.Combine (Path.GetTempPath (), $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
             _directory = Directory.CreateDirectory (tempDirectory);
             _seederDir = _directory.CreateSubdirectory ("Seeder");
@@ -70,6 +71,8 @@ namespace Tests.MonoTorrent.IntegrationTests
         private DirectoryInfo _directory;
         private DirectoryInfo _seederDir;
         private DirectoryInfo _leecherDir;
+
+        private bool _failHttpRequest;
 
         [Test]
         public async Task DownloadFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: false, explitlyHashCheck: false);
@@ -121,6 +124,13 @@ namespace Tests.MonoTorrent.IntegrationTests
 
         [Test]
         public async Task WebSeedDownload_V1V2_BiggerFile () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true, fileSize: 131_073);
+
+        [Test]
+        public async Task WebSeedDownload_V1V2_RetryWebSeeder ()
+        {
+            _failHttpRequest = true;
+            await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
+        }
 
         [Test]
         public async Task WebSeedDownload_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
@@ -232,7 +242,10 @@ namespace Tests.MonoTorrent.IntegrationTests
 
             var localPath = ctx.Request.Url.LocalPath;
             string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
-            if (localPath.Contains (relativeSeedingPath)) {
+            if (_failHttpRequest) {
+                _failHttpRequest = false;
+                ctx.Response.StatusCode = 500;
+            } else if (localPath.Contains (relativeSeedingPath)) {
                 var fileName = localPath.Replace (relativeSeedingPath, string.Empty);
                 var files = _seederDir.GetFiles ();
                 var file = files.FirstOrDefault (x => x.Name == fileName);
@@ -253,9 +266,10 @@ namespace Tests.MonoTorrent.IntegrationTests
                     ctx.Response.OutputStream.Close ();
                     return;
                 }
+            } else {
+                ctx.Response.StatusCode = 404;
             }
 
-            ctx.Response.StatusCode = 404;
         }
 
         private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
