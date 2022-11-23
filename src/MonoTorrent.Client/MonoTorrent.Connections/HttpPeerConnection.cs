@@ -228,8 +228,17 @@ namespace MonoTorrent.Connections.Peer
             // If we have already connected to the server then DataStream will be non-null and we can just read the next bunch
             // of data from it.
             if (DataStream != null) {
-                int result = await DataStream.ReadAsync (socketBuffer);
-                socketBuffer = socketBuffer.Slice (result);
+                int result = 0;
+                // If DataStreamCount is zero, then don't try try to read from the DataStream.
+                // We do not expect there to be any extra data available.
+                if (DataStreamCount > 0) {
+                    // If we are reading from the DataStream, we should ensure that the buffer passed to the stream
+                    // is sliced to be the same length as the maximum number of bytes we expect to receive. This
+                    // prevents unintentional over-reading if the stream happens to contain more bytes than we need right now.
+                    var toRead = Math.Min ((int) DataStreamCount, socketBuffer.Length);
+                    result = await DataStream.ReadAsync (socketBuffer.Slice (0, toRead));
+                    socketBuffer = socketBuffer.Slice (result);
+                }
 
                 DataStreamCount -= result;
                 // If result is zero it means we've read the last data from the stream.
