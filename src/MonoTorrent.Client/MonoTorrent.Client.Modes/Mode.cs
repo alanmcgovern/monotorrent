@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 
@@ -653,7 +654,7 @@ namespace MonoTorrent.Client.Modes
                 try { await dhtAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing dht announce"); }
                 try { await localPeerAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing local peer announce"); }
                 try { await trackerAnnounce; } catch (Exception ex) { logger.Exception (ex, "Error performing tracker announce"); }
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 logger.Exception (ex, "Error sending timed announces");
             }
         }
@@ -683,6 +684,8 @@ namespace MonoTorrent.Client.Modes
             if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && (Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger || Settings.WebSeedSpeedTrigger == 0)) {
                 foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
                     var peer = new Peer (new PeerInfo (uri, CreatePeerId ()), Manager.InfoHashes.V1OrV2);
+                    if (Manager.Peers.Contains (peer) || Manager.Peers.ConnectedPeers.Any (p => p.Uri == uri))
+                        continue;
 
                     var connection = new HttpPeerConnection (Manager, Settings.WebSeedConnectionTimeout, Manager.Engine!.Factories, uri);
                     // Unsupported connection type.
@@ -704,10 +707,6 @@ namespace MonoTorrent.Client.Modes
                         ConnectionManager.TryProcessQueue (Manager, id);
                     }
                 }
-
-                // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
-                // Add a boolean or something so that we don't add them twice.
-                Manager.Torrent.HttpSeeds.Clear ();
             }
 
             // Remove inactive peers we haven't heard from if we're downloading

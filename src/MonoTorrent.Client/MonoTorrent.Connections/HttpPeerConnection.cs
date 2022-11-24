@@ -44,6 +44,8 @@ namespace MonoTorrent.Connections.Peer
 {
     sealed class HttpPeerConnection : IPeerConnection
     {
+        static readonly Uri PaddingFileUri = new Uri ("http://__paddingfile__");
+
         class HttpRequestData
         {
             public bool SentLength;
@@ -61,6 +63,52 @@ namespace MonoTorrent.Connections.Peer
                 var m = new PieceMessage (BlockInfo.PieceIndex, BlockInfo.StartOffset, BlockInfo.RequestLength);
                 TotalToReceive = m.ByteLength;
             }
+        }
+        class ZeroStream : Stream
+        {
+            public override bool CanRead { get; } = true;
+            public override bool CanSeek { get; } = false;
+            public override bool CanWrite { get; } = false;
+            public override long Length { get; } = -1;
+            public override long Position { get; set; }
+
+            public override void Flush ()
+            {
+                throw new NotImplementedException ();
+            }
+
+            public override int Read (byte[] buffer, int offset, int count)
+            {
+                buffer.AsSpan (offset, count).Fill (0);
+                return count;
+            }
+#if !NETSTANDARD2_0
+            public override int Read (Span<byte> buffer)
+            {
+                buffer.Fill (0);
+                return buffer.Length;
+            }
+#endif
+            public override Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                buffer.AsSpan (offset, count).Fill (0);
+                return Task.FromResult (count);
+            }
+#if !NETSTANDARD2_0
+            public override ValueTask<int> ReadAsync (Memory<byte> buffer, CancellationToken cancellationToken = default)
+            {
+                buffer.Span.Fill (0);
+                return new ValueTask<int> (buffer.Length);
+            }
+#endif
+            public override long Seek (long offset, SeekOrigin origin)
+                => throw new NotImplementedException ();
+
+            public override void SetLength (long value)
+                => throw new NotImplementedException ();
+
+            public override void Write (byte[] buffer, int offset, int count)
+                => throw new NotImplementedException ();
         }
 
         #region Member Variables
@@ -174,8 +222,17 @@ namespace MonoTorrent.Connections.Peer
             // If we have already connected to the server then DataStream will be non-null and we can just read the next bunch
             // of data from it.
             if (DataStream != null) {
-                int result = await DataStream.ReadAsync (socketBuffer);
-                socketBuffer = socketBuffer.Slice (result);
+                int result = 0;
+                // If DataStreamCount is zero, then don't try try to read from the DataStream.
+                // We do not expect there to be any extra data available.
+                if (DataStreamCount > 0) {
+                    // If we are reading from the DataStream, we should ensure that the buffer passed to the stream
+                    // is sliced to be the same length as the maximum number of bytes we expect to receive. This
+                    // prevents unintentional over-reading if the stream happens to contain more bytes than we need right now.
+                    var toRead = Math.Min ((int) DataStreamCount, socketBuffer.Length);
+                    result = await DataStream.ReadAsync (socketBuffer.Slice (0, toRead));
+                    socketBuffer = socketBuffer.Slice (result);
+                }
 
                 DataStreamCount -= result;
                 // If result is zero it means we've read the last data from the stream.
@@ -223,12 +280,17 @@ namespace MonoTorrent.Connections.Peer
                 var rr = WebRequests.Dequeue ();
 
                 Requester?.Dispose ();
-                Requester = RequestCreator.CreateHttpClient ();
-                var msg = new HttpRequestMessage (HttpMethod.Get, rr.fileUri);
-                msg.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue (rr.startOffset, rr.startOffset + rr.count - 1);
-                Requester.Timeout = ConnectionTimeout;
-                DataStream = await (await Requester.SendAsync (msg)).Content.ReadAsStreamAsync ();
-                DataStreamCount = rr.count;
+                if (rr.fileUri == PaddingFileUri) {
+                    DataStream = new ZeroStream ();
+                    DataStreamCount = rr.count;
+                } else {
+                    Requester = RequestCreator.CreateHttpClient ();
+                    var msg = new HttpRequestMessage (HttpMethod.Get, rr.fileUri);
+                    msg.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue (rr.startOffset, rr.startOffset + rr.count - 1);
+                    Requester.Timeout = ConnectionTimeout;
+                    DataStream = await (await Requester.SendAsync (msg)).Content.ReadAsStreamAsync ();
+                    DataStreamCount = rr.count;
+                }
                 return await ReceiveAsync (socketBuffer) + written;
             }
 
@@ -302,6 +364,10 @@ namespace MonoTorrent.Connections.Peer
                     WebRequests.Enqueue ((u, startOffset, file.Length - startOffset));
                     startOffset = 0;
                     endOffset -= file.Length;
+                    if (file.Padding > 0) {
+                        WebRequests.Enqueue ((PaddingFileUri, 0, file.Padding));
+                        endOffset -= file.Padding;
+                    }
                 }
                 // All the data we want is from within this file
                 else {
