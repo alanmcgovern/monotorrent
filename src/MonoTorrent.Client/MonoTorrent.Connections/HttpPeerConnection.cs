@@ -92,7 +92,7 @@ namespace MonoTorrent.Connections.Peer
             public override Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
                 buffer.AsSpan (offset, count).Fill (0);
-                return Task.FromResult (buffer.Length);
+                return Task.FromResult (count);
             }
 #if !NETSTANDARD2_0
             public override ValueTask<int> ReadAsync (Memory<byte> buffer, CancellationToken cancellationToken = default)
@@ -102,19 +102,13 @@ namespace MonoTorrent.Connections.Peer
             }
 #endif
             public override long Seek (long offset, SeekOrigin origin)
-            {
-                throw new NotImplementedException ();
-            }
+                => throw new NotImplementedException ();
 
             public override void SetLength (long value)
-            {
-                throw new NotImplementedException ();
-            }
+                => throw new NotImplementedException ();
 
             public override void Write (byte[] buffer, int offset, int count)
-            {
-                throw new NotImplementedException ();
-            }
+                => throw new NotImplementedException ();
         }
 
         #region Member Variables
