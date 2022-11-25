@@ -20,7 +20,7 @@ namespace Tests.MonoTorrent.IntegrationTests
     [TestFixture]
     public class IntegrationTests
     {
-        static TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (10);
+        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (20);
 
         [OneTimeSetUp]
         public void FixtureSetup ()
@@ -128,9 +128,6 @@ namespace Tests.MonoTorrent.IntegrationTests
         [Test]
         public async Task WebSeedDownload_V1V2_RetryWebSeeder ()
         {
-            if (CancellationTimeout != Timeout.InfiniteTimeSpan)
-                CancellationTimeout = TimeSpan.FromMinutes (1);
-
             _failHttpRequest = true;
             await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
         }
@@ -250,11 +247,18 @@ namespace Tests.MonoTorrent.IntegrationTests
             if (_failHttpRequest) {
                 _failHttpRequest = false;
                 ctx.Response.StatusCode = 500;
-            } else if (localPath.Contains (relativeSeedingPath)) {
+                ctx.Response.Close ();
+            } else if (!localPath.Contains (relativeSeedingPath)) {
+                ctx.Response.StatusCode = 404;
+                ctx.Response.Close ();
+            } else {
                 var fileName = localPath.Replace (relativeSeedingPath, string.Empty);
                 var files = _seederDir.GetFiles ();
                 var file = files.FirstOrDefault (x => x.Name == fileName);
-                if (file != null) {
+                if (file == null) {
+                    ctx.Response.StatusCode = 406;
+                    ctx.Response.Close ();
+                } else {
                     using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read);
                     long start = 0;
                     long end = fs.Length - 1;
@@ -266,15 +270,16 @@ namespace Tests.MonoTorrent.IntegrationTests
                     }
                     var buffer = new byte[end - start + 1];
                     fs.Seek (start, SeekOrigin.Begin);
-                    fs.Read (buffer, 0, buffer.Length);
-                    ctx.Response.OutputStream.Write (buffer, 0, buffer.Length);
-                    ctx.Response.OutputStream.Close ();
-                    return;
+                    if (fs.Read (buffer, 0, buffer.Length) == buffer.Length) {
+                        ctx.Response.OutputStream.Write (buffer, 0, buffer.Length);
+                        ctx.Response.OutputStream.Close ();
+                    } else {
+                        ctx.Response.StatusCode = 405;
+                        ctx.Response.Close ();
+                    }
                 }
-            } else {
-                ctx.Response.StatusCode = 404;
-            }
 
+            }
         }
 
         private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
