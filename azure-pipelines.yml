@@ -12,7 +12,7 @@ pool:
 
 variables:
   solution: 'src/MonoTorrent.sln'
-  buildParams: '/p:Configuration=Release'
+  configuration: 'Release'
 
 steps:
 - task: DotNetCoreCLI@2
@@ -20,12 +20,12 @@ steps:
   inputs:
     command: build
     projects: $(solution)
-    arguments: $(buildParams)
+    arguments: '/p:Configuration=$(configuration)'
 
 - task: DotNetCoreCLI@2
   displayName: 'Test'
   inputs:
     command: test
     projects: $(solution)
-    arguments: '$(buildParams) --no-build --collect "Code coverage"'
+    arguments: '--configuration $(configuration) --no-build --collect "Code coverage"'
     publishTestResults: true
