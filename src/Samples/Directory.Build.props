@@ -6,5 +6,8 @@
       <UseGitInfo>false</UseGitInfo>
       <Nullable></Nullable>
     </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0'" Include="System.Memory" Version="4.5.5" />
+  </ItemGroup>
 
 </Project>
