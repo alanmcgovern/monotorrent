@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
-    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0'" Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
   <ItemGroup>
