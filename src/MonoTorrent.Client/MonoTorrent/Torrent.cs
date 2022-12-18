@@ -531,6 +531,9 @@ namespace MonoTorrent
                         break;
 
                     case ("creation date"):
+                        if (keypair.Value.ToString () == String.Empty)
+                            break;
+
                         try {
                             try {
                                 CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString ()!));
