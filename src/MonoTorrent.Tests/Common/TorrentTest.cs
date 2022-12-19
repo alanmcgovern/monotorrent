@@ -466,5 +466,15 @@ namespace MonoTorrent.Common
         {
             Assert.IsTrue (Toolbox.ByteMatch (torrent.SHA1, sha.ComputeHash (System.Text.Encoding.UTF8.GetBytes ("this is a sha1 hash string"))));
         }
+
+        [Test]
+        public void EmptyCreationDate ()
+        {
+            var info = torrentInfo;
+            info.Remove ("creation date");
+            info.Add ("creation date", new BEncodedString (String.Empty));
+
+            Assert.DoesNotThrow (() => Torrent.Load (torrentInfo));
+        }
     }
 }

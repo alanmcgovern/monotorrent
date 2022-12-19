@@ -573,6 +573,9 @@ namespace MonoTorrent
             AnnounceUrls = new List<IList<string>> ().AsReadOnly ();
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
+                if (keypair.Value is BEncodedString && keypair.Value.ToString () == String.Empty)
+                    continue;
+
                 switch (keypair.Key.Text) {
                     case ("announce"):
                         // Ignore this if we have an announce-list
