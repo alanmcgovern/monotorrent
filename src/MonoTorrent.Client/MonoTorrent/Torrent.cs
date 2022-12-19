@@ -520,6 +520,9 @@ namespace MonoTorrent
             PieceHashesV1? hashesV1 = null;
             PieceHashesV2? hashesV2 = null;
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
+                if (keypair.Value is BEncodedString && keypair.Value.ToString () == String.Empty)
+                    continue;
+
                 switch (keypair.Key.Text) {
                     case ("announce"):
                         // Ignore this if we have an announce-list
