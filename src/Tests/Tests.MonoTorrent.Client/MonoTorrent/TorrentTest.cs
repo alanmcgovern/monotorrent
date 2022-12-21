@@ -480,5 +480,15 @@ namespace MonoTorrent.Common
                 (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents) = (before1, before2);
             }
         }
+
+        [Test]
+        public void EmptyCreationDate ()
+        {
+            var info = torrentInfo;
+            info.Remove ("creation date");
+            info.Add ("creation date", new BEncodedString (String.Empty));
+
+            Assert.DoesNotThrow (() => Torrent.Load (torrentInfo));
+        }
     }
 }
