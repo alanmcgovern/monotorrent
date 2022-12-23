@@ -76,9 +76,9 @@ namespace MonoTorrent.BEncoding
             buffer[0] = (byte) 'd';
             int written = 1;
 
-            foreach (var keypair in dictionary) {
-                written += keypair.Key.Encode (buffer.Slice (written));
-                written += keypair.Value.Encode (buffer.Slice (written));
+            for (int i = 0; i < dictionary.Keys.Count; i++) {
+                written += dictionary.Keys[i].Encode (buffer.Slice (written));
+                written += dictionary.Values[i].Encode (buffer.Slice (written));
             }
 
             // Dictionaries end with 'e'
@@ -94,9 +94,9 @@ namespace MonoTorrent.BEncoding
         {
             int length = 2; // Account for the prefix/suffix
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
-                length += keypair.Key.LengthInBytes ();
-                length += keypair.Value.LengthInBytes ();
+            for (int i = 0; i < dictionary.Keys.Count; i++) {
+                length += dictionary.Keys[i].LengthInBytes ();
+                length += dictionary.Values[i].LengthInBytes ();
             }
 
             return length;
