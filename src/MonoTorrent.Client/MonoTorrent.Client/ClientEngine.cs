@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -215,7 +216,7 @@ namespace MonoTorrent.Client
 
         internal Factories Factories { get; }
 
-        internal IPeerConnectionListener PeerListener { get; set; }
+        internal IList<IPeerConnectionListener> PeerListeners { get; set; } = Array.Empty<IPeerConnectionListener> ();
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -311,8 +312,8 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            PeerListener = (settings.ListenEndPoint == null ? null : Factories.CreatePeerConnectionListener (settings.ListenEndPoint)) ?? new NullPeerListener ();
-            listenManager.SetListener (PeerListener);
+            PeerListeners = Array.AsReadOnly (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
+            listenManager.SetListeners (PeerListeners);
 
             DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
             DhtEngine = (settings.DhtEndPoint == null ? null : Factories.CreateDht ()) ?? new NullDhtEngine ();
@@ -544,8 +545,9 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
-                PeerListener.Stop ();
-                listenManager.SetListener (new NullPeerListener ());
+                foreach (var listener in PeerListeners)
+                    listener.Stop ();
+                listenManager.SetListeners (Array.Empty<IPeerConnectionListener> ());
 
                 DhtListener.Stop ();
                 DhtEngine.Dispose ();
@@ -708,11 +710,11 @@ namespace MonoTorrent.Client
                     continue;
 
                 if (manager.InfoHashes.V1 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V1, Settings.ListenEndPoint?.Port ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V1, GetListenEndPoint ("ipv4")?.Port ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V1);
                 }
                 if (manager.InfoHashes.V2 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), Settings.ListenEndPoint?.Port ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetListenEndPoint("ipv4")?.Port ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V2.Truncate ());
                 }
             }
@@ -820,14 +822,20 @@ namespace MonoTorrent.Client
             if (!IsRunning) {
                 IsRunning = true;
 
-                PeerListener.Start ();
+                foreach (var listener in PeerListeners)
+                    listener.Start ();
+
                 LocalPeerDiscovery.Start ();
                 await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
                 if (Settings.AllowPortForwarding)
                     await PortForwarder.StartAsync (CancellationToken.None);
 
-                if (PeerListener.LocalEndPoint != null)
-                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port));
+                var maps = PeerListeners
+                    .Select (t => t.LocalEndPoint!)
+                    .Where (t => t != null)
+                    .Select (t => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, t.Port)))
+                    .ToArray ();
+                await Task.WhenAll (maps);
 
                 if (DhtListener.LocalEndPoint != null)
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
@@ -840,13 +848,19 @@ namespace MonoTorrent.Client
             // If all the torrents are stopped, stop ticking
             IsRunning = allTorrents.Exists (m => m.State != TorrentState.Stopped);
             if (!IsRunning) {
-                if (PeerListener.LocalEndPoint != null)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port), CancellationToken.None);
+                var unmaps = PeerListeners
+                    .Select (t => t.LocalEndPoint!)
+                    .Where (t => t != null)
+                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port), CancellationToken.None))
+                    .ToArray ();
+                await Task.WhenAll (unmaps);
+
+                foreach (var listener in PeerListeners)
+                    listener.Stop ();
 
                 if (DhtListener.LocalEndPoint != null)
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port), CancellationToken.None);
 
-                PeerListener.Stop ();
                 LocalPeerDiscovery.Stop ();
 
                 if (Settings.AllowPortForwarding)
@@ -965,19 +979,31 @@ namespace MonoTorrent.Client
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
 
-            if (!Equals (oldSettings.ListenEndPoint, newSettings.ListenEndPoint)) {
-                if (PeerListener.LocalEndPoint != null)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port), CancellationToken.None);
+            if (!oldSettings.ListenEndPoints.SequenceEqual (newSettings.ListenEndPoints)) {
+                var unmaps = PeerListeners
+                    .Select (t => t.LocalEndPoint!)
+                    .Where (t => t != null)
+                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port), CancellationToken.None))
+                    .ToArray ();
+                await Task.WhenAll (unmaps);
 
-                PeerListener.Stop ();
-                PeerListener = (newSettings.ListenEndPoint == null ? null : Factories.CreatePeerConnectionListener (newSettings.ListenEndPoint)) ?? new NullPeerListener ();
-                listenManager.SetListener (PeerListener);
+                foreach (var listener in PeerListeners)
+                    listener.Stop ();
+
+                PeerListeners = Array.AsReadOnly (newSettings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
+                listenManager.SetListeners (PeerListeners);
 
                 if (IsRunning) {
-                    PeerListener.Start ();
+                    foreach (var v in PeerListeners)
+                        v.Start ();
+
                     // The settings could say to listen at port 0, which means 'choose one dynamically'
-                    if (PeerListener.LocalEndPoint != null)
-                        await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, PeerListener.LocalEndPoint.Port));
+                    var maps = PeerListeners
+                        .Select (t => t.LocalEndPoint!)
+                        .Where (t => t != null)
+                        .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port)))
+                        .ToArray ();
+                    await Task.WhenAll (maps);
                 }
             }
 
@@ -1002,6 +1028,17 @@ namespace MonoTorrent.Client
             }
 
             return new BEncodedString (sb.ToString ());
+        }
+
+        internal IPEndPoint? GetListenEndPoint (string scheme)
+        {
+            foreach (var listener in PeerListeners) {
+                if (scheme == "ipv4" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    return listener.LocalEndPoint;
+                if (scheme == "ipv6" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                    return listener.LocalEndPoint;
+            }
+            return Settings.ReportedAddress;
         }
 
         #endregion

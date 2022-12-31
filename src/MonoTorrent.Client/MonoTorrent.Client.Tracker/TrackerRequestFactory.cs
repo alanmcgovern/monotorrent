@@ -56,10 +56,15 @@ namespace MonoTorrent.Trackers
             if (engine.Settings.ReportedAddress != null) {
                 ip = engine.Settings.ReportedAddress.Address.ToString ();
                 port = engine.Settings.ReportedAddress.Port;
-            } else if (engine.PeerListener.LocalEndPoint != null) {
-                port = engine.PeerListener.LocalEndPoint.Port;
+            } else if (engine.GetListenEndPoint ("ipv4") != null) {
+                port = engine.GetListenEndPoint ("ipv4")!.Port;
             } else {
-                port = engine.Settings.ListenEndPoint?.Port ?? -1;
+                // FIXME: Announce via ipv4 *and* via ipv6 endpoints. Use the correct scheme then.
+                // FIXME: This shouldn't be needed? ENgine.GetListeEndPoint should always return non-null?
+                // port = engine.Settings.GetListenEndPoint ("ipv4")?.Port ?? -1;
+
+                // If all else fails, report -1.
+                port = -1;
             }
 
             // FIXME: In metadata mode we need to pretend we need to download data otherwise

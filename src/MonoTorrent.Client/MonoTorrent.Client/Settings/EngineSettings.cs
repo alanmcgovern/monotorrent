@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -160,9 +161,13 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
-        /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any with port 0.
+        /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any and IPAddress.AnyIPv6,
+        /// both with port 0.
         /// </summary>
-        public IPEndPoint? ListenEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
+        public IDictionary<string, IPEndPoint> ListenEndPoints { get; } = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> {
+            {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
+            {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
+        });
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -260,7 +265,7 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, IPEndPoint? listenEndPoint,
+            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<string, IPEndPoint> listenEndPoints,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
@@ -281,7 +286,7 @@ namespace MonoTorrent.Client
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
             HttpStreamingPrefix = httpStreamingPrefix;
-            ListenEndPoint = listenEndPoint;
+            ListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (listenEndPoints));
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
             MaximumDiskWriteRate = maximumDiskWriteRate;
@@ -334,7 +339,7 @@ namespace MonoTorrent.Client
                    && DiskCachePolicy == other.DiskCachePolicy
                    && FastResumeMode == other.FastResumeMode
                    && HttpStreamingPrefix == other.HttpStreamingPrefix
-                   && Equals (ListenEndPoint, other.ListenEndPoint)
+                   && ListenEndPoints.SequenceEqual (other.ListenEndPoints)
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate
                    && MaximumDiskWriteRate == other.MaximumDiskWriteRate
@@ -357,8 +362,6 @@ namespace MonoTorrent.Client
                    MaximumDownloadRate +
                    MaximumUploadRate +
                    MaximumHalfOpenConnections +
-                   ListenEndPoint?.GetHashCode () ?? 0 +
-                   AllowedEncryption.GetHashCode () +
                    CacheDirectory.GetHashCode ();
         }
     }

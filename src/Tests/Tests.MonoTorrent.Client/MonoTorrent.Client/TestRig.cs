@@ -333,7 +333,7 @@ namespace MonoTorrent.Client
 
         public ClientEngine Engine { get; }
 
-        public CustomListener Listener => (CustomListener) Engine.PeerListener;
+        public CustomListener Listener => (CustomListener) Engine.PeerListeners[0];
 
         public TorrentManager Manager { get; set; }
 
@@ -426,7 +426,7 @@ namespace MonoTorrent.Client
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
                 cacheDirectory: cacheDir,
-                listenEndPoint: new IPEndPoint (IPAddress.Any, 12345)
+                listenEndPoints: new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 12345) } }
             ), factories);
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);

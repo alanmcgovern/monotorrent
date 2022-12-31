@@ -86,11 +86,13 @@ namespace MonoTorrent.Client
                         endPoint = new IPEndPoint (IPAddress.Parse (ipAddress.Text), (int) port.Number);
                     }
                     property.SetValue (builder, endPoint);
-                } else if (property.PropertyType == typeof (IList<EncryptionType>)) {
+                } else if (property.PropertyType == typeof (List<EncryptionType>)) {
                     var list = (IList<EncryptionType>) property.GetValue (builder)!;
                     list.Clear ();
                     foreach (BEncodedString encryptionType in (BEncodedList) value)
                         list.Add ((EncryptionType) Enum.Parse (typeof (EncryptionType), encryptionType.Text));
+                } else if (property.PropertyType == typeof (Dictionary<string, IPEndPoint>)) {
+                    property.SetValue (builder, ToIPAddressDictionary ((BEncodedDictionary) value));
                 } else
                     throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}");
             }
@@ -114,6 +116,7 @@ namespace MonoTorrent.Client
                     CachePolicy value => new BEncodedString (value.ToString ()),
                     Uri value => new BEncodedString (value.OriginalString),
                     null => null,
+                    Dictionary<string, IPEndPoint> value => FromIPAddressDictionary(value),
                     _ => throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}"),
                 };
                 // Ensure default values aren't accidentally propagated.
@@ -124,6 +127,24 @@ namespace MonoTorrent.Client
             }
 
             return dict;
+        }
+
+        static BEncodedDictionary FromIPAddressDictionary (Dictionary<string, IPEndPoint> value)
+        {
+            var result = new BEncodedDictionary ();
+            foreach (var kvp in value)
+                result[kvp.Key] = new BEncodedList { (BEncodedString) kvp.Value.Address.ToString (), (BEncodedNumber) kvp.Value.Port };
+            return result;
+        }
+
+        static IDictionary<string, IPEndPoint> ToIPAddressDictionary (BEncodedDictionary value)
+        {
+            var result = new Dictionary<string, IPEndPoint> ();
+            foreach (var kvp in value) {
+                var parts = (BEncodedList) kvp.Value;
+                result[kvp.Key.Text] = new IPEndPoint (IPAddress.Parse (((BEncodedString) parts[0]).Text), (int) ((BEncodedNumber) parts[1]).Number);
+            }
+            return result;
         }
     }
 }
