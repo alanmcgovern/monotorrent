@@ -156,6 +156,8 @@ namespace MonoTorrent
                         // Do not try to handle this, it would be very messy.
                         throw new ArgumentException ("Can not handle torrent that starts with padding");
                     } else {
+                        if (files[real].length == 0)
+                            throw new InvalidOperationException ("Attempted to add padding bytes to a file which should not have padding.");
                         // add the count to it will also work in case of consecutive padding files, also slightly edge-case-y
                         files[real].padding += files[t].length;
                     }

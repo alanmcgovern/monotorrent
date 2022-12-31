@@ -265,8 +265,10 @@ namespace MonoTorrent
             if (Type.HasV2 ())
                 rawFiles = rawFiles.OrderBy (t => t.Destination, StringComparer.Ordinal).ToArray ();
 
-            // The last file never has padding bytes
-            rawFiles[rawFiles.Length - 1].padding = 0;
+            // The last non-empty file never has padding bytes
+            var last = rawFiles.Where (t => t.length != 0).Last ();
+            var index = Array.IndexOf (rawFiles, last);
+            rawFiles[index].padding = 0;
 
             var files = TorrentFileInfo.Create (PieceLength, rawFiles);
             var manager = new TorrentManagerInfo (files,
