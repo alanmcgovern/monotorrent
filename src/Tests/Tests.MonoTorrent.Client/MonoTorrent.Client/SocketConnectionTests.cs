@@ -73,8 +73,8 @@ namespace MonoTorrent.Client
 
             var s1b = socketListener.AcceptSocket ();
 
-            Incoming = new SocketPeerConnection (s1a, true);
-            Outgoing = new SocketPeerConnection (s1b, false);
+            using var incoming = new SocketPeerConnection (s1a, true);
+            using var outgoing = new SocketPeerConnection (s1b, false);
             socketListener.Stop ();
         }
 
