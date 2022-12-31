@@ -53,11 +53,12 @@ namespace MonoTorrent.Trackers
 
             string? ip = null;
             int port;
-            if (engine.Settings.ReportedAddress != null) {
-                ip = engine.Settings.ReportedAddress.Address.ToString ();
-                port = engine.Settings.ReportedAddress.Port;
-            } else if (engine.GetListenEndPoint ("ipv4") != null) {
-                port = engine.GetListenEndPoint ("ipv4")!.Port;
+            // IPV6 support - If we need to do an ipv4 announce *and* an ipv6 announce, where's the best place for this to live?
+            if (engine.Settings.ReportedListenEndPoints.TryGetValue ("ipv4", out var reportedAddress)) {
+                ip = reportedAddress.Address.ToString ();
+                port = reportedAddress.Port;
+            } else if (engine.GetReportedListenEndPoint ("ipv4") != null) {
+                port = engine.GetReportedListenEndPoint ("ipv4")!.Port;
             } else {
                 // FIXME: Announce via ipv4 *and* via ipv6 endpoints. Use the correct scheme then.
                 // FIXME: This shouldn't be needed? ENgine.GetListeEndPoint should always return non-null?

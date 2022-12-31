@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IPEndPoint? ReportedAddress { get; set; }
+        public Dictionary<string, IPEndPoint> ReportedListenEndPoints { get; set; }
 
         /// <summary>
         /// When blocks have been requested from a peer, the connection to that peer will be closed and the
@@ -357,6 +357,7 @@ namespace MonoTorrent.Client
             FastResumeMode = settings.FastResumeMode;
             httpStreamingPrefix = settings.HttpStreamingPrefix;
             ListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ListenEndPoints);
+            ReportedListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ReportedListenEndPoints);
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
             MaximumDiskWriteRate = settings.MaximumDiskWriteRate;
@@ -364,7 +365,6 @@ namespace MonoTorrent.Client
             MaximumHalfOpenConnections = settings.MaximumHalfOpenConnections;
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadRate = settings.MaximumUploadRate;
-            ReportedAddress = settings.ReportedAddress;
             StaleRequestTimeout = settings.StaleRequestTimeout;
             UsePartialFiles = settings.UsePartialFiles;
             WebSeedConnectionTimeout = settings.WebSeedConnectionTimeout;
@@ -404,7 +404,7 @@ namespace MonoTorrent.Client
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadRate: MaximumUploadRate,
-                reportedAddress: ReportedAddress,
+                reportedListenEndPoints: ReportedListenEndPoints,
                 staleRequestTimeout: StaleRequestTimeout,
                 usePartialFiles: UsePartialFiles,
                 webSeedConnectionTimeout: WebSeedConnectionTimeout,

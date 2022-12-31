@@ -216,7 +216,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IPEndPoint? ReportedAddress { get; }
+        public IDictionary<string, IPEndPoint> ReportedListenEndPoints { get; } = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> ());
 
         /// <summary>
         /// When blocks have been requested from a peer, the connection to that peer will be closed and the
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
             TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<string, IPEndPoint> listenEndPoints,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
-            int maximumOpenFiles, int maximumUploadRate, IPEndPoint? reportedAddress, bool usePartialFiles,
+            int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
             string httpStreamingPrefix)
         {
@@ -294,7 +294,7 @@ namespace MonoTorrent.Client
             MaximumHalfOpenConnections = maximumHalfOpenConnections;
             MaximumOpenFiles = maximumOpenFiles;
             MaximumUploadRate = maximumUploadRate;
-            ReportedAddress = reportedAddress;
+            ReportedListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (reportedListenEndPoints));
             StaleRequestTimeout = staleRequestTimeout;
             UsePartialFiles = usePartialFiles;
             WebSeedConnectionTimeout = webSeedConnectionTimeout;
@@ -347,7 +347,7 @@ namespace MonoTorrent.Client
                    && MaximumHalfOpenConnections == other.MaximumHalfOpenConnections
                    && MaximumOpenFiles == other.MaximumOpenFiles
                    && MaximumUploadRate == other.MaximumUploadRate
-                   && ReportedAddress == other.ReportedAddress
+                   && ReportedListenEndPoints.SequenceEqual (other.ReportedListenEndPoints)
                    && StaleRequestTimeout == other.StaleRequestTimeout
                    && UsePartialFiles == other.UsePartialFiles
                    && WebSeedConnectionTimeout == other.WebSeedConnectionTimeout

@@ -710,11 +710,11 @@ namespace MonoTorrent.Client
                     continue;
 
                 if (manager.InfoHashes.V1 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V1, GetListenEndPoint ("ipv4")?.Port ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V1, GetReportedListenEndPoint ("ipv4")?.Port ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V1);
                 }
                 if (manager.InfoHashes.V2 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetListenEndPoint("ipv4")?.Port ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetReportedListenEndPoint ("ipv4")?.Port ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V2.Truncate ());
                 }
             }
@@ -793,7 +793,7 @@ namespace MonoTorrent.Client
 
             if (tickCount % 2 == 0) {
                 downloadLimiter.UpdateChunks (Settings.MaximumDownloadRate, TotalDownloadRate, PreferredChunkSize (Settings.MaximumDownloadRate, 0));
-                uploadLimiter.UpdateChunks (Settings.MaximumUploadRate, TotalUploadRate, PreferredChunkSize(Settings.MaximumUploadRate, 0));
+                uploadLimiter.UpdateChunks (Settings.MaximumUploadRate, TotalUploadRate, PreferredChunkSize (Settings.MaximumUploadRate, 0));
             }
 
             ConnectionManager.CancelPendingConnects ();
@@ -1030,17 +1030,21 @@ namespace MonoTorrent.Client
             return new BEncodedString (sb.ToString ());
         }
 
-        internal IPEndPoint? GetListenEndPoint (string scheme)
+        internal IPEndPoint? GetReportedListenEndPoint (string scheme)
         {
+            // If the address has been overridden, use the value the user has set.
+            if (Settings.ReportedListenEndPoints.TryGetValue (scheme, out var reportedAddress))
+                return reportedAddress;
+
             foreach (var listener in PeerListeners) {
                 if (scheme == "ipv4" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                     return listener.LocalEndPoint;
                 if (scheme == "ipv6" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                     return listener.LocalEndPoint;
             }
-            return Settings.ReportedAddress;
-        }
 
-        #endregion
+            return null;
+        }
     }
+    #endregion
 }
