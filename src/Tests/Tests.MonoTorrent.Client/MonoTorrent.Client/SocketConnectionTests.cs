@@ -61,17 +61,17 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task TestIPV6Connection ()
+        public void TestIPV6Connection ()
         {
             Assume.That (Socket.OSSupportsIPv6);
 
             var socketListener = new TcpListener (IPAddress.IPv6Loopback, 0);
             socketListener.Start ();
 
-            var s1a = new Socket (AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+            using var s1a = new Socket (AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             s1a.Connect (socketListener.LocalEndpoint);
 
-            var s1b = socketListener.AcceptSocket ();
+            using var s1b = socketListener.AcceptSocket ();
 
             using var incoming = new SocketPeerConnection (s1a, true);
             using var outgoing = new SocketPeerConnection (s1b, false);
