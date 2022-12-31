@@ -51,5 +51,23 @@ namespace MonoTorrent.Client
             Assert.AreNotEqual (modified.HttpStreamingPrefix, new EngineSettings ().HttpStreamingPrefix);
             Assert.AreNotEqual (modified.ToSettings ().HttpStreamingPrefix, new EngineSettings ().HttpStreamingPrefix);
         }
+
+        [Test]
+        public void WithReportedAddress ()
+        {
+            var settings = new EngineSettingsBuilder {
+                ReportedListenEndPoints = new System.Collections.Generic.Dictionary<string, System.Net.IPEndPoint> {
+                    { "custom", new System.Net.IPEndPoint (System.Net.IPAddress.Any, 12345) },
+                    { "ipv6", new System.Net.IPEndPoint (System.Net.IPAddress.IPv6Any, 3456) },
+                    { "ipv4", new System.Net.IPEndPoint (System.Net.IPAddress.Loopback, 6798) },
+                }
+            }.ToSettings ();
+
+            Assert.AreEqual (settings, settings);
+
+            var deserialised = Serializer.DeserializeEngineSettings (Serializer.Serialize (settings));
+            Assert.AreEqual (deserialised, settings);
+
+        }
     }
 }

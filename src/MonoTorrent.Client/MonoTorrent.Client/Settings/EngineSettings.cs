@@ -339,7 +339,8 @@ namespace MonoTorrent.Client
                    && DiskCachePolicy == other.DiskCachePolicy
                    && FastResumeMode == other.FastResumeMode
                    && HttpStreamingPrefix == other.HttpStreamingPrefix
-                   && ListenEndPoints.SequenceEqual (other.ListenEndPoints)
+                   && AreEquivalent (ListenEndPoints, other.ListenEndPoints)
+                   && AreEquivalent (ReportedListenEndPoints, other.ReportedListenEndPoints)
                    && MaximumConnections == other.MaximumConnections
                    && MaximumDiskReadRate == other.MaximumDiskReadRate
                    && MaximumDiskWriteRate == other.MaximumDiskWriteRate
@@ -347,13 +348,22 @@ namespace MonoTorrent.Client
                    && MaximumHalfOpenConnections == other.MaximumHalfOpenConnections
                    && MaximumOpenFiles == other.MaximumOpenFiles
                    && MaximumUploadRate == other.MaximumUploadRate
-                   && ReportedListenEndPoints.SequenceEqual (other.ReportedListenEndPoints)
                    && StaleRequestTimeout == other.StaleRequestTimeout
                    && UsePartialFiles == other.UsePartialFiles
                    && WebSeedConnectionTimeout == other.WebSeedConnectionTimeout
                    && WebSeedDelay == other.WebSeedDelay
                    && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger
                    ;
+        }
+
+        bool AreEquivalent (IDictionary<string, IPEndPoint> first, IDictionary<string, IPEndPoint> second)
+        {
+            if (first.Count != second.Count)
+                return false;
+            foreach (var v in first)
+                if (!second.TryGetValue (v.Key, out var value) || !v.Value.Equals (value))
+                    return false;
+            return true;
         }
 
         public override int GetHashCode ()
