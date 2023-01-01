@@ -711,12 +711,13 @@ namespace MonoTorrent.Client
                 if (!manager.CanUseDht)
                     continue;
 
+                // IPV6: Also report to an ipv6 DHT node
                 if (manager.InfoHashes.V1 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V1, GetReportedListenEndPoint ("ipv4")?.Port ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V1, GetOverrideOrActualListenPort ("ipv4") ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V1);
                 }
                 if (manager.InfoHashes.V2 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetReportedListenEndPoint ("ipv4")?.Port ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetOverrideOrActualListenPort ("ipv4") ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V2.Truncate ());
                 }
             }
@@ -1026,19 +1027,18 @@ namespace MonoTorrent.Client
             return new BEncodedString (sb.ToString ());
         }
 
-        internal IPEndPoint? GetReportedListenEndPoint (string scheme)
+        internal int? GetOverrideOrActualListenPort (string scheme)
         {
-            // If the address has been overridden, use the value the user has set.
-            if (Settings.ReportedListenEndPoints.TryGetValue (scheme, out var reportedAddress))
-                return reportedAddress;
+            // If the override is set to non-zero, use it. Otherwise use the actual port.
+            if (Settings.ReportedListenEndPoints.TryGetValue(scheme, out var endPoint) && endPoint.Port != 0)
+                return endPoint.Port;
 
             foreach (var listener in PeerListeners) {
                 if (scheme == "ipv4" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                    return listener.LocalEndPoint;
+                    return listener.LocalEndPoint.Port;
                 if (scheme == "ipv6" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-                    return listener.LocalEndPoint;
+                    return listener.LocalEndPoint.Port;
             }
-
             return null;
         }
     }
