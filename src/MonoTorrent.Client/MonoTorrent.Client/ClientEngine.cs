@@ -47,6 +47,8 @@ using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.PortForwarding;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     /// <summary>
@@ -822,20 +824,13 @@ namespace MonoTorrent.Client
             if (!IsRunning) {
                 IsRunning = true;
 
-                foreach (var listener in PeerListeners)
-                    listener.Start ();
-
-                LocalPeerDiscovery.Start ();
-                await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
                 if (Settings.AllowPortForwarding)
                     await PortForwarder.StartAsync (CancellationToken.None);
 
-                var maps = PeerListeners
-                    .Select (t => t.LocalEndPoint!)
-                    .Where (t => t != null)
-                    .Select (t => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, t.Port)))
-                    .ToArray ();
-                await Task.WhenAll (maps);
+                LocalPeerDiscovery.Start ();
+                await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
+
+                await StartAndPortMapPeerListeners ();
 
                 if (DhtListener.LocalEndPoint != null)
                     await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
@@ -848,15 +843,7 @@ namespace MonoTorrent.Client
             // If all the torrents are stopped, stop ticking
             IsRunning = allTorrents.Exists (m => m.State != TorrentState.Stopped);
             if (!IsRunning) {
-                var unmaps = PeerListeners
-                    .Select (t => t.LocalEndPoint!)
-                    .Where (t => t != null)
-                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port), CancellationToken.None))
-                    .ToArray ();
-                await Task.WhenAll (unmaps);
-
-                foreach (var listener in PeerListeners)
-                    listener.Stop ();
+                await UnmapAndStopPeerListeners ();
 
                 if (DhtListener.LocalEndPoint != null)
                     await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port), CancellationToken.None);
@@ -871,7 +858,34 @@ namespace MonoTorrent.Client
             }
         }
 
-        async ReusableTasks.ReusableTask<ReadOnlyMemory<byte>> MaybeLoadDhtNodes ()
+        async ReusableTask StartAndPortMapPeerListeners ()
+        {
+            foreach (var v in PeerListeners)
+                v.Start ();
+
+            // The settings could say to listen at port 0, which means 'choose one dynamically'
+            var maps = PeerListeners
+                .Select (t => t.LocalEndPoint!)
+                .Where (t => t != null)
+                .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port)))
+                .ToArray ();
+            await Task.WhenAll (maps);
+        }
+
+        async ReusableTask UnmapAndStopPeerListeners()
+        {
+            var unmaps = PeerListeners
+                    .Select (t => t.LocalEndPoint!)
+                    .Where (t => t != null)
+                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port), CancellationToken.None))
+                    .ToArray ();
+            await Task.WhenAll (unmaps);
+
+            foreach (var listener in PeerListeners)
+                listener.Stop ();
+        }
+
+        async ReusableTask<ReadOnlyMemory<byte>> MaybeLoadDhtNodes ()
         {
             if (!Settings.AutoSaveLoadDhtCache)
                 return ReadOnlyMemory<byte>.Empty;
@@ -880,7 +894,7 @@ namespace MonoTorrent.Client
             return await Task.Run (() => File.Exists (savePath) ? File.ReadAllBytes (savePath) : ReadOnlyMemory<byte>.Empty);
         }
 
-        async ReusableTasks.ReusableTask MaybeSaveDhtNodes ()
+        async ReusableTask MaybeSaveDhtNodes ()
         {
             if (!Settings.AutoSaveLoadDhtCache)
                 return;
@@ -980,31 +994,13 @@ namespace MonoTorrent.Client
             }
 
             if (!oldSettings.ListenEndPoints.SequenceEqual (newSettings.ListenEndPoints)) {
-                var unmaps = PeerListeners
-                    .Select (t => t.LocalEndPoint!)
-                    .Where (t => t != null)
-                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port), CancellationToken.None))
-                    .ToArray ();
-                await Task.WhenAll (unmaps);
-
-                foreach (var listener in PeerListeners)
-                    listener.Stop ();
+                await UnmapAndStopPeerListeners ();
 
                 PeerListeners = Array.AsReadOnly (newSettings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
                 listenManager.SetListeners (PeerListeners);
 
-                if (IsRunning) {
-                    foreach (var v in PeerListeners)
-                        v.Start ();
-
-                    // The settings could say to listen at port 0, which means 'choose one dynamically'
-                    var maps = PeerListeners
-                        .Select (t => t.LocalEndPoint!)
-                        .Where (t => t != null)
-                        .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port)))
-                        .ToArray ();
-                    await Task.WhenAll (maps);
-                }
+                if (IsRunning)
+                    await StartAndPortMapPeerListeners ();
             }
 
             if (oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) {
