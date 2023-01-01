@@ -213,8 +213,8 @@ namespace Tests.MonoTorrent.IntegrationTests
             // Give an example of how settings can be modified for the engine.
             var settingBuilder = new EngineSettingsBuilder {
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoint = new IPEndPoint (IPAddress.Any, port),
-                ReportedAddress = new IPEndPoint (IPAddress.Parse ("127.0.0.1"), port),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port) } },
+                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 0) } },
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 DhtEndPoint = null,

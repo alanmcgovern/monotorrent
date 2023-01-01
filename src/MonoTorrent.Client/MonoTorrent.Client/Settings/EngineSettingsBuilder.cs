@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
             bool automaticFastResume = false,
             bool autoSaveLoadMagnetLinkMetadata = true,
             IPEndPoint? dhtEndPoint = null,
-            IPEndPoint? listenEndPoint = null,
+            Dictionary<string, IPEndPoint>? listenEndPoints = null,
             string? cacheDirectory = null,
             bool usePartialFiles = false)
         {
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location)!, "test_cache_dir"),
                 DhtEndPoint = dhtEndPoint,
-                ListenEndPoint = listenEndPoint,
+                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()),
                 UsePartialFiles = usePartialFiles,
             }.ToSettings ();
         }
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client
         /// Connections will be attempted in the same order as they are in the list. Defaults to <see cref="EncryptionType.RC4Header"/>,
         /// <see cref="EncryptionType.RC4Full"/> and <see cref="EncryptionType.PlainText"/>.
         /// </summary>
-        public IList<EncryptionType> AllowedEncryption { get; set; }
+        public List<EncryptionType> AllowedEncryption { get; set; }
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
@@ -218,7 +218,7 @@ namespace MonoTorrent.Client
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
-        public IPEndPoint? ListenEndPoint { get; set; }
+        public Dictionary<string, IPEndPoint> ListenEndPoints { get; set; }
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IPEndPoint? ReportedAddress { get; set; }
+        public Dictionary<string, IPEndPoint> ReportedListenEndPoints { get; set; }
 
         /// <summary>
         /// When blocks have been requested from a peer, the connection to that peer will be closed and the
@@ -356,7 +356,8 @@ namespace MonoTorrent.Client
             DiskCachePolicy = settings.DiskCachePolicy;
             FastResumeMode = settings.FastResumeMode;
             httpStreamingPrefix = settings.HttpStreamingPrefix;
-            ListenEndPoint = settings.ListenEndPoint;
+            ListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ListenEndPoints);
+            ReportedListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ReportedListenEndPoints);
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
             MaximumDiskWriteRate = settings.MaximumDiskWriteRate;
@@ -364,7 +365,6 @@ namespace MonoTorrent.Client
             MaximumHalfOpenConnections = settings.MaximumHalfOpenConnections;
             MaximumOpenFiles = settings.MaximumOpenFiles;
             MaximumUploadRate = settings.MaximumUploadRate;
-            ReportedAddress = settings.ReportedAddress;
             StaleRequestTimeout = settings.StaleRequestTimeout;
             UsePartialFiles = settings.UsePartialFiles;
             WebSeedConnectionTimeout = settings.WebSeedConnectionTimeout;
@@ -396,7 +396,7 @@ namespace MonoTorrent.Client
                 diskCachePolicy: DiskCachePolicy,
                 fastResumeMode: FastResumeMode,
                 httpStreamingPrefix: HttpStreamingPrefix,
-                listenEndPoint: ListenEndPoint,
+                listenEndPoints: ListenEndPoints,
                 maximumConnections: MaximumConnections,
                 maximumDiskReadRate: MaximumDiskReadRate,
                 maximumDiskWriteRate: MaximumDiskWriteRate,
@@ -404,7 +404,7 @@ namespace MonoTorrent.Client
                 maximumHalfOpenConnections: MaximumHalfOpenConnections,
                 maximumOpenFiles: MaximumOpenFiles,
                 maximumUploadRate: MaximumUploadRate,
-                reportedAddress: ReportedAddress,
+                reportedListenEndPoints: ReportedListenEndPoints,
                 staleRequestTimeout: StaleRequestTimeout,
                 usePartialFiles: UsePartialFiles,
                 webSeedConnectionTimeout: WebSeedConnectionTimeout,

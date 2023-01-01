@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -50,7 +51,10 @@ namespace ClientSample
                 AutoSaveLoadMagnetLinkMetadata = true,
 
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoint = new IPEndPoint (IPAddress.Any, 55123),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Any, 55123) },
+                    { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55123) }
+                },
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
                 DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),

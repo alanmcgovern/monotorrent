@@ -169,8 +169,8 @@ namespace ClientSample
             int port = 37000;
             var seeder = new ClientEngine (
                 new EngineSettingsBuilder {
-                    AllowedEncryption = new[] { EncryptionType.PlainText },
-                    ListenEndPoint = new IPEndPoint (IPAddress.Any, port++),
+                    AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
+                    ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } },
                     DhtEndPoint = null,
                     AllowLocalPeerDiscovery = false,
                 }.ToSettings (),
@@ -189,9 +189,9 @@ namespace ClientSample
             var downloaders = Enumerable.Range (port, MaxDownloaders).Select (p => {
                 return new ClientEngine (
                     new EngineSettingsBuilder {
-                        AllowedEncryption = new[] { EncryptionType.PlainText },
+                        AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
                         DiskCacheBytes = DataSize,
-                        ListenEndPoint = new IPEndPoint (IPAddress.Any, p),
+                        ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } },
                         DhtEndPoint = null,
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")

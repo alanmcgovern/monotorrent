@@ -51,16 +51,11 @@ namespace MonoTorrent.Trackers
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
+            // IPV6 support - If we need to do an ipv4 announce *and* an ipv6 announce, where's the best place for this to live?
             string? ip = null;
-            int port;
-            if (engine.Settings.ReportedAddress != null) {
-                ip = engine.Settings.ReportedAddress.Address.ToString ();
-                port = engine.Settings.ReportedAddress.Port;
-            } else if (engine.PeerListener.LocalEndPoint != null) {
-                port = engine.PeerListener.LocalEndPoint.Port;
-            } else {
-                port = engine.Settings.ListenEndPoint?.Port ?? -1;
-            }
+            int port = engine.GetOverrideOrActualListenPort ("ipv4").GetValueOrDefault (-1);
+            if (engine.Settings.ReportedListenEndPoints.TryGetValue ("ipv4", out var reportedAddress))
+                ip = reportedAddress.Address.ToString ();
 
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.
